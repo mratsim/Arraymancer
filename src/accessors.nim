@@ -13,7 +13,12 @@
 # limitations under the License.
 
 template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int = 
-    assert(idx.high == t.rank, "Number of arguments is different from tensor dimensions")
+    when compileOption("boundChecks"):
+        if idx.high != t.rank:
+            raise newException(IndexError, "Number of arguments: " &
+                                            $(idx.len) &
+                                            ", is different from tensor rank: " &
+                                            $(t.rank))
 
     var real_idx = t.offset
 

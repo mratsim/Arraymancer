@@ -34,7 +34,7 @@ type
         # N for N-dimension array
         # Size of the datastructure is 32 bytes - perfect !
         #
-        dimsizes: seq[int]
+        dimensions: seq[int]
         strides: seq[int]
         offset: int # To be changed to ptr T to avoids bounds checking when iterating over the Tensor?
         data: seq[T] # Perf note: seq are always deep copied on assignement
@@ -45,9 +45,9 @@ type
         # Another alternative are unchecked arrays (of uint8? to save on size, and optimize cache lines)
 
 template len*(t: Tensor): int = t.data.len
-template dim*(t: Tensor): seq[int] = t.dimsizes
-template rank*(t: Tensor): int = t.dimsizes.high
-template shape*(t: Tensor): int = t.dimsizes
+template shape*(t: Tensor): seq[int] = t.dimensions
+template rank*(t: Tensor): int = t.dimensions.high
+
 
 proc newTensor*(dim: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] =
     # Compute strides matching with dimensions.
@@ -55,7 +55,7 @@ proc newTensor*(dim: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] =
     let strides = (dim & 1)[1..dim.len].scanr(a * b)
 
     ##scanr
-    result.dimsizes = dim
+    result.dimensions = dim
     result.strides = strides
     result.data = newSeq[T](dim.foldl(a * b))
     result.offset = 0 # addr tmp.data[0]

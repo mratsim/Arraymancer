@@ -7,7 +7,7 @@ template scanr[T](s: seq[T], operation: untyped): untyped =
   ## Template to scan a sequence from right to left, returning the accumulation and intermediate values.
   ## This is a foldr with intermediate steps returned
 
-  ## @[2, 2, 3, 5].scanr(a + b) = @[48, 24, 12, 4]
+  ## @[2, 2, 3, 4].scanr(a + b) = @[48, 24, 12, 4]
   let len = s.len
 
   assert len > 0, "Can't scan empty sequences"

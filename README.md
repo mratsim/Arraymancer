@@ -1,6 +1,6 @@
 # Arraymancer
 
-A Tensor (N-dimensional array) project for machine learning and deep learning.
+A tensor (N-dimensional array) project for machine learning and deep learning.
 
 ## Goals
 

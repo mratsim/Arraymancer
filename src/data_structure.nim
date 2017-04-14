@@ -26,7 +26,7 @@ type
     #    Contiguous # For Vector/classic arrays
     #    Universal # Any stride
 
-    Tensor[B: static[Backend]; T] = object
+    Tensor*[B: static[Backend]; T] = object
         # N is the rank of the Tensor.
         # 0 for scalar (unfortunately cannot be stored)
         # 1 for vector
@@ -47,6 +47,7 @@ type
 template len*(t: Tensor): int = t.data.len
 template dim*(t: Tensor): seq[int] = t.dimsizes
 template rank*(t: Tensor): int = t.dimsizes.high
+template shape*(t: Tensor): int = t.dimsizes
 
 proc newTensor*(dim: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] =
     # Compute strides matching with dimensions.

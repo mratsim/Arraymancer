@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sequtils
+import sequtils, strutils
 include src/utils/functional,
         src/data_structure,
-        src/accessors
+        src/accessors,
+        src/display.nim

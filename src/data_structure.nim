@@ -46,17 +46,4 @@ type
 
 template len*(t: Tensor): int = t.data.len
 template shape*(t: Tensor): seq[int] = t.dimensions
-template rank*(t: Tensor): int = t.dimensions.high
-
-
-proc newTensor*(dim: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] =
-    # Compute strides matching with dimensions.
-    # Row-Major ordering, rows have strides of 1
-    let strides = (dim & 1)[1..dim.len].scanr(a * b)
-
-    ##scanr
-    result.dimensions = dim
-    result.strides = strides
-    result.data = newSeq[T](dim.foldl(a * b))
-    result.offset = 0 # addr tmp.data[0]
-    result
+template rank*(t: Tensor): int = t.dimensions.len

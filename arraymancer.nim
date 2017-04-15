@@ -14,6 +14,8 @@
 
 import sequtils, strutils
 include src/utils/functional,
+        src/utils/nested_containers,
         src/data_structure,
         src/accessors,
-        src/display.nim
+        src/display,
+        src/init

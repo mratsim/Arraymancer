@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 proc bounds_display(t: Tensor,
                         idx_data: tuple[val: string,
                                   idx: int]
                         ): string  {.noSideEffect.} =
+    ## Internal routine, compare an index with the strides of a Tensor
+    ## to check beginning and end of lines
+    ## Add the delimiter "|" and line breaks at beginning and end of lines
     let s = t.strides
     let (val,idx) = idx_data
 
@@ -28,11 +30,18 @@ proc bounds_display(t: Tensor,
     return $val & "\t"
 
 proc `$`*(t: Tensor): string {.noSideEffect.} =
+    ## Display a tensor
+
+    # Add a position index to each value in the Tensor
     let indexed_data: seq[(string,int)] =
                       t.data.mapIt($it)
                             .zip(toSeq(1..t.strides[0])
                                  .cycle(t.shape[0])
                                 )
-    let str_tensor = indexed_data.foldl(a & t.bounds_display(b), "")
+    
+    # Create a closure to apply the boundaries transformation for the specific input
+    proc curry_bounds(tup: (string,int)): string {.noSideEffect.} = t.bounds_display(tup)
+
+    let str_tensor = indexed_data.concatMap(curry_bounds)
     let desc = "Tensor dimensions are " & t.shape.join("x")
     return str_tensor & "\n" & desc

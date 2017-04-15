@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sequtils, strutils
+import sequtils, strutils, future
 include src/utils/functional,
         src/utils/nested_containers,
         src/data_structure,

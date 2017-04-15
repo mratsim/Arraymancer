@@ -13,10 +13,10 @@
 # limitations under the License.
 
 
-## Helper function to get the dimensions of nested arrays/sequences
-# Dimension check is using only the first nested element so further checking
-# must be one to confirm that the total number of elements match the dimensions.
 proc shape[T](s: openarray[T], dimensions: seq[int] = @[]): seq[int] =
+    ## Helper function to get the dimensions of nested arrays/sequences
+    # Dimension check is using only the first nested element so further checking
+    # must be one to confirm that the total number of elements match the dimensions.
     result = dimensions & s.len
     when (T is seq|array):
       result = shape(s[0], result)

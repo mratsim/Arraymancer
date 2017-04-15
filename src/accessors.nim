@@ -12,24 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int = 
+template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int =
+    ## Convert [i, j, k, l ...] to the proper index.
     when compileOption("boundChecks"):
-        if idx.high != t.rank:
+        if idx.len != t.rank:
             raise newException(IndexError, "Number of arguments: " &
                                             $(idx.len) &
                                             ", is different from tensor rank: " &
                                             $(t.rank))
-
     var real_idx = t.offset
-
     for i,j in zip(t.strides,idx):
         real_idx += i*j
     real_idx
 
 proc `[]`*[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): T {.noSideEffect.} =
+    ## Get the value at input coordinates
     let real_idx = t.getIndex(idx)
     return t.data[real_idx]
 
 proc `[]=`*[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], val: T) {.noSideEffect.} =
+    ## Set the value at input coordinates
     let real_idx = t.getIndex(idx)
     t.data[real_idx] = val

@@ -38,7 +38,7 @@ type
         #
         dimensions: seq[int]
         strides: seq[int]
-        offset: ptr T
+        offset: ptr T # Should annote `not nil` but due to pointer arithmetic that cannot be proven
         data: seq[T] # Perf note: seq are always deep copied on assignement
         #
         # Open design question: should the rank of the Tensor be part of its type signature?

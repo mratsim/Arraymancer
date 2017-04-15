@@ -21,7 +21,7 @@ suite "Accessing and setting tensor values":
         var a = newTensor(@[2,3,4], int, Backend.Cpu)
         a[1,2,2] = 122
         check: a[1,2,2] == 122
-        echo a
+        # echo a
 
         var b = newTensor(@[3,4], int, Backend.Cpu)
         b[1,2] = 12
@@ -39,4 +39,5 @@ suite "Accessing and setting tensor values":
 #        when compiles(a[2,0,0] = 200): false
 #        var b = newTensor(@[3,4], int, Backend.Cpu)
 #        when compiles(b[3,4] = 999): false
+#        when compiles(b[1,-1] = 999): false
 #        echo b

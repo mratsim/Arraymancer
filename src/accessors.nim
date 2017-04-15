@@ -25,7 +25,8 @@ template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): ptr
         for i,j in zip(t.strides,idx):
             real_idx += i*j
         when compileOption("boundChecks"):
-            if real_idx >= (t.offset + t.data.len):
+            let d0 = unsafeAddr(t.data[0])
+            if real_idx < d0 or real_idx >= d0 + t.data.len:
                 raise newException(IndexError, "Index out of bounds")
     real_idx
 

@@ -16,29 +16,27 @@ proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] {
     ## Compute strides matching with dimensions.
     ## Row-Major ordering, rows have strides of 1
     # TODO support array/openarray. Pending https://github.com/nim-lang/Nim/issues/2652
+    let strides = (shape & 1)[1..shape.len].scanr(a * b)
 
-    let dim = shape.reversed
-    let strides = (dim & 1)[1..dim.len].scanr(a * b)
-
-    result.dimensions = dim
+    result.dimensions = shape.reversed
     result.strides = strides
-    result.data = newSeq[T](dim.product)
+    result.data = newSeq[T](shape.product)
     result.offset = addr result.data[0]
     return result
 
 proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
     ## Create a tensor from a nested sequence
     ## Unfortunately it can't typecheck without auto if T is another sequence
-    let dim = s.shape.reversed
+    let shape = s.shape
     let flat = s.flatten
 
     when compileOption("boundChecks"):
-      if (dim.product != flat.len):
+      if (shape.product != flat.len):
         raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
 
-    let strides = (dim & 1)[1..dim.len].scanr(a * b)
+    let strides = (shape & 1)[1..shape.len].scanr(a * b)
 
-    result.dimensions = dim
+    result.dimensions = shape.reversed
     result.strides = strides
     result.data = flat
     result.offset = addr result.data[0]

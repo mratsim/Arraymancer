@@ -53,17 +53,21 @@ suite "Creating a new Tensor":
                         @[
                             @[4,4,5],
                             @[4,4,4]
+                        ],
+                        @[
+                            @[6,6,6],
+                            @[6,6,6]
                         ]
                     ]
         
         let t3 = fromSeq(nest3, int, Backend.Cpu)
         check: t3.rank == 3
-        check: t3.shape == @[3, 2, 3]
+        check: t3.shape == @[4, 2, 3]  # 4 rows, 2 cols, 3 depth. depth indices moves the fastest. Same scheme as Numpy.
 
     test "Check that Tensor shape is in row-by-column order":
         let s = @[@[1,2,3],@[3,2,1]]
         let t = fromSeq(s,int,Backend.Cpu)
-
+        
         check: t.shape == @[2,3]
 
         let u = newTensor(@[2,3],int,Backend.Cpu)

@@ -15,6 +15,7 @@
 
 proc shape[T](s: openarray[T], dimensions: seq[int] = @[]): seq[int] {.noSideEffect.}=
     ## Helper function to get the dimensions of nested arrays/sequences
+    ## C convention. Last index is the fastest changing (columns in 2D, depth in 3D) - Rows (slowest), Columns, Depth (fastest)
     # Dimension check is using only the first nested element so further checking
     # must be one to confirm that the total number of elements match the dimensions.
     result = dimensions & s.len

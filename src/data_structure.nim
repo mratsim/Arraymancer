@@ -21,10 +21,12 @@ type
 
     # StrideKind = enum
     # Either RowMajor, ColMajor or Contiguous are needed for BLAS optimization for Tensor of Rank 1 or 2
-    #    RowMajor # C convention. Stride for row (the last) is 1.
-    #    ColMajor # Fortran convention. Stride for column (the first) is 1.
+    #    RowMajor # C convention. Last index is the fastest changing (columns in 2D, depth in 3D) - Rows (slowest), Columns, Depth (fastest)
+    #    ColMajor # Fortran convention. First index is the fastest changing (rows in 2D, depth in 3D) - Rows (fastest), Columns, Depth (slowest)
     #    Contiguous # For Vector/classic arrays
     #    Universal # Any stride
+    # For deep learning on images, depth represents colors channels and change the fastest, rows represent another image in a batch and change the slowest.
+    # Hence C convention is the best.
 
     Tensor*[B: static[Backend]; T] = object
         # N is the rank of the Tensor.

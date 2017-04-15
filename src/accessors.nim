@@ -20,7 +20,7 @@ template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int
                                             $(idx.len) &
                                             ", is different from tensor rank: " &
                                             $(t.rank))
-    var real_idx = t.offset
+    var real_idx = t.offset[]
     for i,j in zip(t.strides,idx):
         real_idx += i*j
     real_idx

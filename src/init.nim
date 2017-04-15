@@ -22,7 +22,7 @@ proc newTensor*(dim: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] =
     result.dimensions = dim
     result.strides = strides
     result.data = newSeq[T](dim.product)
-    result.offset = 0 # addr tmp.data[0]
+    result.offset = addr result.data[0]
     return result
 
 proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B,T] =
@@ -40,5 +40,5 @@ proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B,T] =
     result.dimensions = dim
     result.strides = strides
     result.data = flat
-    result.offset = 0
+    result.offset = addr result.data[0]
     return result

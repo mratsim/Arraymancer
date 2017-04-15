@@ -36,7 +36,7 @@ type
         #
         dimensions: seq[int]
         strides: seq[int]
-        offset: int # To be changed to ptr T to avoids bounds checking when iterating over the Tensor?
+        offset: ptr T
         data: seq[T] # Perf note: seq are always deep copied on assignement
         #
         # Open design question: should the rank of the Tensor be part of its type signature?
@@ -44,6 +44,9 @@ type
         # Otherwise to have dimsizes and strides on the stack and limit GC we would need VLAs
         # Another alternative are unchecked arrays (of uint8? to save on size, and optimize cache lines)
 
+
+template dim(t: Tensor): seq[int] = t.dimensions # To be used internally. Order match with strides order
+
 template len*(t: Tensor): int = t.data.len
-template shape*(t: Tensor): seq[int] = t.dimensions
+template shape*(t: Tensor): seq[int] = t.dimensions.reversed
 template rank*(t: Tensor): int = t.dimensions.len

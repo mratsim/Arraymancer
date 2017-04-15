@@ -59,3 +59,9 @@ suite "Creating a new Tensor":
         let t3 = fromSeq(nest3, int, Backend.Cpu)
         check: t3.rank == 3
         check: t3.shape == @[3, 2, 3]
+
+    test "Check that Tensor shape is in row-by-column order":
+        let s = @[@[1,2,3],@[3,2,1]]
+        let t = fromSeq(s,int,Backend.Cpu)
+
+        check: t.shape == @[3,2]

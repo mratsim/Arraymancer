@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-proc shape[T](s: openarray[T], dimensions: seq[int] = @[]): seq[int] =
+proc shape[T](s: openarray[T], dimensions: seq[int] = @[]): seq[int] {.noSideEffect.}=
     ## Helper function to get the dimensions of nested arrays/sequences
     # Dimension check is using only the first nested element so further checking
     # must be one to confirm that the total number of elements match the dimensions.
@@ -23,5 +23,5 @@ proc shape[T](s: openarray[T], dimensions: seq[int] = @[]): seq[int] =
 
 ## Flatten any-depth nested sequences.
 # TODO support array/openarray. Pending https://github.com/nim-lang/Nim/issues/2652
-proc flatten[T](a: seq[T]): seq[T] = a
-proc flatten[T](a: seq[seq[T]]): auto = a.concat.flatten
+proc flatten[T](a: seq[T]): seq[T] {.noSideEffect.}= a
+proc flatten[T](a: seq[seq[T]]): auto {.noSideEffect.}= a.concat.flatten

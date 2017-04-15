@@ -65,3 +65,6 @@ suite "Creating a new Tensor":
         let t = fromSeq(s,int,Backend.Cpu)
 
         check: t.shape == @[3,2]
+
+        let u = newTensor(@[5,3],int,Backend.Cpu)
+        check u.shape == @[5,3]

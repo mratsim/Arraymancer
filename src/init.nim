@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc newTensor*(dim: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] = 
+proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] = 
     ## Compute strides matching with dimensions.
     ## Row-Major ordering, rows have strides of 1
     # TODO support array/openarray. Pending https://github.com/nim-lang/Nim/issues/2652
 
+    let dim = shape.reversed
     let strides = (dim & 1)[1..dim.len].scanr(a * b)
 
     result.dimensions = dim

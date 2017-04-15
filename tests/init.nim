@@ -64,7 +64,9 @@ suite "Creating a new Tensor":
         let s = @[@[1,2,3],@[3,2,1]]
         let t = fromSeq(s,int,Backend.Cpu)
 
-        check: t.shape == @[3,2]
+        check: t.shape == @[2,3]
 
-        let u = newTensor(@[5,3],int,Backend.Cpu)
-        check u.shape == @[5,3]
+        let u = newTensor(@[2,3],int,Backend.Cpu)
+        check: u.shape == @[2,3]
+
+        check: u.shape == t.shape

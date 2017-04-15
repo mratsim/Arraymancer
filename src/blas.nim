@@ -15,7 +15,7 @@
 
 ## Linear algebra routines for rank 1 and 2 tensors (vectors and matrices)
 
-template matmul[B: static[Backend],T](a, b, result: Tensor[B,T]): auto =
+template matmul_blas[B;T: SomeReal](a, b, result: Tensor[B,T]): auto =
     # TODO: static dispatch based on Tensor rank
     # TODO: support a transpose parameter
     # TODO: term rewriting to fuse transpose-multiply
@@ -43,5 +43,6 @@ template matmul[B: static[Backend],T](a, b, result: Tensor[B,T]): auto =
     gemm(rowMajor, noTranspose, noTranspose, rowA, colB, rowB, 1, a.offset, colA, b.offset, colB, 0, result.offset, colB)
 
 proc `*`*[B,T](a, b: Tensor[B,T]): Tensor[B,T] {.inline, noSideEffect.} =
-    if (a.rank == 2 and b.rank == 2): matmul(a, b, result)
+    if (a.rank == 2 and b.rank == 2 and T is SomeReal and B == Backend.Cpu):
+        matmul_blas(a, b, result)
     else: raise newException(ValueError, "Tensor multiplications, not implemented for ranks other than 2")

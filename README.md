@@ -2,7 +2,7 @@
 
 A tensor (N-dimensional array) project. Focus on machine learning, deep learning and numerical computing.
 
-A tensor support arbitrary types (floats, strings, objects ...).
+A tensor supports arbitrary types (floats, strings, objects ...).
 
 EXPERIMENTAL: API may change and break.
 

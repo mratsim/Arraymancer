@@ -40,10 +40,17 @@ iterator zip[T1, T2](a: openarray[T1], b: openarray[T2]): (T1,T2) {.inline.} =
   for i in 0..<len:
     yield (a[i], b[i])
 
-iterator zipWith[T1,T2,T3](f: proc(u: T1, v:T2): T3, a: openarray[T1], b: openarray[T2]): T3  {.inline.} =
+iterator zipWith[T1,T2,T3](f: proc(u: T1, v:T2): T3, a: openarray[T1], b: openarray[T2]): seq[T3]  {.inline.} =
   ## Transform two lists in a new one, applying a function to each couple of items from both lists.
   for i in zip(a,b):
     yield f(a,b)
+
+proc zipWith[T1,T2,T3](f: proc(u: T1, v:T2): T3, a: openarray[T1], b: openarray[T2]): seq[T3]  {.inline,noSideEffect.} =
+  ## Transform two lists in a new one, applying a function to each couple of items from both lists.
+  # We do not call zip for the proc version as that would loop twice
+  let m = min(a.len,b.len)
+  newSeq(result,m)
+  for i in 0..<m: result[i] = f(a[i],b[i])
 
 ## Get the product of all numbers in a sequence or array
 template product[T: SomeNumber](s: openarray[T]): T = s.foldl(a*b)

@@ -28,6 +28,10 @@ type
     # For deep learning on images, depth represents colors channels and change the fastest, rows represent another image in a batch and change the slowest.
     # Hence C convention is the best.
 
+    # DataKind = enum
+    #    Dense
+    #    Sparse
+
     Tensor*[B: static[Backend]; T] = object
         # N is the rank of the Tensor.
         # 0 for scalar (unfortunately cannot be stored)
@@ -41,11 +45,11 @@ type
         offset: ptr T # Should annote `not nil` but due to pointer arithmetic that cannot be proven
         data: seq[T] # Perf note: seq are always deep copied on assignement
 
-template dim(t: Tensor): seq[int] = t.dimensions # To be used internally. Order match with strides order
-
 template len*(t: Tensor): int = t.data.len
 template shape*(t: Tensor): seq[int] = t.dimensions.reversed
 template rank*(t: Tensor): int = t.dimensions.len
+
+template isRowMajor(t: Tensor): bool = t.strides[t.strides.high] == 1
 
 proc `==`*[B,T](a,b: Tensor[B,T]): bool {.noSideEffect.}=
     if a.dim != b.dim: return false

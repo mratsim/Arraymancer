@@ -64,6 +64,10 @@ suite "Creating a new Tensor":
         check: t3.rank == 3
         check: t3.shape == @[4, 2, 3]  # 4 rows, 2 cols, 3 depth. depth indices moves the fastest. Same scheme as Numpy.
 
+        let u = @[@[1.0, -1, 2],@[0.0, -1]]
+        expect(IndexError):
+            discard fromSeq(u,float64,Backend.Cpu)
+
     test "Check that Tensor shape is in row-by-column order":
         let s = @[@[1,2,3],@[3,2,1]]
         let t = fromSeq(s,int,Backend.Cpu)

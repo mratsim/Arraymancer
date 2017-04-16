@@ -24,6 +24,7 @@ proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] {
 
 proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
     ## Create a tensor from a nested sequence
+    # If sequence is deeply nested Nim cannot detect the very basic type hence U and T in the proc declaration.
     let shape = s.shape
     let flat = s.flatten
 

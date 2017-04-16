@@ -21,7 +21,6 @@ suite "Accessing and setting tensor values":
         var a = newTensor(@[2,3,4], int, Backend.Cpu)
         a[1,2,2] = 122
         check: a[1,2,2] == 122
-        # echo a
 
         var b = newTensor(@[3,4], int, Backend.Cpu)
         b[1,2] = 12
@@ -30,10 +29,8 @@ suite "Accessing and setting tensor values":
         check: b[0,0] == 999
         b[2,3] = 111
         check: b[2,3] == 111
-        b[2,0] = 555
-        # echo b
+    ## TODO: It's currently possible to use negative indices but they don't work as expected.
 
-## TODO: It's currently possible to use negative indices but they don't work as expected.
 
     test "Out of bounds checking":
         # Cannot test properly "when compiles assignation"

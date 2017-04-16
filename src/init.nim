@@ -14,7 +14,6 @@
 
 proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
     ## Compute strides matching with dimensions.
-    ## Row-Major ordering, rows have strides of 1
     # TODO support array/openarray. Pending https://github.com/nim-lang/Nim/issues/2652
     let strides = (shape & 1)[1..shape.len].scanr(a * b)
 
@@ -25,7 +24,6 @@ proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] {
 
 proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
     ## Create a tensor from a nested sequence
-    ## Unfortunately it can't typecheck without auto if T is another sequence
     let shape = s.shape
     let flat = s.flatten
 

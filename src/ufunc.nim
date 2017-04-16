@@ -24,7 +24,7 @@ proc fmap*[B: static[Backend],T, U](t: Tensor[B,T], g: T -> U): Tensor[B,U] {.no
 
     result.dimensions = t.dimensions
     result.strides = t.strides
-    # TODO: Bounds checking - result[0, 0, 0 ...] is included, result[dim1.len, dim2.len, ...] is not
+    # TODO: Bounds checking on strides and offsets combinations
     result.data = t.data.map(g)
 
     ptrMath:
@@ -34,6 +34,7 @@ template makeUniversal*(func_name: untyped) =
     ## Lift an unary function into an exported universal function.
     ## Universal functions apply element-wise
     # For now, makeUniversal does not work when internal type is changing
+    # use fmap instead
     proc func_name*(t: Tensor): Tensor = t.fmap(func_name)
     export func_name
 
@@ -41,10 +42,10 @@ template makeUniversalLocal*(func_name: untyped) =
     ## Lift an unary function into a non-exported universal function
     ## Universal functions apply element-wise
     # For now, makeUniversalLocal does not work when internal type is changing
+    # use fmap instead
     proc func_name(t: Tensor): Tensor = t.fmap(func_name)
 
 ## Unary functions from Nim math library
-## For now, for functions with input type != result type would need fmap use
 
 makeUniversal(fac)
 #makeUniversal(classify)

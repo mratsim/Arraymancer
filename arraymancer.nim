@@ -15,7 +15,7 @@
 import sequtils, strutils, future, algorithm, nimblas, math, typetraits
 include src/utils/functional,
         src/utils/nested_containers,
-        src/utils/pointers_arithmetic,
+        src/utils/pointer_arithmetic,
         src/data_structure,
         src/accessors,
         src/display,

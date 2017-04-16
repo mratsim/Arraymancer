@@ -38,3 +38,4 @@ suite "Displaying tensors":
 
         let t_van = fromSeq(vandermonde, int, Backend.Cpu)
         when compiles(echo t_van): check: true
+        # TODO: Better display tests

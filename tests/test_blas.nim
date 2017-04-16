@@ -15,7 +15,7 @@
 import ../arraymancer
 import unittest
 
-suite "BLAS (Basic Linear Algebra Subprograms":
+suite "BLAS (Basic Linear Algebra Subprograms)":
     test "GEMM - General Matrix to Matrix Multiplication":
         let a = @[@[1.0,2,3],@[4.0,5,6]]
         let b = @[@[7.0, 8],@[9.0, 10],@[11.0, 12]]

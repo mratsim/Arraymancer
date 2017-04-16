@@ -37,3 +37,5 @@ proc `[]`*[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): T {.noSide
 proc `[]=`*[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], val: T) {.noSideEffect.} =
     ## Set the value at input coordinates
     t.getIndex(idx)[] = val
+
+## TODO: It's currently possible to use negative indices but they don't work as expected.

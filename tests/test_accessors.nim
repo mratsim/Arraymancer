@@ -33,11 +33,13 @@ suite "Accessing and setting tensor values":
         b[2,0] = 555
         # echo b
 
-#    test "Out of bounds checking":
-#        # Cannot test properly "when compiles assignation"
-#        var a = newTensor(@[2,3,4], int, Backend.Cpu)
-#        when compiles(a[2,0,0] = 200): false
-#        var b = newTensor(@[3,4], int, Backend.Cpu)
-#        when compiles(b[3,4] = 999): false
-#        when compiles(b[1,-1] = 999): false
-#        echo b
+## TODO: It's currently possible to use negative indices but they don't work as expected.
+
+    test "Out of bounds checking":
+        # Cannot test properly "when compiles assignation"
+        var a = newTensor(@[2,3,4], int, Backend.Cpu)
+        expect(IndexError):
+            a[2,0,0] = 200
+        var b = newTensor(@[3,4], int, Backend.Cpu)
+        expect(IndexError):
+            b[3,4] = 999

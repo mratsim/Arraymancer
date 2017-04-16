@@ -17,15 +17,13 @@ proc fmap*[B: static[Backend],T, U](t: Tensor[B,T], g: T -> U): Tensor[B,U] {.no
     ## Map a unary function T -> U on Tensor[T]
 
     # First convert the offset pointer back to index
-    ptrMath:
-        # TODO: Thoroughly test this, especially with negative offsets
-        let d0: ptr T = unsafeAddr(t.data[0])
-        let offset_idx: int = t.offset - d0
+
+    let offset_idx = t.offset_to_index
 
     result.dimensions = t.dimensions
     result.strides = t.strides
     # TODO: Bounds checking on strides and offsets combinations
-    result.data = t.data.map(g)
+    result.data = t.data.map(g) # TODO: OpenMP pragma for parallel map?
 
     ptrMath:
         result.offset = addr(result.data[0]) + offset_idx

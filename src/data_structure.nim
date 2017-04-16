@@ -51,9 +51,18 @@ template rank*(t: Tensor): int = t.dimensions.len
 
 template isRowMajor(t: Tensor): bool = t.strides[t.strides.high] == 1
 
+
+template offset_to_index[B,T](t: Tensor[B,T]): int =
+    ptrMath:
+        # TODO: Thoroughly test this, especially with negative offsets
+        let d0: ptr T = unsafeAddr(t.data[0])
+        let offset_idx: int = t.offset - d0
+    offset_idx
+
 proc `==`*[B,T](a,b: Tensor[B,T]): bool {.noSideEffect.}=
-    if a.dim != b.dim: return false
+    ## Tensor comparison
+    if a.dimensions != b.dimensions: return false
     elif a.strides != b.strides: return false
-    elif a.offset[] != b.offset[]: return false
+    elif offset_to_index(a) != offset_to_index(b): return false
     elif a.data != b.data: return false
     else: return true

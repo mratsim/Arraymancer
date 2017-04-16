@@ -20,5 +20,5 @@ include src/utils/functional,
         src/accessors,
         src/display,
         src/init,
-        src/blas,
-        src/ufunc
+        src/ufunc,
+        src/blas

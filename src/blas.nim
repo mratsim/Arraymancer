@@ -14,26 +14,122 @@
 
 
 ## Linear algebra routines for rank 1 and 2 tensors (vectors and matrices)
+# TODO: static dispatch based on Tensor rank
+# TODO: support a transpose parameter
+# TODO: term rewriting to fuse transpose-multiply
+# TODO: term rewriting to fuse multiply-add
+# TODO: restrict to CPU backend
 
-template matmul_blas[B;T: SomeReal](a, b, result: Tensor[B,T]): auto =
-    # TODO: static dispatch based on Tensor rank
-    # TODO: support a transpose parameter
-    # TODO: term rewriting to fuse transpose-multiply
-    # TODO: term rewriting to fuse multiply-add
-    # TODO: restrict to CPU backend
+############################
+## Bounds checking functions
+template check_matmat(a, b:Tensor) =
+    let colA = a.shape[1]
+    let rowB = b.shape[0]
 
+    if colA != rowB:
+        raise newException(IndexError, "Number of columns in the first matrix: " &
+                                        $(colA) &
+                                        ", must be the same as the number of rows in the second matrix: " &
+                                        $(rowB))
+    if a.strides[1] != 1 or b.strides[1] != 1:
+        raise newException(ValueError, "Only Row-Major matrices are supported")
+    if offset_to_index(a) != 0 or offset_to_index(b) != 0:
+        raise newException(IndexError, "Matrices have a non-0 offset")
+
+template check_matvec(a, b:Tensor) =
+    let colA = a.shape[1]
+    let rowB = b.shape[0]
+
+    if colA != rowB:
+        raise newException(IndexError, "Number of columns in the matrix: " &
+                                        $(colA) &
+                                        ", must be the same as the number of rows in the vector: " &
+                                        $(rowB))
+    if a.strides[1] != 1:
+        raise newException(ValueError, "Only Row-Major matrices are supported")
+    if offset_to_index(a) != 0 or offset_to_index(b) != 0:
+        raise newException(IndexError, "Matrice and/or Vector have a non-0 offset")
+
+template check_dot_prod(a, b:Tensor) =
+    if a.rank != 1 or b.rank != 1: raise newException(ValueError, "Dot product is only supported for vectors (tensors of rank 1)")
+    if a.dimensions != b.dimensions: raise newException(ValueError, "Vector should be the same length")
+    if offset_to_index(a) != 0 or offset_to_index(b) != 0:
+        raise newException(IndexError, "One of the Vectors has a non-0 offset")
+
+template check_add(a, b:Tensor) =
+    if a.strides != b.strides:
+        raise newException(ValueError, "Both Tensors should have the exact same shape")
+    if offset_to_index(a) != 0 or offset_to_index(b) != 0:
+        raise newException(IndexError, "One of the Vectors has a non-0 offset")
+
+
+##########################################################################
+## BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
+# TODO: Add OpenMP pragma for parallel computing?
+
+proc `.*`*[T: SomeReal](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
+    ## Vector to Vector dot (scalar) product
+    when compileOption("boundChecks"): check_dot_prod(a,b)
+    return dot(a.dimensions[0], a.offset, 1, b.offset, 1)
+
+proc `.*`*[T: SomeInteger](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
+    ## Vector to Vector dot (scalar) product
+    # Fallback for non-floats
+    when compileOption("boundChecks"): check_dot_prod(a,b)
+    for ai, bi in zip(a.data, b.data):
+        result += ai * bi
+
+proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
+    ## Vector to Vector dot (scalar) product
+    when compileOption("boundChecks"): check_add(a,b)
+
+    result.data = newSeq[T](a.data.len)
+    result.dimensions = a.dimensions
+    result.strides = a.strides
+    result.offset = addr result.data[0]
+
+    var i = 0
+    for ai, bi in zip(a.data, b.data):
+        result[i] = ai + bi
+
+proc `-`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
+    ## Vector to Vector dot (scalar) product
+    when compileOption("boundChecks"): check_add(a,b)
+
+    result.data = newSeq[T](a.data.len)
+    result.dimensions = a.dimensions
+    result.strides = a.strides
+    result.offset = addr result.data[0]
+
+    var i = 0
+    for ai, bi in zip(a.data, b.data):
+        result[i] = ai - bi
+
+proc `*`*[T: SomeNumber](a: T, t: Tensor[Backend.Cpu,T]): Tensor[Backend.Cpu,T] {.noSideEffect.} =
+    proc f(x: T): T = a * x
+    return t.fmap(f)
+
+proc `*`*[T: SomeNumber](t: Tensor[Backend.Cpu,T], a: T): Tensor[Backend.Cpu,T] {.noSideEffect.} =
+    proc f(x: T): T = a * x
+    return t.fmap(f)
+
+proc `/`*[T: SomeNumber](t: Tensor[Backend.Cpu,T], a: T): Tensor[Backend.Cpu,T] {.noSideEffect.} =
+    proc f(x: T): T = x / a
+    return t.fmap(f)
+
+####################################################
+## BLAS Level 2 and 3 (Matrix-Matrix, Matrix-Vector)
+
+template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T]): auto =
+    ## Matrix to matrix Multiply for float tensors of rank 2 in RowMajor ordering
     let
         rowA = a.shape[0]
         colA = a.shape[1]
         rowB = b.shape[0]
         colB = b.shape[1]
 
-    when compileOption("boundChecks"):
-        if colA != rowB:
-            raise newException(IndexError, "Number of columns in the first matrix: " &
-                                            $(colA) &
-                                            ", must be the same as the number of rows in the second matrix: " &
-                                            $(rowB))
+    when compileOption("boundChecks"): check_matmat(a,b)
+
     result.data = newSeq[T](rowA * colB)
     result.dimensions = @[colB, rowA]
     result.strides = @[rowA, 1]
@@ -42,7 +138,30 @@ template matmul_blas[B;T: SomeReal](a, b, result: Tensor[B,T]): auto =
     # General Matrix Multiply from nimblas.
     gemm(rowMajor, noTranspose, noTranspose, rowA, colB, rowB, 1, a.offset, colA, b.offset, colB, 0, result.offset, colB)
 
-proc `*`*[B,T](a, b: Tensor[B,T]): Tensor[B,T] {.noSideEffect.} =
-    if (a.rank == 2 and b.rank == 2 and T is SomeReal and B == Backend.Cpu):
-        matmul_blas(a, b, result)
-    else: raise newException(ValueError, "Tensor multiplications, not implemented for ranks other than 2")
+template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T]): auto =
+    ## Matrix to Vector Multiply for float tensors of rank 2 and 1 in RowMajor ordering
+    let
+        rowA = a.shape[0]
+        colA = a.shape[1]
+        rowB = b.shape[0] # B is considered as a column vector
+
+    when compileOption("boundChecks"): check_matvec(a,b)
+
+    result.data = newSeq[T](rowA)
+    result.dimensions = @[rowA]
+    result.strides = @[1]
+    result.offset = addr result.data[0]
+
+    # General Matrix-Vector Multiply from nimblas.
+    gemv(rowMajor, noTranspose, rowA, rowB, 1, a.offset, colA, b.offset, 1, 0, result.offset, 1)
+
+template mul_dispatch[T: SomeReal](a, b, res: Tensor[Backend.Cpu,T], params: tuple[a_rank, b_rank: int, a_ordering, b_ordering: bool]): auto =
+    ## Dispatch for Matrix/Vector multiplication
+    # Input == Check: Rank A, Rank B, A is Row Major, B is Row Major
+    if params == (2, 2, true, true):    matmat_blas(a, b, res)
+    elif params == (2, 1, true, true):  matvec_blas(a, b, result)
+    else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+
+proc `*`*[T: SomeReal](a, b: Tensor[Backend.Cpu,T]): Tensor[Backend.Cpu,T] {.noSideEffect.} =
+    ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
+    mul_dispatch(a, b, result, (a.rank, b.rank, a.isRowMajor, b.isRowMajor))

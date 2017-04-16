@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sequtils, strutils, future, algorithm, nimblas, math
+import sequtils, strutils, future, algorithm, nimblas, math, typetraits
 include src/utils/functional,
         src/utils/nested_containers,
         src/utils/pointers_arithmetic,

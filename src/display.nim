@@ -29,7 +29,7 @@ proc bounds_display(t: Tensor,
             return "|" & $val & "\t"
     return $val & "\t"
 
-proc `$`*(t: Tensor): string {.noSideEffect.} =
+proc `$`*[B,T](t: Tensor[B,T]): string {.noSideEffect.} =
     ## Display a tensor
 
     # Add a position index to each value in the Tensor
@@ -43,5 +43,5 @@ proc `$`*(t: Tensor): string {.noSideEffect.} =
     proc curry_bounds(tup: (string,int)): string {.noSideEffect.} = t.bounds_display(tup)
 
     let str_tensor = indexed_data.concatMap(curry_bounds)
-    let desc = "Tensor dimensions are " & t.shape.join("x")
+    let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & $B & "\""
     return desc & "\n" & str_tensor

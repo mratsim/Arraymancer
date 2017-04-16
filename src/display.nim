@@ -44,4 +44,4 @@ proc `$`*(t: Tensor): string {.noSideEffect.} =
 
     let str_tensor = indexed_data.concatMap(curry_bounds)
     let desc = "Tensor dimensions are " & t.shape.join("x")
-    return str_tensor & "\n" & desc
+    return desc & "\n" & str_tensor

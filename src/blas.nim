@@ -157,7 +157,10 @@ template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr: Tra
     result.offset = addr result.data[0]
 
     # General Matrix-Vector Multiply from nimblas.
-    gemv(rowMajor, a_tr, rowA, rowB, 1, a.offset, colA, b.offset, 1, 0, result.offset, 1)
+    if a_tr == TransposeType.noTranspose: # A is rowMajor
+        gemv(rowMajor, a_tr, rowA, rowB, 1, a.offset, colA, b.offset, 1, 0, result.offset, 1)
+    else: # A is colMajor
+        gemv(colMajor, noTranspose, rowA, rowB, 1, a.offset, rowA, b.offset, 1, 0, result.offset, 1)
 
 template mul_dispatch[T: SomeReal](a, b, res: Tensor[Backend.Cpu,T], a_rank, b_rank: int, a_tr, b_tr: TransposeType): auto =
     ## Dispatch for Matrix/Vector multiplication

@@ -79,6 +79,17 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
         check: transpose(tat) * transpose(tbt) == t_expected
 
 
+        let d = @[@[1.0,-1,2],@[0.0,-3,1]]
+        let e = @[2.0, 1, 0]
+
+        let td = fromSeq(d, float64, Backend.Cpu)
+        let te = fromSeq(e, float64, Backend.Cpu)
+
+        let dt = @[@[1.0,0],@[-1.0,-3],@[2.0,1]]
+        let tdt = fromSeq(dt, float64, Backend.Cpu)
+
+        check: td * te == transpose(tdt) * te
+
     test "Scalar/dot product":
         let u_int = @[1, 3, -5]
         let v_int = @[4, -2, -1]

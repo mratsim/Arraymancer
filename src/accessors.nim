@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): ptr T =
+template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int =
     ## Convert [i, j, k, l ...] to the proper index.
     when compileOption("boundChecks"):
         if idx.len != t.rank:
@@ -21,21 +21,16 @@ template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): ptr
                                             ", is different from tensor rank: " &
                                             $(t.rank))
     var real_idx = t.offset
-    ptrMath:
-        for i,j in zip(t.strides,idx):
-            real_idx += i*j
-        when compileOption("boundChecks"):
-            let d0 = unsafeAddr(t.data[0])
-            if real_idx < d0 or real_idx >= d0 + t.data.len:
-                raise newException(IndexError, "Index out of bounds")
+    for i,j in zip(t.strides,idx):
+        real_idx += i*j
     real_idx
 
-proc `[]`*[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): T {.noSideEffect.} =
+proc `[]`*[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): T = #{.noSideEffect.} =
     ## Get the value at input coordinates
-    return t.getIndex(idx)[]
+    return t.data[t.getIndex(idx)]
 
 proc `[]=`*[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], val: T) {.noSideEffect.} =
     ## Set the value at input coordinates
-    t.getIndex(idx)[] = val
+    t.data[t.getIndex(idx)] = val
 
 ## FIXME: It's currently possible to use negative indices but they don't work as expected.

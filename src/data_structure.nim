@@ -27,7 +27,7 @@ type
         # Size of the datastructure is 32 bytes - perfect !
         dimensions: seq[int]
         strides: seq[int]
-        offset: ptr T
+        offset: int
         data: seq[T] # Perf note: seq are always deep copied on assignement.
 
 template len*(t: Tensor): int = t.data.len
@@ -47,18 +47,13 @@ proc is_F_contiguous(t: Tensor): bool {.noSideEffect,inline.}=
     result = t.strides.isSorted(system.cmp[int], SortOrder.Ascending)
     result = result and t.strides[0] == 1
 
-template offset_to_index[B,T](t: Tensor[B,T]): int =
-    ## Convert the pointer offset to the corresponding integer index
-    ptrMath:
-        # TODO: Thoroughly test this, especially with negative offsets
-        let d0: ptr T = unsafeAddr(t.data[0])
-        let offset_idx: int = t.offset - d0
-    offset_idx
-
 proc `==`*[B,T](a,b: Tensor[B,T]): bool {.noSideEffect.}=
     ## Tensor comparison
     if a.dimensions != b.dimensions: return false
     elif a.strides != b.strides: return false
-    elif offset_to_index(a) != offset_to_index(b): return false
+    elif a.offset != b.offset: return false
     elif a.data != b.data: return false
     else: return true
+
+## Get a pointer to the start of the data. Needed for BLAS.
+template get_data_ptr[B,T](t: Tensor[B,T]): ptr T = unsafeAddr(t.data[0])

@@ -63,6 +63,28 @@ Nim GC perf: https://gist.github.com/dom96/77b32e36b62377b2e7cadf09575b8883
     Advantage: Dispatch and compatibility cheching at compile time (Matrix * Matrix and Matrix * Vec)
 2. Have the kind of stride (C_contiguous, F_contiguous) be part of its type. Rejected because impractical for function chaining. Furthermore this should not be exposed to the users as it's an implementation detail.
 
+3. Implement offsets and iterator using pointers. Indexing with a strided array is basically doing a dot product. With a 3x3 matrix, strides are [3,1], in memory, element at position [1,2] will be at 3x1 + 1 x 2 -> 5th position (i.e. we did a dot product)
+
+    > 0 1 2
+    
+    > 3 4 5
+
+    > 6 7 8
+
+    After transposition, strides are [1, 3] and matrix shape:
+
+    > 0 3 6
+
+    > 1 4 7
+
+    > 2 5 8
+
+    but the corresponding order in memory is still as before transposition. So pointer must jump by 3 twice, then minus 5, then jump by 3 twice, then minus 5. There is probably a mathematical formula behind but it's much easier and less error-prone to do a dot product, especially for high dimensions.
+
+    Since we will do a dot product anyway instead of shifting a pointer by a constant, just doing regular array/sequence indexing is better as we get automatic bounds checking, Nim future improvements and it's much easier to copy a Tensor, no need to recalculate the pointer address. We just need a way to provide a pointer to the beginning of the data to BLAS.
+
+    Perf note: from a perf point of view, (integer ?) dot product is vectorized on CPU and GPU, the stride seq will stay in cache, so perf is probably bounded by the non-contiguous memory access. Moving a pointer sometimes by x, sometimes by y, sometimes the other way would also be bounded by memory access (provided a correct and probably cumber some implementation)
+
 ## To watch:
 
 * Nim's linalg

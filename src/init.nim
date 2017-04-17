@@ -20,7 +20,7 @@ proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] {
     result.dimensions = shape.reversed
     result.strides = strides
     result.data = newSeq[T](shape.product)
-    result.offset = addr result.data[0]
+    result.offset = 0
 
 proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
     ## Create a tensor from a nested sequence
@@ -37,4 +37,4 @@ proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSi
     result.dimensions = shape.reversed
     result.strides = strides
     result.data = flat
-    result.offset = addr result.data[0]
+    result.offset = 0

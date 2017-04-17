@@ -17,14 +17,10 @@ proc fmap*[B: static[Backend],T, U](t: Tensor[B,T], g: T -> U): Tensor[B,U] {.no
     ## Map a unary function T -> U on Tensor[T]
 
     # First convert the offset pointer back to index
-    let offset_idx = t.offset_to_index
-
     result.dimensions = t.dimensions
     result.strides = t.strides
+    result.offset = t.offset
     result.data = t.data.map(g)
-
-    ptrMath:
-        result.offset = addr(result.data[0]) + offset_idx
 
 template makeUniversal*(func_name: untyped) =
     ## Lift an unary function into an exported universal function.

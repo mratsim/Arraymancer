@@ -33,7 +33,7 @@ template check_matmat(a, b:Tensor) =
                                         $(colA) &
                                         ", must be the same as the number of rows in the second matrix: " &
                                         $(rowB))
-    if offset_to_index(a) != 0 or offset_to_index(b) != 0:
+    if a.offset != 0 or b.offset != 0:
         raise newException(IndexError, "One of the Matrices has a non-0 offset")
 
 template check_matvec(a, b:Tensor) =
@@ -45,19 +45,19 @@ template check_matvec(a, b:Tensor) =
                                         $(colA) &
                                         ", must be the same as the number of rows in the vector: " &
                                         $(rowB))
-    if offset_to_index(a) != 0 or offset_to_index(b) != 0:
+    if a.offset != 0 or b.offset != 0:
         raise newException(IndexError, "Matrice and/or Vector have a non-0 offset")
 
 template check_dot_prod(a, b:Tensor) =
     if a.rank != 1 or b.rank != 1: raise newException(ValueError, "Dot product is only supported for vectors (tensors of rank 1)")
     if a.dimensions != b.dimensions: raise newException(ValueError, "Vector should be the same length")
-    if offset_to_index(a) != 0 or offset_to_index(b) != 0:
+    if a.offset != 0 or b.offset != 0:
         raise newException(IndexError, "One of the Vectors has a non-0 offset")
 
 template check_add(a, b:Tensor) =
     if a.strides != b.strides:
         raise newException(ValueError, "Both Tensors should have the exact same shape")
-    if offset_to_index(a) != 0 or offset_to_index(b) != 0:
+    if a.offset != 0 or b.offset != 0:
         raise newException(IndexError, "One of the Vectors has a non-0 offset")
 
 
@@ -67,7 +67,7 @@ template check_add(a, b:Tensor) =
 proc `.*`*[T: SomeReal](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
     ## Vector to Vector dot (scalar) product
     when compileOption("boundChecks"): check_dot_prod(a,b)
-    return dot(a.dimensions[0], a.offset, 1, b.offset, 1)
+    return dot(a.dimensions[0], a.get_data_ptr, 1, b.get_data_ptr, 1)
 
 proc `.*`*[T: SomeInteger](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
     ## Vector to Vector dot (scalar) product
@@ -83,7 +83,7 @@ proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
     result.data = newSeq[T](a.data.len)
     result.dimensions = a.dimensions
     result.strides = a.strides
-    result.offset = addr result.data[0]
+    result.offset = 0
 
     var i = 0
     for ai, bi in zip(a.data, b.data):
@@ -96,7 +96,7 @@ proc `-`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
     result.data = newSeq[T](a.data.len)
     result.dimensions = a.dimensions
     result.strides = a.strides
-    result.offset = addr result.data[0]
+    result.offset = 0
 
     var i = 0
     for ai, bi in zip(a.data, b.data):
@@ -130,17 +130,21 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr, b_t
     result.data = newSeq[T](rowA * colB)
     result.dimensions = @[colB, rowA]
     result.strides = @[rowA, 1]
-    result.offset = addr result.data[0]
+    result.offset = 0
+
+    let a_data = get_data_ptr(a)
+    let b_data = get_data_ptr(b)
+    let res_data = get_data_ptr(result)
 
     # General Matrix Multiply from nimblas.
     if a_tr == TransposeType.noTranspose and b_tr == TransposeType.noTranspose:
-        gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a.offset, colA, b.offset, colB, 0, result.offset, colB)
+        gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a_data, colA, b_data, colB, 0, res_data, colB)
     elif a_tr == TransposeType.transpose and b_tr == TransposeType.noTranspose:
-        gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a.offset, rowA, b.offset, colB, 0, result.offset, colB)
+        gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a_data, rowA, b_data, colB, 0, res_data, colB)
     elif a_tr == TransposeType.noTranspose and b_tr == TransposeType.transpose:
-        gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a.offset, colA, b.offset, rowB, 0, result.offset, colB)
+        gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a_data, colA, b_data, rowB, 0, res_data, colB)
     elif a_tr == TransposeType.transpose and b_tr == TransposeType.transpose:
-        gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a.offset, rowA, b.offset, rowB, 0, result.offset, colB)
+        gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a_data, rowA, b_data, rowB, 0, res_data, colB)
     else: raise newException(ValueError, "The transposes types: " & $a_tr & " or " & $b_tr & " is not supported")
 template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr: TransposeType): auto =
     ## Matrix to Vector Multiply for float tensors of rank 2 and 1
@@ -154,13 +158,17 @@ template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr: Tra
     result.data = newSeq[T](rowA)
     result.dimensions = @[rowA]
     result.strides = @[1]
-    result.offset = addr result.data[0]
+    result.offset = 0
+
+    let a_data = get_data_ptr(a)
+    let b_data = get_data_ptr(b)
+    let res_data = get_data_ptr(result)
 
     # General Matrix-Vector Multiply from nimblas.
     if a_tr == TransposeType.noTranspose: # A is rowMajor
-        gemv(rowMajor, a_tr, rowA, rowB, 1, a.offset, colA, b.offset, 1, 0, result.offset, 1)
+        gemv(rowMajor, a_tr, rowA, rowB, 1, a_data, colA, b_data, 1, 0, res_data, 1)
     else: # A is colMajor
-        gemv(colMajor, noTranspose, rowA, rowB, 1, a.offset, rowA, b.offset, 1, 0, result.offset, 1)
+        gemv(colMajor, noTranspose, rowA, rowB, 1, a_data, rowA, b_data, 1, 0, res_data, 1)
 
 template mul_dispatch[T: SomeReal](a, b, res: Tensor[Backend.Cpu,T], a_rank, b_rank: int, a_tr, b_tr: TransposeType): auto =
     ## Dispatch for Matrix/Vector multiplication

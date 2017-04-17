@@ -22,7 +22,7 @@ proc bounds_display(t: Tensor,
     let s = t.strides
     let (val,idx) = idx_data
 
-    for i,j in s[0 .. ^2]: # We don't take the last element (the row)
+    for i,j in s[0 .. ^2]: # We don't take the last element (the row in C convention)
         if idx mod j == 0:
             return $val & "|\n".repeat(s.high - i)
         if idx mod j == 1:

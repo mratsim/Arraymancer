@@ -31,11 +31,13 @@ However, every time we retrieve the dimensions and strides there is a pointer re
 
 * `data` is currently stored in a "seq" that always deep copy on assignement. Taking the transpose of a tensor will allocate new memory (unless optimized away by the compiler).
 
-Open question: Should I implement shallow copy to save memory (example Transpose) or trust in Nim/Cuda GC?
+Open question: Should I implement shallow copy/ref seq or object to save memory (example Transpose) or trust in Nim/Cuda GC to make the proper memory optimization?
 
 If yes:
-    - how to make sure we can modify in-place if shallow copy is allowed?
-    - how hard will it be to extend Arraymancer for others.
+
+- How to make sure we can modify in-place if shallow copy is allowed or a ref seq/object is used?
+- To avoid reference counting, would it be better to always copy-on-write, in that case wouldn't it be better to pay the cost upfront on assignment?
+- How hard will it be to maintain Arraymancer and avoid bugs because a copy-on-write was missed.
 
     From Scipy: https://docs.scipy.org/doc/numpy/user/c-info.how-to-extend.html#reference-counting
 

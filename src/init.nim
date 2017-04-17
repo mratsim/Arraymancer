@@ -14,7 +14,7 @@
 
 proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
     ## Compute strides matching with dimensions.
-    # TODO support array/openarray. Pending https://github.com/nim-lang/Nim/issues/2652
+    # FIXME support array/openarray. Pending https://github.com/nim-lang/Nim/issues/2652
     let strides = (shape & 1)[1..shape.len].scanr(a * b)
 
     result.dimensions = shape.reversed

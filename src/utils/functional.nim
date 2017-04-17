@@ -31,7 +31,6 @@ template scanr[T](s: seq[T], operation: untyped): untyped =
   result
 
 
-# zipWith cannot be used with +, * pending: https://github.com/nim-lang/Nim/issues/5702
 iterator zip[T1, T2](a: openarray[T1], b: openarray[T2]): (T1,T2) {.inline.} =
   ## Transform two lists in a list of tuples.
   ## Length of result will be the length of the smallest list, items from the longest will be discarded.
@@ -40,6 +39,7 @@ iterator zip[T1, T2](a: openarray[T1], b: openarray[T2]): (T1,T2) {.inline.} =
   for i in 0..<len:
     yield (a[i], b[i])
 
+# zipWith cannot be used with +, * pending: https://github.com/nim-lang/Nim/issues/5702
 # iterator zipWith[T1,T2,T3](f: proc(u: T1, v:T2): T3,
 #                            a: openarray[T1],
 #                            b: openarray[T2]): seq[T3]  {.inline.} =

@@ -4,7 +4,7 @@
 
 template ptrMath(body: untyped) =
   {.push hint[XDeclaredButNotUsed]: off.}
-  # XDeclaredButNotUsed pending: https://github.com/nim-lang/Nim/issues/4044
+  # FIXME: XDeclaredButNotUsed pending: https://github.com/nim-lang/Nim/issues/4044
 
   template `+`[T](p: ptr T, off: int): ptr T =
     cast[ptr type(p[])](cast[ByteAddress](p) +% off * sizeof(p[]))

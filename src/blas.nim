@@ -12,21 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-## Linear algebra routines for rank 1 and 2 tensors (vectors and matrices)
-# TODO: static dispatch based on Tensor rank
-# TODO: support a transpose parameter
-# TODO: term rewriting to fuse transpose-multiply
-# TODO: term rewriting to fuse multiply-add
-# TODO: restrict to CPU backend
-
-#######################################
-## Get Row Major / Col Major Convention
-## Check if Transpose is needed.
-## depends on nimblas rowMajor and colMajor
-## In Arraymancer we prefer C convention (Row Major)
-## so BLAS result are asked in RowMajor layout
-
 proc getLayout(t: Tensor): OrderType {.inline,noSideEffect.}=
     if is_C_contiguous(t): return OrderType.rowMajor
     elif is_F_contiguous(t): return OrderType.colMajor
@@ -78,7 +63,6 @@ template check_add(a, b:Tensor) =
 
 ##########################################################################
 ## BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
-# TODO: Add OpenMP pragma for parallel computing?
 
 proc `.*`*[T: SomeReal](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
     ## Vector to Vector dot (scalar) product
@@ -134,7 +118,7 @@ proc `/`*[T: SomeNumber](t: Tensor[Backend.Cpu,T], a: T): Tensor[Backend.Cpu,T] 
 ## BLAS Level 2 and 3 (Matrix-Matrix, Matrix-Vector)
 
 template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr, b_tr: TransposeType): auto =
-    ## Matrix to matrix Multiply for float tensors of rank 2 in RowMajor ordering
+    ## Matrix to matrix Multiply for float tensors of rank 2
     let
         rowA = a.shape[0]
         colA = a.shape[1]
@@ -152,7 +136,7 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr, b_t
     gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a.offset, colA, b.offset, colB, 0, result.offset, colB)
 
 template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr: TransposeType): auto =
-    ## Matrix to Vector Multiply for float tensors of rank 2 and 1 in RowMajor ordering
+    ## Matrix to Vector Multiply for float tensors of rank 2 and 1
     let
         rowA = a.shape[0]
         colA = a.shape[1]
@@ -170,7 +154,6 @@ template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr: Tra
 
 template mul_dispatch[T: SomeReal](a, b, res: Tensor[Backend.Cpu,T], a_rank, b_rank: int, a_tr, b_tr: TransposeType): auto =
     ## Dispatch for Matrix/Vector multiplication
-    # Input == Check: Rank A, Rank B, A is Row Major, B is Row Major
     if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, res, a_tr, b_tr)
     elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result, a_tr)
     else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")

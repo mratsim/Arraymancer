@@ -56,6 +56,29 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
         check: td_float * te_float == fromSeq(tde_expected_int, int, Backend.Cpu).fmap(x => x.float64)
 
+    test "GEMM and GEMV with transposed matrices":
+        let a = @[@[1.0,2,3],@[4.0,5,6]]
+        let ta = fromSeq(a,float64,Backend.Cpu)
+        let b = @[@[7.0, 8],@[9.0, 10],@[11.0, 12]]
+        let tb = fromSeq(b,float64,Backend.Cpu)
+
+
+        let at = @[@[1.0,4],@[2.0,5],@[3.0,6]]
+        let tat = fromSeq(at,float64,Backend.Cpu)
+
+        let expected = @[@[58.0,64],@[139.0,154]]
+        let t_expected = fromSeq(expected, float64,Backend.Cpu)
+
+        check: transpose(tat) * tb == t_expected
+
+        let bt = @[@[7.0, 9, 11],@[8.0, 10, 12]]
+        let tbt = fromSeq(bt,float64,Backend.Cpu)
+
+        check: ta * transpose(tbt) == t_expected
+
+        check: transpose(tat) * transpose(tbt) == t_expected
+
+
     test "Scalar/dot product":
         let u_int = @[1, 3, -5]
         let v_int = @[4, -2, -1]

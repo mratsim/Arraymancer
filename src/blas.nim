@@ -133,8 +133,15 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr, b_t
     result.offset = addr result.data[0]
 
     # General Matrix Multiply from nimblas.
-    gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a.offset, colA, b.offset, colB, 0, result.offset, colB)
-
+    if a_tr == TransposeType.noTranspose and b_tr == TransposeType.noTranspose:
+        gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a.offset, colA, b.offset, colB, 0, result.offset, colB)
+    elif a_tr == TransposeType.transpose and b_tr == TransposeType.noTranspose:
+        gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a.offset, rowA, b.offset, colB, 0, result.offset, colB)
+    elif a_tr == TransposeType.noTranspose and b_tr == TransposeType.transpose:
+        gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a.offset, colA, b.offset, rowB, 0, result.offset, colB)
+    elif a_tr == TransposeType.transpose and b_tr == TransposeType.transpose:
+        gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a.offset, rowA, b.offset, rowB, 0, result.offset, colB)
+    else: raise newException(ValueError, "The transposes types: " & $a_tr & " or " & $b_tr & " is not supported")
 template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr: TransposeType): auto =
     ## Matrix to Vector Multiply for float tensors of rank 2 and 1
     let

@@ -12,14 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sequtils, strutils, future, algorithm, nimblas, math, typetraits
-include src/utils/functional,
-        src/utils/nested_containers,
-        src/utils/pointer_arithmetic,
-        src/data_structure,
-        src/accessors,
-        src/display,
-        src/init,
-        src/ufunc,
-        src/shapeshifting,
-        src/blas
+proc transpose*(t: Tensor): Tensor {.noSideEffect.}=
+    ## Transpose a Tensor. For N-d Tensor with shape (0, 1, 2 ... n-1)
+    ## the resulting tensor will have dimensions (n-1, ... 2, 1, 0)
+    ## Data is copied as is and not modified.
+
+    # First convert the offset pointer back to index
+    let offset_idx = t.offset_to_index
+
+    result.dimensions = t.dimensions.reversed
+    result.strides = t.strides.reversed
+    result.data = t.data
+
+    ptrMath:
+        result.offset = addr(result.data[0]) + offset_idx

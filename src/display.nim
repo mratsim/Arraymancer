@@ -36,7 +36,7 @@ proc `$`*[B,T](t: Tensor[B,T]): string {.noSideEffect.} =
     let indexed_data: seq[(string,int)] =
                       t.data.mapIt($it)
                             .zip(toSeq(1..t.strides[0])
-                                 .cycle(t.dim[0]+1)
+                                 .cycle(t.dimensions[0]+1)
                                 )
     
     # Create a closure to apply the boundaries transformation for the specific input

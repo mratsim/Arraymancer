@@ -34,3 +34,42 @@ proc `[]=`*[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], val: T
     t.data[t.getIndex(idx)] = val
 
 ## FIXME: It's currently possible to use negative indices but they don't work as expected.
+
+type
+    IterKind = enum
+        Values, Coord, MemOffset, ValCoord, ValMemOffset
+
+template strided_iteration[B,T](t: Tensor[B,T], strider: IterKind): untyped =
+    ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
+
+    ## Iterator init
+    var coord = newSeq[int](t.rank) # Coordinates in the n-dimentional space
+    var backstrides: seq[int] = @[] # Offset between end of dimension and beginning
+    for i,j in zip(t.strides,t.shape): backstrides.add(i*(j-1))
+
+    var iter_pos = t.offset
+
+    ## Iterator loop
+    for i in 0 .. <t.data.len:
+    
+        ## Templating the return value
+        when strider == IterKind.Values: yield t.data[iter_pos]
+        elif strider == IterKind.ValCoord: yield (t.data[iter_pos], coord)
+        elif strider == IterKind.MemOffset: yield iter_pos
+        elif strider == IterKind.ValMemOffset: yield (t.data[iter_pos], iter_pos)
+
+        ## Computing the next position
+        for k in countdown(t.rank - 1,0):
+            if coord[k] < t.shape[k]-1:
+                coord[k] += 1
+                iter_pos += t.strides[k]
+                break
+            else:
+                coord[k] = 0
+                iter_pos -= backstrides[k]
+
+iterator items*[B,T](t: Tensor[B,T]): T {.inline,noSideEffect.}=
+    t.strided_iteration(IterKind.Values)
+
+iterator pairs*[B,T](t: Tensor[B,T]): (T, seq[int]) {.inline,noSideEffect.}=
+    t.strided_iteration(IterKind.ValCoord)

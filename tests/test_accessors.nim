@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../arraymancer
-import unittest
+import unittest, math
 
 
 suite "Accessing and setting tensor values":
@@ -40,3 +40,43 @@ suite "Accessing and setting tensor values":
         var b = newTensor(@[3,4], int, Backend.Cpu)
         expect(IndexError):
             b[3,4] = 999
+
+    test "Iterators":
+        const
+            a = @[1, 2, 3, 4, 5]
+            b = @[1, 2, 3]
+        var
+            vd: seq[seq[int]]
+            row: seq[int]
+        vd = newSeq[seq[int]]()
+        for i, aa in a:
+            row = newSeq[int]()
+            vd.add(row)
+            for j, bb in b:
+                vd[i].add(aa^bb)
+
+        let nda_vd = fromSeq(vd, int, Backend.Cpu)
+
+        let expected_seq = @[1,1,1,2,4,8,3,9,27,4,16,64,5,25,125]
+
+        var seq_val: seq[int] = @[]
+        for i in nda_vd:
+            seq_val.add(i)
+
+        check: seq_val == expected_seq
+
+        var seq_validx: seq[tuple[val: int,idx: seq[int]]] = @[]
+        for i,j in nda_vd:
+            seq_validx.add((i,j))
+        
+        check: seq_validx[0] == (1,@[0,0])
+        check: seq_validx[10] == (16,@[3,1])
+
+        let t_nda = transpose(nda_vd)
+
+        var seq_transpose: seq[tuple[val: int,idx: seq[int]]] = @[]
+        for i,j in t_nda:
+            seq_transpose.add((i,j))
+        
+        check: seq_transpose[0] == (1,@[0,0])
+        check: seq_transpose[8] == (16,@[1,3])

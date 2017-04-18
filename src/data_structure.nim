@@ -39,12 +39,15 @@ template rank*(t: Tensor): int = t.dimensions.len
     # 2 for matrices
     # N for N-dimension array
 
+proc shape_to_strides(shape: seq[int]): seq[int] {.noSideEffect,inline.} =
+    return (shape & 1)[1..shape.len].scanr(a * b)
+
 proc is_C_contiguous(t: Tensor): bool {.noSideEffect,inline.}=
-    result = t.strides.isSorted(system.cmp[int], SortOrder.Descending)
+    result = t.strides == t.shape.shape_to_strides
     result = result and t.strides[t.strides.high] == 1
 
 proc is_F_contiguous(t: Tensor): bool {.noSideEffect,inline.}=
-    result = t.strides.isSorted(system.cmp[int], SortOrder.Ascending)
+    result = t.strides.reversed == t.dimensions.shape_to_strides
     result = result and t.strides[0] == 1
 
 proc `==`*[B,T](a,b: Tensor[B,T]): bool {.noSideEffect.}=

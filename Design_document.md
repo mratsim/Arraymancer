@@ -15,7 +15,6 @@ For deep learning on images, depth represents colors channels and change the fas
 * Creating Tensor from arrays, arrays of arrays and more. Pending: https://github.com/nim-lang/Nim/issues/2652
 * `zipWith` cannot be used with builtins `+`and `*`: https://github.com/nim-lang/Nim/issues/5702
 * `makeuniversal` and `makeUniversalLocal` cannot be used on functions with different input/result types. `fmap` can be used instead.
-* Call to `fmap` and BLAS will spam `XDeclaredButNotUsed`. Pending https://github.com/nim-lang/Nim/issues/4044
 
 ## Memory considerations
 Current CPUs cache line is 64 bytes. The Tensor data structure at 32 bytes has an ideal size.
@@ -44,10 +43,23 @@ If yes:
     "If you mis-handle reference counts you can get problems from memory-leaks to segmentation faults.  The only strategy I know of to handle reference counts correctly is blood, sweat, and tears."
 Nim GC perf: https://gist.github.com/dom96/77b32e36b62377b2e7cadf09575b8883
 
+References: [Copy semantics](https://forum.nim-lang.org/t/1793/5) "Parameter passing doesn't copy, var x = foo() doesn't copy but moves let x = y doesn't copy but moves, var x = y does copy but I can use shallowCopy instead of = for that."
+
+In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-reference-types-in-swift) (for Swift but applicable): performance, safety, usability
+
 ## Performance consideration
 
 * Add OpenMP pragma for parallel computing on `fmap` and self-implemented BLAS operations.
     How to detect that OpenMP overhead is worth it?
+
+## Features
+
+* How to implement integer matrix multiplication and matrix-vector multiplication.
+    1. Convert to float64, use BLAS, convert back to int. No issue for int32 has them all. Int64 may lose some precision.
+    2. Implement a cache-oblivious matrix multiplication. Implementation in [Julia](https://github.com/JuliaLang/julia/blob/master/base/linalg/matmul.jl#L490). [Paper](http://ocw.raf.edu.rs/courses/electrical-engineering-and-computer-science/6-895-theory-of-parallel-systems-sma-5509-fall-2003/readings/cach_oblvs_thsis.pdf).
+* How to implement non-contiguous matrix multiplication and matrix-vector multiplication.
+    1. Cache oblivious and any stride generic matrix multiplication
+    2. Convert the tensor to C major layout with the ìtems` iterator.
 
 ## TODO
 1. GPU support: Cuda and Magma first. OpenCL when AMD gets its act together.

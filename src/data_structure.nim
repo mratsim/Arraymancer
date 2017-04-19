@@ -19,16 +19,12 @@ type
         # OpenCL
         # Magma
 
-    # DataKind = enum
-    #    Dense
-    #    Sparse
-
     Tensor*[B: static[Backend]; T] = object
         # Size of the datastructure is 32 bytes - perfect !
         dimensions: seq[int]
         strides: seq[int]
         offset: int
-        data: seq[T] # Perf note: seq are always deep copied on assignement.
+        data: seq[T] # Perf note: seq are always deep copied on "var" assignement.
 
 template len*(t: Tensor): int = t.data.len
 template shape*(t: Tensor): seq[int] = t.dimensions.reversed

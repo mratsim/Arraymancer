@@ -15,14 +15,13 @@
 proc bounds_display(t: Tensor,
                         idx_data: tuple[val: string,
                                   idx: int]
-                        ): string  {.noSideEffect.} =
+                        ): string {.noSideEffect.}=
     ## Internal routine, compare an index with the strides of a Tensor
     ## to check beginning and end of lines
     ## Add the delimiter "|" and line breaks at beginning and end of lines
-    let s = t.strides
     let (val,idx) = idx_data
 
-    for i,j in s[0 .. ^2]: # We don't take the last element (the row in C convention)
+    for i,j in t.dimensions[0 .. ^2]: # We don't take the last element (the row in C convention)
         if idx mod j == 0:
             return $val & "|\n".repeat(s.high - i)
         if idx mod j == 1:
@@ -32,15 +31,15 @@ proc bounds_display(t: Tensor,
 proc `$`*[B,T](t: Tensor[B,T]): string {.noSideEffect.} =
     ## Display a tensor
 
-    # Add a position index to each value in the Tensor
-    let indexed_data: seq[(string,int)] =
-                      t.data.mapIt($it)
-                            .zip(toSeq(1..t.strides[0])
-                                 .cycle(t.dimensions[0]+1)
-                                )
+    # Add a position index to each value in the Tensor.
+    var indexed_data: seq[(string,int)] = @[]
+    var i = 1
+    for value in t:
+        indexed_data.add(($value,i))
+        i += 1
     
     # Create a closure to apply the boundaries transformation for the specific input
-    proc curry_bounds(tup: (string,int)): string {.noSideEffect.} = t.bounds_display(tup)
+    proc curry_bounds(tup: (string,int)): string {.noSideEffect.}= t.bounds_display(tup)
 
     let str_tensor = indexed_data.concatMap(curry_bounds)
     let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & $B & "\""

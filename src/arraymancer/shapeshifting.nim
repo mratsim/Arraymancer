@@ -17,9 +17,6 @@ proc transpose*(t: Tensor): Tensor {.noSideEffect.}=
     ## the resulting tensor will have shape (n-1, ... 2, 1, 0)
     ## Data is copied as is and not modified.
 
-    # First convert the offset pointer back to index
-    let offset_idx = t.offset
-
     result.shape = t.shape.reversed
     result.strides = t.strides.reversed
     result.offset = t.offset

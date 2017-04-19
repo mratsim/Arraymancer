@@ -13,12 +13,12 @@
 # limitations under the License.
 
 import sequtils, strutils, future, algorithm, nimblas, math, typetraits
-include src/utils/functional,
-        src/utils/nested_containers,
-        src/data_structure,
-        src/accessors,
-        src/display,
-        src/init,
-        src/ufunc,
-        src/shapeshifting,
-        src/blas
+include src/arraymancer/utils/functional,
+        src/arraymancer/utils/nested_containers,
+        src/arraymancer/data_structure,
+        src/arraymancer/accessors,
+        src/arraymancer/display,
+        src/arraymancer/init,
+        src/arraymancer/ufunc,
+        src/arraymancer/shapeshifting,
+        src/arraymancer/blas

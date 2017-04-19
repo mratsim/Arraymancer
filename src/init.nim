@@ -13,11 +13,11 @@
 # limitations under the License.
 
 proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
-    ## Compute strides matching with dimensions.
+
     # FIXME support array/openarray. Pending https://github.com/nim-lang/Nim/issues/2652
     let strides = shape_to_strides(shape)
 
-    result.dimensions = shape.reversed
+    result.shape = shape
     result.strides = strides
     result.data = newSeq[T](shape.product)
     result.offset = 0
@@ -34,7 +34,7 @@ proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSi
 
     let strides = shape_to_strides(shape)
 
-    result.dimensions = shape.reversed
+    result.shape = shape
     result.strides = strides
     result.data = flat
     result.offset = 0

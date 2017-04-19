@@ -17,7 +17,7 @@ proc fmap*[B: static[Backend],T, U](t: Tensor[B,T], g: T -> U): Tensor[B,U] {.no
     ## Map a unary function T -> U on Tensor[T]
 
     # First convert the offset pointer back to index
-    result.dimensions = t.dimensions
+    result.shape = t.shape
     result.strides = t.strides
     result.offset = t.offset
     result.data = t.data.map(g)

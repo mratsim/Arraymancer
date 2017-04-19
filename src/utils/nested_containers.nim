@@ -13,12 +13,13 @@
 # limitations under the License.
 
 
-proc shape[T](s: openarray[T], dimensions: seq[int] = @[]): seq[int] {.noSideEffect.}=
-    ## Helper function to get the dimensions of nested arrays/sequences
+proc shape[T](s: openarray[T], parent_shape: seq[int] = @[]): seq[int] {.noSideEffect.}=
+    ## Helper function to get the shape of nested arrays/sequences
     ## C convention. Last index is the fastest changing (columns in 2D, depth in 3D) - Rows (slowest), Columns, Depth (fastest)
+    ## The second argument "shape" is used for recursive call on nested arrays/sequences
     # Dimension check is using only the first nested element so further checking
-    # must be one to confirm that the total number of elements match the dimensions.
-    result = dimensions & s.len
+    # must be one to confirm that the total number of elements match the shape.
+    result = parent_shape & s.len
     when (T is seq|array):
       result = shape(s[0], result)
 

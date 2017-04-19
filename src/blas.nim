@@ -50,7 +50,7 @@ template check_matvec(a, b:Tensor) =
 
 template check_dot_prod(a, b:Tensor) =
     if a.rank != 1 or b.rank != 1: raise newException(ValueError, "Dot product is only supported for vectors (tensors of rank 1)")
-    if a.dimensions != b.dimensions: raise newException(ValueError, "Vector should be the same length")
+    if a.shape != b.shape: raise newException(ValueError, "Vector should be the same length")
     if a.offset != 0 or b.offset != 0:
         raise newException(IndexError, "One of the Vectors has a non-0 offset")
 
@@ -67,7 +67,7 @@ template check_add(a, b:Tensor) =
 proc `.*`*[T: SomeReal](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
     ## Vector to Vector dot (scalar) product
     when compileOption("boundChecks"): check_dot_prod(a,b)
-    return dot(a.dimensions[0], a.get_data_ptr, 1, b.get_data_ptr, 1)
+    return dot(a.shape[0], a.get_data_ptr, 1, b.get_data_ptr, 1)
 
 proc `.*`*[T: SomeInteger](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
     ## Vector to Vector dot (scalar) product
@@ -81,7 +81,7 @@ proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
     when compileOption("boundChecks"): check_add(a,b)
 
     result.data = newSeq[T](a.data.len)
-    result.dimensions = a.dimensions
+    result.shape = a.shape
     result.strides = a.strides
     result.offset = 0
 
@@ -94,7 +94,7 @@ proc `-`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
     when compileOption("boundChecks"): check_add(a,b)
 
     result.data = newSeq[T](a.data.len)
-    result.dimensions = a.dimensions
+    result.shape = a.shape
     result.strides = a.strides
     result.offset = 0
 
@@ -128,7 +128,7 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr, b_t
     when compileOption("boundChecks"): check_matmat(a,b)
 
     result.data = newSeq[T](rowA * colB)
-    result.dimensions = @[colB, rowA]
+    result.shape = @[rowA, colB]
     result.strides = @[rowA, 1]
     result.offset = 0
 
@@ -146,6 +146,7 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr, b_t
     elif a_tr == TransposeType.transpose and b_tr == TransposeType.transpose:
         gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a_data, rowA, b_data, rowB, 0, res_data, colB)
     else: raise newException(ValueError, "The transposes types: " & $a_tr & " or " & $b_tr & " is not supported")
+
 template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr: TransposeType): auto =
     ## Matrix to Vector Multiply for float tensors of rank 2 and 1
     let
@@ -156,7 +157,7 @@ template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr: Tra
     when compileOption("boundChecks"): check_matvec(a,b)
 
     result.data = newSeq[T](rowA)
-    result.dimensions = @[rowA]
+    result.shape = @[rowA]
     result.strides = @[1]
     result.offset = 0
 

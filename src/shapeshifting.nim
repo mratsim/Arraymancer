@@ -14,13 +14,13 @@
 
 proc transpose*(t: Tensor): Tensor {.noSideEffect.}=
     ## Transpose a Tensor. For N-d Tensor with shape (0, 1, 2 ... n-1)
-    ## the resulting tensor will have dimensions (n-1, ... 2, 1, 0)
+    ## the resulting tensor will have shape (n-1, ... 2, 1, 0)
     ## Data is copied as is and not modified.
 
     # First convert the offset pointer back to index
     let offset_idx = t.offset
 
-    result.dimensions = t.dimensions.reversed
+    result.shape = t.shape.reversed
     result.strides = t.strides.reversed
     result.offset = t.offset
     result.data = t.data

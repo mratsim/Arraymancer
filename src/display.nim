@@ -20,8 +20,9 @@ proc bounds_display(t: Tensor,
     ## to check beginning and end of lines
     ## Add the delimiter "|" and line breaks at beginning and end of lines
     let (val,idx) = idx_data
+    let s = t.shape.reversed
 
-    for i,j in t.dimensions[0 .. ^2]: # We don't take the last element (the row in C convention)
+    for i,j in s[0 .. ^2]: # We don't take the last element (the row in C convention)
         if idx mod j == 0:
             return $val & "|\n".repeat(s.high - i)
         if idx mod j == 1:

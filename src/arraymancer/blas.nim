@@ -56,7 +56,7 @@ template check_dot_prod(a, b:Tensor) =
 
 template check_add(a, b:Tensor) =
     if a.strides != b.strides:
-        raise newException(ValueError, "Both Tensors should have the exact same shape")
+        raise newException(ValueError, "Both Tensors should have the exact same shape and strides")
     if a.offset != 0 or b.offset != 0:
         raise newException(IndexError, "One of the Vectors has a non-0 offset")
 
@@ -76,8 +76,8 @@ proc `.*`*[T: SomeInteger](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
     for ai, bi in zip(a.data, b.data):
         result += ai * bi
 
-proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
-    ## Vector to Vector dot (scalar) product
+proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): Tensor[Backend.Cpu,T] = # {.noSideEffect.} =
+    ## Tensor addition
     when compileOption("boundChecks"): check_add(a,b)
 
     result.data = newSeq[T](a.data.len)
@@ -85,12 +85,13 @@ proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
     result.strides = a.strides
     result.offset = 0
 
-    var i = 0
+    var i = 0 ## TODO: use pairs/enumerate instead.
     for ai, bi in zip(a.data, b.data):
-        result[i] = ai + bi
+        result.data[i] = ai + bi
+        inc i
 
-proc `-`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
-    ## Vector to Vector dot (scalar) product
+proc `-`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): Tensor[Backend.Cpu,T] {.noSideEffect.} =
+    ## Tensor substraction
     when compileOption("boundChecks"): check_add(a,b)
 
     result.data = newSeq[T](a.data.len)
@@ -98,9 +99,10 @@ proc `-`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): T {.noSideEffect.} =
     result.strides = a.strides
     result.offset = 0
 
-    var i = 0
+    var i = 0 ## TODO: use pairs/enumerate instead.
     for ai, bi in zip(a.data, b.data):
-        result[i] = ai - bi
+        result.data[i] = ai - bi
+        inc i
 
 proc `*`*[T: SomeNumber](a: T, t: Tensor[Backend.Cpu,T]): Tensor[Backend.Cpu,T] {.noSideEffect.} =
     proc f(x: T): T = a * x

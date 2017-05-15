@@ -121,3 +121,25 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
         let ufl_expected = @[2'f64, 6, -10]
         check: fromSeq(ufl_expected,float64,Backend.Cpu) / 2 == tu_float
+
+    test "Tensor addition and substraction":
+        let u_int = @[1, 3, -5]
+        let v_int = @[1, 1, 1]
+        let expected_add = @[2, 4, -4]
+        let expected_sub = @[0, 2, -6]
+        let tu_int = fromSeq(u_int,int,Backend.Cpu)
+        let tv_int = fromSeq(v_int,int,Backend.Cpu)
+
+        check: tu_int + tv_int == fromSeq(expected_add,int,Backend.Cpu)
+        check: tu_int - tv_int == fromSeq(expected_sub,int,Backend.Cpu)
+
+    test "Addition-Substraction - Bounds checking":
+        let a = @[@[1.0,2,3],@[4.0,5,6], @[7.0,8,9]]
+        let ta = fromSeq(a,float64,Backend.Cpu)
+        let ta_t = ta.transpose()
+
+        expect(ValueError):
+            discard ta + ta_t
+
+        expect(ValueError):
+            discard ta - ta_t

@@ -65,6 +65,7 @@ In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-referen
 1. GPU support: Cuda and Magma first. OpenCL when AMD gets its act together.
 2. BLAS operation fusion: `transpose(A) * B` or `Ax + y` should be fused in one operation.
 3. (Needs thinking) Negative indices support. Currently it doesn't return/set the expected location.
+4. Tensor addition and substraction of transposed Tensors. (and later any stride)
 
 999. (Needs thinking) Numpy like slicing and dicing. Inconvenient: `proc` might need to copy data in to a clean strided tensor.
 999. (Needs thinking) Support sparse matrices. There is Magma and CuSparse for GPU. What to use? Interface should be similar to BLAS and should compile on ARM/embedded devices like Jetson TX1.

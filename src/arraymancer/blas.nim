@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc getLayout(t: Tensor): OrderType {.inline,noSideEffect.}=
+proc getLayout(t: Tensor): OrderType {.inline,noSideEffect,used.}=
     if is_C_contiguous(t): return OrderType.rowMajor
     elif is_F_contiguous(t): return OrderType.colMajor
     else: raise newException(ValueError,"Operation not supported for this matrix. It has a non-contiguous layout")

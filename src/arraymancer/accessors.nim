@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int =
+template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int {.used.}=
     ## Convert [i, j, k, l ...] to the proper index.
     when compileOption("boundChecks"):
         if idx.len != t.rank:
@@ -25,8 +25,9 @@ template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int
         real_idx += i*j
     real_idx
 
-proc `[]`*[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): T = #{.noSideEffect.} =
+proc atIndex*[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): T {.noSideEffect.} =
     ## Get the value at input coordinates
+    ## This used to be `[]` before slicing
     return t.data[t.getIndex(idx)]
 
 proc `[]=`*[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], val: T) {.noSideEffect.} =
@@ -37,7 +38,7 @@ proc `[]=`*[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], val: T
 
 type
     IterKind = enum
-        Values, Coord, MemOffset, ValCoord, ValMemOffset
+        Values, MemOffset, ValCoord, ValMemOffset #, Coord
 
 template strided_iteration[B,T](t: Tensor[B,T], strider: IterKind): untyped =
     ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
@@ -50,7 +51,7 @@ template strided_iteration[B,T](t: Tensor[B,T], strider: IterKind): untyped =
     var iter_pos = t.offset
 
     ## Iterator loop
-    for i in 0 .. <t.data.len:
+    for i in 0 .. <t.shape.product:
     
         ## Templating the return value
         when strider == IterKind.Values: yield t.data[iter_pos]

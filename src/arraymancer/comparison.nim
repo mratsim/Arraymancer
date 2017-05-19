@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc `==`*[B,T](a,b: Tensor[B,T]): bool {.noSideEffect,inline.}=
+proc `==`*[B,T](a,b: Tensor[B,T]): bool {.noSideEffect.}=
     ## Tensor comparison
     if a.shape != b.shape: return false
 
-    result = true
     for ai, bi in zip(a,b):
         ## Iterate through the tensors using stride-aware iterators
-        result = result and ai == bi
+        ## Returns early if false
+        if ai != bi: return false
+    return true

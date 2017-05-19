@@ -52,7 +52,7 @@ template strided_iteration[B,T](t: Tensor[B,T], strider: IterKind): untyped =
 
     ## Iterator loop
     for i in 0 .. <t.shape.product:
-    
+
         ## Templating the return value
         when strider == IterKind.Values: yield t.data[iter_pos]
         elif strider == IterKind.ValCoord: yield (t.data[iter_pos], coord)

@@ -188,117 +188,130 @@ macro desugar(args: untyped): typed =
     ## Transform all syntactic sugar in arguments to integer or SteppedSlices
     ## It will then be dispatch to "atIndex" (if specific integers)
     ## or slicer if there are SteppedSlices
-    ## TODO: Refactor to improve readability, maintenance and debugging
-    ## TODO: Improve error reporting like "undeclared identifier '|+'"
 
     # echo "\n------------------\nOriginal tree"
     # echo args.treerepr
     var r = newNimNode(nnkArglist)
 
-    # TODO: REFACTOR THE SPAGHETTI MONSTER
     for nnk in children(args):
 
-        # Replace [_, 3] by [span, 3]
-        if nnk == ident("_"): r.add(ident("span"))
+        ###### Traverse tree and one-hot-encode the different conditions
+        let nnk_joker =             nnk == ident("_")
 
-        elif nnk.kind == nnkInfix:
-            if nnk[0] == ident(".."):
+        let nnk0_inf_dotdot =       if nnk.kind == nnkInfix: nnk[0] == ident("..")
+                                    else: false
 
-                ## _ part
-                if nnk[1] == ident("_") and nnk[2] == ident("_"):
-                    ## [_.._, 3] into [span, 3]
-                    r.add(ident("span"))
-                elif nnk[1] == ident("_") and nnk[2].kind == nnkInfix:
-                    if nnk[2][0] == ident("|") and nnk[2][1] == ident("_"):
-                        ## [_.._|2, 3] into [..|2, 3]
-                        r.add(prefix(nnk[2][2], "..|"))
-                    elif nnk[2][0] == ident("|") or nnk[2][0] == ident("|+") or nnk[2][0] == ident("|-"):
-                        ## [_..10|1, 3] into [..10|1, 3]  # ..10 is a 0..10 slice, .. prefix has precedence over |
-                        r.add(infix(prefix(nnk[2][1], ".."), $nnk[2][0], nnk[2][2]))
-                    else: r.add(nnk)
-                elif nnk[1] == ident("_"):
-                    ## [_..10, 3] into [..10|1, 3]  # ..10 is a 0..10 slice, .. prefix has precedence over |
-                    r.add(infix(prefix(nnk[2], ".."), "|", newIntLitNode(1)))
-                elif nnk[2] == ident("_"):
-                    ## [1.._, 3] into [1..|1, 3]
-                    r.add(infix(nnk[1], "..|", newIntLitNode(1)))
-                elif nnk[2].kind == nnkInfix:
-                    if nnk[2][0] == ident("|") and nnk[2][1] == ident("_"):
-                        ## [1.._|1, 3] into [1..|1, 3]
-                        r.add(infix(nnk[1], "..|", nnk[2][2]))
-                    elif nnk[2][0] == ident("|+") and nnk[2][1] == ident("_"):
-                        ## [1.._|+1, 3] into [1..|+1, 3]
-                        r.add(infix(nnk[1], "..|+", nnk[2][2]))
-                    elif nnk[2][0] == ident("|-") and nnk[2][1] == ident("_"):
-                        ## [1.._|-1, 3] into [1..|-1, 3]
-                        r.add(infix(nnk[1], "..|-", nnk[2][2]))
-                    elif nnk[1].kind == nnkPrefix:
-                        ## ^ part
-                        if nnk[1][0] == ident("^"):
-                            ## [^1..2*3, 3] into [^(1..2*3), 3] # We can skip the parenthesis in the AST
-                            ## [^1..2|-1, 3] into [^(1..2|-1), 3]
-                            r.add(prefix(infix(nnk[1][1], "..", nnk[2]), "^"))
-                        else: r.add(nnk)
-                    else: r.add(nnk)
+        let nnk0_inf_dotdot_alt =   if nnk.kind == nnkInfix: nnk[0] == ident("..<") or nnk[0] == ident("..^")
+                                    else: false
 
-                elif nnk[1].kind == nnkPrefix:
-                    ## ^ part
+        let nnk0_inf_dotdot_all =   nnk0_inf_dotdot or nnk0_inf_dotdot_alt
 
-                    if nnk[1][0] == ident("^"):
-                        ## [^1..0, 3] into [^(1..0), 3] # We can skip the parenthesis in the AST
-                        r.add(prefix(infix(nnk[1][1], "..", nnk[2]), "^"))
-                    else: r.add(nnk)
+        let nnk0_inf_bar_all =      if nnk.kind == nnkInfix: nnk[0] == ident("|") or nnk[0] == ident("|+") or nnk[0] == ident("|-")
+                                    else: false
 
-                else:
-                    ## Convert [1..10, 3] to [1..10|1, 3]
-                    r.add(infix(nnk[1], "..", infix(nnk[2], "|", newIntLitNode(1))))
+        let nnk0_pre_dotdot_all =   if nnk.kind == nnkPrefix: nnk[0] == ident("..") or nnk[0] == ident("..<") or nnk[0] == ident("..^")
+                                    else: false
 
+        let nnk1_joker =            if nnk.kind == nnkInfix: nnk[1] == ident("_")
+                                    else: false
 
-            elif nnk[0] == ident("..<") or nnk[0] == ident("..^"):
-                ## _ part
-                if nnk[1] == ident("_") and nnk[2].kind == nnkInfix:
-                    if nnk[2][0] == ident("|") or nnk[2][0] == ident("|+") or nnk[2][0] == ident("|-"):
-                        ## [_..^10|1, 3] into [0..^10|1, 3]   # ..^ directly creating SteppedSlices may introduce issues in seq[0..^10]
-                                                              # Furthermore ..^10|1, would have ..^ with precedence over |
-                        ## [_..<10|1, 3] into [0..<10|1, 3]
-                        r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[2][1], $nnk[2][0], nnk[2][2])))
-                    else: r.add(nnk)
-                elif nnk[1] == ident("_"):
-                    ## [_..^10, 3] into [0..^10|1, 3]   # ..^ directly creating SteppedSlices from int may introduce issues in seq[0..^10]
-                    ## [_..<10, 3] into [0..<10|1, 3]
-                    r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[2], "|", newIntLitNode(1))))
+        let nnk10_hat =             if nnk.kind == nnkInfix:
+                                        if nnk[1].kind == nnkPrefix: nnk[1][0] == ident("^")
+                                        else: false
+                                    else: false
 
+        let nnk10_dotdot_pre_alt =  if nnk.kind == nnkInfix:
+                                        if nnk[1].kind == nnkPrefix:
+                                            nnk[1][0] == ident("..^") or nnk[1][0] == ident("..<")
+                                        else: false
+                                    else: false
 
-                elif nnk[1].kind == nnkPrefix:
-                    ## ^ part
-                    if nnk[1][0] == ident("^"):
-                        ## [^1..<10, 3] into [^(1..<10), 3] # Precedence support, We can skip the parenthesis in the AST
-                        ## [^10..^1, 3] into [^(10..^1), 3] # Precedence support, We can skip the parenthesis in the AST
-                        r.add(prefix(infix(nnk[1][1], $nnk[0], nnk[2]), "^"))
-                    else: r.add(nnk)
+        let nnk2_joker =            if nnk.kind == nnkInfix: nnk[2] == ident("_")
+                                    else: false
 
-                elif nnk[2].kind == nnkInfix:
-                    ## if nnk[2][0] == ident("|") or nnk[2][0] == ident("|-") or nnk[2][0] == ident("|+")
-                    r.add(nnk)
+        let nnk20_bar_pos =         if nnk.kind == nnkInfix:
+                                        if nnk[2].kind == nnkInfix: nnk[2][0] == ident("|") or nnk[2][0] == ident("|+")
+                                        else: false
+                                    else: false
 
-                else:
-                    ## Convert [1..^10, 3] to [1..^10|1, 3]
-                    r.add(infix(nnk[1], $nnk[0], infix(nnk[2], "|", newIntLitNode(1))))
+        let nnk20_bar_min =         if nnk.kind == nnkInfix:
+                                        if nnk[2].kind == nnkInfix: nnk[2][0] == ident("|-")
+                                        else: false
+                                    else: false
 
-            elif nnk[0] == ident("|") or nnk[0] == ident("|+") or nnk[0] == ident("|-"):
-                if nnk[1].kind == nnkPrefix:
-                    if nnk[1][0] == ident("..^") or nnk[1][0] == ident("..<"): # Not needed for `..` it already creates a slice without precedence/Step issues
-                        ## [..^10|2, 3] into [0..^10|2, 3]
-                        r.add(infix(newIntLitNode(0), $nnk[1][0], infix(nnk[1][1], $nnk[0], nnk[2])))
-                    else: r.add(nnk)
-                else: r.add(nnk)
-            else: r.add(nnk)
-        elif nnk.kind == nnkPrefix:
-            if nnk[0] == ident("..") or nnk[0] == ident("..^") or nnk[0] == ident("..<"):
-                ## convert [..10, 3] to [0..10|1, 3]
-                r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[1], "|", newIntLitNode(1))))
-            else: r.add(nnk)
-        else: r.add(nnk)
+        let nnk20_bar_all =         nnk20_bar_pos or nnk20_bar_min
+
+        let nnk21_joker =           if nnk.kind == nnkInfix:
+                                        if nnk[2].kind == nnkInfix: nnk[2][1] == ident("_")
+                                        else: false
+                                    else: false
+
+        ###### Core logic
+        if nnk_joker:
+            ## [_, 3] into [span, 3]
+            r.add(ident("span"))
+        elif nnk0_inf_dotdot and nnk1_joker and nnk2_joker:
+            ## [_.._, 3] into [span, 3]
+            r.add(ident("span"))
+        elif nnk0_inf_dotdot and nnk1_joker and nnk20_bar_pos and nnk21_joker:
+            ## [_.._|2, 3] into [..|2, 3]
+            ## [_.._|+2, 3] into [..|2, 3]
+            r.add(prefix(nnk[2][2], "..|"))
+        elif nnk0_inf_dotdot and nnk1_joker and nnk20_bar_min and nnk21_joker:
+            ## [_.._|-2, 3] into [..|-2, 3]
+            r.add(prefix(nnk[2][2], "..|-"))
+        elif nnk0_inf_dotdot_all and nnk1_joker and nnk20_bar_all:
+            ## [_..10|1, 3] into [0..10|1, 3]
+            ## [_..^10|1, 3] into [0..^10|1, 3]   # ..^ directly creating SteppedSlices may introduce issues in seq[0..^10]
+                                                  # Furthermore ..^10|1, would have ..^ with precedence over |
+            ## [_..<10|1, 3] into [0..<10|1, 3]
+            r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[2][1], $nnk[2][0], nnk[2][2])))
+        elif nnk0_inf_dotdot_all and nnk1_joker:
+            ## [_..10, 3] into [0..10|1, 3]
+            ## [_..^10, 3] into [0..^10|1, 3]   # ..^ directly creating SteppedSlices from int in 0..^10 may introduce issues in seq[0..^10]
+            ## [_..<10, 3] into [0..<10|1, 3]
+            r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[2], "|", newIntLitNode(1))))
+        elif nnk0_inf_dotdot and nnk2_joker:
+            ## [1.._, 3] into [1..|1, 3]
+            r.add(infix(nnk[1], "..|", newIntLitNode(1)))
+        elif nnk0_inf_dotdot and nnk20_bar_pos and nnk21_joker:
+            ## [1.._|1, 3] into [1..|1, 3]
+            ## [1.._|+1, 3] into [1..|1, 3]
+            r.add(infix(nnk[1], "..|", nnk[2][2]))
+        elif nnk0_inf_dotdot and nnk20_bar_min and nnk21_joker:
+            ## Raise error on [5.._|-1, 3]
+            raise newException(IndexError, "Please use explicit end of range " &
+                                           "instead of `_` " &
+                                           "when the steps are negative")
+        elif nnk0_inf_dotdot_all and nnk10_hat and nnk20_bar_all:
+            # We can skip the parenthesis in the AST
+            ## [^1..2|-1, 3] into [^(1..2|-1), 3]
+            r.add(prefix(infix(nnk[1][1], $nnk[0], nnk[2]), "^"))
+        elif nnk0_inf_dotdot_all and nnk10_hat:
+            # We can skip the parenthesis in the AST
+            ## [^1..2*3, 3] into [^(1..2*3|1), 3]
+            ## [^1..0, 3] into [^(1..0|1), 3]
+            ## [^1..<10, 3] into [^(1..<10|1), 3]
+            ## [^10..^1, 3] into [^(10..^1|1), 3]
+            r.add(prefix(infix(nnk[1][1], $nnk[0], infix(nnk[2],"|",newIntLitNode(1))), "^"))
+        elif nnk0_inf_dotdot_all and nnk20_bar_all:
+            ## [1..10|1] as is
+            ## [1..^10|1] as is
+            r.add(nnk)
+        elif nnk0_inf_dotdot_all:
+            ## [1..10, 3] to [1..10|1, 3]
+            ## [1..^10, 3] to [1..^10|1, 3]
+            ## [1..<10, 3] to [1..<10|1, 3]
+            r.add(infix(nnk[1], $nnk[0], infix(nnk[2], "|", newIntLitNode(1))))
+        elif nnk0_inf_bar_all and nnk10_dotdot_pre_alt:
+            ## [..^10|2, 3] into [0..^10|2, 3]
+            # Not needed for `..` it already creates a slice without precedence/Step issues
+            r.add(infix(newIntLitNode(0), $nnk[1][0], infix(nnk[1][1], $nnk[0], nnk[2])))
+        elif nnk0_pre_dotdot_all:
+            ## [..10, 3] to [0..10|1, 3]
+            r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[1], "|", newIntLitNode(1))))
+        else:
+            r.add(nnk)
     # echo "\nAfter modif"
     # echo r.treerepr
     return r

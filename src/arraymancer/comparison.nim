@@ -12,15 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros
-include src/arraymancer/utils/functional,
-        src/arraymancer/utils/nested_containers,
-        src/arraymancer/data_structure,
-        src/arraymancer/accessors,
-        src/arraymancer/accessors_slicer,
-        src/arraymancer/comparison,
-        src/arraymancer/display,
-        src/arraymancer/init,
-        src/arraymancer/ufunc,
-        src/arraymancer/shapeshifting,
-        src/arraymancer/blas
+proc `==`*[B,T](a,b: Tensor[B,T]): bool {.noSideEffect,inline.}=
+    ## Tensor comparison
+    if a.shape != b.shape: return false
+
+    result = true
+    for ai, bi in zip(a,b):
+        ## Iterate through the tensors using stride-aware iterators
+        result = result and ai == bi

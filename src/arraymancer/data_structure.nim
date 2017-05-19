@@ -29,6 +29,7 @@ type
 template len*(t: Tensor): int = t.data.len
 template shape*(t: Tensor): seq[int] = t.shape
 template strides*(t: Tensor): seq[int] = t.strides
+template offset*(t: Tensor): int = t.offset
 template rank*(t: Tensor): int = t.shape.len
     # 0 for scalar (unfortunately cannot be stored)
     # 1 for vector
@@ -48,14 +49,6 @@ proc is_F_contiguous(t: Tensor): bool {.noSideEffect,inline.}=
     ## Check if Fortran convention / Column Major
     result = t.strides.reversed == t.shape.reversed.shape_to_strides
     result = result and t.strides[0] == 1
-
-proc `==`*[B,T](a,b: Tensor[B,T]): bool {.noSideEffect,inline.}=
-    ## Tensor comparison
-    if a.shape != b.shape: return false
-    elif a.strides != b.strides: return false
-    elif a.offset != b.offset: return false
-    elif a.data != b.data: return false
-    else: return true
 
 ## Get a pointer to the start of the data. Needed for BLAS.
 template get_data_ptr[B,T](t: Tensor[B,T]): ptr T = unsafeAddr(t.data[0])

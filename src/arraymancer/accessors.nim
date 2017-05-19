@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int {.used.}=
+template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int =
     ## Convert [i, j, k, l ...] to the proper index.
     when compileOption("boundChecks"):
         if idx.len != t.rank:

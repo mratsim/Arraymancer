@@ -14,6 +14,8 @@
 
 import ../arraymancer,
         ./test_init.nim,
+        ./test_comparison,
         ./test_accessors,
+        ./test_accessors_slicer,
         ./test_display,
         ./test_blas

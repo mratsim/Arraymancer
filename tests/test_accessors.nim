@@ -29,17 +29,19 @@ suite "Accessing and setting tensor values":
         check: b[0,0] == 999
         b[2,3] = 111
         check: b[2,3] == 111
-    ## TODO: It's currently possible to use negative indices but they don't work as expected.
 
 
     test "Out of bounds checking":
-        # Cannot test properly "when compiles assignation"
         var a = newTensor(@[2,3,4], int, Backend.Cpu)
         expect(IndexError):
             a[2,0,0] = 200
         var b = newTensor(@[3,4], int, Backend.Cpu)
         expect(IndexError):
             b[3,4] = 999
+        expect(IndexError):
+            discard b[-1,0]
+        expect(IndexError):
+            discard b[0,-2]
 
     test "Iterators":
         const

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-## This file deals with slicing.
+## This file with slicing syntactic sugar.
 ## Foo being:
 # Tensor of shape 5x5 of type "int" on backend "Cpu"
 # |1      1       1       1       1|
@@ -21,53 +21,30 @@
 # |3      9       27      81      243|
 # |4      16      64      256     1024|
 # |5      25      125     625     3125|
-## Target supported syntax is:
 #
-## Full Integer
-# foo[2, 3]
-# foo[1+1, 2*4*1]
+## Target supported syntax is in `test_accessors_slicer`
 #
-## Indexing from last
-# echo foo[^1,3] --> TODO return a scalar not a Tensor
 #
-## Slice
-# echo foo[1+1..4,3]
-# echo foo[1..2, 3]
-#
-## Span
-# echo foo[_, 3]
-# echo foo[_.._|2, 3]
-# echo foo[1.._, 3]
-# echo foo[1.._|1, 3]
-# echo foo[1..|1, 3]
-# echo foo[_..3, 3]
-# echo foo[_..3|1, 3]
-# echo foo[..3|1, 3]
-# echo foo[_..^2, 3]
-# echo foo[_..<4|2, 3]
-#
-## Combinations
-# echo foo[1..2+1|2,3]
-#
-## End step from last
-# echo foo[0..^4|1, 3]
-# echo foo[1..^1|2, 3]
-#
-## Prefix
-# echo foo[..^2|2, 3]
-# echo foo[..4, 3]
-# echo foo[..<4, 3]
-# echo foo[..^10|2, 3]
-#
-## Start from last
-# echo foo[^1..0|-1, 3]
-# echo foo[^4..2*2, 3]
-# echo foo[^1..2|-1, 3]
-# echo foo[^1..2*2|-1, 3]
-# echo foo[^3..^2, 3]
-# echo foo[^(1..^2*3), 3]
-
-
+# Basic indexing - foo[2, 3]
+# Basic indexing - foo[1+1, 2*2*1]
+# Basic slicing - foo[1..2, 3]
+# Basic slicing - foo[1+1..4, 3-2..2]
+# Span slices - foo[_, 3]
+# Span slices - foo[1.._, 3]
+# Span slices - foo[_..3, 3]
+# Span slices - foo[_.._, 3]
+# Stepping - foo[1..3|2, 3]
+# Span stepping - foo[_.._|2, 3]
+# Span stepping - foo[_.._|+2, 3]
+# Span stepping - foo[1.._|1, 2..3]
+# Span stepping - foo[_..<4|2, 3]
+# Slicing until at n from the end - foo[0..^4, 3]
+# Span Slicing until at n from the end - foo[_..^2, 3]
+# Stepped Slicing until at n from the end - foo[1..^1|2, 3]
+# Slice from the end - foo[^1..0|-1, 3]
+# Slice from the end - expect non-negative step error - foo[^1..0, 3]
+# Slice from the end - foo[^(2*2)..2*2, 3]
+# Slice from the end - foo[^3..^2, 3]
 
 ######################################
 type SteppedSlice* = object
@@ -110,18 +87,15 @@ proc `|`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
     result.step = step
 
 proc `|+`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
-    ## Alias, cannot use a template because of the macro
-    ## Hopefully it's properly inlined
+    ## Alias
     return `|`(s, step)
 
 proc `|+`*(b, step: int): Step {.noSideEffect, inline.}=
-    ## Alias, cannot use a template because of the macro
-    ## Hopefully it's properly inlined
+    ## Alias
     return `|`(b, step)
 
 proc `|+`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
-    ## Alias, cannot use a template because of the macro
-    ## Hopefully it's properly inlined
+    ## Alias
     return `|`(ss, step)
 
 proc `|-`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
@@ -136,23 +110,6 @@ proc `|-`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
 
 proc `..`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
     return SteppedSlice(a: a, b: s.b, step: s.step)
-
-proc `..|`*(s: int): SteppedSlice {.noSideEffect, inline.} =
-    return SteppedSlice(a: 0, b: 1, step: s, b_from_end: true)
-
-proc `..|`*(a,s: int): SteppedSlice {.noSideEffect, inline.} =
-    return SteppedSlice(a: a, b: 1, step: s, b_from_end: true)
-
-
-proc `..|+`*(s: int): SteppedSlice {.noSideEffect, inline.} =
-    ## Alias, cannot use a template because of the macro
-    ## Hopefully it's properly inlined
-    return `..|`(s)
-
-proc `..|+`*(a,s: int): SteppedSlice {.noSideEffect, inline.} =
-    ## Alias, cannot use a template because of the macro
-    ## Hopefully it's properly inlined
-    return `..|`(a, s)
 
 proc `..<`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
     return SteppedSlice(a: a, b: <s.b, step: s.step)
@@ -172,7 +129,6 @@ proc `^`*(s: Slice): SteppedSlice {.noSideEffect, inline.} =
 ## span is equivalent to `:` in Python. It returns the whole axis range.
 ## Tensor[_, 3] will be replaced by Tensor[span, 3]
 const span* = SteppedSlice(b: 1, step: 1, b_from_end: true)
-
 
 proc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.}=
     ## Take a Tensor and SteppedSlices
@@ -237,24 +193,6 @@ macro desugar(args: untyped): typed =
             nnk0_inf_dotdot_alt
         )
 
-        # Node is of the form "* | *", "* |+ *", "* |- *"
-        let nnk0_inf_bar_all = (
-            nnk.kind == nnkInfix and (
-                nnk[0] == ident("|") or
-                nnk[0] == ident("|+") or
-                nnk[0] == ident("|-")
-            )
-        )
-
-        # Node is of the form "..*", "..<*", "..^*"
-        let nnk0_pre_dotdot_all = (
-            nnk.kind == nnkInfix and (
-                nnk[0] == ident("..") or
-                nnk[0] == ident("..<") or
-                nnk[0] == ident("..^")
-            )
-        )
-
         # Node is of the form "^ *"
         let nnk0_pre_hat = (
             nnk.kind == nnkPrefix and
@@ -272,15 +210,6 @@ macro desugar(args: untyped): typed =
             nnk.kind == nnkInfix and
             nnk[1].kind == nnkPrefix and
             nnk[1][0] == ident("^")
-        )
-
-        # Node is of the form "..^ * `op` *" or "..< * `op` *"
-        let nnk10_dotdot_pre_alt =  (
-            nnk.kind == nnkInfix and
-            nnk[1].kind == nnkPrefix and (
-                nnk[1][0] == ident("..^") or
-                nnk[1][0] == ident("..<")
-            )
         )
 
         # Node is of the form "* `op` _"
@@ -322,13 +251,11 @@ macro desugar(args: untyped): typed =
         elif nnk0_inf_dotdot and nnk1_joker and nnk2_joker:
             ## [_.._, 3] into [span, 3]
             r.add(ident("span"))
-        elif nnk0_inf_dotdot and nnk1_joker and nnk20_bar_pos and nnk21_joker:
-            ## [_.._|2, 3] into [..|2, 3]
-            ## [_.._|+2, 3] into [..|2, 3]
-            r.add(prefix(nnk[2][2], "..|"))
-        elif nnk0_inf_dotdot and nnk1_joker and nnk20_bar_min and nnk21_joker:
-            ## [_.._|-2, 3] into [..|-2, 3]
-            r.add(prefix(nnk[2][2], "..|-"))
+        elif nnk0_inf_dotdot and nnk1_joker and nnk20_bar_all and nnk21_joker:
+            ## [_.._|2, 3] into [0..^1|2, 3]
+            ## [_.._|+2, 3] into [0..^1|2, 3]
+            ## [_.._|-2 doesn't make sense and will throw out of bounds
+            r.add(infix(newIntLitNode(0), "..^", infix(newIntLitNode(1), $nnk[2][0], nnk[2][2])))
         elif nnk0_inf_dotdot_all and nnk1_joker and nnk20_bar_all:
             ## [_..10|1, 3] into [0..10|1, 3]
             ## [_..^10|1, 3] into [0..^10|1, 3]   # ..^ directly creating SteppedSlices may introduce issues in seq[0..^10]
@@ -341,12 +268,12 @@ macro desugar(args: untyped): typed =
             ## [_..<10, 3] into [0..<10|1, 3]
             r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[2], "|", newIntLitNode(1))))
         elif nnk0_inf_dotdot and nnk2_joker:
-            ## [1.._, 3] into [1..|1, 3]
-            r.add(infix(nnk[1], "..|", newIntLitNode(1)))
+            ## [1.._, 3] into [1..^1|1, 3]
+            r.add(infix(nnk[1], "..^", infix(newIntLitNode(1), "|", newIntLitNode(1))))
         elif nnk0_inf_dotdot and nnk20_bar_pos and nnk21_joker:
-            ## [1.._|1, 3] into [1..|1, 3]
-            ## [1.._|+1, 3] into [1..|1, 3]
-            r.add(infix(nnk[1], "..|", nnk[2][2]))
+            ## [1.._|1, 3] into [1..^1|1, 3]
+            ## [1.._|+1, 3] into [1..^1|1, 3]
+            r.add(infix(nnk[1], "..^", infix(newIntLitNode(1), "|", nnk[2][2])))
         elif nnk0_inf_dotdot and nnk20_bar_min and nnk21_joker:
             ## Raise error on [5.._|-1, 3]
             raise newException(IndexError, "Please use explicit end of range " &
@@ -372,15 +299,8 @@ macro desugar(args: untyped): typed =
             ## [1..^10, 3] to [1..^10|1, 3]
             ## [1..<10, 3] to [1..<10|1, 3]
             r.add(infix(nnk[1], $nnk[0], infix(nnk[2], "|", newIntLitNode(1))))
-        elif nnk0_inf_bar_all and nnk10_dotdot_pre_alt:
-            ## [..^10|2, 3] into [0..^10|2, 3]
-            # Not needed for `..` it already creates a slice without precedence/Step issues
-            r.add(infix(newIntLitNode(0), $nnk[1][0], infix(nnk[1][1], $nnk[0], nnk[2])))
-        elif nnk0_pre_dotdot_all:
-            ## [..10, 3] to [0..10|1, 3]
-            r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[1], "|", newIntLitNode(1))))
         elif nnk0_pre_hat:
-            ## [^2, 3] into [¨2..^2|1, 3]
+            ## [^2, 3] into [^2..^2|1, 3]
             r.add(prefix(infix(nnk[1], "..^", infix(nnk[1],"|",newIntLitNode(1))), "^"))
         else:
             r.add(nnk)
@@ -426,7 +346,3 @@ macro `[]`*[B, T](t: Tensor[B,T], args: varargs[untyped]): untyped =
 
     result = quote do:
         inner_typed_dispatch(`t`, `new_args`)
-
-## template []= by zipping tensor A[slice] and openarray of proper length
-## or A and tensor of proper shape
-## or A and T val (auto broadcast of scalar)

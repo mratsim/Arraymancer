@@ -61,8 +61,6 @@
 # echo foo[^4..2*2, 3]
 # echo foo[^1..2|-1, 3]
 # echo foo[^1..2*2|-1, 3]
-#
-## NOT working yet
 # echo foo[^3..^2, 3]
 # echo foo[^(1..^2*3), 3]
 
@@ -186,8 +184,8 @@ proc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T]
 
 macro desugar(args: untyped): typed =
     ## Transform all syntactic sugar in arguments to integer or SteppedSlices
-    ## It will then be dispatch to "atIndex" (if specific integers)
-    ## or slicer if there are SteppedSlices
+    ## It will then be dispatched to "atIndex" (if specific integers)
+    ## or "slicer" if there are SteppedSlices
 
     # echo "\n------------------\nOriginal tree"
     # echo args.treerepr
@@ -210,6 +208,9 @@ macro desugar(args: untyped): typed =
                                     else: false
 
         let nnk0_pre_dotdot_all =   if nnk.kind == nnkPrefix: nnk[0] == ident("..") or nnk[0] == ident("..<") or nnk[0] == ident("..^")
+                                    else: false
+
+        let nnk0_pre_hat_all =      if nnk.kind == nnkPrefix: nnk[0] == ident("^")
                                     else: false
 
         let nnk1_joker =            if nnk.kind == nnkInfix: nnk[1] == ident("_")
@@ -310,6 +311,9 @@ macro desugar(args: untyped): typed =
         elif nnk0_pre_dotdot_all:
             ## [..10, 3] to [0..10|1, 3]
             r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[1], "|", newIntLitNode(1))))
+        elif nnk0_pre_hat_all:
+            ## [^2, 3] into [¨2..^2|1, 3]
+            r.add(prefix(infix(nnk[1], "..^", infix(nnk[1],"|",newIntLitNode(1))), "^"))
         else:
             r.add(nnk)
     # echo "\nAfter modif"
@@ -354,3 +358,7 @@ macro `[]`*[B, T](t: Tensor[B,T], args: varargs[untyped]): untyped =
 
     result = quote do:
         inner_typed_dispatch(`t`, `new_args`)
+
+## template []= by zipping tensor A[slice] and openarray of proper length
+## or A and tensor of proper shape
+## or A and T val (auto broadcast of scalar)

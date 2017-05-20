@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+## Functional programming and iterator tooling
+
 template scanr[T](s: seq[T], operation: untyped): untyped =
   ## Template to scan a sequence from right to left, returning the accumulation and intermediate values.
   ## This is a foldr with intermediate steps returned
@@ -30,7 +32,6 @@ template scanr[T](s: seq[T], operation: untyped): untyped =
     result[i-1] = operation
   result
 
-
 iterator zip[T1, T2](a: openarray[T1], b: openarray[T2]): (T1,T2) {.noSideEffect.} =
   ## Transform two lists in a list of tuples.
   ## Length of result will be the length of the smallest list, items from the longest will be discarded.
@@ -38,6 +39,30 @@ iterator zip[T1, T2](a: openarray[T1], b: openarray[T2]): (T1,T2) {.noSideEffect
 
   for i in 0..<len:
     yield (a[i], b[i])
+
+iterator zip[T1, T2](inp1: iterator(): T1, inp2: iterator(): T2): (T1, T2) {.noSideEffect.} =
+  ## Inline iteration on 2 closure iterators at the same time
+  ## Input is first copied to avoid side-effects
+
+  let it1 = inp1
+  let it2 = inp2
+  while true:
+    let val1 = it1()
+    let val2 = it2()
+    if finished(it1) or finished(it2):
+      break
+    yield (val1, val2)
+
+iterator zip[T1, T2](inp1: iterator(): T1, b: openarray[T2]): (T1, T2) {.noSideEffect.} =
+  ## Inline iteration on a closure iterators and an openarray
+  ## Input is first copied to avoid side-effects
+
+  let it1 = inp1
+  for i in 0..<b.len:
+    let val1 = it1()
+    if finished(it1):
+      break
+    yield (val1, b[i])
 
 template product[T: SomeNumber](s: openarray[T]): T =
   ## Get the product of all numbers in a sequence or array

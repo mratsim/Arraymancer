@@ -66,14 +66,27 @@ proc check_steps(a,b, step:int) {.noSideEffect.}=
     ## I choose not to do it as this might introduce the typical silent bugs typechecking/Nim is helping avoid.
     if ((b-a) * step < 0):
         raise newException(IndexError, "Your slice start: " &
-                                $(a) &
+                                $a &
                                 ", and stop: " &
-                                $(b) &
+                                $b &
                                 ", or your step: " &
-                                $(step) &
+                                $step &
                                 """, are not correct. If your step is positive
                                 start must be inferior to stop and inversely if your step is negative
                                 start must be superior to stop.""")
+
+proc check_length[B,T](t: Tensor[B,T], oa: openarray[T]) {.noSideEffect.}=
+    ## Compare length
+    if t.len != oa.len:
+        raise newException(IndexError, "Your openarray length: " & $oa.len &
+                                ", is not compatible with a tensor of shape " & $t.shape.join("x") &
+                                " (length: " & $t.len & ")")
+
+proc check_shape[B1, B2,T](t: Tensor[B1,T], t2: Tensor[B2,T]) {.noSideEffect.}=
+    ## Compare shape
+    if t.shape != t2.shape:
+        raise newException(IndexError, "Your tensors do not have the same shape: " & $t.shape.join("x") &
+                                " and " & $t2.shape.join("x"))
 
 ## Procs to manage all integer, slice, SteppedSlice 
 proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
@@ -129,33 +142,6 @@ proc `^`*(s: Slice): SteppedSlice {.noSideEffect, inline.} =
 ## span is equivalent to `:` in Python. It returns the whole axis range.
 ## Tensor[_, 3] will be replaced by Tensor[span, 3]
 const span* = SteppedSlice(b: 1, step: 1, b_from_end: true)
-
-proc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.}=
-    ## Take a Tensor and SteppedSlices
-    ## Returns:
-    ##    A view of the original Tensor
-    ##    Data is not changed, only offset and strides are changed to achieve the desired effect.
-    ##    TODO: Currently, BLAS needs C-contiguous data and does not work with "Universal" strides.
-    ##          Provide a way to convert from Universal to C-contiguous. (Strided iterator should make that easy)
-
-    result = t # For t.data, seq semantics should copy only on write. TODO: Test
-
-    for i, slice in slices:
-        # Check if we start from the end
-        let a = if slice.a_from_end: result.shape[i] - slice.a
-                else: slice.a
-
-        let b = if slice.b_from_end: result.shape[i] - slice.b
-                else: slice.b
-
-        # Bounds checking
-        when compileOption("boundChecks"): check_steps(a,b, slice.step)
-
-        # Compute offset:
-        result.offset += a * result.strides[i]
-        # Now change shape and strides
-        result.strides[i] *= slice.step
-        result.shape[i] = abs((b-a) div slice.step) + 1
 
 macro desugar(args: untyped): typed =
     ## Transform all syntactic sugar in arguments to integer or SteppedSlices
@@ -308,19 +294,32 @@ macro desugar(args: untyped): typed =
     # echo r.treerepr
     return r
 
-proc hasType(x: NimNode, t: static[string]): bool {. compileTime .} =
-  ## Compile-time type checking
-  sameType(x, bindSym(t))
+proc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.}=
+    ## Take a Tensor and SteppedSlices
+    ## Returns:
+    ##    A view of the original Tensor
+    ##    Data is not changed, only offset and strides are changed to achieve the desired effect.
+    ##    TODO: Currently, BLAS needs C-contiguous data and does not work with "Universal" strides.
+    ##          Provide a way to convert from Universal to C-contiguous. (Strided iterator should make that easy)
 
-proc isInt(x: NimNode): bool {. compileTime .} =
-  ## Compile-time type checking
-  hasType(x, "int")
+    result = t # For t.data, seq semantics should copy only on write. TODO: Test
 
-proc isAllInt(slice_args: NimNode): bool {. compileTime .} =
-  ## Compile-time type checking
-  result = true
-  for child in slice_args:
-    result = result and isInt(child)
+    for i, slice in slices:
+        # Check if we start from the end
+        let a = if slice.a_from_end: result.shape[i] - slice.a
+                else: slice.a
+
+        let b = if slice.b_from_end: result.shape[i] - slice.b
+                else: slice.b
+
+        # Bounds checking
+        when compileOption("boundChecks"): check_steps(a,b, slice.step)
+
+        # Compute offset:
+        result.offset += a * result.strides[i]
+        # Now change shape and strides
+        result.strides[i] *= slice.step
+        result.shape[i] = abs((b-a) div slice.step) + 1
 
 macro inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
     ## Typed macro so that isAllInt has typed context and we can dispatch.
@@ -346,3 +345,55 @@ macro `[]`*[B, T](t: Tensor[B,T], args: varargs[untyped]): untyped =
 
     result = quote do:
         inner_typed_dispatch(`t`, `new_args`)
+
+proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
+    ## Assign the value to the whole slice
+    let sliced = t.slicer(slices)
+    for real_idx in sliced.real_indices:
+        t.data[real_idx] = val
+
+proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: openarray[T]) =
+    ## Assign the value to the whole slice
+    let sliced = t.slicer(slices)
+
+    when compileOption("boundChecks"): check_length(sliced, oa)
+
+    for real_idx, val in zip(sliced.real_indices, oa):
+        t.data[real_idx] = val
+
+proc slicerMut*[B1, B2, T](t: var Tensor[B1, T], slices: varargs[SteppedSlice], t2: Tensor[B2, T]) {.noSideEffect.}=
+    ## Assign the value to the whole slice
+    let sliced = t.slicer(slices)
+
+    when compileOption("boundChecks"): check_shape(sliced, t2)
+
+    for real_idx, val in zip(sliced.real_indices, t2.values):
+        t.data[real_idx] = val
+
+macro inner_typed_dispatch_mut(t: typed, args: varargs[typed], val: typed): untyped =
+    ## Assign `val` to Tensor T at slice/position `args`
+    if isAllInt(args):
+        result = newCall("atIndexMut", t)
+        for slice in args:
+            result.add(slice)
+        result.add(val)
+    else:
+        result = newCall("slicerMut", t)
+        for slice in args:
+            if isInt(slice):
+                ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
+                result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
+            else:
+                result.add(slice)
+        result.add(val)
+
+macro `[]=`*[B, T](t: var Tensor[B,T], args: varargs[untyped]): untyped =
+    ## varargs[untyped] consumes all arguments so the actual value should be popped
+    ## https://github.com/nim-lang/Nim/issues/5855
+
+    var tmp = args
+    let val = tmp.pop
+    let new_args = getAST(desugar(tmp))
+
+    result = quote do:
+        inner_typed_dispatch_mut(`t`, `new_args`,`val`)

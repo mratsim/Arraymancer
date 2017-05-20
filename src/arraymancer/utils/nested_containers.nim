@@ -13,6 +13,8 @@
 # limitations under the License.
 
 
+## Tools to manipulate deep nested containers
+
 proc shape[T](s: openarray[T], parent_shape: seq[int] = @[]): seq[int] {.noSideEffect.}=
     ## Helper function to get the shape of nested arrays/sequences
     ## C convention. Last index is the fastest changing (columns in 2D, depth in 3D) - Rows (slowest), Columns, Depth (fastest)

@@ -31,14 +31,13 @@ proc getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int {.n
 
 proc atIndex*[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): T {.noSideEffect.} =
     ## Get the value at input coordinates
-    ## This used to be `[]` before slicing
+    ## This used to be `[]` before slicing was implemented
     return t.data[t.getIndex(idx)]
 
-proc `[]=`*[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], val: T) {.noSideEffect.} =
+proc atIndexMut*[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], val: T) {.noSideEffect.} =
     ## Set the value at input coordinates
+    ## This used to be `[]=` before slicing was implemented
     t.data[t.getIndex(idx)] = val
-
-## FIXME: It's currently possible to use negative indices but they don't work as expected.
 
 type
     IterKind = enum
@@ -77,23 +76,22 @@ iterator items*[B,T](t: Tensor[B,T]): T {.noSideEffect.}=
     ## Inline stride-aware iterator on Tensor values
     t.strided_iteration(IterKind.Values)
 
+proc values*[B,T](t: Tensor[B,T]): auto {.noSideEffect.}=
+    ## Closure stride-aware iterator on Tensor values
+    return iterator(): T = t.strided_iteration(IterKind.Values)
+
 iterator pairs*[B,T](t: Tensor[B,T]): (T, seq[int]) {.noSideEffect.}=
     ## Inline stride-aware iterator on Tensor coordinates i.e. [1,2,3] and values
     t.strided_iteration(IterKind.ValCoord)
 
-proc values[B,T](t: Tensor[B,T]): auto {.noSideEffect.}=
-    ## Closure stride-aware iterator on Tensor values
-    return iterator(): T = t.strided_iteration(IterKind.Values)
+iterator real_indices(t: Tensor): int {.noSideEffect.}=
+    ## Inline stride-aware iterator on Tensor real indices in the seq storage
+    ## For loop will automatically use this one. (A closure iterator do not implement "items")
+    t.strided_iteration(IterKind.MemOffset)
 
-iterator zip[B1, T1, B2, T2](t1: Tensor[B1,T1], t2: Tensor[B2,T2]): (T1, T2) {.noSideEffect.} =
-  ## Iterates on 2 tensors at the same time with stride-aware itarators
-  let it1 = t1.values
-  let it2 = t2.values
-  while true:
-    let val1 = it1()
-    let val2 = it2()
-    if finished(it1) or finished(it2):
-      break
-    yield (val1,val2)
+proc real_indices(t: Tensor): auto {.noSideEffect.}=
+    ## Closure stride-aware iterator on Tensor real indices in the seq storage
+    ## For loop will not use this one. It must be assigned before use.
+    return iterator(): int = t.strided_iteration(IterKind.MemOffset)
 
 

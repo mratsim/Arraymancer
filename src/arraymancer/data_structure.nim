@@ -26,7 +26,7 @@ type
         offset: int
         data: seq[T] # Perf note: seq are always deep copied on "var" assignement.
 
-template len*(t: Tensor): int = t.data.len
+proc len*(t: Tensor): int {.noSideEffect, inline.} = t.shape.product
 template shape*(t: Tensor): seq[int] = t.shape
 template strides*(t: Tensor): seq[int] = t.strides
 template offset*(t: Tensor): int = t.offset

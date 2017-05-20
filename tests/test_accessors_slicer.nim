@@ -141,3 +141,96 @@ suite "Testing indexing and slice syntax":
     test "Slice from the end - foo[^3..^2, 3]":
         let test = @[@[81],@[256]]
         check: t_van[^3..^2, 3] == fromSeq(test, int, Cpu)
+
+suite "Slice mutations":
+    const
+        a = @[1, 2, 3, 4, 5]
+        b = @[1, 2, 3, 4, 5]
+
+    var
+        vandermonde: seq[seq[int]]
+        row: seq[int]
+
+    vandermonde = newSeq[seq[int]]()
+
+    for i, aa in a:
+        row = newSeq[int]()
+        vandermonde.add(row)
+        for j, bb in b:
+            vandermonde[i].add(aa^bb)
+
+    let t_van_immut = fromSeq(vandermonde, int, Backend.Cpu)
+
+    # Tensor of shape 5x5 of type "int" on backend "Cpu"
+    # |1      1       1       1       1|
+    # |2      4       8       16      32|
+    # |3      9       27      81      243|
+    # |4      16      64      256     1024|
+    # |5      25      125     625     3125|
+
+    test "Immutability - let variables cannot be changed":
+        when compiles(t_van_immut[1..2,3..4] = 999):
+            check false
+        when compiles(t_van_immut[0..1,0..1] = [111, 222, 333, 444]):
+            check false
+        when compiles(t_van_immut[0..1,0..1] = t_van_immut[111, 222, 333, 444]):
+            check false
+
+    test "Setting a slice to a single value":
+        var t_van = t_van_immut
+        let test =  @[@[1,  1,   1,   1,    1],
+                      @[2,  4,   8, 999,  999],
+                      @[3,  9,  27, 999,  999],
+                      @[4, 16,  64, 256, 1024],
+                      @[5, 25, 125, 625, 3125]]
+
+        let t_test = fromSeq(test, int, Backend.Cpu)
+        t_van[1..2, 3..4] = 999
+        check: t_van == t_test
+
+    test "Setting a slice to an array/seq of values":
+        var t_van = t_van_immut
+        let test =  @[@[111,  222,   1,   1,    1],
+                      @[333,  444,   8,  16,   32],
+                      @[  3,    9,  27,  81,  243],
+                      @[  4,   16,  64, 256, 1024],
+                      @[  5,   25, 125, 625, 3125]]
+
+        let t_test = fromSeq(test, int, Backend.Cpu)
+        t_van[0..1,0..1] = [111, 222, 333, 444]
+        check: t_van == t_test
+
+    test "Setting a slice from a different Tensor":
+        var t_van = t_van_immut
+        let test =  @[@[1,  1,     1,   1,   1],
+                      @[2,  4,     8,  16,  32],
+                      @[3,  9,    27,  81, 243],
+                      @[4, 16,  3125, 625, 125],
+                      @[5, 25,  1024, 256,  64]]
+
+        let t_test = fromSeq(test, int, Backend.Cpu)
+        t_van[^2..^1,2..4] = t_van_immut[^1..^2|-1, 4..2|-1]
+        check: t_van == t_test
+
+    test "Setting a slice from a view of the same Tensor":
+        var t_van = t_van_immut
+        let test =  @[@[1,  1,     1,   1,   1],
+                      @[2,  4,     8,  16,  32],
+                      @[3,  9,    27,  81, 243],
+                      @[4, 16,  3125, 625, 125],
+                      @[5, 25,  1024, 256, 64]]
+
+        let t_test = fromSeq(test, int, Backend.Cpu)
+        t_van[^2..^1,2..4] = t_van[^1..^2|-1, 4..2|-1]
+        check: t_van == t_test
+    
+    test "Bounds checking":
+        var t_van = t_van_immut
+        expect(IndexError):
+            t_van[0..1,0..1] = [111, 222, 333, 444, 555]
+        expect(IndexError):
+            t_van[0..1,0..1] = [111, 222, 333]
+        expect(IndexError):
+            t_van[^2..^1,2..4] = t_van[1, 4..2|-1]
+        expect(IndexError):
+            t_van[^2..^1,2..4] = t_van[^1..^3|-1, 4..2|-1]

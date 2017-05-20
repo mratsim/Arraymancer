@@ -27,6 +27,9 @@
 # foo[2, 3]
 # foo[1+1, 2*4*1]
 #
+## Indexing from last
+# echo foo[^1,3] --> TODO return a scalar not a Tensor
+#
 ## Slice
 # echo foo[1+1..4,3]
 # echo foo[1..2, 3]
@@ -65,6 +68,7 @@
 # echo foo[^(1..^2*3), 3]
 
 
+
 ######################################
 type SteppedSlice* = object
     ## A slice with step information and start is from beginning or end of range
@@ -80,7 +84,7 @@ type Step* = object
     b: int
     step: int
 
-template check_steps(a,b, step:int) =
+proc check_steps(a,b, step:int) {.noSideEffect.}=
     ## Though it might be convenient to automatically step in the correct direction like in Python
     ## I choose not to do it as this might introduce the typical silent bugs typechecking/Nim is helping avoid.
     if ((b-a) * step < 0):
@@ -95,17 +99,6 @@ template check_steps(a,b, step:int) =
                                 start must be superior to stop.""")
 
 ## Procs to manage all integer, slice, SteppedSlice 
-## TODO: change the macro so we don't need to export the following symbols?
-proc `|+`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
-    return SteppedSlice(a: s.a, b: s.b, step: step)
-
-proc `|+`*(b, step: int): Step {.noSideEffect, inline.}=
-    return Step(b: b, step: step)
-
-proc `|+`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
-    result = ss
-    result.step = step
-
 proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
     return SteppedSlice(a: s.a, b: s.b, step: step)
 
@@ -115,6 +108,21 @@ proc `|`*(b, step: int): Step {.noSideEffect, inline.}=
 proc `|`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
     result = ss
     result.step = step
+
+proc `|+`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
+    ## Alias, cannot use a template because of the macro
+    ## Hopefully it's properly inlined
+    return `|`(s, step)
+
+proc `|+`*(b, step: int): Step {.noSideEffect, inline.}=
+    ## Alias, cannot use a template because of the macro
+    ## Hopefully it's properly inlined
+    return `|`(b, step)
+
+proc `|+`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
+    ## Alias, cannot use a template because of the macro
+    ## Hopefully it's properly inlined
+    return `|`(ss, step)
 
 proc `|-`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
     return SteppedSlice(a: s.a, b: s.b, step: -step)
@@ -134,6 +142,17 @@ proc `..|`*(s: int): SteppedSlice {.noSideEffect, inline.} =
 
 proc `..|`*(a,s: int): SteppedSlice {.noSideEffect, inline.} =
     return SteppedSlice(a: a, b: 1, step: s, b_from_end: true)
+
+
+proc `..|+`*(s: int): SteppedSlice {.noSideEffect, inline.} =
+    ## Alias, cannot use a template because of the macro
+    ## Hopefully it's properly inlined
+    return `..|`(s)
+
+proc `..|+`*(a,s: int): SteppedSlice {.noSideEffect, inline.} =
+    ## Alias, cannot use a template because of the macro
+    ## Hopefully it's properly inlined
+    return `..|`(a, s)
 
 proc `..<`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
     return SteppedSlice(a: a, b: <s.b, step: s.step)

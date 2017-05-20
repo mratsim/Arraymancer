@@ -31,7 +31,7 @@ template scanr[T](s: seq[T], operation: untyped): untyped =
   result
 
 
-iterator zip[T1, T2](a: openarray[T1], b: openarray[T2]): (T1,T2) {.inline.} =
+iterator zip[T1, T2](a: openarray[T1], b: openarray[T2]): (T1,T2) {.noSideEffect.} =
   ## Transform two lists in a list of tuples.
   ## Length of result will be the length of the smallest list, items from the longest will be discarded.
   let len = min(a.len, b.len)
@@ -39,26 +39,10 @@ iterator zip[T1, T2](a: openarray[T1], b: openarray[T2]): (T1,T2) {.inline.} =
   for i in 0..<len:
     yield (a[i], b[i])
 
-# zipWith cannot be used with +, * pending: https://github.com/nim-lang/Nim/issues/5702
-# iterator zipWith[T1,T2,T3](f: proc(u: T1, v:T2): T3,
-#                            a: openarray[T1],
-#                            b: openarray[T2]): seq[T3]  {.inline.} =
-#   ## Transform two lists in a new one, applying a function to each couple of items from both lists.
-#   for i in zip(a,b):
-#     yield f(a,b)
-# 
-# proc zipWith[T1,T2,T3](f: proc(u: T1, v:T2): T3,
-#                        a: openarray[T1],
-#                        b: openarray[T2]): seq[T3]  {.inline,noSideEffect.} =
-#   ## Transform two lists in a new one, applying a function to each couple of items from both lists.
-#   # We do not call zip for the proc version as that would loop twice
-#   let m = min(a.len,b.len)
-#   newSeq(result,m)
-#   for i in 0..<m: result[i] = f(a[i],b[i])
+template product[T: SomeNumber](s: openarray[T]): T =
+  ## Get the product of all numbers in a sequence or array
+  s.foldl(a*b)
 
-## Get the product of all numbers in a sequence or array
-template product[T: SomeNumber](s: openarray[T]): T = s.foldl(a*b)
-
-## Map a function to a sequence of T and concatenate the result as string
-template concatMap[T](s: seq[T], f: proc(ss: T):string): string =
-  s.foldl(a & f(b), "")
+proc concatMap[T](s: seq[T], f: proc(ss: T):string): string  {.noSideEffect.}=
+  ## Map a function to a sequence of T and concatenate the result as string
+  return s.foldl(a & f(b), "")

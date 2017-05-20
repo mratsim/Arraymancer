@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc getLayout(t: Tensor): OrderType {.inline,noSideEffect,used.}=
+proc getLayout(t: Tensor): OrderType {.noSideEffect,used.}=
     if is_C_contiguous(t): return OrderType.rowMajor
     elif is_F_contiguous(t): return OrderType.colMajor
     else: raise newException(ValueError,"Operation not supported for this matrix. It has a non-contiguous layout")
 
-proc isTransposeNeeded(t: Tensor): TransposeType {.inline,noSideEffect.}=
+proc isTransposeNeeded(t: Tensor): TransposeType {.noSideEffect.}=
     if is_C_contiguous(t): return TransposeType.noTranspose
     elif is_F_contiguous(t): return TransposeType.transpose
     else: raise newException(ValueError,"Operation not supported for this matrix. It has a non-contiguous layout")
 
 ############################
 ## Bounds checking functions
-template check_matmat(a, b:Tensor) =
+proc check_matmat(a, b:Tensor) {.noSideEffect.}=
     let colA = a.shape[1]
     let rowB = b.shape[0]
 
@@ -36,7 +36,7 @@ template check_matmat(a, b:Tensor) =
     if a.offset != 0 or b.offset != 0:
         raise newException(IndexError, "One of the Matrices has a non-0 offset")
 
-template check_matvec(a, b:Tensor) =
+proc check_matvec(a, b:Tensor)  {.noSideEffect.}=
     let colA = a.shape[1]
     let rowB = b.shape[0]
 
@@ -48,13 +48,13 @@ template check_matvec(a, b:Tensor) =
     if a.offset != 0 or b.offset != 0:
         raise newException(IndexError, "Matrice and/or Vector have a non-0 offset")
 
-template check_dot_prod(a, b:Tensor) =
+proc check_dot_prod(a, b:Tensor)  {.noSideEffect.}=
     if a.rank != 1 or b.rank != 1: raise newException(ValueError, "Dot product is only supported for vectors (tensors of rank 1)")
     if a.shape != b.shape: raise newException(ValueError, "Vector should be the same length")
     if a.offset != 0 or b.offset != 0:
         raise newException(IndexError, "One of the Vectors has a non-0 offset")
 
-template check_add(a, b:Tensor) =
+proc check_add(a, b:Tensor)  {.noSideEffect.}=
     if a.strides != b.strides:
         raise newException(ValueError, "Both Tensors should have the exact same shape and strides")
     if a.offset != 0 or b.offset != 0:

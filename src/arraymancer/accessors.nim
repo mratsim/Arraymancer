@@ -12,18 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int =
+proc check_index(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
+    if idx.len != t.rank:
+        raise newException(IndexError, "Number of arguments: " &
+                                        $(idx.len) &
+                                        ", is different from tensor rank: " &
+                                        $(t.rank))
+
+proc getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int {.noSideEffect.} =
     ## Convert [i, j, k, l ...] to the proper index.
     when compileOption("boundChecks"):
-        if idx.len != t.rank:
-            raise newException(IndexError, "Number of arguments: " &
-                                            $(idx.len) &
-                                            ", is different from tensor rank: " &
-                                            $(t.rank))
+        t.check_index(idx)
+
     var real_idx = t.offset
     for i,j in zip(t.strides,idx):
         real_idx += i*j
-    real_idx
+    return real_idx
 
 proc atIndex*[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): T {.noSideEffect.} =
     ## Get the value at input coordinates
@@ -69,17 +73,19 @@ template strided_iteration[B,T](t: Tensor[B,T], strider: IterKind): untyped =
                 coord[k] = 0
                 iter_pos -= backstrides[k]
 
-iterator items*[B,T](t: Tensor[B,T]): T {.inline,noSideEffect.}=
+iterator items*[B,T](t: Tensor[B,T]): T {.noSideEffect.}=
+    ## Inline stride-aware iterator on Tensor values
     t.strided_iteration(IterKind.Values)
 
-iterator pairs*[B,T](t: Tensor[B,T]): (T, seq[int]) {.inline,noSideEffect.}=
+iterator pairs*[B,T](t: Tensor[B,T]): (T, seq[int]) {.noSideEffect.}=
+    ## Inline stride-aware iterator on Tensor coordinates i.e. [1,2,3] and values
     t.strided_iteration(IterKind.ValCoord)
 
-proc values[B,T](t: Tensor[B,T]): auto {.inline,noSideEffect.}=
-    ## Values given in a closure iterator for chaining
+proc values[B,T](t: Tensor[B,T]): auto {.noSideEffect.}=
+    ## Closure stride-aware iterator on Tensor values
     return iterator(): T = t.strided_iteration(IterKind.Values)
 
-iterator zip[B1, T1, B2, T2](t1: Tensor[B1,T1], t2: Tensor[B2,T2]): (T1, T2) {.inline, noSideEffect.} =
+iterator zip[B1, T1, B2, T2](t1: Tensor[B1,T1], t2: Tensor[B2,T2]): (T1, T2) {.noSideEffect.} =
   ## Iterates on 2 tensors at the same time with stride-aware itarators
   let it1 = t1.values
   let it2 = t2.values

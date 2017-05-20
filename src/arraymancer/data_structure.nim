@@ -36,16 +36,16 @@ template rank*(t: Tensor): int = t.shape.len
     # 2 for matrices
     # N for N-dimension array
 
-proc shape_to_strides(shape: seq[int]): seq[int] {.noSideEffect,inline.} =
+proc shape_to_strides(shape: seq[int]): seq[int] {.noSideEffect.} =
     ## Compute strides matching with dimensions.
     return (shape & 1)[1..shape.len].scanr(a * b)
 
-proc is_C_contiguous(t: Tensor): bool {.noSideEffect,inline.}=
+proc is_C_contiguous(t: Tensor): bool {.noSideEffect.}=
     ## Check if C convention / Row Major
     result = t.strides == t.shape.shape_to_strides
     result = result and t.strides[t.strides.high] == 1
 
-proc is_F_contiguous(t: Tensor): bool {.noSideEffect,inline.}=
+proc is_F_contiguous(t: Tensor): bool {.noSideEffect.}=
     ## Check if Fortran convention / Column Major
     result = t.strides.reversed == t.shape.reversed.shape_to_strides
     result = result and t.strides[0] == 1

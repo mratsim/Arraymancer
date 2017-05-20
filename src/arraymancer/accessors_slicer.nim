@@ -212,61 +212,110 @@ macro desugar(args: untyped): typed =
 
     for nnk in children(args):
 
-        ###### Traverse tree and one-hot-encode the different conditions
-        let nnk_joker =             nnk == ident("_")
+        ###### Traverse top tree nodes and one-hot-encode the different conditions
 
-        let nnk0_inf_dotdot =       if nnk.kind == nnkInfix: nnk[0] == ident("..")
-                                    else: false
+        # Node is "_"
+        let nnk_joker = nnk == ident("_")
 
-        let nnk0_inf_dotdot_alt =   if nnk.kind == nnkInfix: nnk[0] == ident("..<") or nnk[0] == ident("..^")
-                                    else: false
+        # Node is of the form "* .. *"
+        let nnk0_inf_dotdot = (
+            nnk.kind == nnkInfix and
+            nnk[0] == ident("..")
+        )
 
-        let nnk0_inf_dotdot_all =   nnk0_inf_dotdot or nnk0_inf_dotdot_alt
+        # Node is of the form "* ..< *" or "* ..^ *"
+        let nnk0_inf_dotdot_alt = (
+            nnk.kind == nnkInfix and (
+                nnk[0] == ident("..<") or
+                nnk[0] == ident("..^")
+            )
+        )
 
-        let nnk0_inf_bar_all =      if nnk.kind == nnkInfix: nnk[0] == ident("|") or nnk[0] == ident("|+") or nnk[0] == ident("|-")
-                                    else: false
+        # Node is of the form "* .. *", "* ..< *" or "* ..^ *"
+        let nnk0_inf_dotdot_all = (
+            nnk0_inf_dotdot or
+            nnk0_inf_dotdot_alt
+        )
 
-        let nnk0_pre_dotdot_all =   if nnk.kind == nnkPrefix: nnk[0] == ident("..") or nnk[0] == ident("..<") or nnk[0] == ident("..^")
-                                    else: false
+        # Node is of the form "* | *", "* |+ *", "* |- *"
+        let nnk0_inf_bar_all = (
+            nnk.kind == nnkInfix and (
+                nnk[0] == ident("|") or
+                nnk[0] == ident("|+") or
+                nnk[0] == ident("|-")
+            )
+        )
 
-        let nnk0_pre_hat_all =      if nnk.kind == nnkPrefix: nnk[0] == ident("^")
-                                    else: false
+        # Node is of the form "..*", "..<*", "..^*"
+        let nnk0_pre_dotdot_all = (
+            nnk.kind == nnkInfix and (
+                nnk[0] == ident("..") or
+                nnk[0] == ident("..<") or
+                nnk[0] == ident("..^")
+            )
+        )
 
-        let nnk1_joker =            if nnk.kind == nnkInfix: nnk[1] == ident("_")
-                                    else: false
+        # Node is of the form "^ *"
+        let nnk0_pre_hat = (
+            nnk.kind == nnkPrefix and
+            nnk[0] == ident("^")
+        )
 
-        let nnk10_hat =             if nnk.kind == nnkInfix:
-                                        if nnk[1].kind == nnkPrefix: nnk[1][0] == ident("^")
-                                        else: false
-                                    else: false
+        # Node is of the form "_ `op` *"
+        let nnk1_joker = (
+            nnk.kind == nnkInfix and
+            nnk[1] == ident("_")
+        )
 
-        let nnk10_dotdot_pre_alt =  if nnk.kind == nnkInfix:
-                                        if nnk[1].kind == nnkPrefix:
-                                            nnk[1][0] == ident("..^") or nnk[1][0] == ident("..<")
-                                        else: false
-                                    else: false
+        # Node is of the form "_ `op` *"
+        let nnk10_hat = (
+            nnk.kind == nnkInfix and
+            nnk[1].kind == nnkPrefix and
+            nnk[1][0] == ident("^")
+        )
 
-        let nnk2_joker =            if nnk.kind == nnkInfix: nnk[2] == ident("_")
-                                    else: false
+        # Node is of the form "..^ * `op` *" or "..< * `op` *"
+        let nnk10_dotdot_pre_alt =  (
+            nnk.kind == nnkInfix and
+            nnk[1].kind == nnkPrefix and (
+                nnk[1][0] == ident("..^") or
+                nnk[1][0] == ident("..<")
+            )
+        )
 
-        let nnk20_bar_pos =         if nnk.kind == nnkInfix:
-                                        if nnk[2].kind == nnkInfix: nnk[2][0] == ident("|") or nnk[2][0] == ident("|+")
-                                        else: false
-                                    else: false
+        # Node is of the form "* `op` _"
+        let nnk2_joker = (
+            nnk.kind == nnkInfix and
+            nnk[2] == ident("_")
+        )
 
-        let nnk20_bar_min =         if nnk.kind == nnkInfix:
-                                        if nnk[2].kind == nnkInfix: nnk[2][0] == ident("|-")
-                                        else: false
-                                    else: false
+        # Node is of the form "* `op` * | *" or "* `op` * |+ *"
+        let nnk20_bar_pos = (
+            nnk.kind == nnkInfix and
+            nnk[2].kind == nnkInfix and (
+                nnk[2][0] == ident("|") or
+                nnk[2][0] == ident("|+")
+            )
+        )
 
-        let nnk20_bar_all =         nnk20_bar_pos or nnk20_bar_min
+        # Node is of the form "* `op` * |- *"
+        let nnk20_bar_min = (
+            nnk.kind == nnkInfix and
+            nnk[2].kind == nnkInfix and
+            nnk[2][0] == ident("|-")
+        )
 
-        let nnk21_joker =           if nnk.kind == nnkInfix:
-                                        if nnk[2].kind == nnkInfix: nnk[2][1] == ident("_")
-                                        else: false
-                                    else: false
+        # Node is of the form "* `op` * | *" or "* `op` * |+ *" or "* `op` * |- *"
+        let nnk20_bar_all = nnk20_bar_pos or nnk20_bar_min
 
-        ###### Core logic
+        # Node is of the form "* `op1` _ `op2` *"
+        let nnk21_joker = (
+            nnk.kind == nnkInfix and
+            nnk[2].kind == nnkInfix and
+            nnk[2][1] == ident("_")
+        )
+
+        ###### Core desugaring logic
         if nnk_joker:
             ## [_, 3] into [span, 3]
             r.add(ident("span"))
@@ -330,7 +379,7 @@ macro desugar(args: untyped): typed =
         elif nnk0_pre_dotdot_all:
             ## [..10, 3] to [0..10|1, 3]
             r.add(infix(newIntLitNode(0), $nnk[0], infix(nnk[1], "|", newIntLitNode(1))))
-        elif nnk0_pre_hat_all:
+        elif nnk0_pre_hat:
             ## [^2, 3] into [¨2..^2|1, 3]
             r.add(prefix(infix(nnk[1], "..^", infix(nnk[1],"|",newIntLitNode(1))), "^"))
         else:

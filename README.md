@@ -36,8 +36,9 @@ Arraymancer's tensors currently support the following:
 
   * Tensor-Tensor addition, substraction
   * By scalar multiplication, addition, substraction and division
-Limitations BLAS and Tensor-Tensor operations are only available for Tensors and transposed Tensors for now.
-Slices cannot be used for now.
+
+Limitations BLAS and Tensor-Tensor operations are **only available for Tensors** and transposed Tensors for now.
+**Slices cannot be used for now.**
 
 Check syntax examples in the test folder.
 

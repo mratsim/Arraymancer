@@ -25,7 +25,20 @@ proc shape[T](s: openarray[T], parent_shape: seq[int] = @[]): seq[int] {.noSideE
     when (T is seq|array):
       result = shape(s[0], result)
 
+iterator flatIter[T](s: openarray[T]): auto {.noSideEffect.}=
+    ## Inline iterator on any-depth seq or array
+    ## Returns values in order
+    for item in s:
+        when item is array|seq:
+            for subitem in flatIter(item):
+                yield subitem
+        else:
+            yield item
+
 ## Flatten any-depth nested sequences.
-# TODO support array/openarray. Pending https://github.com/nim-lang/Nim/issues/2652
-proc flatten[T](a: seq[T]): seq[T] {.noSideEffect.}= a
-proc flatten[T](a: seq[seq[T]]): auto {.noSideEffect.}= a.concat.flatten
+# TODO support for array/openarray is pending https://github.com/nim-lang/Nim/issues/2652
+# DEPRECATED and kept for reference only.
+# Flatten creates copies in memory.
+# Use the iterator instead.
+proc flatten[T](a: seq[T]): seq[T] {.noSideEffect, deprecated.}= a
+proc flatten[T](a: seq[seq[T]]): auto {.noSideEffect, deprecated.}= a.concat.flatten

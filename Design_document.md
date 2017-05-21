@@ -10,7 +10,8 @@ Either C or Fortran contiguous arrays are needed for BLAS optimization for Tenso
 * Universal: Any strides
 
 ## Pending issues
-* Slices have universal strides and cannot be use currently with BLAS operations
+* Slices have universal strides and cannot be use currently with BLAS operations.
+BLIS (A BLAS-like library with universal strided matrices) can be considered: https://github.com/flame/blis/wiki/FAQ
 
 ## Memory considerations
 * Current CPUs cache line is 64 bytes. The Tensor data structure at 32 bytes has an ideal size.
@@ -96,3 +97,4 @@ Perf note: from a perf point of view, (integer ?) dot product is vectorized on C
 * Dask
 * Mir ndslice and Mir GLAS
 * OpenBLAS, Magma, libelemental, Eigen
+* BLIS / ulmBLAS

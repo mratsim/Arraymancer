@@ -57,7 +57,7 @@ suite "Accessing and setting tensor values":
             for j, bb in b:
                 vd[i].add(aa^bb)
 
-        let nda_vd = fromSeq(vd, int, Backend.Cpu)
+        let nda_vd = vd.toTensor(Cpu)
 
         let expected_seq = @[1,1,1,2,4,8,3,9,27,4,16,64,5,25,125]
 

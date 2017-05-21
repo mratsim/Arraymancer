@@ -20,18 +20,18 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
         let a = @[@[1.0,2,3],@[4.0,5,6]]
         let b = @[@[7.0, 8],@[9.0, 10],@[11.0, 12]]
 
-        let ta = fromSeq(a,float64,Backend.Cpu)
-        let tb = fromSeq(b,float64,Backend.Cpu)
+        let ta = a.toTensor(Cpu)
+        let tb = b.toTensor(Cpu)
 
         let expected = @[@[58.0,64],@[139.0,154]]
-        let t_expected = fromSeq(expected, float64,Backend.Cpu)
+        let t_expected = expected.toTensor(Cpu)
 
         check: ta * tb == t_expected
 
 
     test "GEMM - Bounds checking":
         let c = @[@[1'f32,2,3],@[4'f32,5,6]]
-        let tc = fromSeq(c,float32,Backend.Cpu)
+        let tc = c.toTensor(Cpu)
 
         when compiles(tc * tb): check: false
         expect(IndexError):
@@ -42,37 +42,37 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
         let e_int = @[2, 1, 0]
         let tde_expected_int = @[1, -3]
 
-        let td_int = fromSeq(d_int, int, Backend.Cpu)
-        let te_int = fromSeq(e_int, int, Backend.Cpu)
+        let td_int = d_int.toTensor(Cpu)
+        let te_int = e_int.toTensor(Cpu)
 
         ## TODO integer fallback
-        # check: td_int * te_int == fromSeq(tde_expected_int, int, Backend.Cpu)
+        # check: td_int * te_int == tde_expected_int.toTensor(Cpu)
 
         let d_float = @[@[1.0,-1,2],@[0.0,-3,1]]
         let e_float = @[2.0, 1, 0]
 
-        let td_float = fromSeq(d_float, float64, Backend.Cpu)
-        let te_float = fromSeq(e_float, float64, Backend.Cpu)
+        let td_float = d_float.toTensor(Cpu)
+        let te_float = e_float.toTensor(Cpu)
 
-        check: td_float * te_float == fromSeq(tde_expected_int, int, Backend.Cpu).fmap(x => x.float64)
+        check: td_float * te_float == tde_expected_int.toTensor(Cpu).fmap(x => x.float64)
 
     test "GEMM and GEMV with transposed matrices":
         let a = @[@[1.0,2,3],@[4.0,5,6]]
-        let ta = fromSeq(a,float64,Backend.Cpu)
+        let ta = a.toTensor(Cpu)
         let b = @[@[7.0, 8],@[9.0, 10],@[11.0, 12]]
-        let tb = fromSeq(b,float64,Backend.Cpu)
+        let tb = b.toTensor(Cpu)
 
 
         let at = @[@[1.0,4],@[2.0,5],@[3.0,6]]
-        let tat = fromSeq(at,float64,Backend.Cpu)
+        let tat = at.toTensor(Cpu)
 
         let expected = @[@[58.0,64],@[139.0,154]]
-        let t_expected = fromSeq(expected, float64,Backend.Cpu)
+        let t_expected = expected.toTensor(Cpu)
 
         check: transpose(tat) * tb == t_expected
 
         let bt = @[@[7.0, 9, 11],@[8.0, 10, 12]]
-        let tbt = fromSeq(bt,float64,Backend.Cpu)
+        let tbt = bt.toTensor(Cpu)
 
         check: ta * transpose(tbt) == t_expected
 
@@ -82,11 +82,11 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
         let d = @[@[1.0,-1,2],@[0.0,-3,1]]
         let e = @[2.0, 1, 0]
 
-        let td = fromSeq(d, float64, Backend.Cpu)
-        let te = fromSeq(e, float64, Backend.Cpu)
+        let td = d.toTensor(Cpu)
+        let te = e.toTensor(Cpu)
 
         let dt = @[@[1.0,0],@[-1.0,-3],@[2.0,1]]
-        let tdt = fromSeq(dt, float64, Backend.Cpu)
+        let tdt = dt.toTensor(Cpu)
 
         check: td * te == transpose(tdt) * te
 
@@ -94,48 +94,48 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
         let u_int = @[1, 3, -5]
         let v_int = @[4, -2, -1]
 
-        let tu_int = fromSeq(u_int,int,Backend.Cpu)
-        let tv_int = fromSeq(u_int,int,Backend.Cpu)
+        let tu_int = u_int.toTensor(Cpu)
+        let tv_int = v_int.toTensor(Cpu)
 
-        check: tu_int .* tv_int == 35
+        check: tu_int .* tv_int == 3
 
 
         let u_float = @[1'f64, 3, -5]
         let v_float = @[4'f64, -2, -1]
 
-        let tu_float = fromSeq(u_float,float64,Backend.Cpu)
-        let tv_float = fromSeq(u_float,float64,Backend.Cpu)
+        let tu_float = u_float.toTensor(Cpu)
+        let tv_float = v_float.toTensor(Cpu)
 
-        check: tu_float .* tv_float == 35.0
+        check: tu_float .* tv_float == 3.0
 
     test "Multiplication/division by scalar":
         let u_int = @[1, 3, -5]
         let u_expected = @[2, 6, -10]
-        let tu_int = fromSeq(u_int,int,Backend.Cpu)
+        let tu_int = u_int.toTensor(Cpu)
 
-        check: 2 * tu_int == fromSeq(u_expected,int,Backend.Cpu)
-        check: tu_int * 2 == fromSeq(u_expected,int,Backend.Cpu)
+        check: 2 * tu_int == u_expected.toTensor(Cpu)
+        check: tu_int * 2 == u_expected.toTensor(Cpu)
 
         let u_float = @[1'f64, 3, -5]
-        let tu_float = fromSeq(u_float,float64,Backend.Cpu)
+        let tu_float = u_float.toTensor(Cpu)
 
         let ufl_expected = @[2'f64, 6, -10]
-        check: fromSeq(ufl_expected,float64,Backend.Cpu) / 2 == tu_float
+        check: ufl_expected.toTensor(Cpu) / 2 == tu_float
 
     test "Tensor addition and substraction":
         let u_int = @[1, 3, -5]
         let v_int = @[1, 1, 1]
         let expected_add = @[2, 4, -4]
         let expected_sub = @[0, 2, -6]
-        let tu_int = fromSeq(u_int,int,Backend.Cpu)
-        let tv_int = fromSeq(v_int,int,Backend.Cpu)
+        let tu_int = u_int.toTensor(Cpu)
+        let tv_int = v_int.toTensor(Cpu)
 
-        check: tu_int + tv_int == fromSeq(expected_add,int,Backend.Cpu)
-        check: tu_int - tv_int == fromSeq(expected_sub,int,Backend.Cpu)
+        check: tu_int + tv_int == expected_add.toTensor(Cpu)
+        check: tu_int - tv_int == expected_sub.toTensor(Cpu)
 
     test "Addition-Substraction - Bounds checking":
         let a = @[@[1.0,2,3],@[4.0,5,6], @[7.0,8,9]]
-        let ta = fromSeq(a,float64,Backend.Cpu)
+        let ta = a.toTensor(Cpu)
         let ta_t = ta.transpose()
 
         expect(ValueError):

@@ -34,7 +34,7 @@ suite "Testing tensor comparison":
             for j, bb in b:
                 vandermonde[i].add(aa^bb)
 
-        let t_van = fromSeq(vandermonde, int, Backend.Cpu)
+        let t_van = vandermonde.toTensor(Cpu)
 
         # Tensor of shape 5x5 of type "int" on backend "Cpu"
         # |1      1       1       1       1|
@@ -44,7 +44,7 @@ suite "Testing tensor comparison":
         # |5      25      125     625     3125|
 
         let test = @[@[4, 8, 16], @[9, 27, 81], @[16, 64, 256]]
-        let t_test = fromSeq(test, int, Backend.Cpu)
+        let t_test = test.toTensor(Cpu)
         
         check: t_van[1..^2,1..3] == t_test
         check: t_van[1..3,1..3] == t_test

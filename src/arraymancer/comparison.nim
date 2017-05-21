@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../arraymancer,
-        ./test_init.nim,
-        ./test_comparison,
-        ./test_accessors,
-        ./test_accessors_slicer,
-        ./test_display,
-        ./test_blas
+proc `==`*[B,T](a,b: Tensor[B,T]): bool {.noSideEffect.}=
+    ## Tensor comparison
+    if a.shape != b.shape: return false
+
+    for ai, bi in zip(a.values,b.values):
+        ## Iterate through the tensors using stride-aware iterators
+        ## Returns early if false
+        if ai != bi: return false
+    return true

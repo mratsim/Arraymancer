@@ -12,32 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-template getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int =
+proc check_index(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
+    if idx.len != t.rank:
+        raise newException(IndexError, "Number of arguments: " &
+                                        $(idx.len) &
+                                        ", is different from tensor rank: " &
+                                        $(t.rank))
+
+proc getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int {.noSideEffect.} =
     ## Convert [i, j, k, l ...] to the proper index.
     when compileOption("boundChecks"):
-        if idx.len != t.rank:
-            raise newException(IndexError, "Number of arguments: " &
-                                            $(idx.len) &
-                                            ", is different from tensor rank: " &
-                                            $(t.rank))
+        t.check_index(idx)
+
     var real_idx = t.offset
     for i,j in zip(t.strides,idx):
         real_idx += i*j
-    real_idx
+    return real_idx
 
-proc `[]`*[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): T = #{.noSideEffect.} =
+proc atIndex*[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): T {.noSideEffect.} =
     ## Get the value at input coordinates
+    ## This used to be `[]` before slicing was implemented
     return t.data[t.getIndex(idx)]
 
-proc `[]=`*[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], val: T) {.noSideEffect.} =
+proc atIndexMut*[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], val: T) {.noSideEffect.} =
     ## Set the value at input coordinates
+    ## This used to be `[]=` before slicing was implemented
     t.data[t.getIndex(idx)] = val
-
-## FIXME: It's currently possible to use negative indices but they don't work as expected.
 
 type
     IterKind = enum
-        Values, Coord, MemOffset, ValCoord, ValMemOffset
+        Values, MemOffset, ValCoord, ValMemOffset #, Coord
 
 template strided_iteration[B,T](t: Tensor[B,T], strider: IterKind): untyped =
     ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
@@ -50,8 +54,8 @@ template strided_iteration[B,T](t: Tensor[B,T], strider: IterKind): untyped =
     var iter_pos = t.offset
 
     ## Iterator loop
-    for i in 0 .. <t.data.len:
-    
+    for i in 0 .. <t.shape.product:
+
         ## Templating the return value
         when strider == IterKind.Values: yield t.data[iter_pos]
         elif strider == IterKind.ValCoord: yield (t.data[iter_pos], coord)
@@ -68,8 +72,26 @@ template strided_iteration[B,T](t: Tensor[B,T], strider: IterKind): untyped =
                 coord[k] = 0
                 iter_pos -= backstrides[k]
 
-iterator items*[B,T](t: Tensor[B,T]): T {.inline,noSideEffect.}=
+iterator items*[B,T](t: Tensor[B,T]): T {.noSideEffect.}=
+    ## Inline stride-aware iterator on Tensor values
     t.strided_iteration(IterKind.Values)
 
-iterator pairs*[B,T](t: Tensor[B,T]): (T, seq[int]) {.inline,noSideEffect.}=
+proc values*[B,T](t: Tensor[B,T]): auto {.noSideEffect.}=
+    ## Closure stride-aware iterator on Tensor values
+    return iterator(): T = t.strided_iteration(IterKind.Values)
+
+iterator pairs*[B,T](t: Tensor[B,T]): (T, seq[int]) {.noSideEffect.}=
+    ## Inline stride-aware iterator on Tensor coordinates i.e. [1,2,3] and values
     t.strided_iteration(IterKind.ValCoord)
+
+iterator real_indices(t: Tensor): int {.noSideEffect.}=
+    ## Inline stride-aware iterator on Tensor real indices in the seq storage
+    ## For loop will automatically use this one. (A closure iterator do not implement "items")
+    t.strided_iteration(IterKind.MemOffset)
+
+proc real_indices(t: Tensor): auto {.noSideEffect.}=
+    ## Closure stride-aware iterator on Tensor real indices in the seq storage
+    ## For loop will not use this one. It must be assigned before use.
+    return iterator(): int = t.strided_iteration(IterKind.MemOffset)
+
+

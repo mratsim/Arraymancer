@@ -38,7 +38,7 @@ proc `$`*[B,T](t: Tensor[B,T]): string {.noSideEffect.} =
     for value in t:
         indexed_data.add(($value,i))
         i += 1
-    
+
     # Create a closure to apply the boundaries transformation for the specific input
     proc curry_bounds(tup: (string,int)): string {.noSideEffect.}= t.bounds_display(tup)
 

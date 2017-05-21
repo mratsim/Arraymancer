@@ -75,18 +75,11 @@ proc check_steps(a,b, step:int) {.noSideEffect.}=
                                 start must be inferior to stop and inversely if your step is negative
                                 start must be superior to stop.""")
 
-proc check_length[B,T](t: Tensor[B,T], oa: openarray[T]) {.noSideEffect.}=
-    ## Compare length
-    if t.len != oa.len:
-        raise newException(IndexError, "Your openarray length: " & $oa.len &
-                                ", is not compatible with a tensor of shape " & $t.shape.join("x") &
-                                " (length: " & $t.len & ")")
-
-proc check_shape[B1, B2,T](t: Tensor[B1,T], t2: Tensor[B2,T]) {.noSideEffect.}=
+proc check_shape(a, b: Tensor|openarray) {.noSideEffect.}=
     ## Compare shape
-    if t.shape != t2.shape:
-        raise newException(IndexError, "Your tensors do not have the same shape: " & $t.shape.join("x") &
-                                " and " & $t2.shape.join("x"))
+    if a.shape != b.shape:
+        raise newException(IndexError, "Your tensors or openarrays do not have the same shape: " & $a.shape.join("x") &
+                                " and " & $b.shape.join("x"))
 
 ## Procs to manage all integer, slice, SteppedSlice 
 proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
@@ -352,13 +345,21 @@ proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T
     for real_idx in sliced.real_indices:
         t.data[real_idx] = val
 
-proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: openarray[T]) =
-    ## Assign the value to the whole slice
+proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: openarray) =
+    ## Assign value from openarrays
+    ## The openarray must have the same shape as the slice
     let sliced = t.slicer(slices)
+    when compileOption("boundChecks"):
+        check_shape(sliced, oa)
 
-    when compileOption("boundChecks"): check_length(sliced, oa)
+    let data = toSeq(flatIter(oa))
+    when compileOption("boundChecks"):
+        check_nested_elements(oa.shape, data.len)
 
-    for real_idx, val in zip(sliced.real_indices, oa):
+    # Unfortunately we need to loop twice over data/oa
+    # Reason 1: we can't check the iterator length before consuming it
+    # Reason 2: we can't capture an open array, i.e. do zip(sliced.real_indices, flatClosureIter(oa))
+    for real_idx, val in zip(sliced.real_indices, data):
         t.data[real_idx] = val
 
 proc slicerMut*[B1, B2, T](t: var Tensor[B1, T], slices: varargs[SteppedSlice], t2: Tensor[B2, T]) {.noSideEffect.}=

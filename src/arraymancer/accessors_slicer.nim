@@ -24,7 +24,7 @@
 #
 ## Target supported syntax is in `test_accessors_slicer`
 #
-#
+### Slicing
 # Basic indexing - foo[2, 3]
 # Basic indexing - foo[1+1, 2*2*1]
 # Basic slicing - foo[1..2, 3]
@@ -45,6 +45,12 @@
 # Slice from the end - expect non-negative step error - foo[^1..0, 3]
 # Slice from the end - foo[^(2*2)..2*2, 3]
 # Slice from the end - foo[^3..^2, 3]
+
+### Assignement
+# Slice to a single value - foo[1..2, 3..4] = 999
+# Slice to an array/seq of values - foo[0..1,0..1] = [[111, 222], [333, 444]]
+# Slice to values from a view/Tensor - foo[^2..^1,2..4] = bar
+# Slice to values from view of same Tensor - foo[^2..^1,2..4] = foo[^1..^2|-1, 4..2|-1]
 
 ######################################
 type SteppedSlice* = object

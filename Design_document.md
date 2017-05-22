@@ -50,7 +50,7 @@ In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-referen
     1. Convert to float64, use BLAS, convert back to int. No issue for int32 has them all. Int64 may lose some precision.
     2. Implement a cache-oblivious matrix multiplication. Implementation in [Julia](https://github.com/JuliaLang/julia/blob/master/base/linalg/matmul.jl#L490). [Paper](http://ocw.raf.edu.rs/courses/electrical-engineering-and-computer-science/6-895-theory-of-parallel-systems-sma-5509-fall-2003/readings/cach_oblvs_thsis.pdf).
 * How to implement non-contiguous matrix multiplication and matrix-vector multiplication.
-    1. Cache oblivious and any stride generic matrix multiplication
+    1. Cache oblivious and any stride generic matrix multiplication (see [Universal stride cache oblivious GEMM in Javascript](https://0fps.net/2013/05/28/cache-oblivious-array-operations/))
     2. Convert the tensor to C major layout with the strided iterator.
 
 ## TODO
@@ -98,3 +98,4 @@ Perf note: from a perf point of view, (integer ?) dot product is vectorized on C
 * Mir ndslice and Mir GLAS
 * OpenBLAS, Magma, libelemental, Eigen
 * BLIS / ulmBLAS
+* scijs/ndarray and scijs/cwise (especially universal stride cache oblivious ndarray)

@@ -234,3 +234,7 @@ suite "Slice mutations":
             t_van[^2..^1,2..4] = t_van[1, 4..2|-1]
         expect(IndexError):
             t_van[^2..^1,2..4] = t_van[^1..^3|-1, 4..2|-1]
+    
+    test "Chained slicing - foo[1..^2,1..2][1..^1, 0]":
+        let t_van = t_van_immut
+        check: t_van[1..^2,1..2][1..^1, 0] == [[9],[16]].toTensor(Cpu)

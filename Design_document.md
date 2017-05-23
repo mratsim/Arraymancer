@@ -53,7 +53,7 @@ In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-referen
     - template if proc does not work or to access an object field
     - macro as last resort to manipulate AST tree or rewrite code
 * Readibility, maintainability and performance are very important (in no particular order)
-* Use functional constructs like `map`, `scanr` instead of `for loop` when you don't need side-effects
+* Use functional constructs like `map`, `scanr` instead of `for loop` when you don't need side-effects or a iterator
 
 ## Features
 

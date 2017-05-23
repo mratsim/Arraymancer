@@ -44,21 +44,3 @@ proc toTensor*(s:openarray, B: static[Backend]): auto {.noSideEffect.} =
 
   result = newTensor(shape, type(data[0]), B)
   result.data = data
-
-proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect, deprecated.} =
-  ## Create a tensor from a nested sequence
-  # If sequence is deeply nested Nim cannot detect the very basic type hence U and T in the proc declaration.
-  ## DEPRECATED: use toTensor instead
-  let shape = s.shape
-  let flat = s.flatten
-
-  when compileOption("boundChecks"):
-    if (shape.product != flat.len):
-        raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
-
-  let strides = shape_to_strides(shape)
-
-  result.shape = shape
-  result.strides = strides
-  result.data = flat
-  result.offset = 0

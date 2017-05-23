@@ -34,11 +34,3 @@ iterator flatIter[T](s: openarray[T]): auto {.noSideEffect.}=
         yield subitem
     else:
       yield item
-
-## Flatten any-depth nested sequences.
-# TODO support for array/openarray is pending https://github.com/nim-lang/Nim/issues/2652
-# DEPRECATED and kept for reference only.
-# Flatten creates copies in memory.
-# Use the iterator instead.
-proc flatten[T](a: seq[T]): seq[T] {.noSideEffect, deprecated.}= a
-proc flatten[T](a: seq[seq[T]]): auto {.noSideEffect, deprecated.}= a.concat.flatten

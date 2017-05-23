@@ -41,7 +41,7 @@ proc atIndexMut*[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], v
 
 type
   IterKind = enum
-    Values, MemOffset, ValCoord, ValMemOffset #, Coord
+    Values, MemOffset, Coord_Values, MemOffset_Values
 
 template strided_iteration[B,T](t: Tensor[B,T], strider: IterKind): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
@@ -58,9 +58,9 @@ template strided_iteration[B,T](t: Tensor[B,T], strider: IterKind): untyped =
 
     ## Templating the return value
     when strider == IterKind.Values: yield t.data[iter_pos]
-    elif strider == IterKind.ValCoord: yield (t.data[iter_pos], coord)
+    elif strider == IterKind.Coord_Values: yield (coord, t.data[iter_pos])
     elif strider == IterKind.MemOffset: yield iter_pos
-    elif strider == IterKind.ValMemOffset: yield (t.data[iter_pos], iter_pos)
+    elif strider == IterKind.MemOffset_Values: yield (iter_pos, t.data[iter_pos])
 
     ## Computing the next position
     for k in countdown(t.rank - 1,0):
@@ -80,9 +80,9 @@ proc values*[B,T](t: Tensor[B,T]): auto {.noSideEffect.}=
   ## Closure stride-aware iterator on Tensor values
   return iterator(): T = t.strided_iteration(IterKind.Values)
 
-iterator pairs*[B,T](t: Tensor[B,T]): (T, seq[int]) {.noSideEffect.}=
+iterator pairs*[B,T](t: Tensor[B,T]): (seq[int], T) {.noSideEffect.}=
   ## Inline stride-aware iterator on Tensor coordinates i.e. [1,2,3] and values
-  t.strided_iteration(IterKind.ValCoord)
+  t.strided_iteration(IterKind.Coord_Values)
 
 iterator real_indices(t: Tensor): int {.noSideEffect.}=
   ## Inline stride-aware iterator on Tensor real indices in the seq storage

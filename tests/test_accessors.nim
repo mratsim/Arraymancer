@@ -67,18 +67,18 @@ suite "Accessing and setting tensor values":
 
         check: seq_val == expected_seq
 
-        var seq_validx: seq[tuple[val: int,idx: seq[int]]] = @[]
+        var seq_validx: seq[tuple[idx: seq[int], val: int]] = @[]
         for i,j in nda_vd:
             seq_validx.add((i,j))
         
-        check: seq_validx[0] == (1,@[0,0])
-        check: seq_validx[10] == (16,@[3,1])
+        check: seq_validx[0] == (@[0,0], 1)
+        check: seq_validx[10] == (@[3,1], 16)
 
         let t_nda = transpose(nda_vd)
 
-        var seq_transpose: seq[tuple[val: int,idx: seq[int]]] = @[]
+        var seq_transpose: seq[tuple[idx: seq[int], val: int]] = @[]
         for i,j in t_nda:
             seq_transpose.add((i,j))
         
-        check: seq_transpose[0] == (1,@[0,0])
-        check: seq_transpose[8] == (16,@[1,3])
+        check: seq_transpose[0] == (@[0,0], 1)
+        check: seq_transpose[8] == (@[1,3], 16)

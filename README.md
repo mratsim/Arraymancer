@@ -10,7 +10,7 @@ Note: Machine learning tensors ARE NOT mathematical tensors.
 
 ## Goals
 
-The automatic backpropagation library [Nim-RMAD](https://github.com/mratsim/nim-rmad) needs to be generalized to vectors and matrices, 3D, 4D, 5D tensors for deep learning.
+The automatic backpropagation library [Nim-RMAD](https://github.com/mratsim/nim-rmad) needs to be generalized to vectors and matrices, 3D, 4D and 5D tensors for deep learning. Technically I would need 6D for convolution on 3D videos but ... oh well.
 
 This library aims to provided an efficient tensor/ndarray type. Focus will be on numerical computation (BLAS) and GPU support.
 The library will be flexible enough to represent arbitrary N-dimensional arrays, especially for NLP word vectors.
@@ -37,9 +37,12 @@ Arraymancer's tensors currently support the following:
   * Tensor-Tensor addition, substraction
   * By scalar multiplication, addition, substraction and division
 
-Limitations BLAS and Tensor-Tensor operations are currently **only available for floats**. `Int32` and lower can be converted to `float64` without precision loss.
+## Limitations:
+
+BLAS and Tensor-Tensor operations are currently **only available for floats**. `Int32` and lower can be converted to `float64` without precision loss.
 Unfortunaly there is no optimized integer matrices library currently so I will probably roll up my own solution.
 
+## Examples
 
 ```Nim
 import math, ../arraymancer, future
@@ -137,7 +140,4 @@ echo foo[^1..0|-1, _] # Reverse step
 
 ## Not prioritized
 
-The following Numpy-like functionality:
-* statistics (mean, median, stddev ...)
-
-will be added on an as-needed basis.
+Focus is on getting a deep earning library up, features will be prioritized towards this goal.

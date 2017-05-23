@@ -297,8 +297,6 @@ proc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T]
   ## Returns:
   ##    A view of the original Tensor
   ##    Data is not changed, only offset and strides are changed to achieve the desired effect.
-  ##    TODO: Currently, BLAS needs C-contiguous data and does not work with "Universal" strides.
-  ##          Provide a way to convert from Universal to C-contiguous. (Strided iterator should make that easy)
 
   result = t # For t.data, seq semantics should copy only on write. TODO: Test
 

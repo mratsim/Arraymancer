@@ -50,5 +50,16 @@ proc is_F_contiguous(t: Tensor): bool {.noSideEffect.}=
     result = t.strides.reversed == t.shape.reversed.shape_to_strides
     result = result and t.strides[0] == 1
 
+proc isContiguous(t: Tensor): bool {.noSideEffect.}=
+    return t.is_C_contiguous or t.is_F_contiguous
+
+proc getTransposeTarget(t: Tensor): TransposeType {.noSideEffect.}=
+    ## Default layout is Row major. Everytime it is worth it or fused with a BLAS operation we change the strides to Row-Major
+    if is_C_contiguous(t): return TransposeType.noTranspose
+    elif is_F_contiguous(t): return TransposeType.transpose
+    else: raise newException(ValueError,"Operation not supported for this matrix. It has a non-contiguous layout")
+
 ## Get a pointer to the start of the data. Needed for BLAS.
 template get_data_ptr[B,T](t: Tensor[B,T]): ptr T = unsafeAddr(t.data[0])
+
+template data*[B,T](t: Tensor[B,T]): seq[T] = t.data

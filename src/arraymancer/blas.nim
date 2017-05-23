@@ -12,16 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc getLayout(t: Tensor): OrderType {.noSideEffect,used.}=
-    if is_C_contiguous(t): return OrderType.rowMajor
-    elif is_F_contiguous(t): return OrderType.colMajor
-    else: raise newException(ValueError,"Operation not supported for this matrix. It has a non-contiguous layout")
-
-proc isTransposeNeeded(t: Tensor): TransposeType {.noSideEffect.}=
-    if is_C_contiguous(t): return TransposeType.noTranspose
-    elif is_F_contiguous(t): return TransposeType.transpose
-    else: raise newException(ValueError,"Operation not supported for this matrix. It has a non-contiguous layout")
-
 ############################
 ## Bounds checking functions
 proc check_matmat(a, b:Tensor) {.noSideEffect.}=
@@ -33,8 +23,6 @@ proc check_matmat(a, b:Tensor) {.noSideEffect.}=
                                         $(colA) &
                                         ", must be the same as the number of rows in the second matrix: " &
                                         $(rowB))
-    if a.offset != 0 or b.offset != 0:
-        raise newException(IndexError, "One of the Matrices has a non-0 offset")
 
 proc check_matvec(a, b:Tensor)  {.noSideEffect.}=
     let colA = a.shape[1]
@@ -45,20 +33,14 @@ proc check_matvec(a, b:Tensor)  {.noSideEffect.}=
                                         $(colA) &
                                         ", must be the same as the number of rows in the vector: " &
                                         $(rowB))
-    if a.offset != 0 or b.offset != 0:
-        raise newException(IndexError, "Matrice and/or Vector have a non-0 offset")
 
 proc check_dot_prod(a, b:Tensor)  {.noSideEffect.}=
     if a.rank != 1 or b.rank != 1: raise newException(ValueError, "Dot product is only supported for vectors (tensors of rank 1)")
     if a.shape != b.shape: raise newException(ValueError, "Vector should be the same length")
-    if a.offset != 0 or b.offset != 0:
-        raise newException(IndexError, "One of the Vectors has a non-0 offset")
 
 proc check_add(a, b:Tensor)  {.noSideEffect.}=
-    if a.strides != b.strides:
-        raise newException(ValueError, "Both Tensors should have the exact same shape and strides")
-    if a.offset != 0 or b.offset != 0:
-        raise newException(IndexError, "One of the Vectors has a non-0 offset")
+    if a.shape != b.shape:
+        raise newException(ValueError, "Both Tensors should have the same shape")
 
 
 ##########################################################################
@@ -80,27 +62,27 @@ proc `+`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): Tensor[Backend.Cpu,T] = #
     ## Tensor addition
     when compileOption("boundChecks"): check_add(a,b)
 
-    result.data = newSeq[T](a.data.len)
     result.shape = a.shape
-    result.strides = a.strides
+    result.strides = shape_to_strides(a.shape)
+    result.data = newSeq[T](a.shape.product)
     result.offset = 0
 
     var i = 0 ## TODO: use pairs/enumerate instead.
-    for ai, bi in zip(a.data, b.data):
+    for ai, bi in zip(a.values, b.values):
         result.data[i] = ai + bi
         inc i
 
 proc `-`*[T: SomeNumber](a, b: Tensor[Backend.Cpu,T]): Tensor[Backend.Cpu,T] {.noSideEffect.} =
-    ## Tensor substraction
+    ## Tensor addition
     when compileOption("boundChecks"): check_add(a,b)
 
-    result.data = newSeq[T](a.data.len)
     result.shape = a.shape
-    result.strides = a.strides
+    result.strides = shape_to_strides(result.shape)
+    result.data = newSeq[T](result.shape.product)
     result.offset = 0
 
     var i = 0 ## TODO: use pairs/enumerate instead.
-    for ai, bi in zip(a.data, b.data):
+    for ai, bi in zip(a.values, b.values):
         result.data[i] = ai - bi
         inc i
 
@@ -119,7 +101,7 @@ proc `/`*[T: SomeNumber](t: Tensor[Backend.Cpu,T], a: T): Tensor[Backend.Cpu,T] 
 ####################################################
 ## BLAS Level 2 and 3 (Matrix-Matrix, Matrix-Vector)
 
-template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr, b_tr: TransposeType): auto =
+template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T]): auto =
     ## Matrix to matrix Multiply for float tensors of rank 2
     let
         rowA = a.shape[0]
@@ -134,9 +116,17 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr, b_t
     result.strides = @[rowA, 1]
     result.offset = 0
 
-    let a_data = get_data_ptr(a)
-    let b_data = get_data_ptr(b)
+    ## TODO use a GEMM kernel that supports strided arrays like BLIS
+    ## That avoids copies and a conversion step
+    let cont_a = a.asContiguous
+    let cont_b = b.asContiguous
+
+    let a_data = get_data_ptr(cont_a)
+    let b_data = get_data_ptr(cont_b)
     let res_data = get_data_ptr(result)
+
+    let a_tr = getTransposeTarget(cont_a)
+    let b_tr = getTransposeTarget(cont_b)
 
     # General Matrix Multiply from nimblas.
     if a_tr == TransposeType.noTranspose and b_tr == TransposeType.noTranspose:
@@ -149,7 +139,7 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr, b_t
         gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a_data, rowA, b_data, rowB, 0, res_data, colB)
     else: raise newException(ValueError, "The transposes types: " & $a_tr & " or " & $b_tr & " is not supported")
 
-template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr: TransposeType): auto =
+template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T]): auto =
     ## Matrix to Vector Multiply for float tensors of rank 2 and 1
     let
         rowA = a.shape[0]
@@ -163,9 +153,15 @@ template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr: Tra
     result.strides = @[1]
     result.offset = 0
 
+    ## TODO use a GEMV kernel that supports strided arrays like BLIS
+    ## That avoids copies and a conversion step
+    let cont_a = a.asContiguous
+
     let a_data = get_data_ptr(a)
     let b_data = get_data_ptr(b)
     let res_data = get_data_ptr(result)
+
+    let a_tr = getTransposeTarget(cont_a)
 
     # General Matrix-Vector Multiply from nimblas.
     if a_tr == TransposeType.noTranspose: # A is rowMajor
@@ -173,12 +169,8 @@ template matvec_blas[T: SomeReal](a, b, result: Tensor[Backend.Cpu,T], a_tr: Tra
     else: # A is colMajor
         gemv(colMajor, noTranspose, rowA, rowB, 1, a_data, rowA, b_data, 1, 0, res_data, 1)
 
-template mul_dispatch[T: SomeReal](a, b, res: Tensor[Backend.Cpu,T], a_rank, b_rank: int, a_tr, b_tr: TransposeType): auto =
-    ## Dispatch for Matrix/Vector multiplication
-    if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, res, a_tr, b_tr)
-    elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result, a_tr)
-    else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
-
 proc `*`*[T: SomeReal](a, b: Tensor[Backend.Cpu,T]): Tensor[Backend.Cpu,T] {.noSideEffect.} =
     ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
-    mul_dispatch(a, b, result, a.rank, b.rank, a.isTransposeNeeded, b.isTransposeNeeded)
+    if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, result)
+    elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
+    else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")

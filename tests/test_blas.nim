@@ -133,13 +133,21 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
         check: tu_int + tv_int == expected_add.toTensor(Cpu)
         check: tu_int - tv_int == expected_sub.toTensor(Cpu)
 
-    test "Addition-Substraction - Bounds checking":
+    test "Addition-Substraction - slices":
         let a = @[@[1.0,2,3],@[4.0,5,6], @[7.0,8,9]]
         let ta = a.toTensor(Cpu)
         let ta_t = ta.transpose()
 
-        expect(ValueError):
-            discard ta + ta_t
+        check: ta[0..1, 0..1] + ta_t[0..1, 0..1] == [[2.0, 6], [6.0, 10]].toTensor(Cpu)
+        check: ta[1..2, 1..2] - ta_t[1..2, 1..2] == [[0.0, -2], [2.0, 0]].toTensor(Cpu)
+
+    test "Addition-Substraction - Bounds checking":
+        let a = [[1.0,2,3], [4.0,5,6], [7.0,8,9]]
+        let ta = a.toTensor(Cpu)
+        let ta_t = ta.transpose()
 
         expect(ValueError):
-            discard ta - ta_t
+            discard ta[1..2,1..2] + ta_t
+
+        expect(ValueError):
+            discard ta - ta_t[1..2,1..2]

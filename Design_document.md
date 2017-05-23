@@ -10,8 +10,9 @@ Either C or Fortran contiguous arrays are needed for BLAS optimization for Tenso
 * Universal: Any strides
 
 ## Pending issues
-* Slices have universal strides and cannot be use currently with BLAS operations.
+* Slices have universal strides and cannot be use currently with BLAS operations. (In progress)
 BLIS (A BLAS-like library with universal strided matrices) can be considered: https://github.com/flame/blis/wiki/FAQ
+* Code-style: spacing is inconsistent
 
 ## Memory considerations
 * Current CPUs cache line is 64 bytes. The Tensor data structure at 32 bytes has an ideal size.
@@ -43,6 +44,16 @@ In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-referen
 ## Performance consideration
 * Add OpenMP pragma for parallel computing on `fmap` and self-implemented BLAS operations.
     How to detect that OpenMP overhead is worth it?
+* Limit branching: use `when` instead of `if` for conditions that can be tested at compile-time
+
+## Coding-style
+* Prefer `when` to `if` for compile-time evaluation
+* Let the compiler do its job:
+    - proc everywhere, without the `inline` tag
+    - template if proc does not work or to access an object field
+    - macro as last resort to manipulate AST tree or rewrite code
+* Readibility, maintainability and performance are very important (in no particular order)
+* Use functional constructs like `map`, `scanr` instead of `for loop` when you don't need side-effects
 
 ## Features
 
@@ -52,9 +63,10 @@ In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-referen
 * How to implement non-contiguous matrix multiplication and matrix-vector multiplication.
     1. Cache oblivious and any stride generic matrix multiplication (see [Universal stride cache oblivious GEMM in Javascript](https://0fps.net/2013/05/28/cache-oblivious-array-operations/))
     2. Convert the tensor to C major layout with the strided iterator.
+  ==> In progress, if BLIS is available use BLIS otherwise convert to contiguous first.
 
 ## TODO
-1. Operations on Universal strides
+1. Operations on Universal strides (done for regular BLAS, BLIS integration in progress)
 2. GPU support: Cuda and Magma first. OpenCL when AMD gets its act together.
 3. BLAS operation fusion: `transpose(A) * B` or `Ax + y` should be fused in one operation.
 

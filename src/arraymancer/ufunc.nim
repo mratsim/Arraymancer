@@ -15,6 +15,7 @@
 
 proc fmap*[B: static[Backend],T, U](t: Tensor[B,T], g: T -> U): Tensor[B,U] {.noSideEffect.}=
   ## Map a unary function T -> U on Tensor[T]
+  ## We cannot just copy the input as result.data may have a different type from t.data
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset

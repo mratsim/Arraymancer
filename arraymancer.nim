@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros
+import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros, random
 include src/arraymancer/utils/functional,
         src/arraymancer/utils/nested_containers,
         src/arraymancer/utils/ast_utils,

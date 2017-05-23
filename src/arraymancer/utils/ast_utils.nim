@@ -26,10 +26,12 @@ proc isAllInt(slice_args: NimNode): bool {. compileTime .} =
   ## Compile-time type checking
   result = true
   for child in slice_args:
+    # We don't use early return here as everything is evaluated at compile-time,
+    # has no run-time impact and there are very few slice_args
     result = result and isInt(child)
 
-proc pop(tree: var NimNode): NimNode {.compileTime.}=
-    ## varargs[untyped] consumes all arguments so the actual value should be popped
-    ## https://github.com/nim-lang/Nim/issues/5855
-    result = tree[tree.len-1]
-    tree.del(tree.len-1)
+proc pop(tree: var NimNode): NimNode {. compileTime .}=
+  ## varargs[untyped] consumes all arguments so the actual value should be popped
+  ## https://github.com/nim-lang/Nim/issues/5855
+  result = tree[tree.len-1]
+  tree.del(tree.len-1)

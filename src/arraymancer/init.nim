@@ -21,44 +21,44 @@ proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect.}=
     raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
 
 proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
-    ## Creates a new Tensor
-    ## Input:
-    ##      - Shape of the Tensor
-    ##      - Type of its elements
-    ##      - Backend
+  ## Creates a new Tensor
+  ## Input:
+  ##      - Shape of the Tensor
+  ##      - Type of its elements
+  ##      - Backend
 
-    let strides = shape_to_strides(shape)
+  let strides = shape_to_strides(shape)
 
-    result.shape = shape
-    result.strides = strides
-    result.data = newSeq[T](shape.product)
-    result.offset = 0
+  result.shape = shape
+  result.strides = strides
+  result.data = newSeq[T](shape.product)
+  result.offset = 0
 
 proc toTensor*(s:openarray, B: static[Backend]): auto {.noSideEffect.} =
-    ## Convert an openarray to a Tensor
-    ## TODO: have Backend.Cpu as default. pending https://github.com/nim-lang/Nim/issues/5864
-    let shape = s.shape
-    let data = toSeq(flatIter(s))
+  ## Convert an openarray to a Tensor
+  ## TODO: have Backend.Cpu as default. pending https://github.com/nim-lang/Nim/issues/5864
+  let shape = s.shape
+  let data = toSeq(flatIter(s))
 
-    when compileOption("boundChecks"): check_nested_elements(shape, data.len)
+  when compileOption("boundChecks"): check_nested_elements(shape, data.len)
 
-    result = newTensor(shape, type(data[0]), B)
-    result.data = data
+  result = newTensor(shape, type(data[0]), B)
+  result.data = data
 
 proc fromSeq*[U](s: seq[U], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect, deprecated.} =
-    ## Create a tensor from a nested sequence
-    # If sequence is deeply nested Nim cannot detect the very basic type hence U and T in the proc declaration.
-    ## DEPRECATED: use toTensor instead
-    let shape = s.shape
-    let flat = s.flatten
+  ## Create a tensor from a nested sequence
+  # If sequence is deeply nested Nim cannot detect the very basic type hence U and T in the proc declaration.
+  ## DEPRECATED: use toTensor instead
+  let shape = s.shape
+  let flat = s.flatten
 
-    when compileOption("boundChecks"):
-      if (shape.product != flat.len):
+  when compileOption("boundChecks"):
+    if (shape.product != flat.len):
         raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
 
-    let strides = shape_to_strides(shape)
+  let strides = shape_to_strides(shape)
 
-    result.shape = shape
-    result.strides = strides
-    result.data = flat
-    result.offset = 0
+  result.shape = shape
+  result.strides = strides
+  result.data = flat
+  result.offset = 0

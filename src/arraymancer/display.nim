@@ -13,35 +13,34 @@
 # limitations under the License.
 
 proc bounds_display(t: Tensor,
-                        idx_data: tuple[val: string,
-                                  idx: int]
-                        ): string {.noSideEffect.}=
-    ## Internal routine, compare an index with the strides of a Tensor
-    ## to check beginning and end of lines
-    ## Add the delimiter "|" and line breaks at beginning and end of lines
-    let (val,idx) = idx_data
-    let s = t.shape.reversed
+          idx_data: tuple[val: string, idx: int]
+          ): string {.noSideEffect.}=
+  ## Internal routine, compare an index with the strides of a Tensor
+  ## to check beginning and end of lines
+  ## Add the delimiter "|" and line breaks at beginning and end of lines
+  let (val,idx) = idx_data
+  let s = t.shape.reversed
 
-    for i,j in s[0 .. ^2]: # We don't take the last element (the row in C convention)
-        if idx mod j == 0:
-            return $val & "|\n".repeat(s.high - i)
-        if idx mod j == 1:
-            return "|" & $val & "\t"
-    return $val & "\t"
+  for i,j in s[0 .. ^2]: # We don't take the last element (the row in C convention)
+    if idx mod j == 0:
+      return $val & "|\n".repeat(s.high - i)
+    if idx mod j == 1:
+      return "|" & $val & "\t"
+  return $val & "\t"
 
 proc `$`*[B,T](t: Tensor[B,T]): string {.noSideEffect.} =
-    ## Display a tensor
+  ## Display a tensor
 
-    # Add a position index to each value in the Tensor.
-    var indexed_data: seq[(string,int)] = @[]
-    var i = 1
-    for value in t:
-        indexed_data.add(($value,i))
-        i += 1
+  # Add a position index to each value in the Tensor.
+  var indexed_data: seq[(string,int)] = @[]
+  var i = 1
+  for value in t:
+    indexed_data.add(($value,i))
+    i += 1
 
-    # Create a closure to apply the boundaries transformation for the specific input
-    proc curry_bounds(tup: (string,int)): string {.noSideEffect.}= t.bounds_display(tup)
+  # Create a closure to apply the boundaries transformation for the specific input
+  proc curry_bounds(tup: (string,int)): string {.noSideEffect.}= t.bounds_display(tup)
 
-    let str_tensor = indexed_data.concatMap(curry_bounds)
-    let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & $B & "\""
-    return desc & "\n" & str_tensor
+  let str_tensor = indexed_data.concatMap(curry_bounds)
+  let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & $B & "\""
+  return desc & "\n" & str_tensor

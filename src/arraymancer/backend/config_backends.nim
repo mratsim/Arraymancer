@@ -25,7 +25,7 @@ when defined(blis):
 
 else:
   static: echo "Consider adding BLIS from \"https://github.com/flame/blis\" " &
-                  "and compile Arraymancer with \"-d:blis\" " &
-                  "for operations on array slices without copy. " &
-                  "OSX users can install it through Homebrew."
+          "and compile Arraymancer with \"-d:blis\" " &
+          "for operations on array slices without copy. " &
+          "OSX users can install it through Homebrew."
 

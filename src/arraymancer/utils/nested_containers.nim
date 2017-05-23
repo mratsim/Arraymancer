@@ -16,24 +16,24 @@
 ## Tools to manipulate deep nested containers
 
 proc shape[T](s: openarray[T], parent_shape: seq[int] = @[]): seq[int] {.noSideEffect.}=
-    ## Helper function to get the shape of nested arrays/sequences
-    ## C convention. Last index is the fastest changing (columns in 2D, depth in 3D) - Rows (slowest), Columns, Depth (fastest)
-    ## The second argument "shape" is used for recursive call on nested arrays/sequences
-    # Dimension check is using only the first nested element so further checking
-    # must be one to confirm that the total number of elements match the shape.
-    result = parent_shape & s.len
-    when (T is seq|array):
-      result = shape(s[0], result)
+  ## Helper function to get the shape of nested arrays/sequences
+  ## C convention. Last index is the fastest changing (columns in 2D, depth in 3D) - Rows (slowest), Columns, Depth (fastest)
+  ## The second argument "shape" is used for recursive call on nested arrays/sequences
+  # Dimension check is using only the first nested element so further checking
+  # must be one to confirm that the total number of elements match the shape.
+  result = parent_shape & s.len
+  when (T is seq|array):
+    result = shape(s[0], result)
 
 iterator flatIter[T](s: openarray[T]): auto {.noSideEffect.}=
-    ## Inline iterator on any-depth seq or array
-    ## Returns values in order
-    for item in s:
-        when item is array|seq:
-            for subitem in flatIter(item):
-                yield subitem
-        else:
-            yield item
+  ## Inline iterator on any-depth seq or array
+  ## Returns values in order
+  for item in s:
+    when item is array|seq:
+      for subitem in flatIter(item):
+        yield subitem
+    else:
+      yield item
 
 ## Flatten any-depth nested sequences.
 # TODO support for array/openarray is pending https://github.com/nim-lang/Nim/issues/2652

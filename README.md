@@ -37,12 +37,10 @@ Arraymancer's tensors currently support the following:
   * Tensor-Tensor addition, substraction
   * By scalar multiplication, addition, substraction and division
 
-Limitations BLAS and Tensor-Tensor operations are **only available for Tensors** and transposed Tensors for now.
-**Slices cannot be used for now.**
+Limitations BLAS and Tensor-Tensor operations are currently **only available for floats**. `Int32` and lower can be converted to `float64` without precision loss.
+Unfortunaly there is no optimized integer matrices library currently so I will probably roll up my own solution.
 
-Check syntax examples in the test folder.
 
-## Examples
 ```Nim
 import math, ../arraymancer, future
 

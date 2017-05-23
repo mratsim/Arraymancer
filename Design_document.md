@@ -10,15 +10,14 @@ Either C or Fortran contiguous arrays are needed for BLAS optimization for Tenso
 * Universal: Any strides
 
 ## Pending issues
-* Slices have universal strides and cannot be use currently with BLAS operations. (In progress)
-BLIS (A BLAS-like library with universal strided matrices) can be considered: https://github.com/flame/blis/wiki/FAQ
-* Code-style: spacing is inconsistent
+* There is no matrix multiplications and Matrix-Vector multiplication for integers.
+  You can convert them to `float64` before and then use floating-point BLAS (will cover `int32` without precision loss).
 
 ## Memory considerations
 * Current CPUs cache line is 64 bytes. The Tensor data structure at 32 bytes has an ideal size.
-However, every time we retrieve its shape and strides there is a pointer resolution + bounds checking for seq with constant length. See Data structure considerations section
+However, every time we retrieve its shape and strides there is a pointer resolution + bounds checking for seq with constant length. See Data structure considerations section.
 
-* Most copy operations (from nested arrays/seq, for slice assignments from nested arrays/seq or Tensor) uses iterators and avoid intermediate representation)
+* Most copy operations (from nested arrays/seq, for slice assignments from nested arrays/seq or Tensor) uses iterators and avoid intermediate representation.
 
 ## Data structure considerations
 
@@ -44,7 +43,7 @@ In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-referen
 ## Performance consideration
 * Add OpenMP pragma for parallel computing on `fmap` and self-implemented BLAS operations.
     How to detect that OpenMP overhead is worth it?
-* Limit branching: use `when` instead of `if` for conditions that can be tested at compile-time
+* Limit branching: use `when` or static dispatch instead of `if` for conditions that can be tested at compile-time
 
 ## Coding-style
 * Prefer `when` to `if` for compile-time evaluation
@@ -60,15 +59,14 @@ In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-referen
 * How to implement integer matrix multiplication and matrix-vector multiplication.
     1. Convert to float64, use BLAS, convert back to int. No issue for int32 has them all. Int64 may lose some precision.
     2. Implement a cache-oblivious matrix multiplication. Implementation in [Julia](https://github.com/JuliaLang/julia/blob/master/base/linalg/matmul.jl#L490). [Paper](http://ocw.raf.edu.rs/courses/electrical-engineering-and-computer-science/6-895-theory-of-parallel-systems-sma-5509-fall-2003/readings/cach_oblvs_thsis.pdf).
-* How to implement non-contiguous matrix multiplication and matrix-vector multiplication.
-    1. Cache oblivious and any stride generic matrix multiplication (see [Universal stride cache oblivious GEMM in Javascript](https://0fps.net/2013/05/28/cache-oblivious-array-operations/))
-    2. Convert the tensor to C major layout with the strided iterator.
-  ==> In progress, if BLIS is available use BLIS otherwise convert to contiguous first.
+
 
 ## TODO
-1. Operations on Universal strides (done for regular BLAS, BLIS integration in progress)
-2. GPU support: Cuda and Magma first. OpenCL when AMD gets its act together.
-3. BLAS operation fusion: `transpose(A) * B` or `Ax + y` should be fused in one operation.
+1. Array creation utilities (zeros, ones, zeros_like, random ...)
+2. Axis iterators
+3. GPU support: Cuda and Magma first. OpenCL when AMD gets its act together.
+4. BLAS operation fusion: `transpose(A) * B` or `Ax + y` should be fused in one operation.
+5. Implement GEMM and GEMV for integers
 
 999. (Needs thinking) Support sparse matrices. There is Magma and CuSparse for GPU. What to use? Interface should be similar to BLAS and should compile on ARM/embedded devices like Jetson TX1.
 
@@ -110,4 +108,5 @@ Perf note: from a perf point of view, (integer ?) dot product is vectorized on C
 * Mir ndslice and Mir GLAS
 * OpenBLAS, Magma, libelemental, Eigen
 * BLIS / ulmBLAS
-* scijs/ndarray and scijs/cwise (especially universal stride cache oblivious ndarray)
+* Scijs/ndarray and scijs/cwise (especially universal stride cache oblivious ndarray)
+* Cuda-on-cl

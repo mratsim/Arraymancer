@@ -16,6 +16,7 @@ import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros
 include src/arraymancer/utils/functional,
         src/arraymancer/utils/nested_containers,
         src/arraymancer/utils/ast_utils,
+        src/arraymancer/backend/config_backends,
         src/arraymancer/data_structure,
         src/arraymancer/init,
         src/arraymancer/accessors,

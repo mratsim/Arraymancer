@@ -17,6 +17,7 @@ import unittest, future
 
 suite "BLAS (Basic Linear Algebra Subprograms)":
     test "GEMM - General Matrix to Matrix Multiplication":
+        ## TODO: test with slices
         let a = @[@[1.0,2,3],@[4.0,5,6]]
         let b = @[@[7.0, 8],@[9.0, 10],@[11.0, 12]]
 
@@ -38,6 +39,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
            discard tc * tc
 
     test "GEMV - General Matrix to Vector Multiplication":
+        ## TODO: test with slices
         let d_int = @[@[1,-1,2],@[0,-3,1]]
         let e_int = @[2, 1, 0]
         let tde_expected_int = @[1, -3]
@@ -91,6 +93,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
         check: td * te == transpose(tdt) * te
 
     test "Scalar/dot product":
+        ## TODO: test with slices
         let u_int = @[1, 3, -5]
         let v_int = @[4, -2, -1]
 

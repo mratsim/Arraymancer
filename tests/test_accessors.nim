@@ -18,11 +18,11 @@ import unittest, math
 
 suite "Accessing and setting tensor values":
     test "Accessing and setting a single value":
-        var a = newTensor(@[2,3,4], int, Backend.Cpu)
+        var a = zeros(@[2,3,4], int, Backend.Cpu)
         a[1,2,2] = 122
         check: a[1,2,2] == 122
 
-        var b = newTensor(@[3,4], int, Backend.Cpu)
+        var b = zeros(@[3,4], int, Backend.Cpu)
         b[1,2] = 12
         check: b[1,2] == 12
         b[0,0] = 999

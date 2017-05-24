@@ -12,14 +12,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-proc fmap*[B: static[Backend],T, U](t: Tensor[B,T], g: T -> U): Tensor[B,U] {.noSideEffect.}=
-  ## Map a unary function T -> U on Tensor[T]
-  ## We cannot just copy the input as result.data may have a different type from t.data
+proc astype*[B: static[Backend],T, U](t: Tensor[B,T], typ: typedesc[U]): Tensor[B,U] {.noSideEffect.}=
+  ## Apply type conversion on the whole tensor
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset
-  result.data = t.data.map(g)
+  result.data = t.data.map(x => x.U)
+
+proc fmap*[B: static[Backend],T, U](t: Tensor[B,T], g: T -> U): Tensor[B,U] {.noSideEffect.}=
+  ## Map a unary function T -> U on Tensor[T]
+
+  ## We use this opportunity to reshape the data internally
+  ## Iteration should be almost as fast for contiguous non-sliced Tensors
+  ## But may avoid a lot of unnecessary computations on slices
+  result.shape = t.shape
+  result.strides = shape_to_strides(result.shape)
+  result.offset = 0
+
+  result.data = newSeq[U](result.shape.product)
+  var i = 0 ## TODO: use pairs/enumerate instead.
+  for val in t:
+    result.data[i] = g(val)
+    inc i
 
 template makeUniversal*(func_name: untyped) =
   ## Lift an unary function into an exported universal function.

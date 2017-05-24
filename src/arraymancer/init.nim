@@ -21,14 +21,15 @@ proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect.}=
     raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
 
 
-template tensor[B,T](shape: seq[int], result: Tensor[B,T]): untyped =
-  let strides = shape_to_strides(shape)
+template tensor[B,T](shape: openarray[int], result: Tensor[B,T]): untyped =
+  let seq_shape = @shape
+  let strides = shape_to_strides(seq_shape)
 
-  result.shape = shape
+  result.shape = seq_shape
   result.strides = strides
   result.offset = 0
 
-proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
+proc newTensor*(shape: openarray[int], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
   ## Creates a new Tensor
   ## Input:
   ##      - Shape of the Tensor
@@ -39,7 +40,7 @@ proc newTensor*(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] {
   ##        the default type value (0 for numeric types)
 
   tensor(shape, result)
-  result.data = newSeq[T](shape.product)
+  result.data = newSeq[T](result.shape.product)
 
 proc emptyTensor(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect, inline.} =
   ## Creates an empty Tensor
@@ -58,7 +59,7 @@ proc toTensor*(s:openarray, B: static[Backend]): auto {.noSideEffect.} =
   result.data = data
 
 ## TODO add tests for zeros, ones and randomTensor
-proc zeros*[T: SomeNumber](shape: seq[int], typ: typedesc[T], B: static[Backend]): Tensor[B,T] {.noSideEffect, inline.} =
+proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], B: static[Backend]): Tensor[B,T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
   ## Input:
   ##      - Shape of the Tensor
@@ -78,7 +79,7 @@ proc zeros_like*[B: static[Backend], T: SomeNumber](t: Tensor[B,T]): Tensor[B,T]
   ##      - An zero-ed Tensor of the same shape
   return zeros(t.shape, T, B)
 
-proc ones*[T: SomeNumber](shape: seq[int], typ: typedesc[T], B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
+proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -98,24 +99,24 @@ proc ones_like*[B: static[Backend], T: SomeNumber](t: Tensor[B,T]): Tensor[B,T] 
   ##      - A Tensor of one of the input shape
   return ones(t.shape, T, B)
 
-template randomTensorT(shape: seq[int], max_or_range: typed, seed: int): untyped =
+template randomTensorT(shape: openarray[int], max_or_range: typed, seed: int): untyped =
   let strides = shape_to_strides(shape)
 
-  result.shape = shape
+  result.shape = @shape
   result.strides = strides
   result.offset = 0
 
   randomize(seed)
-  result.data = newSeqWith(shape.product, random(max_or_range))
+  result.data = newSeqWith(result.shape.product, random(max_or_range))
 
-proc randomTensor*(shape: seq[int], max: float, seed: int, B: static[Backend]): Tensor[B,float] =
+proc randomTensor*(shape: openarray[int], max: float, seed: int, B: static[Backend]): Tensor[B,float] =
   ## Creates a new float Tensor filled with values between 0 and max
   randomTensorT(shape, max, seed)
 
-proc randomTensor*(shape: seq[int], max: int, seed: int, B: static[Backend]): Tensor[B,int] =
+proc randomTensor*(shape: openarray[int], max: int, seed: int, B: static[Backend]): Tensor[B,int] =
   ## Creates a new int Tensor filled with values between 0 and max-1
   randomTensorT(shape, max, seed)
 
-proc randomTensor*[T](shape: seq[int], slice: Slice[T], seed: int, B: static[Backend]): Tensor[B,T] =
+proc randomTensor*[T](shape: openarray[int], slice: Slice[T], seed: int, B: static[Backend]): Tensor[B,T] =
   ## Creates a new int Tensor filled with values in the Slice range.
   randomTensorT(shape, slice, seed)

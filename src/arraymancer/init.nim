@@ -87,7 +87,7 @@ proc ones*[T: SomeNumber](shape: seq[int], typ: typedesc[T], B: static[Backend])
   ## Result:
   ##      - A Tensor of one of the input shape
   tensor(shape, result)
-  result.data = newSeqWith(shape.product, 1)
+  result.data = newSeqWith(shape.product, 1.T)
 
 proc ones_like*[B: static[Backend], T: SomeNumber](t: Tensor[B,T]): Tensor[B,T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input

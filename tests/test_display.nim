@@ -17,33 +17,33 @@ import math, unittest
 
 
 suite "Displaying tensors":
-    test "Display compiles":
-        const
-            a = @[1, 2, 3, 4, 5]
-            b = @[1, 2, 3, 4, 5]
+  test "Display compiles":
+    const
+      a = @[1, 2, 3, 4, 5]
+      b = @[1, 2, 3, 4, 5]
 
-        var
-            vandermonde: seq[seq[int]]
-            row: seq[int]
+    var
+      vandermonde: seq[seq[int]]
+      row: seq[int]
 
-        vandermonde = newSeq[seq[int]]()
+    vandermonde = newSeq[seq[int]]()
 
-        for i, aa in a:
-            row = newSeq[int]()
-            vandermonde.add(row)
-            for j, bb in b:
-                vandermonde[i].add(aa^bb)
+    for i, aa in a:
+      row = newSeq[int]()
+      vandermonde.add(row)
+      for j, bb in b:
+        vandermonde[i].add(aa^bb)
 
-        # @[@[1, 1, 1, 1, 1], @[2, 4, 8, 16, 32], @[3, 9, 27, 81, 243], @[4, 16, 64, 256, 1024], @[5, 25, 125, 625, 3125]]
+    # @[@[1, 1, 1, 1, 1], @[2, 4, 8, 16, 32], @[3, 9, 27, 81, 243], @[4, 16, 64, 256, 1024], @[5, 25, 125, 625, 3125]]
 
-        let t_van = vandermonde.toTensor(Cpu)
-        when compiles(echo t_van): check: true
+    let t_van = vandermonde.toTensor(Cpu)
+    when compiles(echo t_van): check: true
 
-        # Tensor of shape 5x5 of type "int" on backend "Cpu"
-        # |1      1       1       1       1|
-        # |2      4       8       16      32|
-        # |3      9       27      81      243|
-        # |4      16      64      256     1024|
-        # |5      25      125     625     3125|
-        
-        # TODO: Better display tests
+    # Tensor of shape 5x5 of type "int" on backend "Cpu"
+    # |1      1       1       1       1|
+    # |2      4       8       16      32|
+    # |3      9       27      81      243|
+    # |4      16      64      256     1024|
+    # |5      25      125     625     3125|
+    
+    # TODO: Better display tests

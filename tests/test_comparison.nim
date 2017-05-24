@@ -17,34 +17,34 @@ import unittest, math
 
 
 suite "Testing tensor comparison":
-    test "Testing for [1..^2, 1..3] slicing":
-        const
-            a = @[1, 2, 3, 4, 5]
-            b = @[1, 2, 3, 4, 5]
+  test "Testing for [1..^2, 1..3] slicing":
+    const
+      a = @[1, 2, 3, 4, 5]
+      b = @[1, 2, 3, 4, 5]
 
-        var
-            vandermonde: seq[seq[int]]
-            row: seq[int]
+    var
+      vandermonde: seq[seq[int]]
+      row: seq[int]
 
-        vandermonde = newSeq[seq[int]]()
+    vandermonde = newSeq[seq[int]]()
 
-        for i, aa in a:
-            row = newSeq[int]()
-            vandermonde.add(row)
-            for j, bb in b:
-                vandermonde[i].add(aa^bb)
+    for i, aa in a:
+      row = newSeq[int]()
+      vandermonde.add(row)
+      for j, bb in b:
+        vandermonde[i].add(aa^bb)
 
-        let t_van = vandermonde.toTensor(Cpu)
+    let t_van = vandermonde.toTensor(Cpu)
 
-        # Tensor of shape 5x5 of type "int" on backend "Cpu"
-        # |1      1       1       1       1|
-        # |2      4       8       16      32|
-        # |3      9       27      81      243|
-        # |4      16      64      256     1024|
-        # |5      25      125     625     3125|
+    # Tensor of shape 5x5 of type "int" on backend "Cpu"
+    # |1      1       1       1       1|
+    # |2      4       8       16      32|
+    # |3      9       27      81      243|
+    # |4      16      64      256     1024|
+    # |5      25      125     625     3125|
 
-        let test = @[@[4, 8, 16], @[9, 27, 81], @[16, 64, 256]]
-        let t_test = test.toTensor(Cpu)
-        
-        check: t_van[1..^2,1..3] == t_test
-        check: t_van[1..3,1..3] == t_test
+    let test = @[@[4, 8, 16], @[9, 27, 81], @[16, 64, 256]]
+    let t_test = test.toTensor(Cpu)
+    
+    check: t_van[1..^2,1..3] == t_test
+    check: t_van[1..3,1..3] == t_test

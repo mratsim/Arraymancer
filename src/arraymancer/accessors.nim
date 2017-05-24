@@ -94,4 +94,14 @@ proc real_indices(t: Tensor): auto {.noSideEffect.}=
   ## For loop will not use this one. It must be assigned before use.
   return iterator(): int = t.strided_iteration(IterKind.MemOffset)
 
+iterator axis*[B,T](t: Tensor[B,T], axis: int): Tensor[B,T] {.noSideEffect.}=
+  ## Iterates over an axis
 
+  var out_t = t
+  let axis_len = t.shape[axis]
+  let axis_stride = t.strides[axis]
+  out_t.shape[axis] = 1
+
+  for _ in 0..<axis_len:
+    yield out_t
+    out_t.offset += axis_stride

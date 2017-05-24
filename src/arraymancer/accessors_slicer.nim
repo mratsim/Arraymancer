@@ -310,6 +310,8 @@ proc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T]
 
     # Bounds checking
     when compileOption("boundChecks"): check_steps(a,b, slice.step)
+    ## TODO bounds-check the offset or leave the default?
+    ## The default only checks when we retrieve the value
 
     # Compute offset:
     result.offset += a * result.strides[i]

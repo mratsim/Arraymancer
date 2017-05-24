@@ -18,6 +18,7 @@ proc bounds_display(t: Tensor,
   ## Internal routine, compare an index with the strides of a Tensor
   ## to check beginning and end of lines
   ## Add the delimiter "|" and line breaks at beginning and end of lines
+  ## TODO: improve 3+D-tensors display
   let (val,idx) = idx_data
   let s = t.shape.reversed
 

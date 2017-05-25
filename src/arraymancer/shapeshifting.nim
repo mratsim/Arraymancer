@@ -28,9 +28,9 @@ proc asContiguous*[B,T](t: Tensor[B,T]): Tensor[B,T] {.noSideEffect.}=
   if t.isContiguous: return t
 
   result.shape = t.shape
-  result.strides = shape_to_strides(t.shape)
+  result.strides = shape_to_strides(result.shape)
   result.offset = 0
-  result.data = newSeq[T](t.shape.product)
+  result.data = newSeq[T](result.shape.product)
 
   var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
   for val in t:

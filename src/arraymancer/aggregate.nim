@@ -14,15 +14,28 @@
 
 proc sum*[B; T: SomeNumber](t: Tensor[B,T]): T =
   # Compute the sum of all elements of T
+  # TODO tests
   result = 0.T
   for val in t:
     result += val
 
 proc sum*[B; T: SomeNumber](t: Tensor[B,T], axis: int): Tensor[B, T] =
   # Compute the sum of all elements of T along an axis
+  # TODO tests
   var agg_shape = t.shape
   agg_shape[axis] = 1
 
   result = zeros(agg_shape, T, B)
   for t_slice in t.axis(axis):
     result += t_slice
+
+proc mean*[B; T: SomeReal](t: Tensor[B,T]): T =
+  # Compute the mean of all elements of T
+  # TODO tests
+  return t.sum / t.shape.product.T
+
+proc mean*[B; T: SomeReal](t: Tensor[B,T], axis: int): Tensor[B, T] =
+  # Compute the mean of T along an axis
+  # TODO tests
+  let n = t.shape[axis]
+  return t.sum(axis) / n.T

@@ -25,4 +25,4 @@ include src/arraymancer/utils/functional,
         src/arraymancer/display,
         src/arraymancer/ufunc,
         src/arraymancer/shapeshifting,
-        src/arraymancer/blas
+        src/arraymancer/operator_blas

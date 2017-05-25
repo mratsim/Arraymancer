@@ -70,6 +70,14 @@ proc `+`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   for i, ai, bi in enumerate_zip(a.values, b.values):
     result.data[i] = ai + bi
 
+proc `+=`*[T: SomeNumber](a: var Tensor[Cpu,T], b: Tensor[Cpu, T]) {.noSideEffect.} =
+  ## Tensor in-place addition
+  when compileOption("boundChecks"): check_add(a,b)
+
+  ## TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
+  for a_idx, b_val in zip(a.real_indices, b.values):
+    a.data[a_idx] += b_val
+
 proc `-`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   ## Tensor addition
   when compileOption("boundChecks"): check_add(a,b)
@@ -81,6 +89,14 @@ proc `-`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
 
   for i, ai, bi in enumerate_zip(a.values, b.values):
     result.data[i] = ai - bi
+
+proc `-=`*[T: SomeNumber](a: var Tensor[Cpu,T], b: Tensor[Cpu, T]) {.noSideEffect.} =
+  ## Tensor in-place addition
+  when compileOption("boundChecks"): check_add(a,b)
+
+  ## TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
+  for a_idx, b_val in zip(a.real_indices, b.values):
+    a.data[a_idx] -= b_val
 
 proc `*`*[T: SomeNumber](a: T, t: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   proc f(x: T): T = a * x

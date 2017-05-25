@@ -22,11 +22,8 @@ proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect.}=
 
 
 template tensor[B,T](shape: openarray[int], result: Tensor[B,T]): untyped =
-  let seq_shape = @shape
-  let strides = shape_to_strides(seq_shape)
-
-  result.shape = seq_shape
-  result.strides = strides
+  result.shape = @shape
+  result.strides = shape_to_strides(result.shape)
   result.offset = 0
 
 proc newTensor*(shape: openarray[int], T: typedesc, B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
@@ -100,10 +97,8 @@ proc ones_like*[B: static[Backend], T: SomeNumber](t: Tensor[B,T]): Tensor[B,T] 
   return ones(t.shape, T, B)
 
 template randomTensorT(shape: openarray[int], max_or_range: typed, seed: int): untyped =
-  let strides = shape_to_strides(shape)
-
   result.shape = @shape
-  result.strides = strides
+  result.strides = shape_to_strides(result.shape)
   result.offset = 0
 
   randomize(seed)

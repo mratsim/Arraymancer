@@ -22,6 +22,8 @@ However, every time we retrieve its shape and strides there is a pointer resolut
 
 * `slicerMut` can be implemented with shallow-copy to avoid extra memory copies. This is done for single value assignments but not for assignment from Tensor or openarray: https://forum.nim-lang.org/t/2971 and https://forum.nim-lang.org/t/2972
 
+* For mean / stdev, should I implement the numerically stable but slow Welford algorithm?
+
 ## Data structure considerations
 
 * Shape and strides have a static size known at runtime. They might be best implemented as VLAs (Variable Length Array) from an indirection point of view. Inconvenient: 2 tensors will not fit in a cache line.

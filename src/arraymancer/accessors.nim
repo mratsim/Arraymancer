@@ -104,7 +104,9 @@ proc real_indices(t: Tensor): auto {.noSideEffect.}=
 iterator axis*[B,T](t: Tensor[B,T], axis: int): Tensor[B,T] {.noSideEffect.}=
   ## Iterates over an axis
 
-  var out_t = t
+  var out_t = shallowCopy(t) # Note: .data of yielded Tensors will still have a different memory address
+                             # TODO: tests
+
   let axis_len = t.shape[axis]
   let axis_stride = t.strides[axis]
   out_t.shape[axis] = 1

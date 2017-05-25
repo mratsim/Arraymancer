@@ -364,10 +364,10 @@ proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T
   for old_val in sliced.mitems:
     old_val = val
 
-proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: openarray) =
+proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: openarray) {.noSideEffect.}=
   ## Assign value from openarrays
   ## The openarray must have the same shape as the slice
-  let sliced = t.slicer(slices)
+  let sliced = t.shallowSlicer(slices)
   when compileOption("boundChecks"):
     check_shape(sliced, oa)
 
@@ -385,7 +385,7 @@ proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: op
 
 proc slicerMut*[B1, B2, T](t: var Tensor[B1, T], slices: varargs[SteppedSlice], t2: Tensor[B2, T]) {.noSideEffect.}=
   ## Assign the value to the whole slice
-  let sliced = t.slicer(slices)
+  let sliced = t.shallowSlicer(slices)
 
   when compileOption("boundChecks"): check_shape(sliced, t2)
 

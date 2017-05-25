@@ -96,22 +96,24 @@ proc ones_like*[B: static[Backend], T: SomeNumber](t: Tensor[B,T]): Tensor[B,T] 
   ##      - A Tensor of one of the input shape
   return ones(t.shape, T, B)
 
-template randomTensorT(shape: openarray[int], max_or_range: typed, seed: int): untyped =
+template randomTensorT(shape: openarray[int], max_or_range: typed): untyped =
   result.shape = @shape
   result.strides = shape_to_strides(result.shape)
   result.offset = 0
 
-  randomize(seed)
   result.data = newSeqWith(result.shape.product, random(max_or_range))
 
-proc randomTensor*(shape: openarray[int], max: float, seed: int, B: static[Backend]): Tensor[B,float] =
+proc randomTensor*(shape: openarray[int], max: float, B: static[Backend]): Tensor[B,float] =
   ## Creates a new float Tensor filled with values between 0 and max
-  randomTensorT(shape, max, seed)
+  ## Random seed can be set by importing random and `randomize(seed)`
+  randomTensorT(shape, max)
 
-proc randomTensor*(shape: openarray[int], max: int, seed: int, B: static[Backend]): Tensor[B,int] =
+proc randomTensor*(shape: openarray[int], max: int, B: static[Backend]): Tensor[B,int] =
   ## Creates a new int Tensor filled with values between 0 and max-1
-  randomTensorT(shape, max, seed)
+  ## Random seed can be set by importing random and `randomize(seed)`
+  randomTensorT(shape, max)
 
-proc randomTensor*[T](shape: openarray[int], slice: Slice[T], seed: int, B: static[Backend]): Tensor[B,T] =
+proc randomTensor*[T](shape: openarray[int], slice: Slice[T], B: static[Backend]): Tensor[B,T] =
   ## Creates a new int Tensor filled with values in the Slice range.
-  randomTensorT(shape, slice, seed)
+  ## Random seed can be set by importing random and `randomize(seed)`
+  randomTensorT(shape, slice)

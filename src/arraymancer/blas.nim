@@ -58,7 +58,7 @@ proc `.*`*[T: SomeInteger](a, b: Tensor[Cpu,T]): T {.noSideEffect.} =
   for ai, bi in zip(a.values, b.values):
     result += ai * bi
 
-proc `+`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] = # {.noSideEffect.} =
+proc `+`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   ## Tensor addition
   when compileOption("boundChecks"): check_add(a,b)
 

@@ -44,6 +44,17 @@ In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-referen
 * Add OpenMP pragma for parallel computing on `fmap` and self-implemented BLAS operations.
     How to detect that OpenMP overhead is worth it?
 * Limit branching: use `when` or static dispatch instead of `if` for conditions that can be tested at compile-time
+* `SlicerMut` is implemented in a readable but inefficient way
+```Nim
+proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
+  ## Assign the value to the whole slice
+  let sliced = t.slicer(slices)
+  for real_idx in sliced.real_indices:
+    t.data[real_idx] = val
+````
+  Instead we could save the current shape/strides of t, use `slicer` then use `mitems` to directly assign the value
+  and then reverting shape/strides. That would avoid recomputing t.data[real_idx] at the price of copying shape/stride twice
+  and readability.
 
 ## Coding-style
 * Prefer `when` to `if` for compile-time evaluation

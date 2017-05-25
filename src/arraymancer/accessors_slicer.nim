@@ -346,6 +346,7 @@ macro `[]`*[B, T](t: Tensor[B,T], args: varargs[untyped]): untyped =
 
 proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
   ## Assign the value to the whole slice
+  ## See perf consideration in design document of not using `mitems` here
   let sliced = t.slicer(slices)
   for real_idx in sliced.real_indices:
     t.data[real_idx] = val

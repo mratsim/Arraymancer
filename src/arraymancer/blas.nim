@@ -67,10 +67,8 @@ proc `+`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] = # {.noSideEffect.
   result.data = newSeq[T](a.shape.product)
   result.offset = 0
 
-  var i = 0 ## TODO: use pairs/enumerate instead.
-  for ai, bi in zip(a.values, b.values):
+  for i, ai, bi in enumerate_zip(a.values, b.values):
     result.data[i] = ai + bi
-    inc i
 
 proc `-`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   ## Tensor addition
@@ -81,10 +79,8 @@ proc `-`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   result.data = newSeq[T](result.shape.product)
   result.offset = 0
 
-  var i = 0 ## TODO: use pairs/enumerate instead.
-  for ai, bi in zip(a.values, b.values):
+  for i, ai, bi in enumerate_zip(a.values, b.values):
     result.data[i] = ai - bi
-    inc i
 
 proc `*`*[T: SomeNumber](a: T, t: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   proc f(x: T): T = a * x

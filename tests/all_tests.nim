@@ -18,4 +18,5 @@ import ../arraymancer,
         ./test_accessors,
         ./test_accessors_slicer,
         ./test_display,
-        ./test_operator_blas
+        ./test_operator_blas,
+        ./test_aggregate

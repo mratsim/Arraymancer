@@ -34,7 +34,7 @@ proc `$`*[B,T](t: Tensor[B,T]): string {.noSideEffect.} =
 
   # Add a position index to each value in the Tensor.
   var indexed_data: seq[(string,int)] = @[]
-  var i = 1
+  var i = 1  ## TODO: use pairs/enumerate instead. - pending https://forum.nim-lang.org/t/2972
   for value in t:
     indexed_data.add(($value,i))
     i += 1

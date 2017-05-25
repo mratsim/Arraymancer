@@ -30,7 +30,7 @@ proc fmap*[B: static[Backend],T, U](t: Tensor[B,T], g: T -> U): Tensor[B,U] {.no
   result.offset = 0
 
   result.data = newSeq[U](result.shape.product)
-  var i = 0 ## TODO: use pairs/enumerate instead.
+  var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
   for val in t:
     result.data[i] = g(val)
     inc i

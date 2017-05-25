@@ -61,3 +61,9 @@ proc getTransposeTarget(t: Tensor): TransposeType {.noSideEffect.}=
 
 ## Get a pointer to the start of the data. Needed for BLAS.
 template get_data_ptr[B,T](t: Tensor[B,T]): ptr T = unsafeAddr(t.data[0])
+
+proc shallowCopy*[B,T](t: Tensor[B,T]): Tensor[B,T] =
+  result.shape = t.shape
+  result.strides = t.strides
+  result.offset = t.offset
+  shallowCopy(result.data, t.data)

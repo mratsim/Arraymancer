@@ -28,7 +28,7 @@ However, every time we retrieve its shape and strides there is a pointer resolut
 
 * Shape and strides have a static size known at runtime. They might be best implemented as VLAs (Variable Length Array) from an indirection point of view. Inconvenient: 2 tensors will not fit in a cache line.
 
-* Slicing shallow-copies by default like Numpy. Big risk of gotcha. Would a `shallowSlice` proc be better for safety by default but an option for performance?
+* If slicing shallow-copies by default like Numpy there is a big risk of gotcha. Would a `shallowSlice` proc be better for safety by default but an option for performance? Note: since Nim is compiled we can hope that the compiler detects cases where original tensor is not reused and moves instead of copying.
 
 ## Coding-style
 * Prefer `when` to `if` for compile-time evaluation

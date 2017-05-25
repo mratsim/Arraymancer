@@ -28,7 +28,11 @@ However, every time we retrieve its shape and strides there is a pointer resolut
 
 * Shape and strides have a static size known at runtime. They might be best implemented as VLAs (Variable Length Array) from an indirection point of view. Inconvenient: 2 tensors will not fit in a cache line.
 
-* If slicing shallow-copies by default like Numpy there is a big risk of gotcha. Would a `shallowSlice` proc be better for safety by default but an option for performance? Note: since Nim is compiled we can hope that the compiler detects cases where original tensor is not reused and moves instead of copying.
+* For now, shallowCopies will be used only in strategic places, for example when we want to mutate the original reference but use another striding scheme in `slicerMut`. Slicing will not return views.
+Contrary to Python, the compiler can do the following optimization:
+  - Copy elision
+  - Move on assignment
+  - Detect if the original Tensor is not used anymore and the copy is unneeded.
 
 ## Coding-style
 * Prefer `when` to `if` for compile-time evaluation
@@ -87,12 +91,15 @@ Since we will do a dot product anyway instead of shifting a pointer by a constan
 Perf note: from a perf point of view, (integer ?) dot product is vectorized on CPU and GPU, the stride seq will stay in cache, so perf is probably bounded by the non-contiguous memory access. Moving a pointer sometimes by x, sometimes by y, sometimes the other way would also be bounded by memory access (provided a correct and probably cumber some implementation)
 
 ### Shallow-copy by default:
+Rejected until benchmarked otherwise.
+
 `data` is currently stored in a "seq" that always deep copy on var assignement. It doesn't copy on let assignement.
+
+If slicing shallow-copies by default like Numpy there is a risk of modifying the original array by mistake. Since Nim is compiled we can hope that the compiler detects cases where original tensor is not reused and moves instead of copying. Excellent read on value semantics vs reference semantics: https://akrzemi1.wordpress.com/2012/02/03/value-semantics/, https://juanchopanzacpp.wordpress.com/2014/05/11/want-speed-dont-always-pass-by-value/ and https://definedbehavior.blogspot.fr/2011/08/value-semantics-copy-elision.html. Nim in-depth discussion: https://forum.nim-lang.org/t/2665/1.
 
 References: [Copy semantics](https://forum.nim-lang.org/t/1793/5) "Parameter passing doesn't copy, var x = foo() doesn't copy but moves let x = y doesn't copy but moves, var x = y does copy but I can use shallowCopy instead of = for that."
 
-
-As such using seq is far easier than implementing my own shallowCopy / refcounting code which would introduce the following questions:
+Also using seq is far easier than implementing my own shallowCopy / refcounting code which would introduce the following questions:
 - How to make sure we can modify in-place if shallow copy is allowed or a ref seq/object is used?
 - To avoid reference counting, would it be better to always copy-on-write, in that case wouldn't it be better to pay the cost upfront on assignment?
 - How hard will it be to maintain Arraymancer and avoid bugs because a copy-on-write was missed.

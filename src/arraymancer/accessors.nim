@@ -49,7 +49,8 @@ template strided_iteration[B,T](t: Tensor[B,T], strider: IterKind): untyped =
   ## Iterator init
   var coord = newSeq[int](t.rank) # Coordinates in the n-dimentional space
   var backstrides: seq[int] = @[] # Offset between end of dimension and beginning
-  for i,j in zip(t.strides,t.shape): backstrides.add(i*(j-1))
+  for i,j in zip(t.strides,t.shape):
+    backstrides.add(i*(j-1))
 
   var iter_pos = t.offset
 
@@ -79,6 +80,12 @@ iterator items*[B,T](t: Tensor[B,T]): T {.noSideEffect.}=
 proc values*[B,T](t: Tensor[B,T]): auto {.noSideEffect.}=
   ## Closure stride-aware iterator on Tensor values
   return iterator(): T = t.strided_iteration(IterKind.Values)
+
+iterator mitems*[B,T](t: var Tensor[B,T]): var T {.noSideEffect.}=
+  ## Inline stride-aware iterator on Tensor values.
+  ## Values yielded can be directly modified
+  ## and avoid bound-checking/index calculation with t[index] = val
+  t.strided_iteration(IterKind.Values)
 
 iterator pairs*[B,T](t: Tensor[B,T]): (seq[int], T) {.noSideEffect.}=
   ## Inline stride-aware iterator on Tensor coordinates i.e. [1,2,3] and values

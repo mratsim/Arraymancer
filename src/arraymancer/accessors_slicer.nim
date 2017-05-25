@@ -292,21 +292,16 @@ macro desugar(args: untyped): typed =
   # echo r.treerepr
   return r
 
-proc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.}=
-  ## Take a Tensor and SteppedSlices
-  ## Returns:
-  ##    A view of the original Tensor
-  ##    Data is not changed, only offset and strides are changed to achieve the desired effect.
-
-  result = t # For t.data, seq semantics should copy only on write. TODO: Test
+template slicerT[B,T](result: Tensor[B, T], slices: varargs[SteppedSlice]): untyped=
+  ## Slicing routine
 
   for i, slice in slices:
     # Check if we start from the end
     let a = if slice.a_from_end: result.shape[i] - slice.a
-        else: slice.a
+            else: slice.a
 
     let b = if slice.b_from_end: result.shape[i] - slice.b
-        else: slice.b
+            else: slice.b
 
     # Bounds checking
     when compileOption("boundChecks"): check_steps(a,b, slice.step)
@@ -318,6 +313,25 @@ proc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T]
     # Now change shape and strides
     result.strides[i] *= slice.step
     result.shape[i] = abs((b-a) div slice.step) + 1
+
+proc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.}=
+  ## Take a Tensor and SteppedSlices
+  ## Returns:
+  ##    A copy of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+
+  result = t
+  slicerT(result, slices)
+
+proc shallowSlicer[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.}=
+  ## Take a Tensor and SteppedSlices
+  ## Returns:
+  ##    A view of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+  ##    Warning: mutating the result will mutate the original
+
+  result = shallowCopy(t) # TODO: Test to ensure safety
+  slicerT(result, slices)
 
 macro inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
   ## Typed macro so that isAllInt has typed context and we can dispatch.
@@ -346,10 +360,9 @@ macro `[]`*[B, T](t: Tensor[B,T], args: varargs[untyped]): untyped =
 
 proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
   ## Assign the value to the whole slice
-  ## See perf consideration in design document of not using `mitems` here
-  let sliced = t.slicer(slices)
-  for real_idx in sliced.real_indices:
-    t.data[real_idx] = val
+  var sliced = t.shallowSlicer(slices)
+  for old_val in sliced.mitems:
+    old_val = val
 
 proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: openarray) =
   ## Assign value from openarrays
@@ -365,6 +378,8 @@ proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: op
   # Unfortunately we need to loop twice over data/oa
   # Reason 1: we can't check the iterator length before consuming it
   # Reason 2: we can't capture an open array, i.e. do zip(sliced.real_indices, flatClosureIter(oa))
+  # TODO: use mvalues/mitems instead of sliced.real_indices: https://forum.nim-lang.org/t/2971
+  # Or switch fully to inline iterators: https://forum.nim-lang.org/t/2972
   for real_idx, val in zip(sliced.real_indices, data):
     t.data[real_idx] = val
 

@@ -12,49 +12,21 @@ Either C or Fortran contiguous arrays are needed for BLAS optimization for Tenso
 ## Pending issues
 * There is no matrix multiplications and Matrix-Vector multiplication for integers.
   You can convert them to `float64` before and then use floating-point BLAS (will cover `int32` without precision loss).
+* Switch to full inline iterators: https://forum.nim-lang.org/t/2972
 
-## Memory considerations
+## Memory/Perf considerations
 * Current CPUs cache line is 64 bytes. The Tensor data structure at 32 bytes has an ideal size.
 However, every time we retrieve its shape and strides there is a pointer resolution + bounds checking for seq with constant length. See Data structure considerations section.
 
 * Most copy operations (from nested arrays/seq, for slice assignments from nested arrays/seq or Tensor) uses iterators and avoid intermediate representation.
 
+* `slicerMut` can be implemented with shallow-copy to avoid extra memory copies. This is done for single value assignments but not for assignment from Tensor or openarray: https://forum.nim-lang.org/t/2971 and https://forum.nim-lang.org/t/2972
+
 ## Data structure considerations
 
 * Shape and strides have a static size known at runtime. They might be best implemented as VLAs (Variable Length Array) from an indirection point of view. Inconvenient: 2 tensors will not fit in a cache line.
 
-* `data` is currently stored in a "seq" that always deep copy on var assignement. It doesn't copy on let assignement.
-
-References: [Copy semantics](https://forum.nim-lang.org/t/1793/5) "Parameter passing doesn't copy, var x = foo() doesn't copy but moves let x = y doesn't copy but moves, var x = y does copy but I can use shallowCopy instead of = for that."
-
-
-As such using seq is far easier than implementing my own shallowCopy / refcounting code which would introduce the following questions:
-- How to make sure we can modify in-place if shallow copy is allowed or a ref seq/object is used?
-- To avoid reference counting, would it be better to always copy-on-write, in that case wouldn't it be better to pay the cost upfront on assignment?
-- How hard will it be to maintain Arraymancer and avoid bugs because a copy-on-write was missed.
-
-    From Scipy: https://docs.scipy.org/doc/numpy/user/c-info.how-to-extend.html#reference-counting
-
-    "If you mis-handle reference counts you can get problems from memory-leaks to segmentation faults.  The only strategy I know of to handle reference counts correctly is blood, sweat, and tears."
-Nim GC perf: https://gist.github.com/dom96/77b32e36b62377b2e7cadf09575b8883
-
-In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-reference-types-in-swift) (for Swift but applicable): performance, safety, usability
-
-## Performance consideration
-* Add OpenMP pragma for parallel computing on `fmap` and self-implemented BLAS operations.
-    How to detect that OpenMP overhead is worth it?
-* Limit branching: use `when` or static dispatch instead of `if` for conditions that can be tested at compile-time
-* `SlicerMut` is implemented in a readable but inefficient way
-```Nim
-proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
-  ## Assign the value to the whole slice
-  let sliced = t.slicer(slices)
-  for real_idx in sliced.real_indices:
-    t.data[real_idx] = val
-````
-  Instead we could save the current shape/strides of t, use `slicer` then use `mitems` to directly assign the value
-  and then reverting shape/strides. That would avoid recomputing t.data[real_idx] at the price of copying shape/stride twice
-  and readability.
+* Slicing shallow-copies by default like Numpy. Big risk of gotcha. Would a `shallowSlice` proc be better for safety by default but an option for performance?
 
 ## Coding-style
 * Prefer `when` to `if` for compile-time evaluation
@@ -73,8 +45,8 @@ proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T
 
 
 ## TODO
-1. Array creation utilities (zeros, ones, zeros_like, random ...)
-2. Axis iterators
+1. Tests for array creation utilities (zeros, ones, zeros_like, random ...)
+2. Tests for axis iterators
 3. GPU support: Cuda and Magma first. OpenCL when AMD gets its act together.
 4. BLAS operation fusion: `transpose(A) * B` or `Ax + y` should be fused in one operation.
 5. Implement GEMM and GEMV for integers
@@ -83,11 +55,13 @@ proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T
 
 ## Ideas rejected
 
-1. Have the rank of the Tensor be part of its type. Rejected because impractical for function chaining.
+### Have the rank of the Tensor be part of its type. 
+Rejected because impractical for function chaining.
     Advantage: Dispatch and compatibility checking at compile time (Matrix * Matrix and Matrix * Vec)
-2. Have the kind of stride (C_contiguous, F_contiguous) be part of its type. Rejected because impractical for function chaining. Furthermore this should not be exposed to the users as it's an implementation detail.
+### Have the kind of stride (C_contiguous, F_contiguous) be part of its type.
+Rejected because impractical for function chaining. Furthermore this should not be exposed to the users as it's an implementation detail.
 
-3. Implement offsets and iterator using pointers.
+### Implement offsets and iterator using pointers.
 Indexing with a strided array is basically doing a dot product. With a 3x3 matrix, strides are [3,1], in memory, element at position [1,2] will be at 3x1 + 1 x 2 -> 5th position (i.e. we did a dot product)
 
     > 0 1 2
@@ -109,6 +83,24 @@ but the corresponding order in memory is still as before transposition. So point
 Since we will do a dot product anyway instead of shifting a pointer by a constant, just doing regular array/sequence indexing is better as we get automatic bounds checking, Nim future improvements and it's much easier to copy a Tensor, no need to recalculate the pointer address. We just need a way to provide a pointer to the beginning of the data to BLAS.
 
 Perf note: from a perf point of view, (integer ?) dot product is vectorized on CPU and GPU, the stride seq will stay in cache, so perf is probably bounded by the non-contiguous memory access. Moving a pointer sometimes by x, sometimes by y, sometimes the other way would also be bounded by memory access (provided a correct and probably cumber some implementation)
+
+### Shallow-copy by default:
+`data` is currently stored in a "seq" that always deep copy on var assignement. It doesn't copy on let assignement.
+
+References: [Copy semantics](https://forum.nim-lang.org/t/1793/5) "Parameter passing doesn't copy, var x = foo() doesn't copy but moves let x = y doesn't copy but moves, var x = y does copy but I can use shallowCopy instead of = for that."
+
+
+As such using seq is far easier than implementing my own shallowCopy / refcounting code which would introduce the following questions:
+- How to make sure we can modify in-place if shallow copy is allowed or a ref seq/object is used?
+- To avoid reference counting, would it be better to always copy-on-write, in that case wouldn't it be better to pay the cost upfront on assignment?
+- How hard will it be to maintain Arraymancer and avoid bugs because a copy-on-write was missed.
+
+    From Scipy: https://docs.scipy.org/doc/numpy/user/c-info.how-to-extend.html#reference-counting
+
+    "If you mis-handle reference counts you can get problems from memory-leaks to segmentation faults.  The only strategy I know of to handle reference counts correctly is blood, sweat, and tears."
+Nim GC perf: https://gist.github.com/dom96/77b32e36b62377b2e7cadf09575b8883
+
+In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-reference-types-in-swift) (for Swift but applicable): performance, safety, usability
 
 ## To watch:
 

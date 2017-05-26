@@ -27,4 +27,5 @@ include src/arraymancer/utils/functional,
         src/arraymancer/shapeshifting,
         src/arraymancer/operators_blas,
         src/arraymancer/operators_extra,
-        src/arraymancer/aggregate
+        src/arraymancer/aggregate,
+        src/arraymancer/term_rewriting

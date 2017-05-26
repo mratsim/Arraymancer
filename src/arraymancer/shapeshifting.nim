@@ -42,16 +42,9 @@ proc asContiguous*[B,T](t: Tensor[B,T]): Tensor[B,T] {.noSideEffect.}=
     result.data[i] = val
     inc i
 
-proc reshape*[B,T](t: Tensor[B,T], new_shape: varargs[int]): Tensor[B,T] {.noSideEffect.}=
-  ## Reshape a tensor
-  ## TODO: tests
-  ## TODO: fuse toTensor.reshape
-
-  let ns = @new_shape
-  when compileOption("boundChecks"): check_reshape(t, ns)
-
+proc reshape_with_copy[B,T](t: Tensor[B,T], new_shape: seq[int]): Tensor[B,T] {.noSideEffect.}=
   # Can't call "tensor" template here for some reason
-  result.shape = ns
+  result.shape = new_shape
   result.strides = shape_to_strides(result.shape)
   result.offset = 0
   result.data = newSeq[T](result.shape.product)
@@ -60,6 +53,38 @@ proc reshape*[B,T](t: Tensor[B,T], new_shape: varargs[int]): Tensor[B,T] {.noSid
   for val in t:
     result.data[i] = val
     inc i
+
+# The following needs benchmark, it seems slower by 120ms on my machine (Broadwell i7-5XXX U mobile)
+# than reshape with copy when reshaping 25000 elements to a 5000x5000 matrices
+
+# proc reshape_no_copy[B,T](t: Tensor[B,T], new_shape: seq[int]): Tensor[B,T] {.noSideEffect.}=
+#   ## For contiguous arrays
+#   var matched_dims = 0
+#   for shapes in zip(t.shape, new_shape):
+#     if shapes[0] != shapes[1]:
+#       break
+#     inc matched_dims
+# 
+#   result.shape = new_shape
+#   
+#   # Strides extended for unmatched dimension
+#   let ext_strides = result.shape[matched_dims..result.shape.high].shape_to_strides
+# 
+#   result.strides = t.strides[0..<matched_dims] & ext_strides
+#   result.offset = 0
+#   result.data = t.data
+
+proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
+  ## Reshape a tensor
+  ## TODO: tests
+  ## TODO: fuse toTensor.reshape
+
+  let ns = @new_shape
+  when compileOption("boundChecks"): check_reshape(t, ns)
+  
+  #if t.isContiguous:
+  #  return t.reshape_no_copy(ns)
+  return t.reshape_with_copy(ns)
 
 proc broadcast*[B,T](t: Tensor[B,T], shape: openarray[int]): Tensor[B,T] {.noSideEffect.}=
   ## Broadcasting array

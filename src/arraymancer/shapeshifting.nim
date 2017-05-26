@@ -16,6 +16,12 @@ proc check_reshape(t: Tensor, new_shape:seq[int]) =
   if t.shape.product != new_shape.product:
     raise newException(ValueError, "The total number of elements in the old and the new reshaped matrix must be the same")
 
+proc check_concat(t1, t2: Tensor, axis: int) {.noSideEffect,inline.}=
+  let check1 = t1.shape[0..<axis] == t2.shape[0..<axis]
+  let check2 = t2.shape[axis+1..t1.shape.high] == t2.shape[axis+1..t2.shape.high]
+
+  if not check1 or not check2:
+    raise newException(ValueError, "Concatenation Error: Except along the concatenation axis tensors must have the same shape")
 
 proc transpose*(t: Tensor): Tensor {.noSideEffect.}=
   ## Transpose a Tensor. For N-d Tensor with shape (0, 1, 2 ... n-1)
@@ -64,12 +70,12 @@ proc reshape_with_copy[B,T](t: Tensor[B,T], new_shape: seq[int]): Tensor[B,T] {.
 #     if shapes[0] != shapes[1]:
 #       break
 #     inc matched_dims
-# 
+#
 #   result.shape = new_shape
-#   
+#
 #   # Strides extended for unmatched dimension
 #   let ext_strides = result.shape[matched_dims..result.shape.high].shape_to_strides
-# 
+#
 #   result.strides = t.strides[0..<matched_dims] & ext_strides
 #   result.offset = 0
 #   result.data = t.data
@@ -108,14 +114,14 @@ template bc*(t: Tensor, shape: openarray[int]): untyped =
 
 proc exch_dim(t: Tensor, dim1, dim2: int): Tensor {.noSideEffect.}=
   if dim1 == dim2:
-    return t
-  
+    return
+
   result = t
   swap(result.strides[dim1], result.strides[dim2])
   swap(result.shape[dim1], result.shape[dim2])
 
 proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noSideEffect.}=
-  
+
   # TODO: bounds check
   var perm = @dims
   result = t
@@ -128,3 +134,32 @@ proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noSideEffect.}=
         if perm[j] == i:
           break
       perm[j] = -1
+
+
+proc concat[B,T](t_list: varargs[Tensor[B,T]], axis: int): Tensor[B,T] =
+
+  var axis_dim = 0
+  let t0 = t_list[0]
+
+  for t in t_list:
+    when compileOption("boundChecks"):
+      check_concat(t0, t, axis)
+    axis_dim += t.shape[axis]
+
+  let concat_shape = t0.shape[0..<axis] & axis_dim & t0.shape[axis+1..t0.shape.high]
+
+  ## Setup the Tensor
+  result.shape = concat_shape
+  result.strides = shape_to_strides(result.shape)
+  result.offset = 0
+  result.data = newSeq[T](result.shape.product)
+
+  # Fill in the copy with the matching values
+  var slices = concat_shape.mapIt((0..<it)|1)
+  var iaxis = 0
+
+  for t in t_list:
+    slices[axis].a = iaxis
+    slices[axis].b = iaxis + t.shape[axis] - 1
+    result.slicerMut(slices, t)
+    iaxis += t.shape[axis]

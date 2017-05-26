@@ -67,6 +67,7 @@ proc `+`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   result.data = newSeq[T](a.shape.product)
   result.offset = 0
 
+  ## TODO use mitems instead of result.data[i] cf profiling
   for i, ai, bi in enumerate_zip(a.values, b.values):
     result.data[i] = ai + bi
 
@@ -87,6 +88,7 @@ proc `-`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   result.data = newSeq[T](result.shape.product)
   result.offset = 0
 
+  ## TODO use mitems instead of result.data[i] cf profiling
   for i, ai, bi in enumerate_zip(a.values, b.values):
     result.data[i] = ai - bi
 

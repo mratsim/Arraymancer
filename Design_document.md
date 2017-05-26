@@ -49,6 +49,8 @@ Contrary to Python, the compiler can do the following optimization:
     1. Convert to float64, use BLAS, convert back to int. No issue for int32 has them all. Int64 may lose some precision.
     2. Implement a cache-oblivious matrix multiplication. Implementation in [Julia](https://github.com/JuliaLang/julia/blob/master/base/linalg/matmul.jl#L490). [Paper](http://ocw.raf.edu.rs/courses/electrical-engineering-and-computer-science/6-895-theory-of-parallel-systems-sma-5509-fall-2003/readings/cach_oblvs_thsis.pdf).
 
+* Implement a Tensor comprehension macro. It may be able to leverage mitems instead of result[i,j] = alpha * (i - j) * (i + j)
+
 
 ## TODO
 1. Tests for array creation utilities (zeros, ones, zeros_like, random ...)

@@ -85,7 +85,7 @@ proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], B: static[Bac
   ## Result:
   ##      - A Tensor of one of the input shape
   tensor(shape, result)
-  result.data = newSeqWith(shape.product, 1.T)
+  result.data = newSeqWith(result.shape.product, 1.T)
 
 proc ones_like*[B: static[Backend], T: SomeNumber](t: Tensor[B,T]): Tensor[B,T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
@@ -97,10 +97,7 @@ proc ones_like*[B: static[Backend], T: SomeNumber](t: Tensor[B,T]): Tensor[B,T] 
   return ones(t.shape, T, B)
 
 template randomTensorT(shape: openarray[int], max_or_range: typed): untyped =
-  result.shape = @shape
-  result.strides = shape_to_strides(result.shape)
-  result.offset = 0
-
+  tensor(shape, result)
   result.data = newSeqWith(result.shape.product, random(max_or_range))
 
 proc randomTensor*(shape: openarray[int], max: float, B: static[Backend]): Tensor[B,float] =

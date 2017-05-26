@@ -26,4 +26,5 @@ include src/arraymancer/utils/functional,
         src/arraymancer/ufunc,
         src/arraymancer/shapeshifting,
         src/arraymancer/operator_blas,
+        src/arraymancer/operator_extra,
         src/arraymancer/aggregate

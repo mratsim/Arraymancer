@@ -259,10 +259,12 @@ proc `*`*[T: SomeReal](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
 
   when defined(blis):
     ## When is evaluated at compile time and has no runtime cost
-    if a.rank == 2 and b.rank == 2:    matmat_blis(a, b, result)
-    elif a.rank == 2 and b.rank == 1:  matvec_blis(a, b, result)
-    else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
-  else:
-    if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, result)
-    elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
-    else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+    if not a.isContiguous and not b.isContiguous:
+      # OpenBLAS / MKL are still faster than BLIS in the contiguous case
+      if a.rank == 2 and b.rank == 2:    matmat_blis(a, b, result)
+      elif a.rank == 2 and b.rank == 1:  matvec_blis(a, b, result)
+      else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+  
+  if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, result)
+  elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
+  else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")

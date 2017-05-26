@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+proc check_reshape(t: Tensor, new_shape:seq[int]) =
+  if t.shape.product != new_shape.product:
+    raise newException(ValueError, "The total number of elements in the old and the new reshaped matrix must be the same")
+
+
 proc transpose*(t: Tensor): Tensor {.noSideEffect.}=
   ## Transpose a Tensor. For N-d Tensor with shape (0, 1, 2 ... n-1)
   ## the resulting tensor will have shape (n-1, ... 2, 1, 0)
@@ -37,6 +42,25 @@ proc asContiguous*[B,T](t: Tensor[B,T]): Tensor[B,T] {.noSideEffect.}=
     result.data[i] = val
     inc i
 
+proc reshape*[B,T](t: Tensor[B,T], new_shape: varargs[int]): Tensor[B,T] {.noSideEffect.}=
+  ## Reshape a tensor
+  ## TODO: tests
+  ## TODO: fuse toTensor.reshape
+
+  let ns = @new_shape
+  when compileOption("boundChecks"): check_reshape(t, ns)
+
+  # Can't call "tensor" template here for some reason
+  result.shape = ns
+  result.strides = shape_to_strides(result.shape)
+  result.offset = 0
+  result.data = newSeq[T](result.shape.product)
+
+  var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
+  for val in t:
+    result.data[i] = val
+    inc i
+
 proc broadcast*[B,T](t: Tensor[B,T], shape: openarray[int]): Tensor[B,T] {.noSideEffect.}=
   ## Broadcasting array
   ## Todo: proper bound-checking
@@ -53,7 +77,7 @@ proc broadcast*[B,T](t: Tensor[B,T], shape: openarray[int]): Tensor[B,T] {.noSid
     elif result.shape[i] != shape[i]:
       raise newException(ValueError, "The broadcasted size of the tensor must match existing size for non-singleton dimension")
 
-template bc(t: Tensor, shape: openarray[int]): untyped =
+template bc*(t: Tensor, shape: openarray[int]): untyped =
   ## Alias
   t.broadcast(shape)
 

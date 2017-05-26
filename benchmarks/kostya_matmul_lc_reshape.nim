@@ -1,14 +1,12 @@
 # From: https://github.com/kostya/benchmarks
 
-import os, strutils, sequtils
+import os, strutils, future
 import ../arraymancer
 
 proc matgen(n: int): auto =
     result = newTensor(@[n,n],float64,Backend.Cpu)
     let tmp = 1.0 / (n*n).float64
-
-    ## TODO: use list, comprehension + reshape:
-    ## lc[tmp * (i - j).float64 * (i + j).float64 | (i <- 0..<n, j<- 0..<n), float64].toTensor(Cpu)
+    return lc[tmp * (i - j).float64 * (i + j).float64 | (i <- 0..<n, j<- 0..<n), float64].toTensor(Cpu).reshape(n, n)
 
 
 var n = 100

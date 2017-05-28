@@ -136,7 +136,7 @@ proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noSideEffect.}=
       perm[j] = -1
 
 
-proc concat[B,T](t_list: varargs[Tensor[B,T]], axis: int): Tensor[B,T] =
+proc concat*[B,T](t_list: varargs[Tensor[B,T]], axis: int): Tensor[B,T]  {.noSideEffect.}=
 
   var axis_dim = 0
   let t0 = t_list[0]

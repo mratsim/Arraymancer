@@ -99,7 +99,9 @@ Rejected until benchmarked otherwise.
 
 If slicing shallow-copies by default like Numpy there is a risk of modifying the original array by mistake. Since Nim is compiled we can hope that the compiler detects cases where original tensor is not reused and moves instead of copying. Excellent read on value semantics vs reference semantics: https://akrzemi1.wordpress.com/2012/02/03/value-semantics/, https://juanchopanzacpp.wordpress.com/2014/05/11/want-speed-dont-always-pass-by-value/ and https://definedbehavior.blogspot.fr/2011/08/value-semantics-copy-elision.html. Nim in-depth discussion: https://forum.nim-lang.org/t/2665/1.
 
-References: [Copy semantics](https://forum.nim-lang.org/t/1793/5) "Parameter passing doesn't copy, var x = foo() doesn't copy but moves let x = y doesn't copy but moves, var x = y does copy but I can use shallowCopy instead of = for that."
+References:
+ - [Copy semantics](https://forum.nim-lang.org/t/1793/5) "Parameter passing doesn't copy, var x = foo() doesn't copy but moves let x = y doesn't copy but moves, var x = y does copy but I can use shallowCopy instead of = for that."
+ - [Another](https://forum.nim-lang.org/t/1543) "First, it's important to understand that most of the time, you won't need shallowCopy at all. Copying is shallow by default if (1) the left-hand side of an assignment is a let variable or (2) the right-hand side is a function call."
 
 Also using seq is far easier than implementing my own shallowCopy / refcounting code which would introduce the following questions:
 - How to make sure we can modify in-place if shallow copy is allowed or a ref seq/object is used?
@@ -112,15 +114,3 @@ Also using seq is far easier than implementing my own shallowCopy / refcounting 
 Nim GC perf: https://gist.github.com/dom96/77b32e36b62377b2e7cadf09575b8883
 
 In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-reference-types-in-swift) (for Swift but applicable): performance, safety, usability
-
-## To watch:
-
-* Nim's linalg, nimcuda and nimblas
-* Collenchyma/Parenchyma
-* Numpy
-* Dask
-* Mir ndslice and Mir GLAS
-* OpenBLAS, Magma, libelemental, Eigen
-* BLIS / ulmBLAS
-* Scijs/ndarray and scijs/cwise (especially universal stride cache oblivious ndarray)
-* Cuda-on-cl

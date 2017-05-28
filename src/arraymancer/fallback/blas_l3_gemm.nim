@@ -44,8 +44,7 @@ const MCKC = MC*KC
 const KCNC = KC*NC
 const MRNR = MR*NR
 
-# FIXME: The program compiles but segfault 11 if those global variables are declared in gemm_nn instead
-# On OSX with Clang
+# Declare global variables so they are allocated on the BSS
 var buffer_A: array[MCKC, int]
 var buffer_B: array[KCNC, int]
 var buffer_C: array[MRNR, int]
@@ -77,10 +76,6 @@ proc gemm_nn[T: int](m, n, k: int,
 
   var mc, nc, kc: int
   var tmp_beta: T
-
-  # var buffer_A: array[MCKC, T]
-  # var buffer_B: array[KCNC, T]
-  # var buffer_C: array[MRNR, T]
 
   for j in 0 ..< nb:
     nc = if (j != nb-1 or mod_nc == 0): NC

@@ -323,12 +323,13 @@ proc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T]
   result = t
   slicerT(result, slices)
 
-proc shallowSlicer[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.}=
+proc shallowSlicer[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
   ##    Offset and strides are changed to achieve the desired effect.
   ##    Warning: mutating the result will mutate the original
+  ##    As such a `var Tensor` is required
 
   result = shallowCopy(t) # TODO: Test to ensure safety
   slicerT(result, slices)

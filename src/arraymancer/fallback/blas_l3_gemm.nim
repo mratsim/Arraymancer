@@ -50,7 +50,7 @@ include ./blas_l3_gemm_axpy_scal
 include ./blas_l3_gemm_micro_kernel
 include ./blas_l3_gemm_macro_kernel
 
-proc newBufferArray[T: SomeNumber](N: static[int], typ: typedesc[T]): ref array[N, T]=
+proc newBufferArray[T: SomeNumber](N: static[int], typ: typedesc[T]): ref array[N, T]  {.noSideEffect.} =
   new result
   for i in 0 ..< N:
     result[i] = 0.T
@@ -64,7 +64,7 @@ proc gemm_nn[T](m, n, k: int,
                 incRowB, incColB: int,
                 beta: T,
                 C: var seq[T], offC: int,
-                incRowC, incColc: int) =
+                incRowC, incColc: int)  {.noSideEffect.} =
 
   let
     mb = (m + MC - 1) div MC
@@ -83,30 +83,30 @@ proc gemm_nn[T](m, n, k: int,
   var buffer_C = newBufferArray(MRNR, T)
 
   for j in 0 ..< nb:
-    nc = if (j != nb-1 or mod_nc == 0): NC
-         else: mod_nc
+    nc =  if (j != nb-1 or mod_nc == 0): NC
+          else: mod_nc
 
     for l in 0 ..< kb:
-      kc       = if (l != kb-1 or mod_kc == 0): KC
-                 else: mod_kc
-      tmp_beta = if l == 0: beta
-                 else: 1.T
+      kc       =  if (l != kb-1 or mod_kc == 0): KC
+                  else: mod_kc
+      tmp_beta =  if l == 0: beta
+                  else: 1.T
 
-      pack_B(kc, nc,
-             B, l*KC*incRowB + j*NC*incColB + offB,
-             incRowB, incColC,
-             buffer_B)
+      pack_dim( nc, kc,
+                B, l*KC*incRowB + j*NC*incColB + offB,
+                incColB, incRowB, NR,
+                buffer_B)
 
       for i in 0 ..< mb:
         mc = if (i != mb-1 or mod_mc == 0): MC
              else: mod_mc
 
-        pack_A(mc, kc,
-               A, i*MC*incRowA+l*KC*incColA + offA,
-               incRowA, incColA,
-               buffer_A)
+        pack_dim( mc, kc,
+                  A, i*MC*incRowA+l*KC*incColA + offA,
+                  incRowA, incColA, MR,
+                  buffer_A)
 
         gemm_macro_kernel(mc, nc, kc,
-                           alpha, tmp_beta,
-                           C, i*MC*incRowC + j*NC*incColC + offC,
-                           incRowC, incColC, buffer_A, buffer_B, buffer_C)
+                          alpha, tmp_beta,
+                          C, i*MC*incRowC + j*NC*incColC + offC,
+                          incRowC, incColC, buffer_A, buffer_B, buffer_C)

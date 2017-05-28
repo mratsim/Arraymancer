@@ -268,7 +268,7 @@ proc `*`*[T: SomeReal](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
   else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
 
-proc `*`*[T: SomeInteger](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] =
+proc `*`*[T: SomeInteger](a, b: Tensor[Cpu,T]): Tensor[Cpu,T]  {.noSideEffect.} =
   if a.rank != 2 or b.rank != 2:
     raise newException(ValueError, "Only Matrix to Matrix multiplication is implemented")
 

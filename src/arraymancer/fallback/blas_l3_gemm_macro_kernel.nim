@@ -13,13 +13,14 @@
 # limitations under the License.
 
 proc gemm_macro_kernel[T](mc, nc, kc: int,
-                        alpha: T,
-                        beta: T,
-                        C: var seq[T], offC: int,
-                        incRowC, incColC: int,
-                        ibuf_A: var ref array[MCKC, T],
-                        ibuf_B: var ref array[KCNC, T],
-                        ibuf_C: var ref array[MRNR, T]) =
+                          alpha: T,
+                          beta: T,
+                          C: var seq[T], offC: int,
+                          incRowC, incColC: int,
+                          buffer_A: var ref array[MCKC, T],
+                          buffer_B: var ref array[KCNC, T],
+                          buffer_C: var ref array[MRNR, T])
+                          {.noSideEffect.} =
   let mp = (mc+MR-1) div MR
   let np = (nc+NR-1) div NR
 
@@ -38,24 +39,24 @@ proc gemm_macro_kernel[T](mc, nc, kc: int,
 
       if (mr==MR and nr==NR):
         gemm_micro_kernel(kc, alpha,
-                          ibuf_A, i*kc*MR,
-                          ibuf_B, j*kc*NR,
+                          buffer_A, i*kc*MR,
+                          buffer_B, j*kc*NR,
                           beta,
                           C, i*MR*incRowC+j*NR*incColC + offC,
                           incRowC, incColC)
       else:
         gemm_micro_kernel(kc, alpha,
-                          ibuf_A, i*kc*MR,
-                          ibuf_B, j*kc*NR,
+                          buffer_A, i*kc*MR,
+                          buffer_B, j*kc*NR,
                           0.T,
-                          ibuf_C, 0,
+                          buffer_C, 0,
                           1, MR)
-        gescal(mr, nr, beta,
-               C, i*MR*incRowC+j*NR*incColC + offC,
-               incRowC, incColC)
-        geaxpy(mr, nr,
-               1.T,
-               ibuf_C,
-               1, MR,
-               C, i*MR*incRowC+j*NR*incColC + offC,
-               incRowC, incColC)
+        gescal( mr, nr, beta,
+                C, i*MR*incRowC+j*NR*incColC + offC,
+                incRowC, incColC)
+        geaxpy( mr, nr,
+                1.T,
+                buffer_C,
+                1, MR,
+                C, i*MR*incRowC+j*NR*incColC + offC,
+                incRowC, incColC)

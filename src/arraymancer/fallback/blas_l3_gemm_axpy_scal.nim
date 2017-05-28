@@ -13,12 +13,12 @@
 # limitations under the License.
 
 ## Compute Y += alpha * X
-proc geaxpy[T](m, n: int,
-               alpha: T,
-               X: ref array[MRNR, T],
-               incRowX, incColX: int,
-               Y: var seq[T], offY: int,
-               incRowY, incColY: int) =
+proc geaxpy[T]( m, n: int,
+                alpha: T,
+                X: ref array[MRNR, T],
+                incRowX, incColX: int,
+                Y: var seq[T], offY: int,
+                incRowY, incColY: int) =
 
   if alpha != 1.T:
     for j in 0 ..< n:
@@ -30,10 +30,10 @@ proc geaxpy[T](m, n: int,
         Y[i*incRowY + j*incColY + offY] += X[i*incRowX + j*incColX]
 
 ## Compute X *= alpha
-proc gescal[T](m, n: int,
-            alpha: T,
-            X: var seq[T], offX: int,
-            incRowX, incColX: int) =
+proc gescal[T]( m, n: int,
+                alpha: T,
+                X: var seq[T], offX: int,
+                incRowX, incColX: int) =
 
   if alpha != 0.T:
     for j in 0 ..< n:

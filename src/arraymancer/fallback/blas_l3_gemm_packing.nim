@@ -12,79 +12,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## Pack A panels without padding
-proc pack_MRxk[T](k: int,
-                        A: seq[T], offA: var int,
-                        incRowA, incColA: int,
-                        buffer: var ref array[MCKC, T],
-                        offBuf: var int) =
+proc pack_panel[T, N](k: int,
+                      M: seq[T], offset: int, # Tensor data + offset
+                      lsm, ssm: int, # Leading and secondary (dimension) stride of M, Leading: incColA/incRowB.
+                      LR: static[int], # Leading block dimension, MR for A (MxK), NR for B (KxN)
+                      buffer: var ref array[N, T], # N = MCKC for A, KCNC for B
+                      offBuf: var int) {.noSideEffect.} =
+  ## Pack blocks of size LR of the matrices in the corresponding buffer
+  var offM = offset
+  for s in 0 ..< k: # Loop along the leaing dimension
+    for lead in 0 ..< LR:
+      buffer[lead + offBuf] = M[lead*lsm + offM]
+    offBuf += LR
+    offM += ssm
 
-  var voffA = offA
-  for j in 0 ..< k:
-    for i in 0 ..< MR:
-      buffer[i + offBuf] = A[i*incRowA + voffA]
-    offBuf += MR
-    voffA   += incColA
+proc pack_dim[T, N](lc, kc: int, # lc = mc for A (MxK matrix) and lc = nc for B (KxN matrix)
+                    M: seq[T], offset: int, # Tensor data + offset
+                    lsm, ssm: int, # Leading and secondary (dimension) stride of M, Leading: incColA/incRowB.
+                    LR: static[int], # Leading block dimension, MR for A (MxK), NR for B (KxN)
+                    buffer: var ref array[N, T]) # N = MCKC for A, KCNC for B
+                    {.noSideEffect.} =
 
-## Pack A with padding if needed
-proc pack_A[T](mc, kc: int,
-                     A: seq[T], offA: int,
-                     incRowA, incColA: int,
-                     buffer: var ref array[MCKC, T]) =
-
-  let mp = mc div MR
-  let mr = mc mod MR
+  let lp = lc div LR # Number of whole blocks along leading dim
+  let lr = lc mod MR # Reminder of leading dim
 
   var offBuf = 0
-  var voffA = offA
+  var offM = offset
 
-  for i in 0..<mp:
-    pack_MRxk(kc, A, voffA, incRowA, incColA, buffer, offBuf)
-    voffA  += MR*incRowA
+  for lead in 0..<lp:
+    pack_panel(kc, M, offM, lsm, ssm, LR, buffer, offBuf)
+    offM  += LR*lsm
 
-  if mr > 0:
-    for j in 0 ..< kc:
-      for i in 0 ..< mr:
-        buffer[i + offBuf] = A[i * incRowA + voffA]
-      for i in mr ..< MR:
-        buffer[i + offBuf] = 0.T
+  if lr > 0:
+    for s in 0 ..< kc:
+      for lead in 0 ..< lr:
+        buffer[lead + offBuf] = M[lead * lsm + offM]
+      for lead in lr ..< LR:
+        buffer[lead + offBuf] = 0.T
       offBuf += MR
-      voffA   += incColA
-
-## Pack B panels without padding
-proc pack_kxNR[T](k: int,
-                        B: seq[T], offB: int,
-                        incRowB, incColB: int,
-                        buffer: var ref array[KCNC, T],
-                        offBuf: var int) =
-  var voffB = offB
-  for i in 0 ..< k:
-    for j in 0 ..< NR:
-      buffer[j + offBuf] = B[j*incColB + voffB]
-    offBuf += NR
-    voffB   += incRowB
-
-## Pack B panels with padding if needed
-proc pack_B[T](kc, nc: int,
-                     B: seq[T], offB: int,
-                     incRowB, incColB: int,
-                     buffer: var ref array[KCNC, T]) =
-
-  let np = nc div NR
-  let nr = nc mod NR
-
-  var offBuf = 0
-  var voffB = offB
-
-  for j in 0 ..< np:
-    pack_kxNR(kc, B, voffB, incRowB, incColB, buffer, offBuf)
-    voffB  += NR*incColB
-
-  if nr > 0:
-    for i in 0 ..< kc:
-      for j in 0 ..< nr:
-        buffer[j + offBuf] = B[j*incColB + voffB]
-      for j in nr ..< NR:
-        buffer[j + offBuf] = 0.T
-      offBuf += NR
-      voffB  += incRowB
+      offM   += ssm

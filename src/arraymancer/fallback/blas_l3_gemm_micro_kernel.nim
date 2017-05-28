@@ -13,20 +13,19 @@
 # limitations under the License.
 
 template gemm_micro_kernelT[T](
-                           kc: int,
-                           alpha: T,
-                           A: typed, offA: int,
-                           B: typed, offB: int,
-                           beta: T,
-                           C: typed,
-                           offC: int,
-                           incRowC, incColC: int): untyped =
+            kc: int,
+            alpha: T,
+            A: typed, offA: int,
+            B: typed, offB: int,
+            beta: T,
+            C: typed,
+            offC: int,
+            incRowC, incColC: int): untyped =
   var AB: array[MR*NR, T]
   var voffA = offA
   var voffB = offB
 
   ## Compute A*B
-
   for l in 0 ..< kc:
     for j in 0 ..< NR:
       for i in 0 .. <MR:
@@ -54,28 +53,24 @@ template gemm_micro_kernelT[T](
       for i in 0 ..< MR:
         C[i*incRowC + j*incColC + offC] += alpha*AB[i + j*MR]
 
-proc gemm_micro_kernel[T](
-                           kc: int,
-                           alpha: T,
-                           A: ref array[MCKC, T], offA: int,
-                           B: ref array[KCNC, T], offB: int,
-                           beta: T,
-                           C: var ref array[MRNR, T],
-                           offC: int,
-                           incRowC, incColC: int) =
+proc gemm_micro_kernel[T](kc: int,
+                          alpha: T,
+                          A: ref array[MCKC, T], offA: int,
+                          B: ref array[KCNC, T], offB: int,
+                          beta: T,
+                          C: var ref array[MRNR, T],
+                          offC: int,
+                          incRowC, incColC: int)
+                          {.noSideEffect.} =
+  gemm_micro_kernelT(kc, alpha, A, offA, B, offB, beta, C, offC, incRowC, incColc)
 
-  gemm_micro_kernelT(kc, alpha, A, offA, B, offB,
-                     beta, C, offC, incRowC, incColc)
-
-proc gemm_micro_kernel[T](
-                           kc: int,
-                           alpha: T,
-                           A: ref array[MCKC, T], offA: int,
-                           B: ref array[KCNC, T], offB: int,
-                           beta: T,
-                           C: var seq[T],
-                           offC: int,
-                           incRowC, incColC: int) =
-
-  gemm_micro_kernelT(kc, alpha, A, offA, B, offB,
-                     beta, C, offC, incRowC, incColc)
+proc gemm_micro_kernel[T](kc: int,
+                          alpha: T,
+                          A: ref array[MCKC, T], offA: int,
+                          B: ref array[KCNC, T], offB: int,
+                          beta: T,
+                          C: var seq[T],
+                          offC: int,
+                          incRowC, incColC: int)
+                          {.noSideEffect.} =
+  gemm_micro_kernelT(kc, alpha, A, offA, B, offB, beta, C, offC, incRowC, incColc)

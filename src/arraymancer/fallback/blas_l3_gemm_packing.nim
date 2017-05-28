@@ -16,7 +16,7 @@
 proc pack_MRxk[T](k: int,
                         A: seq[T], offA: var int,
                         incRowA, incColA: int,
-                        buffer: var array[MCKC, T],
+                        buffer: var ref array[MCKC, T],
                         offBuf: var int) =
 
   var voffA = offA
@@ -30,7 +30,7 @@ proc pack_MRxk[T](k: int,
 proc pack_A[T](mc, kc: int,
                      A: seq[T], offA: int,
                      incRowA, incColA: int,
-                     buffer: var array[MCKC, T]) =
+                     buffer: var ref array[MCKC, T]) =
 
   let mp = mc div MR
   let mr = mc mod MR
@@ -55,7 +55,7 @@ proc pack_A[T](mc, kc: int,
 proc pack_kxNR[T](k: int,
                         B: seq[T], offB: int,
                         incRowB, incColB: int,
-                        buffer: var array[KCNC, T],
+                        buffer: var ref array[KCNC, T],
                         offBuf: var int) =
   var voffB = offB
   for i in 0 ..< k:
@@ -68,7 +68,7 @@ proc pack_kxNR[T](k: int,
 proc pack_B[T](kc, nc: int,
                      B: seq[T], offB: int,
                      incRowB, incColB: int,
-                     buffer: var array[KCNC, T]) =
+                     buffer: var ref array[KCNC, T]) =
 
   let np = nc div NR
   let nr = nc mod NR

@@ -44,18 +44,19 @@ const MCKC = MC*KC
 const KCNC = KC*NC
 const MRNR = MR*NR
 
-# Declare global variables so they are allocated on the BSS
-var buffer_A: array[MCKC, int]
-var buffer_B: array[KCNC, int]
-var buffer_C: array[MRNR, int]
 
 include ./blas_l3_gemm_packing
 include ./blas_l3_gemm_axpy_scal
 include ./blas_l3_gemm_micro_kernel
 include ./blas_l3_gemm_macro_kernel
 
+proc newBufferArray[T: SomeNumber](N: static[int], typ: typedesc[T]): ref array[N, T]=
+  new result
+  for i in 0 ..< N:
+    result[i] = 0.T
+
 # We use T: int so that it is easy to change to float to benchmark against OpenBLAS/MKL/BLIS
-proc gemm_nn[T: int](m, n, k: int,
+proc gemm_nn[T](m, n, k: int,
                 alpha: T,
                 A: seq[T], offA: int,
                 incRowA, incColA: int,
@@ -76,6 +77,10 @@ proc gemm_nn[T: int](m, n, k: int,
 
   var mc, nc, kc: int
   var tmp_beta: T
+
+  var buffer_A = newBufferArray(MCKC, T)
+  var buffer_B = newBufferArray(KCNC, T)
+  var buffer_C = newBufferArray(MRNR, T)
 
   for j in 0 ..< nb:
     nc = if (j != nb-1 or mod_nc == 0): NC

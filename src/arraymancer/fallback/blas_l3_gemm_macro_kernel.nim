@@ -17,9 +17,9 @@ proc gemm_macro_kernel[T](mc, nc, kc: int,
                         beta: T,
                         C: var seq[T], offC: int,
                         incRowC, incColC: int,
-                        ibuf_A: var array[MCKC, T],
-                        ibuf_B: var array[KCNC, T],
-                        ibuf_C: var array[MRNR, T]) =
+                        ibuf_A: var ref array[MCKC, T],
+                        ibuf_B: var ref array[KCNC, T],
+                        ibuf_C: var ref array[MRNR, T]) =
   let mp = (mc+MR-1) div MR
   let np = (nc+NR-1) div NR
 

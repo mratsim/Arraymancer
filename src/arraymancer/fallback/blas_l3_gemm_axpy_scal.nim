@@ -15,7 +15,7 @@
 ## Compute Y += alpha * X
 proc geaxpy[T](m, n: int,
                alpha: T,
-               X: array[MRNR, T],
+               X: ref array[MRNR, T],
                incRowX, incColX: int,
                Y: var seq[T], offY: int,
                incRowY, incColY: int) =

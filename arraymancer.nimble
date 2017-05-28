@@ -16,6 +16,9 @@ requires "nim >= 0.15.1", "nimblas >= 0.1.3"
 ### BLIS support
 # switch("define","blis")
 
+### Compute with full detected optimizations
+{.passC: "-march=native".}
+
 ## Testing tasks
 proc test(name: string) =
   if not dirExists "bin":

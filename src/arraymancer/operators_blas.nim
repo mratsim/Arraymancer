@@ -151,16 +151,15 @@ template matmat_blis[T: SomeReal](a, b, result: Tensor[Cpu,T]): auto =
 template matmat_blas[T: SomeReal](a, b, result: Tensor[Cpu,T]): auto =
   ## Matrix to matrix Multiply for float tensors of rank 2
   let
-    rowA = a.shape[0]
-    colA = a.shape[1]
-    rowB = b.shape[0]
-    colB = b.shape[1]
+    M = a.shape[0]
+    K = a.shape[1] # b.shape[0]
+    N = b.shape[1]
 
   when compileOption("boundChecks"): check_matmat(a,b)
 
-  result.data = newSeq[T](rowA * colB)
-  result.shape = @[rowA, colB]
-  result.strides = @[rowA, 1]
+  result.data = newSeq[T](M * N)
+  result.shape = @[M, N]
+  result.strides = @[N, 1]
   result.offset = 0
 
   ## TODO use a GEMM kernel that supports strided arrays like BLIS
@@ -178,13 +177,13 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[Cpu,T]): auto =
 
   # General Matrix Multiply from nimblas.
   if a_tr == TransposeType.noTranspose and b_tr == TransposeType.noTranspose:
-    gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a_ptr, colA, b_ptr, colB, 0, res_ptr, colB)
+    gemm(rowMajor, a_tr, b_tr, M, N, K, 1, a_ptr, K, b_ptr, N, 0, res_ptr, N)
   elif a_tr == TransposeType.transpose and b_tr == TransposeType.noTranspose:
-    gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a_ptr, rowA, b_ptr, colB, 0, res_ptr, colB)
+    gemm(rowMajor, a_tr, b_tr, M, N, K, 1, a_ptr, M, b_ptr, N, 0, res_ptr, N)
   elif a_tr == TransposeType.noTranspose and b_tr == TransposeType.transpose:
-    gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a_ptr, colA, b_ptr, rowB, 0, res_ptr, colB)
+    gemm(rowMajor, a_tr, b_tr, M, N, K, 1, a_ptr, K, b_ptr, K, 0, res_ptr, N)
   elif a_tr == TransposeType.transpose and b_tr == TransposeType.transpose:
-    gemm(rowMajor, a_tr, b_tr, rowA, colB, rowB, 1, a_ptr, rowA, b_ptr, rowB, 0, res_ptr, colB)
+    gemm(rowMajor, a_tr, b_tr, M, N, K, 1, a_ptr, M, b_ptr, K, 0, res_ptr, N)
   else: raise newException(ValueError, "The transposes types: " & $a_tr & " or " & $b_tr & " is not supported")
 
 

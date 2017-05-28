@@ -53,7 +53,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     let m2 = [[5,3,6,0],
               [5,2,3,3],
               [8,8,2,0],
-              [7,7,2,0]].toTensor(Cpu)
+              [7,7,0,0]].toTensor(Cpu)
 
     let m1m2 = [[151,123,58,18],
                 [170,148,70, 6],
@@ -82,7 +82,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
               [0, 0,  1,  0,  4,  2,  4,  1],
               [0, 0,  1,  3,  4,  2,  4,  2],
               [4, 3,  4,  1,  4,  4,  0,  3],
-              [3, 3,  0,  2,  1,  2,  3,  2],
+              [3, 3,  0,  2,  1,  2,  3,  3],
               [2, 1,  2,  1,  2,  4,  4,  1]].toTensor(Cpu)
     
     let n1n2 = [[27,23,16,29,35,32,58,37],
@@ -258,7 +258,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     let m2 = [[5,3,6,0],
               [5,2,3,3],
               [8,8,2,0],
-              [7,7,2,0]].toTensor(Cpu)
+              [7,7,0,0]].toTensor(Cpu)
 
     let m1m2 = [[151,123,58,18],
                 [170,148,70, 6],
@@ -287,7 +287,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
               [0, 0,  1,  0,  4,  2,  4,  1],
               [0, 0,  1,  3,  4,  2,  4,  2],
               [4, 3,  4,  1,  4,  4,  0,  3],
-              [3, 3,  0,  2,  1,  2,  3,  2],
+              [3, 3,  0,  2,  1,  2,  3,  3],
               [2, 1,  2,  1,  2,  4,  4,  1]].toTensor(Cpu)
     
     let n1n2 = [[27,23,16,29,35,32,58,37],

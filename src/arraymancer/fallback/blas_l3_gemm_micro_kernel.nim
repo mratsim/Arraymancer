@@ -26,7 +26,7 @@ template gemm_micro_kernelT[T](
   var voffB = offB
 
   ## Compute A*B
-  for l in 0 ..< kc:
+  for _ in 0 ..< kc:
     for j in 0 ..< NR:
       for i in 0 .. <MR:
         AB[i + j*MR] += A[i + voffA] * B[j + voffB]

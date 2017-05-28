@@ -273,7 +273,7 @@ proc `*`*[T: SomeInteger](a, b: Tensor[Cpu,T]): Tensor[Cpu,T]  {.noSideEffect.} 
     raise newException(ValueError, "Only Matrix to Matrix multiplication is implemented")
 
   static: echo "Please note that integer matrix multiplication do not have optimized " &
-               "operations like how research as done for floats. If your integers are " &
+               "operations like how research has done for floats. If your integers are " &
                "smaller than 2^31, you can convert them to float64 without losing precision before " &
                "Matrix-Matrix or Matrix-Vector operations to benefit from accelerated routines."
 

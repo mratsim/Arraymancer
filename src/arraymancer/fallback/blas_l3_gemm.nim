@@ -33,6 +33,8 @@
 # - Is there a way to get L1/L2 cache size at compile-time
 # - Is there a way to get number of registers at compile-time
 
+# Best numbers depend on
+# L1, L2, L3 cache and register size
 const MC = 384
 const KC = 384
 const NC = 4096
@@ -55,7 +57,6 @@ proc newBufferArray[T: SomeNumber](N: static[int], typ: typedesc[T]): ref array[
   for i in 0 ..< N:
     result[i] = 0.T
 
-# We use T: int so that it is easy to change to float to benchmark against OpenBLAS/MKL/BLIS
 proc gemm_nn[T](m, n, k: int,
                 alpha: T,
                 A: seq[T], offA: int,
@@ -86,14 +87,14 @@ proc gemm_nn[T](m, n, k: int,
     nc =  if (j != nb-1 or mod_nc == 0): NC
           else: mod_nc
 
-    for l in 0 ..< kb:
-      kc       =  if (l != kb-1 or mod_kc == 0): KC
+    for k in 0 ..< kb:
+      kc       =  if (k != kb-1 or mod_kc == 0): KC
                   else: mod_kc
-      tmp_beta =  if l == 0: beta
+      tmp_beta =  if k == 0: beta
                   else: 1.T
 
       pack_dim( nc, kc,
-                B, l*KC*incRowB + j*NC*incColB + offB,
+                B, k*KC*incRowB + j*NC*incColB + offB,
                 incColB, incRowB, NR,
                 buffer_B)
 
@@ -102,7 +103,7 @@ proc gemm_nn[T](m, n, k: int,
              else: mod_mc
 
         pack_dim( mc, kc,
-                  A, i*MC*incRowA+l*KC*incColA + offA,
+                  A, i*MC*incRowA + k*KC*incColA + offA,
                   incRowA, incColA, MR,
                   buffer_A)
 

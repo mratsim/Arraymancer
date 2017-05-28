@@ -259,7 +259,7 @@ proc `*`*[T: SomeReal](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
 
   when defined(blis):
     ## When is evaluated at compile time and has no runtime cost
-    if not a.isContiguous and not b.isContiguous:
+    if not a.isContiguous or not b.isContiguous:
       # OpenBLAS / MKL are still faster than BLIS in the contiguous case
       if a.rank == 2 and b.rank == 2:    matmat_blis(a, b, result)
       elif a.rank == 2 and b.rank == 1:  matvec_blis(a, b, result)
@@ -268,3 +268,33 @@ proc `*`*[T: SomeReal](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, result)
   elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
   else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+
+proc `*`*[T: SomeInteger](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] =
+  if a.rank != 2 or b.rank != 2:
+    raise newException(ValueError, "Only Matrix to Matrix multiplication is implemented")
+
+  static: echo "Please note that integer matrix multiplication do not have optimized " &
+               "operations like how research as done for floats. If your integers are " &
+               "smaller than 2^31, you can convert them to float64 without losing precision before " &
+               "Matrix-Matrix or Matrix-Vector operations to benefit from accelerated routines."
+
+  let M = a.shape[0]
+  let K = a.shape[1]
+  let N = b.shape[1]
+
+  assert K == b.shape[0]
+
+  result.shape = @[M, N]
+  result.strides = @[N, 1]
+  result.offset = 0
+  result.data = newSeq[T](M*N)
+
+  gemm_nn(M, N, K,
+           1,
+           a.data, a.offset,
+           a.strides[0], a.strides[1],
+           b.data, b.offset,
+           b.strides[0], b.strides[1],
+           0,
+           result.data, 0,
+           N, 1)

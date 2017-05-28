@@ -44,7 +44,8 @@ const MCKC = MC*KC
 const KCNC = KC*NC
 const MRNR = MR*NR
 
-# Somehow it doesn't work if I declare the var arrays in gemm_nn
+# FIXME: The program compiles but segfault 11 if those global variables are declared in gemm_nn instead
+# On OSX with Clang
 var buffer_A: array[MCKC, int]
 var buffer_B: array[KCNC, int]
 var buffer_C: array[MRNR, int]

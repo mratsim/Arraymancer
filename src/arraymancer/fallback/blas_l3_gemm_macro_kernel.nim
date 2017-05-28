@@ -30,10 +30,10 @@ proc gemm_macro_kernel[T](mc, nc, kc: int,
   var nr: int
 
   for j in 0 ..< np:
-    nr = if (j != np-1 or mod_nr == 0.T): NR
+    nr = if (j != np-1 or mod_nr == 0): NR
          else: mod_nr
     for i in 0 ..< mp:
-      mr = if (i != mp-1 or mod_mr==0): MR
+      mr = if (i != mp-1 or mod_mr == 0): MR
            else: mod_mr
 
       if (mr==MR and nr==NR):

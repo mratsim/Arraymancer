@@ -268,7 +268,8 @@ proc `*`*[T: SomeReal](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
   else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
 
-proc `*`*[T: SomeInteger](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] =
+# We use T: int so that it is easy to change to float to benchmark against OpenBLAS/MKL/BLIS
+proc `*`*[T: int](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] =
   if a.rank != 2 or b.rank != 2:
     raise newException(ValueError, "Only Matrix to Matrix multiplication is implemented")
 
@@ -289,11 +290,11 @@ proc `*`*[T: SomeInteger](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] =
   result.data = newSeq[T](M*N)
 
   gemm_nn(M, N, K,
-           1,
+           1.T,
            a.data, a.offset,
            a.strides[0], a.strides[1],
            b.data, b.offset,
            b.strides[0], b.strides[1],
-           0,
+           0.T,
            result.data, 0,
            N, 1)

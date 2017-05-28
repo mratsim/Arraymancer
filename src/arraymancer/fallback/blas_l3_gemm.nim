@@ -54,7 +54,7 @@ include ./blas_l3_gemm_axpy_scal
 include ./blas_l3_gemm_micro_kernel
 include ./blas_l3_gemm_macro_kernel
 
-# TODO Remove T: int when var array issues is solved
+# We use T: int so that it is easy to change to float to benchmark against OpenBLAS/MKL/BLIS
 proc gemm_nn[T: int](m, n, k: int,
                 alpha: T,
                 A: seq[T], offA: int,

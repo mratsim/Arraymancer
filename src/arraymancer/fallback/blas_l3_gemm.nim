@@ -48,7 +48,7 @@ const MRNR = MR*NR
 
 
 include ./blas_l3_gemm_packing
-include ./blas_l3_gemm_axpy_scal
+include ./blas_l3_gemm_aux
 include ./blas_l3_gemm_micro_kernel
 include ./blas_l3_gemm_macro_kernel
 
@@ -82,6 +82,10 @@ proc gemm_nn[T](m, n, k: int,
   var buffer_A = newBufferArray(MCKC, T)
   var buffer_B = newBufferArray(KCNC, T)
   var buffer_C = newBufferArray(MRNR, T)
+
+  if alpha == 0.T or k == 0:
+    gescal(m, n, beta, C, offC, incRowC, incColC)
+    return
 
   for j in 0 ..< nb:
     nc =  if (j != nb-1 or mod_nc == 0): NC

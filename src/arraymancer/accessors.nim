@@ -29,12 +29,12 @@ proc getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int {.n
     real_idx += i*j
   return real_idx
 
-proc atIndex*[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): T {.noSideEffect.} =
+proc atIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): T {.noSideEffect.} =
   ## Get the value at input coordinates
   ## This used to be `[]` before slicing was implemented
   return t.data[t.getIndex(idx)]
 
-proc atIndexMut*[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], val: T) {.noSideEffect.} =
+proc atIndexMut[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], val: T) {.noSideEffect.} =
   ## Set the value at input coordinates
   ## This used to be `[]=` before slicing was implemented
   t.data[t.getIndex(idx)] = val

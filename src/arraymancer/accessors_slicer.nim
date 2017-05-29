@@ -231,10 +231,10 @@ macro desugar(args: untyped): typed =
     ###### Core desugaring logic
     if nnk_joker:
       ## [_, 3] into [span, 3]
-      r.add(ident("span"))
+      r.add(bindSym("span"))
     elif nnk0_inf_dotdot and nnk1_joker and nnk2_joker:
       ## [_.._, 3] into [span, 3]
-      r.add(ident("span"))
+      r.add(bindSym("span"))
     elif nnk0_inf_dotdot and nnk1_joker and nnk20_bar_all and nnk21_joker:
       ## [_.._|2, 3] into [0..^1|2, 3]
       ## [_.._|+2, 3] into [0..^1|2, 3]
@@ -314,7 +314,7 @@ template slicerT[B,T](result: Tensor[B, T], slices: varargs[SteppedSlice]): unty
     result.strides[i] *= slice.step
     result.shape[i] = abs((b-a) div slice.step) + 1
 
-proc slicer*[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.}=
+proc slicer[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -341,11 +341,11 @@ macro inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
   ## Note, normal slices and `_` were already converted in the `[]` macro
   ## TODO in total we do 3 passes over the list of arguments :/. It is done only at compile time though
   if isAllInt(args):
-    result = newCall("atIndex", t)
+    result = newCall(bindSym("atIndex"), t)
     for slice in args:
       result.add(slice)
   else:
-    result = newCall("slicer", t)
+    result = newCall(bindSym("slicer"), t)
     for slice in args:
       if isInt(slice):
         ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
@@ -359,13 +359,13 @@ macro `[]`*[B, T](t: Tensor[B,T], args: varargs[untyped]): untyped =
   result = quote do:
     inner_typed_dispatch(`t`, `new_args`)
 
-proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
+proc slicerMut[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
   ## Assign the value to the whole slice
   var sliced = t.shallowSlicer(slices)
   for old_val in sliced.mitems:
     old_val = val
 
-proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: openarray) {.noSideEffect.}=
+proc slicerMut[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: openarray) {.noSideEffect.}=
   ## Assign value from openarrays
   ## The openarray must have the same shape as the slice
   let sliced = t.shallowSlicer(slices)
@@ -384,7 +384,7 @@ proc slicerMut*[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: op
   for real_idx, val in zip(sliced.real_indices, data):
     t.data[real_idx] = val
 
-proc slicerMut*[B1, B2, T](t: var Tensor[B1, T], slices: varargs[SteppedSlice], t2: Tensor[B2, T]) {.noSideEffect.}=
+proc slicerMut[B1, B2, T](t: var Tensor[B1, T], slices: varargs[SteppedSlice], t2: Tensor[B2, T]) {.noSideEffect.}=
   ## Assign the value to the whole slice
   let sliced = t.shallowSlicer(slices)
 
@@ -396,12 +396,12 @@ proc slicerMut*[B1, B2, T](t: var Tensor[B1, T], slices: varargs[SteppedSlice], 
 macro inner_typed_dispatch_mut(t: typed, args: varargs[typed], val: typed): untyped =
   ## Assign `val` to Tensor T at slice/position `args`
   if isAllInt(args):
-    result = newCall("atIndexMut", t)
+    result = newCall(bindSym("atIndexMut"), t)
     for slice in args:
       result.add(slice)
     result.add(val)
   else:
-    result = newCall("slicerMut", t)
+    result = newCall(bindSym("slicerMut"), t)
     for slice in args:
       if isInt(slice):
         ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]

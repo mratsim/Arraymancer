@@ -35,16 +35,16 @@
 
 # Best numbers depend on
 # L1, L2, L3 cache and register size
-const MC = 384
-const KC = 384
+const MC = 96
+const KC = 256
 const NC = 4096
 
-const MR = 4
-const NR = 4
+const MR = 2 # Must fit in L1 cache
+const NR = 2
 
-const MCKC = MC*KC
-const KCNC = KC*NC
-const MRNR = MR*NR
+const MCKC = MC*KC # A resides in L2 cache
+const KCNC = KC*NC # B resides in L3 cache
+const MRNR = MR*NR # Work area: Fit in registers
 
 
 include ./blas_l3_gemm_packing

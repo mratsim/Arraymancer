@@ -21,14 +21,16 @@ template gemm_micro_kernelT[T](
             C: typed,
             offC: int,
             incRowC, incColC: int): untyped =
-  var AB: array[MR*NR, T]
+
+  {.pragma: align16, codegenDecl: "$# $# __attribute__((aligned(16)))".}
+  var AB{.align16.}: array[MR*NR, T]
   var voffA = offA
   var voffB = offB
 
   ## Compute A*B
   for _ in 0 ..< kc:
     for j in 0 ..< NR:
-      for i in 0 .. <MR:
+      for i in 0 .. < MR:
         AB[i + j*MR] += A[i + voffA] * B[j + voffB]
     voffA += MR
     voffB += NR

@@ -93,9 +93,10 @@ proc gemm_nn[T](m, n, k: int,
   var mc, nc, kc: int
   var tmp_beta: T
 
-  var buffer_A = newBufferArray(MCKC, T)
-  var buffer_B = newBufferArray(KCNC, T)
-  var buffer_C = newBufferArray(MRNR, T)
+  {.pragma: align16, codegenDecl: "$# $# __attribute__((aligned(16)))".}
+  var buffer_A{.align16.} = newBufferArray(MCKC, T)
+  var buffer_B{.align16.} = newBufferArray(KCNC, T)
+  var buffer_C{.align16.} = newBufferArray(MRNR, T)
 
   if alpha == 0.T or k == 0:
     gescal(m, n, beta, C, offC, incRowC, incColC)

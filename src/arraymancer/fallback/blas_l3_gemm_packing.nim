@@ -34,7 +34,7 @@ proc pack_dim[T, N](lc, kc: int, # lc = mc for A (MxK matrix) and lc = nc for B 
                     {.noSideEffect.} =
 
   let lp = lc div LR # Number of whole blocks along leading dim
-  let lr = lc mod MR # Reminder of leading dim
+  let lr = lc mod LR # Reminder of leading dim
 
   var offBuf = 0
   var offM = offset
@@ -49,5 +49,5 @@ proc pack_dim[T, N](lc, kc: int, # lc = mc for A (MxK matrix) and lc = nc for B 
         buffer[lead + offBuf] = M[lead * lsm + offM]
       for lead in lr ..< LR:
         buffer[lead + offBuf] = 0.T
-      offBuf += MR
+      offBuf += LR
       offM   += ssm

@@ -35,13 +35,27 @@
 
 # Best numbers depend on
 # L1, L2, L3 cache and register size
+
+# L1 cache: 32 KB data + 32 KB instructions since Nehalem (per proc)
+# L2 cache: 256KB since Nehalem
+# X86-64 Register size: 16 registers 128-bit (16 Bytes) wide (SSE2), 256-bit with AVX
+# Loading int in AVX registers needs AVX2 support in CPU.
+# Everything must be aligned in memory for faster loading in registers.
+
+# Int/float64 takes 4B
+# float32 takes 2B
+# --> use "when" to parametrize size at compile-time?
+
 const MC = 96
 const KC = 256
 const NC = 4096
 
-const MR = 2 # Must fit in L1 cache
+# The following should be bigger (4x8) but somehow it hurts my performance
+# It might be because the compiler is not using the large AVX registers by default.
+const MR = 2
 const NR = 2
 
+#                    Panels of B of size KC * NR resides in L1 cache
 const MCKC = MC*KC # A resides in L2 cache
 const KCNC = KC*NC # B resides in L3 cache
 const MRNR = MR*NR # Work area: Fit in registers

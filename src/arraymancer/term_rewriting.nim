@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc toTensorReshape(oa: openarray, B: static[Backend], shape: varargs[int]): auto =
-  ## Fuse toTensor and reshape in one operation
-
+template toTensorReshapeT(oa: typed, B: static[Backend], shape: varargs[int]): untyped = 
   let data = toSeq(flatIter(oa))
   let seq_shape = @shape
 
@@ -22,6 +20,17 @@ proc toTensorReshape(oa: openarray, B: static[Backend], shape: varargs[int]): au
 
   result = emptyTensor(seq_shape, type(data[0]), B)
   result.data = data
+
+proc toTensorReshape(oa: string, B: static[Backend], shape: varargs[int]): auto =
+  ## Fuse toTensor and reshape in one operation
+  ## Deal specifically with strings/seq[char]
+
+  toTensorReshapeT(oa, B, shape)
+
+proc toTensorReshape(oa: openarray, B: static[Backend], shape: varargs[int]): auto =
+  ## Fuse toTensor and reshape in one operation
+
+  toTensorReshapeT(oa, B, shape)
 
 template rewriteToTensorReshape*{reshape(toTensor(oa, B), shape)}(
   oa: openarray,

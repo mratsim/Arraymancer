@@ -70,6 +70,11 @@ type Step* = object
 proc check_steps(a,b, step:int) {.noSideEffect.}=
   ## Though it might be convenient to automatically step in the correct direction like in Python
   ## I choose not to do it as this might introduce the typical silent bugs typechecking/Nim is helping avoid.
+  
+  if a == 0 and b == -1 and step == 1:
+    # Very specific scenario to allow initialization of concatenation with empty dimension
+    # like shape of (3, 0)
+    return
   if ((b-a) * step < 0):
     raise newException(IndexError, "Your slice start: " &
                 $a & ", and stop: " &
@@ -81,10 +86,14 @@ proc check_steps(a,b, step:int) {.noSideEffect.}=
 
 proc check_shape(a, b: Tensor|openarray) {.noSideEffect.}=
   ## Compare shape
-  if a.shape != b.shape:
-    raise newException(IndexError, "Your tensors or openarrays do not have the same shape: " &
-                                   $a.shape.join("x") &
-                                   " and " & $b.shape.join("x"))
+  if a.shape == b.shape:
+    return
+  else:
+    for ai, bi in zip(a.shape, b.shape):
+      if ai != bi and not (ai == 0 or bi == 0): # We allow dim = 0 for initialization of concatenation with empty dimension
+        raise newException(IndexError, "Your tensors or openarrays do not have the same shape: " &
+                                       $a.shape.join("x") &
+                                       " and " & $b.shape.join("x"))
 
 ## Procs to manage all integer, slice, SteppedSlice 
 proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=

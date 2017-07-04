@@ -44,9 +44,7 @@ proc emptyTensor(shape: seq[int], T: typedesc, B: static[Backend]): Tensor[B,T] 
   ## Internal proc so that toTensor has the proper internal type and backend
   tensor(shape, result)
 
-proc toTensor*(s:openarray, B: static[Backend]): auto {.noSideEffect.} =
-  ## Convert an openarray to a Tensor
-  ## TODO: have Backend.Cpu as default. pending https://github.com/nim-lang/Nim/issues/5864
+template toTensorT(s: typed, B: static[Backend]): untyped =
   let shape = s.shape
   let data = toSeq(flatIter(s))
 
@@ -54,6 +52,15 @@ proc toTensor*(s:openarray, B: static[Backend]): auto {.noSideEffect.} =
 
   result = emptyTensor(shape, type(data[0]), B)
   result.data = data
+
+proc toTensor*(s:openarray, B: static[Backend]): auto {.noSideEffect.} =
+  ## Convert an openarray to a Tensor
+  ## TODO: have Backend.Cpu as default. pending https://github.com/nim-lang/Nim/issues/5864
+  toTensorT(s,B)
+
+proc toTensor*(s:string, B: static[Backend]): auto {.noSideEffect.} =
+  ## Handle string specifically
+  toTensorT(s,B)
 
 ## TODO add tests for zeros, ones and randomTensor
 proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], B: static[Backend]): Tensor[B,T] {.noSideEffect, inline.} =

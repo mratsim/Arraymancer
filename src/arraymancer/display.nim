@@ -83,7 +83,7 @@ proc disp3d(t: Tensor): string {.noSideEffect.} =
   let sep: seq[string] = @["|"]
   let empty: seq[string] = @[]
 
-  var buffer = empty.repeat(a.shape[1]).toTensor(Cpu)
+  var buffer = empty.repeat(t.shape[1]).toTensor(Cpu)
 
   for t0 in t.axis(0):
     buffer = buffer.concat(

@@ -1,49 +1,8 @@
-# Copied from https://github.com/nim-lang/Nim/wiki/TravisCI
-language: c
-env:
-  # Build and test against the master and devel branches of Nim
-  - BRANCH=master
-  - BRANCH=devel
-compiler:
-  # Build and test using both gcc and clang
-  - gcc
-  - clang
-matrix:
-  allow_failures:
-    # Ignore failures when building against the devel Nim branch
-    - env: BRANCH=devel
-  fast_finish: true
-install:
-  - |
-    if [ ! -x nim-$BRANCH/bin/nim ]; then
-      git clone -b $BRANCH --depth 1 git://github.com/nim-lang/nim nim-$BRANCH/
-      cd nim-$BRANCH
-      git clone --depth 1 git://github.com/nim-lang/csources csources/
-      cd csources
-      sh build.sh
-      cd ..
-      rm -rf csources
-      bin/nim c koch
-      ./koch boot -d:release
-      ./koch nimble
-    else
-      cd nim-$BRANCH
-      git fetch origin
-      if ! git merge FETCH_HEAD | grep "Already up-to-date"; then
-        bin/nim c koch
-        ./koch boot -d:release
-        ./koch nimble
-      fi
-    fi
-    cd ..
-before_script:
-    - export PATH="nim-$BRANCH/bin${PATH:+:$PATH}"
+sudo: required
+services:
+  - docker
+before_install:
+  - docker pull yglukhov/nim-base
 script:
-    - nimble test
-cache:
-  directories:
-    - nim-master
-    - nim-devel
-branches:
-  except:
-    - gh-pages
+  - docker run yglukhov/nim-base nim --version
+  - docker run -v "$(pwd):/project" -w /project yglukhov/nim-base nimble test

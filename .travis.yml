@@ -25,23 +25,18 @@ install:
       rm -rf csources
       bin/nim c koch
       ./koch boot -d:release
+      ./koch nimble
     else
       cd nim-$BRANCH
       git fetch origin
       if ! git merge FETCH_HEAD | grep "Already up-to-date"; then
         bin/nim c koch
         ./koch boot -d:release
+        ./koch nimble
       fi
     fi
+    export PATH=$(pwd)/bin:$PATH
     cd ..
-    
-  # Install nimble
-  - cd ~
-  - git clone https://github.com/nim-lang/nimble.git --depth 1
-  - cd nimble
-  - nim c -r src/nimble install
-  - export PATH=~/nimble/bin:$PATH
-  
 before_script:
     - export PATH="nim-$BRANCH/bin${PATH:+:$PATH}"
 script:

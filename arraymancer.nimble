@@ -1,11 +1,11 @@
 ### Package
-version       = "0.0.1"
+version       = "0.1.0"
 author        = "Mamy André-Ratsimbazafy"
-description   = "Nim tensors / multi-dimensional arrays"
+description   = "A n-dimensional tensor (ndarray) library"
 license       = "Apache License 2.0"
 
 ### Dependencies
-requires "nim >= 0.15.1", "nimblas >= 0.1.3"
+requires "nim >= 0.17.0", "nimblas >= 0.1.3"
 
 ## Install files
 installDirs = @["src"]

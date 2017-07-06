@@ -397,18 +397,18 @@ Input is a tensor and the new dimension order
 let a = toSeq(1..24).toTensor(Cpu).reshape(2,3,4)
 echo a
 
-Tensor of shape 2x3x4 of type "int" on backend "Cpu"
- |      1       2       3       4 |     13      14      15      16|
- |      5       6       7       8 |     17      18      19      20|
- |      9       10      11      12 |    21      22      23      24|
+# Tensor of shape 2x3x4 of type "int" on backend "Cpu"
+#  |      1       2       3       4 |     13      14      15      16|
+#  |      5       6       7       8 |     17      18      19      20|
+#  |      9       10      11      12 |    21      22      23      24|
 
 echo a.permute(0,2,1) # dim 0 stays at 0, dim 1 becomes dim 2 and dim 2 becomes dim 1
 
-Tensor of shape 2x4x3 of type "int" on backend "Cpu"
- |      1       5       9 |     13      17      21|
- |      2       6       10 |    14      18      22|
- |      3       7       11 |    15      19      23|
- |      4       8       12 |    16      20      24|
+# Tensor of shape 2x4x3 of type "int" on backend "Cpu"
+#  |      1       5       9 |     13      17      21|
+#  |      2       6       10 |    14      18      22|
+#  |      3       7       11 |    15      19      23|
+#  |      4       8       12 |    16      20      24|
 ```
 
 #### Concatenation

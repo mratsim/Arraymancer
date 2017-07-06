@@ -20,6 +20,7 @@ install:
   - choosenim $CHANNEL
 
 script:
+    - nimble refresh
     - nimble test
 
 branches:

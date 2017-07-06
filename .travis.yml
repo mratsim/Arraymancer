@@ -13,9 +13,6 @@ matrix:
     # Ignore failures when building against the devel Nim branch
     - env: CHANNEL=devel
   fast_finish: true
-before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libopenblas-dev
 install:
   - curl https://nim-lang.org/choosenim/init.sh -sSf | sh
   - export PATH=~/.nimble/bin:$PATH

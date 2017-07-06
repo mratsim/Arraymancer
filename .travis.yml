@@ -1,0 +1,31 @@
+# Copied from https://github.com/nim-lang/Nim/wiki/TravisCI
+language: c
+env:
+  # Build and test against the master (stable) and devel branches of Nim
+  - CHANNEL=stable
+  - CHANNEL=devel
+compiler:
+  # Build and test using both gcc and clang
+  - gcc
+  - clang
+matrix:
+  allow_failures:
+    # Ignore failures when building against the devel Nim branch
+    - env: CHANNEL=devel
+  fast_finish: true
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y libopenblas-dev
+install:
+  - curl https://nim-lang.org/choosenim/init.sh -sSf | sh
+  - export PATH=~/.nimble/bin:$PATH
+  - echo "export PATH=/home/travis/.nimble/bin:$PATH" >> ~/.profile
+  - choosenim $CHANNEL
+
+script:
+    - nimble refresh
+    - nimble test
+
+branches:
+  except:
+    - gh-pages

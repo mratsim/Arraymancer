@@ -1,3 +1,5 @@
+[![Linux Build Status (Travis)](https://travis-ci.org/mratsim/Arraymancer.svg?branch=master "Linux build status (Travis)")](https://travis-ci.org/mratsim/Arraymancer)   [![Windows build status (Appveyor)](https://ci.appveyor.com/api/projects/status/github/mratsim/arraymancer?branch=master&svg=true "Windows build status (Appveyor)")](https://ci.appveyor.com/project/mratsim/arraymancer)
+
 # Arraymancer - A n-dimensional tensor (ndarray) library
 
 Arraymancer is a tensor (N-dimensional array) project. The main focus is providing a fast and ergonomic CPU and GPU ndarray library on which to build a numerical computing and in particular a deep learning ecosystem.

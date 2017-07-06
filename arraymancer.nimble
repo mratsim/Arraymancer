@@ -7,9 +7,6 @@ license       = "Apache License 2.0"
 ### Dependencies
 requires "nim >= 0.15.1", "nimblas >= 0.1.3"
 
-## Install files
-installDirs = @["src"]
-
 ### BLAS support
 ## OSX
 # switch("define","openblas")

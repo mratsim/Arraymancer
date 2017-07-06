@@ -36,14 +36,13 @@ install:
     cd ..
     
   # Install nimble
+  - echo 'export PATH="nim-$BRANCH/bin${PATH:+:$PATH}"' >> ~/.profile
   - cd ~
   - git clone https://github.com/nim-lang/nimble.git --depth 1
   - cd nimble
   - nim c -r src/nimble install
-  - export PATH=~/nimble/bin:$PATH
-  
-before_script:
-    - export PATH="nim-$BRANCH/bin${PATH:+:$PATH}"
+  - echo 'export PATH=~/nimble/bin:$PATH' >> ~/.profile
+
 script:
     - nimble test
 cache:

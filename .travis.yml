@@ -36,6 +36,8 @@ install:
     cd ..
     
   # Install nimble
+  - echo $PWD
+  - ls -la
   - echo 'export PATH="nim-$BRANCH/bin${PATH:+:$PATH}"' >> ~/.profile
   - cd ~
   - git clone https://github.com/nim-lang/nimble.git --depth 1

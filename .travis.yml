@@ -1,5 +1,8 @@
 # Copied from https://github.com/nim-lang/Nim/wiki/TravisCI
 language: c
+
+cache: ccache
+
 env:
   # Build and test against the master (stable) and devel branches of Nim
   - CHANNEL=stable
@@ -13,13 +16,17 @@ matrix:
     # Ignore failures when building against the devel Nim branch
     - env: CHANNEL=devel
   fast_finish: true
-before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y libopenblas-dev
+
+addons:
+  apt:
+    packages:
+      # On Linux we need OpenBLAS, on OSX Apple Accelerate is present by default
+      - libopenblas-dev
+
 install:
   - curl https://nim-lang.org/choosenim/init.sh -sSf | sh
   - export PATH=~/.nimble/bin:$PATH
-  - echo "export PATH=/home/travis/.nimble/bin:$PATH" >> ~/.profile
+  - echo "export PATH=~/.nimble/bin:$PATH" >> ~/.profile
   - choosenim $CHANNEL
 
 script:

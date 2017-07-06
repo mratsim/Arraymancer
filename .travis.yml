@@ -15,7 +15,6 @@ matrix:
   fast_finish: true
 install:
   - curl https://nim-lang.org/choosenim/init.sh -sSf | sh
-  - choosenim $CHANNEL
 
 script:
     - nimble test

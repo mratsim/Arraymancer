@@ -27,8 +27,8 @@ install:
   - cd ..
   - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%CD%\tools_tmp\%MINGW_DIR%\bin;%PATH%
   - ps: nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}"
-  - ps: cp OpenBLAS.0.2.14.1/lib/native/bin/x64/libopenblas.dll blas.dll
   - SET PATH=%PATH%;%CD%
+  - ps: cp libopenblas.dll blas.dll
 
 build_script:
   - nimble.exe refresh

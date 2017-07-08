@@ -36,4 +36,5 @@ template rewriteToTensorReshape*{reshape(toTensor(oa, B), shape)}(
   oa: openarray,
   B: static[Backend],
   shape: varargs[int]): auto =
+  ## Fuse ``sequence.toTensor(Backend).reshape(new_shape)`` into a single operation.
   toTensorReshape(oa, B, shape)

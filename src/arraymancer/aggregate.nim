@@ -55,7 +55,7 @@ proc agg*[B; T: SomeNumber](t: Tensor[B,T],
                             start_val: Tensor[B,T],
                             axis: int
                             ): Tensor[B,T] {.noSideEffect.}=
-  ## Compute the aggregate
+  ## Compute the aggregate along an axis
   ## Input:
   ##     - A tensor to aggregate on
   ##     - The aggregation function. It is applied this way: new_aggregate = f(old_aggregate, current_value)
@@ -72,7 +72,7 @@ proc agg_inplace*[B; T: SomeNumber](
                             t: Tensor[B,T],
                             axis: int
                             ) {.noSideEffect.}=
-  ## Compute the aggregate
+  ## Compute the aggregate along an axis
   ## Input:
   ##     - The accumulating value which will be modified in-place
   ##     - A tensor to aggregate from
@@ -86,14 +86,14 @@ proc agg_inplace*[B; T: SomeNumber](
 # ### Standard aggregate functions
 
 proc sum*[B; T: SomeNumber](t: Tensor[B,T]): T {.noSideEffect.}=
-  # Compute the sum of all elements of T
+  ## Compute the sum of all elements of T
   # TODO tests
   result = 0.T
   for val in t:
     result += val
 
 proc sum*[B; T: SomeNumber](t: Tensor[B,T], axis: int): Tensor[B, T] {.noSideEffect.}=
-  # Compute the sum of all elements of T along an axis
+  ## Compute the sum of all elements of T along an axis
   # TODO tests
   var agg_shape = t.shape
   agg_shape[axis] = 1
@@ -102,12 +102,12 @@ proc sum*[B; T: SomeNumber](t: Tensor[B,T], axis: int): Tensor[B, T] {.noSideEff
   result.agg_inplace(`+=`, t, axis)
 
 proc mean*[B; T: SomeReal](t: Tensor[B,T]): T {.noSideEffect.}=
-  # Compute the mean of all elements of T
+  ## Compute the mean of all elements of T
   # TODO tests
   return t.sum / t.shape.product.T
 
 proc mean*[B; T: SomeReal](t: Tensor[B,T], axis: int): Tensor[B, T] {.noSideEffect.}=
-  # Compute the mean of T along an axis
+  ## Compute the mean of T along an axis
   # TODO tests
   let n = t.shape[axis]
   return t.sum(axis) / n.T

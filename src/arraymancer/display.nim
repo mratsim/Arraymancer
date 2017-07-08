@@ -127,6 +127,7 @@ proc disp4d(t: Tensor): string {.noSideEffect.} =
   return vbuffer.disp2d
 
 proc `$`*[B,T](t: Tensor[B,T]): string {.noSideEffect.} =
+  ## Pretty-print a tensor (when using ``echo`` for example)
   let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & $B & "\""
   if t.rank <= 2:
     return desc & "\n" & t.disp2d

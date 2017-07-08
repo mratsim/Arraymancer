@@ -55,11 +55,13 @@ template toTensorT(s: typed, B: static[Backend]): untyped =
 
 proc toTensor*(s:openarray, B: static[Backend]): auto {.noSideEffect.} =
   ## Convert an openarray to a Tensor
-  ## TODO: have Backend.Cpu as default. pending https://github.com/nim-lang/Nim/issues/5864
+  # TODO: have Backend.Cpu as default. pending https://github.com/nim-lang/Nim/issues/5864
   toTensorT(s,B)
 
 proc toTensor*(s:string, B: static[Backend]): auto {.noSideEffect.} =
-  ## Handle string specifically
+  ## Convert an openarray to a Tensor
+  ##
+  ## Handle string specifically (otherwise they are interpreted as openarray[char])
   toTensorT(s,B)
 
 # TODO add tests for zeros, ones and randomTensor
@@ -70,7 +72,7 @@ proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], B: static[Ba
   ##      - Type of its elements
   ##      - Backend
   ## Result:
-  ##      - An zero-ed Tensor of the input shape
+  ##      - A zero-ed Tensor of the input shape
   return newTensor(shape, typ, B)
 
 proc zeros_like*[B: static[Backend], T: SomeNumber](t: Tensor[B,T]): Tensor[B,T] {.noSideEffect, inline.} =
@@ -80,7 +82,7 @@ proc zeros_like*[B: static[Backend], T: SomeNumber](t: Tensor[B,T]): Tensor[B,T]
   ##      - Type of its elements
   ##      - Backend
   ## Result:
-  ##      - An zero-ed Tensor of the same shape
+  ##      - A zero-ed Tensor of the same shape
   return zeros(t.shape, T, B)
 
 proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], B: static[Backend]): Tensor[B,T] {.noSideEffect.} =
@@ -90,7 +92,7 @@ proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], B: static[Bac
   ##      - Type of its elements
   ##      - Backend
   ## Result:
-  ##      - A Tensor of one of the input shape
+  ##      - A one-ed Tensor of the same shape
   tensor(shape, result)
   result.data = newSeqWith(result.shape.product, 1.T)
 
@@ -100,7 +102,7 @@ proc ones_like*[B: static[Backend], T: SomeNumber](t: Tensor[B,T]): Tensor[B,T] 
   ## Input:
   ##      - Tensor
   ## Result:
-  ##      - A Tensor of one of the input shape
+  ##      - A one-ed Tensor of the same shape
   return ones(t.shape, T, B)
 
 template randomTensorT(shape: openarray[int], max_or_range: typed): untyped =
@@ -109,15 +111,33 @@ template randomTensorT(shape: openarray[int], max_or_range: typed): untyped =
 
 proc randomTensor*(shape: openarray[int], max: float, B: static[Backend]): Tensor[B,float] =
   ## Creates a new float Tensor filled with values between 0 and max
-  ## Random seed can be set by importing random and `randomize(seed)`
+  ## Random seed can be set by importing ``random`` and ``randomize(seed)``
+  ## Input:
+  ##      - a shape
+  ##      - the max value possible (float)
+  ##      - a tensor backend
+  ## Result:
+  ##      - A tensor of the input shape filled with random value between 0 and max input value
   randomTensorT(shape, max)
 
 proc randomTensor*(shape: openarray[int], max: int, B: static[Backend]): Tensor[B,int] =
   ## Creates a new int Tensor filled with values between 0 and max-1
-  ## Random seed can be set by importing random and `randomize(seed)`
+  ## Random seed can be set by importing ``random`` and ``randomize(seed)``
+  ## Input:
+  ##      - a shape
+  ##      - the max value possible (integer, exclusive)
+  ##      - a tensor backend
+  ## Result:
+  ##      - A tensor of the input shape filled with random value between 0 and max input value (excluded)
   randomTensorT(shape, max)
 
 proc randomTensor*[T](shape: openarray[int], slice: Slice[T], B: static[Backend]): Tensor[B,T] =
   ## Creates a new int Tensor filled with values in the Slice range.
-  ## Random seed can be set by importing random and `randomize(seed)`
+  ## Random seed can be set by importing ``random`` and ``randomize(seed)``
+  ## Input:
+  ##      - a shape
+  ##      - a range/slice
+  ##      - a tensor backend
+  ## Result:
+  ##      - A tensor of the input shape filled with random value in the slice range
   randomTensorT(shape, slice)

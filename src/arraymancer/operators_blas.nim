@@ -42,7 +42,7 @@ proc check_add(a, b:Tensor)  {.noSideEffect.}=
   if a.shape != b.shape:
     raise newException(ValueError, "Both Tensors should have the same shape")
 
-
+# ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
 
 proc `.*`*[T: SomeReal](a, b: Tensor[Cpu,T]): T {.noSideEffect.} =
@@ -100,18 +100,21 @@ proc `-=`*[T: SomeNumber](a: var Tensor[Cpu,T], b: Tensor[Cpu, T]) {.noSideEffec
     a.data[a_idx] -= b_val
 
 proc `*`*[T: SomeNumber](a: T, t: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
+  ## Element-wise multiplication by a scalar
   proc f(x: T): T = a * x
   return t.fmap(f)
 
 proc `*`*[T: SomeNumber](t: Tensor[Cpu,T], a: T): Tensor[Cpu,T] {.noSideEffect.} =
+  ## Element-wise multiplication by a scalar
   proc f(x: T): T = a * x
   return t.fmap(f)
 
 proc `/`*[T: SomeNumber](t: Tensor[Cpu,T], a: T): Tensor[Cpu,T] {.noSideEffect.} =
+  ## Element-wise division by a scalar
   proc f(x: T): T = x / a
   return t.fmap(f)
 
-
+# #################################################
 # BLAS Level 2 and 3 (Matrix-Matrix, Matrix-Vector)
 
 template matmat_blis[T: SomeReal](a, b, result: Tensor[Cpu,T]): auto =
@@ -254,6 +257,7 @@ template matvec_blas[T: SomeReal](a, x, result: Tensor[Cpu,T]): auto =
 
 proc `*`*[T: SomeReal](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
+  ## Float operations use optimized BLAS
 
   when defined(blis):
     ## When is evaluated at compile time and has no runtime cost
@@ -268,6 +272,7 @@ proc `*`*[T: SomeReal](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
 
 proc `*`*[T: SomeInteger](a, b: Tensor[Cpu,T]): Tensor[Cpu,T]  {.noSideEffect.} =
+  ## Matrix multiplication fallback for integer tensor
   if a.rank != 2 or b.rank != 2:
     raise newException(ValueError, "Only Matrix to Matrix multiplication is implemented")
 

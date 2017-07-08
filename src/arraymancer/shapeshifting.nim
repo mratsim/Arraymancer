@@ -24,9 +24,11 @@ proc check_concat(t1, t2: Tensor, axis: int) {.noSideEffect,inline.}=
     raise newException(ValueError, "Concatenation Error: Except along the concatenation axis tensors must have the same shape")
 
 proc transpose*(t: Tensor): Tensor {.noSideEffect.}=
-  ## Transpose a Tensor. For N-d Tensor with shape (0, 1, 2 ... n-1)
-  ## the resulting tensor will have shape (n-1, ... 2, 1, 0)
-  ## Data is copied as is and not modified.
+  ## Transpose a Tensor.
+  ##
+  ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
+  ##
+  ## Data is copied as-is and not modified.
 
   result.shape = t.shape.reversed
   result.strides = t.strides.reversed
@@ -34,7 +36,7 @@ proc transpose*(t: Tensor): Tensor {.noSideEffect.}=
   result.data = t.data
 
 proc asContiguous*[B,T](t: Tensor[B,T]): Tensor[B,T] {.noSideEffect.}=
-  ## Transform a tensor with general striding to a Row major Tensor
+  ## Transform a tensor with general striding to a row major Tensor
 
   if t.isContiguous: return t
 
@@ -82,8 +84,11 @@ proc reshape_with_copy[B,T](t: Tensor[B,T], new_shape: seq[int]): Tensor[B,T] {.
 
 proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
   ## Reshape a tensor
-  ## TODO: tests
-  ## TODO: fuse toTensor.reshape
+  ## Input:
+  ##   - a tensor
+  ##   - a new shape. Number of elements must be the same
+  ## Returns:
+  ##   - a tensor with the same data but reshaped.
 
   let ns = @new_shape
   when compileOption("boundChecks"): check_reshape(t, ns)
@@ -93,10 +98,13 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
   return t.reshape_with_copy(ns)
 
 proc broadcast*[B,T](t: Tensor[B,T], shape: openarray[int]): Tensor[B,T] {.noSideEffect.}=
-  ## Broadcasting array
-  ## Todo: proper bound-checking
-  ## todo: testing
-  ## TODO: use term-rewriting macro to have t1.bc * t2.bc broadcasted in compatible shape
+  ## Broadcast array
+  ##
+  ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
+  ## values along that dimension.
+  # Todo: proper bound-checking
+  # todo: testing
+  # TODO: use term-rewriting macro to have t1.bc * t2.bc broadcasted in compatible shape
   result = t
   assert t.rank == shape.len
 
@@ -109,7 +117,7 @@ proc broadcast*[B,T](t: Tensor[B,T], shape: openarray[int]): Tensor[B,T] {.noSid
       raise newException(ValueError, "The broadcasted size of the tensor must match existing size for non-singleton dimension")
 
 template bc*(t: Tensor, shape: openarray[int]): untyped =
-  ## Alias
+  ## Alias for ``broadcast``
   t.broadcast(shape)
 
 proc exch_dim(t: Tensor, dim1, dim2: int): Tensor {.noSideEffect.}=
@@ -121,6 +129,15 @@ proc exch_dim(t: Tensor, dim1, dim2: int): Tensor {.noSideEffect.}=
   swap(result.shape[dim1], result.shape[dim2])
 
 proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noSideEffect.}=
+  ## Permute dimensions
+  ## Input:
+  ##   - a tensor
+  ##   - the new dimension order
+  ## Returns:
+  ##   - a tensor with re-order dimension
+  ## Example:
+  ##
+  ## a.permute(0,2,1) # dim 0 stays at 0, dim 1 becomes dim 2 and dim 2 becomes dim 1
 
   # TODO: bounds check
   var perm = @dims
@@ -137,7 +154,12 @@ proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noSideEffect.}=
 
 
 proc concat*[B,T](t_list: varargs[Tensor[B,T]], axis: int): Tensor[B,T]  {.noSideEffect.}=
-
+  ## Concatenate tensors
+  ## Input:
+  ##   - Tensors
+  ##   - An axis (dimension)
+  ## Returns:
+  ##   - a tensor
   var axis_dim = 0
   let t0 = t_list[0]
 

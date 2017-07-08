@@ -59,7 +59,7 @@ proc getTransposeTarget(t: Tensor): TransposeType {.noSideEffect.}=
   else: raise newException(ValueError,"Operation not supported for this matrix. It has a non-contiguous layout")
 
 ## Get a pointer to the start of the data. Needed for BLAS.
-template get_data_ptr[B,T](t: Tensor[B,T]): ptr T = unsafeAddr(t.data[0])
+template get_data_ptr*[B,T](t: Tensor[B,T]): ptr T = unsafeAddr(t.data[0])
 
 proc shallowCopy*[B,T](t: var Tensor[B,T]): Tensor[B,T] {.noSideEffect.}=
   result.shape = t.shape

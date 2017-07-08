@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros, random
+
+include docs/autogen_nim_API
 include src/arraymancer/utils/functional,
         src/arraymancer/utils/nested_containers,
         src/arraymancer/utils/ast_utils,

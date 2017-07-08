@@ -58,7 +58,7 @@ proc getTransposeTarget(t: Tensor): TransposeType {.noSideEffect.}=
   elif is_F_contiguous(t): return TransposeType.transpose
   else: raise newException(ValueError,"Operation not supported for this matrix. It has a non-contiguous layout")
 
-template get_data_ptr[B,T](t: Tensor[B,T]): ptr T =
+template get_data_ptr*[B,T](t: Tensor[B,T]): ptr T =
   ## Get a pointer to the start of the data.
   unsafeAddr(t.data[0])
 

@@ -53,16 +53,21 @@
 
 
 type SteppedSlice* = object
-  ## A slice with step information and start is from beginning or end of range
+  ## A slice object related to a tensor single dimension:
+  ##   - a, b: Respectively the beginning and the end of the range of the dimension
+  ##   - step: The stepping of the slice (can be negative)
+  ##   - a/b_from_end: Indicates if a/b should be counted from 0 or from the end of the tensor relevant dimension.
   a, b: int
   step: int
   a_from_end: bool
   b_from_end: bool
 
 type Step* = object
-  ## Holds the end of rang and step
-  ## This is necessary to avoid parenthesis due to operator precedence of | over ..
-  ## [0..10|1] is interpreted as [0..(10|1)]
+  ## Workaround to build ``SteppedSlice`` without using parenthesis.
+  ##
+  ## Expected syntax is ``tensor[0..10|1]``.
+  ##
+  ## Due to operator precedence of ``|`` over ``..`` [0..10|1] is interpreted as [0..(10|1)]
   b: int
   step: int
 
@@ -96,53 +101,110 @@ proc check_shape(a, b: Tensor|openarray) {.noSideEffect.}=
 
 # Procs to manage all integer, slice, SteppedSlice 
 proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
+  ## A ``SteppedSlice`` constructor
+  ## Input:
+  ##     - a slice
+  ##     - a step
+  ## Returns:
+  ##     - a ``SteppedSlice``
   return SteppedSlice(a: s.a, b: s.b, step: step)
 
 proc `|`*(b, step: int): Step {.noSideEffect, inline.}=
+  ## A ``Step`` constructor
+  ##
+  ## ``Step`` is a workaround due to operator precedence.
+  ##
+  ## [0..10|1] is interpreted as [0..(10|1)]
+  ## Input:
+  ##     - the end of a slice range
+  ##     - a step
+  ## Returns:
+  ##     - a ``Step``
   return Step(b: b, step: step)
 
 proc `|`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
+  ## Modifies the step of a ``SteppedSlice``
+  ## Input:
+  ##     - a ``SteppedSLice``
+  ##     - the new stepping
+  ## Returns:
+  ##     - a ``SteppedSLice``
   result = ss
   result.step = step
 
 proc `|+`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
-  ## Alias
+  ## Alias for ``|``
   return `|`(s, step)
 
 proc `|+`*(b, step: int): Step {.noSideEffect, inline.}=
-  ## Alias
+  ## Alias for ``|``
   return `|`(b, step)
 
 proc `|+`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
-  ## Alias
+  ## Alias for ``|``
   return `|`(ss, step)
 
 proc `|-`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
+  ## A ``SteppedSlice`` constructor
+  ##
+  ## Workaround to tensor[slice|-1] being interpreted as [slice `|-` 1]
+  ##
+  ## Properly create ``SteppedSLice`` with negative stepping
   return SteppedSlice(a: s.a, b: s.b, step: -step)
 
 proc `|-`*(b, step: int): Step {.noSideEffect, inline.}=
+  ## A ``SteppedSlice`` constructor
+  ##
+  ## Workaround to tensor[0..10|-1] being intepreted as [0 .. (10 `|-` 1)]
+  ##
+  ## Properly create ``SteppedSLice`` with negative stepping
   return Step(b: b, step: -step)
 
 proc `|-`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
+  ## Modifies the step of a ``SteppedSlice``
+  ##
+  ## Workaround to tensor[slice|-1] being interpreted as [slice `|-` 1]
+  ##
+  ## Properly create ``SteppedSLice`` with negative stepping
   result = ss
   result.step = -step
 
 proc `..`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
+  ## Build a SteppedSlice from [a .. (b|step)] (workaround to operator precedence)
+  ## Input:
+  ##     - the beginning of the slice range
+  ##     - a ``Step`` workaround object
+  ## Returns:
+  ##     - a ``SteppedSlice``, end of range will be inclusive
   return SteppedSlice(a: a, b: s.b, step: s.step)
 
 proc `..<`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
+  ## Build a SteppedSlice from [a ..< (b|step)] (workaround to operator precedence and ..<b not being interpreted as .. <b)
+  ## Input:
+  ##     - the beginning of the slice range
+  ##     - a ``Step`` workaround object
+  ## Returns:
+  ##     - a ``SteppedSlice``, end of range will be exclusive.
   return SteppedSlice(a: a, b: <s.b, step: s.step)
 
 proc `..^`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
+  ## Build a SteppedSlice from [a ..^ (b|step)] (workaround to operator precedence and ..^b not being interpreted as .. ^b)
+  ## Input:
+  ##     - the beginning of the slice range
+  ##     - a ``Step`` workaround object
+  ## Returns:
+  ##     - a ``SteppedSlice``, end of range will start at "b" away from the end
   return SteppedSlice(a: a, b: s.b, step: s.step, b_from_end: true)
 
 proc `^`*(s: SteppedSlice): SteppedSlice {.noSideEffect, inline.} =
-  # Note: This does not automatically inverse stepping, what if we want ^5..^1
+  ## Prefix to a to indicate starting the slice at "a" away from the end
+  ## Note: This does not automatically inverse stepping, what if we want ^5..^1
   result = s
   result.a_from_end = not result.a_from_end
 
 proc `^`*(s: Slice): SteppedSlice {.noSideEffect, inline.} =
-  # Note: This does not automatically inverse stepping, what if we want ^5..^1
+  ## Prefix to a to indicate starting the slice at "a" away from the end
+  ## Note: This does not automatically inverse stepping, what if we want ^5..^1
   return SteppedSlice(a: s.a, b: s.b, step: 1, a_from_end: true)
 
 # span is equivalent to `:` in Python. It returns the whole axis range.
@@ -362,6 +424,13 @@ macro inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
         result.add(slice)
 
 macro `[]`*[B, T](t: Tensor[B,T], args: varargs[untyped]): untyped =
+  ## Input:
+  ##   - a tensor
+  ##   - and:
+  ##     - specific coordinates (``varargs[int]``)
+  ##     - or a slice (cf. tutorial)
+  ## Returns:
+  ##   - a value or a tensor corresponding to the slice
   let new_args = getAST(desugar(args))
 
   result = quote do:
@@ -419,8 +488,24 @@ macro inner_typed_dispatch_mut(t: typed, args: varargs[typed], val: typed): unty
     result.add(val)
 
 macro `[]=`*[B, T](t: var Tensor[B,T], args: varargs[untyped]): untyped =
-  ## varargs[untyped] consumes all arguments so the actual value should be popped
-  ## https://github.com/nim-lang/Nim/issues/5855
+  ## Modifies the input
+  ##
+  ##
+  ## Input:
+  ##   - a ``var`` tensor
+  ##   - a location:
+  ##     - specific coordinates (``varargs[int]``)
+  ##     - or a slice (cf. tutorial)
+  ##   - a value:
+  ##     - a single value that will
+  ##       - replace the value at the specific coordinates
+  ##       - or be applied to the whole slice
+  ##     - an openarray with a shape that matches the slice
+  ##     - a tensor with a shape that matches the slice
+
+
+  # varargs[untyped] consumes all arguments so the actual value should be popped
+  # https://github.com/nim-lang/Nim/issues/5855
 
   var tmp = args
   let val = tmp.pop

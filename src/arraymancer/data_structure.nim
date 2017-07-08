@@ -14,6 +14,9 @@
 
 type
   Backend* = enum
+    ## ``Backend`` for tensor computation and memory allocation.
+    ##
+    ## Only Cpu is supported for now.
     Cpu
     # Cuda
     # OpenCL
@@ -21,19 +24,49 @@ type
 
   Tensor*[B: static[Backend]; T] = object
     # Size of the datastructure is 32 bytes - perfect !
+    ## Tensor data structure
+    ##   - ``shape``: Dimensions of the tensor
+    ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
+    ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
+    ##   - ``data``: A sequence that holds the actual data
     shape: seq[int]
     strides: seq[int]
     offset: int
     data: seq[T] # Perf note: seq are always deep copied on "var" assignement.
 
-template shape*(t: Tensor): seq[int] = t.shape
-template strides*(t: Tensor): seq[int] = t.strides
-template offset*(t: Tensor): int = t.offset
-template rank*(t: Tensor): int = t.shape.len
-  # 0 for scalar (unfortunately cannot be stored)
-  # 1 for vector
-  # 2 for matrices
-  # N for N-dimension array
+template shape*(t: Tensor): seq[int] =
+  ## Input:
+  ##     - A tensor
+  ## Returns:
+  ##     - Its shape
+  t.shape
+
+template strides*(t: Tensor): seq[int] =
+  ## Input:
+  ##     - A tensor
+  ## Returns:
+  ##     - Its strides
+  t.strides
+
+template offset*(t: Tensor): int =
+  ## Input:
+  ##     - A tensor
+  ## Returns:
+  ##     - Its offset
+  t.offset
+
+template rank*(t: Tensor): int =
+  ## Input:
+  ##     - A tensor
+  ## Returns:
+  ##     - Its shape
+  ##
+  ##   - 0 for scalar (unfortunately cannot be stored)
+  ##   - 1 for vector
+  ##   - 2 for matrices
+  ##   - N for N-dimension array
+  ##
+  t.shape.len
 
 proc shape_to_strides(shape: seq[int]): seq[int] {.noSideEffect.} =
   ## Compute strides matching with dimensions.
@@ -53,16 +86,28 @@ proc isContiguous(t: Tensor): bool {.noSideEffect.}=
   return t.is_C_contiguous or t.is_F_contiguous
 
 proc getTransposeTarget(t: Tensor): TransposeType {.noSideEffect.}=
-  ## Default layout is Row major. Everytime it is worth it or fused with a BLAS operation we change the strides to Row-Major
+  ## Default layout is Row major.
+  ## Everytime it is worth it or fused with a BLAS operation we change the strides to Row-Major
   if is_C_contiguous(t): return TransposeType.noTranspose
   elif is_F_contiguous(t): return TransposeType.transpose
   else: raise newException(ValueError,"Operation not supported for this matrix. It has a non-contiguous layout")
 
 template get_data_ptr*[B,T](t: Tensor[B,T]): ptr T =
-  ## Get a pointer to the start of the data.
+  ## Input:
+  ##     - A tensor
+  ## Returns:
+  ##     - A pointer to the start of its data
   unsafeAddr(t.data[0])
 
 proc shallowCopy*[B,T](t: var Tensor[B,T]): Tensor[B,T] {.noSideEffect.}=
+  ## Input:
+  ##     - A ``var`` tensor
+  ## Returns:
+  ##     - A shallow copy.
+  ##
+  ## WARNING !
+  ##   Both tensors shares the same memory. Data modification on one will be reflected on the other.
+  ##   However modifying the shape, strides or offset will not affect the other.
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset

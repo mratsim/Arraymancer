@@ -32,8 +32,8 @@ proc bounds_display(t: Tensor,
       return "|" & $val
   return "\t" & $val
 
-## TODO: Create a generic n-dimensional display function using nested tables.
-## Example code in hTensor: https://github.com/albertoruiz/hTensor/blob/b36c3748b211c7f41c9af9d486c6ef320e2b7585/lib/Numeric/LinearAlgebra/Array/Display.hs#L92
+# TODO: Create a generic n-dimensional display function using nested tables.
+# Example code in hTensor: https://github.com/albertoruiz/hTensor/blob/b36c3748b211c7f41c9af9d486c6ef320e2b7585/lib/Numeric/LinearAlgebra/Array/Display.hs#L92
 
 # Last dim always in column (except vector)
 # If rank is odd, first dim is along columns

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## Compute Y += alpha * X
+# Compute Y += alpha * X
 proc geaxpy[T]( m, n: int,
                 alpha: T,
                 X: ref array[MRNR, T],
@@ -30,7 +30,7 @@ proc geaxpy[T]( m, n: int,
       for i in 0 ..< m:
         Y[i*incRowY + j*incColY + offY] += X[i*incRowX + j*incColX]
 
-## Compute X *= alpha
+# Compute X *= alpha
 proc gescal[T]( m, n: int,
                 alpha: T,
                 X: var seq[T], offX: int,

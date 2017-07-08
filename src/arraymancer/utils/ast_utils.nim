@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## Tools to manipulate Nim Abstract Syntax Tree
+# Tools to manipulate Nim Abstract Syntax Tree
 
 proc hasType(x: NimNode, t: static[string]): bool {. compileTime .} =
   ## Compile-time type checking

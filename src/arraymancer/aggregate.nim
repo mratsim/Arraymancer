@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## Compute aggregate/reduction/folds over tensors
+# # Compute aggregate/reduction/folds over tensors
 
-#### Elementwise generic aggregate functions
+# ### Elementwise generic aggregate functions
 # Note: You can't pass builtins like `+` or `+=` due to Nim limitations
 # https://github.com/nim-lang/Nim/issues/2172
 
@@ -47,7 +47,7 @@ proc agg_inplace*[B; T: SomeNumber](
     f(accum_val, val)
 
 
-#### Axis generic functions
+# ### Axis generic functions
 # `+`, `+=` for tensors are not "built-ins"
 
 proc agg*[B; T: SomeNumber](t: Tensor[B,T],
@@ -83,7 +83,7 @@ proc agg_inplace*[B; T: SomeNumber](
     f(accum_val, val)
 
 
-#### Standard aggregate functions
+# ### Standard aggregate functions
 
 proc sum*[B; T: SomeNumber](t: Tensor[B,T]): T {.noSideEffect.}=
   # Compute the sum of all elements of T

@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-############################
-## Bounds checking functions
+
+# Bounds checking functions
 proc check_matmat(a, b:Tensor) {.noSideEffect.}=
   let colA = a.shape[1]
   let rowB = b.shape[0]
@@ -43,8 +43,7 @@ proc check_add(a, b:Tensor)  {.noSideEffect.}=
     raise newException(ValueError, "Both Tensors should have the same shape")
 
 
-##########################################################################
-## BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
+# BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
 
 proc `.*`*[T: SomeReal](a, b: Tensor[Cpu,T]): T {.noSideEffect.} =
   ## Vector to Vector dot (scalar) product
@@ -88,7 +87,7 @@ proc `-`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   result.data = newSeq[T](result.shape.product)
   result.offset = 0
 
-  ## TODO use mitems instead of result.data[i] cf profiling
+  # TODO use mitems instead of result.data[i] cf profiling
   for i, ai, bi in enumerate_zip(a.values, b.values):
     result.data[i] = ai - bi
 
@@ -96,7 +95,7 @@ proc `-=`*[T: SomeNumber](a: var Tensor[Cpu,T], b: Tensor[Cpu, T]) {.noSideEffec
   ## Tensor in-place addition
   when compileOption("boundChecks"): check_add(a,b)
 
-  ## TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
+  # TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
   for a_idx, b_val in zip(a.real_indices, b.values):
     a.data[a_idx] -= b_val
 
@@ -112,8 +111,8 @@ proc `/`*[T: SomeNumber](t: Tensor[Cpu,T], a: T): Tensor[Cpu,T] {.noSideEffect.}
   proc f(x: T): T = x / a
   return t.fmap(f)
 
-####################################################
-## BLAS Level 2 and 3 (Matrix-Matrix, Matrix-Vector)
+
+# BLAS Level 2 and 3 (Matrix-Matrix, Matrix-Vector)
 
 template matmat_blis[T: SomeReal](a, b, result: Tensor[Cpu,T]): auto =
   ## Matrix to matrix Multiply for float tensors of rank 2
@@ -162,8 +161,8 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[Cpu,T]): auto =
   result.strides = @[N, 1]
   result.offset = 0
 
-  ## TODO use a GEMM kernel that supports strided arrays like BLIS
-  ## That avoids copies and a conversion step
+  # TODO use a GEMM kernel that supports strided arrays like BLIS
+  # That avoids copies and a conversion step
   let
     cont_a = a.asContiguous
     cont_b = b.asContiguous
@@ -236,9 +235,9 @@ template matvec_blas[T: SomeReal](a, x, result: Tensor[Cpu,T]): auto =
   result.strides = @[1]
   result.offset = 0
 
-  ## TODO use a GEMV kernel that supports strided arrays like BLIS
-  ## That avoids copies and a conversion step
-  ## Stride for X is supported via incx argument of GEMV
+  # TODO use a GEMV kernel that supports strided arrays like BLIS
+  # That avoids copies and a conversion step
+  # Stride for X is supported via incx argument of GEMV
   let cont_a = a.asContiguous
 
   let a_ptr = get_data_ptr(a)

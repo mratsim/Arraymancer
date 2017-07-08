@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## Functional programming and iterator tooling
+# Functional programming and iterator tooling
 
 template scanr[T](s: seq[T], operation: untyped): untyped =
   ## Template to scan a sequence from right to left, returning the accumulation and intermediate values.

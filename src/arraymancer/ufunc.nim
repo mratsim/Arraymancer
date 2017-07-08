@@ -36,21 +36,21 @@ proc fmap*[B: static[Backend],T, U](t: Tensor[B,T], g: T -> U): Tensor[B,U] {.no
     inc i
 
 template makeUniversal*(func_name: untyped) =
-  ## Lift an unary function into an exported universal function.
-  ## Universal functions apply element-wise
+  # Lift an unary function into an exported universal function.
+  # Universal functions apply element-wise
   # For now, makeUniversal does not work when internal type is changing
   # use fmap instead
   proc func_name*(t: Tensor): Tensor = t.fmap(func_name)
   export func_name
 
 template makeUniversalLocal*(func_name: untyped) =
-  ## Lift an unary function into a non-exported universal function
-  ## Universal functions apply element-wise
+  # Lift an unary function into a non-exported universal function
+  # Universal functions apply element-wise
   # For now, makeUniversalLocal does not work when internal type is changing
   # use fmap instead
   proc func_name(t: Tensor): Tensor = t.fmap(func_name)
 
-## Unary functions from Nim math library
+# Unary functions from Nim math library
 
 makeUniversal(fac)
 #makeUniversal(classify)

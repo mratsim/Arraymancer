@@ -62,7 +62,7 @@ proc toTensor*(s:string, B: static[Backend]): auto {.noSideEffect.} =
   ## Handle string specifically
   toTensorT(s,B)
 
-## TODO add tests for zeros, ones and randomTensor
+# TODO add tests for zeros, ones and randomTensor
 proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], B: static[Backend]): Tensor[B,T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
   ## Input:

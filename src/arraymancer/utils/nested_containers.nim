@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-## Tools to manipulate deep nested containers
+# Tools to manipulate deep nested containers
 
 proc shape*[T: not char](s: openarray[T], parent_shape: seq[int] = @[]): seq[int] {.noSideEffect.}=
   ## Helper function to get the shape of nested arrays/sequences

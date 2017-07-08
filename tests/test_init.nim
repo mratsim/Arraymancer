@@ -78,3 +78,5 @@ suite "Creating a new Tensor":
     check: u.shape == @[2,3]
 
     check: u.shape == t.shape
+
+  # TODO add tests for zeros, ones and randomTensor

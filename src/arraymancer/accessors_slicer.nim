@@ -148,7 +148,7 @@ proc `^`*(s: Slice): SteppedSlice {.noSideEffect, inline.} =
 
 ## span is equivalent to `:` in Python. It returns the whole axis range.
 ## Tensor[_, 3] will be replaced by Tensor[span, 3]
-const span* = SteppedSlice(b: 1, step: 1, b_from_end: true)
+const span = SteppedSlice(b: 1, step: 1, b_from_end: true)
 
 macro desugar(args: untyped): typed =
   ## Transform all syntactic sugar in arguments to integer or SteppedSlices

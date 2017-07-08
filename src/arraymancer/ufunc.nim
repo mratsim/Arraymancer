@@ -22,23 +22,25 @@ proc astype*[B: static[Backend],T, U](t: Tensor[B,T], typ: typedesc[U]): Tensor[
 proc fmap*[B: static[Backend],T, U](t: Tensor[B,T], g: T -> U): Tensor[B,U] {.noSideEffect.}=
   ## Map a unary function T -> U on Tensor[T]
 
-  ## We use this opportunity to reshape the data internally
-  ## Iteration should be almost as fast for contiguous non-sliced Tensors
-  ## But may avoid a lot of unnecessary computations on slices
+  # We use this opportunity to reshape the data internally
+  # Iteration should be almost as fast for contiguous non-sliced Tensors
+  # But may avoid a lot of unnecessary computations on slices
   result.shape = t.shape
   result.strides = shape_to_strides(result.shape)
   result.offset = 0
 
   result.data = newSeq[U](result.shape.product)
-  var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
+  var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
   for val in t:
     result.data[i] = g(val)
     inc i
 
 template makeUniversal*(func_name: untyped) =
   # Lift an unary function into an exported universal function.
+  #
   # Universal functions apply element-wise
-  # For now, makeUniversal does not work when internal type is changing
+  #
+  # ``makeUniversal`` does not work when internal type is changing,
   # use fmap instead
   proc func_name*(t: Tensor): Tensor =
     ## Universal version of the function.
@@ -49,8 +51,10 @@ template makeUniversal*(func_name: untyped) =
 
 template makeUniversalLocal*(func_name: untyped) =
   # Lift an unary function into a non-exported universal function
+  #
   # Universal functions apply element-wise
-  # For now, makeUniversalLocal does not work when internal type is changing
+  #
+  # ``makeUniversalLocal`` does not work when internal type is changing
   # use fmap instead
   proc func_name(t: Tensor): Tensor = t.fmap(func_name)
 

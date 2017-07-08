@@ -17,10 +17,10 @@ when defined(blis):
   include ./blis
   let blis_status = bli_init()
   echo "Blis initiatialization status: " & $blis_status
-  ## Should add a quit proc but the following doesn't compile
+  ### Should add a quit proc but the following doesn't compile
   # proc quit_blis() =
   #   echo "Blis quit status: " & $bli_finalize()
-  # 
+  #
   # addQuitProc quit_blis
 
 else:

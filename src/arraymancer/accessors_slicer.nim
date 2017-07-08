@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-## This file with slicing syntactic sugar.
-## Foo being:
+# ## This file adds slicing syntactic sugar.
+# ## Foo being:
 # Tensor of shape 5x5 of type "int" on backend "Cpu"
 # |1      1       1       1       1|
 # |2      4       8       16      32|
@@ -22,9 +22,8 @@
 # |4      16      64      256     1024|
 # |5      25      125     625     3125|
 #
-## Target supported syntax is in `test_accessors_slicer`
 #
-### Slicing
+# ## Slicing
 # Basic indexing - foo[2, 3]
 # Basic indexing - foo[1+1, 2*2*1]
 # Basic slicing - foo[1..2, 3]
@@ -46,13 +45,13 @@
 # Slice from the end - foo[^(2*2)..2*2, 3]
 # Slice from the end - foo[^3..^2, 3]
 
-### Assignement
+# ## Assignement
 # Slice to a single value - foo[1..2, 3..4] = 999
 # Slice to an array/seq of values - foo[0..1,0..1] = [[111, 222], [333, 444]]
 # Slice to values from a view/Tensor - foo[^2..^1,2..4] = bar
 # Slice to values from view of same Tensor - foo[^2..^1,2..4] = foo[^1..^2|-1, 4..2|-1]
 
-######################################
+
 type SteppedSlice* = object
   ## A slice with step information and start is from beginning or end of range
   a, b: int
@@ -60,10 +59,10 @@ type SteppedSlice* = object
   a_from_end: bool
   b_from_end: bool
 
-## Necessary to avoid parenthesis due to operator precedence of | over ..
-## [0..10|1] is intepreted as [0..(10|1)]
 type Step* = object
-  ## Holds the end of rang eand step
+  ## Holds the end of rang and step
+  ## This is necessary to avoid parenthesis due to operator precedence of | over ..
+  ## [0..10|1] is interpreted as [0..(10|1)]
   b: int
   step: int
 
@@ -95,7 +94,7 @@ proc check_shape(a, b: Tensor|openarray) {.noSideEffect.}=
                                        $a.shape.join("x") &
                                        " and " & $b.shape.join("x"))
 
-## Procs to manage all integer, slice, SteppedSlice 
+# Procs to manage all integer, slice, SteppedSlice 
 proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
   return SteppedSlice(a: s.a, b: s.b, step: step)
 
@@ -138,16 +137,16 @@ proc `..^`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
   return SteppedSlice(a: a, b: s.b, step: s.step, b_from_end: true)
 
 proc `^`*(s: SteppedSlice): SteppedSlice {.noSideEffect, inline.} =
-  ## Note: This does not automatically inverse stepping, what if we want ^5..^1
+  # Note: This does not automatically inverse stepping, what if we want ^5..^1
   result = s
   result.a_from_end = not result.a_from_end
 
 proc `^`*(s: Slice): SteppedSlice {.noSideEffect, inline.} =
-  ## Note: This does not automatically inverse stepping, what if we want ^5..^1
+  # Note: This does not automatically inverse stepping, what if we want ^5..^1
   return SteppedSlice(a: s.a, b: s.b, step: 1, a_from_end: true)
 
-## span is equivalent to `:` in Python. It returns the whole axis range.
-## Tensor[_, 3] will be replaced by Tensor[span, 3]
+# span is equivalent to `:` in Python. It returns the whole axis range.
+# Tensor[_, 3] will be replaced by Tensor[span, 3]
 const span = SteppedSlice(b: 1, step: 1, b_from_end: true)
 
 macro desugar(args: untyped): typed =

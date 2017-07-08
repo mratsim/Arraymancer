@@ -16,13 +16,13 @@
 # which is heavily inspired by BLIS (https://github.com/flame/blis)
 # A big difference (for now?) is instead of passing (const) pointers I pass the (var) array and a var offset.
 
-## Reading
+# # Reading
 # C++ version: https://stackoverflow.com/questions/35620853/how-to-write-a-matrix-matrix-product-that-can-compete-with-eigen
 # uBLAS C++: http://www.mathematik.uni-ulm.de/~lehn/test_ublas/session1/page01.html
 # Blaze C++: http://www.mathematik.uni-ulm.de/~lehn/test_blaze/session1/page01.html
 # Rust BLIS inspired: https://github.com/bluss/matrixmultiply
 
-#### TODO:
+# ### TODO:
 # - OpenMP parallelization
 # {.passl: "-fopenmp".} # Issue: Clang OSX does not support openmp
 # {.passc: "-fopenmp".} # and the default GCC is actually a link to Clang

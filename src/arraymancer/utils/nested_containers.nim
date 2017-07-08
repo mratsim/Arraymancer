@@ -15,7 +15,7 @@
 
 # Tools to manipulate deep nested containers
 
-proc shape*[T: not char](s: openarray[T], parent_shape: seq[int] = @[]): seq[int] {.noSideEffect.}=
+proc shape[T: not char](s: openarray[T], parent_shape: seq[int] = @[]): seq[int] {.noSideEffect.}=
   ## Helper function to get the shape of nested arrays/sequences
   ## C convention. Last index is the fastest changing (columns in 2D, depth in 3D) - Rows (slowest), Columns, Depth (fastest)
   ## The second argument "shape" is used for recursive call on nested arrays/sequences
@@ -39,7 +39,7 @@ iterator flatIter[T: not char](s: openarray[T]): auto {.noSideEffect.}=
       yield item
 
 
-proc shape*(s: string|seq[char], parent_shape: seq[int] = @[]): seq[int] {.noSideEffect.}=
+proc shape(s: string|seq[char], parent_shape: seq[int] = @[]): seq[int] {.noSideEffect.}=
   ## Handle char / string
   if parent_shape == @[]:
     return @[1]

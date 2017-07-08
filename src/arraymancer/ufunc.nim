@@ -40,7 +40,11 @@ template makeUniversal*(func_name: untyped) =
   # Universal functions apply element-wise
   # For now, makeUniversal does not work when internal type is changing
   # use fmap instead
-  proc func_name*(t: Tensor): Tensor = t.fmap(func_name)
+  proc func_name*(t: Tensor): Tensor =
+    ## Universal version of the function.
+    ##
+    ## The function can be used directly on tensors and will work element-wise.
+    t.fmap(func_name)
   export func_name
 
 template makeUniversalLocal*(func_name: untyped) =

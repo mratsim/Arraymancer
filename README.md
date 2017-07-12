@@ -1,4 +1,4 @@
-[![Linux Build Status (Travis)](https://travis-ci.org/mratsim/Arraymancer.svg?branch=master "Linux build status (Travis)")](https://travis-ci.org/mratsim/Arraymancer)   [![Windows build status (Appveyor)](https://ci.appveyor.com/api/projects/status/github/mratsim/arraymancer?branch=master&svg=true "Windows build status (Appveyor)")](https://ci.appveyor.com/project/mratsim/arraymancer)
+[![Linux Build Status (Travis)](https://travis-ci.org/mratsim/Arraymancer.svg?branch=master "Linux build status (Travis)")](https://travis-ci.org/mratsim/Arraymancer)   [![Windows build status (Appveyor)](https://ci.appveyor.com/api/projects/status/github/mratsim/arraymancer?branch=master&svg=true "Windows build status (Appveyor)")](https://ci.appveyor.com/project/mratsim/arraymancer) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![Stability](https://img.shields.io/badge/stability-experimental-orange.svg)
 
 # Arraymancer - A n-dimensional tensor (ndarray) library
 

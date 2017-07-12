@@ -8,7 +8,7 @@ license       = "Apache License 2.0"
 requires "nim >= 0.17.0", "nimblas >= 0.1.3"
 
 ## Install files
-installDirs = @["src"]
+srcDir = "src"
 
 ### BLAS support
 ## OSX

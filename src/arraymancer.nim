@@ -14,7 +14,7 @@
 
 import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros, random
 
-include ../docs/autogen_nim_API
+# include ../docs/autogen_nim_API
 include arraymancer/utils/functional,
         arraymancer/utils/nested_containers,
         arraymancer/utils/ast_utils,

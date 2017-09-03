@@ -71,7 +71,7 @@ proc newBufferArray[T: SomeNumber](N: static[int], typ: typedesc[T]): ref array[
   for i in 0 ..< N:
     result[i] = 0.T
 
-proc gemm_nn[T](m, n, k: int,
+proc gemm_nn_fallback[T](m, n, k: int,
                 alpha: T,
                 A: seq[T], offA: int,
                 incRowA, incColA: int,

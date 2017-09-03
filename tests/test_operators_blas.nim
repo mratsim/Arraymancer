@@ -221,7 +221,32 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     expect(ValueError):
       discard ta - ta_t[1..2,1..2]
 
-  test "Integer Matrix-Multiplication fallback":
+  test "Integer Matrix-Vector Multiplication fallback":
+    let a = [[1,2,3],
+             [4,5,6],
+             [7,8,9]].toTensor(Cpu)
+    let x = [2,1,3].toTensor(Cpu)
+
+    let ax = [13,31,49].toTensor(Cpu)
+
+    check: a * x == ax
+
+    # example from http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%22-87%22,%2244%22,%2213%22,%221%22],[%228%22,%22-16%22,%228%22,%2291%22],[%226%22,%22-2%22,%2256%22,%22-56%22],[%2282%22,%2270%22,%2234%22,%2223%22],[%2252%22,%22-70%22,%220%22,%2253%22],[%2235%22,%2294%22,%2239%22,%2236%22]]&matrix2=[[%22-91%22],[%2281%22],[%2269%22],[%22-75%22]]&operator=*
+
+    let b = [[-87, 44, 13, 1],
+             [8, -16, 8, 91],
+             [6, -2, 56, -56],
+             [82, 70, 34, 23],
+             [52, -70, 0, 53],
+             [35, 94, 39, 36]].toTensor(Cpu)
+    
+    let u = [-91, 81, 69, -75].toTensor(Cpu)
+
+    let bu = [12303, -8297, 7356, -1171, -14377, 4420].toTensor(Cpu)
+
+    check: b * u == bu
+
+  test "Integer Matrix-Matrix Multiplication fallback":
     ## TODO: test with slices
     let a = [[1,2,3],
              [4,5,6]].toTensor(Cpu)

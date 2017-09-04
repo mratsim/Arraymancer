@@ -10,9 +10,9 @@ Either C or Fortran contiguous arrays are needed for BLAS optimization for Tenso
 * Universal: Any strides
 
 ## Pending issues
-* There is no matrix multiplications and Matrix-Vector multiplication for integers.
-  You can convert them to `float64` before and then use floating-point BLAS (will cover `int32` without precision loss).
 * Switch to full inline iterators: https://forum.nim-lang.org/t/2972
+* Load images as tensors:
+https://github.com/define-private-public/stb_image-Nim/issues/3
 
 ## Memory/Perf considerations
 * Current CPUs cache line is 64 bytes. The Tensor data structure at 32 bytes has an ideal size.
@@ -45,25 +45,22 @@ Contrary to Python, the compiler can do the following optimization:
 
 ## Features
 
-* How to implement integer matrix multiplication and matrix-vector multiplication.
-    1. Convert to float64, use BLAS, convert back to int. No issue for int32 has them all. Int64 may lose some precision.
-    2. Implement a cache-oblivious matrix multiplication. Implementation in [Julia](https://github.com/JuliaLang/julia/blob/master/base/linalg/matmul.jl#L490). [Paper](http://ocw.raf.edu.rs/courses/electrical-engineering-and-computer-science/6-895-theory-of-parallel-systems-sma-5509-fall-2003/readings/cach_oblvs_thsis.pdf).
+* Implement a Tensor comprehension macro. It may be able to leverage mitems instead of result[i,j] = alpha * (i - j) * (i + j).
 
-* Implement a Tensor comprehension macro. It may be able to leverage mitems instead of result[i,j] = alpha * (i - j) * (i + j)
+* Implement einsum: http://ajcr.net/Basic-guide-to-einsum/
 
 
 ## TODO
 1. Tests for array creation utilities (zeros, ones, zeros_like, random ...)
 2. Tests for axis iterators
-3. GPU support: Cuda and Magma first. OpenCL when AMD gets its act together.
+3. GPU support: Cuda and Magma first. OpenCL/ROCm when AMD gets its act together.
 4. BLAS operation fusion: `transpose(A) * B` or `Ax + y` should be fused in one operation.
-5. Implement GEMM and GEMV for integers
 
-999. (Needs thinking) Support sparse matrices. There is Magma and CuSparse for GPU. What to use? Interface should be similar to BLAS and should compile on ARM/embedded devices like Jetson TX1.
+999. (Needs thinking) Support sparse matrices. There is Magma and CuSparse for GPU. What to use for CPU? Interface should be similar to BLAS and should compile on ARM/embedded devices like Jetson TX1.
 
 ## Ideas rejected
 
-### Have the rank of the Tensor be part of its type. 
+### Have the rank of the Tensor be part of its type.
 Rejected because impractical for function chaining.
     Advantage: Dispatch and compatibility checking at compile time (Matrix * Matrix and Matrix * Vec)
 ### Have the kind of stride (C_contiguous, F_contiguous) be part of its type.

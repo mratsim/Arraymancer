@@ -72,9 +72,7 @@ Note: Arraymancer tensors are tensors in the machine learning sense (multidimens
 
 EXPERIMENTAL: Arraymancer may summon Ragnarok and cause the heat death of the Universe.
 
-1. There is no optimized routine for integer matrix and vector multiplication. I wrote my own for integer matrix-matrix multplication but matrix-vector is not implemented.
-
-2. Display of 5-dimensional or more tensors is not implemented.
+1. Display of 5-dimensional or more tensors is not implemented.
 
 ## Features
 
@@ -495,7 +493,7 @@ The following linear algebra operations are supported for tensors of rank 1 (vec
 - matrix-vector multiplication using `*`
 - element-wise multiplication (Hadamard product) using `|*|`
 
-Note: Matrix operations for floats are accelerated using BLAS (Intel MKL, OpenBLAS, Apple Accelerate ...). Unfortunately there is no acceleration routine for integers. I wrote a custom routine for matrix-matrix but matrix-vector is not implemented.
+Note: Matrix operations for floats are accelerated using BLAS (Intel MKL, OpenBLAS, Apple Accelerate ...). Unfortunately there is no acceleration routine for integers. Integer matrix-matrix and matrix-vector multiplications are implemented via semi-optimized routines (no naive loops but don't leverage CPU-specific features).
 
 ```Nim
 echo foo_float * foo_float # Accelerated Matrix-Matrix multiplication (needs float)

@@ -34,6 +34,12 @@ Contrary to Python, the compiler can do the following optimization:
   - Move on assignment
   - Detect if the original Tensor is not used anymore and the copy is unneeded.
 
+## Cuda considerations
+
+* Currently all init proc accept a backend parameter (Cpu, Cuda, ...). In case the backend have dedicated function like "zeros", "ones" or "randomTensor", this will avoid having to create tensor on the Cpu and then copy it to the backend.
+The downside is complicating the procs by the use of untyped templates, auto return types and "when t is Tensor".
+An alternative is to have a rewrite rule to transform randomTensor(...).toCuda() into the direct Cuda function.
+
 ## Coding-style
 * Prefer `when` to `if` for compile-time evaluation
 * Let the compiler do its job:

@@ -18,8 +18,10 @@ template toTensorReshapeT(oa: typed, B: static[Backend], shape: varargs[int]): u
 
   when compileOption("boundChecks"): check_nested_elements(seq_shape, data.len)
 
-  result = emptyTensor(seq_shape, type(data[0]), B)
-  result.data = data
+  var t: Tensor[type(data[0])]
+  tensor(seq_shape, t)
+  t.data = data
+  return t
 
 proc toTensorReshape(oa: string, B: static[Backend], shape: varargs[int]): auto =
   ## Fuse toTensor and reshape in one operation

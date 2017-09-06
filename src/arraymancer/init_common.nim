@@ -31,7 +31,7 @@ proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): a
     return t
   elif backend == Cuda:
     var t: CudaTensor[T]
-    tensorCuda[T](shape, result)
+    tensorCuda[T](shape, t)
     return t
 
 proc toTensor*(s:openarray, backend: static[Backend]): auto {.noSideEffect.} =

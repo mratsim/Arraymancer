@@ -60,6 +60,33 @@ Contrary to Python, the compiler can do the following optimization:
 
 ## Ideas rejected
 
+### Having an unified Tensor type instead of Tensor, CudaTensor, etc.
+
+Rejected because of maintenance/difficult to debug errors. For example for this data structure:
+
+```Nim
+type
+  Backend* = enum
+    Cpu,
+    Cuda
+
+  Tensor*[B: static[Backend]; T] = object
+    shape: seq[int]
+    strides: seq[int]
+    offset: int
+    when B == Backend.Cpu:
+      data: seq[T]
+    else:
+      data_ptr: ptr T
+
+template shape*(t: Tensor): seq[int] =
+  t.shape
+```
+
+The comparison operator "==" fails with "Cannot generate B".
+
+Also having more independant types will probably be easier for future features (distributed compute, MPI ?).
+
 ### Have the rank of the Tensor be part of its type.
 Rejected because impractical for function chaining.
     Advantage: Dispatch and compatibility checking at compile time (Matrix * Matrix and Matrix * Vec)

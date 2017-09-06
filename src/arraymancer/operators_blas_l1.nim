@@ -25,19 +25,19 @@ proc check_add(a, b:Tensor)  {.noSideEffect.}=
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
 
-proc `.*`*[T: SomeReal](a, b: Tensor[Cpu,T]): T {.noSideEffect.} =
+proc `.*`*[T: SomeReal](a, b: Tensor[T]): T {.noSideEffect.} =
   ## Vector to Vector dot (scalar) product
   when compileOption("boundChecks"): check_dot_prod(a,b)
   return dot(a.shape[0], a.get_data_ptr, a.strides[0], b.get_data_ptr, b.strides[0])
 
-proc `.*`*[T: SomeInteger](a, b: Tensor[Cpu,T]): T {.noSideEffect.} =
+proc `.*`*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
   ## Vector to Vector dot (scalar) product
   # Fallback for non-floats
   when compileOption("boundChecks"): check_dot_prod(a,b)
   for ai, bi in zip(a.values, b.values):
     result += ai * bi
 
-proc `+`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
+proc `+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Tensor addition
   when compileOption("boundChecks"): check_add(a,b)
 
@@ -50,7 +50,7 @@ proc `+`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   for i, ai, bi in enumerate_zip(a.values, b.values):
     result.data[i] = ai + bi
 
-proc `+=`*[T: SomeNumber](a: var Tensor[Cpu,T], b: Tensor[Cpu, T]) {.noSideEffect.} =
+proc `+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect.} =
   ## Tensor in-place addition
   when compileOption("boundChecks"): check_add(a,b)
 
@@ -58,7 +58,7 @@ proc `+=`*[T: SomeNumber](a: var Tensor[Cpu,T], b: Tensor[Cpu, T]) {.noSideEffec
   for a_idx, b_val in zip(a.real_indices, b.values):
     a.data[a_idx] += b_val
 
-proc `-`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
+proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Tensor addition
   when compileOption("boundChecks"): check_add(a,b)
 
@@ -71,7 +71,7 @@ proc `-`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   for i, ai, bi in enumerate_zip(a.values, b.values):
     result.data[i] = ai - bi
 
-proc `-=`*[T: SomeNumber](a: var Tensor[Cpu,T], b: Tensor[Cpu, T]) {.noSideEffect.} =
+proc `-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect.} =
   ## Tensor in-place addition
   when compileOption("boundChecks"): check_add(a,b)
 
@@ -79,17 +79,17 @@ proc `-=`*[T: SomeNumber](a: var Tensor[Cpu,T], b: Tensor[Cpu, T]) {.noSideEffec
   for a_idx, b_val in zip(a.real_indices, b.values):
     a.data[a_idx] -= b_val
 
-proc `*`*[T: SomeNumber](a: T, t: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
+proc `*`*[T: SomeNumber](a: T, t: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Element-wise multiplication by a scalar
   proc f(x: T): T = a * x
   return t.fmap(f)
 
-proc `*`*[T: SomeNumber](t: Tensor[Cpu,T], a: T): Tensor[Cpu,T] {.noSideEffect.} =
+proc `*`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] {.noSideEffect.} =
   ## Element-wise multiplication by a scalar
   proc f(x: T): T = a * x
   return t.fmap(f)
 
-proc `/`*[T: SomeNumber](t: Tensor[Cpu,T], a: T): Tensor[Cpu,T] {.noSideEffect.} =
+proc `/`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] {.noSideEffect.} =
   ## Element-wise division by a scalar
   proc f(x: T): T = x / a
   return t.fmap(f)

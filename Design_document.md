@@ -83,7 +83,9 @@ template shape*(t: Tensor): seq[int] =
   t.shape
 ```
 
-The comparison operator "==" fails with "Cannot generate B".
+The template will not compile due to "Cannot generate B", because due to the conditional when, Nim wants B in all proc declaration. The error points to the type declaration and not the proc declaration which makes it a pain to debug.
+
+Furthermore the comparison operator "==" fails with "Cannot generate B" and I found no solution to that.
 
 Also having more independant types will probably be easier for future features (distributed compute, MPI ?).
 

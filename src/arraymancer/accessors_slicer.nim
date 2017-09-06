@@ -362,7 +362,7 @@ macro desugar(args: untyped): typed =
   # echo r.treerepr
   return r
 
-template slicerT[B,T](result: Tensor[B, T], slices: varargs[SteppedSlice]): untyped=
+template slicerT[T](result: Tensor[T], slices: varargs[SteppedSlice]): untyped=
   ## Slicing routine
 
   for i, slice in slices:
@@ -384,7 +384,7 @@ template slicerT[B,T](result: Tensor[B, T], slices: varargs[SteppedSlice]): unty
     result.strides[i] *= slice.step
     result.shape[i] = abs((b-a) div slice.step) + 1
 
-proc slicer[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.}=
+proc slicer[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -393,7 +393,7 @@ proc slicer[B, T](t: Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] 
   result = t
   slicerT(result, slices)
 
-proc shallowSlicer[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice]): Tensor[B, T] {.noSideEffect.}=
+proc shallowSlicer[T](t: var Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
@@ -423,7 +423,7 @@ macro inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
       else:
         result.add(slice)
 
-macro `[]`*[B, T](t: Tensor[B,T], args: varargs[untyped]): untyped =
+macro `[]`*[T](t: Tensor[T], args: varargs[untyped]): untyped =
   ## Input:
   ##   - a tensor
   ##   - and:
@@ -436,13 +436,13 @@ macro `[]`*[B, T](t: Tensor[B,T], args: varargs[untyped]): untyped =
   result = quote do:
     inner_typed_dispatch(`t`, `new_args`)
 
-proc slicerMut[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
+proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
   ## Assign the value to the whole slice
   var sliced = t.shallowSlicer(slices)
   for old_val in sliced.mitems:
     old_val = val
 
-proc slicerMut[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: openarray) {.noSideEffect.}=
+proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) {.noSideEffect.}=
   ## Assign value from openarrays
   ## The openarray must have the same shape as the slice
   let sliced = t.shallowSlicer(slices)
@@ -461,7 +461,7 @@ proc slicerMut[B, T](t: var Tensor[B, T], slices: varargs[SteppedSlice], oa: ope
   for real_idx, val in zip(sliced.real_indices, data):
     t.data[real_idx] = val
 
-proc slicerMut[B1, B2, T](t: var Tensor[B1, T], slices: varargs[SteppedSlice], t2: Tensor[B2, T]) {.noSideEffect.}=
+proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T]) {.noSideEffect.}=
   ## Assign the value to the whole slice
   let sliced = t.shallowSlicer(slices)
 
@@ -487,7 +487,7 @@ macro inner_typed_dispatch_mut(t: typed, args: varargs[typed], val: typed): unty
         result.add(slice)
     result.add(val)
 
-macro `[]=`*[B, T](t: var Tensor[B,T], args: varargs[untyped]): untyped =
+macro `[]=`*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
   ## Modifies the input
   ##
   ##

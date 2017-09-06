@@ -18,7 +18,7 @@
 # Note: You can't pass builtins like `+` or `+=` due to Nim limitations
 # https://github.com/nim-lang/Nim/issues/2172
 
-proc agg*[B; T: SomeNumber](t: Tensor[B,T],
+proc agg*[T: SomeNumber](t: Tensor[T],
                             f:(T, T)-> T,
                             start_val: T
                             ): T {.noSideEffect.}=
@@ -32,10 +32,10 @@ proc agg*[B; T: SomeNumber](t: Tensor[B,T],
   for val in t:
     result = f(result, val)
 
-proc agg_inplace*[B; T: SomeNumber](
+proc agg_inplace*[T: SomeNumber](
                             accum_val: var T,
                             f: proc(x:var T, y:T), # We can't use the nice future syntax here for unknown reason
-                            t: Tensor[B,T],
+                            t: Tensor[T],
                             ) {.noSideEffect.}=
   ## Compute the aggregate
   ## Input:
@@ -50,11 +50,11 @@ proc agg_inplace*[B; T: SomeNumber](
 # ### Axis generic functions
 # `+`, `+=` for tensors are not "built-ins"
 
-proc agg*[B; T: SomeNumber](t: Tensor[B,T],
-                            f:(Tensor[B,T], Tensor[B,T])-> Tensor[B,T],
-                            start_val: Tensor[B,T],
+proc agg*[T: SomeNumber](t: Tensor[T],
+                            f:(Tensor[T], Tensor[T])-> Tensor[T],
+                            start_val: Tensor[T],
                             axis: int
-                            ): Tensor[B,T] {.noSideEffect.}=
+                            ): Tensor[T] {.noSideEffect.}=
   ## Compute the aggregate along an axis
   ## Input:
   ##     - A tensor to aggregate on
@@ -66,10 +66,10 @@ proc agg*[B; T: SomeNumber](t: Tensor[B,T],
   for val in t.axis(axis):
     result = f(result, val)
 
-proc agg_inplace*[B; T: SomeNumber](
-                            accum_val: var Tensor[B,T],
-                            f: proc(x:var Tensor[B,T], y:Tensor[B,T]), # We can't use the nice future syntax here for unknown reason
-                            t: Tensor[B,T],
+proc agg_inplace*[T: SomeNumber](
+                            accum_val: var Tensor[T],
+                            f: proc(x:var Tensor[T], y:Tensor[T]), # We can't use the nice future syntax here for unknown reason
+                            t: Tensor[T],
                             axis: int
                             ) {.noSideEffect.}=
   ## Compute the aggregate along an axis
@@ -85,28 +85,28 @@ proc agg_inplace*[B; T: SomeNumber](
 
 # ### Standard aggregate functions
 
-proc sum*[B; T: SomeNumber](t: Tensor[B,T]): T {.noSideEffect.}=
+proc sum*[T: SomeNumber](t: Tensor[T]): T {.noSideEffect.}=
   ## Compute the sum of all elements of T
   # TODO tests
   result = 0.T
   for val in t:
     result += val
 
-proc sum*[B; T: SomeNumber](t: Tensor[B,T], axis: int): Tensor[B, T] {.noSideEffect.}=
+proc sum*[T: SomeNumber](t: Tensor[T], axis: int): Tensor[T] {.noSideEffect.}=
   ## Compute the sum of all elements of T along an axis
   # TODO tests
   var agg_shape = t.shape
   agg_shape[axis] = 1
 
-  result = zeros(agg_shape, T, B)
+  result = zeros(agg_shape, T, Cpu)
   result.agg_inplace(`+=`, t, axis)
 
-proc mean*[B; T: SomeReal](t: Tensor[B,T]): T {.noSideEffect.}=
+proc mean*[T: SomeReal](t: Tensor[T]): T {.noSideEffect.}=
   ## Compute the mean of all elements of T
   # TODO tests
   return t.sum / t.shape.product.T
 
-proc mean*[B; T: SomeReal](t: Tensor[B,T], axis: int): Tensor[B, T] {.noSideEffect.}=
+proc mean*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noSideEffect.}=
   ## Compute the mean of T along an axis
   # TODO tests
   let n = t.shape[axis]

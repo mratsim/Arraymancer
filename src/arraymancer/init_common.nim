@@ -12,20 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect.}=
-  ## Compare the detected shape from flatten with the real length of the data
-  ## Input:
-  ##   -- A shape (sequence of int)
-  ##   -- A length (int)
-  if (shape.product != len):
-    raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
-
-
-template tensor[T](out_shape: openarray[int], t: Tensor[T]): untyped =
-  t.shape = @out_shape
-  t.strides = shape_to_strides(t.shape)
-  t.offset = 0
-
 proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): auto {.noSideEffect.} =
   ## Creates a new Tensor
   ## Input:
@@ -40,20 +26,13 @@ proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): a
 
   when backend == Cpu:
     var t: Tensor[T]
-    tensor(shape, t)
+    tensorCpu(shape, t)
     t.data = newSeq[T](t.shape.product)
     return t
-
-template toTensorCpu(s: typed): untyped =
-  let shape = s.shape
-  let data = toSeq(flatIter(s))
-
-  when compileOption("boundChecks"): check_nested_elements(shape, data.len)
-
-  var t: Tensor[type(data[0])]
-  tensor(shape, t)
-  t.data = data
-  return t
+  elif backend == Cuda:
+    var t: CudaTensor[T]
+    tensorCuda[T](shape, result)
+    return t
 
 proc toTensor*(s:openarray, backend: static[Backend]): auto {.noSideEffect.} =
   ## Convert an openarray to a Tensor
@@ -118,7 +97,7 @@ proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noSideEffect, inline.} =
     return ones(t.shape, T, Cuda)
 
 template randomTensorCpu[T](t: Tensor[T], shape: openarray[int], max_or_range: typed): untyped =
-  tensor(shape, t)
+  tensorCpu(shape, t)
   t.data = newSeqWith(t.shape.product, random(max_or_range))
 
 proc randomTensor*(shape: openarray[int], max: float, backend: static[Backend]): auto =

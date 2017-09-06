@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import nimcuda/[cuda_runtime_api, driver_types, cublas_api, cublas_v2, nimcuda]
+
 import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros, random
 
 # include ../docs/autogen_nim_API
@@ -22,6 +24,7 @@ include arraymancer/utils/functional,
         arraymancer/data_structure,
         arraymancer/init_check,
         arraymancer/init_cpu,
+        arraymancer/init_cuda,
         arraymancer/init_common,
         arraymancer/accessors,
         arraymancer/accessors_slicer,

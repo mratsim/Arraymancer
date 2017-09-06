@@ -36,9 +36,11 @@ Contrary to Python, the compiler can do the following optimization:
 
 ## Cuda considerations
 
-* Currently all init proc accept a backend parameter (Cpu, Cuda, ...). In case the backend have dedicated function like "zeros", "ones" or "randomTensor", this will avoid having to create tensor on the Cpu and then copy it to the backend.
-The downside is complicating the procs by the use of untyped templates, auto return types and "when t is Tensor".
+* Currently all init procs accept a backend parameter (Cpu, Cuda, ...). In case the backend have dedicated function like "zeros", "ones" or "randomTensor", this will avoid having to create tensor on the Cpu and then copy it to the backend.
+The downside is complicating the procs by the use of untyped templates, auto return types, "when t is Tensor" or "when backend is Cpu". This might promote spaghetti code. Furthermore, in the case of "init" function, it requires the `check_nested_elements` in a file, then __Cpu__ and __Cuda__ specific code in a file, then a __common__ file with the polymorphic proc.
 An alternative is to have a rewrite rule to transform randomTensor(...).toCuda() into the direct Cuda function.
+
+* Reclaiming memory: currently all CudaTensors are created via new + finalizer. The finalizer proc is automatically used after (at a non-deterministic time) the object goes out of scope. In case there are memory leaks, it might be because a CudaTensor wasn't created by new, and so need a `=destroy` destructor proc. Discussions on IRC highlight that finalizer is enough for yglukhov's game engine.
 
 ## Coding-style
 * Prefer `when` to `if` for compile-time evaluation

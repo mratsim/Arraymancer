@@ -14,20 +14,42 @@
 
 
 proc cudaMalloc[T](size: int): ptr T {.noSideEffect.}=
+  ## Internal proc.
+  ## Wrap CudaMAlloc(var pointer, size) -> Error_code
   let s = size * sizeof(T)
   check cudaMalloc(cast[ptr pointer](addr result), s)
 
-proc freeCudaTensor[T](p: ref[ptr T]) =
+proc deallocCuda[T](p: ref[ptr T]) {.noSideEffect.}=
   if not p[].isNil:
     check cudaFree(p[])
 
-template tensorCuda[T](out_shape: openarray[int], t: CudaTensor[T]) =
-  new(t.data_ref, finalizer = freeCudaTensor)
-  t.shape = @out_shape
-  t.data_ptr = cudaMalloc[T](t.shape.product)
-  t.data_ref[] = t.data_ptr
-  t.strides = shape_to_strides(t.shape)
-  t.offset = 0
+proc newCudaTensor[T: SomeReal](shape: openarray[int]): CudaTensor[T] {.noSideEffect.}=
+  new(result.data_ref, deallocCuda)
+  result.shape = @shape
+  result.data_ptr = cudaMalloc[T](result.shape.product)
+  result.data_ref[] = result.data_ptr
+  result.strides = shape_to_strides(result.shape)
+  result.offset = 0
 
-proc newCudaTensor[SR: SomeReal](shape: openarray[int], T: typedesc[SR]): CudaTensor[T] {.noSideEffect.}=
-  tensorCuda[T](shape, result)
+proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] {.noSideEffect.}=
+  ## Convert a tensor on Cpu to a tensor on a Cuda device.
+  result = newCudaTensor(t.shape)
+
+  let contig_t = t.asContiguous()
+
+  check cudaMemCpy(result.get_data_ptr,
+                   contig_t.get_data_ptr,
+                   result.shape.product * sizeof(T),
+                   cudaMemcpyHostToDevice)
+
+proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect.}=
+  ## Convert a tensor on a Cuda device to a tensor on Cpu.
+
+  # TODO: We assume data has not been sliced, hence data to copy is t.shape.product
+
+  result = newTensor(t.shape, T)
+
+  check cudaMemCpy(result.get_data_ptr,
+                   t.get_data_ptr,
+                   result.shape.product * sizeof(T),
+                   cudaMemcpyDeviceToHost)

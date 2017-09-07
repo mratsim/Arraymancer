@@ -17,25 +17,4 @@ import nimcuda/[cuda_runtime_api, driver_types, cublas_api, cublas_v2, nimcuda]
 import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros, random
 
 # include ../docs/autogen_nim_API
-include arraymancer/utils/functional,
-        arraymancer/utils/nested_containers,
-        arraymancer/utils/ast_utils,
-        arraymancer/backend/config_backends,
-        arraymancer/data_structure,
-        arraymancer/init_check,
-        arraymancer/init_cpu,
-        arraymancer/init_cuda,
-        arraymancer/init_common,
-        arraymancer/accessors,
-        arraymancer/accessors_slicer,
-        arraymancer/comparison,
-        arraymancer/shapeshifting,
-        arraymancer/display,
-        arraymancer/ufunc,
-        arraymancer/operators_blas_l1,
-        arraymancer/fallback/blas_l3_gemm,
-        arraymancer/fallback/naive_l2_gemv,
-        arraymancer/operators_blas_l2l3,
-        arraymancer/operators_extra,
-        arraymancer/aggregate,
-        arraymancer/term_rewriting
+include arraymancer/init_cuda

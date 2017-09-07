@@ -136,4 +136,4 @@ proc `$`*[T](t: Tensor[T]): string {.noSideEffect.} =
   elif t.rank == 4:
     return desc & "\n" & t.disp4d
   else:
-    return desc & "\n" & " -- NotImplemented: Display not implemented for tensors of rank > 2"
+    return desc & "\n" & " -- NotImplemented: Display not implemented for tensors of rank > 4"

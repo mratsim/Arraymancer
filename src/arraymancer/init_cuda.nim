@@ -26,8 +26,8 @@ proc deallocCuda[T](p: ref[ptr T]) {.noSideEffect.}=
 proc newCudaTensor[T: SomeReal](shape: openarray[int]): CudaTensor[T] {.noSideEffect.}=
   new(result.data_ref, deallocCuda)
   result.shape = @shape
-  result.data_ptr = cudaMalloc[T](result.shape.product)
-  result.data_ref[] = result.data_ptr
+  result.len = result.shape.product
+  result.data_ref[] = cudaMalloc[T](result.len)
   result.strides = shape_to_strides(result.shape)
   result.offset = 0
 
@@ -36,7 +36,7 @@ proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] {.noSideEffect.}=
   result = newCudaTensor[T](t.shape)
 
   let contig_t = t.asContiguous()
-  let size = result.shape.product * sizeof(T)
+  let size = result.len * sizeof(T)
 
   check cudaMemCpy(result.get_data_ptr,
                    contig_t.get_data_ptr,
@@ -46,10 +46,12 @@ proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] {.noSideEffect.}=
 proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect.}=
   ## Convert a tensor on a Cuda device to a tensor on Cpu.
 
-  # TODO: We assume data has not been sliced, hence data to copy is t.shape.product
+  result.shape = t.shape
+  result.strides = t.strides
+  result.offset = t.offset
+  result.data = newSeq[T](t.len)
 
-  result = newTensor(t.shape, T)
-  let size = result.shape.product * sizeof(T)
+  let size = t.len * sizeof(T)
 
   check cudaMemCpy(result.get_data_ptr,
                    t.get_data_ptr,

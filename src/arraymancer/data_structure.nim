@@ -44,8 +44,8 @@ type
     shape: seq[int]
     strides: seq[int]
     offset: int
-    data_ptr: ptr T
-    data_ref: ref[ptr T]
+    data_ref: ref[ptr T] # Memory on Cuda device will be automatically garbage-collected
+    len: int
 
   AnyTensor[T] = Tensor[T] or CudaTensor[T]
 
@@ -116,7 +116,7 @@ template get_data_ptr*[T](t: AnyTensor[T]): ptr T =
   when t is Tensor:
     unsafeAddr(t.data[0])
   elif t is CudaTensor:
-    t.data_ptr
+    t.data_ref[]
 
 proc shallowCopy*[T](t: var Tensor[T]): Tensor[T] {.noSideEffect.}=
   ## Input:

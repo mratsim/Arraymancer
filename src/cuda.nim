@@ -19,3 +19,4 @@ import nimcuda/[cuda_runtime_api, driver_types, cublas_api, cublas_v2, nimcuda]
 # but not exported externally
 include ./arraymancer
 include ./arraymancer/init_cuda
+include ./arraymancer/display_cuda

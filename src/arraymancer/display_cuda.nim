@@ -15,11 +15,14 @@
 proc `$`*[T](t: CudaTensor[T]): string {.noSideEffect.} =
   ## Pretty-print a CudaTensor (when using ``echo`` for example)
   let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & "Cuda" & "\""
+  
+  let cpu_t = t.cpu()
+  
   if t.rank <= 2:
-    return desc & "\n" & t.disp2d
+    return desc & "\n" & cpu_t.disp2d
   elif t.rank == 3:
-    return desc & "\n" & t.disp3d
+    return desc & "\n" & cpu_t.disp3d
   elif t.rank == 4:
-    return desc & "\n" & t.disp4d
+    return desc & "\n" & cpu_t.disp4d
   else:
     return desc & "\n" & " -- NotImplemented: Display not implemented for tensors of rank > 4"

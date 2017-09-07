@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-proc cudaMalloc[T](size: int): ptr T =
+proc cudaMalloc[T](size: int): ptr T {.noSideEffect.}=
   let s = size * sizeof(T)
   check cudaMalloc(cast[ptr pointer](addr result), s)
 
@@ -21,7 +21,7 @@ proc freeCudaTensor[T](p: ref[ptr T]) =
   if not p[].isNil:
     check cudaFree(p[])
 
-template tensorCuda*[T](out_shape: openarray[int], t: CudaTensor[T]) =
+template tensorCuda[T](out_shape: openarray[int], t: CudaTensor[T]) =
   new(t.data_ref, finalizer = freeCudaTensor)
   t.shape = @out_shape
   t.data_ptr = cudaMalloc[T](t.shape.product)
@@ -29,5 +29,5 @@ template tensorCuda*[T](out_shape: openarray[int], t: CudaTensor[T]) =
   t.strides = shape_to_strides(t.shape)
   t.offset = 0
 
-proc newCudaTensor*[SR: SomeReal](shape: openarray[int], T: typedesc[SR]): CudaTensor[T] {.inline.}=
+proc newCudaTensor[SR: SomeReal](shape: openarray[int], T: typedesc[SR]): CudaTensor[T] {.noSideEffect.}=
   tensorCuda[T](shape, result)

@@ -12,6 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+proc shallowCopy*[T](t: var Tensor[T]): Tensor[T] {.noSideEffect.}=
+  ## Input:
+  ##     - A ``var`` tensor
+  ## Returns:
+  ##     - A shallow copy.
+  ##
+  ## WARNING !
+  ##   Both tensors shares the same memory. Data modification on one will be reflected on the other.
+  ##   However modifying the shape, strides or offset will not affect the other.
+  result.shape = t.shape
+  result.strides = t.strides
+  result.offset = t.offset
+  shallowCopy(result.data, t.data)
+
 proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect.}=
   ## Compare the detected shape from flatten with the real length of the data
   ## Input:

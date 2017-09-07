@@ -36,10 +36,6 @@ Contrary to Python, the compiler can do the following optimization:
 
 ## Cuda considerations
 
-* Currently all init procs accept a backend parameter (Cpu, Cuda, ...). In case the backend have dedicated function like "zeros", "ones" or "randomTensor", this will avoid having to create tensor on the Cpu and then copy it to the backend.
-The downside is complicating the procs by the use of untyped templates, auto return types, "when t is Tensor" or "when backend is Cpu". This might promote spaghetti code. Furthermore, in the case of "init" function, it requires the `check_nested_elements` in a file, then __Cpu__ and __Cuda__ specific code in a file, then a __common__ file with the polymorphic proc.
-An alternative is to have a rewrite rule to transform randomTensor(...).toCuda() into the direct Cuda function.
-
 * Reclaiming memory: currently all CudaTensors are created via new + finalizer. The finalizer proc is automatically used after (at a non-deterministic time) the object goes out of scope. In case there are memory leaks, it might be because a CudaTensor wasn't created by new, and so need a `=destroy` destructor proc. Discussions on IRC highlight that finalizer is enough for yglukhov's game engine.
 
 ## Coding-style
@@ -148,3 +144,15 @@ Also using seq is far easier than implementing my own shallowCopy / refcounting 
 Nim GC perf: https://gist.github.com/dom96/77b32e36b62377b2e7cadf09575b8883
 
 In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-reference-types-in-swift) (for Swift but applicable): performance, safety, usability
+
+
+### Have polymorphic procs depending on a backend parameter
+With the [following commit](https://github.com/mratsim/Arraymancer/blob/260386da01c9185f551f8afbe41d2c4beeeee92c/src/arraymancer/init_common.nim) in Cuda branch, all init procs accepted a backend parameter (Cpu, Cuda, ...). In case the backend had dedicated function like "zeros", this would avoid having to create tensor on the Cpu and then copy it to the backend.
+The downside is
+- Complicating the procs by the use of untyped templates, auto return types, "when t is Tensor" or "when backend is Cpu". This might promote spaghetti code.
+- All new backends would require modification to the base procs, with more risks of introducing new bugs.
+- In the case of "init" function, it requires the `check_nested_elements` proc in a file, then __Cpu__ and __Cuda__ specific code in another, then a __common__ file with the polymorphic procs. This would make it difficult to understand and contribute to the code.
+- Only a few init functions can be used directly on GPU, **ones** and **randomTensor** will require creation on Cpu backend anyway
+Two alternatives are possible to avoid that:
+- Only provide the base proc for Cpu and have a rewrite rule to transform zeros(...).toCuda() into the direct Cuda function if it exists.
+- Use qualified import, like `ìmport arraymancer as ar` and `ìmport arraymancer/cuda as arc`

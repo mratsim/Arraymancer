@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): auto {.noSideEffect.} =
+proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): auto {.noSideEffect, deprecated.} =
+  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
+  ## init procs will not offer the backend parameter anymore.
+  ## Full rationale in the Design_Document on Github.
+  ##
   ## Creates a new Tensor
   ## Input:
   ##      - Shape of the Tensor
@@ -34,13 +38,21 @@ proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): a
     tensorCuda[T](shape, t)
     return t
 
-proc toTensor*(s:openarray, backend: static[Backend]): auto {.noSideEffect.} =
+proc toTensor*(s:openarray, backend: static[Backend]): auto {.noSideEffect, deprecated.} =
+  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
+  ## init procs will not offer the backend parameter anymore.
+  ## Full rationale in the Design_Document on Github.
+  ##
   ## Convert an openarray to a Tensor
   # TODO: have Backend.Cpu as default. pending https://github.com/nim-lang/Nim/issues/6339
   when backend == Cpu:
     toTensorCpu(s)
 
-proc toTensor*(s:string, backend: static[Backend]): auto {.noSideEffect.} =
+proc toTensor*(s:string, backend: static[Backend]): auto {.noSideEffect, deprecated.} =
+  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
+  ## init procs will not offer the backend parameter anymore.
+  ## Full rationale in the Design_Document on Github.
+  ##
   ## Convert an openarray to a Tensor
   ##
   ## Handle string specifically (otherwise they are interpreted as openarray[char])
@@ -48,8 +60,11 @@ proc toTensor*(s:string, backend: static[Backend]): auto {.noSideEffect.} =
     toTensorCpu(s)
 
 # TODO add tests for zeros, ones and randomTensor
-proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: static[Backend]): auto {.noSideEffect, inline.} =
-  ## Creates a new Tensor filled with 0
+proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: static[Backend]): auto {.deprecated, noSideEffect, inline.} =  ## Creates a new Tensor filled with 0
+  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
+  ## init procs will not offer the backend parameter anymore.
+  ## Full rationale in the Design_Document on Github.
+  ##
   ## Input:
   ##      - Shape of the Tensor
   ##      - Type of its elements
@@ -58,20 +73,11 @@ proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: sta
   ##      - A zero-ed Tensor of the input shape
   return newTensor(shape, typ, backend)
 
-proc zeros_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noSideEffect, inline.} =
-  ## Creates a new Tensor filled with 0 with the same shape as the input
-  ## Input:
-  ##      - Shape of the Tensor
-  ##      - Type of its elements
-  ##      - Backend
-  ## Result:
-  ##      - A zero-ed Tensor of the same shape
-  when t is Tensor:
-    return zeros(t.shape, T, Cpu)
-  elif t is CudaTensor:
-    return zeros(t.shape, T, Cuda)
-
-proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: static[Backend]): auto {.noSideEffect.} =
+proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: static[Backend]): auto {.deprecated, noSideEffect.} =
+  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
+  ## init procs will not offer the backend parameter anymore.
+  ## Full rationale in the Design_Document on Github.
+  ##
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -84,23 +90,15 @@ proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: stat
     tensor(shape, t)
     t.data = newSeqWith(t.shape.product, 1.T)
 
-proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noSideEffect, inline.} =
-  ## Creates a new Tensor filled with 0 with the same shape as the input
-  ## and filled with 1
-  ## Input:
-  ##      - Tensor
-  ## Result:
-  ##      - A one-ed Tensor of the same shape
-  when t is Tensor:
-    return ones(t.shape, T, Cpu)
-  elif t is CudaTensor:
-    return ones(t.shape, T, Cuda)
-
 template randomTensorCpu[T](t: Tensor[T], shape: openarray[int], max_or_range: typed): untyped =
   tensorCpu(shape, t)
   t.data = newSeqWith(t.shape.product, random(max_or_range))
 
-proc randomTensor*(shape: openarray[int], max: float, backend: static[Backend]): auto =
+proc randomTensor*(shape: openarray[int], max: float, backend: static[Backend]): auto {.deprecated.}=
+  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
+  ## init procs will not offer the backend parameter anymore.
+  ## Full rationale in the Design_Document on Github.
+  ##
   ## Creates a new float Tensor filled with values between 0 and max
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
   ## Input:
@@ -114,7 +112,11 @@ proc randomTensor*(shape: openarray[int], max: float, backend: static[Backend]):
     randomTensorCpu(t, shape, max)
     return t
 
-proc randomTensor*(shape: openarray[int], max: int, backend: static[Backend]): auto =
+proc randomTensor*(shape: openarray[int], max: int, backend: static[Backend]): auto {.deprecated.}=
+  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
+  ## init procs will not offer the backend parameter anymore.
+  ## Full rationale in the Design_Document on Github.
+  ##
   ## Creates a new int Tensor filled with values between 0 and max-1
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
   ## Input:
@@ -128,7 +130,11 @@ proc randomTensor*(shape: openarray[int], max: int, backend: static[Backend]): a
     randomTensorCpu(t, shape, max)
     return t
 
-proc randomTensor*[T](shape: openarray[int], slice: Slice[T], B: static[Backend]): auto =
+proc randomTensor*[T](shape: openarray[int], slice: Slice[T], B: static[Backend]): auto {.deprecated.}=
+  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
+  ## init procs will not offer the backend parameter anymore.
+  ## Full rationale in the Design_Document on Github.
+  ##
   ## Creates a new int Tensor filled with values in the Slice range.
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
   ## Input:

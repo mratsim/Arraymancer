@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect.}=
+  ## Compare the detected shape from flatten with the real length of the data
+  ## Input:
+  ##   -- A shape (sequence of int)
+  ##   -- A length (int)
+  if (shape.product != len):
+    raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
 
 template tensorCpu[T](out_shape: openarray[int], t: Tensor[T]): untyped =
   t.shape = @out_shape
@@ -29,6 +36,65 @@ template toTensorCpu(s: typed): untyped =
   t.data = data
   return t
 
+proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect.} =
+  ## Creates a new Tensor on Cpu backend
+  ## Input:
+  ##      - Shape of the Tensor
+  ##      - Type of its elements
+  ## Result:
+  ##      - A Tensor of the proper shape initialized with
+  ##        the default type value (0 for numeric types) on Cpu backend
+  tensorCpu(shape, result)
+  result.data = newSeq[T](result.shape.product)
+
+proc toTensor*(s:openarray): Tensor {.noSideEffect.} =
+  ## Convert an openarray to a Tensor
+  toTensorCpu(s)
+
+proc toTensor*(s:string): Tensor[string] {.noSideEffect.} =
+  ## Convert an openarray to a Tensor
+  ##
+  ## Handle string specifically (otherwise they are interpreted as openarray[char])
+  toTensorCpu(s)
+
+# TODO add tests for zeros, ones and randomTensor
+proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {.noSideEffect, inline.} =
+  ## Creates a new Tensor filled with 0
+  ##
+  ## Input:
+  ##      - Shape of the Tensor
+  ##      - Type of its elements
+  ## Result:
+  ##      - A zero-ed Tensor of the input shape on backend Cpu
+  return newTensor(shape, typ)
+
+proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+  ## Creates a new Tensor filled with 0 with the same shape as the input
+  ## Input:
+  ##      - Shape of the Tensor
+  ##      - Type of its elements
+  ## Result:
+  ##      - A zero-ed Tensor of the same shape
+  return zeros(t.shape, T)
+
+proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {.noSideEffect.} =
+  ## Creates a new Tensor filled with 1
+  ## Input:
+  ##      - Shape of the Tensor
+  ##      - Type of its elements
+  ## Result:
+  ##      - A one-ed Tensor of the same shape
+  tensorCpu(shape, result)
+  result.data = newSeqWith(result.shape.product, 1.T)
+
+proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noSideEffect, inline.} =
+  ## Creates a new Tensor filled with 0 with the same shape as the input
+  ## and filled with 1
+  ## Input:
+  ##      - Tensor
+  ## Result:
+  ##      - A one-ed Tensor of the same shape
+  return ones(t.shape, T)
 
 template randomTensorCpu[T](t: Tensor[T], shape: openarray[int], max_or_range: typed): untyped =
   tensor(shape, t)

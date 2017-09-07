@@ -12,10 +12,3 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect.}=
-  ## Compare the detected shape from flatten with the real length of the data
-  ## Input:
-  ##   -- A shape (sequence of int)
-  ##   -- A length (int)
-  if (shape.product != len):
-    raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")

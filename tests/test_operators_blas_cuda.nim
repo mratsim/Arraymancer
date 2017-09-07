@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import nimcuda/[cuda_runtime_api, driver_types, cublas_api, cublas_v2, nimcuda]
+import ../src/cuda
+import unittest, future
 
-# arraymancer and arraymancer/cuda should not be both imported at the same time
-# Unfortunately allowing this would require a difficult configuration to allow private proc visible to both modules
-# but not exported externally
-include ./arraymancer
-include ./arraymancer/init_cuda
-include ./arraymancer/display_cuda
-include ./arraymancer/operators_blas_l1_cuda
+suite "CUDA backend: BLAS (Basic Linear Algebra Subprograms)":
+  test "Scalar/dot product":
+    let u = @[1'f64, 3, -5].toTensor().cuda()
+    let v = @[4'f64, -2, -1].toTensor().cuda()
+
+    check: u .* v == 3.0

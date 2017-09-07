@@ -12,12 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import nimcuda/[cuda_runtime_api, driver_types, cublas_api, cublas_v2, nimcuda]
-
-# arraymancer and arraymancer/cuda should not be both imported at the same time
-# Unfortunately allowing this would require a difficult configuration to allow private proc visible to both modules
-# but not exported externally
-include ./arraymancer
-include ./arraymancer/init_cuda
-include ./arraymancer/display_cuda
-include ./arraymancer/operators_blas_l1_cuda
+import ../src/cuda,
+        ./test_operators_blas_cuda

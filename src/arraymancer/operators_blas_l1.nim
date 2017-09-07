@@ -14,7 +14,7 @@
 
 
 # Bounds checking functions
-proc check_dot_prod(a, b:Tensor)  {.noSideEffect.}=
+proc check_dot_prod(a, b:AnyTensor)  {.noSideEffect.}=
   if a.rank != 1 or b.rank != 1: raise newException(ValueError, "Dot product is only supported for vectors (tensors of rank 1)")
   if a.shape != b.shape: raise newException(ValueError, "Vector should be the same length")
 

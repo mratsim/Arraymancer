@@ -100,5 +100,38 @@ proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noSideEffect, inline.} =
   return ones(t.shape, T)
 
 template randomTensorCpu[T](t: Tensor[T], shape: openarray[int], max_or_range: typed): untyped =
-  tensor(shape, t)
+  tensorCpu(shape, t)
   t.data = newSeqWith(t.shape.product, random(max_or_range))
+
+proc randomTensor*(shape: openarray[int], max: float): Tensor[float] =
+  ## Creates a new float Tensor filled with values between 0 and max
+  ## Random seed can be set by importing ``random`` and ``randomize(seed)``
+  ## Input:
+  ##      - a shape
+  ##      - the max value possible (float)
+  ##      - a tensor backend
+  ## Result:
+  ##      - A tensor of the input shape filled with random value between 0 and max input value
+  randomTensorCpu(result, shape, max)
+
+proc randomTensor*(shape: openarray[int], max: int): Tensor[int] =
+  ## Creates a new int Tensor filled with values between 0 and max-1
+  ## Random seed can be set by importing ``random`` and ``randomize(seed)``
+  ## Input:
+  ##      - a shape
+  ##      - the max value possible (integer, exclusive)
+  ##      - a tensor backend
+  ## Result:
+  ##      - A tensor of the input shape filled with random value between 0 and max input value (excluded)
+  randomTensorCpu(result, shape, max)
+
+proc randomTensor*[T](shape: openarray[int], slice: Slice[T]): Tensor[T] =
+  ## Creates a new int Tensor filled with values in the Slice range.
+  ## Random seed can be set by importing ``random`` and ``randomize(seed)``
+  ## Input:
+  ##      - a shape
+  ##      - a range/slice
+  ##      - a tensor backend
+  ## Result:
+  ##      - A tensor of the input shape filled with random value in the slice range
+  randomTensorCpu(result, shape, slice)

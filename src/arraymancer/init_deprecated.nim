@@ -90,10 +90,6 @@ proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: stat
     tensor(shape, t)
     t.data = newSeqWith(t.shape.product, 1.T)
 
-template randomTensorCpu[T](t: Tensor[T], shape: openarray[int], max_or_range: typed): untyped =
-  tensorCpu(shape, t)
-  t.data = newSeqWith(t.shape.product, random(max_or_range))
-
 proc randomTensor*(shape: openarray[int], max: float, backend: static[Backend]): auto {.deprecated.}=
   ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
   ## init procs will not offer the backend parameter anymore.

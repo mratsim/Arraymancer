@@ -13,11 +13,11 @@
 # limitations under the License.
 
 import ../src/arraymancer
-import unittest, math
+import math, unittest
 
 
-suite "Testing tensor comparison":
-  test "Testing for [1..^2, 1..3] slicing":
+suite "Displaying tensors":
+  test "Display compiles":
     const
       a = @[1, 2, 3, 4, 5]
       b = @[1, 2, 3, 4, 5]
@@ -34,7 +34,10 @@ suite "Testing tensor comparison":
       for j, bb in b:
         vandermonde[i].add(aa^bb)
 
-    let t_van = vandermonde.toTensor()
+    # @[@[1, 1, 1, 1, 1], @[2, 4, 8, 16, 32], @[3, 9, 27, 81, 243], @[4, 16, 64, 256, 1024], @[5, 25, 125, 625, 3125]]
+
+    let t_van = vandermonde.toTensor(Cpu)
+    when compiles(echo t_van): check: true
 
     # Tensor of shape 5x5 of type "int" on backend "Cpu"
     # |1      1       1       1       1|
@@ -42,9 +45,5 @@ suite "Testing tensor comparison":
     # |3      9       27      81      243|
     # |4      16      64      256     1024|
     # |5      25      125     625     3125|
-
-    let test = @[@[4, 8, 16], @[9, 27, 81], @[16, 64, 256]]
-    let t_test = test.toTensor()
     
-    check: t_van[1..^2,1..3] == t_test
-    check: t_van[1..3,1..3] == t_test
+    # TODO: Better display tests

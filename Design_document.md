@@ -154,5 +154,5 @@ The downside is
 - In the case of "init" function, it requires the `check_nested_elements` proc in a file, then __Cpu__ and __Cuda__ specific code in another, then a __common__ file with the polymorphic procs. This would make it difficult to understand and contribute to the code.
 - Only a few init functions can be used directly on GPU, **ones** and **randomTensor** will require creation on Cpu backend anyway
 Two alternatives are possible to avoid that:
-- Only provide the base proc for Cpu and have a rewrite rule to transform zeros(...).toCuda() into the direct Cuda function if it exists.
-- Use qualified import, like `ìmport arraymancer as ar` and `ìmport arraymancer/cuda as arc`
+- Only provide the base proc for Cpu and have a rewrite rule to transform zeros(...).toCuda() into the direct Cuda function if it exists. (aka Composition)
+- Use qualified import, like `ìmport arraymancer as arc` and `ìmport arraymancer/cuda as cu` and then `arc.zeros` or `cu.zeros`

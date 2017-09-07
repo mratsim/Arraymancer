@@ -47,11 +47,14 @@ proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect.} 
   tensorCpu(shape, result)
   result.data = newSeq[T](result.shape.product)
 
-proc toTensor*(s:openarray): Tensor {.noSideEffect.} =
+proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect.} =
   ## Convert an openarray to a Tensor
+  ## Nim >0.17 needed as "static[int] = 0" is not working in Nim 0.17
+  ## Dummy_bugfix param is necessary due to: https://github.com/nim-lang/Nim/issues/6343
+  # TODO: remove 'dummy_bugfix'
   toTensorCpu(s)
 
-proc toTensor*(s:string): Tensor[string] {.noSideEffect.} =
+proc toTensor*(s:string): auto {.noSideEffect.} =
   ## Convert an openarray to a Tensor
   ##
   ## Handle string specifically (otherwise they are interpreted as openarray[char])

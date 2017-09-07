@@ -17,18 +17,18 @@ import unittest, future, sequtils
 
 suite "Shapeshifting":
   test "Reshape":
-    let a = toSeq(1..4).toTensor().reshape(2,2)
+    let a = toSeq(1..4).toTensor(Cpu).reshape(2,2)
     check: a == [[1,2],
-                 [3,4]].toTensor()
+                 [3,4]].toTensor(Cpu)
 
   test "Concatenation":
-    let a = toSeq(1..4).toTensor().reshape(2,2)
+    let a = toSeq(1..4).toTensor(Cpu).reshape(2,2)
 
-    let b = toSeq(5..8).toTensor().reshape(2,2)
+    let b = toSeq(5..8).toTensor(Cpu).reshape(2,2)
 
     check: concat(a,b, axis = 0) == [[1,2],
                                      [3,4],
                                      [5,6],
-                                     [7,8]].toTensor()
+                                     [7,8]].toTensor(Cpu)
     check: concat(a,b, axis = 1) == [[1,2,5,6],
-                                     [3,4,7,8]].toTensor()
+                                     [3,4,7,8]].toTensor(Cpu)

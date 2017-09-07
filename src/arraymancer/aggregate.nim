@@ -98,7 +98,7 @@ proc sum*[T: SomeNumber](t: Tensor[T], axis: int): Tensor[T] {.noSideEffect.}=
   var agg_shape = t.shape
   agg_shape[axis] = 1
 
-  result = zeros(agg_shape, T, Cpu)
+  result = zeros(agg_shape, T)
   result.agg_inplace(`+=`, t, axis)
 
 proc mean*[T: SomeReal](t: Tensor[T]): T {.noSideEffect.}=

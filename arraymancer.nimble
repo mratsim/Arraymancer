@@ -37,6 +37,9 @@ proc test(name: string) =
 task test, "Run all tests - Default BLAS":
   test "all_tests"
 
+task test_deprecated, "Run all tests on deprecated static[Backend] procs":
+  test "all_tests_deprecated"
+
 task test_openblas, "Run all tests - OpenBLAS":
   ## Should work but somehow Nim doesn't find libopenblas.dylib on MacOS
   when defined(macosx):

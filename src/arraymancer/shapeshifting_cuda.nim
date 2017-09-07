@@ -12,13 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import nimcuda/[cuda_runtime_api, driver_types, cublas_api, cublas_v2, nimcuda]
+proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
+  ## Transpose a Tensor.
+  ##
+  ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
+  ##
+  ## Data is copied as-is and not modified.
+  ## WARNING: The input and output tensors share the underlying data storage on GPU
+  ## Modification of data will affect both
 
-# arraymancer and arraymancer/cuda should not be both imported at the same time
-# Unfortunately allowing this would require a difficult configuration to allow private proc visible to both modules
-# but not exported externally
-include ./arraymancer,
-        ./arraymancer/init_cuda,
-        ./arraymancer/display_cuda,
-        ./arraymancer/operators_blas_l1_cuda,
-        ./arraymancer/shapeshifting_cuda
+  result.shape = t.shape.reversed
+  result.strides = t.strides.reversed
+  result.offset = t.offset
+  result.data_ref = t.data_ref
+  result.len = t.len

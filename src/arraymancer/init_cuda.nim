@@ -24,6 +24,9 @@ proc deallocCuda[T](p: ref[ptr T]) {.noSideEffect.}=
     check cudaFree(p[])
 
 proc newCudaTensor[T: SomeReal](shape: openarray[int]): CudaTensor[T] {.noSideEffect.}=
+  ## Internal proc
+  ## Allocate a CudaTensor
+  ## WARNING: The Cuda memory is not initialized to 0
   new(result.data_ref, deallocCuda)
   result.shape = @shape
   result.len = result.shape.product

@@ -19,14 +19,80 @@ check cublasCreate_v2(addr defaultHandle)
 
 # #####################################################
 # Redefinition of imported CUDA proc with standard name
-proc dot*(handle: cublasHandle_t; n: int32; x: ptr float32; incx: int32;
-                     y: ptr float32; incy: int32; output: ptr float32): cublasStatus_t {.inline.} =
+
+# Vector copy
+proc copy(handle: cublasHandle_t; n: cint; x: ptr cfloat; incx: cint;
+                      y: ptr cfloat; incy: cint): cublasStatus_t {.inline.} =
+  cublasScopy_v2(handle, n, x, incx, y, incy)
+proc copy(handle: cublasHandle_t; n: cint; x: ptr cdouble; incx: cint;
+                      y: ptr cdouble; incy: cint): cublasStatus_t {.inline.} =
+  cublasDcopy_v2(handle, n, x, incx, y, incy)
+
+# Vector dot product
+proc dot(handle: cublasHandle_t; n: cint; x: ptr cfloat; incx: cint;
+                     y: ptr cfloat; incy: cint; output: ptr cfloat): cublasStatus_t {.inline.} =
   cublasSdot_v2(handle, n, x, incx, y, incy, output)
 
-proc dot*(handle: cublasHandle_t; n: int32; x: ptr float64; incx: int32;
-                     y: ptr float64; incy: int32; output: ptr float64): cublasStatus_t {.inline.} =
+proc dot(handle: cublasHandle_t; n: cint; x: ptr cdouble; incx: cint;
+                     y: ptr cdouble; incy: cint; output: ptr cdouble): cublasStatus_t {.inline.} =
   cublasDdot_v2(handle, n, x, incx, y, incy, output)
 
+# Vector addition
+proc axpy(handle: cublasHandle_t; n: cint; alpha: ptr cfloat;
+                    x: ptr cfloat; incx: cint; y: ptr cfloat; incy: cint): cublasStatus_t {.inline.} =
+  cublasSaxpy_v2(handle, n, alpha, x, incx, y, incy)
+proc axpy(handle: cublasHandle_t; n: cint; alpha: ptr cdouble;
+                    x: ptr cdouble; incx: cint; y: ptr cdouble; incy: cint): cublasStatus_t {.inline.} =
+  cublasDaxpy_v2(handle, n, alpha, x, incx, y, incy)
+
+# Matrix addition (non-standard BLAS)
+proc geam(handle: cublasHandle_t; transa: cublasOperation_t;
+                 transb: cublasOperation_t; m: cint; n: cint; alpha: ptr cfloat;
+                 A: ptr cfloat; lda: cint; beta: ptr cfloat; B: ptr cfloat; ldb: cint;
+                 C: ptr cfloat; ldc: cint): cublasStatus_t {.inline.} =
+  cublasSgeam(handle, transa,  transb, m, n, alpha,
+                 A, lda, beta, B, ldb,
+                 C, ldc)
+proc geam(handle: cublasHandle_t; transa: cublasOperation_t;
+                 transb: cublasOperation_t; m: cint; n: cint; alpha: ptr cdouble;
+                 A: ptr cdouble; lda: cint; beta: ptr cdouble; B: ptr cdouble; ldb: cint;
+                 C: ptr cdouble; ldc: cint): cublasStatus_t {.inline.} =
+  cublasDgeam(handle, transa,  transb, m, n, alpha,
+                 A, lda, beta, B, ldb,
+                 C, ldc)
+
+# Scalar multiplication
+proc scal(handle: cublasHandle_t; n: cint; alpha: ptr cfloat;
+                    x: ptr cfloat; incx: cint): cublasStatus_t {.inline.} =
+  cublasSscal_v2(handle, n, alpha, x, incx)
+proc scal(handle: cublasHandle_t; n: cint; alpha: ptr cdouble;
+                    x: ptr cdouble; incx: cint): cublasStatus_t {.inline.} =
+  cublasDscal_v2(handle, n, alpha, x, incx)
+
+# ####################################################################
+# Helper proc
+template inplaceAdd_VecVec[T](a: var CudaTensor[T], b: CudaTensor[T]) =
+  var alpha: T = 1
+  check axpy(defaultHandle, a.shape[0].cint, addr(alpha), b.get_data_ptr, b.strides[0].cint, a.get_data_ptr, a.strides[0].cint)
+
+template inplaceAdd_MatMat[T](a: var CudaTensor[T], b: CudaTensor[T]) =
+  # TODO: remove this contiguous layout constraint (via conversion or custom kernel)
+  if not (isContiguous(a) and isContiguous(b)):
+    raise newException(ValueError, "NotImplemented: for now both tensors should be contiguous")
+
+  var alpha: T = 1
+
+  if not is_F_contiguous(a):
+    raise newException(ValueError, "NotImplemented: the modified tensor must have a column-major layout")
+
+  let transpose_B = if is_F_contiguous(b): CUBLAS_OP_N
+                    else: CUBLAS_OP_T
+  let ld_B = if is_F_contiguous(b): b.strides[1]
+             else: b.strides[0]
+
+  check geam(defaultHandle, CUBLAS_OP_N, transpose_B, a.shape[0].cint, a.shape[1].cint, addr(alpha),
+               a.get_data_ptr, a.strides[1].cint, addr(alpha), b.get_data_ptr, ld_B.cint, a.get_data_ptr, a.strides[1].cint)
+  # In column-majour layout a.shape[0] == a.strides[1]
 
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
@@ -39,3 +105,20 @@ proc `.*`*[T: SomeReal](a, b: CudaTensor[T]): T =
             a.get_data_ptr, a.strides[0].cint,
             b.get_data_ptr, b.strides[0].cint,
             addr result)
+
+proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
+  ## Tensor in-place addition
+  ## Only Vector-Vector and Matrix-Matrix addition are supported.
+  ## For Matrix-Matrix, both matrices must have a contiguous layout.
+
+  when compileOption("boundChecks"): check_add(a,b)
+  
+  if a.rank == 1:
+    inplaceAdd_VecVec(a,b)
+  elif a.rank == 2:
+    inplaceAdd_MatMat(a,b)
+  else:
+    raise newException(ValueError, "NotImplemented: Tensor addition is not implemented for 3D+ tensors")
+
+  # TODO: if a and b share the same location, copy a to a new location
+  # a += transpose(a) fails with CUBLAS ERROR 7.

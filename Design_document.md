@@ -34,9 +34,17 @@ Contrary to Python, the compiler can do the following optimization:
   - Move on assignment
   - Detect if the original Tensor is not used anymore and the copy is unneeded.
 
-## Cuda considerations
+## CUDA considerations
 
 * Reclaiming memory: currently all CudaTensors are created via new + finalizer. The finalizer proc is automatically used after (at a non-deterministic time) the object goes out of scope. In case there are memory leaks, it might be because a CudaTensor wasn't created by new, and so need a `=destroy` destructor proc. Discussions on IRC highlight that finalizer is enough for yglukhov's game engine.
+
+* Default to column-major layout (Fortran order).
+Internally CUDA/CuBLAS works with column major layout. Creating CudaTensor column-major by default may avoid temporary transpose allocation.
+
+* Currently CudaTensor are shallow-copied by default.
+From a consistency point of view it would be best if both Tensor and CudaTensor have the same behaviour.
+TODO: implement value semantics for CudaTensor or at least Copy on Write
+alternative: Shallow copy by default for normal tensors
 
 ## Coding-style
 * Prefer `when` to `if` for compile-time evaluation
@@ -124,6 +132,8 @@ Perf note: from a perf point of view, (integer ?) dot product is vectorized on C
 
 ### Shallow-copy by default:
 Rejected until benchmarked otherwise.
+
+Important consideration: how to have deep copy by default for CUDA backend ? and so unified behaviour.
 
 `data` is currently stored in a "seq" that always deep copy on var assignement. It doesn't copy on let assignement.
 

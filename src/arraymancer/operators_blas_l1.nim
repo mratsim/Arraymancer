@@ -18,7 +18,7 @@ proc check_dot_prod(a, b:AnyTensor)  {.noSideEffect.}=
   if a.rank != 1 or b.rank != 1: raise newException(ValueError, "Dot product is only supported for vectors (tensors of rank 1)")
   if a.shape != b.shape: raise newException(ValueError, "Vector should be the same length")
 
-proc check_add(a, b:Tensor)  {.noSideEffect.}=
+proc check_add(a, b:AnyTensor)  {.noSideEffect.}=
   if a.shape != b.shape:
     raise newException(ValueError, "Both Tensors should have the same shape")
 

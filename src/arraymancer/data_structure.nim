@@ -115,7 +115,7 @@ template get_data_ptr*[T](t: AnyTensor[T]): ptr T =
   ##     - A pointer to the start of its data
   when t is Tensor:
     unsafeAddr(t.data[0])
-  elif T is CudaTensor:
+  elif t is CudaTensor:
     t.data_ptr
 
 proc shallowCopy*[T](t: var Tensor[T]): Tensor[T] {.noSideEffect.}=

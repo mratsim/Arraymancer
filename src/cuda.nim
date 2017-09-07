@@ -14,7 +14,8 @@
 
 import nimcuda/[cuda_runtime_api, driver_types, cublas_api, cublas_v2, nimcuda]
 
-import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros, random
-
-# include ../docs/autogen_nim_API
-include arraymancer/init_cuda
+# arraymancer and arraymancer/cuda should not be both imported at the same time
+# Unfortunately allowing this would require a difficult configuration to allow private proc visible to both modules
+# but not exported externally
+include ./arraymancer
+include ./arraymancer/init_cuda

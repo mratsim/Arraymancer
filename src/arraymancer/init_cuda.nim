@@ -33,13 +33,14 @@ proc newCudaTensor[T: SomeReal](shape: openarray[int]): CudaTensor[T] {.noSideEf
 
 proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] {.noSideEffect.}=
   ## Convert a tensor on Cpu to a tensor on a Cuda device.
-  result = newCudaTensor(t.shape)
+  result = newCudaTensor[T](t.shape)
 
   let contig_t = t.asContiguous()
+  let size = result.shape.product * sizeof(T)
 
   check cudaMemCpy(result.get_data_ptr,
                    contig_t.get_data_ptr,
-                   result.shape.product * sizeof(T),
+                   size,
                    cudaMemcpyHostToDevice)
 
 proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect.}=
@@ -48,8 +49,9 @@ proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect.}=
   # TODO: We assume data has not been sliced, hence data to copy is t.shape.product
 
   result = newTensor(t.shape, T)
+  let size = result.shape.product * sizeof(T)
 
   check cudaMemCpy(result.get_data_ptr,
                    t.get_data_ptr,
-                   result.shape.product * sizeof(T),
+                   size,
                    cudaMemcpyDeviceToHost)

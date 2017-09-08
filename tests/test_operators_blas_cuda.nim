@@ -31,6 +31,12 @@ suite "CUDA backend: BLAS (Basic Linear Algebra Subprograms)":
     check: u.cpu() == @[5'f64, 1, -6].toTensor()
 
 
+    # Check require var input
+    let w = @[1'f64, 3, -5].toTensor().cuda()
+    when compiles(w += v):
+      check: false
+
+
     let vandermonde = [[1,1,1],
                        [2,4,8],
                        [3,9,27]]
@@ -51,6 +57,36 @@ suite "CUDA backend: BLAS (Basic Linear Algebra Subprograms)":
                      [4,12,26],
                      [5,25,81]].toTensor.astype(float32)
 
+    # Check size mismatch
+    expect(ValueError):
+      z += t2.cpu[0..1,0..1].cuda
+
+  test "Matrix and Vector in-place substraction":
+    var u = @[1'f32, 3, -5].toTensor.cuda
+    let v = @[1'f32, 1, 1].toTensor.cuda
+
+    u -= v
+
+    check: u.cpu == @[0'f32, 2, -6].toTensor()
+
+    # Check require var input
+    let w = @[1'f64, 3, -5].toTensor().cuda()
+    when compiles(w -= v):
+      check: false
+
+    var a = @[7.0, 4.0, 3.0, 1.0, 8.0, 6.0, 8.0, 1.0, 6.0, 2.0].toTensor.reshape([5,2]).cuda
+    let b = @[6.0, 6.0, 2.0, 0.0, 4.0, 3.0, 2.0, 0.0, 0.0, 3.0].toTensor.reshape([5,2]).cuda
+
+    let amb = @[1.0, -2.0, 1.0, 1.0, 4.0, 3.0, 6.0, 1.0, 6.0, -1.0].toTensor.reshape([5,2])
+
+    a -= b
+
+    check: a.cpu == amb
+
+    # Check size mismatch
+    expect(ValueError):
+      a += b.cpu[0..1,0..1].cuda
+
   test "Matrix and vector addition":
     let u = @[1'f32, 3, -5].toTensor.cuda
     let v = @[1'f32, 1, 1].toTensor.cuda
@@ -63,3 +99,24 @@ suite "CUDA backend: BLAS (Basic Linear Algebra Subprograms)":
     let apb = @[13.0, 10.0, 5.0, 1.0, 12.0, 9.0, 10.0, 1.0, 6.0, 5.0].toTensor.reshape([5,2])
 
     check: (a + b).cpu == apb
+
+    # Check size mismatch
+    expect(ValueError):
+      discard a + b.cpu[0..1, 0..1].cuda
+
+  test "Matrix and vector substraction":
+    let u = @[1'f32, 3, -5].toTensor.cuda
+    let v = @[1'f32, 1, 1].toTensor.cuda
+
+    check: (u - v).cpu == @[0'f32, 2, -6].toTensor()
+
+    let a = @[7.0, 4.0, 3.0, 1.0, 8.0, 6.0, 8.0, 1.0, 6.0, 2.0].toTensor.reshape([5,2]).cuda
+    let b = @[6.0, 6.0, 2.0, 0.0, 4.0, 3.0, 2.0, 0.0, 0.0, 3.0].toTensor.reshape([5,2]).cuda
+
+    let amb = @[1.0, -2.0, 1.0, 1.0, 4.0, 3.0, 6.0, 1.0, 6.0, -1.0].toTensor.reshape([5,2])
+
+    check: (a - b).cpu == amb
+
+    # Check size mismatch
+    expect(ValueError):
+      discard a + b.cpu[0..1, 0..1].cuda

@@ -14,6 +14,9 @@
 
 import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros, random
 
+# Export OrderType (rowMajor, colMajor) from nimblas
+export OrderType
+
 # include ../docs/autogen_nim_API
 include arraymancer/utils/functional,
         arraymancer/utils/nested_containers,
@@ -23,6 +26,7 @@ include arraymancer/utils/functional,
         arraymancer/init_check,
         arraymancer/init_cpu,
         arraymancer/init_deprecated,
+        arraymancer/data_structure_extras,
         arraymancer/accessors,
         arraymancer/accessors_slicer,
         arraymancer/comparison,

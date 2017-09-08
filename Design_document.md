@@ -5,9 +5,17 @@ This is a notepad to track ideas, challenges, future work and open issues/limita
 ## Storage convention
 
 Either C or Fortran contiguous arrays are needed for BLAS optimization for Tensor of Rank 1 or 2
-* C_contiguous: Row Major - Default. Last index is the fastest changing (columns in 2D, depth in 3D) - Rows (slowest), Columns, Depth (fastest)
-* F_contiguous: Col Major. First index is the fastest changing (rows in 2D, depth in 3D) - Rows (fastest), Columns, Depth (slowest)
+* C_contiguous: Row Major - Default for CPU. Last index is the fastest changing (columns in 2D, depth in 3D) - Rows (slowest), Columns, Depth (fastest)
+* F_contiguous: Col Major - Default for CUDA. First index is the fastest changing (rows in 2D, depth in 3D) - Rows (fastest), Columns, Depth (slowest)
 * Universal: Any strides
+
+Historically Fortran and all optimized BLAS libraries used column-major layout by default.
+Today Fortran, Matlab, R, Julia, OpenGL and CUDA uses column-major layout.
+On the other hand, C, Python and several deep learning libraries (Numpy, Torch, Caffe) uses row-major layout.
+
+On CPU, Arraymancer follows the C/Python crowd. A practical bonus is that Matrix-Vector multiplication should be faster (we traverse each column in a row then change row --> row change the slowest).
+On CUDA, Arraymancer follows (temporarily) the column-major layout, as many CUBLAS in-place operations expect that layout. Rewrite rules will be used for "cuda()" proc so that, if possible, CudaTensors are initialized directly on the device with column-major layout and don't need conversion.
+Arraymancer will use row-major on CUDA when CUBLAS operations are replaced with custom kernels.
 
 ## Pending issues
 * Switch to full inline iterators: https://forum.nim-lang.org/t/2972

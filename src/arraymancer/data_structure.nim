@@ -82,9 +82,15 @@ template rank*(t: AnyTensor): int =
   ##
   t.shape.len
 
-proc shape_to_strides(shape: seq[int]): seq[int] {.noSideEffect.} =
+proc shape_to_strides(shape: seq[int], layout: OrderType = rowMajor): seq[int] {.noSideEffect.} =
   ## Compute strides matching with dimensions.
-  return (shape & 1)[1..shape.len].scanr(a * b)
+  ## OrderType is imported from Nimblas and can be rowMajor or colMajor.
+  ## Arraymancer defaults to rowMajor. Temporarily, CUDA tensors will be colMajor by default.
+  ## See Design document for further considerations.
+  if layout == rowMajor:
+    return (shape & 1)[1..shape.len].scanr(a * b)
+
+  return (1 & shape)[0..shape.high].scanl(a * b)
 
 proc is_C_contiguous(t: AnyTensor): bool {.noSideEffect.}=
   ## Check if C convention / Row Major

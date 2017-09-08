@@ -35,23 +35,37 @@ proc transpose*(t: Tensor): Tensor {.noSideEffect.}=
   result.offset = t.offset
   result.data = t.data
 
-proc asContiguous*[T](t: Tensor[T]): Tensor[T] {.noSideEffect.}=
-  ## Transform a tensor with general striding to a row major Tensor
+proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noSideEffect.}=
+  ## Transform a tensor with general striding to a Tensor with contiguous layout.
+  ## By default tensor will be rowMajor.
+  ## By default nothing is done if the tensor is already contiguous (C Major or F major)
+  ## The "force" parameter can force re-ordering to a specific layout
 
-  if t.isContiguous: return t
+  if t.isContiguous and not force:
+    return t
+  elif t.is_C_contiguous and layout == rowMajor:
+    return t
+  elif t.is_F_contiguous and layout == colMajor:
+    return t
 
   result.shape = t.shape
-  result.strides = shape_to_strides(result.shape)
+  result.strides = shape_to_strides(result.shape, layout)
   result.offset = 0
   result.data = newSeq[T](result.shape.product)
 
   var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
-  for val in t:
-    result.data[i] = val
-    inc i
+
+  if layout == rowMajor:
+    for val in t:
+      result.data[i] = val
+      inc i
+  else:
+    for val in t.transpose:
+      result.data[i] = val
+      inc i
 
 proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] {.noSideEffect.}=
-  # Can't call "tensor" template here for some reason
+  # Can't call "tensorCpu" template here for some reason
   result.shape = new_shape
   result.strides = shape_to_strides(result.shape)
   result.offset = 0

@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc astype*[B: static[Backend],T, U](t: Tensor[B,T], typ: typedesc[U]): Tensor[B,U] {.noSideEffect.}=
+proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noSideEffect.}=
   ## Apply type conversion on the whole tensor
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset
   result.data = t.data.map(x => x.U)
 
-proc fmap*[B: static[Backend],T, U](t: Tensor[B,T], g: T -> U): Tensor[B,U] {.noSideEffect.}=
+proc fmap*[T, U](t: Tensor[T], g: T -> U): Tensor[U] {.noSideEffect.}=
   ## Map a unary function T -> U on Tensor[T]
 
   # We use this opportunity to reshape the data internally

@@ -5,7 +5,7 @@ description   = "A n-dimensional tensor (ndarray) library"
 license       = "Apache License 2.0"
 
 ### Dependencies
-requires "nim >= 0.17.0", "nimblas >= 0.1.3"
+requires "nim >= 0.17.2", "nimblas >= 0.1.3", "nimcuda >= 0.1.4"
 
 ## Install files
 srcDir = "src"
@@ -36,6 +36,13 @@ proc test(name: string) =
 
 task test, "Run all tests - Default BLAS":
   test "all_tests"
+
+task test_cuda, "Run all tests - Cuda backend with CUBLAS":
+  switch("cincludes", "/opt/cuda/include")
+  test "all_tests_cuda"
+
+task test_deprecated, "Run all tests on deprecated static[Backend] procs":
+  test "all_tests_deprecated"
 
 task test_openblas, "Run all tests - OpenBLAS":
   ## Should work but somehow Nim doesn't find libopenblas.dylib on MacOS

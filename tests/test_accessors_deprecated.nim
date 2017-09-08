@@ -18,11 +18,11 @@ import unittest, math
 
 suite "Accessing and setting tensor values":
   test "Accessing and setting a single value":
-    var a = zeros(@[2,3,4], int)
+    var a = zeros(@[2,3,4], int, Backend.Cpu)
     a[1,2,2] = 122
     check: a[1,2,2] == 122
 
-    var b = zeros(@[3,4], int)
+    var b = zeros(@[3,4], int, Backend.Cpu)
     b[1,2] = 12
     check: b[1,2] == 12
     b[0,0] = 999
@@ -32,10 +32,10 @@ suite "Accessing and setting tensor values":
 
 
   test "Out of bounds checking":
-    var a = newTensor(@[2,3,4], int)
+    var a = newTensor(@[2,3,4], int, Backend.Cpu)
     expect(IndexError):
       a[2,0,0] = 200
-    var b = newTensor(@[3,4], int)
+    var b = newTensor(@[3,4], int, Backend.Cpu)
     expect(IndexError):
       b[3,4] = 999
     expect(IndexError):
@@ -57,7 +57,7 @@ suite "Accessing and setting tensor values":
       for j, bb in b:
         vd[i].add(aa^bb)
 
-    let nda_vd = vd.toTensor()
+    let nda_vd = vd.toTensor(Cpu)
 
     let expected_seq = @[1,1,1,2,4,8,3,9,27,4,16,64,5,25,125]
 

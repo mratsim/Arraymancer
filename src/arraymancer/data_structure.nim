@@ -17,14 +17,14 @@ type
     ## ``Backend`` for tensor computation and memory allocation.
     ##
     ## Only Cpu is supported for now.
-    Cpu
-    # Cuda
+    Cpu,
+    Cuda
     # OpenCL
     # Magma
 
-  Tensor*[B: static[Backend]; T] = object
+  Tensor*[T] = object
     # Size of the datastructure is 32 bytes - perfect !
-    ## Tensor data structure
+    ## Tensor data structure, stored on Cpu
     ##   - ``shape``: Dimensions of the tensor
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
     ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
@@ -34,28 +34,42 @@ type
     offset: int
     data: seq[T] # Perf note: seq are always deep copied on "var" assignement.
 
-template shape*(t: Tensor): seq[int] =
+  CudaTensor*[T: SomeReal] = object
+    ## Tensor data structure, stored on Nvidia GPU (Cuda)
+    ##   - ``shape``: Dimensions of the tensor
+    ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
+    ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
+    ##   - ``data_ref``: A reference-counted pointer to the data location
+    shape: seq[int]
+    strides: seq[int]
+    offset: int
+    data_ref: ref[ptr T] # Memory on Cuda device will be automatically garbage-collected
+    len: int
+
+  AnyTensor[T] = Tensor[T] or CudaTensor[T]
+
+template shape*(t: AnyTensor): seq[int] =
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - Its shape
   t.shape
 
-template strides*(t: Tensor): seq[int] =
+template strides*(t: AnyTensor): seq[int] =
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - Its strides
   t.strides
 
-template offset*(t: Tensor): int =
+template offset*(t: AnyTensor): int =
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - Its offset
   t.offset
 
-template rank*(t: Tensor): int =
+template rank*(t: AnyTensor): int =
   ## Input:
   ##     - A tensor
   ## Returns:
@@ -68,47 +82,43 @@ template rank*(t: Tensor): int =
   ##
   t.shape.len
 
-proc shape_to_strides(shape: seq[int]): seq[int] {.noSideEffect.} =
+proc shape_to_strides(shape: seq[int], layout: OrderType = rowMajor): seq[int] {.noSideEffect.} =
   ## Compute strides matching with dimensions.
-  return (shape & 1)[1..shape.len].scanr(a * b)
+  ## OrderType is imported from Nimblas and can be rowMajor or colMajor.
+  ## Arraymancer defaults to rowMajor. Temporarily, CUDA tensors will be colMajor by default.
+  ## See Design document for further considerations.
+  if layout == rowMajor:
+    return (shape & 1)[1..shape.len].scanr(a * b)
 
-proc is_C_contiguous(t: Tensor): bool {.noSideEffect.}=
+  return (1 & shape)[0..shape.high].scanl(a * b)
+
+proc is_C_contiguous(t: AnyTensor): bool {.noSideEffect.}=
   ## Check if C convention / Row Major
   result = t.strides == t.shape.shape_to_strides
   result = result and t.strides[t.strides.high] == 1
 
-proc is_F_contiguous(t: Tensor): bool {.noSideEffect.}=
+proc is_F_contiguous(t: AnyTensor): bool {.noSideEffect.}=
   ## Check if Fortran convention / Column Major
   result = t.strides.reversed == t.shape.reversed.shape_to_strides
   result = result and t.strides[0] == 1
 
-proc isContiguous(t: Tensor): bool {.noSideEffect.}=
+proc isContiguous(t: AnyTensor): bool {.noSideEffect.}=
   return t.is_C_contiguous or t.is_F_contiguous
 
-proc getTransposeTarget(t: Tensor): TransposeType {.noSideEffect.}=
+proc getTransposeTarget(t: AnyTensor): TransposeType {.noSideEffect.}=
+  ## TransposeType is introduced by ``nimblas``
   ## Default layout is Row major.
   ## Everytime it is worth it or fused with a BLAS operation we change the strides to Row-Major
   if is_C_contiguous(t): return TransposeType.noTranspose
   elif is_F_contiguous(t): return TransposeType.transpose
   else: raise newException(ValueError,"Operation not supported for this matrix. It has a non-contiguous layout")
 
-template get_data_ptr*[B,T](t: Tensor[B,T]): ptr T =
+template get_data_ptr*[T](t: AnyTensor[T]): ptr T =
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the start of its data
-  unsafeAddr(t.data[0])
-
-proc shallowCopy*[B,T](t: var Tensor[B,T]): Tensor[B,T] {.noSideEffect.}=
-  ## Input:
-  ##     - A ``var`` tensor
-  ## Returns:
-  ##     - A shallow copy.
-  ##
-  ## WARNING !
-  ##   Both tensors shares the same memory. Data modification on one will be reflected on the other.
-  ##   However modifying the shape, strides or offset will not affect the other.
-  result.shape = t.shape
-  result.strides = t.strides
-  result.offset = t.offset
-  shallowCopy(result.data, t.data)
+  when t is Tensor:
+    unsafeAddr(t.data[0])
+  elif t is CudaTensor:
+    t.data_ref[]

@@ -39,7 +39,7 @@ proc check_matvec(a, b:Tensor)  {.noSideEffect.}=
 # #################################################
 # BLAS Level 2 (Matrix-Vector)
 
-template matvec_blis[T: SomeReal](a, x, result: Tensor[Cpu,T]): auto =
+template matvec_blis[T: SomeReal](a, x, result: Tensor[T]): auto =
   ## Matrix to Vector Multiply for float tensors of rank 2 and 1
   let
     rowA = a.shape[0]
@@ -74,7 +74,7 @@ template matvec_blis[T: SomeReal](a, x, result: Tensor[Cpu,T]): auto =
       res_ptr, 1,
       )
 
-template matvec_blas[T: SomeReal](a, x, result: Tensor[Cpu,T]): auto =
+template matvec_blas[T: SomeReal](a, x, result: Tensor[T]): auto =
   ## Matrix to Vector Multiply for float tensors of rank 2 and 1
   let
     rowA = a.shape[0]
@@ -105,7 +105,7 @@ template matvec_blas[T: SomeReal](a, x, result: Tensor[Cpu,T]): auto =
   else: # A is colMajor
     gemv(colMajor, noTranspose, rowA, rowX, 1, a_ptr, rowA, x_ptr, x.strides[0], 0, res_ptr, 1)
 
-template matvec_fallback[T: SomeInteger](a, x, result: Tensor[Cpu,T]): auto =
+template matvec_fallback[T: SomeInteger](a, x, result: Tensor[T]): auto =
   let rowA = a.shape[0]
 
   when compileOption("boundChecks"): check_matvec(a,b)
@@ -126,7 +126,7 @@ template matvec_fallback[T: SomeInteger](a, x, result: Tensor[Cpu,T]): auto =
 # #################################################
 # BLAS Level 3 (Matrix-Matrix)
 
-template matmat_blis[T: SomeReal](a, b, result: Tensor[Cpu,T]): auto =
+template matmat_blis[T: SomeReal](a, b, result: Tensor[T]): auto =
   ## Matrix to matrix Multiply for float tensors of rank 2
   let
     rowA = a.shape[0]
@@ -159,7 +159,7 @@ template matmat_blis[T: SomeReal](a, b, result: Tensor[Cpu,T]): auto =
       beta_ptr,
       res_ptr, result.strides[0], 1)
 
-template matmat_blas[T: SomeReal](a, b, result: Tensor[Cpu,T]): auto =
+template matmat_blas[T: SomeReal](a, b, result: Tensor[T]): auto =
   ## Matrix to matrix Multiply for float tensors of rank 2
   let
     M = a.shape[0]
@@ -197,7 +197,7 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[Cpu,T]): auto =
     gemm(rowMajor, a_tr, b_tr, M, N, K, 1, a_ptr, M, b_ptr, K, 0, res_ptr, N)
   else: raise newException(ValueError, "The transposes types: " & $a_tr & " or " & $b_tr & " is not supported")
 
-template matmat_fallback[T: SomeInteger](a, b, result: Tensor[Cpu,T]): auto =
+template matmat_fallback[T: SomeInteger](a, b, result: Tensor[T]): auto =
   let M = a.shape[0]
   let K = a.shape[1]
   let N = b.shape[1]
@@ -222,7 +222,7 @@ template matmat_fallback[T: SomeInteger](a, b, result: Tensor[Cpu,T]): auto =
 # #################################################
 # Generic notation "*"
 
-proc `*`*[T: SomeReal](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
+proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
   ## Float operations use optimized BLAS
 
@@ -238,7 +238,7 @@ proc `*`*[T: SomeReal](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
   elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
   else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
 
-proc `*`*[T: SomeInteger](a, b: Tensor[Cpu,T]): Tensor[Cpu,T]  {.noSideEffect.} =
+proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T]  {.noSideEffect.} =
   ## Matrix-Matrix and Matrix-Vector multiplications fallback for integer tensor
 
   static: echo "Please note that integer matrix-matrix and matrix-vector multiplications do not have optimized " &

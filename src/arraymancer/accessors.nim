@@ -19,7 +19,7 @@ proc check_index(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
                     ", is different from tensor rank: " &
                     $(t.rank))
 
-proc getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int {.noSideEffect.} =
+proc getIndex[T](t: Tensor[T], idx: varargs[int]): int {.noSideEffect.} =
   ## Convert [i, j, k, l ...] to the proper index.
   when compileOption("boundChecks"):
     t.check_index(idx)
@@ -29,12 +29,12 @@ proc getIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): int {.n
     real_idx += i*j
   return real_idx
 
-proc atIndex[B: static[Backend], T](t: Tensor[B,T], idx: varargs[int]): T {.noSideEffect.} =
+proc atIndex[T](t: Tensor[T], idx: varargs[int]): T {.noSideEffect.} =
   ## Get the value at input coordinates
   ## This used to be `[]` before slicing was implemented
   return t.data[t.getIndex(idx)]
 
-proc atIndexMut[B: static[Backend], T](t: var Tensor[B,T], idx: varargs[int], val: T) {.noSideEffect.} =
+proc atIndexMut[T](t: var Tensor[T], idx: varargs[int], val: T) {.noSideEffect.} =
   ## Set the value at input coordinates
   ## This used to be `[]=` before slicing was implemented
   t.data[t.getIndex(idx)] = val
@@ -43,7 +43,7 @@ type
   IterKind = enum
     Values, MemOffset, Coord_Values, MemOffset_Values
 
-template strided_iteration[B,T](t: Tensor[B,T], strider: IterKind): untyped =
+template strided_iteration[T](t: Tensor[T], strider: IterKind): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
 
   ## Iterator init
@@ -73,21 +73,21 @@ template strided_iteration[B,T](t: Tensor[B,T], strider: IterKind): untyped =
         coord[k] = 0
         iter_pos -= backstrides[k]
 
-iterator items*[B,T](t: Tensor[B,T]): T {.noSideEffect.}=
+iterator items*[T](t: Tensor[T]): T {.noSideEffect.}=
   ## Inline stride-aware iterator on Tensor values
   t.strided_iteration(IterKind.Values)
 
-proc values*[B,T](t: Tensor[B,T]): auto {.noSideEffect.}=
+proc values*[T](t: Tensor[T]): auto {.noSideEffect.}=
   ## Closure stride-aware iterator on Tensor values
   return iterator(): T = t.strided_iteration(IterKind.Values)
 
-iterator mitems*[B,T](t: var Tensor[B,T]): var T {.noSideEffect.}=
+iterator mitems*[T](t: var Tensor[T]): var T {.noSideEffect.}=
   ## Inline stride-aware iterator on Tensor values.
   ## Values yielded can be directly modified
   ## and avoid bound-checking/index calculation with t[index] = val
   t.strided_iteration(IterKind.Values)
 
-iterator pairs*[B,T](t: Tensor[B,T]): (seq[int], T) {.noSideEffect.}=
+iterator pairs*[T](t: Tensor[T]): (seq[int], T) {.noSideEffect.}=
   ## Inline stride-aware iterator on Tensor coordinates i.e. [1,2,3] and values
   t.strided_iteration(IterKind.Coord_Values)
 
@@ -101,7 +101,7 @@ proc real_indices(t: Tensor): auto {.noSideEffect.}=
   ## For loop will not use this one. It must be assigned before use.
   return iterator(): int = t.strided_iteration(IterKind.MemOffset)
 
-iterator axis*[B,T](t: Tensor[B,T], axis: int): Tensor[B,T] {.noSideEffect.}=
+iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] {.noSideEffect.}=
   ## Iterates over an axis
 
   var out_t = t

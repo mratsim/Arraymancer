@@ -12,12 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
-  ## Tensor comparison
-  if a.shape != b.shape: return false
+proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
+  ## Transpose a Tensor.
+  ##
+  ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
+  ##
+  ## Data is copied as-is and not modified.
+  ## WARNING: The input and output tensors share the underlying data storage on GPU
+  ## Modification of data will affect both
 
-  for ai, bi in zip(a.values,b.values):
-    ## Iterate through the tensors using stride-aware iterators
-    ## Returns early if false
-    if ai != bi: return false
-  return true
+  result.shape = t.shape.reversed
+  result.strides = t.strides.reversed
+  result.offset = t.offset
+  result.data_ref = t.data_ref
+  result.len = t.len

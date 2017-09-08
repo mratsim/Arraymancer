@@ -20,10 +20,10 @@
 
 proc naive_gemv_fallback[T: SomeInteger](
           alpha: T,
-          A: Tensor[Cpu,T],
-          x: Tensor[Cpu,T],
+          A: Tensor[T],
+          x: Tensor[T],
           beta: T,
-          y: var Tensor[Cpu,T]) {.noSideEffect.} =
+          y: var Tensor[T]) {.noSideEffect.} =
   ## y <- alpha * A * x + beta * y
 
 

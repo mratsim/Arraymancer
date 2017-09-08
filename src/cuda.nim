@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
-  ## Tensor comparison
-  if a.shape != b.shape: return false
+import nimcuda/[cuda_runtime_api, driver_types, cublas_api, cublas_v2, nimcuda]
 
-  for ai, bi in zip(a.values,b.values):
-    ## Iterate through the tensors using stride-aware iterators
-    ## Returns early if false
-    if ai != bi: return false
-  return true
+# arraymancer and arraymancer/cuda should not be both imported at the same time
+# Unfortunately allowing this would require a difficult configuration to allow private proc visible to both modules
+# but not exported externally
+include ./arraymancer,
+        ./arraymancer/init_cuda,
+        ./arraymancer/display_cuda,
+        ./arraymancer/operators_blas_l1_cuda,
+        ./arraymancer/shapeshifting_cuda

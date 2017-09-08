@@ -35,23 +35,37 @@ proc transpose*(t: Tensor): Tensor {.noSideEffect.}=
   result.offset = t.offset
   result.data = t.data
 
-proc asContiguous*[B,T](t: Tensor[B,T]): Tensor[B,T] {.noSideEffect.}=
-  ## Transform a tensor with general striding to a row major Tensor
+proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noSideEffect.}=
+  ## Transform a tensor with general striding to a Tensor with contiguous layout.
+  ## By default tensor will be rowMajor.
+  ## By default nothing is done if the tensor is already contiguous (C Major or F major)
+  ## The "force" parameter can force re-ordering to a specific layout
 
-  if t.isContiguous: return t
+  if t.isContiguous and not force:
+    return t
+  elif t.is_C_contiguous and layout == rowMajor:
+    return t
+  elif t.is_F_contiguous and layout == colMajor:
+    return t
 
   result.shape = t.shape
-  result.strides = shape_to_strides(result.shape)
+  result.strides = shape_to_strides(result.shape, layout)
   result.offset = 0
   result.data = newSeq[T](result.shape.product)
 
   var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
-  for val in t:
-    result.data[i] = val
-    inc i
 
-proc reshape_with_copy[B,T](t: Tensor[B,T], new_shape: seq[int]): Tensor[B,T] {.noSideEffect.}=
-  # Can't call "tensor" template here for some reason
+  if layout == rowMajor:
+    for val in t:
+      result.data[i] = val
+      inc i
+  else:
+    for val in t.transpose:
+      result.data[i] = val
+      inc i
+
+proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] {.noSideEffect.}=
+  # Can't call "tensorCpu" template here for some reason
   result.shape = new_shape
   result.strides = shape_to_strides(result.shape)
   result.offset = 0
@@ -97,7 +111,7 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
   #  return t.reshape_no_copy(ns)
   return t.reshape_with_copy(ns)
 
-proc broadcast*[B,T](t: Tensor[B,T], shape: openarray[int]): Tensor[B,T] {.noSideEffect.}=
+proc broadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
   ## Broadcast array
   ##
   ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
@@ -153,7 +167,7 @@ proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noSideEffect.}=
       perm[j] = -1
 
 
-proc concat*[B,T](t_list: varargs[Tensor[B,T]], axis: int): Tensor[B,T]  {.noSideEffect.}=
+proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noSideEffect.}=
   ## Concatenate tensors
   ## Input:
   ##   - Tensors

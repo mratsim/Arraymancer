@@ -12,29 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-template toTensorReshapeT(oa: typed, B: static[Backend], shape: varargs[int]): untyped = 
+template toTensorReshapeT(oa: typed, shape: varargs[int]): untyped = 
   let data = toSeq(flatIter(oa))
   let seq_shape = @shape
 
   when compileOption("boundChecks"): check_nested_elements(seq_shape, data.len)
 
-  result = emptyTensor(seq_shape, type(data[0]), B)
-  result.data = data
+  var t: Tensor[type(data[0])]
+  tensorCpu(seq_shape, t)
+  t.data = data
+  return t
 
-proc toTensorReshape(oa: string, B: static[Backend], shape: varargs[int]): auto =
+proc toTensorReshape(oa: string, shape: varargs[int]): auto =
   ## Fuse toTensor and reshape in one operation
   ## Deal specifically with strings/seq[char]
 
-  toTensorReshapeT(oa, B, shape)
+  toTensorReshapeT(oa, shape)
 
-proc toTensorReshape(oa: openarray, B: static[Backend], shape: varargs[int]): auto =
+proc toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto =
   ## Fuse toTensor and reshape in one operation
+  ##
+  ## Nim >0.17 needed as "static[int] = 0" is not working in Nim 0.17
+  ## Dummy_bugfix param is necessary due to: https://github.com/nim-lang/Nim/issues/6343
+  # TODO: remove 'dummy_bugfix'
+  toTensorReshapeT(oa, shape)
 
-  toTensorReshapeT(oa, B, shape)
-
-template rewriteToTensorReshape*{reshape(toTensor(oa, B), shape)}(
+template rewriteToTensorReshape*{reshape(toTensor(oa, dummy_bugfix), shape)}(
   oa: openarray,
-  B: static[Backend],
-  shape: varargs[int]): auto =
+  shape: varargs[int],
+  dummy_bugfix: static[int]): auto =
   ## Fuse ``sequence.toTensor(Backend).reshape(new_shape)`` into a single operation.
-  toTensorReshape(oa, B, shape)
+  toTensorReshape(oa, shape, dummy_bugfix)

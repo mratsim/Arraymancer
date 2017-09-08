@@ -39,7 +39,6 @@ type
     ##   - ``shape``: Dimensions of the tensor
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
     ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
-    ##   - ``data_ptr``: A pointer to the data location
     ##   - ``data_ref``: A reference-counted pointer to the data location
     shape: seq[int]
     strides: seq[int]

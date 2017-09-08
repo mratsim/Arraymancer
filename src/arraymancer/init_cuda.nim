@@ -23,6 +23,50 @@ proc deallocCuda[T](p: ref[ptr T]) {.noSideEffect.}=
   if not p[].isNil:
     check cudaFree(p[])
 
+proc shallowCopy*[T](t: var CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect.}=
+  ## Input:
+  ##     - A ``var`` tensor
+  ## Returns:
+  ##     - A shallow copy.
+  ##
+  ## WARNING !
+  ##   Both tensors shares the same memory. Data modification on one will be reflected on the other.
+  ##   However modifying the shape, strides or offset will not affect the other.
+  
+  # shape and strides fields have value semantics by default
+  # data_ref has ref semantics
+  system.`=`(result, t)
+
+# ###########################################################
+# Implement value semantics for CudaTensor
+# Pending https://github.com/nim-lang/Nim/issues/6348
+# Tracked in https://github.com/mratsim/Arraymancer/issues/19
+#
+# proc `=`*[T](dest: var CudaTensor[T]; src: CudaTensor[T]) =
+#   ## Overloading the assignment operator
+#   ## It will have value semantics by default
+#   new(dest.data_ref, deallocCuda)
+#   dest.shape = src.shape
+#   dest.strides = src.strides
+#   dest.offset = src.offset
+#   dest.len = src.len
+#   dest.data_ref[] = cudaMalloc[T](dest.len)
+#
+#   let size = dest.len * sizeof(T)
+#
+#   check cudaMemCpy(dest.get_data_ptr,
+#                    src.get_data_ptr,
+#                    size,
+#                    cudaMemcpyDeviceToDevice)
+#   echo "Value copied"
+#
+# proc `=`*[T](dest: var CudaTensor[T]; src: CudaTensor[T]{call}) {.inline.}=
+#   ## Overloading the assignment operator
+#   ## Optimized version that knows that
+#   ## the source CudaTensor is unique and thus don't need to be copied
+#   system.`=`(result, t)
+#   echo "Value moved"
+
 proc newCudaTensor[T: SomeReal](shape: openarray[int]): CudaTensor[T] {.noSideEffect.}=
   ## Internal proc
   ## Allocate a CudaTensor

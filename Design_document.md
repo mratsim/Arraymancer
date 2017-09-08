@@ -33,6 +33,7 @@ Contrary to Python, the compiler can do the following optimization:
   - Copy elision
   - Move on assignment
   - Detect if the original Tensor is not used anymore and the copy is unneeded.
+If further no-copy optimizations are needed, move optimization with {call} can be used so the compiler automatically choose a no-copy version if only one reference exists: https://nim-lang.org/docs/manual.html#ast-based-overloading-move-optimization
 
 ## CUDA considerations
 
@@ -43,8 +44,10 @@ Internally CUDA/CuBLAS works with column major layout. Creating CudaTensor colum
 
 * Currently CudaTensor are shallow-copied by default.
 From a consistency point of view it would be best if both Tensor and CudaTensor have the same behaviour.
-TODO: implement value semantics for CudaTensor or at least Copy on Write
-alternative: Shallow copy by default for normal tensors
+WIP: Implementing value semantics with overloading the assignment operator:
+https://nim-lang.org/docs/manual.html#type-bound-operations
+To avoid unnecessary allocation a no-copy assignment can be used if references are unique.
+https://nim-lang.org/docs/manual.html#ast-based-overloading-move-optimization
 
 ## Coding-style
 * Prefer `when` to `if` for compile-time evaluation
@@ -132,8 +135,9 @@ Perf note: from a perf point of view, (integer ?) dot product is vectorized on C
 
 ### Shallow-copy by default:
 Rejected until benchmarked otherwise.
+If further no-copy optimizations are needed, move optimization with {call} can be used so the compiler automatically choose a no-copy version if only one reference exists: https://nim-lang.org/docs/manual.html#ast-based-overloading-move-optimization
 
-Important consideration: how to have deep copy by default for CUDA backend ? and so unified behaviour.
+For CudaTensor, value semantics will be implemented.
 
 `data` is currently stored in a "seq" that always deep copy on var assignement. It doesn't copy on let assignement.
 

@@ -13,61 +13,110 @@
 # limitations under the License.
 
 
-# Note: the following handle prevent {.noSideEffect.} in all CuBLAS proc :/
+# ###################################################
+# Global CuBLAS state
+
+# CuBLAS handle
+# Note: it prevents {.noSideEffect.} in all CuBLAS proc :/
 var defaultHandle: cublasHandle_t
-check cublasCreate_v2(addr defaultHandle)
+check cublasCreate(addr defaultHandle)
+
+# CuBLAS stream for parallel async processing on GPU
+# Computations/Memcpy on different streams are done in simultaneously
+# Streams are also necessary for async Cuda procs like cudaMemcpyAsync
+var defaultStream: cublas_api.cudaStream_t
+check cudaStreamCreate(addr defaultStream)
 
 # #####################################################
 # Redefinition of imported CUDA proc with standard name
+# and use of streams for parallel async processing
 
 # Vector copy
-proc copy(handle: cublasHandle_t; n: cint; x: ptr cfloat; incx: cint;
-                      y: ptr cfloat; incy: cint): cublasStatus_t {.inline.} =
-  cublasScopy_v2(handle, n, x, incx, y, incy)
-proc copy(handle: cublasHandle_t; n: cint; x: ptr cdouble; incx: cint;
-                      y: ptr cdouble; incy: cint): cublasStatus_t {.inline.} =
-  cublasDcopy_v2(handle, n, x, incx, y, incy)
+proc copy(n: cint; x: ptr cfloat; incx: cint;
+                   y: ptr cfloat; incy: cint): cublasStatus_t =
+
+  check cublasSetStream(defaultHandle, defaultStream)
+  cublasScopy(defaultHandle, n, x, incx, y, incy)
+
+proc copy(n: cint; x: ptr cdouble; incx: cint;
+                   y: ptr cdouble; incy: cint): cublasStatus_t =
+
+  check cublasSetStream(defaultHandle, defaultStream)
+  cublasDcopy(defaultHandle, n, x, incx, y, incy)
 
 # Vector dot product
-proc dot(handle: cublasHandle_t; n: cint; x: ptr cfloat; incx: cint;
-                     y: ptr cfloat; incy: cint; output: ptr cfloat): cublasStatus_t {.inline.} =
-  cublasSdot_v2(handle, n, x, incx, y, incy, output)
+proc dot(n: cint;
+         x: ptr cfloat; incx: cint;
+         y: ptr cfloat; incy: cint;
+         output: ptr cfloat): cublasStatus_t =
 
-proc dot(handle: cublasHandle_t; n: cint; x: ptr cdouble; incx: cint;
-                     y: ptr cdouble; incy: cint; output: ptr cdouble): cublasStatus_t {.inline.} =
-  cublasDdot_v2(handle, n, x, incx, y, incy, output)
+  check cublasSetStream(defaultHandle, defaultStream)
+  cublasSdot(defaultHandle, n, x, incx, y, incy, output)
+
+proc dot(n: cint;
+         x: ptr cdouble; incx: cint;
+         y: ptr cdouble; incy: cint;
+         output: ptr cdouble): cublasStatus_t =
+
+  check cublasSetStream(defaultHandle, defaultStream)
+  cublasDdot(defaultHandle, n, x, incx, y, incy, output)
 
 # Vector addition
-proc axpy(handle: cublasHandle_t; n: cint; alpha: ptr cfloat;
-                    x: ptr cfloat; incx: cint; y: ptr cfloat; incy: cint): cublasStatus_t {.inline.} =
-  cublasSaxpy_v2(handle, n, alpha, x, incx, y, incy)
-proc axpy(handle: cublasHandle_t; n: cint; alpha: ptr cdouble;
-                    x: ptr cdouble; incx: cint; y: ptr cdouble; incy: cint): cublasStatus_t {.inline.} =
-  cublasDaxpy_v2(handle, n, alpha, x, incx, y, incy)
+proc axpy(n: cint;
+          alpha: ptr cfloat;
+          x: ptr cfloat; incx: cint;
+          y: ptr cfloat; incy: cint): cublasStatus_t =
+
+  check cublasSetStream(defaultHandle, defaultStream)
+  cublasSaxpy(defaultHandle, n, alpha, x, incx, y, incy)
+
+proc axpy(n: cint;
+          alpha: ptr cdouble;
+          x: ptr cdouble; incx: cint;
+          y: ptr cdouble; incy: cint): cublasStatus_t =
+
+  check cublasSetStream(defaultHandle, defaultStream)
+  cublasDaxpy(defaultHandle, n, alpha, x, incx, y, incy)
 
 # Matrix addition (non-standard BLAS)
-proc geam(handle: cublasHandle_t; transa: cublasOperation_t;
-                 transb: cublasOperation_t; m: cint; n: cint; alpha: ptr cfloat;
-                 A: ptr cfloat; lda: cint; beta: ptr cfloat; B: ptr cfloat; ldb: cint;
-                 C: ptr cfloat; ldc: cint): cublasStatus_t {.inline.} =
-  cublasSgeam(handle, transa,  transb, m, n, alpha,
-                 A, lda, beta, B, ldb,
-                 C, ldc)
-proc geam(handle: cublasHandle_t; transa: cublasOperation_t;
-                 transb: cublasOperation_t; m: cint; n: cint; alpha: ptr cdouble;
-                 A: ptr cdouble; lda: cint; beta: ptr cdouble; B: ptr cdouble; ldb: cint;
-                 C: ptr cdouble; ldc: cint): cublasStatus_t {.inline.} =
-  cublasDgeam(handle, transa,  transb, m, n, alpha,
-                 A, lda, beta, B, ldb,
-                 C, ldc)
+proc geam(transa, transb: cublasOperation_t;
+          m, n: cint;
+          alpha: ptr cfloat; A: ptr cfloat; lda: cint;
+          beta: ptr cfloat; B: ptr cfloat; ldb: cint;
+          C: ptr cfloat; ldc: cint): cublasStatus_t =
+
+  check cublasSetStream(defaultHandle, defaultStream)
+  cublasSgeam(defaultHandle,
+              transa, transb, m, n,
+              alpha, A, lda,
+              beta, B, ldb,
+              C, ldc)
+
+proc geam(transa, transb: cublasOperation_t;
+          m, n: cint;
+          alpha: ptr cdouble; A: ptr cdouble; lda: cint;
+          beta: ptr cdouble; B: ptr cdouble; ldb: cint;
+          C: ptr cdouble; ldc: cint): cublasStatus_t =
+
+  check cublasSetStream(defaultHandle, defaultStream)
+  cublasDgeam(defaultHandle,
+              transa, transb, m, n,
+              alpha, A, lda,
+              beta, B, ldb,
+              C, ldc)
 
 # Scalar multiplication
-proc scal(handle: cublasHandle_t; n: cint; alpha: ptr cfloat;
-                    x: ptr cfloat; incx: cint): cublasStatus_t {.inline.} =
-  cublasSscal_v2(handle, n, alpha, x, incx)
-proc scal(handle: cublasHandle_t; n: cint; alpha: ptr cdouble;
-                    x: ptr cdouble; incx: cint): cublasStatus_t {.inline.} =
-  cublasDscal_v2(handle, n, alpha, x, incx)
+proc scal(n: cint; alpha: ptr cfloat;
+          x: ptr cfloat; incx: cint): cublasStatus_t =
+
+  check cublasSetStream(defaultHandle, defaultStream)
+  cublasSscal(defaultHandle, n, alpha, x, incx)
+
+proc scal(n: cint; alpha: ptr cdouble;
+          x: ptr cdouble; incx: cint): cublasStatus_t =
+
+  check cublasSetStream(defaultHandle, defaultStream)
+  cublasDscal(defaultHandle, n, alpha, x, incx)
 
 # ####################################################################
 # Helper proc
@@ -82,7 +131,8 @@ template cudaVV_A_eq_A_p_bB[T: SomeReal](
   # It won't have an address and can't be used by CUBLAS
   let be = beta
 
-  check axpy(defaultHandle, a.shape[0].cint, unsafeAddr(be),
+  check axpy(a.shape[0].cint,
+             unsafeAddr(be),
              b.get_data_ptr, b.strides[0].cint,
              a.get_data_ptr, a.strides[0].cint)
 
@@ -110,13 +160,13 @@ template cudaMM_A_eq_aA_p_bB[T: SomeReal](
     al = alpha
     be = beta
 
-  check geam(defaultHandle, CUBLAS_OP_N, transpose_B,
-               a.shape[0].cint, a.shape[1].cint,
-               unsafeAddr(al),
-               a.get_data_ptr, a.strides[1].cint,
-               unsafeAddr(be),
-               b.get_data_ptr, ld_B.cint,
-               a.get_data_ptr, a.strides[1].cint)
+  check geam( CUBLAS_OP_N, transpose_B,
+              a.shape[0].cint, a.shape[1].cint,
+              unsafeAddr(al),
+              a.get_data_ptr, a.strides[1].cint,
+              unsafeAddr(be),
+              b.get_data_ptr, ld_B.cint,
+              a.get_data_ptr, a.strides[1].cint)
   # In column-majour layout a.shape[0] == a.strides[1]
 
 template cudaVV_C_eq_A_p_bB[T: SomeReal](a: CudaTensor,
@@ -125,8 +175,7 @@ template cudaVV_C_eq_A_p_bB[T: SomeReal](a: CudaTensor,
   # Vector: C = A + beta B
   result = newCudaTensor[T](a.shape)
 
-  check copy(defaultHandle,
-             a.len.cint, a.get_data_ptr, a.strides[0].cint,
+  check copy(a.len.cint, a.get_data_ptr, a.strides[0].cint,
              result.get_data_ptr, result.strides[0].cint)
 
   cudaVV_A_eq_A_p_bB(result, beta, b)
@@ -155,13 +204,13 @@ template cudaMM_C_eq_aA_p_aB[T: SomeReal](alpha: T, a: CudaTensor[T],
     ld_B = if is_F_contiguous(b): b.strides[1]
            else: b.strides[0]
 
-  check geam(defaultHandle, transpose_A, transpose_B,
-               a.shape[0].cint, a.shape[1].cint,
-               unsafeAddr(al),
-               a.get_data_ptr, ld_A.cint,
-               unsafeAddr(be),
-               b.get_data_ptr, ld_B.cint,
-               result.get_data_ptr, result.strides[1].cint)
+  check geam( transpose_A, transpose_B,
+              a.shape[0].cint, a.shape[1].cint,
+              unsafeAddr(al),
+              a.get_data_ptr, ld_A.cint,
+              unsafeAddr(be),
+              b.get_data_ptr, ld_B.cint,
+              result.get_data_ptr, result.strides[1].cint)
 
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
@@ -169,8 +218,7 @@ template cudaMM_C_eq_aA_p_aB[T: SomeReal](alpha: T, a: CudaTensor[T],
 proc `.*`*[T: SomeReal](a, b: CudaTensor[T]): T =
   ## Vector to Vector dot (scalar) product
   when compileOption("boundChecks"): check_dot_prod(a,b)
-  check dot(defaultHandle,
-            a.shape[0].cint,
+  check dot(a.shape[0].cint,
             a.get_data_ptr, a.strides[0].cint,
             b.get_data_ptr, b.strides[0].cint,
             addr result)

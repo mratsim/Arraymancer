@@ -71,18 +71,24 @@ proc newCudaTensor[T: SomeReal](shape: openarray[int]): CudaTensor[T] {.noSideEf
   ## Internal proc
   ## Allocate a CudaTensor
   ## WARNING: The Cuda memory is not initialized to 0
+
+  # TODO: default to RowMajor. Pending https://github.com/mratsim/Arraymancer/issues/22
+  # As mentionned in design doc, an element-wise kernel will avoid relying on CuBLAS
+  # for inplace operation that requires column major layout.
+
   new(result.data_ref, deallocCuda)
   result.shape = @shape
   result.len = result.shape.product
   result.data_ref[] = cudaMalloc[T](result.len)
-  result.strides = shape_to_strides(result.shape)
+  result.strides = shape_to_strides(result.shape, layout = colMajor)
   result.offset = 0
 
 proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] {.noSideEffect.}=
   ## Convert a tensor on Cpu to a tensor on a Cuda device.
   result = newCudaTensor[T](t.shape)
 
-  let contig_t = t.asContiguous()
+  # TODO: avoid reordering rowMajor tensors. This is only needed for inplace operation in CUBLAS.
+  let contig_t = t.asContiguous(colMajor, force = true)
   let size = result.len * sizeof(T)
 
   check cudaMemCpy(result.get_data_ptr,

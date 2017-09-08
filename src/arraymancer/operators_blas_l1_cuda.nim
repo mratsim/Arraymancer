@@ -71,11 +71,11 @@ proc scal(handle: cublasHandle_t; n: cint; alpha: ptr cdouble;
 
 # ####################################################################
 # Helper proc
-template inplaceAdd_VecVec[T](a: var CudaTensor[T], b: CudaTensor[T]) =
+template cuda_inplaceAdd_VecVec[T](a: var CudaTensor[T], b: CudaTensor[T]) =
   var alpha: T = 1
   check axpy(defaultHandle, a.shape[0].cint, addr(alpha), b.get_data_ptr, b.strides[0].cint, a.get_data_ptr, a.strides[0].cint)
 
-template inplaceAdd_MatMat[T](a: var CudaTensor[T], b: CudaTensor[T]) =
+template cuda_inplaceAdd_MatMat[T](a: var CudaTensor[T], b: CudaTensor[T]) =
   # TODO: remove this contiguous layout constraint (via conversion or custom kernel)
   if not (isContiguous(a) and isContiguous(b)):
     raise newException(ValueError, "NotImplemented: for now both tensors should be contiguous")
@@ -90,9 +90,48 @@ template inplaceAdd_MatMat[T](a: var CudaTensor[T], b: CudaTensor[T]) =
   let ld_B = if is_F_contiguous(b): b.strides[1]
              else: b.strides[0]
 
-  check geam(defaultHandle, CUBLAS_OP_N, transpose_B, a.shape[0].cint, a.shape[1].cint, addr(alpha),
-               a.get_data_ptr, a.strides[1].cint, addr(alpha), b.get_data_ptr, ld_B.cint, a.get_data_ptr, a.strides[1].cint)
+  check geam(defaultHandle, CUBLAS_OP_N, transpose_B,
+               a.shape[0].cint, a.shape[1].cint, addr(alpha),
+               a.get_data_ptr, a.strides[1].cint,
+               addr(alpha),
+               b.get_data_ptr, ld_B.cint,
+               a.get_data_ptr, a.strides[1].cint)
   # In column-majour layout a.shape[0] == a.strides[1]
+
+template cuda_add_VecVec[T: SomeReal](a,b, result: CudaTensor[T]) =
+  result = newCudaTensor[T](a.shape)
+
+  check copy(defaultHandle,
+             a.len.cint, a.get_data_ptr, a.strides[0].cint,
+             result.get_data_ptr, result.strides[0].cint)
+  cuda_inplaceAdd_VecVec(result, b)
+
+template cuda_add_MatMat[T: SomeReal](a,b, result: CudaTensor[T]) =
+  # TODO: remove this contiguous layout constraint (via conversion or custom kernel)
+  if not (isContiguous(a) and isContiguous(b)):
+    raise newException(ValueError, "NotImplemented: for now both tensors should be contiguous")
+
+  result = newCudaTensor[T](a.shape) # result is colMajor
+
+  var alpha: T = 1
+
+  let
+    transpose_A = if is_F_contiguous(a): CUBLAS_OP_N
+                  else: CUBLAS_OP_T
+    ld_A = if is_F_contiguous(a): a.strides[1]
+           else: a.strides[0]
+
+    transpose_B = if is_F_contiguous(b): CUBLAS_OP_N
+                  else: CUBLAS_OP_T
+    ld_B = if is_F_contiguous(b): b.strides[1]
+           else: b.strides[0]
+
+  check geam(defaultHandle, transpose_A, transpose_B,
+               a.shape[0].cint, a.shape[1].cint, addr(alpha),
+               a.get_data_ptr, ld_A.cint,
+               addr(alpha),
+               b.get_data_ptr, ld_B.cint,
+               result.get_data_ptr, result.strides[1].cint)
 
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
@@ -108,17 +147,31 @@ proc `.*`*[T: SomeReal](a, b: CudaTensor[T]): T =
 
 proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Tensor in-place addition
-  ## Only Vector-Vector and Matrix-Matrix addition are supported.
+  ## Only Vector-Vector and Matrix-Matrix addition are supported for now.
   ## For Matrix-Matrix, both matrices must have a contiguous layout.
 
   when compileOption("boundChecks"): check_add(a,b)
   
   if a.rank == 1:
-    inplaceAdd_VecVec(a,b)
+    cuda_inplaceAdd_VecVec(a,b)
   elif a.rank == 2:
-    inplaceAdd_MatMat(a,b)
+    cuda_inplaceAdd_MatMat(a,b)
   else:
     raise newException(ValueError, "NotImplemented: Tensor addition is not implemented for 3D+ tensors")
 
   # TODO: if a and b share the same location, copy a to a new location
   # a += transpose(a) fails with CUBLAS ERROR 7.
+
+proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] =
+  ## Tensor addition
+  ## Only Vector-Vector and Matrix-Matrix addition are supported for now
+  ## For Matrix-Matrix, both matrices must have a contiguous layout.
+
+  when compileOption("boundChecks"): check_add(a,b)
+
+  if a.rank == 1:
+    cuda_add_VecVec(a,b, result)
+  elif a.rank == 2:
+    cuda_add_MatMat(a,b, result)
+  else:
+    raise newException(ValueError, "NotImplemented: Tensor addition is not implemented for 3D+ tensors")

@@ -104,6 +104,8 @@ suite "CUDA backend: BLAS (Basic Linear Algebra Subprograms)":
     expect(ValueError):
       discard a + b.cpu[0..1, 0..1].cuda
 
+    # TODO: when slices are implemented, test on non-contiguous slices
+
   test "Matrix and vector substraction":
     let u = @[1'f32, 3, -5].toTensor.cuda
     let v = @[1'f32, 1, 1].toTensor.cuda
@@ -120,3 +122,17 @@ suite "CUDA backend: BLAS (Basic Linear Algebra Subprograms)":
     # Check size mismatch
     expect(ValueError):
       discard a + b.cpu[0..1, 0..1].cuda
+
+    # TODO: when slices are implemented, test on non-contiguous slices
+
+  test "Multiplication/division by scalar":
+    let u = @[2'f64, 6, -10].toTensor.cuda()
+
+    let v = @[1'f64, 3, -5].toTensor
+    check: (u / 2).cpu == v
+
+    let a = @[1'f32, 3, -5].toTensor.cuda
+    let b = @[2'f32, 6, -10].toTensor
+
+    check: (2'f32 * a).cpu == b
+    check: (a * 2).cpu == b

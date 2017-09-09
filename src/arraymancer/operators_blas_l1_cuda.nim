@@ -108,7 +108,7 @@ template cudaMM_C_eq_aA_p_aB[T: SomeReal](alpha: T, a: CudaTensor[T],
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
 
-proc `.*`*[T: SomeReal](a, b: CudaTensor[T]): T =
+proc `.*`*[T: SomeReal](a, b: CudaTensor[T]): T {.inline.}=
   ## Vector to Vector dot (scalar) product
   when compileOption("boundChecks"): check_dot_prod(a,b)
   check dot(a.shape[0].cint,
@@ -178,3 +178,35 @@ proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] =
     cudaMM_C_eq_aA_p_aB(1.T, a, -1.T, b, result)
   else:
     raise newException(ValueError, "NotImplemented: Tensor addition is not implemented for 3D+ tensors")
+
+proc `*=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
+  ## Tensor inplace multiplication by a scalar
+
+  let alpha = a # We need an pointer/address, if is a value it wouldn't have one
+
+  # We multiply all elements of the CudaTensor regardless of shape/strides
+  # So this operation can be applied to tensors of all ranks.
+  # Hence we use the whole allocated length instead of shape
+  check scal(t.len.cint, unsafeAddr(alpha), t.get_data_ptr, 1)
+
+proc `*`*[T:SomeReal](a: T, t: CudaTensor[T]): CudaTensor[T] {.inline.}=
+  ## Tensor multiplication by a scalar
+
+  result = t.clone()
+  result *= a
+
+proc `*`*[T:SomeReal](t: CudaTensor[T], a: T): CudaTensor[T] {.inline.}=
+  ## Tensor multiplication by a scalar
+  a * t
+
+proc `/=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
+  ## Tensor in-place division by a scalar
+  t *= (1/a)
+
+proc `/`*[T:SomeReal](t: CudaTensor[T], a: T): CudaTensor[T] {.inline.}=
+  ## Tensor division by a scalar
+  (1/a) * t
+
+proc `/`*[T:SomeReal](a: T, t: CudaTensor[T]): CudaTensor[T] {.inline.}=
+  ## Tensor division by a scalar
+  (1/a) * t

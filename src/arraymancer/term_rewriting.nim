@@ -23,13 +23,13 @@ template toTensorReshapeT(oa: typed, shape: varargs[int]): untyped =
   t.data = data
   return t
 
-proc toTensorReshape(oa: string, shape: varargs[int]): auto =
+proc toTensorReshape(oa: string, shape: varargs[int]): auto {.noSideEffect.}=
   ## Fuse toTensor and reshape in one operation
   ## Deal specifically with strings/seq[char]
 
   toTensorReshapeT(oa, shape)
 
-proc toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto =
+proc toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto {.noSideEffect.}=
   ## Fuse toTensor and reshape in one operation
   ##
   ## Nim >0.17 needed as "static[int] = 0" is not working in Nim 0.17

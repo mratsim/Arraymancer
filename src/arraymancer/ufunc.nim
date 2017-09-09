@@ -42,7 +42,7 @@ template makeUniversal*(func_name: untyped) =
   #
   # ``makeUniversal`` does not work when internal type is changing,
   # use fmap instead
-  proc func_name*(t: Tensor): Tensor =
+  proc func_name*(t: Tensor): Tensor {.noSideEffect.}=
     ## Universal version of the function.
     ##
     ## The function can be used directly on tensors and will work element-wise.
@@ -56,7 +56,8 @@ template makeUniversalLocal*(func_name: untyped) =
   #
   # ``makeUniversalLocal`` does not work when internal type is changing
   # use fmap instead
-  proc func_name(t: Tensor): Tensor = t.fmap(func_name)
+  proc func_name(t: Tensor): Tensor {.noSideEffect.}=
+    t.fmap(func_name)
 
 # Unary functions from Nim math library
 

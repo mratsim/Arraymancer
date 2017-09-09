@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc check_reshape(t: Tensor, new_shape:seq[int]) =
+proc check_reshape(t: Tensor, new_shape:seq[int]) {.noSideEffect.}=
   if t.shape.product != new_shape.product:
     raise newException(ValueError, "The total number of elements in the old and the new reshaped matrix must be the same")
 

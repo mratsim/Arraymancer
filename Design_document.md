@@ -2,6 +2,29 @@
 
 This is a notepad to track ideas, challenges, future work and open issues/limitations of Arraymancer.
 
+<!-- TOC -->
+
+- [Design document](#design-document)
+    - [Storage convention](#storage-convention)
+    - [Pending issues](#pending-issues)
+    - [Memory/Perf considerations](#memoryperf-considerations)
+    - [Data structure considerations](#data-structure-considerations)
+    - [CUDA considerations](#cuda-considerations)
+    - [Coding-style](#coding-style)
+    - [Features](#features)
+    - [TODO](#todo)
+    - [Ideas rejected](#ideas-rejected)
+        - [Having an unified Tensor type instead of Tensor, CudaTensor, etc.](#having-an-unified-tensor-type-instead-of-tensor-cudatensor-etc)
+        - [Have the rank of the Tensor be part of its type.](#have-the-rank-of-the-tensor-be-part-of-its-type)
+        - [Have the kind of stride (C_contiguous, F_contiguous) be part of its type.](#have-the-kind-of-stride-c_contiguous-f_contiguous-be-part-of-its-type)
+        - [Implement offsets and iterator using pointers.](#implement-offsets-and-iterator-using-pointers)
+        - [Shallow-copy by default:](#shallow-copy-by-default)
+        - [Have polymorphic procs depending on a backend parameter](#have-polymorphic-procs-depending-on-a-backend-parameter)
+    - [Readings](#readings)
+        - [Performance](#performance)
+
+<!-- /TOC -->
+
 ## Storage convention
 
 Either C or Fortran contiguous arrays are needed for BLAS optimization for Tensor of Rank 1 or 2
@@ -186,3 +209,11 @@ The downside is
 Two alternatives are possible to avoid that:
 - Only provide the base proc for Cpu and have a rewrite rule to transform zeros(...).toCuda() into the direct Cuda function if it exists. (aka Composition)
 - Use qualified import, like `ìmport arraymancer as arc` and `ìmport arraymancer/cuda as cu` and then `arc.zeros` or `cu.zeros`
+
+## Readings
+
+### Performance
+- Compute-bound, memory-bound and IO-bound optimization: http://leto.net/docs/C-optimization.php
+- Implementing matmul from scratch: http://apfel.mathematik.uni-ulm.de/~lehn/ulmBLAS/
+- Implementing matmul in Nvidia assembler from scratch: https://github.com/NervanaSystems/maxas/wiki/SGEMM
+- In-depth discussion on fast convolution (NCHW vs CHNW representation, Winograd kernel): https://github.com/soumith/convnet-benchmarks/issues/93

@@ -18,6 +18,8 @@ import nimcuda/[cuda_runtime_api, driver_types, cublas_api, cublas_v2, nimcuda]
 # Unfortunately allowing this would require a difficult configuration to allow private proc visible to both modules
 # but not exported externally
 include ./arraymancer,
+        ./arraymancer/backend/cuda_global_state,
+        ./arraymancer/backend/cublas,
         ./arraymancer/init_cuda,
         ./arraymancer/display_cuda,
         ./arraymancer/operators_blas_l1_cuda,

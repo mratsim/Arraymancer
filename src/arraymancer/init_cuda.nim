@@ -37,6 +37,26 @@ proc shallowCopy*[T](t: var CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect.
   # data_ref has ref semantics
   system.`=`(result, t)
 
+proc clone*[T](t: CudaTensor[T]): CudaTensor[T] =
+  ## Clone (deep copy) a CudaTensor
+
+  # Note: due to modifying the defaultStream global var for async memcopy
+  # proc cannot be tagged noSideEffect
+
+  new(result.data_ref, deallocCuda)
+  result.shape = t.shape
+  result.strides = t.strides
+  result.offset = t.offset
+  result.len = t.len
+  result.data_ref[] = cudaMalloc[T](result.len)
+  let size = result.len * sizeof(T)
+
+  check cudaMemCpyAsync(result.get_data_ptr,
+                        t.get_data_ptr,
+                        size,
+                        cudaMemcpyDeviceToDevice,
+                        defaultStream) # defaultStream is a cudaStream_t global var
+
 # ###########################################################
 # Implement value semantics for CudaTensor
 # Pending https://github.com/nim-lang/Nim/issues/6348

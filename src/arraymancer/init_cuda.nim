@@ -83,21 +83,30 @@ proc newCudaTensor[T: SomeReal](shape: openarray[int]): CudaTensor[T] {.noSideEf
   result.strides = shape_to_strides(result.shape, layout = colMajor)
   result.offset = 0
 
-proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] {.noSideEffect.}=
+proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] =
   ## Convert a tensor on Cpu to a tensor on a Cuda device.
+  # Note: due to modifying the defaultStream global var for async copy
+  # proc cannot be tagged noSideEffect
+
   result = newCudaTensor[T](t.shape)
 
   # TODO: avoid reordering rowMajor tensors. This is only needed for inplace operation in CUBLAS.
   let contig_t = t.asContiguous(colMajor, force = true)
   let size = result.len * sizeof(T)
 
-  check cudaMemCpy(result.get_data_ptr,
-                   contig_t.get_data_ptr,
-                   size,
-                   cudaMemcpyHostToDevice)
+  # For host to device we use non-blocking copy
+  # Host can proceed with computation.
+  # On CUDA device, next operations will be batch in the stream queue.
+  check cudaMemCpyAsync(result.get_data_ptr,
+                        contig_t.get_data_ptr,
+                        size,
+                        cudaMemcpyHostToDevice,
+                        defaultStream) # defaultStream is a cudaStream_t global var
 
 proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect.}=
   ## Convert a tensor on a Cuda device to a tensor on Cpu.
+  # We use blocking copy in this case to make sure
+  # all data is available for future computation
 
   result.shape = t.shape
   result.strides = t.strides

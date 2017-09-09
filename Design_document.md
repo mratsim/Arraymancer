@@ -57,6 +57,14 @@ https://nim-lang.org/docs/manual.html#type-bound-operations
 To avoid unnecessary allocation a no-copy assignment can be used if references are unique.
 https://nim-lang.org/docs/manual.html#ast-based-overloading-move-optimization
 
+* Async operations
+Operations on CUDA device ("Host -> GPU" copy, additions, substraction, etc) are non-blocking for the host.
+Meaning the program can proceed with CPU computation.
+"GPU -> Host" copy operation is blocking to avoid data races.
+
+In the future, independant operations like A+B and C+D might be scheduled in different Cuda Streams for simultaneous processing.
+
+
 ## Coding-style
 * Prefer `when` to `if` for compile-time evaluation
 * Let the compiler do its job:

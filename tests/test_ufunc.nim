@@ -52,7 +52,7 @@ suite "Universal functions":
     let td = d.toTensor()
     let te = e.toTensor()
 
-    when compiles (td == te): check: false
+    when compiles(td == te): check: false
 
     check: td.fmap(stringify) == te
     check: td.fmap(stringify)[0,1] == "4"

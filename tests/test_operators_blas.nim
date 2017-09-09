@@ -60,7 +60,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
                 [ 57, 42,23,15],
                 [102, 94,34, 0],
                 [ 66, 43,39,15]].toTensor()
-    
+
     check: m1.astype(float) * m2.astype(float) == m1m2.astype(float)
 
     # from http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%222%22,%224%22,%223%22,%221%22,%223%22,%221%22,%223%22,%221%22],[%221%22,%222%22,%221%22,%221%22,%222%22,%220%22,%224%22,%223%22],[%222%22,%220%22,%220%22,%223%22,%220%22,%224%22,%224%22,%221%22],[%221%22,%221%22,%224%22,%220%22,%223%22,%221%22,%223%22,%220%22],[%223%22,%224%22,%221%22,%221%22,%224%22,%222%22,%223%22,%224%22],[%222%22,%224%22,%220%22,%222%22,%223%22,%223%22,%223%22,%224%22],[%223%22,%220%22,%220%22,%223%22,%221%22,%224%22,%223%22,%221%22],[%224%22,%223%22,%222%22,%224%22,%221%22,%220%22,%220%22,%220%22]]&matrix2=[[%222%22,%222%22,%220%22,%224%22,%220%22,%220%22,%224%22,%222%22],[%222%22,%220%22,%220%22,%221%22,%221%22,%221%22,%223%22,%221%22],[%220%22,%222%22,%222%22,%220%22,%222%22,%222%22,%223%22,%223%22],[%220%22,%220%22,%221%22,%220%22,%224%22,%222%22,%224%22,%221%22],[%220%22,%220%22,%221%22,%223%22,%224%22,%222%22,%224%22,%222%22],[%224%22,%223%22,%224%22,%221%22,%224%22,%224%22,%220%22,%223%22],[%223%22,%223%22,%220%22,%222%22,%221%22,%222%22,%223%22,%223%22],[%222%22,%221%22,%222%22,%221%22,%222%22,%224%22,%224%22,%221%22]]&operator=*
@@ -84,7 +84,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
               [4, 3,  4,  1,  4,  4,  0,  3],
               [3, 3,  0,  2,  1,  2,  3,  3],
               [2, 1,  2,  1,  2,  4,  4,  1]].toTensor()
-    
+
     let n1n2 = [[27,23,16,29,35,32,58,37],
                 [24,19,11,23,26,30,49,27],
                 [34,29,21,21,34,34,36,32],
@@ -97,129 +97,97 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     check: n1.astype(float) * n2.astype(float) == n1n2.astype(float)
 
   test "GEMM - Bounds checking":
-    let c = @[@[1'f32,2,3],@[4'f32,5,6]]
-    let tc = c.toTensor()
+    let c = @[@[1'f32,2,3],@[4'f32,5,6]].toTensor()
 
-    when compiles(tc * tb): check: false
     expect(IndexError):
-       discard tc * tc
+      discard c * c
 
   test "GEMV - General Matrix to Vector Multiplication":
     ## TODO: test with slices
-    let d_int = @[@[1,-1,2],@[0,-3,1]]
-    let e_int = @[2, 1, 0]
-    let tde_expected_int = @[1, -3]
+    let d_int = @[@[1,-1,2],@[0,-3,1]].toTensor()
+    let e_int = @[2, 1, 0].toTensor()
+    let te_int = @[1, -3].toTensor()
 
-    let td_int = d_int.toTensor()
-    let te_int = e_int.toTensor()
+    # GEMV integer fallback test - see dedicated section for extensive test
+    check: d_int * e_int == te_int
 
-    ## TODO integer fallback
-    # check: td_int * te_int == tde_expected_int.toTensor(Cpu)
+    let d_float = @[@[1.0,-1,2],@[0.0,-3,1]].toTensor()
+    let e_float = @[2.0, 1, 0].toTensor()
 
-    let d_float = @[@[1.0,-1,2],@[0.0,-3,1]]
-    let e_float = @[2.0, 1, 0]
-
-    let td_float = d_float.toTensor()
-    let te_float = e_float.toTensor()
-
-    check: td_float * te_float == tde_expected_int.toTensor().fmap(x => x.float64)
+    check: d_float * e_float == te_int.fmap(x => x.float64)
 
   test "GEMM and GEMV with transposed matrices":
-    let a = @[@[1.0,2,3],@[4.0,5,6]]
-    let ta = a.toTensor()
-    let b = @[@[7.0, 8],@[9.0, 10],@[11.0, 12]]
-    let tb = b.toTensor()
+    let a = @[@[1.0,2,3],@[4.0,5,6]].toTensor()
+    let b = @[@[7.0, 8],@[9.0, 10],@[11.0, 12]].toTensor()
 
+    let at = @[@[1.0,4],@[2.0,5],@[3.0,6]].toTensor()
 
-    let at = @[@[1.0,4],@[2.0,5],@[3.0,6]]
-    let tat = at.toTensor()
+    let expected = @[@[58.0,64],@[139.0,154]].toTensor()
 
-    let expected = @[@[58.0,64],@[139.0,154]]
-    let t_expected = expected.toTensor()
+    check: transpose(at) * b == expected
 
-    check: transpose(tat) * tb == t_expected
+    let bt = @[@[7.0, 9, 11],@[8.0, 10, 12]].toTensor()
 
-    let bt = @[@[7.0, 9, 11],@[8.0, 10, 12]]
-    let tbt = bt.toTensor()
+    check: a * transpose(bt) == expected
 
-    check: ta * transpose(tbt) == t_expected
+    check: transpose(at) * transpose(bt) == expected
 
-    check: transpose(tat) * transpose(tbt) == t_expected
+    let d = @[@[1.0,-1,2],@[0.0,-3,1]].toTensor()
+    let e = @[2.0, 1, 0].toTensor()
 
+    let dt = @[@[1.0,0],@[-1.0,-3],@[2.0,1]].toTensor()
 
-    let d = @[@[1.0,-1,2],@[0.0,-3,1]]
-    let e = @[2.0, 1, 0]
-
-    let td = d.toTensor()
-    let te = e.toTensor()
-
-    let dt = @[@[1.0,0],@[-1.0,-3],@[2.0,1]]
-    let tdt = dt.toTensor()
-
-    check: td * te == transpose(tdt) * te
+    check: d * e == transpose(dt) * e
 
   test "Scalar/dot product":
     ## TODO: test with slices
-    let u_int = @[1, 3, -5]
-    let v_int = @[4, -2, -1]
+    let u_int = @[1, 3, -5].toTensor()
+    let v_int = @[4, -2, -1].toTensor()
 
-    let tu_int = u_int.toTensor()
-    let tv_int = v_int.toTensor()
+    check: u_int .* v_int == 3
 
-    check: tu_int .* tv_int == 3
+    let u_float = @[1'f64, 3, -5].toTensor()
+    let v_float = @[4'f64, -2, -1].toTensor()
 
-
-    let u_float = @[1'f64, 3, -5]
-    let v_float = @[4'f64, -2, -1]
-
-    let tu_float = u_float.toTensor()
-    let tv_float = v_float.toTensor()
-
-    check: tu_float .* tv_float == 3.0
+    check: u_float .* v_float == 3.0
 
   test "Multiplication/division by scalar":
-    let u_int = @[1, 3, -5]
-    let u_expected = @[2, 6, -10]
-    let tu_int = u_int.toTensor()
+    let u_int = @[1, 3, -5].toTensor()
+    let u_expected = @[2, 6, -10].toTensor()
 
-    check: 2 * tu_int == u_expected.toTensor()
-    check: tu_int * 2 == u_expected.toTensor()
+    check: 2 * u_int == u_expected
+    check: u_int * 2 == u_expected
 
-    let u_float = @[1'f64, 3, -5]
-    let tu_float = u_float.toTensor()
+    let u_float = @[1'f64, 3, -5].toTensor()
 
-    let ufl_expected = @[2'f64, 6, -10]
-    check: ufl_expected.toTensor() / 2 == tu_float
+    let ufl_expected = @[2'f64, 6, -10].toTensor()
+    check: ufl_expected / 2 == u_float
 
   test "Tensor addition and substraction":
-    let u_int = @[1, 3, -5]
-    let v_int = @[1, 1, 1]
-    let expected_add = @[2, 4, -4]
-    let expected_sub = @[0, 2, -6]
-    let tu_int = u_int.toTensor()
-    let tv_int = v_int.toTensor()
+    let u_int = @[1, 3, -5].toTensor()
+    let v_int = @[1, 1, 1].toTensor()
+    let expected_add = @[2, 4, -4].toTensor()
+    let expected_sub = @[0, 2, -6].toTensor()
 
-    check: tu_int + tv_int == expected_add.toTensor()
-    check: tu_int - tv_int == expected_sub.toTensor()
+    check: u_int + v_int == expected_add
+    check: u_int - v_int == expected_sub
 
   test "Addition-Substraction - slices":
-    let a = @[@[1.0,2,3],@[4.0,5,6], @[7.0,8,9]]
-    let ta = a.toTensor()
-    let ta_t = ta.transpose()
+    let a = @[@[1.0,2,3],@[4.0,5,6], @[7.0,8,9]].toTensor()
+    let a_t = a.transpose()
 
-    check: ta[0..1, 0..1] + ta_t[0..1, 0..1] == [[2.0, 6], [6.0, 10]].toTensor()
-    check: ta[1..2, 1..2] - ta_t[1..2, 1..2] == [[0.0, -2], [2.0, 0]].toTensor()
+    check: a[0..1, 0..1] + a_t[0..1, 0..1] == [[2.0, 6], [6.0, 10]].toTensor()
+    check: a[1..2, 1..2] - a_t[1..2, 1..2] == [[0.0, -2], [2.0, 0]].toTensor()
 
   test "Addition-Substraction - Bounds checking":
-    let a = [[1.0,2,3], [4.0,5,6], [7.0,8,9]]
-    let ta = a.toTensor()
-    let ta_t = ta.transpose()
+    let a = [[1.0,2,3], [4.0,5,6], [7.0,8,9]].toTensor()
+    let a_t = a.transpose()
 
     expect(ValueError):
-      discard ta[1..2,1..2] + ta_t
+      discard a[1..2,1..2] + a_t
 
     expect(ValueError):
-      discard ta - ta_t[1..2,1..2]
+      discard a - a_t[1..2,1..2]
 
   test "Integer Matrix-Vector Multiplication fallback":
     let a = [[1,2,3],
@@ -239,7 +207,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
              [82, 70, 34, 23],
              [52, -70, 0, 53],
              [35, 94, 39, 36]].toTensor()
-    
+
     let u = [-91, 81, 69, -75].toTensor()
 
     let bu = [12303, -8297, 7356, -1171, -14377, 4420].toTensor()
@@ -290,7 +258,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
                 [ 57, 42,23,15],
                 [102, 94,34, 0],
                 [ 66, 43,39,15]].toTensor()
-    
+
     check: m1 * m2 == m1m2
 
     # from http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%222%22,%224%22,%223%22,%221%22,%223%22,%221%22,%223%22,%221%22],[%221%22,%222%22,%221%22,%221%22,%222%22,%220%22,%224%22,%223%22],[%222%22,%220%22,%220%22,%223%22,%220%22,%224%22,%224%22,%221%22],[%221%22,%221%22,%224%22,%220%22,%223%22,%221%22,%223%22,%220%22],[%223%22,%224%22,%221%22,%221%22,%224%22,%222%22,%223%22,%224%22],[%222%22,%224%22,%220%22,%222%22,%223%22,%223%22,%223%22,%224%22],[%223%22,%220%22,%220%22,%223%22,%221%22,%224%22,%223%22,%221%22],[%224%22,%223%22,%222%22,%224%22,%221%22,%220%22,%220%22,%220%22]]&matrix2=[[%222%22,%222%22,%220%22,%224%22,%220%22,%220%22,%224%22,%222%22],[%222%22,%220%22,%220%22,%221%22,%221%22,%221%22,%223%22,%221%22],[%220%22,%222%22,%222%22,%220%22,%222%22,%222%22,%223%22,%223%22],[%220%22,%220%22,%221%22,%220%22,%224%22,%222%22,%224%22,%221%22],[%220%22,%220%22,%221%22,%223%22,%224%22,%222%22,%224%22,%222%22],[%224%22,%223%22,%224%22,%221%22,%224%22,%224%22,%220%22,%223%22],[%223%22,%223%22,%220%22,%222%22,%221%22,%222%22,%223%22,%223%22],[%222%22,%221%22,%222%22,%221%22,%222%22,%224%22,%224%22,%221%22]]&operator=*
@@ -314,7 +282,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
               [4, 3,  4,  1,  4,  4,  0,  3],
               [3, 3,  0,  2,  1,  2,  3,  3],
               [2, 1,  2,  1,  2,  4,  4,  1]].toTensor()
-    
+
     let n1n2 = [[27,23,16,29,35,32,58,37],
                 [24,19,11,23,26,30,49,27],
                 [34,29,21,21,34,34,36,32],

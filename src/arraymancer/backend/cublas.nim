@@ -17,88 +17,88 @@
 # and use of streams for parallel async processing
 
 # Vector copy
-proc copy(n: cint; x: ptr cfloat; incx: cint;
-                   y: ptr cfloat; incy: cint): cublasStatus_t =
+proc cublas_copy(n: int; x: ptr float32; incx: int;
+                         y: ptr float32; incy: int): cublasStatus_t =
 
   check cublasSetStream(defaultHandle, defaultStream)
-  cublasScopy(defaultHandle, n, x, incx, y, incy)
+  cublasScopy(defaultHandle, n.cint, x, incx.cint, y, incy.cint)
 
-proc copy(n: cint; x: ptr cdouble; incx: cint;
-                   y: ptr cdouble; incy: cint): cublasStatus_t =
+proc cublas_copy(n: int; x: ptr float64; incx: int;
+                         y: ptr float64; incy: int): cublasStatus_t =
 
   check cublasSetStream(defaultHandle, defaultStream)
-  cublasDcopy(defaultHandle, n, x, incx, y, incy)
+  cublasDcopy(defaultHandle, n.cint, x, incx.cint, y, incy.cint)
 
 # Vector dot product
-proc dot(n: cint;
-         x: ptr cfloat; incx: cint;
-         y: ptr cfloat; incy: cint;
-         output: ptr cfloat): cublasStatus_t =
+proc cublas_dot(n: int;
+                x: ptr float32; incx: int;
+                y: ptr float32; incy: int;
+                output: ptr float32): cublasStatus_t =
 
   check cublasSetStream(defaultHandle, defaultStream)
-  cublasSdot(defaultHandle, n, x, incx, y, incy, output)
+  cublasSdot(defaultHandle, n.cint, x, incx.cint, y, incy.cint, output)
 
-proc dot(n: cint;
-         x: ptr cdouble; incx: cint;
-         y: ptr cdouble; incy: cint;
-         output: ptr cdouble): cublasStatus_t =
+proc cublas_dot(n: int;
+                x: ptr float64; incx: int;
+                y: ptr float64; incy: int;
+                output: ptr float64): cublasStatus_t =
 
   check cublasSetStream(defaultHandle, defaultStream)
-  cublasDdot(defaultHandle, n, x, incx, y, incy, output)
+  cublasDdot(defaultHandle, n.cint, x, incx.cint, y, incy.cint, output)
 
 # Vector addition
-proc axpy(n: cint;
-          alpha: ptr cfloat;
-          x: ptr cfloat; incx: cint;
-          y: ptr cfloat; incy: cint): cublasStatus_t =
+proc cublas_axpy( n: int;
+                  alpha: ptr float32;
+                  x: ptr float32; incx: int;
+                  y: ptr float32; incy: int): cublasStatus_t =
 
   check cublasSetStream(defaultHandle, defaultStream)
-  cublasSaxpy(defaultHandle, n, alpha, x, incx, y, incy)
+  cublasSaxpy(defaultHandle, n.cint, alpha, x, incx.cint, y, incy.cint)
 
-proc axpy(n: cint;
-          alpha: ptr cdouble;
-          x: ptr cdouble; incx: cint;
-          y: ptr cdouble; incy: cint): cublasStatus_t =
+proc cublas_axpy( n: int;
+                  alpha: ptr float64;
+                  x: ptr float64; incx: int;
+                  y: ptr float64; incy: int): cublasStatus_t =
 
   check cublasSetStream(defaultHandle, defaultStream)
-  cublasDaxpy(defaultHandle, n, alpha, x, incx, y, incy)
+  cublasDaxpy(defaultHandle, n.cint, alpha, x, incx.cint, y, incy.cint)
 
 # Matrix addition (non-standard BLAS)
-proc geam(transa, transb: cublasOperation_t;
-          m, n: cint;
-          alpha: ptr cfloat; A: ptr cfloat; lda: cint;
-          beta: ptr cfloat; B: ptr cfloat; ldb: cint;
-          C: ptr cfloat; ldc: cint): cublasStatus_t =
+proc cublas_geam( transa, transb: cublasOperation_t;
+                  m, n: int;
+                  alpha: ptr float32; A: ptr float32; lda: int;
+                  beta: ptr float32; B: ptr float32; ldb: int;
+                  C: ptr float32; ldc: int): cublasStatus_t =
 
   check cublasSetStream(defaultHandle, defaultStream)
   cublasSgeam(defaultHandle,
-              transa, transb, m, n,
-              alpha, A, lda,
-              beta, B, ldb,
-              C, ldc)
+              transa, transb, m.cint, n.cint,
+              alpha, A, lda.cint,
+              beta, B, ldb.cint,
+              C, ldc.cint)
 
-proc geam(transa, transb: cublasOperation_t;
-          m, n: cint;
-          alpha: ptr cdouble; A: ptr cdouble; lda: cint;
-          beta: ptr cdouble; B: ptr cdouble; ldb: cint;
-          C: ptr cdouble; ldc: cint): cublasStatus_t =
+proc cublas_geam( transa, transb: cublasOperation_t;
+                  m, n: int;
+                  alpha: ptr float64; A: ptr float64; lda: int;
+                  beta: ptr float64; B: ptr float64; ldb: int;
+                  C: ptr float64; ldc: int): cublasStatus_t =
 
   check cublasSetStream(defaultHandle, defaultStream)
   cublasDgeam(defaultHandle,
-              transa, transb, m, n,
-              alpha, A, lda,
-              beta, B, ldb,
-              C, ldc)
+              transa, transb, m.cint, n.cint,
+              alpha, A, lda.cint,
+              beta, B, ldb.cint,
+              C, ldc.cint)
 
 # Scalar multiplication
-proc scal(n: cint; alpha: ptr cfloat;
-          x: ptr cfloat; incx: cint): cublasStatus_t =
+proc cublas_scal( n: int; alpha: ptr float32;
+                  x: ptr float32; incx: int): cublasStatus_t =
 
   check cublasSetStream(defaultHandle, defaultStream)
-  cublasSscal(defaultHandle, n, alpha, x, incx)
+  cublasSscal(defaultHandle, n.cint, alpha, x, incx.cint)
 
-proc scal(n: cint; alpha: ptr cdouble;
-          x: ptr cdouble; incx: cint): cublasStatus_t =
+proc cublas_scal( n: int; alpha: ptr float64;
+                  x: ptr float64; incx: int): cublasStatus_t =
 
   check cublasSetStream(defaultHandle, defaultStream)
-  cublasDscal(defaultHandle, n, alpha, x, incx)
+  cublasDscal(defaultHandle, n.cint, alpha, x, incx.cint)

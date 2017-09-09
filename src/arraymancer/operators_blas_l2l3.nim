@@ -14,7 +14,7 @@
 
 
 # Bounds checking functions
-proc check_matmat(a, b:Tensor) {.noSideEffect.}=
+proc check_matmat(a, b: AnyTensor) {.noSideEffect.}=
   let colA = a.shape[1]
   let rowB = b.shape[0]
 
@@ -202,7 +202,7 @@ template matmat_fallback[T: SomeInteger](a, b, result: Tensor[T]): auto =
   let K = a.shape[1]
   let N = b.shape[1]
 
-  assert K == b.shape[0]
+  when compileOption("boundChecks"): check_matmat(a,b)
 
   result.shape = @[M, N]
   result.strides = @[N, 1]
@@ -233,7 +233,7 @@ proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
       if a.rank == 2 and b.rank == 2:    matmat_blis(a, b, result)
       elif a.rank == 2 and b.rank == 1:  matvec_blis(a, b, result)
       else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
-  
+
   if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, result)
   elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
   else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")

@@ -23,4 +23,5 @@ include ./arraymancer,
         ./arraymancer/init_cuda,
         ./arraymancer/display_cuda,
         ./arraymancer/operators_blas_l1_cuda,
+        ./arraymancer/operators_blas_l2l3_cuda,
         ./arraymancer/shapeshifting_cuda

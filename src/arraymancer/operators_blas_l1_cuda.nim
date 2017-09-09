@@ -29,6 +29,17 @@ template cudaVV_A_eq_A_p_bB[T: SomeReal](
              b.get_data_ptr, b.strides[0],
              a.get_data_ptr, a.strides[0])
 
+template cudaVV_C_eq_A_p_bB[T: SomeReal](a: CudaTensor,
+                                         beta: T, b,
+                                         result: CudaTensor[T]) =
+  # Vector: C = A + beta B
+  result = newCudaTensor[T](a.shape)
+
+  check cublas_copy(a.len, a.get_data_ptr, a.strides[0],
+                    result.get_data_ptr, result.strides[0])
+
+  cudaVV_A_eq_A_p_bB(result, beta, b)
+
 template cudaMM_A_eq_aA_p_bB[T: SomeReal](
   alpha: T, a: var CudaTensor[T],
   beta: T, b: CudaTensor[T]) =
@@ -61,17 +72,6 @@ template cudaMM_A_eq_aA_p_bB[T: SomeReal](
                     b.get_data_ptr, ld_B,
                     a.get_data_ptr, a.strides[1])
   # In column-majour layout a.shape[0] == a.strides[1]
-
-template cudaVV_C_eq_A_p_bB[T: SomeReal](a: CudaTensor,
-                                         beta: T, b,
-                                         result: CudaTensor[T]) =
-  # Vector: C = A + beta B
-  result = newCudaTensor[T](a.shape)
-
-  check cublas_copy(a.len, a.get_data_ptr, a.strides[0],
-                    result.get_data_ptr, result.strides[0])
-
-  cudaVV_A_eq_A_p_bB(result, beta, b)
 
 template cudaMM_C_eq_aA_p_aB[T: SomeReal](alpha: T, a: CudaTensor[T],
                                           beta: T, b: CudaTensor[T],

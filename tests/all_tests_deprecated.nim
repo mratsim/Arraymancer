@@ -20,4 +20,5 @@ import ../src/arraymancer,
         ./test_display_deprecated,
         ./test_operators_blas_deprecated,
         ./test_aggregate_deprecated,
-        ./test_shapeshifting_deprecated
+        ./test_shapeshifting_deprecated,
+        ./test_ufunc_deprecated

@@ -20,4 +20,5 @@ import ../src/arraymancer,
         ./test_display,
         ./test_operators_blas,
         ./test_aggregate,
-        ./test_shapeshifting
+        ./test_shapeshifting,
+        ./test_ufunc

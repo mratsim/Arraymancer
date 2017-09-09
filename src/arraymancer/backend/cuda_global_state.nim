@@ -29,8 +29,8 @@ check cublasCreate(addr defaultHandle)
 
 proc cudaRelease() {.noconv.}=
   # Release all cuda resources
-  check cudaStreamDestroy(defaultStream)
   check cublasDestroy(defaultHandle)
+  check cudaStreamDestroy(defaultStream)
 
   when defined(debug):
     echo "CUDA and CuBLAS resources successfully released"

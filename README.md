@@ -40,8 +40,9 @@ The deep learning frameworks are currently in two camps:
 
 Putting a research model in production, on a drone or as a webservice for example, is difficult:
 - Managing Python versions and environment is hell
-- Python does not run on embedded devices or mobile phones
+- Python data science ecosystem does not run on embedded devices (Nvidia Tegra/drones) or mobile phones
 - Transforming a tuned research model (in Python) to a usable Caffe or Darknet model (in C) is almost impossible. PMML is supposed to be the "common" XML description of ML models but is not really supported by anyone.
+**Edit - Sept 7, 2017: Microsoft and Facebook are announcing [Open Neural Network Exchange](https://research.fb.com/facebook-and-microsoft-introduce-new-open-ecosystem-for-interchangeable-ai-frameworks/)**
 - Tensorflow is supposed to bridge the gap between research and production but its syntax and ergonomics are a pain to work with.
 - Deployed models are static, there is no interface to add a new observation/training sample to any framework. The end goal is to use a model as a webservice.
 - No framework are designed yet with javascript/WebAssembly in mind.

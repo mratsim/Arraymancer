@@ -21,14 +21,14 @@
 # Vector copy
 proc cublas_copy[T: SomeReal](
   n: int; x: ptr T; incx: int;
-  y: ptr T; incy: int): cublasStatus_t {.inline.}=
+  y: ptr T; incy: int) {.inline.}=
 
   check cublasSetStream(defaultHandle, defaultStream)
 
   when T is float32:
-    cublasScopy(defaultHandle, n.cint, x, incx.cint, y, incy.cint)
+    check cublasScopy(defaultHandle, n.cint, x, incx.cint, y, incy.cint)
   elif T is float64:
-    cublasDcopy(defaultHandle, n.cint, x, incx.cint, y, incy.cint)
+    check cublasDcopy(defaultHandle, n.cint, x, incx.cint, y, incy.cint)
   else:
     raise newException(ValueError, "Unreachable")
 
@@ -37,14 +37,14 @@ proc cublas_dot[T: SomeReal](
   n: int;
   x: ptr T; incx: int;
   y: ptr T; incy: int;
-  output: ptr T): cublasStatus_t {.inline.}=
+  output: ptr T) {.inline.}=
 
   check cublasSetStream(defaultHandle, defaultStream)
 
   when T is float32:
-    cublasSdot(defaultHandle, n.cint, x, incx.cint, y, incy.cint, output)
+    check cublasSdot(defaultHandle, n.cint, x, incx.cint, y, incy.cint, output)
   elif T is float64:
-    cublasDdot(defaultHandle, n.cint, x, incx.cint, y, incy.cint, output)
+    check cublasDdot(defaultHandle, n.cint, x, incx.cint, y, incy.cint, output)
   else:
     raise newException(ValueError, "Unreachable")
 
@@ -53,40 +53,40 @@ proc cublas_axpy[T: SomeReal](
   n: int;
   alpha: T;
   x: ptr T; incx: int;
-  y: ptr T; incy: int): cublasStatus_t {.inline.}=
+  y: ptr T; incy: int) {.inline.}=
   # Y = alpha X + Y
   # X, Y: vectors
 
-  # We need to pass an address to CuBLAS for beta
+  # We need to pass an address to CuBLAS for alpha
   # If the input is not a variable but a float directly
   # It won't have an address and can't be used by CUBLAS
-  let al = alpha
+  var al = alpha
 
   check cublasSetStream(defaultHandle, defaultStream)
 
   when T is float32:
-    cublasSaxpy(defaultHandle, n.cint, al.unsafeAddr, x, incx.cint, y, incy.cint)
+    check cublasSaxpy(defaultHandle, n.cint, addr al, x, incx.cint, y, incy.cint)
   elif T is float64:
-    cublasDaxpy(defaultHandle, n.cint, al.unsafeAddr, x, incx.cint, y, incy.cint)
+    check cublasDaxpy(defaultHandle, n.cint, addr al, x, incx.cint, y, incy.cint)
   else:
     raise newException(ValueError, "Unreachable")
 
 # Scalar multiplication
 proc cublas_scal[T: SomeReal](
   n: int; alpha: T;
-  x: ptr T; incx: int): cublasStatus_t {.inline.}=
+  x: ptr T; incx: int) {.inline.}=
 
   # We need to pass an address to CuBLAS for beta
   # If the input is not a variable but a float directly
   # It won't have an address and can't be used by CUBLAS
-  let al = alpha
+  var al = alpha
 
   check cublasSetStream(defaultHandle, defaultStream)
 
   when T is float32:
-    cublasSscal(defaultHandle, n.cint, al.unsafeAddr, x, incx.cint)
+    check cublasSscal(defaultHandle, n.cint, addr al, x, incx.cint)
   elif T is float64:
-    cublasDscal(defaultHandle, n.cint, al.unsafeAddr, x, incx.cint)
+    check cublasDscal(defaultHandle, n.cint, addr al, x, incx.cint)
   else:
     raise newException(ValueError, "Unreachable")
 
@@ -97,26 +97,30 @@ proc cublas_geam[T: SomeReal](
   m, n: int;
   alpha: T; A: ptr T; lda: int;
   beta: T; B: ptr T; ldb: int;
-  C: ptr T; ldc: int): cublasStatus_t {.inline.}=
+  C: ptr T; ldc: int) {.inline.}=
 
-  let
+
+  # We need to pass an address to CuBLAS for beta
+  # If the input is not a variable but a float directly
+  # It won't have an address and can't be used by CUBLAS
+  var
     al = alpha
     be = beta
 
   check cublasSetStream(defaultHandle, defaultStream)
 
   when T is float32:
-    cublasSgeam(defaultHandle,
+    check cublasSgeam(defaultHandle,
             transa, transb, m.cint, n.cint,
-            al.unsafeAddr, A, lda.cint,
-            be.unsafeAddr, B, ldb.cint,
+            addr al, A, lda.cint,
+            addr be, B, ldb.cint,
             C, ldc.cint)
   elif T is float64:
-    cublasDgeam(defaultHandle,
-                transa, transb, m.cint, n.cint,
-            al.unsafeAddr, A, lda.cint,
-            be.unsafeAddr, B, ldb.cint,
-                C, ldc.cint)
+    check cublasDgeam(defaultHandle,
+            transa, transb, m.cint, n.cint,
+            addr al, A, lda.cint,
+            addr be, B, ldb.cint,
+            C, ldc.cint)
   else:
     raise newException(ValueError, "Unreachable")
 
@@ -125,27 +129,30 @@ proc cublasSgemv[T: SomeReal](
   trans: cublasOperation_t, m, n: int,
   alpha: T, A: ptr T, lda: int,
   x: ptr T, incx: int,
-  beta: T, y: ptr T, incy: int): cublasStatus_t {.inline.}=
+  beta: T, y: ptr T, incy: int) {.inline.}=
   # y = alpha A * x + beta y
   # A: matrix
   # x, y: vectors
 
-  let
+  # We need to pass an address to CuBLAS for beta
+  # If the input is not a variable but a float directly
+  # It won't have an address and can't be used by CUBLAS
+  var
     al = alpha
     be = beta
 
   check cublasSetStream(defaultHandle, defaultStream)
 
   when T is float32:
-    ublasSgemv*(defaultHandle,
+    check ublasSgemv*(defaultHandle,
                 trans, m.cint, n.cint,
-                al.unsafeAddr, A, lda.cint, x, incx.cint,
-                be.unsafeAddr, y, incy.cint)
+                addr al, A, lda.cint, x, incx.cint,
+                addr be, y, incy.cint)
   elif T is float64:
-    cublasDgemv*(defaultHandle,
+    check cublasDgemv*(defaultHandle,
                 trans, m.cint, n.cint,
-                al.unsafeAddr, A, lda.cint, x, incx.cint,
-                be.unsafeAddr, y, incy.cint)
+                addr al, A, lda.cint, x, incx.cint,
+                addr be, y, incy.cint)
 
 # L3 BLAS
 proc cublas_gemm*[T: SomeReal](
@@ -153,27 +160,30 @@ proc cublas_gemm*[T: SomeReal](
   m, n, k: int,
   alpha: T, A: ptr T, lda: int,
   B: ptr T; ldb: int;
-  beta: T; C: ptr T; ldc: int): cublasStatus_t {.inline.}=
+  beta: T; C: ptr T; ldc: int) {.inline.}=
   # C = alpha A * B + beta C
   # A, B, C: matrices
 
-  let
+  # We need to pass an address to CuBLAS for beta
+  # If the input is not a variable but a float directly
+  # It won't have an address and can't be used by CUBLAS
+  var
     al = alpha
     be = beta
 
   check cublasSetStream(defaultHandle, defaultStream)
 
   when T is float32:
-    cublasSgemm(defaultHandle,
+    check cublasSgemm(defaultHandle,
                 transa, transb,
                 m.cint, n.cint, k.cint,
-                al.unsafeAddr, A, lda.cint,
+                addr al, A, lda.cint,
                 B, ldb.cint,
-                be.unsafeAddr, C, ldc.cint)
+                addr be, C, ldc.cint)
   elif T is float64:
-    cublasDgemm(defaultHandle,
+    check cublasDgemm(defaultHandle,
                 transa, transb,
                 m.cint, n.cint, k.cint,
-                al.unsafeAddr, A, lda.cint,
+                addr al, A, lda.cint,
                 B, ldb.cint,
-                be.unsafeAddr, C, ldc.cint)
+                addr be, C, ldc.cint)

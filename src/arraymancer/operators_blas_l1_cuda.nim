@@ -19,10 +19,10 @@ proc cudaVV_A_eq_A_p_bB[T: SomeReal](
   a: var CudaTensor[T], beta: T, b: CudaTensor[T]) {.inline.}=
   # Vector: A = A + beta B
 
-  check cublas_axpy(a.shape[0],
-                    beta,
-                    b.get_data_ptr, b.strides[0],
-                    a.get_data_ptr, a.strides[0])
+  cublas_axpy(a.shape[0],
+              beta,
+              b.get_data_ptr, b.strides[0],
+              a.get_data_ptr, a.strides[0])
 
 proc cudaVV_C_eq_A_p_bB[T: SomeReal]( a: CudaTensor[T],
                                       beta: T, b: CudaTensor[T],
@@ -30,8 +30,8 @@ proc cudaVV_C_eq_A_p_bB[T: SomeReal]( a: CudaTensor[T],
   # Vector: C = A + beta B
   result = newCudaTensor[T](a.shape)
 
-  check cublas_copy(a.len, a.get_data_ptr, a.strides[0],
-                    result.get_data_ptr, result.strides[0])
+  cublas_copy(a.len, a.get_data_ptr, a.strides[0],
+              result.get_data_ptr, result.strides[0])
 
   cudaVV_A_eq_A_p_bB(result, beta, b)
 
@@ -56,13 +56,13 @@ proc cudaMM_A_eq_aA_p_bB[T: SomeReal](
     ld_B =  if b_is_colMajor: b.strides[1]
             else: b.strides[0]
 
-  check cublas_geam(CUBLAS_OP_N, transpose_B,
-                    a.shape[0], a.shape[1],
-                    alpha,
-                    a.get_data_ptr, a.strides[1],
-                    beta,
-                    b.get_data_ptr, ld_B,
-                    a.get_data_ptr, a.strides[1])
+  cublas_geam(CUBLAS_OP_N, transpose_B,
+              a.shape[0], a.shape[1],
+              alpha,
+              a.get_data_ptr, a.strides[1],
+              beta,
+              b.get_data_ptr, ld_B,
+              a.get_data_ptr, a.strides[1])
   # In column-majour layout a.shape[0] == a.strides[1]
 
 proc cudaMM_C_eq_aA_p_aB[T: SomeReal](alpha: T, a: CudaTensor[T],
@@ -88,13 +88,13 @@ proc cudaMM_C_eq_aA_p_aB[T: SomeReal](alpha: T, a: CudaTensor[T],
     ld_B = if b_is_colMajor: b.strides[1]
            else: b.strides[0]
 
-  check cublas_geam(transpose_A, transpose_B,
-                    a.shape[0], a.shape[1],
-                    alpha,
-                    a.get_data_ptr, ld_A,
-                    beta,
-                    b.get_data_ptr, ld_B,
-                    result.get_data_ptr, result.strides[1])
+  cublas_geam(transpose_A, transpose_B,
+              a.shape[0], a.shape[1],
+              alpha,
+              a.get_data_ptr, ld_A,
+              beta,
+              b.get_data_ptr, ld_B,
+              result.get_data_ptr, result.strides[1])
 
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
@@ -102,10 +102,10 @@ proc cudaMM_C_eq_aA_p_aB[T: SomeReal](alpha: T, a: CudaTensor[T],
 proc `.*`*[T: SomeReal](a, b: CudaTensor[T]): T {.inline.}=
   ## Vector to Vector dot (scalar) product
   when compileOption("boundChecks"): check_dot_prod(a,b)
-  check cublas_dot( a.shape[0],
-                    a.get_data_ptr, a.strides[0],
-                    b.get_data_ptr, b.strides[0],
-                    addr result)
+  cublas_dot( a.shape[0],
+              a.get_data_ptr, a.strides[0],
+              b.get_data_ptr, b.strides[0],
+              addr result)
 
 proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Tensor in-place addition
@@ -176,7 +176,7 @@ proc `*=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
   # We multiply all elements of the CudaTensor regardless of shape/strides
   # So this operation can be applied to tensors of all ranks.
   # Hence we use the whole allocated length and a stride of 1
-  check cublas_scal(t.len, a, t.get_data_ptr, 1)
+  cublas_scal(t.len, a, t.get_data_ptr, 1)
 
 proc `*`*[T:SomeReal](a: T, t: CudaTensor[T]): CudaTensor[T] {.inline.}=
   ## Tensor multiplication by a scalar

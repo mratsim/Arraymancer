@@ -37,11 +37,11 @@ proc cudaMM_C_eq_aAB_mul_bC[T: SomeReal](
     
     ld_C = c.strides[1] # C is always F contiguous (TODO test)
 
-  check cublas_gemm(transpose_A, transpose_B,
-                    a.shape[0], b.shape[1], a.shape[1],
-                    alpha, a.get_data_ptr, ld_A,
-                    b.get_data_ptr, ld_B,
-                    beta, c.get_data_ptr, ld_C)
+  cublas_gemm(transpose_A, transpose_B,
+              a.shape[0], b.shape[1], a.shape[1],
+              alpha, a.get_data_ptr, ld_A,
+              b.get_data_ptr, ld_B,
+              beta, c.get_data_ptr, ld_C)
 
 proc `*`*[T: SomeReal](a, b: CudaTensor[T]): CudaTensor[T] =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector) on CUDA

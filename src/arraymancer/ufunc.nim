@@ -35,6 +35,23 @@ proc fmap*[T, U](t: Tensor[T], g: T -> U): Tensor[U] {.noSideEffect.}=
     result.data[i] = g(val)
     inc i
 
+proc fmap2*[T, U, V](t1: Tensor[T], t2: Tensor[U], g: (T,U) -> V): Tensor[V] {.noSideEffect.}=
+  ## Map a binary function (T,U) -> V on Tensor[T]
+  ## It applies the function to each matching elements
+  ## Tensors must have the same shape
+
+  assert t1.shape == t2.shape
+
+  result.shape = t1.shape
+  result.strides = shape_to_strides(result.shape)
+  result.offset = 0
+
+  result.data = newSeq[U](result.shape.product)
+  var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
+  for ai, bi in zip(t1.values, t2.values):
+    result.data[i] = g(ai, bi)
+    inc i
+
 template makeUniversal*(func_name: untyped) =
   # Lift an unary function into an exported universal function.
   #

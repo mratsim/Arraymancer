@@ -15,23 +15,18 @@
 # ####################################################################
 # Helper proc
 
-template cudaVV_A_eq_A_p_bB[T: SomeReal](
-  a: var CudaTensor[T], beta: T, b: CudaTensor[T]) =
+proc cudaVV_A_eq_A_p_bB[T: SomeReal](
+  a: var CudaTensor[T], beta: T, b: CudaTensor[T]) {.inline.}=
   # Vector: A = A + beta B
 
-  # We need to pass an address to CuBLAS for beta
-  # If the input is not a variable but a float directly
-  # It won't have an address and can't be used by CUBLAS
-  let be = beta
-
   check cublas_axpy(a.shape[0],
-             unsafeAddr(be),
-             b.get_data_ptr, b.strides[0],
-             a.get_data_ptr, a.strides[0])
+                    beta,
+                    b.get_data_ptr, b.strides[0],
+                    a.get_data_ptr, a.strides[0])
 
-template cudaVV_C_eq_A_p_bB[T: SomeReal](a: CudaTensor,
-                                         beta: T, b,
-                                         result: CudaTensor[T]) =
+proc cudaVV_C_eq_A_p_bB[T: SomeReal]( a: CudaTensor[T],
+                                      beta: T, b: CudaTensor[T],
+                                      result: var CudaTensor[T]) {.inline.}=
   # Vector: C = A + beta B
   result = newCudaTensor[T](a.shape)
 
@@ -40,7 +35,7 @@ template cudaVV_C_eq_A_p_bB[T: SomeReal](a: CudaTensor,
 
   cudaVV_A_eq_A_p_bB(result, beta, b)
 
-template cudaMM_A_eq_aA_p_bB[T: SomeReal](
+proc cudaMM_A_eq_aA_p_bB[T: SomeReal](
   alpha: T, a: var CudaTensor[T],
   beta: T, b: CudaTensor[T]) =
   # Matrix: A = alpha A + beta B
@@ -52,30 +47,27 @@ template cudaMM_A_eq_aA_p_bB[T: SomeReal](
   if not is_F_contiguous(a):
     raise newException(ValueError, "NotImplemented: the modified tensor must have a column-major layout")
 
-  let transpose_B = if is_F_contiguous(b): CUBLAS_OP_N
-                    else: CUBLAS_OP_T
-  let ld_B = if is_F_contiguous(b): b.strides[1]
-             else: b.strides[0]
-
-  # We need to pass an address to CuBLAS for alpha
-  # If the input is not a variable but a float directly
-  # It won't have an address and can't be used by CUBLAS
   let
-    al = alpha
-    be = beta
+    b_is_colMajor = b.is_F_contiguous
+
+    transpose_B = if b_is_colMajor: CUBLAS_OP_N
+                  else: CUBLAS_OP_T
+
+    ld_B =  if b_is_colMajor: b.strides[1]
+            else: b.strides[0]
 
   check cublas_geam(CUBLAS_OP_N, transpose_B,
                     a.shape[0], a.shape[1],
-                    unsafeAddr(al),
+                    alpha,
                     a.get_data_ptr, a.strides[1],
-                    unsafeAddr(be),
+                    beta,
                     b.get_data_ptr, ld_B,
                     a.get_data_ptr, a.strides[1])
   # In column-majour layout a.shape[0] == a.strides[1]
 
-template cudaMM_C_eq_aA_p_aB[T: SomeReal](alpha: T, a: CudaTensor[T],
+proc cudaMM_C_eq_aA_p_aB[T: SomeReal](alpha: T, a: CudaTensor[T],
                                           beta: T, b: CudaTensor[T],
-                                          result: CudaTensor[T]) =
+                                          result: var CudaTensor[T]) =
   # TODO: remove this contiguous layout constraint (via conversion or custom kernel)
   if not (isContiguous(a) and isContiguous(b)):
     raise newException(ValueError, "NotImplemented: for now both tensors should be contiguous")
@@ -83,25 +75,24 @@ template cudaMM_C_eq_aA_p_aB[T: SomeReal](alpha: T, a: CudaTensor[T],
   result = newCudaTensor[T](a.shape) # result is colMajor
 
   let
-    al = alpha
-    be = beta
+    a_is_colMajor = a.is_F_contiguous
+    b_is_colMajor = b.is_F_contiguous
 
-  let
-    transpose_A = if is_F_contiguous(a): CUBLAS_OP_N
+    transpose_A = if a_is_colMajor: CUBLAS_OP_N
                   else: CUBLAS_OP_T
-    ld_A = if is_F_contiguous(a): a.strides[1]
+    ld_A = if a_is_colMajor: a.strides[1]
            else: a.strides[0]
 
-    transpose_B = if is_F_contiguous(b): CUBLAS_OP_N
+    transpose_B = if b_is_colMajor: CUBLAS_OP_N
                   else: CUBLAS_OP_T
-    ld_B = if is_F_contiguous(b): b.strides[1]
+    ld_B = if b_is_colMajor: b.strides[1]
            else: b.strides[0]
 
   check cublas_geam(transpose_A, transpose_B,
                     a.shape[0], a.shape[1],
-                    unsafeAddr(al),
+                    alpha,
                     a.get_data_ptr, ld_A,
-                    unsafeAddr(be),
+                    beta,
                     b.get_data_ptr, ld_B,
                     result.get_data_ptr, result.strides[1])
 
@@ -182,12 +173,10 @@ proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] =
 proc `*=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
   ## Tensor inplace multiplication by a scalar
 
-  let alpha = a # We need an pointer/address, if is a value it wouldn't have one
-
   # We multiply all elements of the CudaTensor regardless of shape/strides
   # So this operation can be applied to tensors of all ranks.
   # Hence we use the whole allocated length and a stride of 1
-  check cublas_scal(t.len, unsafeAddr(alpha), t.get_data_ptr, 1)
+  check cublas_scal(t.len, a, t.get_data_ptr, 1)
 
 proc `*`*[T:SomeReal](a: T, t: CudaTensor[T]): CudaTensor[T] {.inline.}=
   ## Tensor multiplication by a scalar

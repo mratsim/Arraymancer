@@ -3,15 +3,6 @@ language: c
 
 cache: ccache
 
-env:
-  # Build and test against the master (stable) and devel branches of Nim
-  - CHANNEL=stable
-  - CHANNEL=devel
-compiler:
-  # Build and test using both gcc and clang
-  - gcc
-  - clang
-
 matrix:
   include:
     # Build and test against the master (stable) and devel branches of Nim

@@ -12,12 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
-  ## Tensor comparison
-  if a.shape != b.shape: return false
-
-  for ai, bi in zip(a.values,b.values):
-    ## Iterate through the tensors using stride-aware iterators
-    ## Returns early if false
-    if ai != bi: return false
-  return true
+proc `$`*[T](t: CudaTensor[T]): string {.noSideEffect.} =
+  ## Pretty-print a CudaTensor (when using ``echo`` for example)
+  let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & "Cuda" & "\""
+  
+  let cpu_t = t.cpu()
+  
+  if t.rank <= 2:
+    return desc & "\n" & cpu_t.disp2d
+  elif t.rank == 3:
+    return desc & "\n" & cpu_t.disp3d
+  elif t.rank == 4:
+    return desc & "\n" & cpu_t.disp4d
+  else:
+    return desc & "\n" & " -- NotImplemented: Display not implemented for tensors of rank > 4"

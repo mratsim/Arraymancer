@@ -2,17 +2,48 @@
 
 This is a notepad to track ideas, challenges, future work and open issues/limitations of Arraymancer.
 
+<!-- TOC -->
+
+- [Design document](#design-document)
+    - [Storage convention](#storage-convention)
+    - [Pending issues](#pending-issues)
+    - [Memory/Perf considerations](#memoryperf-considerations)
+    - [Data structure considerations](#data-structure-considerations)
+    - [CUDA considerations](#cuda-considerations)
+    - [Coding-style](#coding-style)
+    - [Features](#features)
+    - [TODO](#todo)
+    - [Ideas rejected](#ideas-rejected)
+        - [Having an unified Tensor type instead of Tensor, CudaTensor, etc.](#having-an-unified-tensor-type-instead-of-tensor-cudatensor-etc)
+        - [Have the rank of the Tensor be part of its type.](#have-the-rank-of-the-tensor-be-part-of-its-type)
+        - [Have the kind of stride (C_contiguous, F_contiguous) be part of its type.](#have-the-kind-of-stride-c_contiguous-f_contiguous-be-part-of-its-type)
+        - [Implement offsets and iterator using pointers.](#implement-offsets-and-iterator-using-pointers)
+        - [Shallow-copy by default:](#shallow-copy-by-default)
+        - [Have polymorphic procs depending on a backend parameter](#have-polymorphic-procs-depending-on-a-backend-parameter)
+    - [Readings](#readings)
+        - [Performance](#performance)
+
+<!-- /TOC -->
+
 ## Storage convention
 
 Either C or Fortran contiguous arrays are needed for BLAS optimization for Tensor of Rank 1 or 2
-* C_contiguous: Row Major - Default. Last index is the fastest changing (columns in 2D, depth in 3D) - Rows (slowest), Columns, Depth (fastest)
-* F_contiguous: Col Major. First index is the fastest changing (rows in 2D, depth in 3D) - Rows (fastest), Columns, Depth (slowest)
+* C_contiguous: Row Major - Default for CPU. Last index is the fastest changing (columns in 2D, depth in 3D) - Rows (slowest), Columns, Depth (fastest)
+* F_contiguous: Col Major - Default for CUDA. First index is the fastest changing (rows in 2D, depth in 3D) - Rows (fastest), Columns, Depth (slowest)
 * Universal: Any strides
 
+Historically Fortran and all optimized BLAS libraries used column-major layout by default.
+Today Fortran, Matlab, R, Julia, OpenGL and CUDA uses column-major layout.
+On the other hand, C, Python and several deep learning libraries (Numpy, Torch, Caffe) uses row-major layout.
+
+On CPU, Arraymancer follows the C/Python crowd. A practical bonus is that Matrix-Vector multiplication should be faster (we traverse each column in a row then change row --> row change the slowest).
+On CUDA, Arraymancer follows (temporarily) the column-major layout, as many CUBLAS in-place operations expect that layout. Rewrite rules will be used for "cuda()" proc so that, if possible, CudaTensors are initialized directly on the device with column-major layout and don't need conversion.
+Arraymancer will use row-major on CUDA when CUBLAS operations are replaced with custom kernels.
+
 ## Pending issues
-* There is no matrix multiplications and Matrix-Vector multiplication for integers.
-  You can convert them to `float64` before and then use floating-point BLAS (will cover `int32` without precision loss).
 * Switch to full inline iterators: https://forum.nim-lang.org/t/2972
+* Load images as tensors:
+https://github.com/define-private-public/stb_image-Nim/issues/3
 
 ## Memory/Perf considerations
 * Current CPUs cache line is 64 bytes. The Tensor data structure at 32 bytes has an ideal size.
@@ -33,6 +64,29 @@ Contrary to Python, the compiler can do the following optimization:
   - Copy elision
   - Move on assignment
   - Detect if the original Tensor is not used anymore and the copy is unneeded.
+If further no-copy optimizations are needed, move optimization with {call} can be used so the compiler automatically choose a no-copy version if only one reference exists: https://nim-lang.org/docs/manual.html#ast-based-overloading-move-optimization
+
+## CUDA considerations
+
+* Reclaiming memory: currently all CudaTensors are created via new + finalizer. The finalizer proc is automatically used after (at a non-deterministic time) the object goes out of scope. In case there are memory leaks, it might be because a CudaTensor wasn't created by new, and so need a `=destroy` destructor proc. Discussions on IRC highlight that finalizer is enough for yglukhov's game engine.
+
+* Default to column-major layout (Fortran order).
+Internally CUDA/CuBLAS works with column major layout. Creating CudaTensor column-major by default may avoid temporary transpose allocation.
+
+* Currently CudaTensor are shallow-copied by default.
+From a consistency point of view it would be best if both Tensor and CudaTensor have the same behaviour.
+WIP: Implementing value semantics with overloading the assignment operator:
+https://nim-lang.org/docs/manual.html#type-bound-operations
+To avoid unnecessary allocation a no-copy assignment can be used if references are unique.
+https://nim-lang.org/docs/manual.html#ast-based-overloading-move-optimization
+
+* Async operations
+Operations on CUDA device ("Host -> GPU" copy, additions, substraction, etc) are non-blocking for the host.
+Meaning the program can proceed with CPU computation.
+"GPU -> Host" copy operation is blocking to avoid data races.
+
+In the future, independant operations like A+B and C+D might be scheduled in different Cuda Streams for simultaneous processing.
+
 
 ## Coding-style
 * Prefer `when` to `if` for compile-time evaluation
@@ -45,25 +99,51 @@ Contrary to Python, the compiler can do the following optimization:
 
 ## Features
 
-* How to implement integer matrix multiplication and matrix-vector multiplication.
-    1. Convert to float64, use BLAS, convert back to int. No issue for int32 has them all. Int64 may lose some precision.
-    2. Implement a cache-oblivious matrix multiplication. Implementation in [Julia](https://github.com/JuliaLang/julia/blob/master/base/linalg/matmul.jl#L490). [Paper](http://ocw.raf.edu.rs/courses/electrical-engineering-and-computer-science/6-895-theory-of-parallel-systems-sma-5509-fall-2003/readings/cach_oblvs_thsis.pdf).
+* Implement a Tensor comprehension macro. It may be able to leverage mitems instead of result[i,j] = alpha * (i - j) * (i + j).
 
-* Implement a Tensor comprehension macro. It may be able to leverage mitems instead of result[i,j] = alpha * (i - j) * (i + j)
+* Implement einsum: http://ajcr.net/Basic-guide-to-einsum/
 
 
 ## TODO
 1. Tests for array creation utilities (zeros, ones, zeros_like, random ...)
 2. Tests for axis iterators
-3. GPU support: Cuda and Magma first. OpenCL when AMD gets its act together.
+3. GPU support: Cuda and Magma first. OpenCL/ROCm when AMD gets its act together.
 4. BLAS operation fusion: `transpose(A) * B` or `Ax + y` should be fused in one operation.
-5. Implement GEMM and GEMV for integers
 
-999. (Needs thinking) Support sparse matrices. There is Magma and CuSparse for GPU. What to use? Interface should be similar to BLAS and should compile on ARM/embedded devices like Jetson TX1.
+999. (Needs thinking) Support sparse matrices. There is Magma and CuSparse for GPU. What to use for CPU? Interface should be similar to BLAS and should compile on ARM/embedded devices like Jetson TX1.
 
 ## Ideas rejected
 
-### Have the rank of the Tensor be part of its type. 
+### Having an unified Tensor type instead of Tensor, CudaTensor, etc.
+
+Rejected because of maintenance/difficult to debug errors. For example for this data structure:
+
+```Nim
+type
+  Backend* = enum
+    Cpu,
+    Cuda
+
+  Tensor*[B: static[Backend]; T] = object
+    shape: seq[int]
+    strides: seq[int]
+    offset: int
+    when B == Backend.Cpu:
+      data: seq[T]
+    else:
+      data_ptr: ptr T
+
+template shape*(t: Tensor): seq[int] =
+  t.shape
+```
+
+The template will not compile due to "Cannot generate B", because due to the conditional when, Nim wants B in all proc declaration. The error points to the type declaration and not the proc declaration which makes it a pain to debug.
+
+Furthermore the comparison operator "==" fails with "Cannot generate B" and I found no solution to that.
+
+Also having more independant types will probably be easier for future features (distributed compute, MPI ?).
+
+### Have the rank of the Tensor be part of its type.
 Rejected because impractical for function chaining.
     Advantage: Dispatch and compatibility checking at compile time (Matrix * Matrix and Matrix * Vec)
 ### Have the kind of stride (C_contiguous, F_contiguous) be part of its type.
@@ -94,6 +174,9 @@ Perf note: from a perf point of view, (integer ?) dot product is vectorized on C
 
 ### Shallow-copy by default:
 Rejected until benchmarked otherwise.
+If further no-copy optimizations are needed, move optimization with {call} can be used so the compiler automatically choose a no-copy version if only one reference exists: https://nim-lang.org/docs/manual.html#ast-based-overloading-move-optimization
+
+For CudaTensor, value semantics will be implemented.
 
 `data` is currently stored in a "seq" that always deep copy on var assignement. It doesn't copy on let assignement.
 
@@ -114,3 +197,23 @@ Also using seq is far easier than implementing my own shallowCopy / refcounting 
 Nim GC perf: https://gist.github.com/dom96/77b32e36b62377b2e7cadf09575b8883
 
 In-depth [read](http://blog.stablekernel.com/when-to-use-value-types-and-reference-types-in-swift) (for Swift but applicable): performance, safety, usability
+
+
+### Have polymorphic procs depending on a backend parameter
+With the [following commit](https://github.com/mratsim/Arraymancer/blob/260386da01c9185f551f8afbe41d2c4beeeee92c/src/arraymancer/init_common.nim) in Cuda branch, all init procs accepted a backend parameter (Cpu, Cuda, ...). In case the backend had dedicated function like "zeros", this would avoid having to create tensor on the Cpu and then copy it to the backend.
+The downside is
+- Complicating the procs by the use of untyped templates, auto return types, "when t is Tensor" or "when backend is Cpu". This might promote spaghetti code.
+- All new backends would require modification to the base procs, with more risks of introducing new bugs.
+- In the case of "init" function, it requires the `check_nested_elements` proc in a file, then __Cpu__ and __Cuda__ specific code in another, then a __common__ file with the polymorphic procs. This would make it difficult to understand and contribute to the code.
+- Only a few init functions can be used directly on GPU, **ones** and **randomTensor** will require creation on Cpu backend anyway
+Two alternatives are possible to avoid that:
+- Only provide the base proc for Cpu and have a rewrite rule to transform zeros(...).toCuda() into the direct Cuda function if it exists. (aka Composition)
+- Use qualified import, like `ìmport arraymancer as arc` and `ìmport arraymancer/cuda as cu` and then `arc.zeros` or `cu.zeros`
+
+## Readings
+
+### Performance
+- Compute-bound, memory-bound and IO-bound optimization: http://leto.net/docs/C-optimization.php
+- Implementing matmul from scratch: http://apfel.mathematik.uni-ulm.de/~lehn/ulmBLAS/
+- Implementing matmul in Nvidia assembler from scratch: https://github.com/NervanaSystems/maxas/wiki/SGEMM
+- In-depth discussion on fast convolution (NCHW vs CHNW representation, Winograd kernel): https://github.com/soumith/convnet-benchmarks/issues/93

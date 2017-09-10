@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../arraymancer,
+import ../src/arraymancer,
         ./test_init.nim,
         ./test_comparison,
         ./test_accessors,
@@ -20,4 +20,5 @@ import ../arraymancer,
         ./test_display,
         ./test_operators_blas,
         ./test_aggregate,
-        ./test_shapeshifting
+        ./test_shapeshifting,
+        ./test_ufunc

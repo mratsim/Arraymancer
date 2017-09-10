@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc `|*|`*[T: SomeNumber](a, b: Tensor[Cpu,T]): Tensor[Cpu,T] {.noSideEffect.} =
+proc `|*|`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Element-wise multiplication (hadamard product)
   ## TODO: find a good symbol
   when compileOption("boundChecks"): check_add(a,b)

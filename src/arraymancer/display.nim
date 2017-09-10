@@ -32,8 +32,8 @@ proc bounds_display(t: Tensor,
       return "|" & $val
   return "\t" & $val
 
-## TODO: Create a generic n-dimensional display function using nested tables.
-## Example code in hTensor: https://github.com/albertoruiz/hTensor/blob/b36c3748b211c7f41c9af9d486c6ef320e2b7585/lib/Numeric/LinearAlgebra/Array/Display.hs#L92
+# TODO: Create a generic n-dimensional display function using nested tables.
+# Example code in hTensor: https://github.com/albertoruiz/hTensor/blob/b36c3748b211c7f41c9af9d486c6ef320e2b7585/lib/Numeric/LinearAlgebra/Array/Display.hs#L92
 
 # Last dim always in column (except vector)
 # If rank is odd, first dim is along columns
@@ -83,11 +83,11 @@ proc disp3d(t: Tensor): string {.noSideEffect.} =
   let sep: seq[string] = @["|"]
   let empty: seq[string] = @[]
 
-  var buffer = empty.repeat(t.shape[1]).toTensor(Cpu)
+  var buffer = empty.repeat(t.shape[1]).toTensor()
 
   for t0 in t.axis(0):
     buffer = buffer.concat(
-              sep.repeat(t0.shape[1]).toTensor(Cpu).reshape(t.shape[1],1),
+              sep.repeat(t0.shape[1]).toTensor().reshape(t.shape[1],1),
               t0.fmap(x => $x).reshape(t.shape[1], t.shape[2]),
               axis = 1
               )
@@ -102,32 +102,33 @@ proc disp4d(t: Tensor): string {.noSideEffect.} =
   let empty: seq[string] = @[]
 
   # First create seq of tensor to concat horizontally
-  var hbuffer = newSeqWith(t.shape[0], empty.repeat(t.shape[2]).toTensor(Cpu))
+  var hbuffer = newSeqWith(t.shape[0], empty.repeat(t.shape[2]).toTensor())
 
   var i = 0
   for s0 in t.axis(0):
     let s0r = s0.reshape(t.shape[1],t.shape[2],t.shape[3])
     for s1 in s0r.axis(0):
       hbuffer[i] = hbuffer[i].concat(
-                sep.repeat(t.shape[2]).toTensor(Cpu).reshape(t.shape[2],1),
+                sep.repeat(t.shape[2]).toTensor().reshape(t.shape[2],1),
                 s1.reshape(t.shape[2], t.shape[3]).fmap(x => $x),
                 axis = 1
                 )
     inc i
   
   # Then concat vertically
-  var vbuffer = empty.repeat(hbuffer[0].shape[1]).toTensor(Cpu).reshape(0, hbuffer[0].shape[1])
+  var vbuffer = empty.repeat(hbuffer[0].shape[1]).toTensor().reshape(0, hbuffer[0].shape[1])
 
   for h in hbuffer:
     vbuffer = vbuffer.concat(
-              sepv.repeat(hbuffer[0].shape[1]).toTensor(Cpu).reshape(1, hbuffer[0].shape[1]),
+              sepv.repeat(hbuffer[0].shape[1]).toTensor().reshape(1, hbuffer[0].shape[1]),
               h.fmap(x => $x).reshape(hbuffer[0].shape[0], hbuffer[0].shape[1]),
               axis = 0
               )
   return vbuffer.disp2d
 
-proc `$`*[B,T](t: Tensor[B,T]): string {.noSideEffect.} =
-  let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & $B & "\""
+proc `$`*[T](t: Tensor[T]): string {.noSideEffect.} =
+  ## Pretty-print a tensor (when using ``echo`` for example)
+  let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & "Cpu" & "\""
   if t.rank <= 2:
     return desc & "\n" & t.disp2d
   elif t.rank == 3:
@@ -135,4 +136,4 @@ proc `$`*[B,T](t: Tensor[B,T]): string {.noSideEffect.} =
   elif t.rank == 4:
     return desc & "\n" & t.disp4d
   else:
-    return desc & "\n" & " -- NotImplemented: Display not implemented for tensors of rank > 2"
+    return desc & "\n" & " -- NotImplemented: Display not implemented for tensors of rank > 4"

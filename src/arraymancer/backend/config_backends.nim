@@ -17,11 +17,13 @@ when defined(blis):
   include ./blis
   let blis_status = bli_init()
   echo "Blis initiatialization status: " & $blis_status
-  ## Should add a quit proc but the following doesn't compile
-  # proc quit_blis() =
-  #   echo "Blis quit status: " & $bli_finalize()
-  # 
-  # addQuitProc quit_blis
+
+  proc quit_blis() {.noconv.}=
+    when defined(debug):
+      echo "Blis quit status: " & $bli_finalize()
+    else:
+      discard bli_finalize()
+  addQuitProc(quit_blis)
 
 else:
   static: echo "Consider adding BLIS from \"https://github.com/flame/blis\" " &

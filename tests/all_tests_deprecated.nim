@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
-  ## Tensor comparison
-  if a.shape != b.shape: return false
-
-  for ai, bi in zip(a.values,b.values):
-    ## Iterate through the tensors using stride-aware iterators
-    ## Returns early if false
-    if ai != bi: return false
-  return true
+import ../src/arraymancer,
+        ./test_init_deprecated,
+        ./test_comparison_deprecated,
+        ./test_accessors_deprecated,
+        ./test_accessors_slicer_deprecated,
+        ./test_display_deprecated,
+        ./test_operators_blas_deprecated,
+        ./test_aggregate_deprecated,
+        ./test_shapeshifting_deprecated,
+        ./test_ufunc_deprecated

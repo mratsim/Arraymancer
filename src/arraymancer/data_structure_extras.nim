@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
-  ## Tensor comparison
-  if a.shape != b.shape: return false
+proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect.} =
+  ## Convert a tensor to the raw sequence of data.
 
-  for ai, bi in zip(a.values,b.values):
-    ## Iterate through the tensors using stride-aware iterators
-    ## Returns early if false
-    if ai != bi: return false
-  return true
+  # Due to forward declaration this proc must be declared
+  # after "cpu" proc are declared in init_cuda
+  when t is Tensor:
+    return t.data
+  elif t is CudaTensor:
+    return t.cpu.data

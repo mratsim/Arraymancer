@@ -1,6 +1,17 @@
 # Copied from https://github.com/nim-lang/Nim/wiki/TravisCI
 language: c
 
+cache: ccache
+
+env:
+  # Build and test against the master (stable) and devel branches of Nim
+  - CHANNEL=stable
+  - CHANNEL=devel
+compiler:
+  # Build and test using both gcc and clang
+  - gcc
+  - clang
+
 matrix:
   include:
     # Build and test against the master (stable) and devel branches of Nim
@@ -29,14 +40,6 @@ matrix:
 
     - os: osx
       env: CHANNEL=stable BLIS=false
-      compiler: clang
-
-    - os: osx
-      env: CHANNEL=devel BLIS=true
-      compiler: clang
-
-    - os: osx
-      env: CHANNEL=devel BLIS=false
       compiler: clang
 
   allow_failures:

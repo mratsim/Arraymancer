@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../arraymancer
+import ../src/arraymancer
 import math, unittest
 
 
@@ -36,8 +36,8 @@ suite "Displaying tensors":
 
     # @[@[1, 1, 1, 1, 1], @[2, 4, 8, 16, 32], @[3, 9, 27, 81, 243], @[4, 16, 64, 256, 1024], @[5, 25, 125, 625, 3125]]
 
-    let t_van = vandermonde.toTensor(Cpu)
-    when compiles(echo t_van): check: true
+    let t_van = vandermonde.toTensor()
+    when not compiles(echo t_van): check: false
 
     # Tensor of shape 5x5 of type "int" on backend "Cpu"
     # |1      1       1       1       1|
@@ -45,5 +45,5 @@ suite "Displaying tensors":
     # |3      9       27      81      243|
     # |4      16      64      256     1024|
     # |5      25      125     625     3125|
-    
+
     # TODO: Better display tests

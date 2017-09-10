@@ -1,4 +1,4 @@
-[![Linux Build Status (Travis)](https://travis-ci.org/mratsim/Arraymancer.svg?branch=master "Linux build status (Travis)")](https://travis-ci.org/mratsim/Arraymancer)   [![Windows build status (Appveyor)](https://ci.appveyor.com/api/projects/status/github/mratsim/arraymancer?branch=master&svg=true "Windows build status (Appveyor)")](https://ci.appveyor.com/project/mratsim/arraymancer)
+[![Linux Build Status (Travis)](https://travis-ci.org/mratsim/Arraymancer.svg?branch=master "Linux build status (Travis)")](https://travis-ci.org/mratsim/Arraymancer)   [![Windows build status (Appveyor)](https://ci.appveyor.com/api/projects/status/github/mratsim/arraymancer?branch=master&svg=true "Windows build status (Appveyor)")](https://ci.appveyor.com/project/mratsim/arraymancer) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![Stability](https://img.shields.io/badge/stability-experimental-orange.svg)
 
 # Arraymancer - A n-dimensional tensor (ndarray) library
 
@@ -40,8 +40,9 @@ The deep learning frameworks are currently in two camps:
 
 Putting a research model in production, on a drone or as a webservice for example, is difficult:
 - Managing Python versions and environment is hell
-- Python does not run on embedded devices or mobile phones
+- Python data science ecosystem does not run on embedded devices (Nvidia Tegra/drones) or mobile phones
 - Transforming a tuned research model (in Python) to a usable Caffe or Darknet model (in C) is almost impossible. PMML is supposed to be the "common" XML description of ML models but is not really supported by anyone.
+**Edit - Sept 7, 2017: Microsoft and Facebook are announcing [Open Neural Network Exchange](https://research.fb.com/facebook-and-microsoft-introduce-new-open-ecosystem-for-interchangeable-ai-frameworks/)**
 - Tensorflow is supposed to bridge the gap between research and production but its syntax and ergonomics are a pain to work with.
 - Deployed models are static, there is no interface to add a new observation/training sample to any framework. The end goal is to use a model as a webservice.
 - No framework are designed yet with javascript/WebAssembly in mind.
@@ -72,9 +73,7 @@ Note: Arraymancer tensors are tensors in the machine learning sense (multidimens
 
 EXPERIMENTAL: Arraymancer may summon Ragnarok and cause the heat death of the Universe.
 
-1. There is no optimized routine for integer matrix and vector multiplication. I wrote my own for integer matrix-matrix multplication but matrix-vector is not implemented.
-
-2. Display of 5-dimensional or more tensors is not implemented.
+1. Display of 5-dimensional or more tensors is not implemented.
 
 ## Features
 
@@ -397,18 +396,18 @@ Input is a tensor and the new dimension order
 let a = toSeq(1..24).toTensor(Cpu).reshape(2,3,4)
 echo a
 
-Tensor of shape 2x3x4 of type "int" on backend "Cpu"
- |      1       2       3       4 |     13      14      15      16|
- |      5       6       7       8 |     17      18      19      20|
- |      9       10      11      12 |    21      22      23      24|
+# Tensor of shape 2x3x4 of type "int" on backend "Cpu"
+#  |      1       2       3       4 |     13      14      15      16|
+#  |      5       6       7       8 |     17      18      19      20|
+#  |      9       10      11      12 |    21      22      23      24|
 
 echo a.permute(0,2,1) # dim 0 stays at 0, dim 1 becomes dim 2 and dim 2 becomes dim 1
 
-Tensor of shape 2x4x3 of type "int" on backend "Cpu"
- |      1       5       9 |     13      17      21|
- |      2       6       10 |    14      18      22|
- |      3       7       11 |    15      19      23|
- |      4       8       12 |    16      20      24|
+# Tensor of shape 2x4x3 of type "int" on backend "Cpu"
+#  |      1       5       9 |     13      17      21|
+#  |      2       6       10 |    14      18      22|
+#  |      3       7       11 |    15      19      23|
+#  |      4       8       12 |    16      20      24|
 ```
 
 #### Concatenation
@@ -495,7 +494,7 @@ The following linear algebra operations are supported for tensors of rank 1 (vec
 - matrix-vector multiplication using `*`
 - element-wise multiplication (Hadamard product) using `|*|`
 
-Note: Matrix operations for floats are accelerated using BLAS (Intel MKL, OpenBLAS, Apple Accelerate ...). Unfortunately there is no acceleration routine for integers. I wrote a custom routine for matrix-matrix but matrix-vector is not implemented.
+Note: Matrix operations for floats are accelerated using BLAS (Intel MKL, OpenBLAS, Apple Accelerate ...). Unfortunately there is no acceleration routine for integers. Integer matrix-matrix and matrix-vector multiplications are implemented via semi-optimized routines (no naive loops but don't leverage CPU-specific features).
 
 ```Nim
 echo foo_float * foo_float # Accelerated Matrix-Matrix multiplication (needs float)

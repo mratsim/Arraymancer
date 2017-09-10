@@ -12,45 +12,54 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc astype*[B: static[Backend],T, U](t: Tensor[B,T], typ: typedesc[U]): Tensor[B,U] {.noSideEffect.}=
+proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noSideEffect.}=
   ## Apply type conversion on the whole tensor
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset
   result.data = t.data.map(x => x.U)
 
-proc fmap*[B: static[Backend],T, U](t: Tensor[B,T], g: T -> U): Tensor[B,U] {.noSideEffect.}=
+proc fmap*[T, U](t: Tensor[T], g: T -> U): Tensor[U] {.noSideEffect.}=
   ## Map a unary function T -> U on Tensor[T]
 
-  ## We use this opportunity to reshape the data internally
-  ## Iteration should be almost as fast for contiguous non-sliced Tensors
-  ## But may avoid a lot of unnecessary computations on slices
+  # We use this opportunity to reshape the data internally
+  # Iteration should be almost as fast for contiguous non-sliced Tensors
+  # But may avoid a lot of unnecessary computations on slices
   result.shape = t.shape
   result.strides = shape_to_strides(result.shape)
   result.offset = 0
 
   result.data = newSeq[U](result.shape.product)
-  var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
+  var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
   for val in t:
     result.data[i] = g(val)
     inc i
 
 template makeUniversal*(func_name: untyped) =
-  ## Lift an unary function into an exported universal function.
-  ## Universal functions apply element-wise
-  # For now, makeUniversal does not work when internal type is changing
+  # Lift an unary function into an exported universal function.
+  #
+  # Universal functions apply element-wise
+  #
+  # ``makeUniversal`` does not work when internal type is changing,
   # use fmap instead
-  proc func_name*(t: Tensor): Tensor = t.fmap(func_name)
+  proc func_name*(t: Tensor): Tensor {.noSideEffect.}=
+    ## Universal version of the function.
+    ##
+    ## The function can be used directly on tensors and will work element-wise.
+    t.fmap(func_name)
   export func_name
 
 template makeUniversalLocal*(func_name: untyped) =
-  ## Lift an unary function into a non-exported universal function
-  ## Universal functions apply element-wise
-  # For now, makeUniversalLocal does not work when internal type is changing
+  # Lift an unary function into a non-exported universal function
+  #
+  # Universal functions apply element-wise
+  #
+  # ``makeUniversalLocal`` does not work when internal type is changing
   # use fmap instead
-  proc func_name(t: Tensor): Tensor = t.fmap(func_name)
+  proc func_name(t: Tensor): Tensor {.noSideEffect.}=
+    t.fmap(func_name)
 
-## Unary functions from Nim math library
+# Unary functions from Nim math library
 
 makeUniversal(fac)
 #makeUniversal(classify)

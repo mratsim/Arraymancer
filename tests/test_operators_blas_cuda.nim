@@ -102,6 +102,15 @@ suite "CUDA backend: BLAS (Basic Linear Algebra Subprograms)":
     expect(IndexError):
       discard c * c
 
+  test "GEMV - General Matrix to Vector Multiplication":
+    ## TODO: test with slices
+    ## TODO: support and test non-contiguous tensors
+
+    let d = @[@[1.0,-1,2],@[0.0,-3,1]].toTensor().cuda()
+    let e = @[2.0, 1, 0].toTensor().cuda()
+
+    check: (d * e).cpu ==  [1.0, -3].toTensor()
+
   test "Scalar/dot product":
     let u = @[1'f64, 3, -5].toTensor().cuda()
     let v = @[4'f64, -2, -1].toTensor().cuda()

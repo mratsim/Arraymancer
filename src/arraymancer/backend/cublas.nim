@@ -125,7 +125,7 @@ proc cublas_geam[T: SomeReal](
     raise newException(ValueError, "Unreachable")
 
 # L2 BLAS
-proc cublasSgemv[T: SomeReal](
+proc cublas_gemv[T: SomeReal](
   trans: cublasOperation_t, m, n: int,
   alpha: T, A: ptr T, lda: int,
   x: ptr T, incx: int,
@@ -144,12 +144,12 @@ proc cublasSgemv[T: SomeReal](
   check cublasSetStream(defaultHandle, defaultStream)
 
   when T is float32:
-    check ublasSgemv*(defaultHandle,
+    check cublasSgemv(defaultHandle,
                 trans, m.cint, n.cint,
                 addr al, A, lda.cint, x, incx.cint,
                 addr be, y, incy.cint)
   elif T is float64:
-    check cublasDgemv*(defaultHandle,
+    check cublasDgemv(defaultHandle,
                 trans, m.cint, n.cint,
                 addr al, A, lda.cint, x, incx.cint,
                 addr be, y, incy.cint)

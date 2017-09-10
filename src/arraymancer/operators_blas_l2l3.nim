@@ -24,7 +24,7 @@ proc check_matmat(a, b: AnyTensor) {.noSideEffect.}=
                     ", must be the same as the number of rows in the second matrix: " &
                     $(rowB))
 
-proc check_matvec(a, b:Tensor)  {.noSideEffect.}=
+proc check_matvec(a, b: AnyTensor)  {.noSideEffect.}=
   let colA = a.shape[1]
   let rowB = b.shape[0]
 

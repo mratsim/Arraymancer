@@ -148,7 +148,7 @@ Convention 0 corresponds to false and 1 to true
 
 So we need to check each row if there is at least a 1.
 
-In Python / R you would use dataframe row operations, we don't have that (yet)
+In Python / R you would use dataframe row operations, ~we don't have that (yet).~ Actually we do, you can use the aggregate function "agg" that can compute a result on a row or column, then compare/add/do a custom operation between this result and the next row or column. I leave it to you to replace the following.
 
 so I'm going to cheat a little.
 

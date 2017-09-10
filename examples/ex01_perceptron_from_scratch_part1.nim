@@ -121,7 +121,7 @@ var X = data.astype(float)
 # 1 1 ==> 1
 
 # So we need to check each row if there is at least a 1.
-# In Python / R you would use dataframe row operations, we don't have that (yet)
+# In Python / R you would use dataframe row operations, w~we don't have that (yet).~ Actually we do, you can use the aggregate function "agg" that can compute a result on a row or column, then compare/add/do a custom operation between this result and the next row or column. I leave it to you to replace the following.
 # so I'm going to cheat a little.
 # I will first add the 2 columns ...
 # _ is a joker to take the whle dimension

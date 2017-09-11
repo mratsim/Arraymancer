@@ -38,4 +38,5 @@ include arraymancer/utils/functional,
         arraymancer/operators_blas_l2l3,
         arraymancer/operators_extra,
         arraymancer/aggregate,
-        arraymancer/term_rewriting
+        arraymancer/term_rewriting,
+        arraymancer/exporting

@@ -155,7 +155,7 @@ proc cublas_gemv[T: SomeReal](
                 addr be, y, incy.cint)
 
 # L3 BLAS
-proc cublas_gemm*[T: SomeReal](
+proc cublas_gemm[T: SomeReal](
   transa, transb: cublasOperation_t,
   m, n, k: int,
   alpha: T, A: ptr T, lda: int,
@@ -187,3 +187,45 @@ proc cublas_gemm*[T: SomeReal](
                 addr al, A, lda.cint,
                 B, ldb.cint,
                 addr be, C, ldc.cint)
+
+
+proc cublas_gemmStridedBatched[T: SomeReal](
+  transa, transb: cublasOperation_t;
+  m, n, k: int;
+  alpha: T; A: ptr T; lda: int; strideA: int;
+  B: ptr T; ldb: int; strideB: int;
+  beta: T; C: ptr T; ldc: int; strideC: int;
+  batchCount: int) {.inline.} =
+  # C + i*strideC = αop(A + i*strideA)op(B + i*strideB)+β(C + i*strideC),
+  # for i  ∈ [ 0 , b a t c h C o u n t − 1 ]
+  # A, B, C: matrices
+
+  # We need to pass an address to CuBLAS for beta
+  # If the input is not a variable but a float directly
+  # It won't have an address and can't be used by CUBLAS
+  var
+    al = alpha
+    be = beta
+
+  check cublasSetStream(defaultHandle, defaultStream)
+
+  when T is float32:
+    check cublasSgemmStridedBatched(
+      defaultHandle,
+      transa, transb,
+      m.cint, n.cint, k.cint,
+      addr al, A, lda.cint, strideA,
+      B, ldb.cint, strideB,
+      addr be, C, ldc.cint, strideC,
+      batchCount.cint
+    )
+  elif T is float64:
+    check cublasDgemmStridedBatched(
+      defaultHandle,
+      transa, transb,
+      m.cint, n.cint, k.cint,
+      addr al, A, lda.cint, strideA,
+      B, ldb.cint, strideB,
+      addr be, C, ldc.cint, strideC,
+      batchCount.cint
+    )

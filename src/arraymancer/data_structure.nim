@@ -99,7 +99,7 @@ proc is_C_contiguous(t: AnyTensor): bool {.noSideEffect.}=
 
 proc is_F_contiguous(t: AnyTensor): bool {.noSideEffect.}=
   ## Check if Fortran convention / Column Major
-  result = t.strides.reversed == t.shape.reversed.shape_to_strides
+  result = t.strides == t.shape.shape_to_strides(colMajor)
   result = result and t.strides[0] == 1
 
 proc isContiguous(t: AnyTensor): bool {.noSideEffect.}=

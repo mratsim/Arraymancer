@@ -130,7 +130,22 @@ proc broadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffec
     elif result.shape[i] != shape[i]:
       raise newException(ValueError, "The broadcasted size of the tensor must match existing size for non-singleton dimension")
 
-template bc*(t: Tensor, shape: openarray[int]): untyped =
+proc broadcast*[T: SomeNumber](v: T, shape: openarray[int]): Tensor[T] {.noSideEffect.} =
+  ## Broadcast a number
+  ## Input:
+  ##   - a number to be broadcasted
+  ##   - a tensor shape that will be broadcasted to
+  ## Returns:
+  ##   - a tensor with the broadcasted shape where all elements has the broadcasted value
+  ##
+  ## The broadcasting is made using tensor data of size 1 and 0 strides, i.e.
+  ## the operation is memory efficient
+  result.shape = @shape
+  result.strides = newSeqWith(result.shape.len, 0)
+  result.offset = 0
+  result.data = newSeqWith(1, v)
+
+template bc*(t: (Tensor|SomeNumber), shape: openarray[int]): untyped =
   ## Alias for ``broadcast``
   t.broadcast(shape)
 

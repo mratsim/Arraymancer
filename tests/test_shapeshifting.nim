@@ -62,3 +62,22 @@ suite "Shapeshifting":
                                      [7,8]].toTensor()
     check: concat(a,b, axis = 1) == [[1,2,5,6],
                                      [3,4,7,8]].toTensor()
+
+  test "Broadcasting":
+    block:
+      let a = 2.bc([3,2])
+      check a == [[2,2],
+                  [2,2],
+                  [2,2]].toTensor()
+
+    block:
+      let a = toSeq(1..2).toTensor().reshape(1,2)
+      let b = a.bc([2,2])
+      check b == [[1,2],
+                  [1,2]].toTensor()
+
+    block:
+      let a = toSeq(1..2).toTensor().reshape(2,1)
+      let b = a.bc([2,2])
+      check b == [[1,1],
+                  [2,2]].toTensor()

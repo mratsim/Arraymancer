@@ -25,3 +25,11 @@ proc `|*|`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## TODO use mitems instead of result.data[i] cf profiling
   for i, ai, bi in enumerate_zip(a.values, b.values):
     result.data[i] = ai * bi
+
+proc `|/|`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
+  ## Tensor element-wise division for integer numbers
+  return fmap2(a, b, proc(x, y: T): T = x div y)
+
+proc `|/|`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
+  ## Tensor element-wise division for real numbers
+  return fmap2(a, b, proc(x, y: T): T = x / y)

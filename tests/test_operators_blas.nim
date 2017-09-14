@@ -172,6 +172,13 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     check: u_int + v_int == expected_add
     check: u_int - v_int == expected_sub
 
+
+  test "Tensor negative":
+    let u_int = @[-1, 0, 2].toTensor()
+    let expected_add = @[1, 0, -2].toTensor()
+
+    check: - u_int == expected_add
+
   test "Tensor element-wise multiplication/division":
     let u_int = @[-4, 0, 9].toTensor()
     let v_int = @[2, 10, 3].toTensor()

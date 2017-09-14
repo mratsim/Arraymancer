@@ -58,6 +58,10 @@ proc `+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect.} =
   for a_idx, b_val in zip(a.real_indices, b.values):
     a.data[a_idx] += b_val
 
+proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect.} =
+  ## Element-wise numerical negative
+  return t.fmap(proc(x: T): T = -x)
+
 proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Tensor addition
   when compileOption("boundChecks"): check_add(a,b)

@@ -35,6 +35,13 @@ proc fmap*[T, U](t: Tensor[T], g: T -> U): Tensor[U] {.noSideEffect.}=
     result.data[i] = g(val)
     inc i
 
+proc apply*[T](t: var Tensor[T], g: T -> T) {.noSideEffect.}=
+  ## Map a elements inplace with unary function T -> T
+  var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
+  for val in t:
+    t.data[i] = g(val)
+    inc i
+
 proc fmap2*[T, U, V](t1: Tensor[T], t2: Tensor[U], g: (T,U) -> V): Tensor[V] {.noSideEffect.}=
   ## Map a binary function (T,U) -> V on Tensor[T]
   ## It applies the function to each matching elements

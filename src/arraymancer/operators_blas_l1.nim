@@ -92,7 +92,15 @@ proc `*`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] {.noSideEffect, inline.}
   ## Element-wise multiplication by a scalar
   a * t
 
+proc `*=`*[T: SomeNumber](t: var Tensor[T], a: T) {.noSideEffect.} =
+  ## Element-wise multiplication by a scalar (in-place)
+  t.apply(proc(x: T): T = a * x)
+
 proc `/`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] {.noSideEffect.} =
   ## Element-wise division by a scalar
   proc f(x: T): T = x / a
   return t.fmap(f)
+
+proc `/=`*[T: SomeNumber](t: var Tensor[T], a: T): Tensor[T] {.noSideEffect.} =
+  ## Element-wise division by a scalar (in-place)
+  t.apply(proc(x: T): T = a / x)

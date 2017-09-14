@@ -172,6 +172,12 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     check: u_int + v_int == expected_add
     check: u_int - v_int == expected_sub
 
+  test "Tensor negative":
+    let u_int = @[-1, 0, 2].toTensor()
+    let expected_add = @[1, 0, -2].toTensor()
+
+    check: - u_int == expected_add
+
   test "Addition-Substraction - slices":
     let a = @[@[1.0,2,3],@[4.0,5,6], @[7.0,8,9]].toTensor()
     let a_t = a.transpose()

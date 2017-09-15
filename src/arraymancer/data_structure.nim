@@ -29,10 +29,10 @@ type
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
     ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
     ##   - ``data``: A sequence that holds the actual data
-    shape: seq[int]
-    strides: seq[int]
-    offset: int
-    data: seq[T] # Perf note: seq are always deep copied on "var" assignement.
+    shape*: seq[int]
+    strides*: seq[int]
+    offset*: int
+    data*: seq[T] # Perf note: seq are always deep copied on "var" assignement.
 
   CudaTensor*[T: SomeReal] = object
     ## Tensor data structure, stored on Nvidia GPU (Cuda)
@@ -40,34 +40,13 @@ type
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
     ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
     ##   - ``data_ref``: A reference-counted pointer to the data location
-    shape: seq[int]
-    strides: seq[int]
-    offset: int
-    data_ref: ref[ptr T] # Memory on Cuda device will be automatically garbage-collected
-    len: int
+    shape*: seq[int]
+    strides*: seq[int]
+    offset*: int
+    data_ref*: ref[ptr T] # Memory on Cuda device will be automatically garbage-collected
+    len*: int
 
   AnyTensor[T] = Tensor[T] or CudaTensor[T]
-
-template shape*(t: AnyTensor): seq[int] =
-  ## Input:
-  ##     - A tensor
-  ## Returns:
-  ##     - Its shape
-  t.shape
-
-template strides*(t: AnyTensor): seq[int] =
-  ## Input:
-  ##     - A tensor
-  ## Returns:
-  ##     - Its strides
-  t.strides
-
-template offset*(t: AnyTensor): int =
-  ## Input:
-  ##     - A tensor
-  ## Returns:
-  ##     - Its offset
-  t.offset
 
 template rank*(t: AnyTensor): int =
   ## Input:
@@ -82,7 +61,7 @@ template rank*(t: AnyTensor): int =
   ##
   t.shape.len
 
-proc shape_to_strides(shape: seq[int], layout: OrderType = rowMajor): seq[int] {.noSideEffect.} =
+proc shape_to_strides*(shape: seq[int], layout: OrderType = rowMajor): seq[int] {.noSideEffect.} =
   ## Compute strides matching with dimensions.
   ## OrderType is imported from Nimblas and can be rowMajor or colMajor.
   ## Arraymancer defaults to rowMajor. Temporarily, CUDA tensors will be colMajor by default.
@@ -92,17 +71,17 @@ proc shape_to_strides(shape: seq[int], layout: OrderType = rowMajor): seq[int] {
 
   return (1 & shape)[0..shape.high].scanl(a * b)
 
-proc is_C_contiguous(t: AnyTensor): bool {.noSideEffect.}=
+proc is_C_contiguous*(t: AnyTensor): bool {.noSideEffect.}=
   ## Check if C convention / Row Major
   result = t.strides == t.shape.shape_to_strides
   result = result and t.strides[t.strides.high] == 1
 
-proc is_F_contiguous(t: AnyTensor): bool {.noSideEffect.}=
+proc is_F_contiguous*(t: AnyTensor): bool {.noSideEffect.}=
   ## Check if Fortran convention / Column Major
   result = t.strides == t.shape.shape_to_strides(colMajor)
   result = result and t.strides[0] == 1
 
-proc isContiguous(t: AnyTensor): bool {.noSideEffect.}=
+proc isContiguous*(t: AnyTensor): bool {.noSideEffect.}=
   return t.is_C_contiguous or t.is_F_contiguous
 
 proc getTransposeTarget(t: AnyTensor): TransposeType {.noSideEffect.}=

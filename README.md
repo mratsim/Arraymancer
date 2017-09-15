@@ -2,6 +2,8 @@
 
 # Arraymancer - A n-dimensional tensor (ndarray) library
 
+[![Join the chat at https://gitter.im/Arraymancer/Lobby](https://badges.gitter.im/Arraymancer/Lobby.svg)](https://gitter.im/Arraymancer/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Arraymancer is a tensor (N-dimensional array) project. The main focus is providing a fast and ergonomic CPU and GPU ndarray library on which to build a numerical computing and in particular a deep learning ecosystem.
 
 The library is inspired by Numpy and PyTorch.

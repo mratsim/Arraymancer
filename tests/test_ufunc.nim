@@ -41,7 +41,7 @@ suite "Universal functions":
     check: square_plus_one(tc) == expected_c.toTensor()
 
   ## MakeUniversal cannot change Tensor[B,T] to Tensor[B,U] for now
-  ## fmap must be used instead
+  ## map must be used instead
   test "Universal functions that change types are supported":
     let d = @[@[2,4,8],@[3,9,27]]
     let e = @[@["2","4","8"],@["3","9","27"]]
@@ -54,7 +54,7 @@ suite "Universal functions":
 
     when compiles(td == te): check: false
 
-    check: td.fmap(stringify) == te
-    check: td.fmap(stringify)[0,1] == "4"
+    check: td.map(stringify) == te
+    check: td.map(stringify)[0,1] == "4"
     expect(IndexError):
-      discard td.fmap(stringify)[1,3]
+      discard td.map(stringify)[1,3]

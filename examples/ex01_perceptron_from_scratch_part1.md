@@ -33,7 +33,7 @@ proc min_1_and_x(x: float): float =
     return 1
   return x
 
-batch_y = y.fmap(min_1_and_x)
+batch_y = y.map(min_1_and_x)
 
 let vec_ones = ones([batch_size,1], float)
 batch_X = batch_X.concat(vec_ones, axis=1)
@@ -43,7 +43,7 @@ import future
 let s_weights = randomTensor([4], -1.0..1)
 
 proc score(n: Tensor[float], weights: Tensor[float]): Tensor[float] =
-  result = n.fmap(x => max(0,x))
+  result = n.map(x => max(0,x))
   result = concat(result, ones([n.shape[0],1], float), axis=1)
   result = result * weights
 
@@ -206,8 +206,8 @@ proc min_1_and_x(x: float): float =
 
   return x # This is only reached if x = 0
 
-# fmap applies a function to each element of a tensor
-batch_y = y.fmap(min_1_and_x)
+# map applies a function to each element of a tensor
+batch_y = y.map(min_1_and_x)
 
 echo batch_y
 # Tensor of shape 8x1 of type "float" on backend "Cpu"
@@ -278,7 +278,7 @@ The values of the tensor can be "activated" by the relu function
 which is the max between 0 and x
 
 Lets import the "future" library for the very nice syntax shortcut "=>"
-like this `output.fmap(x => max(0,x))`
+like this `output.map(x => max(0,x))`
 ```Nim
 import future
 
@@ -292,7 +292,7 @@ proc score(n: Tensor[float], weights: Tensor[float]): Tensor[float] =
 
   # n is the output of batch_X * model
 
-  result = n.fmap(x => max(0,x))
+  result = n.map(x => max(0,x))
   # result is the implicit value returned in nim
 
   # We also concatenate a dummy vector filled with ones for d4

@@ -114,7 +114,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     let d_float = @[@[1.0,-1,2],@[0.0,-3,1]].toTensor()
     let e_float = @[2.0, 1, 0].toTensor()
 
-    check: d_float * e_float == te_int.fmap(x => x.float64)
+    check: d_float * e_float == te_int.map(x => x.float64)
 
   test "GEMM and GEMV with transposed matrices":
     let a = @[@[1.0,2,3],@[4.0,5,6]].toTensor()

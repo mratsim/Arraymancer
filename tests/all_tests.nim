@@ -19,6 +19,7 @@ import ../src/arraymancer,
         ./test_accessors_slicer,
         ./test_display,
         ./test_operators_blas,
+        ./test_higherorder,
         ./test_aggregate,
         ./test_shapeshifting,
         ./test_ufunc

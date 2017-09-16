@@ -39,10 +39,8 @@ proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] {.noSideEffect.}=
 
 proc apply*[T](t: var Tensor[T], f: T -> T) {.noSideEffect.}=
   ## Map an unary function T->T in place to all elements of the Tensor.
-  var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
-  for val in t:
-    t.data[i] = f(val)
-    inc i
+  for val in t.mitems:
+    val = f(val)
 
 proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] {.noSideEffect.}=
   ## Map a binary function (T,U) -> V on 2 tensors

@@ -14,7 +14,16 @@
 
 proc check_reshape(t: Tensor, new_shape:seq[int]) {.noSideEffect.}=
   if t.shape.product != new_shape.product:
-    raise newException(ValueError, "The total number of elements in the old and the new reshaped matrix must be the same")
+    raise newException(ValueError, "The total number of elements in the old (" &
+                                    $t.shape.product &
+                                    ") and the new (" &
+                                    $new_shape.product &
+                                    ") reshaped tensor must be the same")
+
+proc check_shallowReshape(t: Tensor) {.noSideEffect.}=
+  if not t.isContiguous:
+    raise newException(ValueError, "The tensor must be contiguous for reshape without copy")
+
 
 proc check_concat(t1, t2: Tensor, axis: int) {.noSideEffect,inline.}=
   let check1 = t1.shape[0..<axis] == t2.shape[0..<axis]
@@ -76,26 +85,6 @@ proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] {.noSide
     result.data[i] = val
     inc i
 
-# The following needs benchmark, it seems slower by 120ms on my machine (Broadwell i7-5XXX U mobile)
-# than reshape with copy when reshaping 25000 elements to a 5000x5000 matrices
-
-# proc reshape_no_copy[B,T](t: Tensor[B,T], new_shape: seq[int]): Tensor[B,T] {.noSideEffect.}=
-#   ## For contiguous arrays
-#   var matched_dims = 0
-#   for shapes in zip(t.shape, new_shape):
-#     if shapes[0] != shapes[1]:
-#       break
-#     inc matched_dims
-#
-#   result.shape = new_shape
-#
-#   # Strides extended for unmatched dimension
-#   let ext_strides = result.shape[matched_dims..result.shape.high].shape_to_strides
-#
-#   result.strides = t.strides[0..<matched_dims] & ext_strides
-#   result.offset = 0
-#   result.data = t.data
-
 proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
   ## Reshape a tensor
   ## Input:
@@ -105,11 +94,38 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
   ##   - a tensor with the same data but reshaped.
 
   let ns = @new_shape
-  when compileOption("boundChecks"): check_reshape(t, ns)
-  
-  #if t.isContiguous:
-  #  return t.reshape_no_copy(ns)
+  when compileOption("boundChecks"):
+    check_reshape(t, ns)
+
   return t.reshape_with_copy(ns)
+
+
+proc shallowReshape*(t: var Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
+  ## Shallow reshaping
+  ## Valid only for contiguous arrays
+  ## TODO: tests
+
+  let ns = @new_shape
+  when compileOption("boundChecks"):
+    check_shallowReshape t
+    check_reshape(t, ns)
+
+  var matched_dims = 0
+  for shapes in zip(t.shape, new_shape):
+    if shapes[0] != shapes[1]:
+      break
+    inc matched_dims
+
+  result.shape = ns
+
+  # Strides extended for unmatched dimension
+  let ext_strides = result.shape[matched_dims..result.shape.high].shape_to_strides
+  result.strides = t.strides[0..<matched_dims] & ext_strides
+  result.offset = 0
+
+  shallowCopy(result.data, t.data)
+
+
 
 proc broadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
   ## Broadcast array

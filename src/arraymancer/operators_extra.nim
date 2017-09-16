@@ -12,24 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc `|*|`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
+proc `|*|`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
   ## Element-wise multiplication (hadamard product)
   ## TODO: find a good symbol
-  when compileOption("boundChecks"): check_elementwise(a,b)
 
-  result.shape = a.shape
-  result.strides = shape_to_strides(a.shape)
-  result.data = newSeq[T](a.shape.product)
-  result.offset = 0
+  # FIXME: Can't use built-in proc `*` in map: https://github.com/nim-lang/Nim/issues/5702
+  # map2(a, `+`, b)
+  proc mul(x, y: T): T = x * y
+  return map2(a, mul, b)
 
-  ## TODO use mitems instead of result.data[i] cf profiling
-  for i, ai, bi in enumerate_zip(a.values, b.values):
-    result.data[i] = ai * bi
-
-proc `|/|`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
+proc `|/|`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
   ## Tensor element-wise division for integer numbers
-  return fmap2(a, b, proc(x, y: T): T = x div y)
+  proc dv(x, y: T): T = x div y
+  return map2(a, dv, b)
 
-proc `|/|`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
+proc `|/|`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
   ## Tensor element-wise division for real numbers
-  return fmap2(a, b, proc(x, y: T): T = x / y)
+  proc dv(x, y: T): T = x / y
+  return map2(a, dv, b)

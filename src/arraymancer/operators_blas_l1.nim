@@ -35,16 +35,11 @@ proc `.*`*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
 
 proc `+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Tensor addition
-  when compileOption("boundChecks"): check_elementwise(a,b)
 
-  result.shape = a.shape
-  result.strides = shape_to_strides(a.shape)
-  result.data = newSeq[T](a.shape.product)
-  result.offset = 0
-
-  ## TODO use mitems instead of result.data[i] cf profiling
-  for i, ai, bi in enumerate_zip(a.values, b.values):
-    result.data[i] = ai + bi
+  # FIXME: Can't use built-in proc `+` in map: https://github.com/nim-lang/Nim/issues/5702
+  # map2(a, `+`, b)
+  proc add(x, y: T): T = x + y
+  return map2(a, add, b)
 
 proc `+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect.} =
   ## Tensor in-place addition
@@ -56,20 +51,16 @@ proc `+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect.} =
 
 proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Element-wise numerical negative
-  return t.fmap(proc(x: T): T = -x)
+  return t.map(proc(x: T): T = -x)
 
 proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
-  ## Tensor addition
+  ## Tensor substraction
   when compileOption("boundChecks"): check_elementwise(a,b)
 
-  result.shape = a.shape
-  result.strides = shape_to_strides(result.shape)
-  result.data = newSeq[T](result.shape.product)
-  result.offset = 0
-
-  # TODO use mitems instead of result.data[i] cf profiling
-  for i, ai, bi in enumerate_zip(a.values, b.values):
-    result.data[i] = ai - bi
+  # FIXME: Can't use built-in proc `-` in map: https://github.com/nim-lang/Nim/issues/5702
+  # map2(a, `-`, b)
+  proc sub(x, y: T): T = x - y
+  return map2(a, sub, b)
 
 proc `-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect.} =
   ## Tensor in-place addition
@@ -82,7 +73,7 @@ proc `-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect.} =
 proc `*`*[T: SomeNumber](a: T, t: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Element-wise multiplication by a scalar
   proc f(x: T): T = a * x
-  return t.fmap(f)
+  return t.map(f)
 
 proc `*`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] {.noSideEffect, inline.} =
   ## Element-wise multiplication by a scalar
@@ -95,7 +86,7 @@ proc `*=`*[T: SomeNumber](t: var Tensor[T], a: T) {.noSideEffect.} =
 proc `/`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] {.noSideEffect.} =
   ## Element-wise division by a scalar
   proc f(x: T): T = x / a
-  return t.fmap(f)
+  return t.map(f)
 
 proc `/=`*[T: SomeNumber](t: var Tensor[T], a: T): Tensor[T] {.noSideEffect.} =
   ## Element-wise division by a scalar (in-place)

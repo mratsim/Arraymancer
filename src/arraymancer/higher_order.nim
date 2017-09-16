@@ -58,13 +58,12 @@ proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] {.no
   result.shape = t1.shape
   result.strides = shape_to_strides(result.shape)
   result.offset = 0
-
   result.data = newSeq[U](result.shape.product)
-  var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
-  for ai, bi in zip(t1.values, t2.values): # TODO: inline iterators - pending https://github.com/nim-lang/Nim/issues/4516
-    result.data[i] = f(ai, bi)
-    inc i
 
+  # TODO use mitems instead of result.data[i] cf profiling
+  # TODO: inline iterators - pending https://github.com/nim-lang/Nim/issues/4516
+  for i, ai, bi in enumerate_zip(t1.values, t2.values):
+    result.data[i] = f(ai, bi)
 
 
 #####################################################################

@@ -88,7 +88,7 @@ proc disp3d(t: Tensor): string {.noSideEffect.} =
   for t0 in t.axis(0):
     buffer = buffer.concat(
               sep.repeat(t0.shape[1]).toTensor().reshape(t.shape[1],1),
-              t0.fmap(x => $x).reshape(t.shape[1], t.shape[2]),
+              t0.map(x => $x).reshape(t.shape[1], t.shape[2]),
               axis = 1
               )
 
@@ -110,7 +110,7 @@ proc disp4d(t: Tensor): string {.noSideEffect.} =
     for s1 in s0r.axis(0):
       hbuffer[i] = hbuffer[i].concat(
                 sep.repeat(t.shape[2]).toTensor().reshape(t.shape[2],1),
-                s1.reshape(t.shape[2], t.shape[3]).fmap(x => $x),
+                s1.reshape(t.shape[2], t.shape[3]).map(x => $x),
                 axis = 1
                 )
     inc i
@@ -121,7 +121,7 @@ proc disp4d(t: Tensor): string {.noSideEffect.} =
   for h in hbuffer:
     vbuffer = vbuffer.concat(
               sepv.repeat(hbuffer[0].shape[1]).toTensor().reshape(1, hbuffer[0].shape[1]),
-              h.fmap(x => $x).reshape(hbuffer[0].shape[0], hbuffer[0].shape[1]),
+              h.map(x => $x).reshape(hbuffer[0].shape[0], hbuffer[0].shape[1]),
               axis = 0
               )
   return vbuffer.disp2d

@@ -87,7 +87,7 @@ proc fold*[U, T](t: Tensor[U],
 
 proc fold*[U, T](t: Tensor[U],
                 start_val: Tensor[T],
-                f:(Tensor[T], Tensor[U])-> Tensor[T],
+                f: (Tensor[T], Tensor[U])-> Tensor[T],
                 axis: int
                 ): Tensor[T] {.noSideEffect.}=
 
@@ -100,4 +100,32 @@ proc fold*[U, T](t: Tensor[U],
 
   result = start_val
   for val in t.axis(axis):
+    result = f(result, val)
+
+proc reduce*[T](t: Tensor[T],
+                f: (T, T) -> T
+                ): T {.noSideEffect.}=
+  ## Chain result = f(result, element) over all elements of the Tensor
+  ## The starting value is the first element of the Tensor.
+  ## Input:
+  ##     - A tensor to aggregate on
+  ##     - The aggregation function. It is applied this way: new_aggregate = f(old_aggregate, current_value)
+  let it = t.values
+  result = it()
+  for val in it():
+    result = f(result, val)
+
+proc reduce*[T](t: Tensor[T],
+                f: (Tensor[T], Tensor[T])-> Tensor[T],
+                axis: int
+                ): Tensor[T] {.noSideEffect.}=
+  ## Chain result = f(result, element) over all elements of the Tensor
+  ## The starting value is the first element on the axis of the Tensor.
+  ## Input:
+  ##     - A tensor to aggregate on
+  ##     - The aggregation function. It is applied this way: new_aggregate = f(old_aggregate, current_value)
+  ##     - The axis to aggregate on
+  let it = t.axis(axis)
+  result = it()
+  for val in it():
     result = f(result, val)

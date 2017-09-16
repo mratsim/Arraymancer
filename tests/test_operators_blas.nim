@@ -163,6 +163,17 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     let ufl_expected = @[2'f64, 6, -10].toTensor()
     check: ufl_expected / 2 == u_float
 
+  test "Multiplication/division by scalar (inplace)":
+    var u_int = @[1, 3, -5].toTensor()
+    let u_expected = @[2, 6, -10].toTensor()
+    u_int *= 2
+    check: u_int == u_expected
+
+    var u_float = @[1'f64, 3, -5].toTensor()
+    let ufl_expected = @[2'f64, 6, -10].toTensor()
+    u_float *= 2.0'f64
+    check: ufl_expected == u_float
+
   test "Tensor addition and substraction":
     let u_int = @[1, 3, -5].toTensor()
     let v_int = @[1, 1, 1].toTensor()
@@ -171,7 +182,6 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
     check: u_int + v_int == expected_add
     check: u_int - v_int == expected_sub
-
 
   test "Tensor negative":
     let u_int = @[-1, 0, 2].toTensor()

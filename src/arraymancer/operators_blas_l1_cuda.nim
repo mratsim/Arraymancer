@@ -112,7 +112,7 @@ proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Only Vector-Vector and Matrix-Matrix addition are supported for now.
   ## For Matrix-Matrix, both matrices must have a contiguous layout.
 
-  when compileOption("boundChecks"): check_add(a,b)
+  when compileOption("boundChecks"): check_elementwise(a,b)
 
   if a.rank == 1:
     cudaVV_A_eq_A_p_bB(a, 1.T, b)
@@ -129,7 +129,7 @@ proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] =
   ## Only Vector-Vector and Matrix-Matrix addition are supported for now
   ## For Matrix-Matrix, both matrices must have a contiguous layout.
 
-  when compileOption("boundChecks"): check_add(a,b)
+  when compileOption("boundChecks"): check_elementwise(a,b)
 
   if a.rank == 1:
     cudaVV_C_eq_A_p_bB(a, 1.T, b, result)
@@ -144,7 +144,7 @@ proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Only Vector-Vector and Matrix-Matrix addition are supported for now.
   ## For Matrix-Matrix, both matrices must have a contiguous layout.
 
-  when compileOption("boundChecks"): check_add(a,b)
+  when compileOption("boundChecks"): check_elementwise(a,b)
 
   if a.rank == 1:
     cudaVV_A_eq_A_p_bB(a, -1.T, b)
@@ -161,7 +161,7 @@ proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] =
   ## Only Vector-Vector and Matrix-Matrix addition are supported for now
   ## For Matrix-Matrix, both matrices must have a contiguous layout.
 
-  when compileOption("boundChecks"): check_add(a,b)
+  when compileOption("boundChecks"): check_elementwise(a,b)
 
   if a.rank == 1:
     cudaVV_C_eq_A_p_bB(a, -1.T, b, result)

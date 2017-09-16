@@ -19,46 +19,6 @@ proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noSideEffect.}=
   result.offset = t.offset
   result.data = t.data.map(x => x.U)
 
-proc fmap*[T, U](t: Tensor[T], g: T -> U): Tensor[U] {.noSideEffect.}=
-  ## Map a unary function T -> U on Tensor[T]
-
-  # We use this opportunity to reshape the data internally
-  # Iteration should be almost as fast for contiguous non-sliced Tensors
-  # But may avoid a lot of unnecessary computations on slices
-  result.shape = t.shape
-  result.strides = shape_to_strides(result.shape)
-  result.offset = 0
-
-  result.data = newSeq[U](result.shape.product)
-  var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
-  for val in t:
-    result.data[i] = g(val)
-    inc i
-
-proc apply*[T](t: var Tensor[T], g: T -> T) {.noSideEffect.}=
-  ## Map a elements inplace with unary function T -> T
-  var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
-  for val in t:
-    t.data[i] = g(val)
-    inc i
-
-proc fmap2*[T, U, V](t1: Tensor[T], t2: Tensor[U], g: (T,U) -> V): Tensor[V] {.noSideEffect.}=
-  ## Map a binary function (T,U) -> V on Tensor[T]
-  ## It applies the function to each matching elements
-  ## Tensors must have the same shape
-
-  assert t1.shape == t2.shape
-
-  result.shape = t1.shape
-  result.strides = shape_to_strides(result.shape)
-  result.offset = 0
-
-  result.data = newSeq[U](result.shape.product)
-  var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
-  for ai, bi in zip(t1.values, t2.values):
-    result.data[i] = g(ai, bi)
-    inc i
-
 template makeUniversal*(func_name: untyped) =
   # Lift an unary function into an exported universal function.
   #

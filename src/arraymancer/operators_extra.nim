@@ -15,7 +15,7 @@
 proc `|*|`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Element-wise multiplication (hadamard product)
   ## TODO: find a good symbol
-  when compileOption("boundChecks"): check_add(a,b)
+  when compileOption("boundChecks"): check_elementwise(a,b)
 
   result.shape = a.shape
   result.strides = shape_to_strides(a.shape)

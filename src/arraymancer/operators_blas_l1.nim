@@ -18,10 +18,6 @@ proc check_dot_prod(a, b:AnyTensor)  {.noSideEffect.}=
   if a.rank != 1 or b.rank != 1: raise newException(ValueError, "Dot product is only supported for vectors (tensors of rank 1)")
   if a.shape != b.shape: raise newException(ValueError, "Vector should be the same length")
 
-proc check_add(a, b:AnyTensor)  {.noSideEffect.}=
-  if a.shape != b.shape:
-    raise newException(ValueError, "Both Tensors should have the same shape")
-
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
 
@@ -39,7 +35,7 @@ proc `.*`*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
 
 proc `+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Tensor addition
-  when compileOption("boundChecks"): check_add(a,b)
+  when compileOption("boundChecks"): check_elementwise(a,b)
 
   result.shape = a.shape
   result.strides = shape_to_strides(a.shape)
@@ -52,7 +48,7 @@ proc `+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
 
 proc `+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect.} =
   ## Tensor in-place addition
-  when compileOption("boundChecks"): check_add(a,b)
+  when compileOption("boundChecks"): check_elementwise(a,b)
 
   ## TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
   for a_idx, b_val in zip(a.real_indices, b.values):
@@ -64,7 +60,7 @@ proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect.} =
 
 proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Tensor addition
-  when compileOption("boundChecks"): check_add(a,b)
+  when compileOption("boundChecks"): check_elementwise(a,b)
 
   result.shape = a.shape
   result.strides = shape_to_strides(result.shape)
@@ -77,7 +73,7 @@ proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
 
 proc `-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect.} =
   ## Tensor in-place addition
-  when compileOption("boundChecks"): check_add(a,b)
+  when compileOption("boundChecks"): check_elementwise(a,b)
 
   # TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
   for a_idx, b_val in zip(a.real_indices, b.values):

@@ -40,42 +40,8 @@ suite "Testing aggregation functions":
   test "Mean over axis":
     let row_mean = [[4.5, 5.5, 6.5]].toTensor()
     let col_mean = [[1.0],
-                   [4.0],
-                   [7.0],
-                   [10.0]].toTensor()
+                    [4.0],
+                    [7.0],
+                    [10.0]].toTensor()
     check: t.astype(float).mean(axis=0) == row_mean
     check: t.astype(float).mean(axis=1) == col_mean
-
-  test "Generic aggregate functions":
-    # We can't pass built-ins to procvar
-    proc addition[T](a, b: T): T=
-      return a+b
-    proc addition_inplace[T](a: var T, b: T)=
-      a+=b
-
-    check: t.agg(addition, start_val=0) == 66
-
-    var z = 0
-    z.agg_inplace(addition_inplace, t)
-    check: z == 66
-
-    #### Axis - `+`, `+=` for tensors are not "built-ins"
-    let row_sum = [[18, 22, 26]].toTensor()
-    let col_sum = [[3],
-                   [12],
-                   [21],
-                   [30]].toTensor()
-
-    var z1 = zeros([1,3], int)
-    var z2 = zeros([4,1], int)
-
-    # Start with non-inplace proc
-    check: t.agg(`+`, axis=0, start_val = z1 ) == row_sum
-    check: t.agg(`+`, axis=1, start_val = z2 ) == col_sum
-
-    # Inplace proc
-    z1.agg_inplace(`+=`, t, axis=0)
-    z2.agg_inplace(`+=`, t, axis=1)
-
-    check: z1 == row_sum
-    check: z2 == col_sum

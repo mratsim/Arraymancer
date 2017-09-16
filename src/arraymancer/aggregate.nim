@@ -13,30 +13,24 @@
 # limitations under the License.
 
 # ### Standard aggregate functions
+# TODO consider using stats from Nim standard lib: https://nim-lang.org/docs/stats.html#standardDeviation,RunningStat
 
 proc sum*[T: SomeNumber](t: Tensor[T]): T {.noSideEffect.}=
   ## Compute the sum of all elements of T
-  # TODO tests
+
   result = 0.T
   for val in t:
     result += val
 
 proc sum*[T: SomeNumber](t: Tensor[T], axis: int): Tensor[T] {.noSideEffect.}=
   ## Compute the sum of all elements of T along an axis
-  # TODO tests
-  var agg_shape = t.shape
-  agg_shape[axis] = 1
-
-  result = zeros(agg_shape, T)
-  result.agg_inplace(`+=`, t, axis)
+  result = t.reduce(`+`, axis = axis)
 
 proc mean*[T: SomeReal](t: Tensor[T]): T {.noSideEffect.}=
   ## Compute the mean of all elements of T
-  # TODO tests
   return t.sum / t.shape.product.T
 
 proc mean*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noSideEffect.}=
   ## Compute the mean of T along an axis
-  # TODO tests
   let n = t.shape[axis]
   return t.sum(axis) / n.T

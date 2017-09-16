@@ -436,6 +436,40 @@ macro `[]`*[T](t: Tensor[T], args: varargs[untyped]): untyped =
   result = quote do:
     inner_typed_dispatch(`t`, `new_args`)
 
+macro shallow_inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
+  ## Typed macro so that isAllInt has typed context and we can dispatch.
+  ## If args are all int, we dispatch to atIndex and return T
+  ## Else, all ints are converted to SteppedSlices and we return a Tensor.
+  ## Note, normal slices and `_` were already converted in the `[]` macro
+  ## TODO in total we do 3 passes over the list of arguments :/. It is done only at compile time though
+  if isAllInt(args):
+    result = newCall(bindSym("atIndex"), t)
+    for slice in args:
+      result.add(slice)
+  else:
+    result = newCall(bindSym("shallowSlicer"), t)
+    for slice in args:
+      if isInt(slice):
+        ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
+        result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
+      else:
+        result.add(slice)
+
+macro shallowSlice*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
+  ## Input:
+  ##   - a var tensor. It will share data with the resulting tensor.
+  ##   - and:
+  ##     - specific coordinates (``varargs[int]``)
+  ##     - or a slice (cf. tutorial)
+  ## Returns:
+  ##   - a view of the Tensor at corresponding slice. WARNING: data is shared.
+  ##
+  ## TODO tests!
+  let new_args = getAST(desugar(args))
+
+  result = quote do:
+    shallow_inner_typed_dispatch(`t`, `new_args`)
+
 proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
   ## Assign the value to the whole slice
   var sliced = t.shallowSlicer(slices)

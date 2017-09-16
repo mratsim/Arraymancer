@@ -40,7 +40,7 @@ suite "Testing higher-order functions":
     proc customMin[T: SomeNumber](x,y: Tensor[T]): Tensor[T] = x - y
 
     check: t.reduce(customMin, axis = 0) == [-18, -20, -22].toTensor.reshape([1,3])
-  
+
   test "Fold with different in and result types":
     proc isEven(n: int): bool =
       return n mod 2 == 0
@@ -55,7 +55,7 @@ suite "Testing higher-order functions":
                             [12],
                             [22],
                             [30]].toTensor()
-    
+
     let initval = [1,0,1,0].toTensor.reshape([4,1])
-    
+
     check: t.fold(initval, `+`, axis = 1) == col_sum_plus_1010

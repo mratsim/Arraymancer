@@ -74,8 +74,8 @@ suite "Testing aggregation functions":
     check: t.agg(`+`, axis=1, start_val = z2 ) == col_sum
 
     # Inplace proc
-    z1.agg_inplace(`+=`, t, axis=0)
-    z2.agg_inplace(`+=`, t, axis=1)
+    # z1.agg_inplace(`+=`, t, axis=0)
+    # z2.agg_inplace(`+=`, t, axis=1)
 
-    check: z1 == row_sum
-    check: z2 == col_sum
+    # check: z1 == row_sum
+    # check: z2 == col_sum

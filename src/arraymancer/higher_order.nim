@@ -37,11 +37,11 @@ proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] {.noSideEffect.}=
     result.data[i] = f(val)
     inc i
 
-proc apply*[T](t: var Tensor[T], g: T -> T) {.noSideEffect.}=
-  ## Map an unary function T->T in place
+proc apply*[T](t: var Tensor[T], f: T -> T) {.noSideEffect.}=
+  ## Map an unary function T->T in place to all elements of the Tensor.
   var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
   for val in t:
-    t.data[i] = g(val)
+    t.data[i] = f(val)
     inc i
 
 proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] {.noSideEffect.}=
@@ -65,6 +65,17 @@ proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] {.no
   for i, ai, bi in enumerate_zip(t1.values, t2.values):
     result.data[i] = f(ai, bi)
 
+proc apply2*[T, U](a: var Tensor[T],
+                   f: proc(x:var T, y:T), # We can't use the nice future syntax here
+                   b: Tensor[U]) {.noSideEffect.}=
+  ## Apply element-wise a binary function (T,U)->T like a += b
+  ## Result is stored inplace in the first tensor
+  ## Note: builtin functions like `+=` cannot be used as is as function argument
+  when compileOption("boundChecks"): check_elementwise(a,b)
+
+  ## TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
+  for a_idx, b_val in zip(a.real_indices, b.values):
+    f(a.data[a_idx], b_val)
 
 #####################################################################
 # Folds and reductions over a single Tensor
@@ -81,6 +92,7 @@ proc fold*[U, T](t: Tensor[U],
   ##     - A tensor to aggregate on
   ##     - The starting value
   ##     - The aggregation function. It is applied this way: new_aggregate = f(old_aggregate, current_value)
+
   result = start_val
   for val in t:
     result = f(result, val)
@@ -90,7 +102,6 @@ proc fold*[U, T](t: Tensor[U],
                 f: (Tensor[T], Tensor[U])-> Tensor[T],
                 axis: int
                 ): Tensor[T] {.noSideEffect.}=
-
   ## Chain result = f(result, element) over an axis of the Tensor
   ## Input:
   ##     - A tensor to aggregate on
@@ -110,6 +121,7 @@ proc reduce*[T](t: Tensor[T],
   ## Input:
   ##     - A tensor to aggregate on
   ##     - The aggregation function. It is applied this way: new_aggregate = f(old_aggregate, current_value)
+
   let it = t.values
   result = it()
   for val in it():
@@ -125,6 +137,7 @@ proc reduce*[T](t: Tensor[T],
   ##     - A tensor to aggregate on
   ##     - The aggregation function. It is applied this way: new_aggregate = f(old_aggregate, current_value)
   ##     - The axis to aggregate on
+
   let it = t.axis(axis)
   result = it()
   for val in it():

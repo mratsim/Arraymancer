@@ -182,6 +182,19 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
     check: u_int + v_int == expected_add
     check: u_int - v_int == expected_sub
+  
+  test "Tensor addition and substraction (inplace)":
+    var u_int = @[1, 3, -5].toTensor()
+    let v_int = @[1, 1, 1].toTensor()
+    let expected_add = @[2, 4, -4].toTensor()
+    let expected_sub = @[0, 2, -6].toTensor()
+
+    u_int += v_int
+    check: u_int == expected_add
+
+    u_int -= v_int
+    u_int -= v_int
+    check: u_int == expected_sub
 
   test "Tensor negative":
     let u_int = @[-1, 0, 2].toTensor()

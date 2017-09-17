@@ -51,7 +51,7 @@ when defined(cuda):
 ##########################################################################
 ## Testing tasks
 
-proc test(name: string) =
+proc test(name: string, lang: string = "c") =
   if not dirExists "bin":
     mkDir "bin"
   if not dirExists "nimcache":
@@ -59,11 +59,7 @@ proc test(name: string) =
   --run
   --nimcache: "nimcache"
   switch("out", ("./bin/" & name))
-  setCommand "c", "tests/" & name & ".nim"
-
-
-task test, "Run all tests - Default BLAS":
-  test "all_tests"
+  setCommand lang, "tests/" & name & ".nim"
 
 task test_cuda, "Run all tests - Cuda backend with CUBLAS":
   switch("define","cuda")

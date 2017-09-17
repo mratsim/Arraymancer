@@ -35,6 +35,7 @@ template cudaSwitches() =
   switch("gcc.cpp.exe", "/opt/cuda/bin/nvcc")
   switch("gcc.cpp.linkerexe", "/opt/cuda/bin/nvcc")
   switch("gcc.options.always", "--x cu") # Interpret .c files as .cu
+  switch("gcc.cpp.options.always", "--x cu -Xcompiler -fpermissive") # Interpret .c files as .cu, gate fpermissive behind Xcompiler
 
 when defined(cuda):
   cudaSwitches
@@ -66,7 +67,7 @@ task test_cuda, "Run all tests - Cuda backend with CUBLAS":
   cudaSwitches # Unfortunately the "switch" line doesn't also trigger
                # the "when defined(cuda)" part of this nimble file
                # hence the need to call cudaSwitches explicitly
-  test "all_tests_cuda"
+  test "all_tests_cuda", "cpp"
 
 task test_deprecated, "Run all tests on deprecated static[Backend] procs":
   test "all_tests_deprecated"

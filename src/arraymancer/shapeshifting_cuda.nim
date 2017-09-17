@@ -40,3 +40,28 @@ proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
     }
   };
 """.}
+
+
+{.emit: """
+  template<typename T>
+  inline void cuda_asContiguous(
+    int blocksPerGrid, int threadsPerBlock,
+    const int rank,
+    const int len,
+    const int *  __restrict__ a_shape,
+    const int *  __restrict__ a_strides,
+    const int a_offset,
+    T * __restrict__ a_data,
+    const int *  __restrict__ b_shape,
+    const int *  __restrict__ b_strides,
+    const int b_offset,
+    const T * __restrict__ b_data){
+
+      cuda_apply2<<<blocksPerGrid, threadsPerBlock>>>(
+        rank, len,
+        a_shape, a_strides, a_offset, a_data,
+        CopyOp<T>(),
+        b_shape, b_strides, b_offset, b_data
+      );
+    }
+""".}

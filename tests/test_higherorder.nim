@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../src/arraymancer
-import unittest, math, future
+import unittest, math, future, sequtils
 
 suite "Testing higher-order functions":
   let t = [[0, 1, 2],
@@ -28,6 +28,18 @@ suite "Testing higher-order functions":
     let t2 = [0, 1, 4, 9, 16, 25, 36, 49, 64, 81, 100, 121].toTensor.reshape([4,3])
 
     check: t.map(x => x*x) == t2
+
+  test "Apply function":
+    var t = toSeq(0..11).toTensor().reshape([4,3])
+    let t2 = toSeq(1..12).toTensor().reshape([4,3])
+
+    var tmp1 = t
+    tmp1.apply(x => x+1)
+    check: tmp1 == t2
+
+    var tmp2 = t[_,2]
+    tmp2.apply(x => x+1)
+    check: tmp2 == t2[_,2]
 
   test "Reduce function":
     check: t.reduce(customAdd) == 66

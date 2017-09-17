@@ -48,8 +48,8 @@ proc getIndexOfElementID[T](t: Tensor[T], element_id: int): int {.noSideEffect,u
 {.emit: """
   static inline __device__ int cuda_getIndexOfElementID(
     const int rank,
-    const int *shape,
-    const int *strides,
+    const int * __restrict__ shape,
+    const int * __restrict__ strides,
     const int offset,
     const int element_id) {
 

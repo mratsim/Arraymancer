@@ -33,15 +33,15 @@ const CUDA_HOF_TPB = 32 * 32 # TODO, benchmark and move that to cuda global conf
   template<typename T, typename Op>
   __global__ void cuda_apply2(const int rank,
                               const int len,
-                              const int *a_shape,
-                              const int *a_strides,
+                              const int *  __restrict__ a_shape,
+                              const int *  __restrict__ a_strides,
                               const int a_offset,
-                              T *a_data,
+                              T  __restrict__  *a_data,
                               const Op f,
-                              const int *b_shape,
-                              const int *b_strides,
+                              const int *  __restrict__ b_shape,
+                              const int *  __restrict__ b_strides,
                               const int b_offset,
-                              T *b_data){
+                              const T  __restrict__  *b_data){
 
     for (int elemID = blockIdx.x * blockDim.x + threadIdx.x;
          elemID < len;

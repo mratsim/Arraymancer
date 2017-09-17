@@ -26,3 +26,17 @@ proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   result.offset = t.offset
   result.data_ref = t.data_ref
   result.len = t.len
+
+
+## CopyOp Functor
+## Does element-wise copy A[i] = B[i]
+{.emit: """
+  template<typename T>
+  struct CopyOp{
+  __device__ __forceinline__ void operator()(
+    T *  __restrict__ dst,
+    const T *  __restrict__ src){
+      *dst = __ldg(src);
+    }
+  };
+""".}

@@ -30,7 +30,10 @@ proc getIndexOfElementID[T](t: Tensor[T], element_id: int): int {.noSideEffect,u
   ## This is not meant to be used on serial architecture due to the division overhead.
   ## On GPU however it will allow threads to address the real memory addresses independantly.
 
-  result = 0
+  when defined(boundsChecks):
+    assert element_id < t.shape.product
+
+  result = t.offset
   var reminderOffset = element_id
   var dimIndex: int
 
@@ -40,3 +43,27 @@ proc getIndexOfElementID[T](t: Tensor[T], element_id: int): int {.noSideEffect,u
     reminderOffset = reminderOffset div t.shape[k]
 
     result += dimIndex * t.strides[k]
+
+# Note we don't bound-checks the CUDA implementation
+{.emit: """
+  static inline __device__ int cuda_getIndexOfElementID(
+    const int rank,
+    const int *shape,
+    const int *strides,
+    const int offset,
+    const int element_id) {
+
+    int result = offset;
+    int reminderOffset = element_id;
+    int dimIndex = 0;
+
+    for (int k = rank - 1; k >= 0; --k) {
+      dimIndex = reminderOffset % shape[k];
+      reminderOffset /= shape[k];
+
+      result += dimIndex * strides[k];
+    }
+
+    return result;
+  }
+  """.}

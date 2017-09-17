@@ -51,6 +51,7 @@ when defined(cuda):
           ./arraymancer/init_cuda,
           ./arraymancer/accessors_cuda,
           ./arraymancer/display_cuda,
+          ./arraymancer/higher_order_cuda,
           ./arraymancer/operators_blas_l1_cuda,
           ./arraymancer/operators_blas_l2l3_cuda,
           ./arraymancer/shapeshifting_cuda

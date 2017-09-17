@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../src/cuda
+# Please compile with -d:cuda switch
+import ../src/arraymancer
 import unittest, future, math
 
 suite "CUDA backend: BLAS (Basic Linear Algebra Subprograms)":

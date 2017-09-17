@@ -12,5 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../src/cuda,
+# Please compile with -d:cuda switch
+import ../src/arraymancer,
         ./test_operators_blas_cuda

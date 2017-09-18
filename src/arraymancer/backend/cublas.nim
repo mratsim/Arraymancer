@@ -195,7 +195,7 @@ proc cublas_gemmStridedBatched[T: SomeReal](
   alpha: T; A: ptr T; lda: int; strideA: int;
   B: ptr T; ldb: int; strideB: int;
   beta: T; C: ptr T; ldc: int; strideC: int;
-  batchCount: int) {.inline.} =
+  batchCount: int) {.inline, used.} =
   # C + i*strideC = αop(A + i*strideA)op(B + i*strideB)+β(C + i*strideC),
   # for i  ∈ [ 0 , b a t c h C o u n t − 1 ]
   # A, B, C: matrices

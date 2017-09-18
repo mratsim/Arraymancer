@@ -41,3 +41,17 @@ include arraymancer/utils/functional,
         arraymancer/aggregate,
         arraymancer/term_rewriting,
         arraymancer/exporting
+
+
+# Unfortunately with that condition nimsuggest does not find included proc properly.
+when defined(cuda):
+  import nimcuda/[cuda_runtime_api, driver_types, cublas_api, cublas_v2, nimcuda]
+  include ./arraymancer/backend/cuda_global_state,
+          ./arraymancer/backend/cublas,
+          ./arraymancer/init_cuda,
+          ./arraymancer/accessors_cuda,
+          ./arraymancer/display_cuda,
+          ./arraymancer/higher_order_cuda,
+          ./arraymancer/operators_blas_l1_cuda,
+          ./arraymancer/operators_blas_l2l3_cuda,
+          ./arraymancer/shapeshifting_cuda

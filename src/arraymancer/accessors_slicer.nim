@@ -362,7 +362,7 @@ macro desugar(args: untyped): typed =
   # echo r.treerepr
   return r
 
-template slicerT[T](result: Tensor[T], slices: varargs[SteppedSlice]): untyped=
+template slicerT[T](result: AnyTensor[T], slices: varargs[SteppedSlice]): untyped=
   ## Slicing routine
 
   for i, slice in slices:
@@ -384,7 +384,7 @@ template slicerT[T](result: Tensor[T], slices: varargs[SteppedSlice]): untyped=
     result.strides[i] *= slice.step
     result.shape[i] = abs((b-a) div slice.step) + 1
 
-proc slicer[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noSideEffect.}=
+proc slicer[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -423,7 +423,7 @@ macro inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
       else:
         result.add(slice)
 
-macro `[]`*[T](t: Tensor[T], args: varargs[untyped]): untyped =
+macro `[]`*[T](t: AnyTensor[T], args: varargs[untyped]): untyped =
   ## Input:
   ##   - a tensor
   ##   - and:

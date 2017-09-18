@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../src/cuda
+# Please compile with -d:cuda switch
+import ../src/arraymancer
 import unittest, future, math
 
-suite "CUDA backend: BLAS (Basic Linear Algebra Subprograms)":
+suite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
   test "GEMM - General Matrix to Matrix Multiplication":
     ## TODO: test with slices
     let a = [[1.0,2,3],

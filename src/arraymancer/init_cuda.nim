@@ -38,7 +38,11 @@ proc shallowCopy*[T](t: var CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect.
   system.`=`(result, t)
 
 proc clone*[T](t: CudaTensor[T]): CudaTensor[T] =
-  ## Clone (deep copy) a CudaTensor
+  ## Clone (deep copy) a CudaTensor.
+  ## Tensor is copied as is.
+  ##
+  ## For example it will not be made contiguous.
+  ## Use `asContiguous` for this case
 
   # Note: due to modifying the defaultStream global var for async memcopy
   # proc cannot be tagged noSideEffect

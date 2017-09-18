@@ -73,15 +73,12 @@ proc cuda_asContiguous[T: SomeReal](
   rank, len: cint,
   dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
   src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
-) {.importcpp: "cuda_asContiguous<'*8>(@)".}
+) {.importcpp: "cuda_asContiguous<'*8>(@)", noSideEffect.}
 # We pass the 8th parameter type to the template.
 # The "*" in '*8 is needed to remove the pointer *
-# WARNING, the kernel works in rowMajor indexing
-# Transpose the shape and strides of the result to trick
-# into colMajor
 
 proc asContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, force: bool = false):
-  CudaTensor[T] = #{.noSideEffect.}=
+  CudaTensor[T] {.noSideEffect.}=
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
   ## By default CudaTensor will be colMajor (contrary to a cpu tensor).
   ## By default nothing is done if the tensor is already contiguous (C Major or F major)
@@ -100,43 +97,38 @@ proc asContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, 
   result = newCudaTensor[T](t.shape, layout)
 
   # TODO: all this boilerplate is ugly!!!
-  # shape are the same for starters
+  # Shapes are the same for starters
   # should we store the CudaTensor array attributes in Unified Mem?
   var
-    ondevice_t_shape:  ref ptr cint
+    ondevice_shape:  ref ptr cint
     ondevice_t_strides: ref ptr cint
-    ondevice_r_shape:  ref ptr cint
     ondevice_r_strides: ref ptr cint
 
-  new ondevice_t_shape, deallocCuda
+  new ondevice_shape, deallocCuda
   new ondevice_t_strides, deallocCuda
-  new ondevice_r_shape, deallocCuda
   new ondevice_r_strides, deallocCuda
 
-  ondevice_t_shape[] = cudaMalloc[cint](t.rank)
+  ondevice_shape[] = cudaMalloc[cint](t.rank)
   ondevice_t_strides[] = cudaMalloc[cint](t.rank)
-  ondevice_r_shape[] = cudaMalloc[cint](t.rank)
   ondevice_r_strides[] = cudaMalloc[cint](t.rank)
 
   # We need cint on GPU
   var
-    tmp_t_shape = t.shape.mapIt(it.cint)
+    tmp_shape = t.shape.mapIt(it.cint)
     tmp_t_strides = t.strides.mapIt(it.cint)
-    tmp_r_shape = result.shape.mapIt(it.cint)
     tmp_r_strides = result.strides.mapIt(it.cint)
 
   # TODO: use streams and async
   let size = t.rank * sizeof(cint)
-  check cudaMemCpy(ondevice_t_shape[], addr tmp_t_shape[0], size, cudaMemcpyHostToDevice)
+  check cudaMemCpy(ondevice_shape[], addr tmp_shape[0], size, cudaMemcpyHostToDevice)
   check cudaMemCpy(ondevice_t_strides[], addr tmp_t_strides[0], size, cudaMemcpyHostToDevice)
-  check cudaMemCpy(ondevice_r_shape[], addr tmp_r_shape[0], size, cudaMemcpyHostToDevice)
   check cudaMemCpy(ondevice_r_strides[], addr tmp_r_strides[0], size, cudaMemcpyHostToDevice)
 
   cuda_asContiguous(
     CUDA_HOF_TPB, CUDA_HOF_BPG,
     t.rank.cint, t.shape.product.cint,
-    ondevice_r_shape[], ondevice_r_strides[],
+    ondevice_shape[], ondevice_r_strides[],
     result.offset.cint, result.get_data_ptr,
-    ondevice_t_shape[], ondevice_t_strides[],
+    ondevice_shape[], ondevice_t_strides[],
     t.offset.cint, t.get_data_ptr
   )

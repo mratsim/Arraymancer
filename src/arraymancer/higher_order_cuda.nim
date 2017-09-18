@@ -27,7 +27,12 @@
 
 # TODO, use an on-device struct to store, shape, strides, offset
 
-const CUDA_HOF_TPB = 32 * 32 # TODO, benchmark and move that to cuda global config
+const CUDA_HOF_TPB: cint = 32 * 32 # TODO, benchmark and move that to cuda global config
+                             # Pascal GTX 1070+ have 1024 threads max
+const CUDA_HOF_BPG: cint = 256     # should be (grid-stride+threadsPerBlock-1) div threadsPerBlock ?
+                             # From https://devblogs.nvidia.com/parallelforall/cuda-pro-tip-write-flexible-kernels-grid-stride-loops/
+                             # Lower allows threads re-use and limit overhead of thread creation/destruction
+
 
 {.emit: """
   template<typename T, typename Op>
@@ -36,12 +41,12 @@ const CUDA_HOF_TPB = 32 * 32 # TODO, benchmark and move that to cuda global conf
                               const int *  __restrict__ a_shape,
                               const int *  __restrict__ a_strides,
                               const int a_offset,
-                              T  __restrict__  *a_data,
-                              const Op f,
+                              T * __restrict__ a_data,
+                              Op f,
                               const int *  __restrict__ b_shape,
                               const int *  __restrict__ b_strides,
                               const int b_offset,
-                              const T  __restrict__  *b_data){
+                              const T * __restrict__ b_data){
 
     for (int elemID = blockIdx.x * blockDim.x + threadIdx.x;
          elemID < len;

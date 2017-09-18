@@ -34,8 +34,12 @@ template cudaSwitches() =
   switch("gcc.linkerexe", "/opt/cuda/bin/nvcc")
   switch("gcc.cpp.exe", "/opt/cuda/bin/nvcc")
   switch("gcc.cpp.linkerexe", "/opt/cuda/bin/nvcc")
-  switch("gcc.options.always", "--x cu") # Interpret .c files as .cu
-  switch("gcc.cpp.options.always", "--x cu -Xcompiler -fpermissive") # Interpret .c files as .cu, gate fpermissive behind Xcompiler
+  # Due to the __ldg intrinsics in kernels
+  # we only support compute capabilities 3.5+
+  # See here: http://docs.nvidia.com/cuda/pascal-compatibility-guide/index.html
+  # And wikipedia for GPU capabilities: https://en.wikipedia.org/wiki/CUDA
+  switch("gcc.options.always", "-arch=sm_61 --x cu") # Interpret .c files as .cu
+  switch("gcc.cpp.options.always", "-arch=sm_61 --x cu -Xcompiler -fpermissive") # Interpret .c files as .cu, gate fpermissive behind Xcompiler
 
 when defined(cuda):
   cudaSwitches

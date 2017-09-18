@@ -66,6 +66,9 @@ proc test(name: string, lang: string = "c") =
   switch("out", ("./bin/" & name))
   setCommand lang, "tests/" & name & ".nim"
 
+task test, "Run all tests - Default BLAS":
+  test "all_tests"
+
 task test_cuda, "Run all tests - Cuda backend with CUBLAS":
   switch("define","cuda")
   cudaSwitches # Unfortunately the "switch" line doesn't also trigger

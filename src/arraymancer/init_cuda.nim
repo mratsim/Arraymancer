@@ -87,7 +87,7 @@ proc clone*[T](t: CudaTensor[T]): CudaTensor[T] =
 #   system.`=`(result, t)
 #   echo "Value moved"
 
-proc newCudaTensor[T: SomeReal](shape: openarray[int]): CudaTensor[T] {.noSideEffect.}=
+proc newCudaTensor[T: SomeReal](shape: openarray[int], layout: OrderType = colMajor): CudaTensor[T] {.noSideEffect.}=
   ## Internal proc
   ## Allocate a CudaTensor
   ## WARNING: The Cuda memory is not initialized to 0
@@ -100,7 +100,7 @@ proc newCudaTensor[T: SomeReal](shape: openarray[int]): CudaTensor[T] {.noSideEf
   result.shape = @shape
   result.len = result.shape.product
   result.data_ref[] = cudaMalloc[T](result.len)
-  result.strides = shape_to_strides(result.shape, layout = colMajor)
+  result.strides = shape_to_strides(result.shape, layout)
   result.offset = 0
 
 proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] =

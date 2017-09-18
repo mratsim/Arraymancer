@@ -42,6 +42,7 @@ proc getIndexOfElementID[T](t: Tensor[T], element_id: int): int {.noSideEffect,u
     dimIndex = reminderOffset mod t.shape[k]
     reminderOffset = reminderOffset div t.shape[k]
 
+    # cf atIndex proc to compute real_idx
     result += dimIndex * t.strides[k]
 
 # Note we don't bound-checks the CUDA implementation
@@ -53,17 +54,17 @@ proc getIndexOfElementID[T](t: Tensor[T], element_id: int): int {.noSideEffect,u
     const int offset,
     const int element_id) {
 
-    int result = offset;
-    int reminderOffset = element_id;
-    int dimIndex = 0;
+    int real_idx = offset;
+    int currentOffset = element_id;
+    int dimIdx = 0;
 
     for (int k = rank - 1; k >= 0; --k) {
-      dimIndex = reminderOffset % shape[k];
-      reminderOffset /= shape[k];
+      dimIdx = currentOffset % shape[k];
+      currentOffset /= shape[k];
 
-      result += dimIndex * strides[k];
+      real_idx += dimIdx * strides[k];
     }
 
-    return result;
+    return real_idx;
   }
   """.}

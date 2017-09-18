@@ -28,25 +28,25 @@
 # TODO, use an on-device struct to store, shape, strides, offset
 
 const CUDA_HOF_TPB: cint = 32 * 32 # TODO, benchmark and move that to cuda global config
-                             # Pascal GTX 1070+ have 1024 threads max
+                                   # Pascal GTX 1070+ have 1024 threads max
 const CUDA_HOF_BPG: cint = 256     # should be (grid-stride+threadsPerBlock-1) div threadsPerBlock ?
-                             # From https://devblogs.nvidia.com/parallelforall/cuda-pro-tip-write-flexible-kernels-grid-stride-loops/
-                             # Lower allows threads re-use and limit overhead of thread creation/destruction
+                                   # From https://devblogs.nvidia.com/parallelforall/cuda-pro-tip-write-flexible-kernels-grid-stride-loops/
+                                   # Lower allows threads re-use and limit overhead of thread creation/destruction
 
 
 {.emit: """
   template<typename T, typename Op>
   __global__ void cuda_apply2(const int rank,
                               const int len,
-                              const int *  __restrict__ a_shape,
-                              const int *  __restrict__ a_strides,
-                              const int a_offset,
-                              T * __restrict__ a_data,
+                              const int *  __restrict__ dst_shape,
+                              const int *  __restrict__ dst_strides,
+                              const int dst_offset,
+                              T * __restrict__ dst_data,
                               Op f,
-                              const int *  __restrict__ b_shape,
-                              const int *  __restrict__ b_strides,
-                              const int b_offset,
-                              const T * __restrict__ b_data){
+                              const int *  __restrict__ src_shape,
+                              const int *  __restrict__ src_strides,
+                              const int src_offset,
+                              const T * __restrict__ src_data){
 
     for (int elemID = blockIdx.x * blockDim.x + threadIdx.x;
          elemID < len;
@@ -54,21 +54,21 @@ const CUDA_HOF_BPG: cint = 256     # should be (grid-stride+threadsPerBlock-1) d
 
       // ## we can't instantiate the variable outside the loop
       // ## each threads will store its own in parallel
-      const int a_real_idx = cuda_getIndexOfElementID(
+      const int dst_real_idx = cuda_getIndexOfElementID(
                                rank,
-                               a_shape,
-                               a_strides,
-                               a_offset,
+                               dst_shape,
+                               dst_strides,
+                               dst_offset,
                                elemID);
 
-      const int b_real_idx = cuda_getIndexOfElementID(
+      const int src_real_idx = cuda_getIndexOfElementID(
                                rank,
-                               b_shape,
-                               b_strides,
-                               b_offset,
+                               src_shape,
+                               src_strides,
+                               src_offset,
                                elemID);
 
-      f(&a_data[a_real_idx], &b_data[b_real_idx]);
+      f(&dst_data[dst_real_idx], &src_data[src_real_idx]);
     }
   }
 """.}

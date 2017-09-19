@@ -19,22 +19,22 @@ proc check_index(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
                     ", is different from tensor rank: " &
                     $(t.rank))
 
-proc getIndex[T](t: Tensor[T], idx: varargs[int]): int {.noSideEffect.} =
+proc getIndex[T](t: Tensor[T], idx: varargs[int]): int {.noSideEffect,inline.} =
   ## Convert [i, j, k, l ...] to the proper index.
   when compileOption("boundChecks"):
     t.check_index(idx)
 
   var real_idx = t.offset
-  for i,j in zip(t.strides,idx):
-    real_idx += i*j
+  for i in 0..<idx.len:
+    real_idx += t.strides[i]*idx[i]
   return real_idx
 
-proc atIndex[T](t: Tensor[T], idx: varargs[int]): T {.noSideEffect.} =
+proc atIndex[T](t: Tensor[T], idx: varargs[int]): T {.noSideEffect,inline.} =
   ## Get the value at input coordinates
   ## This used to be `[]` before slicing was implemented
   return t.data[t.getIndex(idx)]
 
-proc atIndexMut[T](t: var Tensor[T], idx: varargs[int], val: T) {.noSideEffect.} =
+proc atIndexMut[T](t: var Tensor[T], idx: varargs[int], val: T) {.noSideEffect,inline.} =
   ## Set the value at input coordinates
   ## This used to be `[]=` before slicing was implemented
   t.data[t.getIndex(idx)] = val

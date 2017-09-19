@@ -393,15 +393,16 @@ proc slicer[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.n
   result = t
   slicerT(result, slices)
 
-proc shallowSlicer[T](t: var Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noSideEffect.}=
+proc unsafeSlicer[T](t: var Tensor[T]|Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
   ##    Offset and strides are changed to achieve the desired effect.
   ##    Warning: mutating the result will mutate the original
   ##    As such a `var Tensor` is required
+  ## WARNING: passing a non-var Tensor is unsafe
 
-  result = shallowCopy(t) # TODO: Test to ensure safety
+  result = unsafeView(t) # TODO: Tests
   slicerT(result, slices)
 
 macro inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
@@ -447,7 +448,7 @@ macro shallow_inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
     for slice in args:
       result.add(slice)
   else:
-    result = newCall(bindSym("shallowSlicer"), t)
+    result = newCall(bindSym("unsafeSlicer"), t)
     for slice in args:
       if isInt(slice):
         ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
@@ -489,14 +490,14 @@ macro unsafeView*[T](t: Tensor[T], args: varargs[untyped]): untyped =
 
 proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
   ## Assign the value to the whole slice
-  var sliced = t.shallowSlicer(slices)
+  var sliced = t.unsafeSlicer(slices)
   for old_val in sliced.mitems:
     old_val = val
 
 proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) {.noSideEffect.}=
   ## Assign value from openarrays
   ## The openarray must have the same shape as the slice
-  let sliced = t.shallowSlicer(slices)
+  let sliced = t.unsafeSlicer(slices)
   when compileOption("boundChecks"):
     check_shape(sliced, oa)
 
@@ -514,7 +515,7 @@ proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray
 
 proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T]) {.noSideEffect.}=
   ## Assign the value to the whole slice
-  let sliced = t.shallowSlicer(slices)
+  let sliced = t.unsafeSlicer(slices)
 
   when compileOption("boundChecks"): check_shape(sliced, t2)
 

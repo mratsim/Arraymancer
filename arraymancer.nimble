@@ -47,8 +47,10 @@ when defined(cuda):
 ########################################################
 # Optimization
 
-### Compute with full detected optimizations
+### To compute with full detected optimizations
+# Add:
 {.passC: "-march=native".}
+# to your code, unfortunately it doesn't work in a nimble file
 
 # TODO: OpenMP and adding OpenMP pragmas
 

@@ -99,12 +99,7 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
 
   return t.reshape_with_copy(ns)
 
-
-proc shallowReshape*(t: var Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
-  ## Shallow reshaping
-  ## Valid only for contiguous arrays
-  ## TODO: tests
-
+template reshape_no_copy(t: Tensor|var Tensor, new_shape: varargs[int]): untyped =
   let ns = @new_shape
   when compileOption("boundChecks"):
     check_shallowReshape t
@@ -125,7 +120,21 @@ proc shallowReshape*(t: var Tensor, new_shape: varargs[int]): Tensor {.noSideEff
 
   shallowCopy(result.data, t.data)
 
+proc shallowReshape*(t: var Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
+  ## Shallow reshaping
+  ## Valid only for contiguous arrays
+  ## TODO: tests
+  t.reshape_no_copy(new_shape)
 
+proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
+  ## Shallow reshaping
+  ## WARNING: even if the input tensor is a "let"
+  ## using this procedure does not guarantee immutability
+  ## Both input and output will share the underlying data.
+  ##
+  ## Valid only for contiguous arrays
+  ## TODO: tests
+  t.reshape_no_copy(new_shape)
 
 proc broadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
   ## Broadcast array

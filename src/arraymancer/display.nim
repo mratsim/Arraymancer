@@ -114,7 +114,7 @@ proc disp4d(t: Tensor): string {.noSideEffect.} =
                 axis = 1
                 )
     inc i
-  
+
   # Then concat vertically
   var vbuffer = empty.repeat(hbuffer[0].shape[1]).toTensor().reshape(0, hbuffer[0].shape[1])
 

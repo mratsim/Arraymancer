@@ -470,6 +470,23 @@ macro shallowSlice*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
   result = quote do:
     shallow_inner_typed_dispatch(`t`, `new_args`)
 
+macro unsafeView*[T](t: Tensor[T], args: varargs[untyped]): untyped =
+  ## Input:
+  ##   - a tensor. It will share data with the resulting tensor.
+  ##     WARNING: even if the input tensor is a "let"
+  ##     using this procedure does not guarantee immutability
+  ##   - and:
+  ##     - specific coordinates (``varargs[int]``)
+  ##     - or a slice (cf. tutorial)
+  ## Returns:
+  ##   - a view of the Tensor at corresponding slice. WARNING: data is shared.
+  ##
+  ## TODO tests!
+  let new_args = getAST(desugar(args))
+
+  result = quote do:
+    shallow_inner_typed_dispatch(`t`, `new_args`)
+
 proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
   ## Assign the value to the whole slice
   var sliced = t.shallowSlicer(slices)

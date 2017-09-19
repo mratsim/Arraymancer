@@ -26,6 +26,22 @@ proc shallowCopy*[T](t: var Tensor[T]): Tensor[T] {.noSideEffect.}=
   result.offset = t.offset
   shallowCopy(result.data, t.data)
 
+proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect.}=
+  ## Input:
+  ##     - A tensor
+  ##       WARNING: even if the input tensor is a "let"
+  ##       using this procedure does not guarantee immutability
+  ## Returns:
+  ##     - A shallow copy.
+  ##
+  ## WARNING !
+  ##   Both tensors shares the same memory. Data modification on one will be reflected on the other.
+  ##   However modifying the shape, strides or offset will not affect the other.
+  result.shape = t.shape
+  result.strides = t.strides
+  result.offset = t.offset
+  shallowCopy(result.data, t.data)
+
 proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect.}=
   ## Compare the detected shape from flatten with the real length of the data
   ## Input:

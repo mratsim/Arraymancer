@@ -174,6 +174,17 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     u_float *= 2.0'f64
     check: ufl_expected == u_float
 
+    block:
+      var u_int = @[1, 3, -6].toTensor()
+      let u_expected = @[0, 1, -3].toTensor()
+      u_int /= 2
+      check: u_int == u_expected
+
+      var u_float = @[1'f64, 3, -5].toTensor()
+      let ufl_expected = @[0.5'f64, 1.5, -2.5].toTensor()
+      u_float /= 2.0'f64
+      check: ufl_expected == u_float
+
   test "Tensor addition and substraction":
     let u_int = @[1, 3, -5].toTensor()
     let v_int = @[1, 1, 1].toTensor()

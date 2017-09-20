@@ -21,12 +21,12 @@ proc check_dot_prod(a, b:AnyTensor)  {.noSideEffect.}=
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
 
-proc `.*`*[T: SomeReal](a, b: Tensor[T]): T {.noSideEffect, inline.} =
+proc dot*[T: SomeReal](a, b: Tensor[T]): T {.noSideEffect, inline.} =
   ## Vector to Vector dot (scalar) product
   when compileOption("boundChecks"): check_dot_prod(a,b)
   return dot(a.shape[0], a.get_data_ptr, a.strides[0], b.get_data_ptr, b.strides[0])
 
-proc `.*`*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
+proc dot*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
   ## Vector to Vector dot (scalar) product
   # Fallback for non-floats
   when compileOption("boundChecks"): check_dot_prod(a,b)

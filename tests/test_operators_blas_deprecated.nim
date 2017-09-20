@@ -166,7 +166,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     let tu_int = u_int.toTensor(Cpu)
     let tv_int = v_int.toTensor(Cpu)
 
-    check: tu_int .* tv_int == 3
+    check: dot(tu_int,tv_int) == 3
 
 
     let u_float = @[1'f64, 3, -5]
@@ -175,7 +175,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     let tu_float = u_float.toTensor(Cpu)
     let tv_float = v_float.toTensor(Cpu)
 
-    check: tu_float .* tv_float == 3.0
+    check: dot(tu_float,tv_float) == 3.0
 
   test "Multiplication/division by scalar":
     let u_int = @[1, 3, -5]

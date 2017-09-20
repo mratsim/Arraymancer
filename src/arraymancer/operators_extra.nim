@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc `|*|`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `.*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
   ## Element-wise multiplication (hadamard product)
   ## TODO: find a good symbol
 
@@ -21,12 +21,12 @@ proc `|*|`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} 
   proc mul(x, y: T): T = x * y
   return map2(a, mul, b)
 
-proc `|/|`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `./`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
   ## Tensor element-wise division for integer numbers
   proc dv(x, y: T): T = x div y
   return map2(a, dv, b)
 
-proc `|/|`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `./`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
   ## Tensor element-wise division for real numbers
   proc dv(x, y: T): T = x / y
   return map2(a, dv, b)

@@ -99,7 +99,7 @@ proc cudaMM_C_eq_aA_p_aB[T: SomeReal](alpha: T, a: CudaTensor[T],
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
 
-proc `.*`*[T: SomeReal](a, b: CudaTensor[T]): T {.inline.}=
+proc dot*[T: SomeReal](a, b: CudaTensor[T]): T {.inline.}=
   ## Vector to Vector dot (scalar) product
   when compileOption("boundChecks"): check_dot_prod(a,b)
   cublas_dot( a.shape[0],

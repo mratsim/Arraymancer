@@ -8,8 +8,8 @@ proc matgen(n: int): auto =
     let tmp = 1.0 / (n*n).float64
     let j_idx = @[toSeq(0..<n)].toTensor(Cpu).astype(float64).broadcast([n,n])
     let i_idx = j_idx.transpose
-    ## TODO: +, -, |*| are very slow
-    return (i_idx - j_idx) |*| (i_idx + j_idx) * tmp
+    ## TODO: +, -, .* are very slow
+    return (i_idx - j_idx) .* (i_idx + j_idx) * tmp
 
 var n = 100
 if paramCount()>0:

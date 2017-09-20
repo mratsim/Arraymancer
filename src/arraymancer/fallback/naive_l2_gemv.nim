@@ -46,5 +46,5 @@ proc naive_gemv_fallback[T: SomeInteger](
   let colA = A.shape[1]
 
   for ai in A.axis(0):
-    y[i] = y[i] + alpha * (ai.reshape(colA) .* x)
+    y[i] = y[i] + alpha * dot(ai.reshape(colA),x)
     i += 1

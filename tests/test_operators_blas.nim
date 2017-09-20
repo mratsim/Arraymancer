@@ -144,12 +144,12 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     let u_int = @[1, 3, -5].toTensor()
     let v_int = @[4, -2, -1].toTensor()
 
-    check: u_int .* v_int == 3
+    check: dot(u_int,v_int) == 3
 
     let u_float = @[1'f64, 3, -5].toTensor()
     let v_float = @[4'f64, -2, -1].toTensor()
 
-    check: u_float .* v_float == 3.0
+    check: dot(u_float,v_float) == 3.0
 
   test "Multiplication/division by scalar":
     let u_int = @[1, 3, -5].toTensor()
@@ -219,16 +219,16 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     let expected_mul_int = @[-8, 0, 27].toTensor()
     let expected_div_int = @[-2, 0, 3].toTensor()
 
-    check: u_int |*| v_int == expected_mul_int
-    check: u_int |/| v_int == expected_div_int
+    check: u_int .* v_int == expected_mul_int
+    check: u_int ./ v_int == expected_div_int
 
     let u_float = @[1.0, 8.0, -3.0].toTensor()
     let v_float = @[4.0, 2.0, 10.0].toTensor()
     let expected_mul_float = @[4.0, 16.0, -30.0].toTensor()
     let expected_div_float = @[0.25, 4.0, -0.3].toTensor()
 
-    check: u_float |*| v_float == expected_mul_float
-    check: u_float |/| v_float == expected_div_float
+    check: u_float .* v_float == expected_mul_float
+    check: u_float ./ v_float == expected_div_float
 
   test "Addition-Substraction - slices":
     let a = @[@[1.0,2,3],@[4.0,5,6], @[7.0,8,9]].toTensor()

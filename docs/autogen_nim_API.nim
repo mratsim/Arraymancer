@@ -541,7 +541,7 @@
 ## -  multiplication or division by a scalar using ``*`` and ``/``
 ## -  matrix-matrix multiplication using ``*``
 ## -  matrix-vector multiplication using ``*``
-## -  element-wise multiplication (Hadamard product) using ``|*|``
+## -  element-wise multiplication (Hadamard product) using ``.*``
 ##
 ## Note: Matrix operations for floats are accelerated using BLAS (Intel
 ## MKL, OpenBLAS, Apple Accelerate ...). Unfortunately there is no

@@ -51,7 +51,7 @@ All those pain points may seem like a huge undertaking however thanks to the Nim
 - Be as fast as C
 - Accelerated routines with Intel MKL/OpenBLAS or even NNPACK
 - Access to CUDA and reusing existing Torch, Tensorflow or Nervana Neon kernels
-- A Python-like syntax with custom operators `a .* b` for tensor multiplication instead of `a.dot(b)` (Numpy/Tensorflow) or `a.mm(b)` (Torch) and Numpy-like slicing ergonomics `t[0..4, 2..10|2]`
+- A Python-like syntax with custom operators `a * b` for tensor multiplication instead of `a.dot(b)` (Numpy/Tensorflow) or `a.mm(b)` (Torch) and Numpy-like slicing ergonomics `t[0..4, 2..10|2]`
 - Target javascript and soon WebAssembly
 
 ## Support (Types, OS, Hardware)
@@ -486,13 +486,13 @@ let foo_float = foo.astype(float)
 
 The following linear algebra operations are supported for tensors of rank 1 (vectors) and 2 (matrices):
 
-- dot product (Vector to Vector) using `.*`
+- dot product (Vector to Vector) using `dot`
 - addition and substraction (any rank) using `+` and `-`
 - in-place addition and substraction (any-rank) using `+=` and `-=`
 - multiplication or division by a scalar using `*` and `/`
 - matrix-matrix multiplication using `*`
 - matrix-vector multiplication using `*`
-- element-wise multiplication (Hadamard product) using `|*|`
+- element-wise multiplication (Hadamard product) using `.*`
 
 Note: Matrix operations for floats are accelerated using BLAS (Intel MKL, OpenBLAS, Apple Accelerate ...). Unfortunately there is no acceleration routine for integers. Integer matrix-matrix and matrix-vector multiplications are implemented via semi-optimized routines (no naive loops but don't leverage CPU-specific features).
 

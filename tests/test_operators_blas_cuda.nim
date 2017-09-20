@@ -116,7 +116,7 @@ suite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
     let u = @[1'f64, 3, -5].toTensor().cuda()
     let v = @[4'f64, -2, -1].toTensor().cuda()
 
-    check: u .* v == 3.0
+    check: dot(u,v) == 3.0
 
   test "Matrix and Vector in-place addition":
     var u = @[1'f64, 3, -5].toTensor().cuda()

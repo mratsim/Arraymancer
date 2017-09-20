@@ -22,7 +22,8 @@ proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect.} =
   elif t is CudaTensor:
     return t.cpu.data
 
-proc export_tensor*[T](t: Tensor[T]): tuple[shape: seq[int], strides: seq[int], data: seq[T]] =
+proc export_tensor*[T](t: Tensor[T]):
+  tuple[shape: seq[int], strides: seq[int], data: seq[T]] {.noSideEffect.}=
   ## Export the tensor as a tuple containing
   ## - shape
   ## - strides

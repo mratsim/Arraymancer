@@ -60,7 +60,8 @@ proc toTensor*(s:string, backend: static[Backend]): auto {.noSideEffect, depreca
     toTensorCpu(s)
 
 # TODO add tests for zeros, ones and randomTensor
-proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: static[Backend]): auto {.deprecated, noSideEffect, inline.} =  ## Creates a new Tensor filled with 0
+proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: static[Backend]): auto {.deprecated, noSideEffect, inline.} =
+  ## Creates a new Tensor filled with 0
   ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
   ## init procs will not offer the backend parameter anymore.
   ## Full rationale in the Design_Document on Github.

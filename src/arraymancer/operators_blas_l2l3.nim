@@ -220,7 +220,7 @@ template matmat_fallback[T: SomeInteger](a, b, result: Tensor[T]): auto =
 # #################################################
 # Generic notation "*"
 
-proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] =
+proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T]  {.noSideEffect.} =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
   ## Float operations use optimized BLAS
 
@@ -231,15 +231,11 @@ proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] =
       if a.rank == 2 and b.rank == 2:    matmat_blis(a, b, result)
       elif a.rank == 2 and b.rank == 1:  matvec_blis(a, b, result)
       else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
-    else:
-      if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, result)
-      elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
-      else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+      return
 
-  else:
-    if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, result)
-    elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
-    else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+  if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, result)
+  elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
+  else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
 
 proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T]  {.noSideEffect.} =
   ## Matrix-Matrix and Matrix-Vector multiplications fallback for integer tensor

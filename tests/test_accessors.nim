@@ -70,7 +70,7 @@ suite "Accessing and setting tensor values":
     var seq_validx: seq[tuple[idx: seq[int], val: int]] = @[]
     for i,j in nda_vd:
       seq_validx.add((i,j))
-    
+
     check: seq_validx[0] == (@[0,0], 1)
     check: seq_validx[10] == (@[3,1], 16)
 
@@ -79,6 +79,15 @@ suite "Accessing and setting tensor values":
     var seq_transpose: seq[tuple[idx: seq[int], val: int]] = @[]
     for i,j in t_nda:
       seq_transpose.add((i,j))
-    
+
     check: seq_transpose[0] == (@[0,0], 1)
     check: seq_transpose[8] == (@[1,3], 16)
+
+  test "indexing + in-place operator":
+    var a = newTensor([3,3], int)
+
+    a[1,1] += 10
+
+    a[1,1] *= 20
+
+    check: a == [[0,0,0],[0,200,0],[0,0,0]].toTensor

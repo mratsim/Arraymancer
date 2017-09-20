@@ -34,6 +34,11 @@ proc atIndex[T](t: Tensor[T], idx: varargs[int]): T {.noSideEffect,inline.} =
   ## This used to be `[]` before slicing was implemented
   return t.data[t.getIndex(idx)]
 
+proc atIndex[T](t: var Tensor[T], idx: varargs[int]): var T {.noSideEffect,inline.} =
+  ## Get the value at input coordinates
+  ## This allows inplace operators t[1,2] += 10 syntax
+  return t.data[t.getIndex(idx)]
+
 proc atIndexMut[T](t: var Tensor[T], idx: varargs[int], val: T) {.noSideEffect,inline.} =
   ## Set the value at input coordinates
   ## This used to be `[]=` before slicing was implemented

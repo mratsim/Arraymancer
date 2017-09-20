@@ -28,22 +28,6 @@ proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   result.len = t.len
 
 
-## CopyOp Functor
-## Does element-wise copy A[i] = B[i]
-## __ldg is a cuda intrinsics to load read-only data
-## from a special cache
-{.emit: """
-  template<typename T>
-  struct CopyOp{
-  __device__ __forceinline__ void operator()(
-    T *  __restrict__ dst,
-    const T *  __restrict__ src){
-      *dst = __ldg(src);
-    }
-  };
-""".}
-
-
 {.emit: """
   template<typename T>
   inline void cuda_asContiguous(
@@ -66,7 +50,7 @@ proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
         src_shape, src_strides, src_offset, src_data
       );
     }
-""".}
+  """.}
 
 proc cuda_asContiguous[T: SomeReal](
   blocksPerGrid, threadsPerBlock: cint,

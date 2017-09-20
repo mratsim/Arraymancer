@@ -14,8 +14,7 @@
 
 proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noSideEffect.}=
   ## Apply type conversion on the whole tensor
-  tensorCpu(t.shape, result)
-  result.data = t.data.map(x => x.U)
+  result = t.map(x => x.U)
 
 template makeUniversal*(func_name: untyped) =
   # Lift an unary function into an exported universal function.

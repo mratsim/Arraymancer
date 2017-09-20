@@ -51,6 +51,25 @@ suite "Shapeshifting":
     check: a == [[1,2],
                  [3,4]].toTensor()
 
+  test "Shallow/Unsafe reshape":
+    block:
+      var a = toSeq(1..4).toTensor()
+      var a_view = a.shallowReshape(2,2)
+      check: a_view == [[1,2],[3,4]].toTensor()
+      a_view[_, _] = 0
+      check: a == [0,0,0,0].toTensor()
+
+    # on slices
+    block:
+      # not that 'a' here a let variable, however
+      # unsafeView and unsafeReshape allow us to
+      # modify its elements value
+      let a = toSeq(1..4).toTensor()
+      var a_view = a.unsafeView(1..2).unsafeReshape(1,2)
+      check: a_view == [[2,3]].toTensor()
+      a_view[_, _] = 0
+      check: a == [1,0,0,4].toTensor()
+
   test "Concatenation":
     let a = toSeq(1..4).toTensor().reshape(2,2)
 

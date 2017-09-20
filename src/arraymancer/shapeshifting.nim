@@ -112,7 +112,7 @@ template reshape_no_copy(t: Tensor|var Tensor, new_shape: varargs[int]): untyped
   # Strides extended for unmatched dimension
   let ext_strides = result.shape[matched_dims..result.shape.high].shape_to_strides
   result.strides = t.strides[0..<matched_dims] & ext_strides
-  result.offset = 0
+  result.offset = t.offset
 
   shallowCopy(result.data, t.data)
 

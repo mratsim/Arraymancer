@@ -73,7 +73,7 @@ proc cuda_asContiguous[T: SomeReal](
   rank, len: cint,
   dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
   src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
-) {.importcpp: "cuda_asContiguous<'*8>(@)", noSideEffect.}
+) {.importcpp: "cuda_asContiguous<'*8>(@)", noSideEffect, inline.}
 # We pass the 8th parameter type to the template.
 # The "*" in '*8 is needed to remove the pointer *
 

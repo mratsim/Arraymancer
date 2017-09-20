@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc check_reshape(t: Tensor, new_shape:seq[int]) {.noSideEffect.}=
+proc check_reshape(t: Tensor, new_shape:seq[int]) {.noSideEffect, inline.}=
   if t.shape.product != new_shape.product:
     raise newException(ValueError, "The total number of elements in the old (" &
                                     $t.shape.product &
@@ -20,7 +20,7 @@ proc check_reshape(t: Tensor, new_shape:seq[int]) {.noSideEffect.}=
                                     $new_shape.product &
                                     ") reshaped tensor must be the same")
 
-proc check_shallowReshape(t: Tensor) {.noSideEffect.}=
+proc check_shallowReshape(t: Tensor) {.noSideEffect, inline.}=
   if not t.isContiguous:
     raise newException(ValueError, "The tensor must be contiguous for reshape without copy")
 
@@ -32,7 +32,7 @@ proc check_concat(t1, t2: Tensor, axis: int) {.noSideEffect,inline.}=
   if not check1 or not check2:
     raise newException(ValueError, "Concatenation Error: Except along the concatenation axis tensors must have the same shape")
 
-proc transpose*(t: Tensor): Tensor {.noSideEffect.}=
+proc transpose*(t: Tensor): Tensor {.noSideEffect, inline.}=
   ## Transpose a Tensor.
   ##
   ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
@@ -57,9 +57,7 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
   elif t.is_F_contiguous and layout == colMajor:
     return t
 
-  result.shape = t.shape
-  result.strides = shape_to_strides(result.shape, layout)
-  result.offset = 0
+  tensorCpu(t.shape, result, layout)
   result.data = newSeq[T](result.shape.product)
 
   var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
@@ -75,9 +73,7 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
 
 proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] {.noSideEffect.}=
   # Can't call "tensorCpu" template here for some reason
-  result.shape = new_shape
-  result.strides = shape_to_strides(result.shape)
-  result.offset = 0
+  tensorCpu(new_shape, result)
   result.data = newSeq[T](result.shape.product)
 
   var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
@@ -85,7 +81,7 @@ proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] {.noSide
     result.data[i] = val
     inc i
 
-proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
+proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect, inline.}=
   ## Reshape a tensor
   ## Input:
   ##   - a tensor
@@ -106,7 +102,7 @@ template reshape_no_copy(t: Tensor|var Tensor, new_shape: varargs[int]): untyped
     check_reshape(t, ns)
 
   var matched_dims = 0
-  for shapes in zip(t.shape, new_shape):
+  for shapes in zip(t.shape, ns):
     if shapes[0] != shapes[1]:
       break
     inc matched_dims
@@ -155,7 +151,7 @@ proc broadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffec
     elif result.shape[i] != shape[i]:
       raise newException(ValueError, "The broadcasted size of the tensor must match existing size for non-singleton dimension")
 
-proc broadcast*[T: SomeNumber](v: T, shape: openarray[int]): Tensor[T] {.noSideEffect.} =
+proc broadcast*[T: SomeNumber](val: T, shape: openarray[int]): Tensor[T] {.noSideEffect.} =
   ## Broadcast a number
   ## Input:
   ##   - a number to be broadcasted
@@ -168,7 +164,7 @@ proc broadcast*[T: SomeNumber](v: T, shape: openarray[int]): Tensor[T] {.noSideE
   result.shape = @shape
   result.strides = newSeqWith(result.shape.len, 0)
   result.offset = 0
-  result.data = newSeqWith(1, v)
+  result.data = newSeqWith(1, val)
 
 template bc*(t: (Tensor|SomeNumber), shape: openarray[int]): untyped =
   ## Alias for ``broadcast``
@@ -225,9 +221,7 @@ proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noSideEffec
   let concat_shape = t0.shape[0..<axis] & axis_dim & t0.shape[axis+1..t0.shape.high]
 
   ## Setup the Tensor
-  result.shape = concat_shape
-  result.strides = shape_to_strides(result.shape)
-  result.offset = 0
+  tensorCpu(concat_shape, result)
   result.data = newSeq[T](result.shape.product)
 
   # Fill in the copy with the matching values

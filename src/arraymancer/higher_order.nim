@@ -27,9 +27,7 @@ proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] {.noSideEffect.}=
   # We use this opportunity to reshape the data internally
   # Iteration should be almost as fast for contiguous non-sliced Tensors
   # But may avoid a lot of unnecessary computations on slices
-  result.shape = t.shape
-  result.strides = shape_to_strides(result.shape)
-  result.offset = 0
+  tensorCpu(t.shape, result)
 
   result.data = newSeq[U](result.shape.product)
   var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
@@ -53,9 +51,8 @@ proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] {.no
   when compileOption("boundChecks"):
     check_elementwise(t1,t2)
 
-  result.shape = t1.shape
-  result.strides = shape_to_strides(result.shape)
-  result.offset = 0
+  tensorCpu(t1.shape, result)
+
   result.data = newSeq[U](result.shape.product)
 
   # TODO use mitems instead of result.data[i] cf profiling

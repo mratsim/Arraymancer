@@ -88,8 +88,6 @@ template matvec_blas[T: SomeReal](a, x, result: Tensor[T]): auto =
   result.strides = @[1]
   result.offset = 0
 
-  # TODO use a GEMV kernel that supports strided arrays like BLIS
-  # That avoids copies and a conversion step
   # Stride for X is supported via incx argument of GEMV
   let cont_a = a.asContiguous
 
@@ -222,7 +220,7 @@ template matmat_fallback[T: SomeInteger](a, b, result: Tensor[T]): auto =
 # #################################################
 # Generic notation "*"
 
-proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
+proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
   ## Float operations use optimized BLAS
 
@@ -233,10 +231,15 @@ proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
       if a.rank == 2 and b.rank == 2:    matmat_blis(a, b, result)
       elif a.rank == 2 and b.rank == 1:  matvec_blis(a, b, result)
       else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+    else:
+      if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, result)
+      elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
+      else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
 
-  if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, result)
-  elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
-  else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+  else:
+    if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, result)
+    elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
+    else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
 
 proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T]  {.noSideEffect.} =
   ## Matrix-Matrix and Matrix-Vector multiplications fallback for integer tensor

@@ -71,7 +71,7 @@ type Step* = object
   b: int
   step: int
 
-proc check_steps(a,b, step:int) {.noSideEffect.}=
+proc check_steps(a,b, step:int) {.noSideEffect, inline.}=
   ## Though it might be convenient to automatically step in the correct direction like in Python
   ## I choose not to do it as this might introduce the typical silent bugs typechecking/Nim is helping avoid.
   
@@ -88,7 +88,7 @@ proc check_steps(a,b, step:int) {.noSideEffect.}=
                 start must be inferior to stop and inversely if your step is negative
                 start must be superior to stop.""")
 
-proc check_shape(a, b: Tensor|openarray) {.noSideEffect.}=
+proc check_shape(a, b: Tensor|openarray) {.noSideEffect, inline.}=
   ## Compare shape
   if a.shape == b.shape:
     return

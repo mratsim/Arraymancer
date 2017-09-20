@@ -14,9 +14,7 @@
 
 proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noSideEffect.}=
   ## Apply type conversion on the whole tensor
-  result.shape = t.shape
-  result.strides = t.strides
-  result.offset = t.offset
+  tensorCpu(t.shape, result)
   result.data = t.data.map(x => x.U)
 
 template makeUniversal*(func_name: untyped) =
@@ -26,7 +24,7 @@ template makeUniversal*(func_name: untyped) =
   #
   # ``makeUniversal`` does not work when internal type is changing,
   # use map instead
-  proc func_name*(t: Tensor): Tensor {.noSideEffect.}=
+  proc func_name*(t: Tensor): Tensor {.noSideEffect, inline.}=
     ## Universal version of the function.
     ##
     ## The function can be used directly on tensors and will work element-wise.
@@ -40,7 +38,7 @@ template makeUniversalLocal*(func_name: untyped) =
   #
   # ``makeUniversalLocal`` does not work when internal type is changing
   # use map instead
-  proc func_name(t: Tensor): Tensor {.noSideEffect.}=
+  proc func_name(t: Tensor): Tensor {.noSideEffect, inline.}=
     t.map(func_name)
 
 # Unary functions from Nim math library

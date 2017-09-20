@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc shallowCopy*[T](t: var Tensor[T]): Tensor[T] {.noSideEffect.}=
+proc shallowCopy*[T](t: var Tensor[T]): Tensor[T] {.noSideEffect, inline.}=
   ## Input:
   ##     - A ``var`` tensor
   ## Returns:
@@ -26,7 +26,7 @@ proc shallowCopy*[T](t: var Tensor[T]): Tensor[T] {.noSideEffect.}=
   result.offset = t.offset
   shallowCopy(result.data, t.data)
 
-proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect.}=
+proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ##       WARNING: even if the input tensor is a "let"
@@ -42,7 +42,7 @@ proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect.}=
   result.offset = t.offset
   shallowCopy(result.data, t.data)
 
-proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect.}=
+proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect, inline.}=
   ## Compare the detected shape from flatten with the real length of the data
   ## Input:
   ##   -- A shape (sequence of int)
@@ -50,9 +50,9 @@ proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect.}=
   if (shape.product != len):
     raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
 
-template tensorCpu[T](out_shape: openarray[int], t: Tensor[T]): untyped =
+template tensorCpu[T](out_shape: openarray[int], t: Tensor[T], layout: OrderType = rowMajor): untyped =
   t.shape = @out_shape
-  t.strides = shape_to_strides(t.shape)
+  t.strides = shape_to_strides(t.shape, layout)
   t.offset = 0
 
 template toTensorCpu(s: typed): untyped =
@@ -66,7 +66,7 @@ template toTensorCpu(s: typed): untyped =
   t.data = data
   return t
 
-proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect.} =
+proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -110,7 +110,7 @@ proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.
   ##      - A zero-ed Tensor of the same shape
   return zeros(t.shape, T)
 
-proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {.noSideEffect.} =
+proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {.noSideEffect,inline.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor

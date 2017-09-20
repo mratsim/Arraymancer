@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-proc cudaMalloc[T](size: int): ptr T {.noSideEffect.}=
+proc cudaMalloc[T](size: int): ptr T {.noSideEffect, inline.}=
   ## Internal proc.
   ## Wrap CudaMAlloc(var pointer, size) -> Error_code
   let s = size * sizeof(T)

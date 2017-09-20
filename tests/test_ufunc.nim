@@ -16,6 +16,11 @@ import ../src/arraymancer
 import math, unittest
 
 suite "Universal functions":
+  test "As type with slicing":
+    let a = [1, 2, 3, 4].toTensor()
+    let b = a[1..2].astype(float)
+    check b == [2.0'f64,3.0'f64].toTensor()
+
   test "Common math functions are exported":
     let a = @[@[1.0,2,3],@[4.0,5,6]]
     let b = @[@[7.0, 8],@[9.0, 10],@[11.0, 12]]

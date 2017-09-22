@@ -15,12 +15,8 @@
 type
   Backend* = enum
     ## ``Backend`` for tensor computation and memory allocation.
-    ##
-    ## Only Cpu is supported for now.
     Cpu,
     Cuda
-    # OpenCL
-    # Magma
 
   Tensor*[T] = object
     # Size of the datastructure is 32 bytes - perfect !
@@ -39,7 +35,7 @@ type
     ##   - ``shape``: Dimensions of the tensor
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
     ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
-    ##   - ``data_ref``: A reference-counted pointer to the data location
+    ##   - ``data``: A cuda seq-like object that points to the data location
     shape*: seq[int]
     strides*: seq[int]
     offset*: int
@@ -60,6 +56,13 @@ template rank*(t: AnyTensor): int =
   ##   - N for N-dimension array
   ##
   t.shape.len
+
+proc size*(t: AnyTensor): int {.noSideEffect, inline.}=
+  ## Input:
+  ##     - A tensor
+  ## Returns:
+  ##     - The total number of elements it contains
+  t.shape.product
 
 proc shape_to_strides*(shape: seq[int], layout: OrderType = rowMajor): seq[int] {.noSideEffect.} =
   ## Compute strides matching with dimensions.

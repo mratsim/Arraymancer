@@ -200,8 +200,6 @@ suite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
     expect(ValueError):
       discard a + b.cpu[0..1, 0..1].cuda
 
-    # TODO: when slices are implemented, test on non-contiguous slices
-
   test "Matrix and vector substraction":
     let u = @[1'f32, 3, -5].toTensor.cuda
     let v = @[1'f32, 1, 1].toTensor.cuda
@@ -219,7 +217,12 @@ suite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
     expect(ValueError):
       discard a + b.cpu[0..1, 0..1].cuda
 
-    # TODO: when slices are implemented, test on non-contiguous slices
+  test "Addition-Substraction - slices":
+    let a = @[@[1.0,2,3],@[4.0,5,6], @[7.0,8,9]].toTensor().cuda
+    let a_t = a.transpose()
+
+    check: (a[0..1, 0..1] + a_t[0..1, 0..1]).cpu == [[2.0, 6], [6.0, 10]].toTensor()
+    check: (a[1..2, 1..2] - a_t[1..2, 1..2]).cpu == [[0.0, -2], [2.0, 0]].toTensor()
 
   test "Multiplication/division by scalar":
     let u = @[2'f64, 6, -10].toTensor.cuda()

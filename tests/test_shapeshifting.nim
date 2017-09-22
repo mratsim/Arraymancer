@@ -100,3 +100,10 @@ suite "Shapeshifting":
       let b = a.bc([2,2])
       check b == [[1,1],
                   [2,2]].toTensor()
+
+  test "Squeeze":
+    let a = toSeq(1..12).toTensor().reshape(1,3,1,2,1,1,2)
+
+    let b = a.squeeze
+
+    check b == toSeq(1..12).toTensor().reshape(3,2,2)

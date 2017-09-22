@@ -233,3 +233,28 @@ proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noSideEffec
     slices[axis].b = iaxis + t.shape[axis] - 1
     result.slicerMut(slices, t)
     iaxis += t.shape[axis]
+
+template squeezeT(t: var AnyTensor): untyped =
+  var idx_real_dim = 0
+
+  for i in 0..<t.rank:
+    if t.shape[i] != 1:
+      if i != idx_real_dim:
+        t.shape[idx_real_dim] = t.shape[i]
+        t.strides[idx_real_dim] = t.strides[i]
+      inc idx_real_dim
+  
+  t.shape = t.shape[0..<idx_real_dim]
+  t.strides = t.strides[0..<idx_real_dim]
+
+proc squeeze*(t: AnyTensor): AnyTensor {.noSideEffect.}=
+  result = t
+  result.squeezeT
+
+proc shallowSqueeze*(t: var Tensor): Tensor {.noSideEffect.}=
+  result = t.shallowCopy
+  result.squeezeT
+
+proc unsafeSqueeze*(t: Tensor): Tensor {.noSideEffect.}=
+  result = t.unsafeView
+  result.squeezeT

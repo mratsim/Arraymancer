@@ -52,27 +52,29 @@ template strided_iteration[T](t: Tensor[T], strider: IterKind): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
 
   ## Iterator init
-  var coord = newSeq[int](t.rank) # Coordinates in the n-dimentional space
-  var backstrides: seq[int] = @[] # Offset between end of dimension and beginning
-  for i,j in zip(t.strides,t.shape):
-    backstrides.add(i*(j-1))
-
   var iter_pos = t.offset
+  let rank = t.rank
+  let shape = t.shape
+  let strides = t.strides
+  var coord: array[MAXDIMS, int]
+  var backstrides: array[MAXDIMS, int]
+  for i in 0..<rank:
+    backstrides[i] = strides[i]*(shape[i]-1)
 
   ## Iterator loop
-  for i in 0 .. <t.shape.product:
+  for i in 0 .. <shape.product:
 
     ## Templating the return value
     when strider == IterKind.Values: yield t.data[iter_pos]
-    elif strider == IterKind.Coord_Values: yield (coord, t.data[iter_pos])
+    elif strider == IterKind.Coord_Values: yield (coord[0..<rank], t.data[iter_pos])
     elif strider == IterKind.MemOffset: yield iter_pos
     elif strider == IterKind.MemOffset_Values: yield (iter_pos, t.data[iter_pos])
 
     ## Computing the next position
-    for k in countdown(t.rank - 1,0):
-      if coord[k] < t.shape[k]-1:
+    for k in countdown(rank - 1,0):
+      if coord[k] < shape[k]-1:
         coord[k] += 1
-        iter_pos += t.strides[k]
+        iter_pos += strides[k]
         break
       else:
         coord[k] = 0
@@ -84,7 +86,8 @@ iterator items*[T](t: Tensor[T]): T {.noSideEffect.}=
 
 proc values*[T](t: Tensor[T]): auto {.noSideEffect.}=
   ## Closure stride-aware iterator on Tensor values
-  return iterator(): T = t.strided_iteration(IterKind.Values)
+  let ref_t = t.unsafeAddr # avoid extra copy
+  return iterator(): T = ref_t[].strided_iteration(IterKind.Values)
 
 iterator mitems*[T](t: var Tensor[T]): var T {.noSideEffect.}=
   ## Inline stride-aware iterator on Tensor values.
@@ -104,7 +107,8 @@ iterator real_indices(t: Tensor): int {.noSideEffect.}=
 proc real_indices(t: Tensor): auto {.noSideEffect.}=
   ## Closure stride-aware iterator on Tensor real indices in the seq storage
   ## For loop will not use this one. It must be assigned before use.
-  return iterator(): int = t.strided_iteration(IterKind.MemOffset)
+  let ref_t = t.unsafeAddr # avoid extra copy
+  return iterator(): int = ref_t[].strided_iteration(IterKind.MemOffset)
 
 template axis_iterator*[T](t: Tensor[T], axis: int): untyped =
   var out_t = t

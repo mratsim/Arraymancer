@@ -30,6 +30,13 @@ type
     offset*: int
     data*: seq[T] # Perf note: seq are always deep copied on "var" assignement.
 
+  CudaSeq* [T: SomeReal] = object
+    ## Cuda-Seq like structure
+    ## End goal is for it to have value semantics like Nim seq
+    ## and optimize to not copy if referenced only once
+    len: int
+    data: ref[ptr UncheckedArray[T]]
+
   CudaTensor*[T: SomeReal] = object
     ## Tensor data structure, stored on Nvidia GPU (Cuda)
     ##   - ``shape``: Dimensions of the tensor
@@ -39,8 +46,7 @@ type
     shape*: seq[int]
     strides*: seq[int]
     offset*: int
-    data_ref*: ref[ptr T] # Memory on Cuda device will be automatically garbage-collected
-    len*: int
+    data*: CudaSeq[T] # Memory on Cuda device will be automatically garbage-collected
 
   AnyTensor[T] = Tensor[T] or CudaTensor[T]
 
@@ -103,4 +109,4 @@ template get_data_ptr*[T](t: AnyTensor[T]): ptr T =
   when t is Tensor:
     unsafeAddr(t.data[0])
   elif t is CudaTensor:
-    t.data_ref[]
+    unsafeAddr(t.data.data[0])

@@ -23,7 +23,7 @@ proc shallowCopy*[T](t: var CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect.
   ##   However modifying the shape, strides or offset will not affect the other.
   
   # shape and strides fields have value semantics by default
-  # data_ref has ref semantics
+  # CudaSeq has ref semantics
   system.`=`(result, t)
 
 proc clone*[T](t: CudaTensor[T]): CudaTensor[T] =
@@ -36,13 +36,11 @@ proc clone*[T](t: CudaTensor[T]): CudaTensor[T] =
   # Note: due to modifying the defaultStream global var for async memcopy
   # proc cannot be tagged noSideEffect
 
-  new(result.data_ref, deallocCuda)
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset
-  result.len = t.len
-  result.data_ref[] = cudaMalloc[T](result.len)
-  let size = result.len * sizeof(T)
+  result.data = newCudaSeq[T](t.data.len)
+  let size = t.data.len * sizeof(T)
 
   check cudaMemCpyAsync(result.get_data_ptr,
                         t.get_data_ptr,
@@ -58,14 +56,12 @@ proc clone*[T](t: CudaTensor[T]): CudaTensor[T] =
 # proc `=`*[T](dest: var CudaTensor[T]; src: CudaTensor[T]) =
 #   ## Overloading the assignment operator
 #   ## It will have value semantics by default
-#   new(dest.data_ref, deallocCuda)
 #   dest.shape = src.shape
 #   dest.strides = src.strides
 #   dest.offset = src.offset
-#   dest.len = src.len
-#   dest.data_ref[] = cudaMalloc[T](dest.len)
+#   dest.data = newCudaSeq(src.data.len)
 #
-#   let size = dest.len * sizeof(T)
+#   let size = dest.size * sizeof(T)
 #
 #   check cudaMemCpy(dest.get_data_ptr,
 #                    src.get_data_ptr,
@@ -89,12 +85,10 @@ proc newCudaTensor[T: SomeReal](shape: openarray[int], layout: OrderType = colMa
   # As mentionned in design doc, an element-wise kernel will avoid relying on CuBLAS
   # for inplace operation that requires column major layout.
 
-  new(result.data_ref, deallocCuda)
   result.shape = @shape
-  result.len = result.size
-  result.data_ref[] = cudaMalloc[T](result.len)
   result.strides = shape_to_strides(result.shape, layout)
   result.offset = 0
+  result.data = newCudaSeq[T](result.size)
 
 proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] =
   ## Convert a tensor on Cpu to a tensor on a Cuda device.
@@ -105,7 +99,7 @@ proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] =
 
   # TODO: avoid reordering rowMajor tensors. This is only needed for inplace operation in CUBLAS.
   let contig_t = t.asContiguous(colMajor, force = true)
-  let size = result.len * sizeof(T)
+  let size = result.size * sizeof(T)
 
   # For host to device we use non-blocking copy
   # Host can proceed with computation.
@@ -124,9 +118,9 @@ proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect.}=
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset
-  result.data = newSeq[T](t.len)
+  result.data = newSeq[T](t.data.len) # We copy over all the memory allocated
 
-  let size = t.len * sizeof(T)
+  let size = t.data.len * sizeof(T)
 
   check cudaMemCpy(result.get_data_ptr,
                    t.get_data_ptr,

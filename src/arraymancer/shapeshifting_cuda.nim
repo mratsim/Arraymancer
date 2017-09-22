@@ -24,8 +24,7 @@ proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   result.shape = t.shape.reversed
   result.strides = t.strides.reversed
   result.offset = t.offset
-  result.data_ref = t.data_ref
-  result.len = t.len
+  result.data = t.data
 
 proc cuda_asContiguous = discard # This is a hack so that the symbol is open
 cuda_assign_glue(cuda_asContiguous, "CopyOp")

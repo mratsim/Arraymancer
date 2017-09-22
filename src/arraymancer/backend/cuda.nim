@@ -12,14 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Data structures to ease interfacing with Cuda and kernels
+
+proc cudaMalloc[T](size: int): ptr T {.noSideEffect, inline.}=
+  ## Internal proc.
+  ## Wrap CudaMAlloc(var pointer, size) -> Error_code
+  let s = size * sizeof(T)
+  check cudaMalloc(cast[ptr pointer](addr result), s)
+
+proc deallocCuda[T](p: ref[ptr T]) {.noSideEffect.}=
+  if not p[].isNil:
+    check cudaFree(p[])
 
 
-# Data structure to ease interfacing with Cuda and kernels
-# This needs -d:cuda compilation flag to work
+###############################################################
+## Base CudaSeq type
+## End goal is for it to have value semantics like Nim seq
 
+proc newCudaSeq[T: SomeReal](length: int): CudaSeq[T] {.noSideEffect.}=
+  result.len = length
+  new(result.data, deallocCuda)
+  result.data[] = cast[ptr UncheckedArray[T]](cudaMalloc[T](result.len))
 
-# MAXRANK is defined in Arraymancer's global_config.nim
-# Unfortunately const cannot be exportc by Nim so we use a template to emit the code with the const
+##########################################################
+## Sending tensor layout to Cuda Kernel
 
 ## So that layout->strides can be used in Cuda kernel, it's easier if everything is declared from cpp
 ## pending https://github.com/nim-lang/Nim/issues/6415
@@ -65,17 +81,6 @@ type
     offset: cint
     data: ptr T              # Data on Cuda device
     len: cint                # Number of elements allocated in memory
-
-
-proc cudaMalloc[T](size: int): ptr T {.noSideEffect, inline.}=
-  ## Internal proc.
-  ## Wrap CudaMAlloc(var pointer, size) -> Error_code
-  let s = size * sizeof(T)
-  check cudaMalloc(cast[ptr pointer](addr result), s)
-
-proc deallocCuda[T](p: ref[ptr T]) {.noSideEffect.}=
-  if not p[].isNil:
-    check cudaFree(p[])
 
 proc layoutOnDevice*[T:SomeReal](t: CudaTensor[T]): CudaTensorLayout[T] {.noSideEffect.}=
   ## Store a CudaTensor shape, strides, etc information on the GPU

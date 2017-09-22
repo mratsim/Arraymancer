@@ -55,6 +55,7 @@ when defined(cuda):
           ./arraymancer/accessors_cuda,
           ./arraymancer/display_cuda,
           ./arraymancer/functors_cuda.nim,
+          ./arraymancer/functors_glue_cuda.nim,
           ./arraymancer/higher_order_cuda,
           ./arraymancer/operators_blas_l1_cuda,
           ./arraymancer/operators_blas_l2l3_cuda,

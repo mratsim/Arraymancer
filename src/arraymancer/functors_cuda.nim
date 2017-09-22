@@ -19,11 +19,12 @@
 #
 # elementwise:
 #   C = (A + B*sin(D))/exp(-X)
+#
+## __ldg is a cuda intrinsics to load read-only data
+## from a special cache
 
 ## Assignment functors
 ## Does element-wise A[i] `op=` B[i]
-## __ldg is a cuda intrinsics to load read-only data
-## from a special cache
 template cuda_assign_op(op_name, op_symbol: string)=
   {.emit: ["""
   template<typename T>

@@ -27,7 +27,7 @@
 # template create_CudaTensorLayout(N: static[int]) =
 #   ## This Layout in C++ will be overriden by a CudaMemCpy from the Nim data structure
 #   {. emit:[ """
-# 
+#
 #     template <typename T>
 #     struct CudaTensorLayout {
 #       int rank;
@@ -36,15 +36,15 @@
 #       int offset;
 #       T * __restrict__ data;
 #       };
-# 
-# 
+#
+#
 #   """].}
-# 
+#
 # create_CudaTensorLayout(MAXDIMS)
 
 type
   # CudaLayoutArray = array[MAXDIMS, cint]
-  # This will replace ptr T in shape and strides
+  # This will replace the current ref[ptr T] for shape and strides in the future
   ## Using arrays instead of seq avoids having to indicate __restrict__ everywhere to indicate no-aliasing
   ## We also prefer stack allocated array sice the data will be used at every single loop iteration to compute elements position.
   ## Ultimately it avoids worrying about deallocation too
@@ -77,7 +77,7 @@ proc deallocCuda[T](p: ref[ptr T]) {.noSideEffect.}=
   if not p[].isNil:
     check cudaFree(p[])
 
-proc layoutOnDevice*[T:SomeReal](t: CudaTensor[T]): CudaTensorLayout[T]=
+proc layoutOnDevice*[T:SomeReal](t: CudaTensor[T]): CudaTensorLayout[T] {.noSideEffect.}=
   ## Store a CudaTensor shape, strides, etc information on the GPU
   #
   # TODO: instead of storing pointers to shape/stride/etc that are passed to each kernel
@@ -89,6 +89,12 @@ proc layoutOnDevice*[T:SomeReal](t: CudaTensor[T]): CudaTensorLayout[T]=
   result.data = t.get_data_ptr
   result.len = t.size.cint
 
+  new result.shape, deallocCuda
+  new result.strides, deallocCuda
+
+  result.shape[] = cudaMalloc[cint](MAXDIMS)
+  result.strides[] = cudaMalloc[cint](MAXDIMS)
+
   var
     tmp_shape: array[MAXDIMS, cint] # CudaLayoutArray
     tmp_strides: array[MAXDIMS, cint] # CudaLayoutArray
@@ -96,12 +102,7 @@ proc layoutOnDevice*[T:SomeReal](t: CudaTensor[T]): CudaTensorLayout[T]=
   for i in 0..<result.rank:
     tmp_shape[i] = t.shape[i].cint
     tmp_strides[i] = t.strides[i].cint
-  
-  new result.shape, deallocCuda
-  new result.strides, deallocCuda
 
-  result.shape[] = cudaMalloc[cint](MAXDIMS)
-  result.strides[] = cudaMalloc[cint](MAXDIMS)
 
   # TODO: use streams and async
   let size = t.rank * sizeof(cint)

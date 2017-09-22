@@ -18,4 +18,13 @@
 # This configures the maximum number of dimensions supported by Arraymancer
 # It should improve performance on Cuda and for iterator by storing temporary shape/strides
 # that will be used extensively in the loop on the stack.
+# For now this is only partly implemented and only on Cuda temporary shape/strides arrays.
 const MAXDIMS = 8 # 8 because it's a nice number, more is possible upon request.
+
+
+const CUDA_HOF_TPB: cint = 32 * 32 # TODO, benchmark and move that to cuda global config
+                                   # Pascal GTX 1070+ have 1024 threads max
+const CUDA_HOF_BPG: cint = 256     # should be (grid-stride+threadsPerBlock-1) div threadsPerBlock ?
+                                   # From https://devblogs.nvidia.com/parallelforall/cuda-pro-tip-write-flexible-kernels-grid-stride-loops/
+                                   # Lower allows threads re-use and limit overhead of thread creation/destruction
+

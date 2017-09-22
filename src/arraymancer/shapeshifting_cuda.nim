@@ -27,39 +27,8 @@ proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   result.data_ref = t.data_ref
   result.len = t.len
 
-
-{.emit:["""
-  template<typename T>
-  inline void cuda_asContiguous(
-    const int blocksPerGrid, const int threadsPerBlock,
-    const int rank,
-    const int len,
-    const int * __restrict__ dst_shape,
-    const int * __restrict__ dst_strides,
-    const int dst_offset,
-    T * __restrict__ dst_data,
-    const int * __restrict__ src_shape,
-    const int * __restrict__ src_strides,
-    const int src_offset,
-    const T * __restrict__ src_data){
-
-      cuda_apply2<<<blocksPerGrid, threadsPerBlock>>>(
-        rank, len,
-        dst_shape, dst_strides, dst_offset, dst_data,
-        CopyOp<T>(),
-        src_shape, src_strides, src_offset, src_data
-      );
-    }
-  """].}
-
-proc cuda_asContiguous[T: SomeReal](
-  blocksPerGrid, threadsPerBlock: cint,
-  rank, len: cint,
-  dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-  src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
-) {.importcpp: "cuda_asContiguous<'*8>(@)", noSideEffect.}
-# We pass the 8th parameter type to the template.
-# The "*" in '*8 is needed to remove the pointer *
+proc cuda_asContiguous = discard # This is a hack so that the symbol is open
+cuda_assign_glue(cuda_asContiguous, "CopyOp")
 
 proc asContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, force: bool = false):
   CudaTensor[T] {.noSideEffect.}=
@@ -80,14 +49,4 @@ proc asContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, 
 
   result = newCudaTensor[T](t.shape, layout)
 
-  let dst = result.layoutOnDevice
-  let src = t.layoutOnDevice
-
-  cuda_asContiguous(
-    CUDA_HOF_TPB, CUDA_HOF_BPG,
-    src.rank, dst.len, # Note: small shortcut, in this case len and size (shape.product) are the same
-    dst.shape[], dst.strides[],
-    dst.offset, dst.data,
-    src.shape[], src.strides[],
-    src.offset, src.data
-  )
+  cuda_assign_call(cuda_asContiguous, result, t)

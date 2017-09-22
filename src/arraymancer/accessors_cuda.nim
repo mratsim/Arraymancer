@@ -34,19 +34,19 @@ proc getIndexOfElementID[T](t: Tensor[T], element_id: int): int {.noSideEffect,u
     assert element_id < t.shape.product
 
   result = t.offset
-  var reminderOffset = element_id
-  var dimIndex: int
+  var currentOffset = element_id
+  var dimIdx: int
 
   for k in countdown(t.rank - 1,0):
     ## hopefully the compiler doesn't do division twice ...
-    dimIndex = reminderOffset mod t.shape[k]
-    reminderOffset = reminderOffset div t.shape[k]
+    dimIdx = currentOffset mod t.shape[k]
+    currentOffset = currentOffset div t.shape[k]
 
     # cf atIndex proc to compute real_idx
-    result += dimIndex * t.strides[k]
+    result += dimIdx * t.strides[k]
 
 # Note we don't bound-checks the CUDA implementation
-{.emit: """
+{.emit:["""
   static inline __device__ int cuda_getIndexOfElementID(
     const int rank,
     const int * __restrict__ shape,
@@ -67,4 +67,4 @@ proc getIndexOfElementID[T](t: Tensor[T], element_id: int): int {.noSideEffect,u
 
     return real_idx;
   }
-  """.}
+  """].}

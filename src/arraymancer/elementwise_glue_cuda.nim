@@ -68,7 +68,7 @@ template cuda_assign_call[T: SomeReal](
 
   kernel_name(
     CUDA_HOF_TPB, CUDA_HOF_BPG,
-    src.rank, dst.len, # Note: small shortcut, in this case len and size (shape.product) are the same
+    src.rank, dst.len, # Note: small shortcut, in this case len and size are the same
     dst.shape[], dst.strides[],
     dst.offset, dst.data,
     src.shape[], src.strides[],
@@ -137,7 +137,7 @@ template cuda_binary_call[T: SomeReal](
 
   kernel_name(
     CUDA_HOF_TPB, CUDA_HOF_BPG,
-    src_a.rank, dst.len, # Note: small shortcut, in this case len and size (shape.product) are the same
+    src_a.rank, dst.len, # Note: small shortcut, in this case len and size are the same
     dst.shape[], dst.strides[],
     dst.offset, dst.data,
     src_a.shape[], src_a.strides[],

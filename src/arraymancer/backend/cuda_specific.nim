@@ -18,7 +18,7 @@
 # This needs -d:cuda compilation flag to work
 
 
-# MAXDIMS is defined in Arraymancer's global_config.nim
+# MAXRANK is defined in Arraymancer's global_config.nim
 # Unfortunately const cannot be exportc by Nim so we use a template to emit the code with the const
 
 ## So that layout->strides can be used in Cuda kernel, it's easier if everything is declared from cpp
@@ -40,10 +40,10 @@
 #
 #   """].}
 #
-# create_CudaTensorLayout(MAXDIMS)
+# create_CudaTensorLayout(MAXRANK)
 
 type
-  # CudaLayoutArray = array[MAXDIMS, cint]
+  # CudaLayoutArray = array[MAXRANK, cint]
   # This will replace the current ref[ptr T] for shape and strides in the future
   ## Using arrays instead of seq avoids having to indicate __restrict__ everywhere to indicate no-aliasing
   ## We also prefer stack allocated array sice the data will be used at every single loop iteration to compute elements position.
@@ -92,12 +92,12 @@ proc layoutOnDevice*[T:SomeReal](t: CudaTensor[T]): CudaTensorLayout[T] {.noSide
   new result.shape, deallocCuda
   new result.strides, deallocCuda
 
-  result.shape[] = cudaMalloc[cint](MAXDIMS)
-  result.strides[] = cudaMalloc[cint](MAXDIMS)
+  result.shape[] = cudaMalloc[cint](MAXRANK)
+  result.strides[] = cudaMalloc[cint](MAXRANK)
 
   var
-    tmp_shape: array[MAXDIMS, cint] # CudaLayoutArray
-    tmp_strides: array[MAXDIMS, cint] # CudaLayoutArray
+    tmp_shape: array[MAXRANK, cint] # CudaLayoutArray
+    tmp_strides: array[MAXRANK, cint] # CudaLayoutArray
 
   for i in 0..<result.rank:
     tmp_shape[i] = t.shape[i].cint

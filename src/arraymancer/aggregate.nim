@@ -28,7 +28,7 @@ proc sum*[T: SomeNumber](t: Tensor[T], axis: int): Tensor[T] {.noSideEffect, inl
 
 proc mean*[T: SomeReal](t: Tensor[T]): T {.noSideEffect, inline.}=
   ## Compute the mean of all elements of T
-  t.sum / t.shape.product.T
+  t.sum / t.size.T
 
 proc mean*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noSideEffect, inline.}=
   ## Compute the mean of T along an axis

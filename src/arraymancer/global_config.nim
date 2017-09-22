@@ -19,7 +19,7 @@
 # It should improve performance on Cuda and for iterator by storing temporary shape/strides
 # that will be used extensively in the loop on the stack.
 # For now this is only partly implemented and only on Cuda temporary shape/strides arrays.
-const MAXDIMS = 8 # 8 because it's a nice number, more is possible upon request.
+const MAXRANK = 8 # 8 because it's a nice number, more is possible upon request.
 
 
 const CUDA_HOF_TPB: cint = 32 * 32 # TODO, benchmark and move that to cuda global config

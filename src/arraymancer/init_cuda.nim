@@ -91,7 +91,7 @@ proc newCudaTensor[T: SomeReal](shape: openarray[int], layout: OrderType = colMa
 
   new(result.data_ref, deallocCuda)
   result.shape = @shape
-  result.len = result.shape.product
+  result.len = result.size
   result.data_ref[] = cudaMalloc[T](result.len)
   result.strides = shape_to_strides(result.shape, layout)
   result.offset = 0

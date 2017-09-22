@@ -31,7 +31,7 @@ proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): a
   when backend == Cpu:
     var t: Tensor[T]
     tensorCpu(shape, t)
-    t.data = newSeq[T](t.shape.product)
+    t.data = newSeq[T](t.size)
     return t
   elif backend == Cuda:
     var t: CudaTensor[T]
@@ -89,7 +89,7 @@ proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: stat
   when backend == Cpu:
     var t: Tensor[T]
     tensor(shape, t)
-    t.data = newSeqWith(t.shape.product, 1.T)
+    t.data = newSeqWith(t.size, 1.T)
 
 proc randomTensor*(shape: openarray[int], max: float, backend: static[Backend]): auto {.deprecated.}=
   ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),

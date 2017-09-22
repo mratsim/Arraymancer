@@ -56,8 +56,8 @@ template strided_iteration[T](t: Tensor[T], strider: IterKind): untyped =
   let rank = t.rank
   let shape = t.shape
   let strides = t.strides
-  var coord: array[MAXDIMS, int]
-  var backstrides: array[MAXDIMS, int]
+  var coord: array[MAXRANK, int]
+  var backstrides: array[MAXRANK, int]
   for i in 0..<rank:
     backstrides[i] = strides[i]*(shape[i]-1)
 

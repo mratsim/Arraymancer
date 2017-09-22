@@ -31,7 +31,7 @@ proc getIndexOfElementID[T](t: Tensor[T], element_id: int): int {.noSideEffect,u
   ## On GPU however it will allow threads to address the real memory addresses independantly.
 
   when defined(boundsChecks):
-    assert element_id < t.shape.product
+    assert element_id < t.size
 
   result = t.offset
   var currentOffset = element_id

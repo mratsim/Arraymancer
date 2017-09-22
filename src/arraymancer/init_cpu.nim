@@ -75,7 +75,7 @@ proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, i
   ##      - A Tensor of the proper shape initialized with
   ##        the default type value (0 for numeric types) on Cpu backend
   tensorCpu(shape, result)
-  result.data = newSeq[T](result.shape.product)
+  result.data = newSeq[T](result.size)
 
 proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect.} =
   ## Convert an openarray to a Tensor
@@ -118,7 +118,7 @@ proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {.
   ## Result:
   ##      - A one-ed Tensor of the same shape
   tensorCpu(shape, result)
-  result.data = newSeqWith(result.shape.product, 1.T)
+  result.data = newSeqWith(result.size, 1.T)
 
 proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
@@ -131,7 +131,7 @@ proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noSideEffect, inline.} =
 
 template randomTensorCpu[T](t: Tensor[T], shape: openarray[int], max_or_range: typed): untyped =
   tensorCpu(shape, t)
-  t.data = newSeqWith(t.shape.product, random(max_or_range))
+  t.data = newSeqWith(t.size, random(max_or_range))
 
 proc randomTensor*(shape: openarray[int], max: float): Tensor[float] =
   ## Creates a new float Tensor filled with values between 0 and max

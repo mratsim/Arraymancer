@@ -23,7 +23,7 @@
 ## __ldg is a cuda intrinsics to load read-only data
 ## from a special cache
 
-## Assignment functors
+## Assignment op
 ## Does element-wise A[i] `op=` B[i]
 template cuda_assign_op(op_name, op_symbol: string)=
   {.emit: ["""
@@ -50,7 +50,7 @@ template cuda_assignscal_op(op_name, op_symbol: string)=
   };
   """].}
 
-## Binary op functors
+## Binary op
 ## Does C[i] = A[i] `op` B[i]
 template cuda_binary_op(op_name, op_symbol: string)=
   {.emit:["""
@@ -65,7 +65,7 @@ template cuda_binary_op(op_name, op_symbol: string)=
   };
   """].}
 
-## Binary op functors with scalar on the left
+## Binary op with scalar on the left
 ## Does C[i] = a `op` B[i]
 template cuda_lscal_op(op_name, op_symbol: string)=
   {.emit:["""
@@ -80,7 +80,7 @@ template cuda_lscal_op(op_name, op_symbol: string)=
   };
   """].}
 
-## Binary op functors with scalar on the right
+## Binary op with scalar on the right
 ## Does C[i] = A[i] `op` beta
 template cuda_rscal_op(op_name, op_symbol: string)=
   {.emit:["""

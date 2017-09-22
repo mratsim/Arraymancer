@@ -51,6 +51,7 @@ when defined(cuda):
   include ./arraymancer/backend/cuda_global_state,
           ./arraymancer/backend/cuda_specific,
           ./arraymancer/backend/cublas,
+          ./arraymancer/backend/cublas_helper_proc,
           ./arraymancer/init_cuda,
           ./arraymancer/accessors_cuda,
           ./arraymancer/display_cuda,

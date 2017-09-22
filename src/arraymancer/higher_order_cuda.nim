@@ -26,6 +26,7 @@
 # for example. (Beware of aliasing)
 
 # TODO, use an on-device struct to store, shape, strides, offset
+# And pass arguments via a struct pointer to limite register pressure
 
 {.emit:["""
   template<typename T, typename Op>
@@ -62,6 +63,57 @@
                                elemID);
 
       f(&dst_data[dst_real_idx], &src_data[src_real_idx]);
+    }
+  }
+"""].}
+
+
+{.emit:["""
+  template<typename T, typename Op>
+  __global__ void cuda_apply3(const int rank,
+                              const int len,
+                              const int *  __restrict__ dst_shape,
+                              const int *  __restrict__ dst_strides,
+                              const int dst_offset,
+                              T * __restrict__ dst_data,
+                              const int *  __restrict__ A_shape,
+                              const int *  __restrict__ A_strides,
+                              const int A_offset,
+                              const T * __restrict__ A_data,
+                              Op f,
+                              const int *  __restrict__ B_shape,
+                              const int *  __restrict__ B_strides,
+                              const int B_offset,
+                              const T * __restrict__ B_data){
+
+    for (int elemID = blockIdx.x * blockDim.x + threadIdx.x;
+         elemID < len;
+         elemID += blockDim.x * gridDim.x) {
+
+      // ## we can't instantiate the variable outside the loop
+      // ## each threads will store its own in parallel
+      const int dst_real_idx = cuda_getIndexOfElementID(
+                               rank,
+                               dst_shape,
+                               dst_strides,
+                               dst_offset,
+                               elemID);
+
+      const int A_real_idx = cuda_getIndexOfElementID(
+                               rank,
+                               A_shape,
+                               A_strides,
+                               A_offset,
+                               elemID);
+
+      const int B_real_idx = cuda_getIndexOfElementID(
+                               rank,
+                               B_shape,
+                               B_strides,
+                               B_offset,
+                               elemID);
+
+      f(&dst_data[dst_real_idx], &A_data[A_real_idx], &B_data[B_real_idx]);
     }
   }
 """].}

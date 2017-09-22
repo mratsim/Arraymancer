@@ -13,90 +13,6 @@
 # limitations under the License.
 
 # ####################################################################
-# Helper proc
-
-proc cudaVV_A_eq_A_p_bB[T: SomeReal](
-  a: var CudaTensor[T], beta: T, b: CudaTensor[T]) {.inline.}=
-  # Vector: A = A + beta B
-
-  cublas_axpy(a.shape[0],
-              beta,
-              b.get_data_ptr, b.strides[0],
-              a.get_data_ptr, a.strides[0])
-
-proc cudaVV_C_eq_A_p_bB[T: SomeReal]( a: CudaTensor[T],
-                                      beta: T, b: CudaTensor[T],
-                                      result: var CudaTensor[T]) {.inline.}=
-  # Vector: C = A + beta B
-  result = newCudaTensor[T](a.shape)
-
-  cublas_copy(a.len, a.get_data_ptr, a.strides[0],
-              result.get_data_ptr, result.strides[0])
-
-  cudaVV_A_eq_A_p_bB(result, beta, b)
-
-proc cudaMM_A_eq_aA_p_bB[T: SomeReal](
-  alpha: T, a: var CudaTensor[T],
-  beta: T, b: CudaTensor[T]) =
-  # Matrix: A = alpha A + beta B
-
-  # TODO: remove this contiguous layout constraint (via conversion or custom kernel)
-  if not (isContiguous(a) and isContiguous(b)):
-    raise newException(ValueError, "NotImplemented: for now both tensors should be contiguous")
-
-  if not is_F_contiguous(a):
-    raise newException(ValueError, "NotImplemented: the modified tensor must have a column-major layout")
-
-  let
-    b_is_colMajor = b.is_F_contiguous
-
-    transpose_B = if b_is_colMajor: CUBLAS_OP_N
-                  else: CUBLAS_OP_T
-
-    ld_B =  if b_is_colMajor: b.strides[1]
-            else: b.strides[0]
-
-  cublas_geam(CUBLAS_OP_N, transpose_B,
-              a.shape[0], a.shape[1],
-              alpha,
-              a.get_data_ptr, a.strides[1],
-              beta,
-              b.get_data_ptr, ld_B,
-              a.get_data_ptr, a.strides[1])
-  # In column-majour layout a.shape[0] == a.strides[1]
-
-proc cudaMM_C_eq_aA_p_aB[T: SomeReal](alpha: T, a: CudaTensor[T],
-                                          beta: T, b: CudaTensor[T],
-                                          result: var CudaTensor[T]) =
-  # TODO: remove this contiguous layout constraint (via conversion or custom kernel)
-  if not (isContiguous(a) and isContiguous(b)):
-    raise newException(ValueError, "NotImplemented: for now both tensors should be contiguous")
-
-  result = newCudaTensor[T](a.shape) # result is colMajor
-
-  let
-    a_is_colMajor = a.is_F_contiguous
-    b_is_colMajor = b.is_F_contiguous
-
-    transpose_A = if a_is_colMajor: CUBLAS_OP_N
-                  else: CUBLAS_OP_T
-    ld_A = if a_is_colMajor: a.strides[1]
-           else: a.strides[0]
-
-    transpose_B = if b_is_colMajor: CUBLAS_OP_N
-                  else: CUBLAS_OP_T
-    ld_B = if b_is_colMajor: b.strides[1]
-           else: b.strides[0]
-
-  cublas_geam(transpose_A, transpose_B,
-              a.shape[0], a.shape[1],
-              alpha,
-              a.get_data_ptr, ld_A,
-              beta,
-              b.get_data_ptr, ld_B,
-              result.get_data_ptr, result.strides[1])
-
-# ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
 
 proc dot*[T: SomeReal](a, b: CudaTensor[T]): T {.inline.}=
@@ -107,37 +23,33 @@ proc dot*[T: SomeReal](a, b: CudaTensor[T]): T {.inline.}=
               b.get_data_ptr, b.strides[0],
               addr result)
 
+proc cuda_inPlaceAdd = discard # This is a hack so that the symbol is open
+cuda_assign_glue(cuda_inPlaceAdd, "InPlaceAddOp")
+
 proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Tensor in-place addition
-  ## Only Vector-Vector and Matrix-Matrix addition are supported for now.
-  ## For Matrix-Matrix, both matrices must have a contiguous layout.
 
-  when compileOption("boundChecks"): check_elementwise(a,b)
+  when compileOption("boundChecks"):
+    check_elementwise(a,b)
 
-  if a.rank == 1:
-    cudaVV_A_eq_A_p_bB(a, 1.T, b)
-  elif a.rank == 2:
-    cudaMM_A_eq_aA_p_bB(1.T, a, 1.T, b)
-  else:
-    raise newException(ValueError, "NotImplemented: Tensor addition is not implemented for 3D+ tensors")
+  cuda_assign_call(cuda_inPlaceAdd, a, b)
 
-  # TODO: if a and b share the same location, copy a to a new location
-  # a += transpose(a) fails with CUBLAS ERROR 7.
+  # TODO: if a and b share the same location, TEST
+
+proc cuda_Add = discard # This is a hack so that the symbol is open
+cuda_binary_glue(cuda_Add, "AddOp")
 
 proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] =
   ## Tensor addition
-  ## Only Vector-Vector and Matrix-Matrix addition are supported for now
-  ## For Matrix-Matrix, both matrices must have a contiguous layout.
 
-  when compileOption("boundChecks"): check_elementwise(a,b)
+  when compileOption("boundChecks"):
+    check_elementwise(a,b)
 
-  if a.rank == 1:
-    cudaVV_C_eq_A_p_bB(a, 1.T, b, result)
-  elif a.rank == 2:
-    cudaMM_C_eq_aA_p_aB(1.T, a, 1.T, b, result)
-  else:
-    raise newException(ValueError, "NotImplemented: Tensor addition is not implemented for 3D+ tensors")
+  result = newCudaTensor[T](a.shape)
+  cuda_binary_call(cuda_Add, result, a, b)
 
+proc cuda_inPlaceSub = discard # This is a hack so that the symbol is open
+cuda_assign_glue(cuda_inPlaceSub, "InPlaceSubOp")
 
 proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Tensor in-place substraction
@@ -146,29 +58,21 @@ proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
 
   when compileOption("boundChecks"): check_elementwise(a,b)
 
-  if a.rank == 1:
-    cudaVV_A_eq_A_p_bB(a, -1.T, b)
-  elif a.rank == 2:
-    cudaMM_A_eq_aA_p_bB(1.T, a, -1.T, b)
-  else:
-    raise newException(ValueError, "NotImplemented: Tensor addition is not implemented for 3D+ tensors")
+  cuda_assign_call(cuda_inPlaceSub, a, b)
 
-  # TODO: if a and b share the same location, copy a to a new location
-  # a -= transpose(a) fails with CUBLAS ERROR 7.
+  # TODO: if a and b share the same location, TEST
+
+
+proc cuda_Sub = discard # This is a hack so that the symbol is open
+cuda_binary_glue(cuda_Sub, "SubOp")
 
 proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] =
   ## Tensor substraction
-  ## Only Vector-Vector and Matrix-Matrix addition are supported for now
-  ## For Matrix-Matrix, both matrices must have a contiguous layout.
 
   when compileOption("boundChecks"): check_elementwise(a,b)
 
-  if a.rank == 1:
-    cudaVV_C_eq_A_p_bB(a, -1.T, b, result)
-  elif a.rank == 2:
-    cudaMM_C_eq_aA_p_aB(1.T, a, -1.T, b, result)
-  else:
-    raise newException(ValueError, "NotImplemented: Tensor addition is not implemented for 3D+ tensors")
+  result = newCudaTensor[T](a.shape)
+  cuda_binary_call(cuda_Sub, result, a, b)
 
 proc `*=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
   ## Tensor inplace multiplication by a scalar
@@ -181,6 +85,9 @@ proc `*=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
 proc `*`*[T:SomeReal](a: T, t: CudaTensor[T]): CudaTensor[T] {.inline.}=
   ## Tensor multiplication by a scalar
 
+  # TODO replace by a custom kernel
+  # Instead of a full clone we keep only the useful which is advantageous if t was a slice
+  # It also makes it contiguous
   result = t.clone()
   result *= a
 
@@ -194,6 +101,11 @@ proc `/=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
 
 proc `/`*[T:SomeReal](t: CudaTensor[T], a: T): CudaTensor[T] {.inline.}=
   ## Tensor division by a scalar
+
+  # TODO replace by a custom kernel
+  # Instead of a full clone we keep only the useful which is advantageous if t was a slice
+  # It also makes it contiguous
+  # Furthermore doing t[i]/a instead of 1/a * t[i] will be much better for speed and numerical stability
   (1/a) * t
 
 proc `/`*[T:SomeReal](a: T, t: CudaTensor[T]): CudaTensor[T] {.inline.}=

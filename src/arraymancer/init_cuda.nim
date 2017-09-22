@@ -12,17 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-proc cudaMalloc[T](size: int): ptr T {.noSideEffect, inline.}=
-  ## Internal proc.
-  ## Wrap CudaMAlloc(var pointer, size) -> Error_code
-  let s = size * sizeof(T)
-  check cudaMalloc(cast[ptr pointer](addr result), s)
-
-proc deallocCuda[T](p: ref[ptr T]) {.noSideEffect.}=
-  if not p[].isNil:
-    check cudaFree(p[])
-
 proc shallowCopy*[T](t: var CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect.}=
   ## Input:
   ##     - A ``var`` tensor

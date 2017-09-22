@@ -57,6 +57,13 @@ template rank*(t: AnyTensor): int =
   ##
   t.shape.len
 
+proc size*(t: AnyTensor): int {.noSideEffect, inline.}=
+  ## Input:
+  ##     - A tensor
+  ## Returns:
+  ##     - The total number of elements it contains
+  t.shape.product
+
 proc shape_to_strides*(shape: seq[int], layout: OrderType = rowMajor): seq[int] {.noSideEffect.} =
   ## Compute strides matching with dimensions.
   ## OrderType is imported from Nimblas and can be rowMajor or colMajor.

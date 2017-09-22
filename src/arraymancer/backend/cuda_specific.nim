@@ -43,17 +43,67 @@
 # create_CudaTensorLayout(MAXDIMS)
 
 type
+  # CudaLayoutArray = array[MAXDIMS, cint]
+  # This will replace ptr T in shape and strides
+  ## Using arrays instead of seq avoids having to indicate __restrict__ everywhere to indicate no-aliasing
+  ## We also prefer stack allocated array sice the data will be used at every single loop iteration to compute elements position.
+  ## Ultimately it avoids worrying about deallocation too
+  CudaLayoutArray = ref[ptr cint]
+
+
   CudaTensorLayout [T: SomeReal] = object
     ## Mimicks CudaTensor
     ## This will be stored on GPU in the end
-    ## Goald is to avoids clumbering proc with cudaMemcpyshape, strides, offset, data, rank, len
-    ## Also using arrays instead of seq avoids having to indicate __restrict__ everywhere to indicate no-aliasing
+    ## Goal is to avoids clumbering proc with cudaMemcpyshape, strides, offset, data, rank, len
+    ##
     ## Check https://github.com/mratsim/Arraymancer/issues/26 (Optimizing Host <-> Cuda transfer)
     ## on why I don't (yet?) use Unified Memory and choose to manage it manually.
 
     rank: cint               # Number of dimension of the tensor
-    shape: array[MAXDIMS, cint]
-    strides: array[MAXDIMS, cint]
+    shape: CudaLayoutArray
+    strides: CudaLayoutArray
     offset: cint
     data: ptr T              # Data on Cuda device
     len: cint                # Number of elements allocated in memory
+
+
+proc cudaMalloc[T](size: int): ptr T {.noSideEffect, inline.}=
+  ## Internal proc.
+  ## Wrap CudaMAlloc(var pointer, size) -> Error_code
+  let s = size * sizeof(T)
+  check cudaMalloc(cast[ptr pointer](addr result), s)
+
+proc deallocCuda[T](p: ref[ptr T]) {.noSideEffect.}=
+  if not p[].isNil:
+    check cudaFree(p[])
+
+proc layoutOnDevice*[T:SomeReal](t: CudaTensor[T]): CudaTensorLayout[T]=
+  ## Store a CudaTensor shape, strides, etc information on the GPU
+  #
+  # TODO: instead of storing pointers to shape/stride/etc that are passed to each kernel
+  # pass the layout object directly and call it with layout->shape, layout->rank
+
+  result.rank = t.rank.cint
+
+  result.offset = t.offset.cint
+  result.data = t.get_data_ptr
+  result.len = t.size.cint
+
+  var
+    tmp_shape: array[MAXDIMS, cint] # CudaLayoutArray
+    tmp_strides: array[MAXDIMS, cint] # CudaLayoutArray
+
+  for i in 0..<result.rank:
+    tmp_shape[i] = t.shape[i].cint
+    tmp_strides[i] = t.strides[i].cint
+  
+  new result.shape, deallocCuda
+  new result.strides, deallocCuda
+
+  result.shape[] = cudaMalloc[cint](MAXDIMS)
+  result.strides[] = cudaMalloc[cint](MAXDIMS)
+
+  # TODO: use streams and async
+  let size = t.rank * sizeof(cint)
+  check cudaMemCpy(result.shape[], addr tmp_shape[0], size, cudaMemcpyHostToDevice)
+  check cudaMemCpy(result.strides[], addr tmp_strides[0], size, cudaMemcpyHostToDevice)

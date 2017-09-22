@@ -28,7 +28,7 @@ proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   result.len = t.len
 
 
-{.emit: """
+{.emit:["""
   template<typename T>
   inline void cuda_asContiguous(
     const int blocksPerGrid, const int threadsPerBlock,
@@ -50,7 +50,7 @@ proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
         src_shape, src_strides, src_offset, src_data
       );
     }
-  """.}
+  """].}
 
 proc cuda_asContiguous[T: SomeReal](
   blocksPerGrid, threadsPerBlock: cint,
@@ -80,39 +80,14 @@ proc asContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, 
 
   result = newCudaTensor[T](t.shape, layout)
 
-  # TODO: all this boilerplate is ugly!!!
-  # Shapes are the same for starters
-  # should we store the CudaTensor array attributes in Unified Mem?
-  var
-    ondevice_shape:  ref ptr cint
-    ondevice_t_strides: ref ptr cint
-    ondevice_r_strides: ref ptr cint
-
-  new ondevice_shape, deallocCuda
-  new ondevice_t_strides, deallocCuda
-  new ondevice_r_strides, deallocCuda
-
-  ondevice_shape[] = cudaMalloc[cint](t.rank)
-  ondevice_t_strides[] = cudaMalloc[cint](t.rank)
-  ondevice_r_strides[] = cudaMalloc[cint](t.rank)
-
-  # We need cint on GPU
-  var
-    tmp_shape = t.shape.mapIt(it.cint)
-    tmp_t_strides = t.strides.mapIt(it.cint)
-    tmp_r_strides = result.strides.mapIt(it.cint)
-
-  # TODO: use streams and async
-  let size = t.rank * sizeof(cint)
-  check cudaMemCpy(ondevice_shape[], addr tmp_shape[0], size, cudaMemcpyHostToDevice)
-  check cudaMemCpy(ondevice_t_strides[], addr tmp_t_strides[0], size, cudaMemcpyHostToDevice)
-  check cudaMemCpy(ondevice_r_strides[], addr tmp_r_strides[0], size, cudaMemcpyHostToDevice)
+  let dst = result.layoutOnDevice
+  let src = t.layoutOnDevice
 
   cuda_asContiguous(
     CUDA_HOF_TPB, CUDA_HOF_BPG,
-    t.rank.cint, t.shape.product.cint,
-    ondevice_shape[], ondevice_r_strides[],
-    result.offset.cint, result.get_data_ptr,
-    ondevice_shape[], ondevice_t_strides[],
-    t.offset.cint, t.get_data_ptr
+    src.rank, dst.len, # Note: small shortcut, in this case len and size (shape.product) are the same
+    dst.shape[], dst.strides[],
+    dst.offset, dst.data,
+    src.shape[], src.strides[],
+    src.offset, src.data
   )

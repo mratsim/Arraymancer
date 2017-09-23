@@ -40,6 +40,11 @@ proc apply*[T](t: var Tensor[T], f: T -> T) {.noSideEffect.}=
   for val in t.mitems:
     val = f(val)
 
+proc apply*[T](t: var Tensor[T], f: proc(x:var T)) {.noSideEffect.}=
+  ## Map an unary function T -> nil in place to all elements of the Tensor.
+  for val in t.mitems:
+    f(val)
+
 proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] {.noSideEffect.}=
   ## Map a binary function (T,U) -> V on 2 tensors
   ## It applies the function to each matching elements
@@ -66,7 +71,8 @@ proc apply2*[T, U](a: var Tensor[T],
   ## Apply element-wise a binary function (T,U)->T like a += b
   ## Result is stored inplace in the first tensor
   ## Note: builtin functions like `+=` cannot be used as is as function argument
-  when compileOption("boundChecks"): check_elementwise(a,b)
+  when compileOption("boundChecks"):
+    check_elementwise(a,b)
 
   ## TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
   for a_idx, b_val in zip(a.real_indices, b.values):

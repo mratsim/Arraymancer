@@ -29,16 +29,18 @@ suite "Testing higher-order functions":
 
     check: t.map(x => x*x) == t2
 
-  test "Apply function":
+  test "Apply functions - with in-place and out of place closure":
     var t = toSeq(0..11).toTensor().reshape([4,3])
     let t2 = toSeq(1..12).toTensor().reshape([4,3])
 
     var tmp1 = t
-    tmp1.apply(x => x+1)
+    tmp1.apply(x => x+1) # out of place
     check: tmp1 == t2
 
     var tmp2 = t[_,2]
-    tmp2.apply(x => x+1)
+
+    proc plus_one[T](x: var T) = x += 1
+    tmp2.apply(plus_one) # in-place
     check: tmp2 == t2[_,2]
 
   test "Reduce function":

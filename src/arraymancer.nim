@@ -41,6 +41,7 @@ include arraymancer/utils/functional,
         arraymancer/operators_broadcasted,
         arraymancer/aggregate,
         arraymancer/term_rewriting,
+        arraymancer/shortcuts,
         arraymancer/exporting
 
 

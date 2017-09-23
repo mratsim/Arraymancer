@@ -15,13 +15,14 @@ matrix:
       env: CHANNEL=devel
       compiler: gcc
 
-    - os: linux
-      env: CHANNEL=stable
-      compiler: clang
-
-    - os: linux
-      env: CHANNEL=devel
-      compiler: clang
+    # For faster testing we don't test clang on linux, only on macOS
+    # - os: linux
+    #   env: CHANNEL=stable
+    #   compiler: clang
+    #
+    # - os: linux
+    #   env: CHANNEL=devel
+    #   compiler: clang
 
     # On OSX we only test against clang (gcc is mapped to clang by default)
     # Note: for OpenMP, Homebrew will build flame/blis with GCC-5

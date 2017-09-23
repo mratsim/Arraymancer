@@ -471,7 +471,7 @@ macro shallowSlice*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
   result = quote do:
     shallow_inner_typed_dispatch(`t`, `new_args`)
 
-macro unsafeView*[T](t: Tensor[T], args: varargs[untyped]): untyped =
+macro unsafeSlice*[T](t: Tensor[T], args: varargs[untyped]): untyped =
   ## Input:
   ##   - a tensor. It will share data with the resulting tensor.
   ##     WARNING: even if the input tensor is a "let"

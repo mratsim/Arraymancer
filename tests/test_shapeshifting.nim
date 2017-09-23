@@ -65,7 +65,7 @@ suite "Shapeshifting":
       # unsafeView and unsafeReshape allow us to
       # modify its elements value
       let a = toSeq(1..4).toTensor()
-      var a_view = a.unsafeView(1..2).unsafeReshape(1,2)
+      var a_view = a.unsafeSlice(1..2).unsafeReshape(1,2)
       check: a_view == [[2,3]].toTensor()
       a_view[_, _] = 0
       check: a == [1,0,0,4].toTensor()

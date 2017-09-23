@@ -31,7 +31,7 @@ proc export_tensor*[T](t: Tensor[T]):
   ## If the tensor was not contiguous (a slice for example), it is reshaped to keep and export only useful data.
   ## Data is exported in C order (last index changes the fastest, column in 2D case)
 
-  let contig_t = t.asContiguous
+  let contig_t = t.unsafeContiguous
 
   result.shape = contig_t.shape
   result.strides = contig_t.strides

@@ -89,9 +89,9 @@ template matvec_blas[T: SomeReal](a, x, result: Tensor[T]): auto =
   result.offset = 0
 
   # Stride for X is supported via incx argument of GEMV
-  let cont_a = a.asContiguous
+  let cont_a = a.unsafeContiguous
 
-  let a_ptr = get_data_ptr(a)
+  let a_ptr = get_data_ptr(cont_a)
   let x_ptr = get_data_ptr(x)
   let res_ptr = get_data_ptr(result)
 
@@ -174,8 +174,8 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[T]): auto =
   # TODO use a GEMM kernel that supports strided arrays like BLIS
   # That avoids copies and a conversion step
   let
-    cont_a = a.asContiguous
-    cont_b = b.asContiguous
+    cont_a = a.unsafeContiguous
+    cont_b = b.unsafeContiguous
 
     a_ptr = get_data_ptr(cont_a)
     b_ptr = get_data_ptr(cont_b)

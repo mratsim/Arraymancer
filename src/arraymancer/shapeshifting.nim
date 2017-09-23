@@ -47,19 +47,7 @@ proc transpose*(t: Tensor): Tensor {.noSideEffect, inline.}=
   result.offset = t.offset
   result.data = t.data
 
-proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noSideEffect.}=
-  ## Transform a tensor with general striding to a Tensor with contiguous layout.
-  ## By default tensor will be rowMajor.
-  ## By default nothing is done if the tensor is already contiguous (C Major or F major)
-  ## The "force" parameter can force re-ordering to a specific layout
-
-  if t.isContiguous and not force:
-    return t
-  elif t.is_C_contiguous and layout == rowMajor:
-    return t
-  elif t.is_F_contiguous and layout == colMajor:
-    return t
-
+template contiguousT*[T](result, t: Tensor[T], layout: OrderType): untyped=
   tensorCpu(t.shape, result, layout)
   result.data = newSeq[T](result.size)
 
@@ -73,6 +61,51 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
     for val in t.transpose:
       result.data[i] = val
       inc i
+
+
+proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noSideEffect.}=
+  ## Transform a tensor with general striding to a Tensor with contiguous layout.
+  ## By default tensor will be rowMajor.
+  ## By default nothing is done if the tensor is already contiguous (C Major or F major)
+  ## The "force" parameter can force re-ordering to a specific layout
+
+  if t.isContiguous and not force:
+    return t
+  elif t.is_C_contiguous and layout == rowMajor:
+    return t
+  elif t.is_F_contiguous and layout == colMajor:
+    return t
+  contiguousT(result, t, layout)
+
+proc shallowContiguous*[T](t: var Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noSideEffect.}=
+  ## Transform a tensor with general striding to a Tensor with contiguous layout.
+  ## WARNING: If no transformation are needed, the returned value shares data with the original.
+  ## By default tensor will be rowMajor.
+  ## By default nothing is done if the tensor is already contiguous (C Major or F major)
+  ## The "force" parameter can force re-ordering to a specific layout
+
+  if t.isContiguous and not force:
+    return t.shallowCopy
+  elif t.is_C_contiguous and layout == rowMajor:
+    return t.shallowCopy
+  elif t.is_F_contiguous and layout == colMajor:
+    return t.shallowCopy
+  contiguousT(result, t, layout)
+
+proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noSideEffect.}=
+  ## Transform a tensor with general striding to a Tensor with contiguous layout.
+  ## WARNING: If no transformation are needed, the returned value shares data with the original.
+  ## By default tensor will be rowMajor.
+  ## By default nothing is done if the tensor is already contiguous (C Major or F major)
+  ## The "force" parameter can force re-ordering to a specific layout
+
+  if t.isContiguous and not force:
+    return t.unsafeView
+  elif t.is_C_contiguous and layout == rowMajor:
+    return t.unsafeView
+  elif t.is_F_contiguous and layout == colMajor:
+    return t.unsafeView
+  contiguousT(result, t, layout)
 
 proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] {.noSideEffect.}=
   # Can't call "tensorCpu" template here for some reason

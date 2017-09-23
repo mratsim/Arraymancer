@@ -98,7 +98,7 @@ proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] =
   result = newCudaTensor[T](t.shape)
 
   # TODO: avoid reordering rowMajor tensors. This is only needed for inplace operation in CUBLAS.
-  let contig_t = t.asContiguous(colMajor, force = true)
+  let contig_t = t.unsafeContiguous(colMajor, force = true)
   let size = result.size * sizeof(T)
 
   # For host to device we use non-blocking copy

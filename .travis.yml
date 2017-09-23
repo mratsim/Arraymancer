@@ -52,6 +52,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install homebrew/science/blis; fi
 
 install:
+  - export CHOOSENIM_NO_ANALYTICS=1
   - curl https://nim-lang.org/choosenim/init.sh -sSf | sh
   - export PATH=~/.nimble/bin:$PATH
   - echo "export PATH=~/.nimble/bin:$PATH" >> ~/.profile

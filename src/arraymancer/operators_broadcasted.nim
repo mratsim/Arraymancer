@@ -12,9 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+proc `.+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+  ## Broadcasted addition for tensors of incompatible but broadcastable shape
+  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  return tmp_a + tmp_b
+
+proc `.-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+  ## Broadcasted addition for tensors of incompatible but broadcastable shape
+  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  return tmp_a - tmp_b
+
 proc `.*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
   ## Element-wise multiplication (hadamard product)
-  ## TODO: find a good symbol
+  ## And broadcasted element-wise addition
 
   # FIXME: Can't use built-in proc `*` in map: https://github.com/nim-lang/Nim/issues/5702
   # map2(a, `+`, b)

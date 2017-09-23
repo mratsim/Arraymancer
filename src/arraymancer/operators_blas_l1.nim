@@ -38,6 +38,7 @@ proc `+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
 
   # FIXME: Can't use built-in proc `+` in map: https://github.com/nim-lang/Nim/issues/5702
   # map2(a, `+`, b)
+  # Note: proc cannot be inlined, probably due to the non in-place closure
   proc add(x, y: T): T = x + y
   return map2(a, add, b)
 
@@ -59,6 +60,7 @@ proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
 
   # FIXME: Can't use built-in proc `-` in map: https://github.com/nim-lang/Nim/issues/5702
   # map2(a, `-`, b)
+  # Note: proc cannot be inlined, probably due to the non in-place closure
   proc sub(x, y: T): T = x - y
   return map2(a, sub, b)
 

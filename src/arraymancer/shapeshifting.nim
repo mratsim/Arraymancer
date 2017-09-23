@@ -132,6 +132,17 @@ proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}
   ## TODO: tests
   t.reshape_no_copy(new_shape)
 
+template broadcastT(t: var Tensor, shape: openarray[int]) =
+  assert t.rank == shape.len
+
+  for i in 0..<t.rank:
+    if t.shape[i] == 1:
+      if shape[i] != 1:
+        t.shape[i] = shape[i]
+        t.strides[i] = 0
+    elif t.shape[i] != shape[i]:
+      raise newException(ValueError, "The broadcasted size of the tensor must match existing size for non-singleton dimension")
+
 proc broadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
   ## Broadcast array
   ##
@@ -139,17 +150,31 @@ proc broadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffec
   ## values along that dimension.
   # Todo: proper bound-checking
   # todo: testing
-  # TODO: use term-rewriting macro to have t1.bc * t2.bc broadcasted in compatible shape
   result = t
-  assert t.rank == shape.len
+  result.broadcastT(shape)
 
-  for i in 0..<result.rank:
-    if result.shape[i] == 1:
-      if shape[i] != 1:
-        result.shape[i] = shape[i]
-        result.strides[i] = 0
-    elif result.shape[i] != shape[i]:
-      raise newException(ValueError, "The broadcasted size of the tensor must match existing size for non-singleton dimension")
+proc shallowBroadcast*[T](t: var Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
+  ## Broadcast array, broadcasted array share data with original.
+  ##
+  ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
+  ## values along that dimension.
+  # Todo: proper bound-checking
+  # todo: testing
+  # TODO: use term-rewriting macro to have t1.bc * t2.bc broadcasted in compatible shape
+  result = t.shallowCopy
+  result.broadcastT(shape)
+
+proc unsafeBroadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
+  ## Broadcast array
+  ## WARNING: even for with a `let` assignment, broadcasted tensors share data with original
+  ##
+  ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
+  ## values along that dimension.
+  # Todo: proper bound-checking
+  # todo: testing
+  # TODO: use term-rewriting macro to have t1.bc * t2.bc broadcasted in compatible shape
+  result = t.shallowCopy
+  result.broadcastT(shape)
 
 proc broadcast*[T: SomeNumber](val: T, shape: openarray[int]): Tensor[T] {.noSideEffect.} =
   ## Broadcast a number
@@ -169,6 +194,51 @@ proc broadcast*[T: SomeNumber](val: T, shape: openarray[int]): Tensor[T] {.noSid
 template bc*(t: (Tensor|SomeNumber), shape: openarray[int]): untyped =
   ## Alias for ``broadcast``
   t.broadcast(shape)
+
+proc unsafeBroadcast2[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect.}=
+  ## Broadcast 2 tensors so they have compatible shapes
+  ## Tensors in the tuple can be accessed with output.a and output.bb
+  ## WARNING: even for with a `let` assignment, broadcasted tensors share data with original
+  let rank = max(a.rank, b.rank)
+
+  var shapeA, stridesA, shapeB, stridesB = newSeq[T](rank)  # seq have value semantic so storage shouldn't be shared.
+                                                            # Also newSeq is initialized with 0
+
+  for i in 0..<rank:
+    let shape_A_iter = if i < rank: a.shape[i] else: 1
+    let shape_B_iter = if i < rank: b.shape[i] else: 1
+
+    if shape_A_iter == shape_B_iter:
+      shapeA[i] = shape_A_iter
+      shapeB[i] = shape_A_iter
+
+      stridesA[i] = a.strides[i]
+      stridesB[i] = b.strides[i]
+
+    elif shape_A_iter == 1:
+      shapeA[i] = shape_B_iter
+      shapeB[i] = shape_B_iter
+
+      # stridesA[i] is already 0
+      stridesB[i] = b.strides[i]
+    elif shape_B_iter == 1:
+      shapeA[i] = shape_A_iter
+      shapeB[i] = shape_A_iter
+
+      stridesA[i] = a.strides[i]
+      # stridesB[i] is already 0
+    else:
+      raise newException(ValueError, "Broadcasting error: non-singleton dimensions must be the same in both tensors")
+
+  result.a.shape = shapeA
+  result.a.strides = stridesA
+  result.a.offset = a.offset
+  shallowCopy(result.a.data, a.data)
+
+  result.b.shape = shapeB
+  result.b.strides = stridesB
+  result.b.offset = b.offset
+  shallowCopy(result.b.data, b.data)
 
 proc exch_dim(t: Tensor, dim1, dim2: int): Tensor {.noSideEffect.}=
   if dim1 == dim2:

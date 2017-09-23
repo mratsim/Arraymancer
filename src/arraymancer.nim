@@ -38,7 +38,7 @@ include arraymancer/utils/functional,
         arraymancer/fallback/blas_l3_gemm,
         arraymancer/fallback/naive_l2_gemv,
         arraymancer/operators_blas_l2l3,
-        arraymancer/operators_extra,
+        arraymancer/operators_broadcasted,
         arraymancer/aggregate,
         arraymancer/term_rewriting,
         arraymancer/exporting

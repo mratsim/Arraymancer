@@ -22,5 +22,6 @@ import ../src/arraymancer,
         ./test_higherorder,
         ./test_aggregate,
         ./test_shapeshifting,
+        ./test_broadcasting,
         ./test_ufunc,
         ./test_bugtracker

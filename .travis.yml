@@ -30,9 +30,10 @@ matrix:
       env: CHANNEL=stable BLIS=true
       compiler: clang
 
-    - os: osx
-      env: CHANNEL=stable BLIS=false
-      compiler: clang
+    # For faster testing, we only test BLIS = true
+    # - os: osx
+    #   env: CHANNEL=stable BLIS=false
+    #   compiler: clang
 
   allow_failures:
     # Ignore failures when building against the devel Nim branch

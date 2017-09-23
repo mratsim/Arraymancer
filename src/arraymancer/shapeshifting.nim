@@ -201,7 +201,7 @@ proc unsafeBroadcast2[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect
   ## WARNING: even for with a `let` assignment, broadcasted tensors share data with original
   let rank = max(a.rank, b.rank)
 
-  var shapeA, stridesA, shapeB, stridesB = newSeq[T](rank)  # seq have value semantic so storage shouldn't be shared.
+  var shapeA, stridesA, shapeB, stridesB = newSeq[int](rank)  # seq have value semantic so storage shouldn't be shared.
                                                             # Also newSeq is initialized with 0
 
   for i in 0..<rank:

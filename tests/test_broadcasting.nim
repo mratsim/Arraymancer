@@ -44,3 +44,11 @@ suite "Shapeshifting - broadcasting":
                         [10, 11, 12],
                         [20, 21, 22],
                         [30, 31, 32]].toTensor
+
+  test "Implicit broadcasting - Sigmoid 1 ./ (1 .+ exp(-x)":
+    block:
+      proc sigmoid[T: SomeReal](t: Tensor[T]): Tensor[T]=
+        1.T ./ (1.T .+ exp(-t))
+
+      let a = newTensor([2,2], float32)
+      check: sigmoid(a) == [[0.5'f32, 0.5],[0.5'f32, 0.5]].toTensor

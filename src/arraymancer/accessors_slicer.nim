@@ -211,6 +211,10 @@ proc `^`*(s: Slice): SteppedSlice {.noSideEffect, inline.} =
 # Tensor[_, 3] will be replaced by Tensor[span, 3]
 const span = SteppedSlice(b: 1, step: 1, b_from_end: true)
 
+# Following https://github.com/mratsim/Arraymancer/issues/61 and
+# https://github.com/mratsim/Arraymancer/issues/43 we export _ directly
+const _* = span
+
 macro desugar(args: untyped): typed =
   ## Transform all syntactic sugar in arguments to integer or SteppedSlices
   ## It will then be dispatched to "atIndex" (if specific integers)

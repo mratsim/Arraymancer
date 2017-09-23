@@ -173,7 +173,7 @@ proc unsafeBroadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSid
   # Todo: proper bound-checking
   # todo: testing
   # TODO: use term-rewriting macro to have t1.bc * t2.bc broadcasted in compatible shape
-  result = t.shallowCopy
+  result = t.unsafeView
   result.broadcastT(shape)
 
 proc broadcast*[T: SomeNumber](val: T, shape: openarray[int]): Tensor[T] {.noSideEffect.} =
@@ -185,7 +185,8 @@ proc broadcast*[T: SomeNumber](val: T, shape: openarray[int]): Tensor[T] {.noSid
   ##   - a tensor with the broadcasted shape where all elements has the broadcasted value
   ##
   ## The broadcasting is made using tensor data of size 1 and 0 strides, i.e.
-  ## the operation is memory efficient
+  ## the operation is memory efficient.
+  ## WARNING: a broadcasted tensor should not be modified in-place.
   result.shape = @shape
   result.strides = newSeqWith(result.shape.len, 0)
   result.offset = 0
@@ -193,6 +194,7 @@ proc broadcast*[T: SomeNumber](val: T, shape: openarray[int]): Tensor[T] {.noSid
 
 template bc*(t: (Tensor|SomeNumber), shape: openarray[int]): untyped =
   ## Alias for ``broadcast``
+  ## WARNING: a broadcasted tensor should not be modified in-place.
   t.broadcast(shape)
 
 proc unsafeBroadcast2[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect.}=

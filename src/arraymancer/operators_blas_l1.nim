@@ -21,6 +21,9 @@ proc check_dot_prod(a, b:AnyTensor)  {.noSideEffect.}=
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
 
+  # FIXME: Can't use built-in proc `+` in map: https://github.com/nim-lang/Nim/issues/5702
+  # map2(a, `+`, b)
+
 proc dot*[T: SomeReal](a, b: Tensor[T]): T {.noSideEffect, inline.} =
   ## Vector to Vector dot (scalar) product
   when compileOption("boundChecks"): check_dot_prod(a,b)
@@ -35,18 +38,16 @@ proc dot*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
 
 proc `+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Tensor addition
+  # shape check done in map2 proc
 
-  # FIXME: Can't use built-in proc `+` in map: https://github.com/nim-lang/Nim/issues/5702
-  # map2(a, `+`, b)
   # Note: proc cannot be inlined, probably due to the non in-place closure
   proc add(x, y: T): T = x + y
   return map2(a, add, b)
 
 proc `+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inline.} =
   ## Tensor in-place addition
+  # shape check done in apply2 proc
 
-  # FIXME: Can't use built-in proc `+=` in map: https://github.com/nim-lang/Nim/issues/5702
-  # apply(a, `+=`, b)
   proc inplace_add(x: var T, y: T) = x += y
   apply2(a, inplace_add, b)
 
@@ -56,20 +57,16 @@ proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
 
 proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Tensor substraction
-  when compileOption("boundChecks"): check_elementwise(a,b)
+  # shape check done in map2 proc
 
-  # FIXME: Can't use built-in proc `-` in map: https://github.com/nim-lang/Nim/issues/5702
-  # map2(a, `-`, b)
   # Note: proc cannot be inlined, probably due to the non in-place closure
   proc sub(x, y: T): T = x - y
   return map2(a, sub, b)
 
 proc `-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inline.} =
   ## Tensor in-place addition
-  when compileOption("boundChecks"): check_elementwise(a,b)
+  # shape check done in apply2 proc
 
-  # FIXME: Can't use built-in proc `+=` in map: https://github.com/nim-lang/Nim/issues/5702
-  # apply(a, `-=`, b)
   proc inplace_min(x: var T, y: T) = x -= y
   apply2(a, inplace_min, b)
 
@@ -84,17 +81,22 @@ proc `*`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] {.noSideEffect, inline.}
 
 proc `*=`*[T: SomeNumber](t: var Tensor[T], a: T) {.noSideEffect, inline.} =
   ## Element-wise multiplication by a scalar (in-place)
-  t.apply(proc(x: T): T = a * x)
+  t.apply(proc(x: var T) = x *= a)
 
-proc `/`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] {.noSideEffect, inline.} =
-  ## Element-wise division by a scalar
+proc `/`*[T: SomeReal](t: Tensor[T], a: T): Tensor[T] {.noSideEffect, inline.} =
+  ## Element-wise division by a float scalar
+  proc f(x: T): T = x / a
+  return t.map(f)
+
+proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noSideEffect, inline.} =
+  ## Element-wise division by an integer
   proc f(x: T): T = x / a
   return t.map(f)
 
 proc `/=`*[T: SomeReal](t: var Tensor[T], a: T) {.noSideEffect, inline.} =
   ## Element-wise division by a scalar (in-place)
-  t.apply(proc(x: T): T = x / a)
+  t.apply(proc(x: var T) = x /= a)
 
 proc `/=`*[T: SomeInteger](t: var Tensor[T], a: T) {.noSideEffect, inline.} =
   ## Element-wise division by a scalar (in-place)
-  t.apply(proc(x: T): T = x div a)
+  t.apply(proc(x: var T) = x = x div a)

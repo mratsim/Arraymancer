@@ -3,15 +3,38 @@ language: c
 
 cache: ccache
 
-env:
-  # Build and test against the master (stable) and devel branches of Nim
-  - CHANNEL=stable
-  - CHANNEL=devel
-compiler:
-  # Build and test using both gcc and clang
-  - gcc
-  - clang
 matrix:
+  include:
+    # Build and test against the master (stable) and devel branches of Nim
+    # Build and test using both gcc and clang
+    - os: linux
+      env: CHANNEL=stable
+      compiler: gcc
+
+    - os: linux
+      env: CHANNEL=devel
+      compiler: gcc
+
+    # For faster testing we don't test clang on linux, only on macOS
+    # - os: linux
+    #   env: CHANNEL=stable
+    #   compiler: clang
+    #
+    # - os: linux
+    #   env: CHANNEL=devel
+    #   compiler: clang
+
+    # On OSX we only test against clang (gcc is mapped to clang by default)
+    # Note: for OpenMP, Homebrew will build flame/blis with GCC-5
+    - os: osx
+      env: CHANNEL=stable BLIS=true
+      compiler: clang
+
+    # For faster testing, we only test BLIS = true
+    # - os: osx
+    #   env: CHANNEL=stable BLIS=false
+    #   compiler: clang
+
   allow_failures:
     # Ignore failures when building against the devel Nim branch
     - env: CHANNEL=devel
@@ -23,8 +46,15 @@ addons:
       # On Linux we need OpenBLAS, on OSX Apple Accelerate is present by default
       - libopenblas-dev
 
+before_install:
+  # On MacOS flame/blis can be tested as it is an homebrew package
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install homebrew/science/blis; fi
+
 install:
-  - curl https://nim-lang.org/choosenim/init.sh -sSf | sh
+  - export CHOOSENIM_NO_ANALYTICS=1
+  - curl https://nim-lang.org/choosenim/init.sh -sSf > init.sh
+  - sh init.sh -y
   - export PATH=~/.nimble/bin:$PATH
   - echo "export PATH=~/.nimble/bin:$PATH" >> ~/.profile
   - choosenim $CHANNEL

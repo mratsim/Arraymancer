@@ -51,10 +51,10 @@ suite "Shapeshifting":
     check: a == [[1,2],
                  [3,4]].toTensor()
 
-  test "Shallow/Unsafe reshape":
+  test "Unsafe reshape":
     block:
-      var a = toSeq(1..4).toTensor()
-      var a_view = a.shallowReshape(2,2)
+      let a = toSeq(1..4).toTensor()
+      var a_view = a.unsafeReshape(2,2)
       check: a_view == [[1,2],[3,4]].toTensor()
       a_view[_, _] = 0
       check: a == [0,0,0,0].toTensor()

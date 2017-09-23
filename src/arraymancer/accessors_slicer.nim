@@ -397,7 +397,7 @@ proc slicer[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.n
   result = t
   slicerT(result, slices)
 
-proc unsafeSlicer[T](t: var Tensor[T]|Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noSideEffect.}=
+proc unsafeSlicer[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
@@ -441,7 +441,7 @@ macro `[]`*[T](t: AnyTensor[T], args: varargs[untyped]): untyped =
   result = quote do:
     inner_typed_dispatch(`t`, `new_args`)
 
-macro shallow_inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
+macro unsafe_inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
   ## Typed macro so that isAllInt has typed context and we can dispatch.
   ## If args are all int, we dispatch to atIndex and return T
   ## Else, all ints are converted to SteppedSlices and we return a Tensor.
@@ -460,21 +460,6 @@ macro shallow_inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
       else:
         result.add(slice)
 
-macro shallowSlice*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
-  ## Input:
-  ##   - a var tensor. It will share data with the resulting tensor.
-  ##   - and:
-  ##     - specific coordinates (``varargs[int]``)
-  ##     - or a slice (cf. tutorial)
-  ## Returns:
-  ##   - a view of the Tensor at corresponding slice. WARNING: data is shared.
-  ##
-  ## TODO tests!
-  let new_args = getAST(desugar(args))
-
-  result = quote do:
-    shallow_inner_typed_dispatch(`t`, `new_args`)
-
 macro unsafeSlice*[T](t: Tensor[T], args: varargs[untyped]): untyped =
   ## Input:
   ##   - a tensor. It will share data with the resulting tensor.
@@ -490,7 +475,7 @@ macro unsafeSlice*[T](t: Tensor[T], args: varargs[untyped]): untyped =
   let new_args = getAST(desugar(args))
 
   result = quote do:
-    shallow_inner_typed_dispatch(`t`, `new_args`)
+    unsafe_inner_typed_dispatch(`t`, `new_args`)
 
 proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
   ## Assign the value to the whole slice

@@ -20,7 +20,7 @@ proc check_reshape(t: Tensor, new_shape:seq[int]) {.noSideEffect, inline.}=
                                     $new_shape.product &
                                     ") reshaped tensor must be the same")
 
-proc check_shallowReshape(t: Tensor) {.noSideEffect, inline.}=
+proc check_nocopyReshape(t: Tensor) {.noSideEffect, inline.}=
   if not t.isContiguous:
     raise newException(ValueError, "The tensor must be contiguous for reshape without copy")
 
@@ -46,19 +46,8 @@ proc transpose*(t: Tensor): Tensor {.noSideEffect, inline.}=
   result.offset = t.offset
   result.data = t.data
 
-proc shallowTranspose*(t: var Tensor): Tensor {.noSideEffect, inline.}=
-  ## Transpose a Tensor.
-  ## Warning, data is shared with the input
-  ##
-  ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
-  ##
-  ## Data is copied as-is and not modified.
-  result.shape = t.shape.reversed
-  result.strides = t.strides.reversed
-  result.offset = t.offset
-  shallowCopy(result.data, t.data)
 
-proc shallowTranspose*(t: Tensor): Tensor {.noSideEffect, inline.}=
+proc unsafeTranspose*(t: Tensor): Tensor {.noSideEffect, inline.}=
   ## Transpose a Tensor.
   ## WARNING, data is shared with the input.
   ## This proc does not guarantee that a `let` value is immutable
@@ -99,21 +88,6 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
     return t
   elif t.is_F_contiguous and layout == colMajor:
     return t
-  contiguousT(result, t, layout)
-
-proc shallowContiguous*[T](t: var Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noSideEffect.}=
-  ## Transform a tensor with general striding to a Tensor with contiguous layout.
-  ## WARNING: If no transformation are needed, the returned value shares data with the original.
-  ## By default tensor will be rowMajor.
-  ## By default nothing is done if the tensor is already contiguous (C Major or F major)
-  ## The "force" parameter can force re-ordering to a specific layout
-
-  if t.isContiguous and not force:
-    return t.shallowCopy
-  elif t.is_C_contiguous and layout == rowMajor:
-    return t.shallowCopy
-  elif t.is_F_contiguous and layout == colMajor:
-    return t.shallowCopy
   contiguousT(result, t, layout)
 
 proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noSideEffect.}=
@@ -158,7 +132,7 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect, inline
 template reshape_no_copy(t: Tensor|var Tensor, new_shape: varargs[int]): untyped =
   let ns = @new_shape
   when compileOption("boundChecks"):
-    check_shallowReshape t
+    check_nocopyReshape t
     check_reshape(t, ns)
 
   var matched_dims = 0
@@ -175,12 +149,6 @@ template reshape_no_copy(t: Tensor|var Tensor, new_shape: varargs[int]): untyped
   result.offset = t.offset
 
   shallowCopy(result.data, t.data)
-
-proc shallowReshape*(t: var Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
-  ## Shallow reshaping
-  ## Valid only for contiguous arrays
-  ## TODO: tests
-  t.reshape_no_copy(new_shape)
 
 proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
   ## Shallow reshaping
@@ -211,17 +179,6 @@ proc broadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffec
   # Todo: proper bound-checking
   # todo: testing
   result = t
-  result.broadcastT(shape)
-
-proc shallowBroadcast*[T](t: var Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
-  ## Broadcast array, broadcasted array share data with original.
-  ##
-  ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
-  ## values along that dimension.
-  # Todo: proper bound-checking
-  # todo: testing
-  # TODO: use term-rewriting macro to have t1.bc * t2.bc broadcasted in compatible shape
-  result = t.shallowCopy
   result.broadcastT(shape)
 
 proc unsafeBroadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
@@ -392,16 +349,6 @@ proc squeeze*(t: AnyTensor): AnyTensor {.noSideEffect.}=
   result = t
   result.squeezeT
 
-proc shallowSqueeze*(t: var Tensor): Tensor {.noSideEffect.}=
-  ## Squeeze tensors
-  ## Input:
-  ##   - a tensor
-  ## Returns:
-  ##   - a tensor with singleton dimensions collapsed
-  ## Result share storage with input
-  result = t.shallowCopy
-  result.squeezeT
-
 proc unsafeSqueeze*(t: Tensor): Tensor {.noSideEffect.}=
   ## Squeeze tensors
   ## Input:
@@ -430,18 +377,6 @@ proc squeeze*(t: AnyTensor, axis: int): AnyTensor {.noSideEffect.}=
   ## Returns:
   ##   - a tensor with that axis collapsed, if it was a singleton dimension
   result = t
-  result.squeezeT(axis)
-
-proc shallowSqueeze*(t: var Tensor, axis: int): Tensor {.noSideEffect.}=
-  ## Collapse the given axis, if the dimension is not 1
-  ## it does nothing
-  ## Input:
-  ##   - a tensor
-  ##   - an axis (dimension)
-  ## Returns:
-  ##   - a tensor with that axis collapsed, if it was a singleton dimension
-  ## Result share storage with input
-  result = t.shallowCopy
   result.squeezeT(axis)
 
 proc unsafeSqueeze*(t: Tensor, axis: int): Tensor {.noSideEffect.}=

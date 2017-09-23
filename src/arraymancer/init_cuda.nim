@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc shallowCopy*[T](t: var CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect.}=
+proc unsafeView*[T](t: CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect.}=
   ## Input:
-  ##     - A ``var`` tensor
+  ##     - A CudaTensor
   ## Returns:
   ##     - A shallow copy.
   ##
   ## WARNING !
   ##   Both tensors shares the same memory. Data modification on one will be reflected on the other.
   ##   However modifying the shape, strides or offset will not affect the other.
-  
+
   # shape and strides fields have value semantics by default
   # CudaSeq has ref semantics
   system.`=`(result, t)

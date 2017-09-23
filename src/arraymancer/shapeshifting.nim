@@ -24,13 +24,16 @@ proc check_shallowReshape(t: Tensor) {.noSideEffect, inline.}=
   if not t.isContiguous:
     raise newException(ValueError, "The tensor must be contiguous for reshape without copy")
 
-
 proc check_concat(t1, t2: Tensor, axis: int) {.noSideEffect,inline.}=
   let check1 = t1.shape[0..<axis] == t2.shape[0..<axis]
   let check2 = t2.shape[axis+1..t1.shape.high] == t2.shape[axis+1..t2.shape.high]
 
   if not check1 or not check2:
     raise newException(ValueError, "Concatenation Error: Except along the concatenation axis tensors must have the same shape")
+
+proc check_squeezeAxis(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
+  if axis >= t.rank:
+    raise newException(ValueError, "The axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )
 
 proc transpose*(t: Tensor): Tensor {.noSideEffect, inline.}=
   ## Transpose a Tensor.
@@ -319,14 +322,80 @@ template squeezeT(t: var AnyTensor): untyped =
   t.shape = t.shape[0..<idx_real_dim]
   t.strides = t.strides[0..<idx_real_dim]
 
+  if t.rank == 0:
+    t.shape.add 1
+    t.strides.add 1
+
 proc squeeze*(t: AnyTensor): AnyTensor {.noSideEffect.}=
+  ## Squeeze tensors
+  ## Input:
+  ##   - a tensor
+  ## Returns:
+  ##   - a tensor with singleton dimensions collapsed
   result = t
   result.squeezeT
 
 proc shallowSqueeze*(t: var Tensor): Tensor {.noSideEffect.}=
+  ## Squeeze tensors
+  ## Input:
+  ##   - a tensor
+  ## Returns:
+  ##   - a tensor with singleton dimensions collapsed
+  ## Result share storage with input
   result = t.shallowCopy
   result.squeezeT
 
 proc unsafeSqueeze*(t: Tensor): Tensor {.noSideEffect.}=
+  ## Squeeze tensors
+  ## Input:
+  ##   - a tensor
+  ## Returns:
+  ##   - a tensor with singleton dimensions collapsed
+  ## WARNING: result share storage with input
+  ## This does not guarantee `let` variable immutability
   result = t.unsafeView
   result.squeezeT
+
+template squeezeT(t: var AnyTensor, axis: int): untyped =
+  when compileOption("boundChecks"):
+    check_squeezeAxis(t, axis)
+
+  if t.rank > 1 and t.shape[axis] == 1: # We don't support rank 0 Tensor
+    t.shape.delete(axis)
+    t.strides.delete(axis)
+
+proc squeeze*(t: AnyTensor, axis: int): AnyTensor {.noSideEffect.}=
+  ## Collapse the given axis, if the dimension is not 1
+  ## it does nothing
+  ## Input:
+  ##   - a tensor
+  ##   - an axis (dimension)
+  ## Returns:
+  ##   - a tensor with that axis collapsed, if it was a singleton dimension
+  result = t
+  result.squeezeT(axis)
+
+proc shallowSqueeze*(t: var Tensor, axis: int): Tensor {.noSideEffect.}=
+  ## Collapse the given axis, if the dimension is not 1
+  ## it does nothing
+  ## Input:
+  ##   - a tensor
+  ##   - an axis (dimension)
+  ## Returns:
+  ##   - a tensor with that axis collapsed, if it was a singleton dimension
+  ## Result share storage with input
+  result = t.shallowCopy
+  result.squeezeT(axis)
+
+proc unsafeSqueeze*(t: Tensor, axis: int): Tensor {.noSideEffect.}=
+  ## Collapse the given axis, if the dimension is not 1
+  ## it does nothing
+  ## Input:
+  ##   - a tensor
+  ##   - an axis (dimension)
+  ## Returns:
+  ##   - a tensor with singleton dimensions collapsed
+  ## WARNING: result share storage with input
+  ## This does not guarantee `let` variable immutability
+  result = t.unsafeView
+  result.squeezeT(axis)

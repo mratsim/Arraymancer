@@ -35,6 +35,10 @@ proc check_squeezeAxis(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
   if axis >= t.rank:
     raise newException(ValueError, "The axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )
 
+proc check_unsqueezeAxis(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
+  if t.rank == 0 or axis > t.rank or axis < 0:
+    raise newException(ValueError, "The new axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )
+
 proc transpose*(t: Tensor): Tensor {.noSideEffect, inline.}=
   ## Transpose a Tensor.
   ##
@@ -418,3 +422,47 @@ proc unsafeSqueeze*(t: Tensor, axis: int): Tensor {.noSideEffect.}=
   ##   This proc does not guarantee that a ``let`` value is immutable.
   result = t.unsafeView
   result.squeezeT(axis)
+
+template unsqueezeT(t: var AnyTensor, axis: int): untyped =
+  when compileOption("boundChecks"):
+    check_unsqueezeAxis(t, axis)
+
+  # set the stride to be consistent with the rest of the lib
+  var stride: int
+  if axis >= t.rank:
+    stride = 1
+  else:
+    stride = t.shape[axis]*t.strides[axis]
+
+  t.shape.insert(1, axis)
+  t.strides.insert(stride, axis)
+
+proc unsqueeze*(t: AnyTensor, axis: int): AnyTensor {.noSideEffect.}=
+  ## Insert a new axis just before the given axis, increasing the tensor
+  ## dimension (rank) by 1
+  ## Input:
+  ##   - a tensor
+  ##   - an axis (dimension)
+  ## Returns:
+  ##   - a tensor with that new axis
+  result = t
+  result.unsqueezeT(axis)
+
+proc unsafeUnsqueeze*(t: Tensor, axis: int): Tensor {.noSideEffect.}=
+  ## Insert a new axis just before the given axis, increasing the tensor
+  ## dimension (rank) by 1
+  ##   - a tensor with that new axis
+  ## WARNING: result share storage with input
+  ## This does not guarantee `let` variable immutability
+  result = t.unsafeView
+  result.unsqueezeT(axis)
+
+proc stack*[T](tensors: openarray[Tensor[T]], axis: int = 0): Tensor[T] =
+  ## Join a sequence of tensors along a new axis into a new tensor.
+  ## Input:
+  ##   - a tensor
+  ##   - an axis (dimension)
+  ## Returns:
+  ##   - a new stacked tensor along the new axis
+  proc stack_unsqueeze(t: Tensor[T]): Tensor[T] = t.unsafeUnsqueeze(axis)
+  tensors.map(stack_unsqueeze).concat(axis)

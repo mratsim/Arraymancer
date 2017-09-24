@@ -106,3 +106,14 @@ suite "Shapeshifting":
       let b = a[0, 0..1, 0, 3..0|-1].squeeze(0)
 
       check b == [4, 3, 2, 1, 8, 7, 6, 5].toTensor.reshape(2,1,4)
+
+  test "To tensor reshape":
+    block:
+      let a = [1,2,3,4].toTensorReshape([2,2])
+      check a == [[1,2],[3,4]].toTensor()
+    block:
+      var s = @[1,2,3,4]
+      var a = s.unsafeToTensorReshape([2,2])
+      check a == [[1,2],[3,4]].toTensor()
+      s[0] = 0
+      check a == [[0,2],[3,4]].toTensor()

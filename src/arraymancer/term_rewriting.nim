@@ -23,13 +23,13 @@ template toTensorReshapeT(oa: typed, shape: varargs[int]): untyped =
   shallowCopy(t.data, data)
   return t
 
-proc toTensorReshape(oa: string, shape: varargs[int]): auto {.noSideEffect.}=
+proc toTensorReshape*(oa: string, shape: varargs[int]): auto {.noSideEffect.}=
   ## Fuse toTensor and reshape in one operation
   ## Deal specifically with strings/seq[char]
 
   toTensorReshapeT(oa, shape)
 
-proc toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto {.noSideEffect.}=
+proc toTensorReshape*(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto {.noSideEffect.}=
   ## Fuse toTensor and reshape in one operation
   ##
   ## Nim >0.17 needed as "static[int] = 0" is not working in Nim 0.17
@@ -43,3 +43,17 @@ template rewriteToTensorReshape*{reshape(toTensor(oa, dummy_bugfix), shape)}(
   dummy_bugfix: static[int]): auto =
   ## Fuse ``sequence.toTensor(Backend).reshape(new_shape)`` into a single operation.
   toTensorReshape(oa, shape, dummy_bugfix)
+
+proc unsafeToTensorReshape*[T](data: seq[T], shape: varargs[int]): Tensor[T] {.noSideEffect.} =
+  ## Fuse unsafeToTensor and unsafeReshape in one operation
+
+  when compileOption("boundChecks"): check_nested_elements(@shape, data.len)
+
+  tensorCpu(shape, result)
+  shallowCopy(result.data, data)
+
+template rewriteUnsafeToTensorReshape*{unsafeReshape(unsafeToTensor(s), shape)}(
+  s: seq,
+  shape: varargs[int]): auto =
+  ## Fuse ``sequence.unsafeToTensor().unsafeReshape(new_shape)`` into a single operation.
+  unsafeToTensorReshape(s, shape, dummy_bugfix)

@@ -70,6 +70,16 @@ proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect
   # TODO: remove 'dummy_bugfix'
   toTensorCpu(s)
 
+proc unsafeToTensor*[T: SomeNumber](data: seq[T]): Tensor[T] {.noSideEffect.} =
+  ## Convert a seq to a Tensor, sharing the seq data
+  ## Input:
+  ##      - A seq with the tensor data
+  ## Result:
+  ##      - A rank 1 tensor with the same size of the input
+  ## WARNING: result share storage with input
+  tensorCpu([data.len], result)
+  shallowCopy(result.data, data)
+
 proc toTensor*(s:string): auto {.noSideEffect.} =
   ## Convert an openarray to a Tensor
   ##

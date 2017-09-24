@@ -424,12 +424,18 @@ proc unsqueeze*(t: AnyTensor, axis: int): AnyTensor {.noSideEffect.}=
 proc unsafeUnsqueeze*(t: Tensor, axis: int): Tensor {.noSideEffect.}=
   ## Insert a new axis just before the given axis, increasing the tensor
   ## dimension (rank) by 1
-  ## Input:
-  ##   - a tensor
-  ##   - an axis (dimension)
-  ## Returns:
   ##   - a tensor with that new axis
   ## WARNING: result share storage with input
   ## This does not guarantee `let` variable immutability
   result = t.unsafeView
   result.unsqueezeT(axis)
+
+proc stack*[T](tensors: openarray[Tensor[T]], axis: int = 0): Tensor[T] =
+  ## Join a sequence of tensors along a new axis into a new tensor.
+  ## Input:
+  ##   - a tensor
+  ##   - an axis (dimension)
+  ## Returns:
+  ##   - a new stacked tensor along the new axis
+  proc stack_unsqueeze(t: Tensor[T]): Tensor[T] = t.unsafeUnsqueeze(axis)
+  tensors.map(stack_unsqueeze).concat(axis)

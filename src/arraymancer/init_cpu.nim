@@ -50,6 +50,10 @@ template toTensorCpu(s: typed): untyped =
   t.data = data
   return t
 
+proc newSeqUninitialized[T](len: Natural): seq[T] {.noSideEffect, inline.} =
+  result = newSeqOfCap[T](len)
+  result.setLen(len)
+
 proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
@@ -59,7 +63,19 @@ proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, i
   ##      - A Tensor of the proper shape initialized with
   ##        the default type value (0 for numeric types) on Cpu backend
   tensorCpu(shape, result)
-  result.data = newSeq[T](result.size)
+  result.data = newSeqUninitialized[T](result.size)
+
+proc newTensor*[T](shape: openarray[int], value: T): Tensor[T] {.noSideEffect, inline.} =
+  ## Creates a new Tensor filled with the given value
+  ## Input:
+  ##      - Shape of the Tensor
+  ##      - Type of its elements
+  ##      - Value to initialize its elements
+  ## Result:
+  ##      - A Tensor of the proper shape initialized with
+  ##        the given value
+  tensorCpu(shape, result)
+  result.data = newSeqWith(result.size, value)
 
 proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect.} =
   ## Convert an openarray to a Tensor
@@ -78,7 +94,7 @@ proc toTensor*(s:string): auto {.noSideEffect.} =
   ## This proc handles string specifically as otherwise they are interpreted as a sequence of char
   toTensorCpu(s)
 
-# TODO add tests for zeros, ones and randomTensor
+# TODO add tests for randomTensor
 proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
   ##
@@ -87,7 +103,8 @@ proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {
   ##      - Type of its elements
   ## Result:
   ##      - A zero-ed Tensor of the input shape on backend Cpu
-  return newTensor(shape, typ)
+  tensorCpu(shape, result)
+  result.data = newSeq[T](result.size)
 
 proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input

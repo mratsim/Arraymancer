@@ -79,3 +79,9 @@ makeUniversal(round)
 #makeUniversal(splitDecimal)
 makeUniversal(degToRad)
 makeUniversal(radToDeg)
+
+# Built-in nim functions that doesn't work with makeUniversal
+
+proc abs*[T](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.}=
+  proc abs_proxy(x: T):T = abs(x)
+  t.map(abs_proxy)

@@ -73,3 +73,10 @@ suite "Testing higher-order functions":
     let initval = [1,0,1,0].toTensor.reshape([4,1])
 
     check: t.fold(initval, `+`, axis = 1) == col_sum_plus_1010
+
+  test "Fold over two tensors":
+    let a = [[1,2],[3,4]].toTensor()
+    let b = [[5,6],[7,8]].toTensor()
+
+    let res = a.fold2(0, (r, x, y) => r + x + y, b)
+    check res == 36

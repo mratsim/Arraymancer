@@ -53,17 +53,18 @@
 
 
 type SteppedSlice* = object
-  ## A slice object related to a tensor single dimension:
+  ## Internal: A slice object related to a tensor single dimension:
   ##   - a, b: Respectively the beginning and the end of the range of the dimension
   ##   - step: The stepping of the slice (can be negative)
   ##   - a/b_from_end: Indicates if a/b should be counted from 0 or from the end of the tensor relevant dimension.
+  ## Slicing syntax like a[2, 1..<5, _] will be converted at compile-time to SteppedSlices
   a, b: int
   step: int
   a_from_end: bool
   b_from_end: bool
 
 type Step* = object
-  ## Workaround to build ``SteppedSlice`` without using parenthesis.
+  ## Internal: Workaround to build ``SteppedSlice`` without using parenthesis.
   ##
   ## Expected syntax is ``tensor[0..10|1]``.
   ##
@@ -101,7 +102,7 @@ proc check_shape(a, b: Tensor|openarray) {.noSideEffect, inline.}=
 
 # Procs to manage all integer, slice, SteppedSlice 
 proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
-  ## A ``SteppedSlice`` constructor
+  ## Internal: A ``SteppedSlice`` constructor
   ## Input:
   ##     - a slice
   ##     - a step
@@ -110,7 +111,7 @@ proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
   return SteppedSlice(a: s.a, b: s.b, step: step)
 
 proc `|`*(b, step: int): Step {.noSideEffect, inline.}=
-  ## A ``Step`` constructor
+  ## Internal: A ``Step`` constructor
   ##
   ## ``Step`` is a workaround due to operator precedence.
   ##
@@ -123,7 +124,7 @@ proc `|`*(b, step: int): Step {.noSideEffect, inline.}=
   return Step(b: b, step: step)
 
 proc `|`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
-  ## Modifies the step of a ``SteppedSlice``
+  ## Internal: Modifies the step of a ``SteppedSlice``
   ## Input:
   ##     - a ``SteppedSLice``
   ##     - the new stepping
@@ -133,19 +134,19 @@ proc `|`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
   result.step = step
 
 proc `|+`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
-  ## Alias for ``|``
+  ## Internal: Alias for ``|``
   return `|`(s, step)
 
 proc `|+`*(b, step: int): Step {.noSideEffect, inline.}=
-  ## Alias for ``|``
+  ## Internal: Alias for ``|``
   return `|`(b, step)
 
 proc `|+`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
-  ## Alias for ``|``
+  ## Internal: Alias for ``|``
   return `|`(ss, step)
 
 proc `|-`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
-  ## A ``SteppedSlice`` constructor
+  ## Internal: A ``SteppedSlice`` constructor
   ##
   ## Workaround to tensor[slice|-1] being interpreted as [slice `|-` 1]
   ##
@@ -153,7 +154,7 @@ proc `|-`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
   return SteppedSlice(a: s.a, b: s.b, step: -step)
 
 proc `|-`*(b, step: int): Step {.noSideEffect, inline.}=
-  ## A ``SteppedSlice`` constructor
+  ## Internal: A ``SteppedSlice`` constructor
   ##
   ## Workaround to tensor[0..10|-1] being intepreted as [0 .. (10 `|-` 1)]
   ##
@@ -161,7 +162,7 @@ proc `|-`*(b, step: int): Step {.noSideEffect, inline.}=
   return Step(b: b, step: -step)
 
 proc `|-`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
-  ## Modifies the step of a ``SteppedSlice``
+  ## Internal: Modifies the step of a ``SteppedSlice``
   ##
   ## Workaround to tensor[slice|-1] being interpreted as [slice `|-` 1]
   ##
@@ -170,7 +171,7 @@ proc `|-`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
   result.step = -step
 
 proc `..`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
-  ## Build a SteppedSlice from [a .. (b|step)] (workaround to operator precedence)
+  ## Internal: Build a SteppedSlice from [a .. (b|step)] (workaround to operator precedence)
   ## Input:
   ##     - the beginning of the slice range
   ##     - a ``Step`` workaround object
@@ -179,7 +180,7 @@ proc `..`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
   return SteppedSlice(a: a, b: s.b, step: s.step)
 
 proc `..<`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
-  ## Build a SteppedSlice from [a ..< (b|step)] (workaround to operator precedence and ..<b not being interpreted as .. <b)
+  ## Internal: Build a SteppedSlice from [a ..< (b|step)] (workaround to operator precedence and ..<b not being interpreted as .. <b)
   ## Input:
   ##     - the beginning of the slice range
   ##     - a ``Step`` workaround object
@@ -188,7 +189,7 @@ proc `..<`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
   return SteppedSlice(a: a, b: <s.b, step: s.step)
 
 proc `..^`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
-  ## Build a SteppedSlice from [a ..^ (b|step)] (workaround to operator precedence and ..^b not being interpreted as .. ^b)
+  ## Internal: Build a SteppedSlice from [a ..^ (b|step)] (workaround to operator precedence and ..^b not being interpreted as .. ^b)
   ## Input:
   ##     - the beginning of the slice range
   ##     - a ``Step`` workaround object
@@ -197,13 +198,13 @@ proc `..^`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
   return SteppedSlice(a: a, b: s.b, step: s.step, b_from_end: true)
 
 proc `^`*(s: SteppedSlice): SteppedSlice {.noSideEffect, inline.} =
-  ## Prefix to a to indicate starting the slice at "a" away from the end
+  ## Internal: Prefix to a to indicate starting the slice at "a" away from the end
   ## Note: This does not automatically inverse stepping, what if we want ^5..^1
   result = s
   result.a_from_end = not result.a_from_end
 
 proc `^`*(s: Slice): SteppedSlice {.noSideEffect, inline.} =
-  ## Prefix to a to indicate starting the slice at "a" away from the end
+  ## Internal: Prefix to a to indicate starting the slice at "a" away from the end
   ## Note: This does not automatically inverse stepping, what if we want ^5..^1
   return SteppedSlice(a: s.a, b: s.b, step: 1, a_from_end: true)
 
@@ -429,13 +430,38 @@ macro inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
         result.add(slice)
 
 macro `[]`*[T](t: AnyTensor[T], args: varargs[untyped]): untyped =
+  ## Slice a Tensor or a CudaTensor
   ## Input:
-  ##   - a tensor
+  ##   - a Tensor or a CudaTensor
   ##   - and:
   ##     - specific coordinates (``varargs[int]``)
   ##     - or a slice (cf. tutorial)
   ## Returns:
   ##   - a value or a tensor corresponding to the slice
+  ## Warning ⚠ CudaTensor temporary default:
+  ##   For CudaTensor only, this is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  ## Usage:
+  ##    - Basic indexing - foo[2, 3]
+  ##    - Basic indexing - foo[1+1, 2*2*1]
+  ##    - Basic slicing - foo[1..2, 3]
+  ##    - Basic slicing - foo[1+1..4, 3-2..2]
+  ##    - Span slices - foo[_, 3]
+  ##    - Span slices - foo[1.._, 3]
+  ##    - Span slices - foo[_..3, 3]
+  ##    - Span slices - foo[_.._, 3]
+  ##    - Stepping - foo[1..3\|2, 3]
+  ##    - Span stepping - foo[_.._\|2, 3]
+  ##    - Span stepping - foo[_.._\|+2, 3]
+  ##    - Span stepping - foo[1.._\|1, 2..3]
+  ##    - Span stepping - foo[_..<4\|2, 3]
+  ##    - Slicing until at n from the end - foo[0..^4, 3]
+  ##    - Span Slicing until at n from the end - foo[_..^2, 3]
+  ##    - Stepped Slicing until at n from the end - foo[1..^1\|2, 3]
+  ##    - Slice from the end - foo[^1..0\|-1, 3]
+  ##    - Slice from the end - expect non-negative step error - foo[^1..0, 3]
+  ##    - Slice from the end - foo[^(2*2)..2*2, 3]
+  ##    - Slice from the end - foo[^3..^2, 3]
   let new_args = getAST(desugar(args))
 
   result = quote do:
@@ -461,17 +487,19 @@ macro unsafe_inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
         result.add(slice)
 
 macro unsafeSlice*[T](t: Tensor[T], args: varargs[untyped]): untyped =
+  ## Slice a Tensor
   ## Input:
-  ##   - a tensor. It will share data with the resulting tensor.
-  ##     WARNING: even if the input tensor is a "let"
-  ##     using this procedure does not guarantee immutability
+  ##   - a Tensor
   ##   - and:
   ##     - specific coordinates (``varargs[int]``)
   ##     - or a slice (cf. tutorial)
   ## Returns:
-  ##   - a view of the Tensor at corresponding slice. WARNING: data is shared.
-  ##
-  ## TODO tests!
+  ##   - a value or a view of the Tensor corresponding to the slice
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  ## Usage:
+  ##   See the ``[]`` macro
   let new_args = getAST(desugar(args))
 
   result = quote do:
@@ -529,7 +557,7 @@ macro inner_typed_dispatch_mut(t: typed, args: varargs[typed], val: typed): unty
     result.add(val)
 
 macro `[]=`*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
-  ## Modifies the input
+  ## Modifies a tensor inplace at the corresponding location or slice
   ##
   ##
   ## Input:
@@ -543,7 +571,13 @@ macro `[]=`*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
   ##       - or be applied to the whole slice
   ##     - an openarray with a shape that matches the slice
   ##     - a tensor with a shape that matches the slice
-
+  ## Result:
+  ##   - Nothing, the tensor is modified in-place
+  ## Usage:
+  ##   - Assign a single value - foo[1..2, 3..4] = 999
+  ##   - Assign an array/seq of values - foo[0..1,0..1] = [[111, 222], [333, 444]]
+  ##   - Assign values from a view/Tensor - foo[^2..^1,2..4] = bar
+  ##   - Assign values from the same Tensor - foo[^2..^1,2..4] = foo[^1..^2|-1, 4..2|-1]
 
   # varargs[untyped] consumes all arguments so the actual value should be popped
   # https://github.com/nim-lang/Nim/issues/5855

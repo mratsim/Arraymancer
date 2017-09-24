@@ -24,7 +24,8 @@ template toTensorReshapeT(oa: typed, shape: varargs[int]): untyped =
   return t
 
 proc toTensorReshape(oa: string, shape: varargs[int]): auto {.noSideEffect.}=
-  ## Fuse toTensor and reshape in one operation
+  ## Fuse toTensor and reshape in one operation.
+  ##
   ## Deal specifically with strings/seq[char]
 
   toTensorReshapeT(oa, shape)
@@ -41,5 +42,7 @@ template rewriteToTensorReshape*{reshape(toTensor(oa, dummy_bugfix), shape)}(
   oa: openarray,
   shape: varargs[int],
   dummy_bugfix: static[int]): auto =
-  ## Fuse ``sequence.toTensor(Backend).reshape(new_shape)`` into a single operation.
+  ## Fuse ``sequence.toTensor.reshape(new_shape)`` into a single operation.
+  ##
+  ## Operation fusion leverage the Nim compiler and should not be called explicitly.
   toTensorReshape(oa, shape, dummy_bugfix)

@@ -52,7 +52,7 @@ proc `+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inline
   apply2(a, inplace_add, b)
 
 proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
-  ## Element-wise numerical negative
+  ## Negate all values of a Tensor
   t.map(proc(x: T): T = -x)
 
 proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =

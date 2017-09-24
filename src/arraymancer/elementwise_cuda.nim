@@ -20,11 +20,11 @@
 # elementwise:
 #   C = (A + B*sin(D))/exp(-X)
 #
-## __ldg is a cuda intrinsics to load read-only data
-## from a special cache
+# __ldg is a cuda intrinsics to load read-only data
+# from a special cache
 
-## Assignment op
-## Does element-wise A[i] `op=` B[i]
+# Assignment op
+# Does element-wise A[i] `op=` B[i]
 template cuda_assign_op(op_name, op_symbol: string)=
   {.emit: ["""
   template<typename T>
@@ -37,7 +37,7 @@ template cuda_assign_op(op_name, op_symbol: string)=
   };
   """].}
 
-## Assignment with scalars
+# Assignment with scalars
 template cuda_assignscal_op(op_name, op_symbol: string)=
   {.emit: ["""
   template<typename T>
@@ -50,8 +50,8 @@ template cuda_assignscal_op(op_name, op_symbol: string)=
   };
   """].}
 
-## Binary op
-## Does C[i] = A[i] `op` B[i]
+# Binary op
+# Does C[i] = A[i] `op` B[i]
 template cuda_binary_op(op_name, op_symbol: string)=
   {.emit:["""
   template<typename T>
@@ -65,8 +65,8 @@ template cuda_binary_op(op_name, op_symbol: string)=
   };
   """].}
 
-## Binary op with scalar on the left
-## Does C[i] = a `op` B[i]
+# Binary op with scalar on the left
+# Does C[i] = a `op` B[i]
 template cuda_lscal_op(op_name, op_symbol: string)=
   {.emit:["""
   template<typename T>
@@ -80,8 +80,8 @@ template cuda_lscal_op(op_name, op_symbol: string)=
   };
   """].}
 
-## Binary op with scalar on the right
-## Does C[i] = A[i] `op` beta
+# Binary op with scalar on the right
+# Does C[i] = A[i] `op` beta
 template cuda_rscal_op(op_name, op_symbol: string)=
   {.emit:["""
   template<typename T>
@@ -95,8 +95,8 @@ template cuda_rscal_op(op_name, op_symbol: string)=
   };
   """].}
 
-## Unary op
-## Does C[i] = op(A[i])
+# Unary op
+# Does C[i] = op(A[i])
 template cuda_unary_op(op_name, op_symbol: string)=
   {.emit:["""
   template<typename T>

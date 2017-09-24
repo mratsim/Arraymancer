@@ -13,12 +13,35 @@
 # limitations under the License.
 
 template at*[T](t: Tensor[T], args: varargs[untyped]): untyped =
-  ## Slice a tensor and collapse singleton dimension
-  # Note, slicing already creates a copy, no need to create another qith squeeze
+  ## Slice a Tensor and collapse singleton dimension.
+  ##
+  ## Input:
+  ##   - a Tensor
+  ##   - and:
+  ##     - specific coordinates (``varargs[int]``)
+  ##     - or a slice (cf. tutorial)
+  ## Returns:
+  ##   - a value or a view of the Tensor corresponding to the slice
+  ##     Singleton dimension are collapsed
+  ## Usage:
+  ##   See the ``[]`` macro
   t[args].unsafeSqueeze
 
 template unsafeAt*[T](t: Tensor[T], args: varargs[untyped]): untyped =
-  ## Slice a tensor and collapse singleton dimension
-  ## Both the original and the slice share the same data
-  ## WARNING, `let`variable immutability is not guaranteed if you use this proc.
+  ## Slice a Tensor and collapse singleton dimension.
+  ##
+  ## Data is shared between input and output.
+  ## Input:
+  ##   - a Tensor
+  ##   - and:
+  ##     - specific coordinates (``varargs[int]``)
+  ##     - or a slice (cf. tutorial)
+  ## Returns:
+  ##   - a value or a view of the Tensor corresponding to the slice
+  ##     Singleton dimension are collapsed
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  ## Usage:
+  ##   See the ``[]`` macro
   t.unsafeSlice(args).unsafeSqueeze

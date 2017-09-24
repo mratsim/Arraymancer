@@ -222,7 +222,8 @@ template matmat_fallback[T: SomeInteger](a, b, result: Tensor[T]): auto =
 
 proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T]  {.noSideEffect.} =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
-  ## Float operations use optimized BLAS
+  ##
+  ## Float operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.
 
   when defined(blis):
     ## When is evaluated at compile time and has no runtime cost
@@ -238,7 +239,13 @@ proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T]  {.noSideEffect.} =
   else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
 
 proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T]  {.noSideEffect.} =
-  ## Matrix-Matrix and Matrix-Vector multiplications fallback for integer tensor
+  ## Matrix-Matrix and Matrix-Vector multiplications fallback for integer tensors.
+  ##
+  ## Integer BLAS has been implemented manually. While not as fast as BLAS for floats,
+  ## it should be much faster than naive loops.
+  ##
+  ## Note: Integers smaller than 2^31 can be converted to float64 without losing precision
+  ## and can benefit from the optimized float BLAS implementations
 
   static: echo "Please note that integer matrix-matrix and matrix-vector multiplications do not have optimized " &
                "operations like how research has done for floats. If your integers are " &

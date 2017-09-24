@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
+# init procs will not offer the backend parameter anymore.
+# Full rationale in the Design_Document on Github.
+
 proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): auto {.noSideEffect, deprecated.} =
-  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
-  ## init procs will not offer the backend parameter anymore.
-  ## Full rationale in the Design_Document on Github.
+  ## DEPRECATED - The backend: static[Backend] argument has been deprecated for easier maintenance.
   ##
   ## Creates a new Tensor
   ## Input:
@@ -25,6 +27,7 @@ proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): a
   ## Result:
   ##      - A Tensor of the proper shape initialized with
   ##        the default type value (0 for numeric types)
+
 
   # TODO: Cpu backend as default, pending: https://github.com/nim-lang/Nim/issues/6339
 
@@ -39,9 +42,7 @@ proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): a
     return t
 
 proc toTensor*(s:openarray, backend: static[Backend]): auto {.noSideEffect, deprecated.} =
-  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
-  ## init procs will not offer the backend parameter anymore.
-  ## Full rationale in the Design_Document on Github.
+  ## DEPRECATED - The backend: static[Backend] argument has been deprecated for easier maintenance.
   ##
   ## Convert an openarray to a Tensor
   # TODO: have Backend.Cpu as default. pending https://github.com/nim-lang/Nim/issues/6339
@@ -49,9 +50,7 @@ proc toTensor*(s:openarray, backend: static[Backend]): auto {.noSideEffect, depr
     toTensorCpu(s)
 
 proc toTensor*(s:string, backend: static[Backend]): auto {.noSideEffect, deprecated.} =
-  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
-  ## init procs will not offer the backend parameter anymore.
-  ## Full rationale in the Design_Document on Github.
+  ## DEPRECATED - The backend: static[Backend] argument has been deprecated for easier maintenance.
   ##
   ## Convert an openarray to a Tensor
   ##
@@ -61,10 +60,7 @@ proc toTensor*(s:string, backend: static[Backend]): auto {.noSideEffect, depreca
 
 # TODO add tests for zeros, ones and randomTensor
 proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: static[Backend]): auto {.deprecated, noSideEffect, inline.} =
-  ## Creates a new Tensor filled with 0
-  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
-  ## init procs will not offer the backend parameter anymore.
-  ## Full rationale in the Design_Document on Github.
+  ## DEPRECATED - The backend: static[Backend] argument has been deprecated for easier maintenance.
   ##
   ## Input:
   ##      - Shape of the Tensor
@@ -75,9 +71,7 @@ proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: sta
   return newTensor(shape, typ, backend)
 
 proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: static[Backend]): auto {.deprecated, noSideEffect.} =
-  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
-  ## init procs will not offer the backend parameter anymore.
-  ## Full rationale in the Design_Document on Github.
+  ## DEPRECATED - The backend: static[Backend] argument has been deprecated for easier maintenance.
   ##
   ## Creates a new Tensor filled with 1
   ## Input:
@@ -92,11 +86,10 @@ proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T], backend: stat
     t.data = newSeqWith(t.size, 1.T)
 
 proc randomTensor*(shape: openarray[int], max: float, backend: static[Backend]): auto {.deprecated.}=
-  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
-  ## init procs will not offer the backend parameter anymore.
-  ## Full rationale in the Design_Document on Github.
+  ## DEPRECATED - The backend: static[Backend] argument has been deprecated for easier maintenance.
   ##
-  ## Creates a new float Tensor filled with values between 0 and max
+  ## Creates a new float Tensor filled with values between 0 and max.
+  ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
   ## Input:
   ##      - a shape
@@ -110,11 +103,10 @@ proc randomTensor*(shape: openarray[int], max: float, backend: static[Backend]):
     return t
 
 proc randomTensor*(shape: openarray[int], max: int, backend: static[Backend]): auto {.deprecated.}=
-  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
-  ## init procs will not offer the backend parameter anymore.
-  ## Full rationale in the Design_Document on Github.
+  ## DEPRECATED - The backend: static[Backend] argument has been deprecated for easier maintenance.
   ##
-  ## Creates a new int Tensor filled with values between 0 and max-1
+  ## Creates a new int Tensor filled with values between 0 and max-1.
+  ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
   ## Input:
   ##      - a shape
@@ -128,11 +120,10 @@ proc randomTensor*(shape: openarray[int], max: int, backend: static[Backend]): a
     return t
 
 proc randomTensor*[T](shape: openarray[int], slice: Slice[T], B: static[Backend]): auto {.deprecated.}=
-  ## DEPRECATED: For an easier to maintain code (no polymorphic output zeros(..., Cpu) -> Tensor, zeros(Cuda) -> CudaTensor),
-  ## init procs will not offer the backend parameter anymore.
-  ## Full rationale in the Design_Document on Github.
+  ## DEPRECATED - The backend: static[Backend] argument has been deprecated for easier maintenance.
   ##
   ## Creates a new int Tensor filled with values in the Slice range.
+  ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
   ## Input:
   ##      - a shape

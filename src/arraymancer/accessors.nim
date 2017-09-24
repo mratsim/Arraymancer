@@ -81,22 +81,69 @@ template strided_iteration[T](t: Tensor[T], strider: IterKind): untyped =
         iter_pos -= backstrides[k]
 
 iterator items*[T](t: Tensor[T]): T {.noSideEffect.}=
-  ## Inline stride-aware iterator on Tensor values
+  ## Inline iterator on Tensor values
+  ##
+  ## The iterator will iterate in C order regardingless of the tensor properties (Fortran layout, non-contiguous, slice ...).
+  ## So [0, 0, 0] then [0, 0, 1] then ... then [0, 1, 0] ...
+  ##
+  ## Usage:
+  ##  .. code:: nim
+  ##     for val in t: # items is implicitly called
+  ##       val += 42
   t.strided_iteration(IterKind.Values)
 
 proc values*[T](t: Tensor[T]): auto {.noSideEffect.}=
-  ## Closure stride-aware iterator on Tensor values
+  ## Creates an closure iterator on Tensor values.
+  ##
+  ## The iterator will iterate in C order regardingless of the tensor properties (Fortran layout, non-contiguous, slice ...).
+  ## So [0, 0, 0] then [0, 0, 1] then ... then [0, 1, 0] ...
+  ##
+  ## A closure iterator must be assigned to an iterator variable first.
+  ## Usage:
+  ##  .. code:: nim
+  ##     let it = t.values
+  ##     for val in it():
+  ##       # do stuff
+  ## Note: This is mostly useful for iterator chaining. Prefer the inline iterator ``items`` for simple iteration.
+  ##
+  ##  .. code:: nim
+  ##     for val in t: # The `for` loop call the items iterator implicitly.
+  ##       # do stuff
+  ## Contrary to other ndarray packages looping in Arraymancer is not slow.
   let ref_t = t.unsafeAddr # avoid extra copy
   return iterator(): T = ref_t[].strided_iteration(IterKind.Values)
 
 iterator mitems*[T](t: var Tensor[T]): var T {.noSideEffect.}=
-  ## Inline stride-aware iterator on Tensor values.
+  ## Inline iterator on Tensor values.
   ## Values yielded can be directly modified
-  ## and avoid bound-checking/index calculation with t[index] = val
+  ## and avoid bound-checking/index calculation with t[index] = val.
+  ##
+  ## The iterator will iterate in C order regardingless of the tensor properties (Fortran layout, non-contiguous, slice ...).
+  ## So [0, 0, 0] then [0, 0, 1] then ... then [0, 1, 0] ...
+  ##
+  ## Usage:
+  ##  .. code:: nim
+  ##     for val in t.mitems:
+  ##       val += 42
   t.strided_iteration(IterKind.Values)
 
 iterator pairs*[T](t: Tensor[T]): (seq[int], T) {.noSideEffect.}=
-  ## Inline stride-aware iterator on Tensor coordinates i.e. [1,2,3] and values
+  ## Inline iterator on Tensor (coordinates, values)
+  ##
+  ## The iterator will iterate in C order regardingless of the tensor properties (Fortran layout, non-contiguous, slice ...).
+  ## So [0, 0, 0] then [0, 0, 1] then ... then [0, 1, 0] ...
+  ##
+  ## It returns a tuple of (coordinates, value) like (@[1,0,1], 1337)
+  ##
+  ## Usage:
+  ##  .. code:: nim
+  ##     for coord, val in t: # pairs is implicitly called
+  ##       echo coord
+  ##       echo val
+  ##  .. code:: nim
+  ##     for coordval in t.pairs: # pairs is explicitly called
+  ##       echo coordval[0]
+  ##       echo coordval[1]
   t.strided_iteration(IterKind.Coord_Values)
 
 iterator real_indices(t: Tensor): int {.noSideEffect.}=
@@ -110,7 +157,7 @@ proc real_indices(t: Tensor): auto {.noSideEffect.}=
   let ref_t = t.unsafeAddr # avoid extra copy
   return iterator(): int = ref_t[].strided_iteration(IterKind.MemOffset)
 
-template axis_iterator*[T](t: Tensor[T], axis: int): untyped =
+template axis_iterator[T](t: Tensor[T], axis: int): untyped =
   var out_t = t
 
   let axis_len = t.shape[axis]
@@ -122,10 +169,31 @@ template axis_iterator*[T](t: Tensor[T], axis: int): untyped =
     out_t.offset += axis_stride
 
 iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] {.noSideEffect.}=
-  ## Iterates over an axis
+  ## Inline iterator over an axis.
+  ##
+  ## Returns:
+  ##   - A slice along the given axis at each iteration.
+  ##
+  ## Note: The slice dimension is not collapsed by default.
+  ## You can use ``unsafeSqueeze`` to collapse it without copy.
+  ## In this case ``unsafeSqueeze`` is safe.
+  ##
+  ## Usage:
+  ##  .. code:: nim
+  ##     for subtensor in t.axis(1):
+  ##       # do stuff
   axis_iterator(t,axis)
 
 proc axis*[T](t: Tensor[T], axis: int): auto {.noSideEffect.}=
   ## Closure iterator on axis
-  ## For loop will not use this one. It must be assigned before use.
+  ##
+  ## A closure iterator must be assigned to an iterator variable first.
+  ## Usage:
+  ##  .. code:: nim
+  ##     let it = t.axis(1)
+  ##     for subtensor in it():
+  ##       # do stuff
+  ##
+  ## Note: This is mostly useful for iterator chaining.
+  ## Prefer the inline iterator ``axis`` for simple iteration.
   return iterator(): Tensor[T] = axis_iterator(t,axis)

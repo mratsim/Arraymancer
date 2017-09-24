@@ -15,34 +15,43 @@
 type
   Backend* = enum
     ## ``Backend`` for tensor computation and memory allocation.
+    ##
+    ##
+    ## Only deprecated procs from v0.1.3 uses this for the moment.
     Cpu,
     Cuda
 
   Tensor*[T] = object
     # Size of the datastructure is 32 bytes - perfect !
-    ## Tensor data structure, stored on Cpu
+    ## Tensor data structure stored on Cpu
     ##   - ``shape``: Dimensions of the tensor
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
     ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
     ##   - ``data``: A sequence that holds the actual data
+    ## Fields are public so that external libraries can easily construct a Tensor.
     shape*: seq[int]
     strides*: seq[int]
     offset*: int
     data*: seq[T] # Perf note: seq are always deep copied on "var" assignement.
 
   CudaSeq* [T: SomeReal] = object
-    ## Cuda-Seq like structure
-    ## End goal is for it to have value semantics like Nim seq
-    ## and optimize to not copy if referenced only once
+    ## Seq-like structure on the Cuda backend.
+    ##
+    ## Nim garbage collector will automatically ask cuda to clear GPU memory if ``data`` becomes unused.
     len: int
     data: ref[ptr UncheckedArray[T]]
 
   CudaTensor*[T: SomeReal] = object
-    ## Tensor data structure, stored on Nvidia GPU (Cuda)
+    ## Tensor data structure stored on Nvidia GPU (Cuda)
     ##   - ``shape``: Dimensions of the tensor
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
     ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
     ##   - ``data``: A cuda seq-like object that points to the data location
+    ## Note: currently ``=`` assignement for CudaTensor does not copy. Both CudaTensors will share a view of the same data location.
+    ## Modifying the data in one will modify the data in the other.
+    ##
+    ## In the future CudaTensor will leverage Nim compiler to automatically
+    ## copy if a memory location would be used more than once in a mutable manner.
     shape*: seq[int]
     strides*: seq[int]
     offset*: int
@@ -54,13 +63,12 @@ template rank*(t: AnyTensor): int =
   ## Input:
   ##     - A tensor
   ## Returns:
-  ##     - Its shape
+  ##     - Its rank
   ##
   ##   - 0 for scalar (unfortunately cannot be stored)
   ##   - 1 for vector
   ##   - 2 for matrices
   ##   - N for N-dimension array
-  ##
   t.shape.len
 
 proc size*(t: AnyTensor): int {.noSideEffect, inline.}=
@@ -71,26 +79,31 @@ proc size*(t: AnyTensor): int {.noSideEffect, inline.}=
   t.shape.product
 
 proc shape_to_strides*(shape: seq[int], layout: OrderType = rowMajor): seq[int] {.noSideEffect.} =
-  ## Compute strides matching with dimensions.
-  ## OrderType is imported from Nimblas and can be rowMajor or colMajor.
-  ## Arraymancer defaults to rowMajor. Temporarily, CUDA tensors will be colMajor by default.
-  ## See Design document for further considerations.
+  ## Input:
+  ##     - A shape (seq of int), for example @[3,5] for a 3x5 matrix
+  ##     - Optionally rowMajor (C layout - default) or colMajor (Fortran)
+  ## Returns:
+  ##     - The strides in C or Fortran order corresponding to this shape and layout
+  ##
+  ## Arraymancer defaults to rowMajor. Temporarily, CudaTensors are colMajor by default.
+  # See Design document for further considerations.
   if layout == rowMajor:
     return (shape & 1)[1..shape.len].scanr(a * b)
 
   return (1 & shape)[0..shape.high].scanl(a * b)
 
 proc is_C_contiguous*(t: AnyTensor): bool {.noSideEffect.}=
-  ## Check if C convention / Row Major
+  ## Check if the tensor follows C convention / is row major
   result = t.strides == t.shape.shape_to_strides
   result = result and t.strides[t.strides.high] == 1
 
 proc is_F_contiguous*(t: AnyTensor): bool {.noSideEffect.}=
-  ## Check if Fortran convention / Column Major
+  ## Check if the tensor follows Fortran convention / is column major
   result = t.strides == t.shape.shape_to_strides(colMajor)
   result = result and t.strides[0] == 1
 
 proc isContiguous*(t: AnyTensor): bool {.noSideEffect.}=
+  ## Check if the tensor is contiguous
   return t.is_C_contiguous or t.is_F_contiguous
 
 proc getTransposeTarget(t: AnyTensor): TransposeType {.noSideEffect.}=

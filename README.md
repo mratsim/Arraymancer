@@ -58,13 +58,14 @@ Putting a research model in production, on a drone or as a webservice for exampl
 All those pain points may seem like a huge undertaking however thanks to the Nim language, we can have Arraymancer:
 - Be as fast as C
 - Accelerated routines with Intel MKL/OpenBLAS or even NNPACK
-- Access to CUDA and reusing existing Torch, Tensorflow or Nervana Neon kernels
-- A Python-like syntax with custom operators `a * b` for tensor multiplication instead of `a.dot(b)` (Numpy/Tensorflow) or `a.mm(b)` (Torch) and Numpy-like slicing ergonomics `t[0..4, 2..10|2]`
+- Access to CUDA and generate custom CUDA kernels on the fly via metaprogramming.
+- A Python-like syntax with custom operators `a * b` for tensor multiplication instead of `a.dot(b)` (Numpy/Tensorflow) or `a.mm(b)` (Torch)
+- Numpy-like slicing ergonomics `t[0..4, 2..10|2]`
 
 ## Future ambitions
 Because apparently to be successful you need a vision, I would like Arraymancer to be:
 - The go-to tool for Deep Learning video processing. I.e. `vid = load_video("./cats/youtube_cat_video.mkv")`
-- Target javascript, WebAssembly, ARM devices, AMD Rocm, OpenCL.
+- Target javascript, WebAssembly, Apple Metal, ARM devices, AMD Rocm, OpenCL, you name it.
 - Target cryptominers FPGAs because they drove the price of GPUs for honest deep-learners too high.
 
 ## Support (Types, OS, Hardware)
@@ -95,7 +96,7 @@ For now Arraymancer is still at the ndarray stage, however a [vision package](ht
 
 ### Speed
 
-On the demo benchmark, Arraymancer already reach speeds with comparable to Torch on logistic regression on OpenBLAS, though further MKL optimization are possible (batched matmul probably):
+On the demo benchmark, Arraymancer already reach speeds with comparable to Torch on logistic regression on OpenBLAS, though further MKL optimizations are possible (batched matmul probably):
 
 | Library | Timing |
 | ------ | ------ |
@@ -135,7 +136,7 @@ Here is a comparative table, not that this feature set is developing very rapidl
 | Iterating on a Tensor |[x]|[]|
 | Slicing a Tensor |[x]|[x]|
 | Slice mutation `a[1,_] = 10` |[x]|[]|
-| Comparison `==`|[x]|[]|
+| Comparison `==`|[x]| Coming soon|
 | Element-wise basic operations|[x]|[x]|
 | Universal functions |[x]|[x]|
 | Automatically broadcasted operations |[x]| Coming soon|

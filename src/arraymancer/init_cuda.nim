@@ -18,7 +18,7 @@ proc unsafeView*[T](t: CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect.}=
   ## Returns:
   ##     - A shallow copy.
   ##
-  ## WARNING !
+  ## Warning ⚠
   ##   Both tensors shares the same memory. Data modification on one will be reflected on the other.
   ##   However modifying the shape, strides or offset will not affect the other.
 
@@ -28,9 +28,9 @@ proc unsafeView*[T](t: CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect.}=
 
 proc clone*[T](t: CudaTensor[T]): CudaTensor[T] =
   ## Clone (deep copy) a CudaTensor.
-  ## Tensor is copied as is.
+  ## Copy will not share its data with the original.
   ##
-  ## For example it will not be made contiguous.
+  ## Tensor is copied as is. For example it will not be made contiguous.
   ## Use `asContiguous` for this case
 
   # Note: due to modifying the defaultStream global var for async memcopy
@@ -118,7 +118,7 @@ proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect.}=
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset
-  result.data = newSeq[T](t.data.len) # We copy over all the memory allocated
+  result.data = newSeqUninitialized[T](t.data.len) # We copy over all the memory allocated
 
   let size = t.data.len * sizeof(T)
 

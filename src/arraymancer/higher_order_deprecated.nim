@@ -15,14 +15,15 @@
 
 proc fmap*[T, U](t: Tensor[T], f: T -> U): Tensor[U]
   {.deprecated, inline, noSideEffect.}=
-  ## Deprecated
+  ## DEPRECATED
   ##
   ## Replace by map2
   t.map(f)
 
 proc fmap2*[T, U, V](t1: Tensor[T], t2: Tensor[U], f: (T,U) -> V): Tensor[V]
   {.deprecated, inline, noSideEffect.}=
-  ## Deprecated
+  ## DEPRECATED
+  ##
   ## Replaced by map2
   ##
   ## Note the new argument order of map2 to accomodate for
@@ -42,6 +43,7 @@ proc agg*[T: SomeNumber](t: Tensor[T],
                             ): T
   {.noSideEffect, inline, deprecated.}=
   ## DEPRECATED, use fold instead.
+  ##
   ## Note: order between function f and start_val has changed
   ##
   ## Compute the aggregate
@@ -59,6 +61,7 @@ proc agg_inplace*[T: SomeNumber](
                             )
   {.noSideEffect, inline, deprecated.}=
   ## DEPRECATED, use fold instead.
+  ##
   ## You will have to switch to a non-inplace function.
   ##
   ## Compute the aggregate
@@ -81,6 +84,7 @@ proc agg*[T: SomeNumber](t: Tensor[T],
                             ): Tensor[T]
   {.noSideEffect, inline, deprecated.}=
   ## DEPRECATED, use fold instead.
+  ##
   ## Note: order between function f and start_val has changed
   ##
   ## Input:
@@ -99,6 +103,7 @@ proc agg_inplace*[T: SomeNumber](
                             )
   {.noSideEffect, inline, deprecated.}=
   ## DEPRECATED, use fold instead.
+  ##
   ## You will have to switch to a non-inplace function.
   ##
   ## Input:

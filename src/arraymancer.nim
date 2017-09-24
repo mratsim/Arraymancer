@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+when defined(doc):
+  include ../docs/autogen_nim_API
+
 import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros, random
 
 # Export OrderType (rowMajor, colMajor) from nimblas
@@ -45,9 +48,11 @@ include arraymancer/utils/functional,
         arraymancer/exporting
 
 
-# Unfortunately with that condition nimsuggest does not find included proc properly.
 when defined(cuda):
+  # Nimcuda poses issues with Nim docgen
   import nimcuda/[cuda_runtime_api, driver_types, cublas_api, cublas_v2, nimcuda]
+
+when defined(cuda) or defined(doc):
   include ./arraymancer/backend/cuda_global_state,
           ./arraymancer/backend/cuda,
           ./arraymancer/backend/cublas,

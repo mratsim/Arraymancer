@@ -15,8 +15,8 @@
 
 # Auto-generate glue between Nim functions, cuda higher-order functions and basic op
 
-###################################################
-## Assignements, copy and in-place operations
+# ##################################################
+# # Assignements, copy and in-place operations
 template cuda_assign_glue(
   kernel_name: untyped, op_name: string): untyped =
   # Kernel_name must be an open symbol
@@ -75,8 +75,8 @@ template cuda_assign_call[T: SomeReal](
     src.offset, src.data
   )
 
-###################################################
-## Binary operations
+# ##################################################
+# # Binary operations
 template cuda_binary_glue(
   kernel_name: untyped, op_name: string): untyped =
   # Kernel_name must be an open symbol

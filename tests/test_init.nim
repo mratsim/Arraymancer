@@ -79,4 +79,35 @@ suite "Creating a new Tensor":
 
     check: u.shape == t.shape
 
-  # TODO add tests for zeros, ones and randomTensor
+  test "Zeros":
+    block:
+      let t = zeros([4,4,4], float)
+      for v in t.items:
+        check v == 0.0f
+    block:
+      let t = zeros([4,4,4], int)
+      for v in t.items:
+        check v == 0
+
+  test "Ones":
+    block:
+      let t = ones([4,4,4], float)
+      for v in t.items:
+        check v == 1.0f
+    block:
+      let t = ones([4,4,4], int)
+      for v in t.items:
+        check v == 1
+
+  test "Filled new tensor":
+    block:
+      let t = newTensor([4,4,4], 2.0f)
+      for v in t.items:
+        check v == 2.0f
+    block:
+      let t = newTensor([4,4,4], 2)
+      for v in t.items:
+        check v == 2
+
+  # TODO add tests for randomTensor
+

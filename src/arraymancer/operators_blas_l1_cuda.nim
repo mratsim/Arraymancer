@@ -27,7 +27,7 @@ proc cuda_inPlaceAdd = discard # This is a hack so that the symbol is open
 cuda_assign_glue(cuda_inPlaceAdd, "InPlaceAddOp")
 
 proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
-  ## Tensor in-place addition
+  ## CudaTensor in-place addition
 
   when compileOption("boundChecks"):
     check_elementwise(a,b)
@@ -40,7 +40,7 @@ proc cuda_Add = discard # This is a hack so that the symbol is open
 cuda_binary_glue(cuda_Add, "AddOp")
 
 proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] =
-  ## Tensor addition
+  ## CudaTensor addition
 
   when compileOption("boundChecks"):
     check_elementwise(a,b)
@@ -52,9 +52,7 @@ proc cuda_inPlaceSub = discard # This is a hack so that the symbol is open
 cuda_assign_glue(cuda_inPlaceSub, "InPlaceSubOp")
 
 proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
-  ## Tensor in-place substraction
-  ## Only Vector-Vector and Matrix-Matrix addition are supported for now.
-  ## For Matrix-Matrix, both matrices must have a contiguous layout.
+  ## CudaTensor in-place substraction
 
   when compileOption("boundChecks"): check_elementwise(a,b)
 
@@ -67,7 +65,7 @@ proc cuda_Sub = discard # This is a hack so that the symbol is open
 cuda_binary_glue(cuda_Sub, "SubOp")
 
 proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] =
-  ## Tensor substraction
+  ## CudaTensor substraction
 
   when compileOption("boundChecks"): check_elementwise(a,b)
 
@@ -75,7 +73,7 @@ proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] =
   cuda_binary_call(cuda_Sub, result, a, b)
 
 proc `*=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
-  ## Tensor inplace multiplication by a scalar
+  ## CudaTensor inplace multiplication by a scalar
 
   # We multiply all elements of the CudaTensor regardless of shape/strides
   # So this operation can be applied to tensors of all ranks.
@@ -83,7 +81,7 @@ proc `*=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
   cublas_scal(t.data.len, a, t.get_data_ptr, 1)
 
 proc `*`*[T:SomeReal](a: T, t: CudaTensor[T]): CudaTensor[T] {.inline.}=
-  ## Tensor multiplication by a scalar
+  ## CudaTensor multiplication by a scalar
 
   # TODO replace by a custom kernel
   # Instead of a full clone we keep only the useful which is advantageous if t was a slice
@@ -92,15 +90,15 @@ proc `*`*[T:SomeReal](a: T, t: CudaTensor[T]): CudaTensor[T] {.inline.}=
   result *= a
 
 proc `*`*[T:SomeReal](t: CudaTensor[T], a: T): CudaTensor[T] {.inline.}=
-  ## Tensor multiplication by a scalar
+  ## CudaTensor multiplication by a scalar
   a * t
 
 proc `/=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
-  ## Tensor in-place division by a scalar
+  ## CudaTensor in-place division by a scalar
   t *= (1/a)
 
 proc `/`*[T:SomeReal](t: CudaTensor[T], a: T): CudaTensor[T] {.inline.}=
-  ## Tensor division by a scalar
+  ## CudaTensor division by a scalar
 
   # TODO replace by a custom kernel
   # Instead of a full clone we keep only the useful which is advantageous if t was a slice
@@ -109,5 +107,5 @@ proc `/`*[T:SomeReal](t: CudaTensor[T], a: T): CudaTensor[T] {.inline.}=
   (1/a) * t
 
 proc `/`*[T:SomeReal](a: T, t: CudaTensor[T]): CudaTensor[T] {.inline.}=
-  ## Tensor division by a scalar
+  ## CudaTensor division by a scalar
   (1/a) * t

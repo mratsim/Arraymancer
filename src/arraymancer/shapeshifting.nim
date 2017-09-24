@@ -35,6 +35,10 @@ proc check_squeezeAxis(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
   if axis >= t.rank:
     raise newException(ValueError, "The axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )
 
+proc check_unsqueezeAxis(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
+  if t.rank == 0 or axis > t.rank or axis < 0:
+    raise newException(ValueError, "The new axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )
+
 proc transpose*(t: Tensor): Tensor {.noSideEffect, inline.}=
   ## Transpose a Tensor.
   ##
@@ -48,21 +52,21 @@ proc transpose*(t: Tensor): Tensor {.noSideEffect, inline.}=
 
 
 proc unsafeTranspose*(t: Tensor): Tensor {.noSideEffect, inline.}=
-  ## Transpose a Tensor.
-  ## WARNING, data is shared with the input.
-  ## This proc does not guarantee that a `let` value is immutable
+  ## Transpose a Tensor without copy.
+  ##
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
   ##
   ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
-  ##
-  ## Data is copied as-is and not modified.
   result.shape = t.shape.reversed
   result.strides = t.strides.reversed
   result.offset = t.offset
   shallowCopy(result.data, t.data)
 
-template contiguousT*[T](result, t: Tensor[T], layout: OrderType): untyped=
+template contiguousT[T](result, t: Tensor[T], layout: OrderType): untyped=
   tensorCpu(t.shape, result, layout)
-  result.data = newSeq[T](result.size)
+  result.data = newSeqUninitialized[T](result.size)
 
   var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
 
@@ -78,7 +82,9 @@ template contiguousT*[T](result, t: Tensor[T], layout: OrderType): untyped=
 
 proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noSideEffect.}=
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
+  ##
   ## By default tensor will be rowMajor.
+  ##
   ## By default nothing is done if the tensor is already contiguous (C Major or F major)
   ## The "force" parameter can force re-ordering to a specific layout
 
@@ -92,8 +98,15 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
 
 proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noSideEffect.}=
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
-  ## WARNING: If no transformation are needed, the returned value shares data with the original.
+  ##
+  ## If the tensor is already contiguous it is returned without copy, underlying data is shared between the input and the output.
+  ##
+  ## Warning ⚠:
+  ##   This may be a no-copy operation with result data shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  ##
   ## By default tensor will be rowMajor.
+  ##
   ## By default nothing is done if the tensor is already contiguous (C Major or F major)
   ## The "force" parameter can force re-ordering to a specific layout
 
@@ -108,7 +121,7 @@ proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: boo
 proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] {.noSideEffect.}=
   # Can't call "tensorCpu" template here for some reason
   tensorCpu(new_shape, result)
-  result.data = newSeq[T](result.size)
+  result.data = newSeqUninitialized[T](result.size)
 
   var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
   for val in t:
@@ -117,6 +130,7 @@ proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] {.noSide
 
 proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect, inline.}=
   ## Reshape a tensor
+  ##
   ## Input:
   ##   - a tensor
   ##   - a new shape. Number of elements must be the same
@@ -151,13 +165,14 @@ template reshape_no_copy(t: Tensor|var Tensor, new_shape: varargs[int]): untyped
   shallowCopy(result.data, t.data)
 
 proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
-  ## Shallow reshaping
-  ## WARNING: even if the input tensor is a "let"
-  ## using this procedure does not guarantee immutability
-  ## Both input and output will share the underlying data.
+  ## Reshape a tensor without copy.
   ##
-  ## Valid only for contiguous arrays
-  ## TODO: tests
+  ## ⚠ Reshaping without copy is only possible on contiguous Tensors
+  ##
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+
   t.reshape_no_copy(new_shape)
 
 template broadcastT(t: var Tensor, shape: openarray[int]) =
@@ -172,29 +187,34 @@ template broadcastT(t: var Tensor, shape: openarray[int]) =
       raise newException(ValueError, "The broadcasted size of the tensor must match existing size for non-singleton dimension")
 
 proc broadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
-  ## Broadcast array
+  ## Explicitly broadcast a tensor to the specified shape.
   ##
   ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
   ## values along that dimension.
-  # Todo: proper bound-checking
-  # todo: testing
+  ##
+  ## Warning ⚠:
+  ##   A broadcasted tensor should not be modified and only used for computation.
+
   result = t
   result.broadcastT(shape)
 
 proc unsafeBroadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
-  ## Broadcast array
-  ## WARNING: even for with a `let` assignment, broadcasted tensors share data with original
+  ## Explicitly broadcast a Tensor to the specified shape.
+  ## The returned broadcasted Tensor share the underlying data with the input.
   ##
   ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
   ## values along that dimension.
-  # Todo: proper bound-checking
-  # todo: testing
-  # TODO: use term-rewriting macro to have t1.bc * t2.bc broadcasted in compatible shape
+  ##
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  ##   A broadcasted tensor should not be modified and only used for computation.
   result = t.unsafeView
   result.broadcastT(shape)
 
 proc broadcast*[T: SomeNumber](val: T, shape: openarray[int]): Tensor[T] {.noSideEffect.} =
   ## Broadcast a number
+  ##
   ## Input:
   ##   - a number to be broadcasted
   ##   - a tensor shape that will be broadcasted to
@@ -203,7 +223,10 @@ proc broadcast*[T: SomeNumber](val: T, shape: openarray[int]): Tensor[T] {.noSid
   ##
   ## The broadcasting is made using tensor data of size 1 and 0 strides, i.e.
   ## the operation is memory efficient.
-  ## WARNING: a broadcasted tensor should not be modified in-place.
+  ##
+  ## Warning ⚠:
+  ##   A broadcasted tensor should not be modified and only used for computation.
+  ##   Modifying any value from this broadcasted tensor will change all its values.
   result.shape = @shape
   result.strides = newSeqWith(result.shape.len, 0)
   result.offset = 0
@@ -211,17 +234,25 @@ proc broadcast*[T: SomeNumber](val: T, shape: openarray[int]): Tensor[T] {.noSid
 
 template bc*(t: (Tensor|SomeNumber), shape: openarray[int]): untyped =
   ## Alias for ``broadcast``
-  ## WARNING: a broadcasted tensor should not be modified in-place.
   t.broadcast(shape)
 
 proc unsafeBroadcast2[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect.}=
-  ## Broadcast 2 tensors so they have compatible shapes
-  ## Tensors in the tuple can be accessed with output.a and output.bb
-  ## WARNING: even for with a `let` assignment, broadcasted tensors share data with original
+  ## Broadcast 2 tensors so they have compatible shapes for element-wise computations.
+  ##
+  ## Tensors in the tuple can be accessed with output.a and output.b
+  ##
+  ## The returned broadcasted Tensors share the underlying data with the input.
+  ##
+  ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
+  ## values along that dimension.
+  ##
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  ##   A broadcasted tensor should not be modified and only used for computation.
   let rank = max(a.rank, b.rank)
 
-  var shapeA, stridesA, shapeB, stridesB = newSeq[int](rank)  # seq have value semantic so storage shouldn't be shared.
-                                                            # Also newSeq is initialized with 0
+  var shapeA, stridesA, shapeB, stridesB = newSeq[int](rank) # newSeq is initialized with 0
 
   for i in 0..<rank:
     let shape_A_iter = if i < rank: a.shape[i] else: 1
@@ -268,15 +299,15 @@ proc exch_dim(t: Tensor, dim1, dim2: int): Tensor {.noSideEffect.}=
   swap(result.shape[dim1], result.shape[dim2])
 
 proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noSideEffect.}=
-  ## Permute dimensions
+  ## Permute dimensions of a tensors
   ## Input:
   ##   - a tensor
   ##   - the new dimension order
   ## Returns:
   ##   - a tensor with re-order dimension
-  ## Example:
-  ##
-  ## a.permute(0,2,1) # dim 0 stays at 0, dim 1 becomes dim 2 and dim 2 becomes dim 1
+  ## Usage:
+  ##  .. code:: nim
+  ##     a.permute(0,2,1) # dim 0 stays at 0, dim 1 becomes dim 2 and dim 2 becomes dim 1
 
   # TODO: bounds check
   var perm = @dims
@@ -311,7 +342,7 @@ proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noSideEffec
 
   ## Setup the Tensor
   tensorCpu(concat_shape, result)
-  result.data = newSeq[T](result.size)
+  result.data = newSeqUninitialized[T](result.size)
 
   # Fill in the copy with the matching values
   var slices = concat_shape.mapIt((0..<it)|1)
@@ -341,7 +372,7 @@ template squeezeT(t: var AnyTensor): untyped =
     t.strides.add 1
 
 proc squeeze*(t: AnyTensor): AnyTensor {.noSideEffect.}=
-  ## Squeeze tensors
+  ## Squeeze tensors. For example a Tensor of shape @[4,1,3] will become @[4,3]
   ## Input:
   ##   - a tensor
   ## Returns:
@@ -350,13 +381,14 @@ proc squeeze*(t: AnyTensor): AnyTensor {.noSideEffect.}=
   result.squeezeT
 
 proc unsafeSqueeze*(t: Tensor): Tensor {.noSideEffect.}=
-  ## Squeeze tensors
+  ## Squeeze tensors. For example a Tensor of shape @[4,1,3] will become @[4,3]
   ## Input:
   ##   - a tensor
   ## Returns:
-  ##   - a tensor with singleton dimensions collapsed
-  ## WARNING: result share storage with input
-  ## This does not guarantee `let` variable immutability
+  ##   - a tensor with singleton dimensions collapsed that share the same underlying storage
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
   result = t.unsafeView
   result.squeezeT
 
@@ -369,8 +401,7 @@ template squeezeT(t: var AnyTensor, axis: int): untyped =
     t.strides.delete(axis)
 
 proc squeeze*(t: AnyTensor, axis: int): AnyTensor {.noSideEffect.}=
-  ## Collapse the given axis, if the dimension is not 1
-  ## it does nothing
+  ## Collapse the given axis, if the dimension is not 1, it does nothing.
   ## Input:
   ##   - a tensor
   ##   - an axis (dimension)
@@ -380,14 +411,58 @@ proc squeeze*(t: AnyTensor, axis: int): AnyTensor {.noSideEffect.}=
   result.squeezeT(axis)
 
 proc unsafeSqueeze*(t: Tensor, axis: int): Tensor {.noSideEffect.}=
-  ## Collapse the given axis, if the dimension is not 1
-  ## it does nothing
+  ## Collapse the given axis, if the dimension is not 1; it does nothing
   ## Input:
   ##   - a tensor
   ##   - an axis (dimension)
   ## Returns:
   ##   - a tensor with singleton dimensions collapsed
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  result = t.unsafeView
+  result.squeezeT(axis)
+
+template unsqueezeT(t: var AnyTensor, axis: int): untyped =
+  when compileOption("boundChecks"):
+    check_unsqueezeAxis(t, axis)
+
+  # set the stride to be consistent with the rest of the lib
+  var stride: int
+  if axis >= t.rank:
+    stride = 1
+  else:
+    stride = t.shape[axis]*t.strides[axis]
+
+  t.shape.insert(1, axis)
+  t.strides.insert(stride, axis)
+
+proc unsqueeze*(t: AnyTensor, axis: int): AnyTensor {.noSideEffect.}=
+  ## Insert a new axis just before the given axis, increasing the tensor
+  ## dimension (rank) by 1
+  ## Input:
+  ##   - a tensor
+  ##   - an axis (dimension)
+  ## Returns:
+  ##   - a tensor with that new axis
+  result = t
+  result.unsqueezeT(axis)
+
+proc unsafeUnsqueeze*(t: Tensor, axis: int): Tensor {.noSideEffect.}=
+  ## Insert a new axis just before the given axis, increasing the tensor
+  ## dimension (rank) by 1
+  ##   - a tensor with that new axis
   ## WARNING: result share storage with input
   ## This does not guarantee `let` variable immutability
   result = t.unsafeView
-  result.squeezeT(axis)
+  result.unsqueezeT(axis)
+
+proc stack*[T](tensors: openarray[Tensor[T]], axis: int = 0): Tensor[T] =
+  ## Join a sequence of tensors along a new axis into a new tensor.
+  ## Input:
+  ##   - a tensor
+  ##   - an axis (dimension)
+  ## Returns:
+  ##   - a new stacked tensor along the new axis
+  proc stack_unsqueeze(t: Tensor[T]): Tensor[T] = t.unsafeUnsqueeze(axis)
+  tensors.map(stack_unsqueeze).concat(axis)

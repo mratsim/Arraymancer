@@ -25,20 +25,20 @@ proc deallocCuda[T](p: ref[ptr T]) {.noSideEffect.}=
     check cudaFree(p[])
 
 
-###############################################################
-## Base CudaSeq type
-## End goal is for it to have value semantics like Nim seq
+# ##############################################################
+# # Base CudaSeq type
+# # End goal is for it to have value semantics like Nim seq
 
 proc newCudaSeq[T: SomeReal](length: int): CudaSeq[T] {.noSideEffect.}=
   result.len = length
   new(result.data, deallocCuda)
   result.data[] = cast[ptr UncheckedArray[T]](cudaMalloc[T](result.len))
 
-##########################################################
-## Sending tensor layout to Cuda Kernel
+# #########################################################
+# # Sending tensor layout to Cuda Kernel
 
-## So that layout->strides can be used in Cuda kernel, it's easier if everything is declared from cpp
-## pending https://github.com/nim-lang/Nim/issues/6415
+# # So that layout->strides can be used in Cuda kernel, it's easier if everything is declared from cpp
+# # pending https://github.com/nim-lang/Nim/issues/6415
 #
 # template create_CudaTensorLayout(N: static[int]) =
 #   ## This Layout in C++ will be overriden by a CudaMemCpy from the Nim data structure

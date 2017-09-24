@@ -23,17 +23,17 @@ template toTensorReshapeT(oa: typed, shape: varargs[int]): untyped =
   shallowCopy(t.data, data)
   return t
 
-proc toTensorReshape*(oa: string, shape: varargs[int]): auto {.noSideEffect.}=
-  ## Fuse toTensor and reshape in one operation
+proc toTensorReshape(oa: string, shape: varargs[int]): auto {.noSideEffect.}=
+  ## Fuse toTensor and reshape in one operation.
+  ##
   ## Deal specifically with strings/seq[char]
 
   toTensorReshapeT(oa, shape)
 
-proc toTensorReshape*(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto {.noSideEffect.}=
+proc toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto {.noSideEffect.}=
   ## Fuse toTensor and reshape in one operation
   ##
-  ## Nim >0.17 needed as "static[int] = 0" is not working in Nim 0.17
-  ## Dummy_bugfix param is necessary due to: https://github.com/nim-lang/Nim/issues/6343
+  # Dummy_bugfix param is necessary due to: https://github.com/nim-lang/Nim/issues/6343
   # TODO: remove 'dummy_bugfix'
   toTensorReshapeT(oa, shape)
 
@@ -41,7 +41,9 @@ template rewriteToTensorReshape*{reshape(toTensor(oa, dummy_bugfix), shape)}(
   oa: openarray,
   shape: varargs[int],
   dummy_bugfix: static[int]): auto =
-  ## Fuse ``sequence.toTensor(Backend).reshape(new_shape)`` into a single operation.
+  ## Fuse ``sequence.toTensor.reshape(new_shape)`` into a single operation.
+  ##
+  ## Operation fusion leverage the Nim compiler and should not be called explicitly.
   toTensorReshape(oa, shape, dummy_bugfix)
 
 proc unsafeToTensorReshape*[T](data: seq[T], shape: varargs[int]): Tensor[T] {.noSideEffect.} =
@@ -56,4 +58,6 @@ template rewriteUnsafeToTensorReshape*{unsafeReshape(unsafeToTensor(s), shape)}(
   s: seq,
   shape: varargs[int]): auto =
   ## Fuse ``sequence.unsafeToTensor().unsafeReshape(new_shape)`` into a single operation.
+  ##
+  ## Operation fusion leverage the Nim compiler and should not be called explicitly.
   unsafeToTensorReshape(s, shape, dummy_bugfix)

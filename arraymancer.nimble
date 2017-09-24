@@ -1,5 +1,5 @@
 ### Package
-version       = "0.1.3"
+version       = "0.2.0"
 author        = "Mamy André-Ratsimbazafy"
 description   = "A n-dimensional tensor (ndarray) library"
 license       = "Apache License 2.0"
@@ -93,3 +93,6 @@ task test_blis, "Run all tests - BLIS":
   switch("define","blis")
   test "all_tests"
 
+task gen_doc, "Generate Arraymancer documentation":
+  switch("define", "doc")
+  exec "nim doc2 src/arraymancer"

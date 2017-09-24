@@ -15,12 +15,10 @@
 proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
-  ##       WARNING: even if the input tensor is a "let"
-  ##       using this procedure does not guarantee immutability
   ## Returns:
-  ##     - A shallow copy.
+  ##     - A shallow copy. Both tensors share the same memory location.
   ##
-  ## WARNING !
+  ## Warning ⚠
   ##   Both tensors shares the same memory. Data modification on one will be reflected on the other.
   ##   However modifying the shape, strides or offset will not affect the other.
   result.shape = t.shape
@@ -52,6 +50,10 @@ template toTensorCpu(s: typed): untyped =
   t.data = data
   return t
 
+proc newSeqUninitialized[T](len: Natural): seq[T] {.noSideEffect, inline.} =
+  result = newSeqOfCap[T](len)
+  result.setLen(len)
+
 proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
@@ -61,13 +63,29 @@ proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, i
   ##      - A Tensor of the proper shape initialized with
   ##        the default type value (0 for numeric types) on Cpu backend
   tensorCpu(shape, result)
-  result.data = newSeq[T](result.size)
+  result.data = newSeqUninitialized[T](result.size)
+
+proc newTensor*[T](shape: openarray[int], value: T): Tensor[T] {.noSideEffect, inline.} =
+  ## Creates a new Tensor filled with the given value
+  ## Input:
+  ##      - Shape of the Tensor
+  ##      - Type of its elements
+  ##      - Value to initialize its elements
+  ## Result:
+  ##      - A Tensor of the proper shape initialized with
+  ##        the given value
+  tensorCpu(shape, result)
+  result.data = newSeqWith(result.size, value)
 
 proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect.} =
   ## Convert an openarray to a Tensor
-  ## Nim >0.17 needed as "static[int] = 0" is not working in Nim 0.17
-  ## Dummy_bugfix param is necessary due to: https://github.com/nim-lang/Nim/issues/6343
-  # TODO: remove 'dummy_bugfix'
+  ## Input:
+  ##      - An array or a seq (can be nested)
+  ## Result:
+  ##      - A Tensor of the same shape
+  ##
+  ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
+  # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
   toTensorCpu(s)
 
 proc unsafeToTensor*[T: SomeNumber](data: seq[T]): Tensor[T] {.noSideEffect.} =
@@ -81,12 +99,12 @@ proc unsafeToTensor*[T: SomeNumber](data: seq[T]): Tensor[T] {.noSideEffect.} =
   shallowCopy(result.data, data)
 
 proc toTensor*(s:string): auto {.noSideEffect.} =
-  ## Convert an openarray to a Tensor
+  ## Convert a string to a Tensor
   ##
-  ## Handle string specifically (otherwise they are interpreted as openarray[char])
+  ## This proc handles string specifically as otherwise they are interpreted as a sequence of char
   toTensorCpu(s)
 
-# TODO add tests for zeros, ones and randomTensor
+# TODO add tests for randomTensor
 proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
   ##
@@ -95,7 +113,8 @@ proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {
   ##      - Type of its elements
   ## Result:
   ##      - A zero-ed Tensor of the input shape on backend Cpu
-  return newTensor(shape, typ)
+  tensorCpu(shape, result)
+  result.data = newSeq[T](result.size)
 
 proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
@@ -130,7 +149,8 @@ template randomTensorCpu[T](t: Tensor[T], shape: openarray[int], max_or_range: t
   t.data = newSeqWith(t.size, random(max_or_range))
 
 proc randomTensor*(shape: openarray[int], max: float): Tensor[float] =
-  ## Creates a new float Tensor filled with values between 0 and max
+  ## Creates a new float Tensor filled with values between 0 and max.
+  ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
   ## Input:
   ##      - a shape
@@ -141,7 +161,8 @@ proc randomTensor*(shape: openarray[int], max: float): Tensor[float] =
   randomTensorCpu(result, shape, max)
 
 proc randomTensor*(shape: openarray[int], max: int): Tensor[int] =
-  ## Creates a new int Tensor filled with values between 0 and max-1
+  ## Creates a new int Tensor filled with values between 0 and max-1.
+  ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
   ## Input:
   ##      - a shape
@@ -153,6 +174,7 @@ proc randomTensor*(shape: openarray[int], max: int): Tensor[int] =
 
 proc randomTensor*[T](shape: openarray[int], slice: Slice[T]): Tensor[T] =
   ## Creates a new int Tensor filled with values in the Slice range.
+  ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
   ## Input:
   ##      - a shape

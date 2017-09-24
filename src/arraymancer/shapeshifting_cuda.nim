@@ -17,9 +17,9 @@ proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   ##
   ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
   ##
-  ## Data is copied as-is and not modified.
-  ## WARNING: The input and output tensors share the underlying data storage on GPU
-  ## Modification of data will affect both
+  ## Warning ⚠ CudaTensor temporary default:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
 
   result.shape = t.shape.reversed
   result.strides = t.strides.reversed
@@ -32,12 +32,15 @@ cuda_assign_glue(cuda_asContiguous, "CopyOp")
 proc asContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, force: bool = false):
   CudaTensor[T] {.noSideEffect.}=
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
+  ##
   ## By default CudaTensor will be colMajor (contrary to a cpu tensor).
+  ##
   ## By default nothing is done if the tensor is already contiguous (C Major or F major)
   ## The "force" parameter can force re-ordering to a specific layout
   ##
-  ## WARNING, until optimized value semantics are implemented, this returns a tensor that shares
-  ## the underlying data with the original IF it was contiguous.
+  ## Warning ⚠ CudaTensor temporary default:
+  ##   If the CudaTensor is contiguous, this is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
 
   if t.isContiguous and not force:
     return t

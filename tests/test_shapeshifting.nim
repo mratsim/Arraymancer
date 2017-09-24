@@ -109,11 +109,43 @@ suite "Shapeshifting":
 
   test "To tensor reshape":
     block:
-      let a = [1,2,3,4].toTensorReshape([2,2])
-      check a == [[1,2],[3,4]].toTensor()
-    block:
       var s = @[1,2,3,4]
       var a = s.unsafeToTensorReshape([2,2])
       check a == [[1,2],[3,4]].toTensor()
       s[0] = 0
       check a == [[0,2],[3,4]].toTensor()
+
+  test "Unsqueeze":
+    block:
+      let a = toSeq(1..12).toTensor().reshape(3,4)
+      let b = a.unsqueeze(0)
+      let c = a.unsqueeze(1)
+      let d = a.unsqueeze(2)
+
+      check a.reshape(1,3,4).strides == b.strides
+      check a.reshape(3,1,4).strides == c.strides
+      check a.reshape(3,4,1).strides == d.strides
+      check b == toSeq(1..12).toTensor().reshape(1,3,4)
+      check c == toSeq(1..12).toTensor().reshape(3,1,4)
+      check d == toSeq(1..12).toTensor().reshape(3,4,1)
+
+    block: # With slices
+      let a = toSeq(1..12).toTensor().reshape(3,4)
+      let b = a[0..1, ^2..0|-1].unsqueeze(0)
+      let c = a[0..1, ^2..0|-1].unsqueeze(1)
+      let d = a[0..1, ^2..0|-1].unsqueeze(2)
+
+      check b == [[[3,2,1],[7,6,5]]].toTensor
+      check c == [[[3,2,1]],[[7,6,5]]].toTensor
+      check d == [[[3],[2],[1]],[[7],[6],[5]]].toTensor
+
+  test "Stack tensors":
+    let a = [[1,2,3].toTensor(),[4,5,6].toTensor()]
+    check a.stack() == [[1,2,3],[4,5,6]].toTensor()
+    check a.stack(1) == [[1,4],[2,5],[3,6]].toTensor()
+
+    let b = [[[1,2],[3,4]].toTensor(),[[4,5],[6,7]].toTensor()]
+    check b.stack()  == [[[1,2],[3,4]],[[4,5],[6,7]]].toTensor()
+    check b.stack(1) == [[[1,2],[4,5]],[[3,4],[6,7]]].toTensor()
+    check b.stack(2) == [[[1,4],[2,5]],[[3,6],[4,7]]].toTensor()
+

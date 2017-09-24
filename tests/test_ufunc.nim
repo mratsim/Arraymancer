@@ -63,3 +63,9 @@ suite "Universal functions":
     check: td.map(stringify)[0,1] == "4"
     expect(IndexError):
       discard td.map(stringify)[1,3]
+
+  test "Abs":
+    let a = [-2,-1,0,1,2].toTensor()
+    check abs(a) == [2,1,0,1,2].toTensor()
+    let b = [-2.0,-1,0,1,2].toTensor()
+    check abs(b) == [2.0,1,0,1,2].toTensor()

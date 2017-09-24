@@ -29,7 +29,7 @@ proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] {.noSideEffect.}=
   # But may avoid a lot of unnecessary computations on slices
   tensorCpu(t.shape, result)
 
-  result.data = newSeq[U](result.size)
+  result.data = newSeqUninitialized[U](result.size)
   var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
   for val in t:
     result.data[i] = f(val)
@@ -58,7 +58,7 @@ proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] {.no
 
   tensorCpu(t1.shape, result)
 
-  result.data = newSeq[U](result.size)
+  result.data = newSeqUninitialized[U](result.size)
 
   # TODO use mitems instead of result.data[i] cf profiling
   # TODO: inline iterators - pending https://github.com/nim-lang/Nim/issues/4516

@@ -106,3 +106,27 @@ suite "Shapeshifting":
       let b = a[0, 0..1, 0, 3..0|-1].squeeze(0)
 
       check b == [4, 3, 2, 1, 8, 7, 6, 5].toTensor.reshape(2,1,4)
+
+  test "Unsqueeze":
+    block:
+      let a = toSeq(1..12).toTensor().reshape(3,4)
+      let b = a.unsqueeze(0)
+      let c = a.unsqueeze(1)
+      let d = a.unsqueeze(2)
+
+      check a.reshape(1,3,4).strides == b.strides
+      check a.reshape(3,1,4).strides == c.strides
+      check a.reshape(3,4,1).strides == d.strides
+      check b == toSeq(1..12).toTensor().reshape(1,3,4)
+      check c == toSeq(1..12).toTensor().reshape(3,1,4)
+      check d == toSeq(1..12).toTensor().reshape(3,4,1)
+
+    block: # With slices
+      let a = toSeq(1..12).toTensor().reshape(3,4)
+      let b = a[0..1, ^2..0|-1].unsqueeze(0)
+      let c = a[0..1, ^2..0|-1].unsqueeze(1)
+      let d = a[0..1, ^2..0|-1].unsqueeze(2)
+
+      check b == [[[3,2,1],[7,6,5]]].toTensor
+      check c == [[[3,2,1]],[[7,6,5]]].toTensor
+      check d == [[[3],[2],[1]],[[7],[6],[5]]].toTensor

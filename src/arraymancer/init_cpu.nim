@@ -65,7 +65,7 @@ proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, i
   tensorCpu(shape, result)
   result.data = newSeqUninitialized[T](result.size)
 
-proc newTensor*[T](shape: openarray[int], value: T): Tensor[T] {.noSideEffect, inline.} =
+proc newTensorWith*[T](shape: openarray[int], value: T): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with the given value
   ## Input:
   ##      - Shape of the Tensor
@@ -74,6 +74,7 @@ proc newTensor*[T](shape: openarray[int], value: T): Tensor[T] {.noSideEffect, i
   ## Result:
   ##      - A Tensor of the proper shape initialized with
   ##        the given value
+  # Todo: use a template that can accept proc or value. See the code for newSeqWith: https://github.com/nim-lang/Nim/blob/master/lib/pure/collections/sequtils.nim#L650-L665
   tensorCpu(shape, result)
   result.data = newSeqWith(result.size, value)
 

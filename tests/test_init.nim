@@ -101,11 +101,11 @@ suite "Creating a new Tensor":
 
   test "Filled new tensor":
     block:
-      let t = newTensor([4,4,4], 2.0f)
+      let t = newTensorWith([4,4,4], 2.0f)
       for v in t.items:
         check v == 2.0f
     block:
-      let t = newTensor([4,4,4], 2)
+      let t = newTensorWith([4,4,4], 2)
       for v in t.items:
         check v == 2
 

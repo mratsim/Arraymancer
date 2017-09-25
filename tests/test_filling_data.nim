@@ -12,18 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../src/arraymancer,
-        ./test_init.nim,
-        ./test_comparison,
-        ./test_accessors,
-        ./test_accessors_slicer,
-        ./test_display,
-        ./test_operators_blas,
-        ./test_math_functions,
-        ./test_higherorder,
-        ./test_aggregate,
-        ./test_shapeshifting,
-        ./test_broadcasting,
-        ./test_ufunc,
-        ./test_filling_data,
-        ./test_bugtracker
+
+import ../src/arraymancer
+import unittest, math, future, sequtils
+
+
+suite "Testing miscellaneous data functions":
+  test "Copy data from source":
+    let a = [[1,2],[3,4]].toTensor.reshape(2,2)
+
+    var b = ones[int](4,1)
+
+    b.copy_from(a)
+
+    check: b == [[1],[2], [3], [4]].toTensor

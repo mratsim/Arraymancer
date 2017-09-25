@@ -20,7 +20,7 @@ suite "Testing specific issues from bug tracker":
   test "Span slicing inside dynamic type procs fails to compile":
     # https://github.com/mratsim/Arraymancer/issues/43
     proc boo[T](): T =
-      var a = zeros([2,2], int)
+      var a = zeros[int]([2,2])
       echo a[1,_] #<-- Bug was undeclared identifier '_',
                   # unfortunately there is no way to gracefully check this
                   # with when not compiles for example

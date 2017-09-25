@@ -178,5 +178,5 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       proc sigmoid[T: SomeReal](t: Tensor[T]): Tensor[T]=
         1.T ./ (1.T .+ exp(-t))
 
-      let a = newTensor([2,2], float32)
+      let a = newTensor[float32]([2,2])
       check: sigmoid(a) == [[0.5'f32, 0.5],[0.5'f32, 0.5]].toTensor

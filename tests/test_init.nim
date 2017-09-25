@@ -74,28 +74,28 @@ suite "Creating a new Tensor":
     
     check: t.shape == @[2,3]
 
-    let u = newTensor(@[2,3], int)
+    let u = newTensor[int](@[2,3])
     check: u.shape == @[2,3]
 
     check: u.shape == t.shape
 
   test "Zeros":
     block:
-      let t = zeros([4,4,4], float)
+      let t = zeros[float]([4,4,4])
       for v in t.items:
         check v == 0.0f
     block:
-      let t = zeros([4,4,4], int)
+      let t = zeros[int]([4,4,4])
       for v in t.items:
         check v == 0
 
   test "Ones":
     block:
-      let t = ones([4,4,4], float)
+      let t = ones[float]([4,4,4])
       for v in t.items:
         check v == 1.0f
     block:
-      let t = ones([4,4,4], int)
+      let t = ones[int]([4,4,4])
       for v in t.items:
         check v == 1
 

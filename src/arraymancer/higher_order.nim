@@ -194,6 +194,20 @@ proc fold*[U, T](t: Tensor[U],
   for val in t.axis(axis):
     result = f(result, val)
 
+proc fold2*[T](t1: Tensor[T],
+               start_val: T,
+               f: (T, T, T)-> T,
+               t2: Tensor[T]
+               ): T {.noSideEffect.}=
+  ## Chain result = f(result, element1, element2) over all elements of two Tensors
+  ## Input:
+  ##     - Two tensor to aggregate on
+  ##     - The starting value
+  ##     - The aggregation function. It is applied this way: new_aggregate = f(old_aggregate, element1, element2)
+  result = start_val
+  for ai, bi in zip(t1.values, t2.values):
+    result = f(result, ai, bi)
+
 proc reduce*[T](t: Tensor[T],
                 f: (T, T) -> T
                 ): T {.noSideEffect.}=

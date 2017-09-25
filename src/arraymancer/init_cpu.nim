@@ -66,7 +66,7 @@ proc newTensorUninit*[T](shape: openarray[int]): Tensor[T] {.noSideEffect, inlin
   tensorCpu(shape, result)
   result.data = newSeqUninit[T](result.size)
 
-proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, inline.} =
+proc newTensor*[T](shape: openarray[int]): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -118,7 +118,7 @@ proc toTensor*(s:string): auto {.noSideEffect.} =
   toTensorCpu(s)
 
 # TODO add tests for randomTensor
-proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {.noSideEffect, inline.} =
+proc zeros*[T: SomeNumber](shape: openarray[int]): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -138,7 +138,7 @@ proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.
   ##      - A zero-ed Tensor of the same shape
   return zeros(t.shape, T)
 
-proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {.noSideEffect,inline.} =
+proc ones*[T: SomeNumber](shape: openarray[int]): Tensor[T] {.noSideEffect,inline.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor

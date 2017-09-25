@@ -12,12 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc check_elementwise(a, b:AnyTensor)  {.noSideEffect.}=
-  ## Check if element-wise operations can be applied to 2 Tensors
-  if a.shape != b.shape:
-    raise newException(ValueError, "Both Tensors should have the same shape")
-
-
 # ####################################################################
 # Mapping over tensors
 

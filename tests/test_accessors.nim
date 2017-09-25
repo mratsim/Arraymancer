@@ -91,3 +91,12 @@ suite "Accessing and setting tensor values":
     a[1,1] *= 20
 
     check: a == [[0,0,0],[0,200,0],[0,0,0]].toTensor
+
+  test "Zipping two tensors":
+    let a = [[1,2],[3,4]].toTensor()
+    let b = [[5,6],[7,8]].toTensor()
+
+    var res = 0
+    for ai, bi in zip(a, b):
+      res += ai + bi
+    check: res == 36

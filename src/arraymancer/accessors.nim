@@ -19,6 +19,11 @@ proc check_index(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
                     ", is different from tensor rank: " &
                     $(t.rank))
 
+proc check_elementwise(a, b:AnyTensor)  {.noSideEffect.}=
+  ## Check if element-wise operations can be applied to 2 Tensors
+  if a.shape != b.shape:
+    raise newException(ValueError, "Both Tensors should have the same shape")
+
 proc getIndex[T](t: Tensor[T], idx: varargs[int]): int {.noSideEffect,inline.} =
   ## Convert [i, j, k, l ...] to the proper index.
   when compileOption("boundChecks"):
@@ -197,3 +202,14 @@ proc axis*[T](t: Tensor[T], axis: int): auto {.noSideEffect.}=
   ## Note: This is mostly useful for iterator chaining.
   ## Prefer the inline iterator ``axis`` for simple iteration.
   return iterator(): Tensor[T] = axis_iterator(t,axis)
+
+
+iterator zip*[T1, T2](a: Tensor[T1], b: Tensor[T2]): tuple[a: T1, b: T2] =
+  ## Iterates simultaneously on two tensors returning their elements in a tuple.
+  ## As a shortcut elements from the tuple can be addressed via result.a and result.b
+  ## Note: only tensors of the same shape will be zipped together.
+  when compileOption("boundChecks"):
+    check_elementwise(a,b)
+
+  for vals in zip(a.values, b.values): # TODO: use inline iterators
+    yield vals

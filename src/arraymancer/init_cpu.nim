@@ -159,9 +159,9 @@ proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noSideEffect, inline.} =
 
 template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typed): untyped =
   tensorCpu(shape, t)
-  t.data = newSeqWith(t.size, random(max_or_range))
+  t.data = newSeqWith(t.size, T(random(max_or_range))) # Due to automatic converter (float32 -> float64), we must force T #68
 
-proc randomTensor*(shape: varargs[int], max: float): Tensor[float] =
+proc randomTensor*[T:SomeReal](shape: varargs[int], max: T): Tensor[T] =
   ## Creates a new float Tensor filled with values between 0 and max.
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``

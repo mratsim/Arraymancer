@@ -109,5 +109,11 @@ suite "Creating a new Tensor":
       for v in t.items:
         check v == 2
 
+  test "Random tensor":
+    block:
+      # Check that randomTensor doesn't silently convert float32 to float64
+      let a = randomTensor([3, 4], 100'f32)
+
+      check: a[0,0] is float32
   # TODO add tests for randomTensor
 

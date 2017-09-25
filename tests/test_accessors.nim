@@ -18,11 +18,11 @@ import unittest, math
 
 suite "Accessing and setting tensor values":
   test "Accessing and setting a single value":
-    var a = zeros(@[2,3,4], int)
+    var a = zeros[int](@[2,3,4])
     a[1,2,2] = 122
     check: a[1,2,2] == 122
 
-    var b = zeros(@[3,4], int)
+    var b = zeros[int](@[3,4])
     b[1,2] = 12
     check: b[1,2] == 12
     b[0,0] = 999
@@ -32,10 +32,10 @@ suite "Accessing and setting tensor values":
 
 
   test "Out of bounds checking":
-    var a = newTensor(@[2,3,4], int)
+    var a = newTensor[int](@[2,3,4])
     expect(IndexError):
       a[2,0,0] = 200
-    var b = newTensor(@[3,4], int)
+    var b = newTensor[int](@[3,4])
     expect(IndexError):
       b[3,4] = 999
     expect(IndexError):
@@ -84,7 +84,7 @@ suite "Accessing and setting tensor values":
     check: seq_transpose[8] == (@[1,3], 16)
 
   test "indexing + in-place operator":
-    var a = newTensor([3,3], int)
+    var a = newTensor[int]([3,3])
 
     a[1,1] += 10
 

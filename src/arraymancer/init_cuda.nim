@@ -76,7 +76,7 @@ proc clone*[T](t: CudaTensor[T]): CudaTensor[T] =
 #   system.`=`(result, t)
 #   echo "Value moved"
 
-proc newCudaTensor[T: SomeReal](shape: openarray[int], layout: OrderType = colMajor): CudaTensor[T] {.noSideEffect.}=
+proc newCudaTensor[T: SomeReal](shape: varargs[int], layout: OrderType = colMajor): CudaTensor[T] {.noSideEffect.}=
   ## Internal proc
   ## Allocate a CudaTensor
   ## WARNING: The Cuda memory is not initialized to 0
@@ -118,7 +118,7 @@ proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect.}=
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset
-  result.data = newSeqUninitialized[T](t.data.len) # We copy over all the memory allocated
+  result.data = newSeqUninit[T](t.data.len) # We copy over all the memory allocated
 
   let size = t.data.len * sizeof(T)
 

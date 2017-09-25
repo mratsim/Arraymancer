@@ -48,7 +48,7 @@ template matvec_blis[T: SomeReal](a, x, result: Tensor[T]): auto =
 
   when compileOption("boundChecks"): check_matvec(a,b)
 
-  result.data = newSeqUninitialized[T](rowA)
+  result.data = newSeqUninit[T](rowA)
   result.shape = @[rowA]
   result.strides = @[1]
   result.offset = 0
@@ -83,7 +83,7 @@ template matvec_blas[T: SomeReal](a, x, result: Tensor[T]): auto =
 
   when compileOption("boundChecks"): check_matvec(a,b)
 
-  result.data = newSeqUninitialized[T](rowA)
+  result.data = newSeqUninit[T](rowA)
   result.shape = @[rowA]
   result.strides = @[1]
   result.offset = 0
@@ -108,7 +108,7 @@ template matvec_fallback[T: SomeInteger](a, x, result: Tensor[T]): auto =
 
   when compileOption("boundChecks"): check_matvec(a,b)
 
-  result.data = newSeqUninitialized[T](rowA)
+  result.data = newSeqUninit[T](rowA)
   result.shape = @[rowA]
   result.strides = @[1]
   result.offset = 0
@@ -134,7 +134,7 @@ template matmat_blis[T: SomeReal](a, b, result: Tensor[T]): auto =
 
   when compileOption("boundChecks"): check_matmat(a,b)
 
-  result.data = newSeqUninitialized[T](rowA * colB)
+  result.data = newSeqUninit[T](rowA * colB)
   result.shape = @[rowA, colB]
   result.strides = @[rowA, 1]  # We force row-major after computation
   result.offset = 0
@@ -166,7 +166,7 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[T]): auto =
 
   when compileOption("boundChecks"): check_matmat(a,b)
 
-  result.data = newSeqUninitialized[T](M * N)
+  result.data = newSeqUninit[T](M * N)
   result.shape = @[M, N]
   result.strides = @[N, 1]
   result.offset = 0
@@ -205,7 +205,7 @@ template matmat_fallback[T: SomeInteger](a, b, result: Tensor[T]): auto =
   result.shape = @[M, N]
   result.strides = @[N, 1]
   result.offset = 0
-  result.data = newSeqUninitialized[T](M*N)
+  result.data = newSeqUninit[T](M*N)
 
   gemm_nn_fallback(M, N, K,
            1.T,

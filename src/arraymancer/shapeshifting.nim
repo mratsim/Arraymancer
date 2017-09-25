@@ -65,8 +65,7 @@ proc unsafeTranspose*(t: Tensor): Tensor {.noSideEffect, inline.}=
   shallowCopy(result.data, t.data)
 
 template contiguousT[T](result, t: Tensor[T], layout: OrderType): untyped=
-  tensorCpu(t.shape, result, layout)
-  result.data = newSeqUninitialized[T](result.size)
+  result = newTensorUninit[T](t.shape)
 
   var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
 
@@ -120,8 +119,7 @@ proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: boo
 
 proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] {.noSideEffect.}=
   # Can't call "tensorCpu" template here for some reason
-  tensorCpu(new_shape, result)
-  result.data = newSeqUninitialized[T](result.size)
+  result = newTensorUninit[T](new_shape)
 
   var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
   for val in t:
@@ -186,7 +184,7 @@ template broadcastT(t: var Tensor, shape: openarray[int]) =
     elif t.shape[i] != shape[i]:
       raise newException(ValueError, "The broadcasted size of the tensor must match existing size for non-singleton dimension")
 
-proc broadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
+proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.
   ##
   ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
@@ -198,7 +196,7 @@ proc broadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffec
   result = t
   result.broadcastT(shape)
 
-proc unsafeBroadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
+proc unsafeBroadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noSideEffect.}=
   ## Explicitly broadcast a Tensor to the specified shape.
   ## The returned broadcasted Tensor share the underlying data with the input.
   ##
@@ -212,7 +210,7 @@ proc unsafeBroadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSid
   result = t.unsafeView
   result.broadcastT(shape)
 
-proc broadcast*[T: SomeNumber](val: T, shape: openarray[int]): Tensor[T] {.noSideEffect.} =
+proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noSideEffect.} =
   ## Broadcast a number
   ##
   ## Input:
@@ -232,7 +230,7 @@ proc broadcast*[T: SomeNumber](val: T, shape: openarray[int]): Tensor[T] {.noSid
   result.offset = 0
   result.data = newSeqWith(1, val)
 
-template bc*(t: (Tensor|SomeNumber), shape: openarray[int]): untyped =
+template bc*(t: (Tensor|SomeNumber), shape: varargs[int]): untyped =
   ## Alias for ``broadcast``
   t.broadcast(shape)
 
@@ -341,8 +339,7 @@ proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noSideEffec
   let concat_shape = t0.shape[0..<axis] & axis_dim & t0.shape[axis+1..t0.shape.high]
 
   ## Setup the Tensor
-  tensorCpu(concat_shape, result)
-  result.data = newSeqUninitialized[T](result.size)
+  result = newTensorUninit[T](concat_shape)
 
   # Fill in the copy with the matching values
   var slices = concat_shape.mapIt((0..<it)|1)
@@ -457,7 +454,7 @@ proc unsafeUnsqueeze*(t: Tensor, axis: int): Tensor {.noSideEffect.}=
   result = t.unsafeView
   result.unsqueezeT(axis)
 
-proc stack*[T](tensors: openarray[Tensor[T]], axis: int = 0): Tensor[T] =
+proc stack*[T](tensors: varargs[Tensor[T]], axis: int = 0): Tensor[T] =
   ## Join a sequence of tensors along a new axis into a new tensor.
   ## Input:
   ##   - a tensor

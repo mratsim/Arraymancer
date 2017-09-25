@@ -36,67 +36,73 @@ proc dot*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
   for ai, bi in zip(a.values, b.values):
     result += ai * bi
 
+# #########################################################
+# # Tensor-Tensor linear algebra
+# # shape checks are done in map2 proc
+
 proc `+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
   ## Tensor addition
-  # shape check done in map2 proc
+  # Note: proc cannot be inlined for unknown reason (closure with env variable?)
+  proc add_closure(x, y: T): T = x + y
+  return map2(a, add_closure, b)
 
-  # Note: proc cannot be inlined, probably due to the non in-place closure
-  proc add(x, y: T): T = x + y
-  return map2(a, add, b)
+proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
+  ## Tensor substraction
+  # Note: proc cannot be inlined for unknown reason (closure with env variable?)
+  proc sub_closure(x, y: T): T = x - y
+  return map2(a, sub_closure, b)
+
+# #########################################################
+# # Tensor-Tensor in-place linear algebra
 
 proc `+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inline.} =
   ## Tensor in-place addition
   # shape check done in apply2 proc
 
-  proc inplace_add(x: var T, y: T) = x += y
-  apply2(a, inplace_add, b)
-
-proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
-  ## Negate all values of a Tensor
-  t.map(proc(x: T): T = -x)
-
-proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect.} =
-  ## Tensor substraction
-  # shape check done in map2 proc
-
-  # Note: proc cannot be inlined, probably due to the non in-place closure
-  proc sub(x, y: T): T = x - y
-  return map2(a, sub, b)
+  proc madd_closure(x: var T, y: T) = x += y
+  apply2(a, madd_closure, b)
 
 proc `-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inline.} =
-  ## Tensor in-place addition
-  # shape check done in apply2 proc
+  ## Tensor in-place substraction
+  proc msub_closure(x: var T, y: T) = x -= y
+  apply2(a, msub_closure, b)
 
-  proc inplace_min(x: var T, y: T) = x -= y
-  apply2(a, inplace_min, b)
+# #########################################################
+# # Tensor-scalar linear algebra
 
 proc `*`*[T: SomeNumber](a: T, t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
   ## Element-wise multiplication by a scalar
-  proc f(x: T): T = a * x
-  return t.map(f)
+  proc scalmul_closure(x: T): T = a * x
+  return t.map(scalmul_closure)
 
 proc `*`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] {.noSideEffect, inline.} =
   ## Element-wise multiplication by a scalar
   a * t
 
-proc `*=`*[T: SomeNumber](t: var Tensor[T], a: T) {.noSideEffect, inline.} =
-  ## Element-wise multiplication by a scalar (in-place)
-  t.apply(proc(x: var T) = x *= a)
-
 proc `/`*[T: SomeReal](t: Tensor[T], a: T): Tensor[T] {.noSideEffect, inline.} =
   ## Element-wise division by a float scalar
-  proc f(x: T): T = x / a
-  return t.map(f)
+  proc scaldiv_closure(x: T): T = x / a
+  return t.map(scaldiv_closure)
 
 proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noSideEffect, inline.} =
   ## Element-wise division by an integer
-  proc f(x: T): T = x / a
-  return t.map(f)
+  proc scalintdiv_closure(x: T): T = x div a
+  return t.map(scalintdiv_closure)
+
+# #########################################################
+# # Tensor-scalar in-place linear algebra
+
+proc `*=`*[T: SomeNumber](t: var Tensor[T], a: T) {.noSideEffect, inline.} =
+  ## Element-wise multiplication by a scalar (in-place)
+  proc mscalmul_closure(x: var T) = x *= a
+  t.apply(mscalmul_closure)
 
 proc `/=`*[T: SomeReal](t: var Tensor[T], a: T) {.noSideEffect, inline.} =
   ## Element-wise division by a scalar (in-place)
-  t.apply(proc(x: var T) = x /= a)
+  proc mscaldiv_closure(x: var T) = x /= a
+  t.apply(mscaldiv_closure)
 
 proc `/=`*[T: SomeInteger](t: var Tensor[T], a: T) {.noSideEffect, inline.} =
   ## Element-wise division by a scalar (in-place)
-  t.apply(proc(x: var T) = x = x div a)
+  proc mscalintdiv_closure(x: T): T = x div a
+  t.apply(mscalintdiv_closure)

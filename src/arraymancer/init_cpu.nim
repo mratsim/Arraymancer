@@ -34,7 +34,7 @@ proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect, inline.}=
   if (shape.product != len):
     raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
 
-template tensorCpu[T](out_shape: openarray[int], t: Tensor[T], layout: OrderType = rowMajor): untyped =
+template tensorCpu[T](out_shape: openarray, t: Tensor[T], layout: OrderType = rowMajor): untyped =
   t.shape = @out_shape
   t.strides = shape_to_strides(t.shape, layout)
   t.offset = 0
@@ -54,7 +54,7 @@ proc newSeqUninit[T](len: Natural): seq[T] {.noSideEffect, inline.} =
   result = newSeqOfCap[T](len)
   result.setLen(len)
 
-proc newTensorUninit*[T](shape: openarray[int]): Tensor[T] {.noSideEffect, inline.} =
+proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -66,7 +66,7 @@ proc newTensorUninit*[T](shape: openarray[int]): Tensor[T] {.noSideEffect, inlin
   tensorCpu(shape, result)
   result.data = newSeqUninit[T](result.size)
 
-proc newTensor*[T](shape: openarray[int]): Tensor[T] {.noSideEffect, inline.} =
+proc newTensor*[T](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -77,7 +77,7 @@ proc newTensor*[T](shape: openarray[int]): Tensor[T] {.noSideEffect, inline.} =
   tensorCpu(shape, result)
   result.data = newSeq[T](result.size)
 
-proc newTensorWith*[T](shape: openarray[int], value: T): Tensor[T] {.noSideEffect, inline.} =
+proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with the given value
   ## Input:
   ##      - Shape of the Tensor
@@ -118,7 +118,7 @@ proc toTensor*(s:string): auto {.noSideEffect.} =
   toTensorCpu(s)
 
 # TODO add tests for randomTensor
-proc zeros*[T: SomeNumber](shape: openarray[int]): Tensor[T] {.noSideEffect, inline.} =
+proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -138,7 +138,7 @@ proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.
   ##      - A zero-ed Tensor of the same shape
   return zeros(t.shape, T)
 
-proc ones*[T: SomeNumber](shape: openarray[int]): Tensor[T] {.noSideEffect,inline.} =
+proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noSideEffect,inline.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -157,11 +157,11 @@ proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noSideEffect, inline.} =
   ##      - A one-ed Tensor of the same shape
   return ones(t.shape, T)
 
-template randomTensorCpu[T](t: Tensor[T], shape: openarray[int], max_or_range: typed): untyped =
+template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typed): untyped =
   tensorCpu(shape, t)
   t.data = newSeqWith(t.size, random(max_or_range))
 
-proc randomTensor*(shape: openarray[int], max: float): Tensor[float] =
+proc randomTensor*(shape: varargs[int], max: float): Tensor[float] =
   ## Creates a new float Tensor filled with values between 0 and max.
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
@@ -173,7 +173,7 @@ proc randomTensor*(shape: openarray[int], max: float): Tensor[float] =
   ##      - A tensor of the input shape filled with random value between 0 and max input value
   randomTensorCpu(result, shape, max)
 
-proc randomTensor*(shape: openarray[int], max: int): Tensor[int] =
+proc randomTensor*(shape: varargs[int], max: int): Tensor[int] =
   ## Creates a new int Tensor filled with values between 0 and max-1.
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
@@ -185,7 +185,7 @@ proc randomTensor*(shape: openarray[int], max: int): Tensor[int] =
   ##      - A tensor of the input shape filled with random value between 0 and max input value (excluded)
   randomTensorCpu(result, shape, max)
 
-proc randomTensor*[T](shape: openarray[int], slice: Slice[T]): Tensor[T] =
+proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] =
   ## Creates a new int Tensor filled with values in the Slice range.
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``

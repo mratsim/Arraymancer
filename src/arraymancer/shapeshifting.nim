@@ -184,7 +184,7 @@ template broadcastT(t: var Tensor, shape: openarray[int]) =
     elif t.shape[i] != shape[i]:
       raise newException(ValueError, "The broadcasted size of the tensor must match existing size for non-singleton dimension")
 
-proc broadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
+proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.
   ##
   ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
@@ -196,7 +196,7 @@ proc broadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffec
   result = t
   result.broadcastT(shape)
 
-proc unsafeBroadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSideEffect.}=
+proc unsafeBroadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noSideEffect.}=
   ## Explicitly broadcast a Tensor to the specified shape.
   ## The returned broadcasted Tensor share the underlying data with the input.
   ##
@@ -210,7 +210,7 @@ proc unsafeBroadcast*[T](t: Tensor[T], shape: openarray[int]): Tensor[T] {.noSid
   result = t.unsafeView
   result.broadcastT(shape)
 
-proc broadcast*[T: SomeNumber](val: T, shape: openarray[int]): Tensor[T] {.noSideEffect.} =
+proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noSideEffect.} =
   ## Broadcast a number
   ##
   ## Input:
@@ -230,7 +230,7 @@ proc broadcast*[T: SomeNumber](val: T, shape: openarray[int]): Tensor[T] {.noSid
   result.offset = 0
   result.data = newSeqWith(1, val)
 
-template bc*(t: (Tensor|SomeNumber), shape: openarray[int]): untyped =
+template bc*(t: (Tensor|SomeNumber), shape: varargs[int]): untyped =
   ## Alias for ``broadcast``
   t.broadcast(shape)
 
@@ -454,7 +454,7 @@ proc unsafeUnsqueeze*(t: Tensor, axis: int): Tensor {.noSideEffect.}=
   result = t.unsafeView
   result.unsqueezeT(axis)
 
-proc stack*[T](tensors: openarray[Tensor[T]], axis: int = 0): Tensor[T] =
+proc stack*[T](tensors: varargs[Tensor[T]], axis: int = 0): Tensor[T] =
   ## Join a sequence of tensors along a new axis into a new tensor.
   ## Input:
   ##   - a tensor

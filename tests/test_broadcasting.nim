@@ -52,7 +52,7 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       check b == [[1,1],
                   [2,2]].toTensor()
 
-  test "Implicit broadcasting - basic operations .+, .-, .*, ./":
+  test "Implicit tensor-tensor broadcasting - basic operations .+, .-, .*, ./, .^":
     block: # Addition
       let a = [0, 10, 20, 30].toTensor().reshape(4,1)
       let b = [0, 1, 2].toTensor().reshape(1,3)
@@ -98,7 +98,20 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                         [10.0, 4, 2],
                         [15.0, 6, 3]].toTensor
 
-  test "Implicit broadcasting - basic in-place operations .+=, .-=, .*=, ./=":
+    block: # Float Exponentiation
+      let a = [1.0, 10, 20, 30].toTensor().reshape(4,1)
+
+      check: a .^ 2.0 == [[1.0],
+                          [100.0],
+                          [400.0],
+                          [900.0]].toTensor
+
+      check: a .^ -1 ==  [[1.0],
+                          [1.0/10.0],
+                          [1.0/20.0],
+                          [1.0/30.0]].toTensor
+
+  test "Implicit tensor-tensor broadcasting - basic in-place operations .+=, .-=, .*=, ./=":
     block: # Addition
       # Note: We can't broadcast the lhs with in-place operations
       var a = [0, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).asContiguous
@@ -154,7 +167,8 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                   [10.0, 4, 2],
                   [15.0, 6, 3]].toTensor
 
-  test "Implicit broadcasting - basic operations .+=, .-= with scalar":
+
+  test "Implicit tensor-scalar broadcasting - basic operations .+=, .-=, .^=":
     block: # Addition
       var a = [0, 10, 20, 30].toTensor().reshape(4,1)
 
@@ -172,6 +186,22 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                     [-90],
                     [-80],
                     [-70]].toTensor
+    
+    block: # Float Exponentiation
+      var a = [1.0, 10, 20, 30].toTensor().reshape(4,1)
+      var b = a
+    
+      a .^= 2.0
+      check: a  == [[1.0],
+                    [100.0],
+                    [400.0],
+                    [900.0]].toTensor
+
+      b .^= -1
+      check: b  == [[1.0],
+                    [1.0/10.0],
+                    [1.0/20.0],
+                    [1.0/30.0]].toTensor
 
   test "Implicit broadcasting - Sigmoid 1 ./ (1 .+ exp(-x)":
     block:

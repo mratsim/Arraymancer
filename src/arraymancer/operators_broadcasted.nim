@@ -142,6 +142,11 @@ proc `./`*[T: SomeReal](val: T, t: Tensor[T]): Tensor[T] {.noSideEffect, inline.
   proc f(x: T): T = val / x
   return t.map(f)
 
+proc `.^`*[T: SomeReal](t: Tensor[T], exponent: T): Tensor[T] {.noSideEffect, inline.} =
+  ## Compute element-wise exponentiation
+  proc f(x: T): T = pow(x, exponent)
+  return t.map(f)
+
 # #####################################
 # # Broadcasting in-place Tensor-Scalar
 
@@ -155,4 +160,10 @@ proc `.-=`*[T: SomeNumber](t: var Tensor[T], val: T) {.noSideEffect, inline.} =
   ## Tensor in-place substraction with a broadcasted scalar.
 
   proc f(x: var T) = x -= val
+  t.apply(f)
+
+proc `.^=`*[T: SomeReal](t: var Tensor[T], exponent: T) {.noSideEffect, inline.} =
+  ## Compute in-place element-wise exponentiation
+
+  proc f(x: T): T = pow(x, exponent)
   t.apply(f)

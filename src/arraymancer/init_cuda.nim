@@ -118,7 +118,7 @@ proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect.}=
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset
-  result.data = newSeqUninitialized[T](t.data.len) # We copy over all the memory allocated
+  result.data = newSeqUninit[T](t.data.len) # We copy over all the memory allocated
 
   let size = t.data.len * sizeof(T)
 

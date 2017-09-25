@@ -50,9 +50,21 @@ template toTensorCpu(s: typed): untyped =
   t.data = data
   return t
 
-proc newSeqUninitialized[T](len: Natural): seq[T] {.noSideEffect, inline.} =
+proc newSeqUninit[T](len: Natural): seq[T] {.noSideEffect, inline.} =
   result = newSeqOfCap[T](len)
   result.setLen(len)
+
+proc newTensorUninit*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, inline.} =
+  ## Creates a new Tensor on Cpu backend
+  ## Input:
+  ##      - Shape of the Tensor
+  ##      - Type of its elements
+  ## Result:
+  ##      - A Tensor of the proper shape with NO initialization
+  ## Warning ⚠
+  ##   Tensor data is uninitialized an contains garbage.
+  tensorCpu(shape, result)
+  result.data = newSeqUninit[T](result.size)
 
 proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor on Cpu backend
@@ -63,7 +75,7 @@ proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, i
   ##      - A Tensor of the proper shape initialized with
   ##        the default type value (0 for numeric types) on Cpu backend
   tensorCpu(shape, result)
-  result.data = newSeqUninitialized[T](result.size)
+  result.data = newSeq[T](result.size)
 
 proc newTensorWith*[T](shape: openarray[int], value: T): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with the given value

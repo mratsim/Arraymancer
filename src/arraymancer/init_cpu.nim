@@ -54,7 +54,7 @@ proc newSeqUninit[T](len: Natural): seq[T] {.noSideEffect, inline.} =
   result = newSeqOfCap[T](len)
   result.setLen(len)
 
-proc newTensorUninit*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, inline.} =
+proc newTensorUninit*[T](shape: openarray[int]): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor

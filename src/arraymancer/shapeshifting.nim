@@ -65,8 +65,7 @@ proc unsafeTranspose*(t: Tensor): Tensor {.noSideEffect, inline.}=
   shallowCopy(result.data, t.data)
 
 template contiguousT[T](result, t: Tensor[T], layout: OrderType): untyped=
-  tensorCpu(t.shape, result, layout)
-  result.data = newSeqUninit[T](result.size)
+  result = newTensorUninit[T](t.shape)
 
   var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
 
@@ -120,8 +119,7 @@ proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: boo
 
 proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] {.noSideEffect.}=
   # Can't call "tensorCpu" template here for some reason
-  tensorCpu(new_shape, result)
-  result.data = newSeqUninit[T](result.size)
+  result = newTensorUninit[T](new_shape)
 
   var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
   for val in t:
@@ -341,8 +339,7 @@ proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noSideEffec
   let concat_shape = t0.shape[0..<axis] & axis_dim & t0.shape[axis+1..t0.shape.high]
 
   ## Setup the Tensor
-  tensorCpu(concat_shape, result)
-  result.data = newSeqUninit[T](result.size)
+  result = newTensorUninit[T](concat_shape)
 
   # Fill in the copy with the matching values
   var slices = concat_shape.mapIt((0..<it)|1)

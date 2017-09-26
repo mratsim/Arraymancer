@@ -37,6 +37,7 @@ proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] {.noSideEffect.}=
   # And should benefit future computations on previously non-contiguous data
 
   result = newTensorUninit[U](t.shape)
+
   var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
   for val in t:
     result.data[i] = f(val)
@@ -60,7 +61,8 @@ proc apply*[T](t: var Tensor[T], f: T -> T) {.noSideEffect.}=
   ##     proc plusone[T](x: T): T =
   ##       x + 1
   ##     a.apply(plusone) # Apply the function plusone in-place
-  for val in t.mitems:
+
+  for val in t.mitems_orderless:
     val = f(val)
 
 proc apply*[T](t: var Tensor[T], f: proc(x:var T)) {.noSideEffect.}=
@@ -81,7 +83,8 @@ proc apply*[T](t: var Tensor[T], f: proc(x:var T)) {.noSideEffect.}=
   ##       x += 1
   ##     a.apply(pluseqone) # Apply the in-place function pluseqone
   ## ``apply`` is especially useful to do multiple element-wise operations on a tensor in a single loop over the data.
-  for val in t.mitems:
+
+  for val in t.mitems_orderless:
     f(val)
 
 proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] {.noSideEffect.}=
@@ -109,10 +112,14 @@ proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] {.no
 
   result = newTensorUninit[U](t1.shape)
 
-  # TODO use mitems instead of result.data[i] cf profiling
-  # TODO: inline iterators - pending https://github.com/nim-lang/Nim/issues/4516
-  for i, ai, bi in enumerate_zip(t1.values, t2.values):
-    result.data[i] = f(ai, bi)
+  if t1.isFullyIterableAs(t2):
+    for i in 0..<t1.data.len:
+      result.data[i] = f(t1.data[i], t2.data[i])
+  else:
+    # TODO use mitems instead of result.data[i] cf profiling
+    # TODO: inline iterators - pending https://github.com/nim-lang/Nim/issues/4516
+    for i, ai, bi in enumerate_zip(t1.values, t2.values):
+      result.data[i] = f(ai, bi)
 
 proc apply2*[T, U](a: var Tensor[T],
                    f: proc(x:var T, y:T), # We can't use the nice future syntax here
@@ -139,9 +146,13 @@ proc apply2*[T, U](a: var Tensor[T],
   when compileOption("boundChecks"):
     check_elementwise(a,b)
 
-  ## TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
-  for a_idx, b_val in zip(a.real_indices, b.values):
-    f(a.data[a_idx], b_val)
+  if a.isFullyIterableAs(b):
+    for i in 0..<a.data.len:
+      f(a.data[i], b.data[i])
+  else:
+    ## TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
+    for a_idx, b_val in zip(a.real_indices, b.values):
+      f(a.data[a_idx], b_val)
 
 # ####################################################################
 # Folds and reductions over a single Tensor

@@ -92,19 +92,31 @@ proc shape_to_strides*(shape: seq[int], layout: OrderType = rowMajor): seq[int] 
 
   return (1 & shape)[0..shape.high].scanl(a * b)
 
-proc is_C_contiguous*(t: AnyTensor): bool {.noSideEffect.}=
+proc is_C_contiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
   ## Check if the tensor follows C convention / is row major
-  result = t.strides == t.shape.shape_to_strides
-  result = result and t.strides[t.strides.high] == 1
+  if not (t.strides == t.shape.shape_to_strides()):
+    return false
+  return (t.strides[t.strides.high] == 1)
 
-proc is_F_contiguous*(t: AnyTensor): bool {.noSideEffect.}=
+proc is_F_contiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
   ## Check if the tensor follows Fortran convention / is column major
-  result = t.strides == t.shape.shape_to_strides(colMajor)
-  result = result and t.strides[0] == 1
+  if not (t.strides == t.shape.shape_to_strides(colMajor)):
+    return false
+  return (t.strides[0] == 1)
 
-proc isContiguous*(t: AnyTensor): bool {.noSideEffect.}=
+proc isContiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
   ## Check if the tensor is contiguous
   return t.is_C_contiguous or t.is_F_contiguous
+
+proc isFullyIterable(t: AnyTensor): bool {.noSideEffect,inline.}=
+  return t.data.len == t.size
+
+proc isFullyIterableAs(t1: AnyTensor, t2: AnyTensor): bool {.noSideEffect,inline.}=
+  let datasize = t1.data.len
+  return (t1.strides == t2.strides) and
+         (t1.data.len == t2.data.len) and
+         (t1.size == datasize) and
+         (t2.size == datasize)
 
 proc getTransposeTarget(t: AnyTensor): TransposeType {.noSideEffect.}=
   ## TransposeType is introduced by ``nimblas``

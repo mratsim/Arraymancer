@@ -31,7 +31,9 @@ const CUDA_HOF_BPG: cint = 256     # should be (grid-stride+threadsPerBlock-1) d
 
 const OMP_FOR_THRESHOLD = 1000    # Tensor number of elements threshold before using OpenMP multithreading
 
-
+# Full procesor optimization (AVX, AVX2, ARM neon, ... if applicable)
+when defined(native):
+  {.passC: "-march=native".}
 
 # Note: Following https://github.com/mratsim/Arraymancer/issues/61 and
 # https://github.com/mratsim/Arraymancer/issues/43

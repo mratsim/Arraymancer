@@ -19,17 +19,17 @@
 # # Broadcasting Tensor-Tensor
 # # And element-wise multiplication (Hadamard) and division
 
-proc `.+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `.+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {. inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
   return tmp_a + tmp_b
 
-proc `.-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `.-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {. inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
   return tmp_a - tmp_b
 
-proc `.*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `.*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.inline.} =
   ## Element-wise multiplication (Hadamard product).
   ##
   ## And broadcasted element-wise multiplication.
@@ -39,7 +39,7 @@ proc `.*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
 
   return map2(tmp_a, bc_mul_closure, tmp_b)
 
-proc `./`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `./`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.inline.} =
   ## Tensor element-wise division for integer numbers.
   ##
   ## And broadcasted element-wise division.
@@ -47,7 +47,7 @@ proc `./`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} 
   proc bc_intdiv_closure(x, y: T): T = x div y
   return map2(tmp_a, bc_intdiv_closure, tmp_b)
 
-proc `./`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `./`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.inline.} =
   ## Tensor element-wise division for real numbers.
   ##
   ## And broadcasted element-wise division.
@@ -58,7 +58,7 @@ proc `./`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
 # ##############################################
 # # Broadcasting in-place Tensor-Tensor
 
-proc `.+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inline.} =
+proc `.+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {. inline.} =
   ## Tensor broadcasted in-place addition.
   ##
   ## Only the right hand side tensor can be broadcasted.
@@ -68,7 +68,7 @@ proc `.+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inlin
   proc bc_madd_closure(x: var T, y: T) = x += y
   apply2(a, bc_madd_closure, tmp_b)
 
-proc `.-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inline.} =
+proc `.-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {. inline.} =
   ## Tensor broadcasted in-place substraction.
   ##
   ## Only the right hand side tensor can be broadcasted.
@@ -78,7 +78,7 @@ proc `.-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inlin
   proc bc_msub_closure(x: var T, y: T) = x -= y
   apply2(a, bc_msub_closure, tmp_b)
 
-proc `.*=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inline.} =
+proc `.*=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {. inline.} =
   ## Tensor broadcasted in-place multiplication (Hadamard product)
   ##
   ## Only the right hand side tensor can be broadcasted
@@ -88,7 +88,7 @@ proc `.*=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inlin
   proc bc_mmul_closure(x: var T, y: T) = x *= y
   apply2(a, bc_mmul_closure, tmp_b)
 
-proc `./=`*[T: SomeInteger](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inline.} =
+proc `./=`*[T: SomeInteger](a: var Tensor[T], b: Tensor[T]) {. inline.} =
   ## Tensor broadcasted in-place integer division.
   ##
   ## Only the right hand side tensor can be broadcasted.
@@ -98,7 +98,7 @@ proc `./=`*[T: SomeInteger](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inli
   proc bc_mintdiv_closure(x: var T, y: T) = x = x div y
   apply2(a, bc_mintdiv_closure, tmp_b)
 
-proc `./=`*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inline.} =
+proc `./=`*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) {. inline.} =
   ## Tensor broadcasted in-place float division.
   ##
   ## Only the right hand side tensor can be broadcasted.
@@ -112,37 +112,37 @@ proc `./=`*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) {.noSideEffect, inline.
 # ##############################################
 # # Broadcasting Tensor-Scalar and Scalar-Tensor
 
-proc `.+`*[T: SomeNumber](val: T, t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `.+`*[T: SomeNumber](val: T, t: Tensor[T]): Tensor[T] {. inline.} =
   ## Broadcasted addition for tensor + scalar.
   proc bcs_add_closure(x: T): T = x + val
   return t.map(bcs_add_closure)
 
-proc `.+`*[T: SomeNumber](t: Tensor[T], val: T): Tensor[T] {.noSideEffect, inline.} =
+proc `.+`*[T: SomeNumber](t: Tensor[T], val: T): Tensor[T] {. inline.} =
   ## Broadcasted addition for scalar + tensor.
   proc bcs2_add_closure(x: T): T = x + val
   return t.map(bcs2_add_closure)
 
-proc `.-`*[T: SomeNumber](val: T, t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `.-`*[T: SomeNumber](val: T, t: Tensor[T]): Tensor[T] {. inline.} =
   ## Broadcasted substraction for tensor - scalar.
   proc bcs_min_closure(x: T): T = val - x
   return t.map(bcs_min_closure)
 
-proc `.-`*[T: SomeNumber](t: Tensor[T], val: T): Tensor[T] {.noSideEffect, inline.} =
+proc `.-`*[T: SomeNumber](t: Tensor[T], val: T): Tensor[T] {. inline.} =
   ## Broadcasted substraction for scalar - tensor.
   proc bcs2_min_closure(x: T): T = x - val
   return t.map(bcs2_min_closure)
 
-proc `./`*[T: SomeInteger](val: T, t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `./`*[T: SomeInteger](val: T, t: Tensor[T]): Tensor[T] {. inline.} =
   ## Broadcasted division of an integer by a tensor of integers.
   proc bcs2_intdiv_closure(x: T): T = val div x
   return t.map(bcs2_intdiv_closure)
 
-proc `./`*[T: SomeReal](val: T, t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `./`*[T: SomeReal](val: T, t: Tensor[T]): Tensor[T] {. inline.} =
   ## Broadcasted division of a float by a tensor of floats.
   proc bcs2_div_closure(x: T): T = val / x
   return t.map(bcs2_div_closure)
 
-proc `.^`*[T: SomeReal](t: Tensor[T], exponent: T): Tensor[T] {.noSideEffect, inline.} =
+proc `.^`*[T: SomeReal](t: Tensor[T], exponent: T): Tensor[T] {. inline.} =
   ## Compute element-wise exponentiation
   proc bc_pow_closure(x: T): T = pow(x, exponent)
   return t.map(bc_pow_closure)
@@ -150,19 +150,19 @@ proc `.^`*[T: SomeReal](t: Tensor[T], exponent: T): Tensor[T] {.noSideEffect, in
 # #####################################
 # # Broadcasting in-place Tensor-Scalar
 
-proc `.+=`*[T: SomeNumber](t: var Tensor[T], val: T) {.noSideEffect, inline.} =
+proc `.+=`*[T: SomeNumber](t: var Tensor[T], val: T) {. inline.} =
   ## Tensor in-place addition with a broadcasted scalar.
 
   proc bcs_madd_closure(x: var T) = x += val
   t.apply(bcs_madd_closure)
 
-proc `.-=`*[T: SomeNumber](t: var Tensor[T], val: T) {.noSideEffect, inline.} =
+proc `.-=`*[T: SomeNumber](t: var Tensor[T], val: T) {. inline.} =
   ## Tensor in-place substraction with a broadcasted scalar.
 
   proc bcs_msub_closure(x: var T) = x -= val
   t.apply(bcs_msub_closure)
 
-proc `.^=`*[T: SomeReal](t: var Tensor[T], exponent: T) {.noSideEffect, inline.} =
+proc `.^=`*[T: SomeReal](t: var Tensor[T], exponent: T) {. inline.} =
   ## Compute in-place element-wise exponentiation
 
   proc bcs_mpow_closure(x: T): T = pow(x, exponent)

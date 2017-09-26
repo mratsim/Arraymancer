@@ -20,7 +20,7 @@ proc gemm_macro_kernel[T](mc, nc, kc: int,
                           buffer_A: var ref array[MCKC, T],
                           buffer_B: var ref array[KCNC, T],
                           buffer_C: var ref array[MRNR, T])
-                          {.noSideEffect.} =
+                           =
   let mp = (mc+MR-1) div MR
   let np = (nc+NR-1) div NR
 

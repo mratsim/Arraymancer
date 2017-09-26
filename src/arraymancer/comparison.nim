@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
+proc `==`*[T](a,b: Tensor[T]): bool =
   ## Tensor comparison
   if a.shape != b.shape: return false
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
+proc transpose*(t: CudaTensor): CudaTensor =
   ## Transpose a Tensor.
   ##
   ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
@@ -30,7 +30,7 @@ proc cuda_asContiguous = discard # This is a hack so that the symbol is open
 cuda_assign_glue(cuda_asContiguous, "CopyOp")
 
 proc asContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, force: bool = false):
-  CudaTensor[T] {.noSideEffect.}=
+  CudaTensor[T] =
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
   ##
   ## By default CudaTensor will be colMajor (contrary to a cpu tensor).

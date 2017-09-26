@@ -19,7 +19,7 @@ proc geaxpy[T]( m, n: int,
                 incRowX, incColX: int,
                 Y: var seq[T], offY: int,
                 incRowY, incColY: int)
-                {.noSideEffect.}=
+                =
 
   if alpha != 1.T:
     for j in 0 ..< n:
@@ -35,7 +35,7 @@ proc gescal[T]( m, n: int,
                 alpha: T,
                 X: var seq[T], offX: int,
                 incRowX, incColX: int)
-                {.noSideEffect.} =
+                 =
 
   if alpha != 0.T:
     for j in 0 ..< n:

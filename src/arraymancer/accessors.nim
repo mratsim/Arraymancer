@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc check_index(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
+proc check_index(t: Tensor, idx: varargs[int]) =
   if idx.len != t.rank:
     raise newException(IndexError, "Number of arguments: " &
                     $(idx.len) &
                     ", is different from tensor rank: " &
                     $(t.rank))
 
-proc check_elementwise(a, b:AnyTensor)  {.noSideEffect.}=
+proc check_elementwise(a, b:AnyTensor)  =
   ## Check if element-wise operations can be applied to 2 Tensors
   if a.shape != b.shape:
     raise newException(ValueError, "Both Tensors should have the same shape")
 
-proc getIndex[T](t: Tensor[T], idx: varargs[int]): int {.noSideEffect,inline.} =
+proc getIndex[T](t: Tensor[T], idx: varargs[int]): int {.inline.} =
   ## Convert [i, j, k, l ...] to the proper index.
   when compileOption("boundChecks"):
     t.check_index(idx)
@@ -34,17 +34,17 @@ proc getIndex[T](t: Tensor[T], idx: varargs[int]): int {.noSideEffect,inline.} =
     real_idx += t.strides[i]*idx[i]
   return real_idx
 
-proc atIndex[T](t: Tensor[T], idx: varargs[int]): T {.noSideEffect,inline.} =
+proc atIndex[T](t: Tensor[T], idx: varargs[int]): T {.inline.} =
   ## Get the value at input coordinates
   ## This used to be `[]` before slicing was implemented
   return t.data[t.getIndex(idx)]
 
-proc atIndex[T](t: var Tensor[T], idx: varargs[int]): var T {.noSideEffect,inline.} =
+proc atIndex[T](t: var Tensor[T], idx: varargs[int]): var T {.inline.} =
   ## Get the value at input coordinates
   ## This allows inplace operators t[1,2] += 10 syntax
   return t.data[t.getIndex(idx)]
 
-proc atIndexMut[T](t: var Tensor[T], idx: varargs[int], val: T) {.noSideEffect,inline.} =
+proc atIndexMut[T](t: var Tensor[T], idx: varargs[int], val: T) {.inline.} =
   ## Set the value at input coordinates
   ## This used to be `[]=` before slicing was implemented
   t.data[t.getIndex(idx)] = val
@@ -93,7 +93,7 @@ template strided_iteration[T](t: Tensor[T], strider: IterKind): untyped =
           coord[k] = 0
           iter_pos -= backstrides[k]
 
-iterator items*[T](t: Tensor[T]): T {.noSideEffect.}=
+iterator items*[T](t: Tensor[T]): T =
   ## Inline iterator on Tensor values
   ##
   ## The iterator will iterate in C order regardingless of the tensor properties (Fortran layout, non-contiguous, slice ...).
@@ -105,7 +105,7 @@ iterator items*[T](t: Tensor[T]): T {.noSideEffect.}=
   ##       val += 42
   t.strided_iteration(IterKind.Values)
 
-proc values*[T](t: Tensor[T]): auto {.noSideEffect.}=
+proc values*[T](t: Tensor[T]): auto =
   ## Creates an closure iterator on Tensor values.
   ##
   ## The iterator will iterate in C order regardingless of the tensor properties (Fortran layout, non-contiguous, slice ...).
@@ -126,7 +126,7 @@ proc values*[T](t: Tensor[T]): auto {.noSideEffect.}=
   let ref_t = t.unsafeAddr # avoid extra copy
   return iterator(): T = ref_t[].strided_iteration(IterKind.Values)
 
-iterator mitems*[T](t: var Tensor[T]): var T {.noSideEffect.}=
+iterator mitems*[T](t: var Tensor[T]): var T =
   ## Inline iterator on Tensor values.
   ## Values yielded can be directly modified
   ## and avoid bound-checking/index calculation with t[index] = val.
@@ -144,13 +144,13 @@ iterator mitems_orderless[T](t: var Tensor[T]): var T {.noSideEffect.}=
   ## Inline iterator on Tensor values.
   ## Values yielded can be directly modified
   ## The iterable order is non contiguous.
-  if t.isFullyIterable():
-    for i in 0..<t.data.len:
+  if t.isFullyIterable() or t.isContiguous():
+    for i in t.offset..<(t.offset+t.size):
       yield t.data[i]
   else:
     t.strided_iteration(IterKind.Values)
 
-iterator pairs*[T](t: Tensor[T]): (seq[int], T) {.noSideEffect.}=
+iterator pairs*[T](t: Tensor[T]): (seq[int], T) =
   ## Inline iterator on Tensor (coordinates, values)
   ##
   ## The iterator will iterate in C order regardingless of the tensor properties (Fortran layout, non-contiguous, slice ...).
@@ -169,12 +169,12 @@ iterator pairs*[T](t: Tensor[T]): (seq[int], T) {.noSideEffect.}=
   ##       echo coordval[1]
   t.strided_iteration(IterKind.Coord_Values)
 
-iterator real_indices(t: Tensor): int {.noSideEffect.}=
+iterator real_indices(t: Tensor): int =
   ## Inline stride-aware iterator on Tensor real indices in the seq storage
   ## For loop will automatically use this one. (A closure iterator do not implement "items")
   t.strided_iteration(IterKind.MemOffset)
 
-proc real_indices(t: Tensor): auto {.noSideEffect.}=
+proc real_indices(t: Tensor): auto =
   ## Closure stride-aware iterator on Tensor real indices in the seq storage
   ## For loop will not use this one. It must be assigned before use.
   let ref_t = t.unsafeAddr # avoid extra copy
@@ -191,7 +191,7 @@ template axis_iterator[T](t: Tensor[T], axis: int): untyped =
     yield out_t
     out_t.offset += axis_stride
 
-iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] {.noSideEffect.}=
+iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] =
   ## Inline iterator over an axis.
   ##
   ## Returns:
@@ -207,7 +207,7 @@ iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] {.noSideEffect.}=
   ##       # do stuff
   axis_iterator(t,axis)
 
-proc axis*[T](t: Tensor[T], axis: int): auto {.noSideEffect.}=
+proc axis*[T](t: Tensor[T], axis: int): auto =
   ## Closure iterator on axis
   ##
   ## A closure iterator must be assigned to an iterator variable first.

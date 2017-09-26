@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.}=
+proc unsafeView*[T](t: Tensor[T]): Tensor[T] {. inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
@@ -26,7 +26,7 @@ proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.}=
   result.offset = t.offset
   shallowCopy(result.data, t.data)
 
-proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect, inline.}=
+proc check_nested_elements(shape: seq[int], len: int) {. inline.}=
   ## Compare the detected shape from flatten with the real length of the data
   ## Input:
   ##   -- A shape (sequence of int)
@@ -50,11 +50,11 @@ template toTensorCpu(s: typed): untyped =
   t.data = data
   return t
 
-proc newSeqUninit[T](len: Natural): seq[T] {.noSideEffect, inline.} =
+proc newSeqUninit[T](len: Natural): seq[T] {. inline.} =
   result = newSeqOfCap[T](len)
   result.setLen(len)
 
-proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.} =
+proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {. inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -66,7 +66,7 @@ proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.
   tensorCpu(shape, result)
   result.data = newSeqUninit[T](result.size)
 
-proc newTensor*[T](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.} =
+proc newTensor*[T](shape: varargs[int]): Tensor[T] {. inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -77,7 +77,7 @@ proc newTensor*[T](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.} =
   tensorCpu(shape, result)
   result.data = newSeq[T](result.size)
 
-proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noSideEffect, inline.} =
+proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {. inline.} =
   ## Creates a new Tensor filled with the given value
   ## Input:
   ##      - Shape of the Tensor
@@ -90,7 +90,7 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noSideEffect,
   tensorCpu(shape, result)
   result.data = newSeqWith(result.size, value)
 
-proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect.} =
+proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto  =
   ## Convert an openarray to a Tensor
   ## Input:
   ##      - An array or a seq (can be nested)
@@ -101,7 +101,7 @@ proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect
   # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
   toTensorCpu(s)
 
-proc unsafeToTensor*[T: SomeNumber](data: seq[T]): Tensor[T] {.noSideEffect.} =
+proc unsafeToTensor*[T: SomeNumber](data: seq[T]): Tensor[T]  =
   ## Convert a seq to a Tensor, sharing the seq data
   ## Input:
   ##      - A seq with the tensor data
@@ -111,14 +111,14 @@ proc unsafeToTensor*[T: SomeNumber](data: seq[T]): Tensor[T] {.noSideEffect.} =
   tensorCpu([data.len], result)
   shallowCopy(result.data, data)
 
-proc toTensor*(s:string): auto {.noSideEffect.} =
+proc toTensor*(s:string): auto  =
   ## Convert a string to a Tensor
   ##
   ## This proc handles string specifically as otherwise they are interpreted as a sequence of char
   toTensorCpu(s)
 
 # TODO add tests for randomTensor
-proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.} =
+proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {. inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -129,7 +129,7 @@ proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noSideEffect, inlin
   tensorCpu(shape, result)
   result.data = newSeq[T](result.size)
 
-proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {. inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
   ## Input:
   ##      - Shape of the Tensor
@@ -138,7 +138,7 @@ proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.
   ##      - A zero-ed Tensor of the same shape
   return zeros(t.shape, T)
 
-proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noSideEffect,inline.} =
+proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.inline.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -148,7 +148,7 @@ proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noSideEffect,inline.
   tensorCpu(shape, result)
   result.data = newSeqWith(result.size, 1.T)
 
-proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noSideEffect, inline.} =
+proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {. inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
   ## and filled with 1
   ## Input:

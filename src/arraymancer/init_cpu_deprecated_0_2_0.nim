@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, inline, deprecated.} =
+proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {. inline, deprecated.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -24,7 +24,7 @@ proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, i
   tensorCpu(shape, result)
   result.data = newSeq[T](result.size)
 
-proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {.noSideEffect, inline, deprecated.} =
+proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {. inline, deprecated.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -36,7 +36,7 @@ proc zeros*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {
   result.data = newSeq[T](result.size)
 
 
-proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {.noSideEffect,inline, deprecated.} =
+proc ones*[T: SomeNumber](shape: openarray[int], typ: typedesc[T]): Tensor[T] {.inline, deprecated.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor

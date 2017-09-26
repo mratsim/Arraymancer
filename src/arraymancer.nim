@@ -24,9 +24,11 @@ export OrderType
 include arraymancer/utils/functional,
         arraymancer/utils/nested_containers,
         arraymancer/utils/ast_utils,
-        arraymancer/backend/blis,
         arraymancer/global_config,
+        arraymancer/backend/blis,
+        arraymancer/backend/openmp,
         arraymancer/data_structure,
+        arraymancer/data_structure_helpers,
         arraymancer/init_cpu,
         arraymancer/init_deprecated_0_1_0,
         arraymancer/init_cpu_deprecated_0_2_0, # source of deprecation spam https://github.com/nim-lang/Nim/issues/6436

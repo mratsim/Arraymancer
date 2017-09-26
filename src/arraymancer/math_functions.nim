@@ -15,28 +15,28 @@
 
 # Non-operator math functions
 
-proc reciprocal*[T: SomeReal](t: Tensor[T]): Tensor[T] =
+proc reciprocal*[T: SomeReal](t: Tensor[T]): Tensor[T] {.inline.}=
   # Return a tensor with the reciprocal 1/x of all elements
   proc reciprocal_closure(x: T): T = 1.T/x
   return t.map(reciprocal_closure)
 
-proc mreciprocal*[T: SomeReal](t: var Tensor[T]) =
+proc mreciprocal*[T: SomeReal](t: var Tensor[T]) {.inline.}=
   # Apply the reciprocal 1/x in-place to all elements of the Tensor
   proc mreciprocal_closure(x: T): T = 1.T/x
   t.apply(mreciprocal_closure)
 
 
-proc negate*[T: SomeSignedInt|SomeReal](t: Tensor[T]): Tensor[T] =
+proc negate*[T: SomeSignedInt|SomeReal](t: Tensor[T]): Tensor[T] {.inline.}=
   # Return a tensor with all elements negated (10 -> -10)
   proc negate_closure(x: T): T = -x
   return t.map(negate_closure)
 
-proc mnegate*[T: SomeSignedInt|SomeReal](t: var Tensor[T]) =
+proc mnegate*[T: SomeSignedInt|SomeReal](t: var Tensor[T]) {.inline.}=
   # Negate in-place all elements of the tensor (10 -> -10)
   proc mnegate_closure(x: T): T = -x
   t.apply(mnegate_closure)
 
-proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.inline.} =
   ## Negate all values of a Tensor
   proc neg_closure(x: T): T = -x
   t.map(neg_closure)

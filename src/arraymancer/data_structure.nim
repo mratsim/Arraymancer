@@ -108,24 +108,6 @@ proc isContiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
   ## Check if the tensor is contiguous
   return t.is_C_contiguous or t.is_F_contiguous
 
-proc isFullyIterable(t: AnyTensor): bool {.noSideEffect,inline.}=
-  return t.data.len == t.size
-
-proc isFullyIterableAs(t1: AnyTensor, t2: AnyTensor): bool {.noSideEffect,inline.}=
-  let datasize = t1.data.len
-  return (t1.strides == t2.strides) and
-         (t1.data.len == t2.data.len) and
-         (t1.size == datasize) and
-         (t2.size == datasize)
-
-proc getTransposeTarget(t: AnyTensor): TransposeType {.noSideEffect.}=
-  ## TransposeType is introduced by ``nimblas``
-  ## Default layout is Row major.
-  ## Everytime it is worth it or fused with a BLAS operation we change the strides to Row-Major
-  if is_C_contiguous(t): return TransposeType.noTranspose
-  elif is_F_contiguous(t): return TransposeType.transpose
-  else: raise newException(ValueError,"Operation not supported for this matrix. It has a non-contiguous layout")
-
 template get_data_ptr*[T](t: AnyTensor[T]): ptr T =
   ## Input:
   ##     - A tensor

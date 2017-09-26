@@ -77,7 +77,7 @@ proc disp2d(t: Tensor): string {.noSideEffect.} =
 
   return indexed_data.concatMap(curry_bounds)
 
-proc disp3d(t: Tensor): string {.noSideEffect.} =
+proc disp3d(t: Tensor): string =
   ## Display a 3D-tensor
 
   let sep: seq[string] = @["|"]
@@ -94,7 +94,7 @@ proc disp3d(t: Tensor): string {.noSideEffect.} =
 
   return buffer.disp2d
 
-proc disp4d(t: Tensor): string {.noSideEffect.} =
+proc disp4d(t: Tensor): string =
   ## Display a 4D-tensor
 
   let sep: seq[string] = @["|"]
@@ -126,7 +126,7 @@ proc disp4d(t: Tensor): string {.noSideEffect.} =
               )
   return vbuffer.disp2d
 
-proc `$`*[T](t: Tensor[T]): string {.noSideEffect.} =
+proc `$`*[T](t: Tensor[T]): string =
   ## Pretty-print a tensor (when using ``echo`` for example)
   let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & "Cpu" & "\""
   if t.rank <= 2:

@@ -28,6 +28,11 @@ const CUDA_HOF_BPG: cint = 256     # should be (grid-stride+threadsPerBlock-1) d
                                    # From https://devblogs.nvidia.com/parallelforall/cuda-pro-tip-write-flexible-kernels-grid-stride-loops/
                                    # Lower allows threads re-use and limit overhead of thread creation/destruction
 
+
+const OMP_FOR_THRESHOLD = 1000    # Tensor number of elements threshold before using OpenMP multithreading
+
+
+
 # Note: Following https://github.com/mratsim/Arraymancer/issues/61 and
 # https://github.com/mratsim/Arraymancer/issues/43
 # Arraymancer export '_' for slicing (type is SteppedSlice)

@@ -12,10 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noSideEffect.}=
+proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] =
   ## Apply type conversion on the whole tensor
   result = t.map(x => x.U)
 
+
+# Built-in nim functions that doesn't work with makeUniversal
+proc abs*[T](t: Tensor[T]): Tensor[T] {.inline.}=
+  proc abs_closure(x: T):T = abs(x)
+  t.map(abs_closure)
+
+
+
+# #############################################################
+# Autogen universal functions
 
 # Note, the makeUniversal/Local documentation gets duplicated in docs at each template call
 # And shouldn't use ##
@@ -27,7 +37,7 @@ template makeUniversal*(func_name: untyped) =
   # ``makeUniversal`` does not work when the internal type of the Tensor changes,
   # for example, a function "isEven: int -> bool".
   # Use ``map`` in this case instead instead
-  proc func_name*(t: Tensor): Tensor {.noSideEffect, inline.}=
+  proc func_name*(t: Tensor): Tensor {.inline.}=
     ## Auto-generated universal version of the function.
     ##
     ## The function can be used directly on tensors and will work element-wise.
@@ -42,7 +52,7 @@ template makeUniversalLocal*(func_name: untyped) =
   # ``makeUniversalLocal`` does not work when the internal type of the Tensor changes,
   # for example, a function "isEven: int -> bool".
   # Use ``map`` in this case instead instead
-  proc func_name(t: Tensor): Tensor {.noSideEffect, inline.}=
+  proc func_name(t: Tensor): Tensor {.inline.}=
     t.map(func_name)
 
 # Unary functions from Nim math library
@@ -79,9 +89,3 @@ makeUniversal(round)
 #makeUniversal(splitDecimal)
 makeUniversal(degToRad)
 makeUniversal(radToDeg)
-
-# Built-in nim functions that doesn't work with makeUniversal
-
-proc abs*[T](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.}=
-  proc abs_proxy(x: T):T = abs(x)
-  t.map(abs_proxy)

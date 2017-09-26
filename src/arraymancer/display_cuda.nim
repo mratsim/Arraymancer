@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc `$`*[T](t: CudaTensor[T]): string {.noSideEffect.} =
+proc `$`*[T](t: CudaTensor[T]): string =
   ## Pretty-print a CudaTensor (when using ``echo`` for example)
   let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & "Cuda" & "\""
   

@@ -57,15 +57,16 @@ template strided_iteration[T](t: Tensor[T], strider: IterKind): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
 
   block:
-    let size = t.shape.product
+    let size = t.size
 
+    ## Shortcut if C contiguous
     when strider != IterKind.Coord_Values:
       if t.is_C_contiguous:
         for i in t.offset..<(t.offset+size):
           when strider == IterKind.Values: yield t.data[i]
           when strider == IterKind.MemOffset: yield i
           elif strider == IterKind.MemOffset_Values: yield (i, t.data[i])
-        break
+        break # Get out of the block (i.e. out of the template)
 
     ## Iterator init
     var iter_pos = t.offset
@@ -139,16 +140,6 @@ iterator mitems*[T](t: var Tensor[T]): var T {.noSideEffect.}=
   ##     for val in t.mitems:
   ##       val += 42
   t.strided_iteration(IterKind.Values)
-
-iterator mitems_orderless[T](t: var Tensor[T]): var T {.noSideEffect.}=
-  ## Inline iterator on Tensor values.
-  ## Values yielded can be directly modified
-  ## The iterable order is non contiguous.
-  if t.isFullyIterable():
-    for i in 0..<t.data.len:
-      yield t.data[i]
-  else:
-    t.strided_iteration(IterKind.Values)
 
 iterator pairs*[T](t: Tensor[T]): (seq[int], T) {.noSideEffect.}=
   ## Inline iterator on Tensor (coordinates, values)

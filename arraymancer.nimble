@@ -47,12 +47,13 @@ when defined(cuda):
 ########################################################
 # Optimization
 
-### To compute with full detected optimizations
-# Add:
-{.passC: "-march=native".}
-# to your code, unfortunately it doesn't work in a nimble file
+# Multithreading
+# use the -d:openmp switch
+# which passC: -fopenmp to the compiler
 
-# TODO: OpenMP and adding OpenMP pragmas
+# Native processor optimization
+# use the -d:native
+# which passC: -march=native to the compiler
 
 
 ##########################################################################
@@ -91,6 +92,14 @@ task test_openblas, "Run all tests - OpenBLAS":
 
 task test_blis, "Run all tests - BLIS":
   switch("define","blis")
+  test "all_tests"
+
+task test_native, "Run all tests - march=native":
+  switch("define","native")
+  test "all_tests"
+
+task test_openmp, "Run all tests - OpenMP":
+  switch("define","openmp")
   test "all_tests"
 
 task gen_doc, "Generate Arraymancer documentation":

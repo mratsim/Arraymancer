@@ -94,9 +94,13 @@ proc shape_to_strides*(shape: seq[int], layout: OrderType = rowMajor): seq[int] 
 
 proc is_C_contiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
   ## Check if the tensor follows C convention / is row major
-  if not (t.strides == t.shape.shape_to_strides()):
-    return false
-  return (t.strides[t.strides.high] == 1)
+  for i in 0..<t.shape.len-1:
+    # 1. We should ignore strides on dimensions of size 1
+    # 2. Strides always must have the the size of the next shape dimension
+    if t.shape[i] != 1 and t.strides[i] != t.shape[i+1]:
+      return false
+  # 3. Last dimension should have either shape or strides 1
+  return (t.strides[t.strides.high] == 1 or t.shape[t.shape.high] == 1)
 
 proc is_F_contiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
   ## Check if the tensor follows Fortran convention / is column major

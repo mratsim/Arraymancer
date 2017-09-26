@@ -66,7 +66,7 @@ include ./blas_l3_gemm_aux
 include ./blas_l3_gemm_micro_kernel
 include ./blas_l3_gemm_macro_kernel
 
-proc newBufferArray[T: SomeNumber](N: static[int], typ: typedesc[T]): ref array[N, T]  {.noSideEffect.} =
+proc newBufferArray[T: SomeNumber](N: static[int], typ: typedesc[T]): ref array[N, T]   =
   new result
   for i in 0 ..< N:
     result[i] = 0.T
@@ -79,7 +79,7 @@ proc gemm_nn_fallback[T](m, n, k: int,
                 incRowB, incColB: int,
                 beta: T,
                 C: var seq[T], offC: int,
-                incRowC, incColc: int)  {.noSideEffect.} =
+                incRowC, incColc: int)   =
 
   let
     mb = (m + MC - 1) div MC

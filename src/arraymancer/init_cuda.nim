@@ -76,7 +76,7 @@ proc clone*[T](t: CudaTensor[T]): CudaTensor[T] =
 #   system.`=`(result, t)
 #   echo "Value moved"
 
-proc newCudaTensor[T: SomeReal](shape: varargs[int], layout: OrderType = colMajor): CudaTensor[T] {.noSideEffect.}=
+proc newCudaTensor[T: SomeReal](shape: varargs[int], layout: OrderType = colMajor): CudaTensor[T] =
   ## Internal proc
   ## Allocate a CudaTensor
   ## WARNING: The Cuda memory is not initialized to 0
@@ -110,7 +110,7 @@ proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] =
                         cudaMemcpyHostToDevice,
                         defaultStream) # defaultStream is a cudaStream_t global var
 
-proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect.}=
+proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] =
   ## Convert a tensor on a Cuda device to a tensor on Cpu.
   # We use blocking copy in this case to make sure
   # all data is available for future computation

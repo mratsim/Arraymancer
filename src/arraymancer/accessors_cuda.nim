@@ -24,7 +24,7 @@
 #     the kernels won't use tensor[2,5] as an index
 
 
-proc getIndexOfElementID[T](t: Tensor[T], element_id: int): int {.noSideEffect,used.} =
+proc getIndexOfElementID[T](t: Tensor[T], element_id: int): int {.used.} =
   ## Convert "Give me element 10" to the real index/memory offset.
   ## Reference Nim CPU version
   ## This is not meant to be used on serial architecture due to the division overhead.

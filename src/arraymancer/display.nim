@@ -14,7 +14,7 @@
 
 proc bounds_display(t: Tensor,
           idx_data: tuple[val: string, idx: int]
-          ): string {.noSideEffect.}=
+          ): string =
   ## Internal routine, compare an index with the strides of a Tensor
   ## to check beginning and end of lines
   ## Add the delimiter "|" and line breaks at beginning and end of lines
@@ -62,7 +62,7 @@ proc bounds_display(t: Tensor,
 # let b = toSeq(1..72).toTensor(Cpu).reshape(2,3,3,4)
 # echo b
 
-proc disp2d(t: Tensor): string {.noSideEffect.} =
+proc disp2d(t: Tensor): string  =
   ## Display a 2D-tensor
 
   # Add a position index to each value in the Tensor.
@@ -73,11 +73,11 @@ proc disp2d(t: Tensor): string {.noSideEffect.} =
     i += 1
 
   # Create a closure to apply the boundaries transformation for the specific input
-  proc curry_bounds(tup: (string,int)): string {.noSideEffect.}= t.bounds_display(tup)
+  proc curry_bounds(tup: (string,int)): string = t.bounds_display(tup)
 
   return indexed_data.concatMap(curry_bounds)
 
-proc disp3d(t: Tensor): string {.noSideEffect.} =
+proc disp3d(t: Tensor): string  =
   ## Display a 3D-tensor
 
   let sep: seq[string] = @["|"]
@@ -94,7 +94,7 @@ proc disp3d(t: Tensor): string {.noSideEffect.} =
 
   return buffer.disp2d
 
-proc disp4d(t: Tensor): string {.noSideEffect.} =
+proc disp4d(t: Tensor): string  =
   ## Display a 4D-tensor
 
   let sep: seq[string] = @["|"]
@@ -126,7 +126,7 @@ proc disp4d(t: Tensor): string {.noSideEffect.} =
               )
   return vbuffer.disp2d
 
-proc `$`*[T](t: Tensor[T]): string {.noSideEffect.} =
+proc `$`*[T](t: Tensor[T]): string  =
   ## Pretty-print a tensor (when using ``echo`` for example)
   let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & "Cpu" & "\""
   if t.rank <= 2:

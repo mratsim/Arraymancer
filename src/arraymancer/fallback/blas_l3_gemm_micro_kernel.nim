@@ -63,7 +63,7 @@ proc gemm_micro_kernel[T](kc: int,
                           C: var ref array[MRNR, T],
                           offC: int,
                           incRowC, incColC: int)
-                          {.noSideEffect.} =
+                           =
   gemm_micro_kernelT(kc, alpha, A, offA, B, offB, beta, C, offC, incRowC, incColc)
 
 proc gemm_micro_kernel[T](kc: int,
@@ -74,5 +74,5 @@ proc gemm_micro_kernel[T](kc: int,
                           C: var seq[T],
                           offC: int,
                           incRowC, incColC: int)
-                          {.noSideEffect.} =
+                           =
   gemm_micro_kernelT(kc, alpha, A, offA, B, offB, beta, C, offC, incRowC, incColc)

@@ -23,14 +23,14 @@ template toTensorReshapeT(oa: typed, shape: varargs[int]): untyped =
   shallowCopy(t.data, data)
   return t
 
-proc toTensorReshape(oa: string, shape: varargs[int]): auto {.noSideEffect.}=
+proc toTensorReshape(oa: string, shape: varargs[int]): auto =
   ## Fuse toTensor and reshape in one operation.
   ##
   ## Deal specifically with strings/seq[char]
 
   toTensorReshapeT(oa, shape)
 
-proc toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto {.noSideEffect.}=
+proc toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto =
   ## Fuse toTensor and reshape in one operation
   ##
   # Dummy_bugfix param is necessary due to: https://github.com/nim-lang/Nim/issues/6343
@@ -46,7 +46,7 @@ template rewriteToTensorReshape*{reshape(toTensor(oa, dummy_bugfix), shape)}(
   ## Operation fusion leverage the Nim compiler and should not be called explicitly.
   toTensorReshape(oa, shape, dummy_bugfix)
 
-proc unsafeToTensorReshape*[T](data: seq[T], shape: varargs[int]): Tensor[T] {.noSideEffect.} =
+proc unsafeToTensorReshape*[T](data: seq[T], shape: varargs[int]): Tensor[T]  =
   ## Fuse unsafeToTensor and unsafeReshape in one operation
 
   when compileOption("boundChecks"): check_nested_elements(@shape, data.len)

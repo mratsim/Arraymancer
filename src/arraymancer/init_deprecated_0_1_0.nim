@@ -16,7 +16,7 @@
 # init procs will not offer the backend parameter anymore.
 # Full rationale in the Design_Document on Github.
 
-proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): auto {.noSideEffect, deprecated.} =
+proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): auto {. deprecated.} =
   ## DEPRECATED - The backend: static[Backend] argument has been deprecated for easier maintenance.
   ##
   ## Creates a new Tensor
@@ -41,7 +41,7 @@ proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): a
     tensorCuda[T](shape, t)
     return t
 
-proc toTensor*(s:openarray, backend: static[Backend]): auto {.noSideEffect, deprecated.} =
+proc toTensor*(s:openarray, backend: static[Backend]): auto {. deprecated.} =
   ## DEPRECATED - The backend: static[Backend] argument has been deprecated for easier maintenance.
   ##
   ## Convert an openarray to a Tensor
@@ -49,7 +49,7 @@ proc toTensor*(s:openarray, backend: static[Backend]): auto {.noSideEffect, depr
   when backend == Cpu:
     toTensorCpu(s)
 
-proc toTensor*(s:string, backend: static[Backend]): auto {.noSideEffect, deprecated.} =
+proc toTensor*(s:string, backend: static[Backend]): auto {. deprecated.} =
   ## DEPRECATED - The backend: static[Backend] argument has been deprecated for easier maintenance.
   ##
   ## Convert an openarray to a Tensor

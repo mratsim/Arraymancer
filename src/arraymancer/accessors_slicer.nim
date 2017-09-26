@@ -72,7 +72,7 @@ type Step* = object
   b: int
   step: int
 
-proc check_steps(a,b, step:int) {.noSideEffect, inline.}=
+proc check_steps(a,b, step:int) {. inline.}=
   ## Though it might be convenient to automatically step in the correct direction like in Python
   ## I choose not to do it as this might introduce the typical silent bugs typechecking/Nim is helping avoid.
   
@@ -89,7 +89,7 @@ proc check_steps(a,b, step:int) {.noSideEffect, inline.}=
                 start must be inferior to stop and inversely if your step is negative
                 start must be superior to stop.""")
 
-proc check_shape(a, b: Tensor|openarray) {.noSideEffect, inline.}=
+proc check_shape(a, b: Tensor|openarray) {. inline.}=
   ## Compare shape
   if a.shape == b.shape:
     return
@@ -101,7 +101,7 @@ proc check_shape(a, b: Tensor|openarray) {.noSideEffect, inline.}=
                                        " and " & $b.shape.join("x"))
 
 # Procs to manage all integer, slice, SteppedSlice 
-proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
+proc `|`*(s: Slice[int], step: int): SteppedSlice {. inline.}=
   ## Internal: A ``SteppedSlice`` constructor
   ## Input:
   ##     - a slice
@@ -110,7 +110,7 @@ proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
   ##     - a ``SteppedSlice``
   return SteppedSlice(a: s.a, b: s.b, step: step)
 
-proc `|`*(b, step: int): Step {.noSideEffect, inline.}=
+proc `|`*(b, step: int): Step {. inline.}=
   ## Internal: A ``Step`` constructor
   ##
   ## ``Step`` is a workaround due to operator precedence.
@@ -123,7 +123,7 @@ proc `|`*(b, step: int): Step {.noSideEffect, inline.}=
   ##     - a ``Step``
   return Step(b: b, step: step)
 
-proc `|`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
+proc `|`*(ss: SteppedSlice, step: int): SteppedSlice {. inline.}=
   ## Internal: Modifies the step of a ``SteppedSlice``
   ## Input:
   ##     - a ``SteppedSLice``
@@ -133,19 +133,19 @@ proc `|`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
   result = ss
   result.step = step
 
-proc `|+`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
+proc `|+`*(s: Slice[int], step: int): SteppedSlice {. inline.}=
   ## Internal: Alias for ``|``
   return `|`(s, step)
 
-proc `|+`*(b, step: int): Step {.noSideEffect, inline.}=
+proc `|+`*(b, step: int): Step {. inline.}=
   ## Internal: Alias for ``|``
   return `|`(b, step)
 
-proc `|+`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
+proc `|+`*(ss: SteppedSlice, step: int): SteppedSlice {. inline.}=
   ## Internal: Alias for ``|``
   return `|`(ss, step)
 
-proc `|-`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
+proc `|-`*(s: Slice[int], step: int): SteppedSlice {. inline.}=
   ## Internal: A ``SteppedSlice`` constructor
   ##
   ## Workaround to tensor[slice|-1] being interpreted as [slice `|-` 1]
@@ -153,7 +153,7 @@ proc `|-`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
   ## Properly create ``SteppedSLice`` with negative stepping
   return SteppedSlice(a: s.a, b: s.b, step: -step)
 
-proc `|-`*(b, step: int): Step {.noSideEffect, inline.}=
+proc `|-`*(b, step: int): Step {. inline.}=
   ## Internal: A ``SteppedSlice`` constructor
   ##
   ## Workaround to tensor[0..10|-1] being intepreted as [0 .. (10 `|-` 1)]
@@ -161,7 +161,7 @@ proc `|-`*(b, step: int): Step {.noSideEffect, inline.}=
   ## Properly create ``SteppedSLice`` with negative stepping
   return Step(b: b, step: -step)
 
-proc `|-`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
+proc `|-`*(ss: SteppedSlice, step: int): SteppedSlice {. inline.}=
   ## Internal: Modifies the step of a ``SteppedSlice``
   ##
   ## Workaround to tensor[slice|-1] being interpreted as [slice `|-` 1]
@@ -170,7 +170,7 @@ proc `|-`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
   result = ss
   result.step = -step
 
-proc `..`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
+proc `..`*(a: int, s: Step): SteppedSlice {. inline.} =
   ## Internal: Build a SteppedSlice from [a .. (b|step)] (workaround to operator precedence)
   ## Input:
   ##     - the beginning of the slice range
@@ -179,7 +179,7 @@ proc `..`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
   ##     - a ``SteppedSlice``, end of range will be inclusive
   return SteppedSlice(a: a, b: s.b, step: s.step)
 
-proc `..<`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
+proc `..<`*(a: int, s: Step): SteppedSlice {. inline.} =
   ## Internal: Build a SteppedSlice from [a ..< (b|step)] (workaround to operator precedence and ..<b not being interpreted as .. <b)
   ## Input:
   ##     - the beginning of the slice range
@@ -188,7 +188,7 @@ proc `..<`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
   ##     - a ``SteppedSlice``, end of range will be exclusive.
   return SteppedSlice(a: a, b: <s.b, step: s.step)
 
-proc `..^`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
+proc `..^`*(a: int, s: Step): SteppedSlice {. inline.} =
   ## Internal: Build a SteppedSlice from [a ..^ (b|step)] (workaround to operator precedence and ..^b not being interpreted as .. ^b)
   ## Input:
   ##     - the beginning of the slice range
@@ -197,13 +197,13 @@ proc `..^`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
   ##     - a ``SteppedSlice``, end of range will start at "b" away from the end
   return SteppedSlice(a: a, b: s.b, step: s.step, b_from_end: true)
 
-proc `^`*(s: SteppedSlice): SteppedSlice {.noSideEffect, inline.} =
+proc `^`*(s: SteppedSlice): SteppedSlice {. inline.} =
   ## Internal: Prefix to a to indicate starting the slice at "a" away from the end
   ## Note: This does not automatically inverse stepping, what if we want ^5..^1
   result = s
   result.a_from_end = not result.a_from_end
 
-proc `^`*(s: Slice): SteppedSlice {.noSideEffect, inline.} =
+proc `^`*(s: Slice): SteppedSlice {. inline.} =
   ## Internal: Prefix to a to indicate starting the slice at "a" away from the end
   ## Note: This does not automatically inverse stepping, what if we want ^5..^1
   return SteppedSlice(a: s.a, b: s.b, step: 1, a_from_end: true)
@@ -389,7 +389,7 @@ template slicerT[T](result: AnyTensor[T], slices: varargs[SteppedSlice]): untype
     result.strides[i] *= slice.step
     result.shape[i] = abs((b-a) div slice.step) + 1
 
-proc slicer[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.noSideEffect.}=
+proc slicer[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] =
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -398,7 +398,7 @@ proc slicer[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.n
   result = t
   slicerT(result, slices)
 
-proc unsafeSlicer[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noSideEffect.}=
+proc unsafeSlicer[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] =
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
@@ -505,13 +505,13 @@ macro unsafeSlice*[T](t: Tensor[T], args: varargs[untyped]): untyped =
   result = quote do:
     unsafe_inner_typed_dispatch(`t`, `new_args`)
 
-proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
+proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], val: T) =
   ## Assign the value to the whole slice
   var sliced = t.unsafeSlicer(slices)
   for old_val in sliced.mitems:
     old_val = val
 
-proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) {.noSideEffect.}=
+proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) =
   ## Assign value from openarrays
   ## The openarray must have the same shape as the slice
   let sliced = t.unsafeSlicer(slices)
@@ -530,7 +530,7 @@ proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray
   for real_idx, val in zip(sliced.real_indices, data):
     t.data[real_idx] = val
 
-proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T]) {.noSideEffect.}=
+proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T]) =
   ## Assign the value to the whole slice
   let sliced = t.unsafeSlicer(slices)
 

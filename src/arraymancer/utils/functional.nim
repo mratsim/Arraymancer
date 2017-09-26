@@ -50,7 +50,7 @@ template scanl[T](s: seq[T], operation: untyped): untyped =
     result[i] = operation
   result
 
-iterator zip[T1, T2](a: openarray[T1], b: openarray[T2]): (T1,T2) {.noSideEffect.} =
+iterator zip[T1, T2](a: openarray[T1], b: openarray[T2]): (T1,T2)  =
   ## Transform two lists in a list of tuples.
   ## Length of result will be the length of the smallest list, items from the longest will be discarded.
   let len = min(a.len, b.len)
@@ -58,7 +58,7 @@ iterator zip[T1, T2](a: openarray[T1], b: openarray[T2]): (T1,T2) {.noSideEffect
   for i in 0..<len:
     yield (a[i], b[i])
 
-iterator zip[T1, T2](inp1: iterator(): T1, inp2: iterator(): T2): (T1, T2) {.noSideEffect.} =
+iterator zip[T1, T2](inp1: iterator(): T1, inp2: iterator(): T2): (T1, T2)  =
   ## Inline iteration on 2 closure iterators at the same time
   ## Input is first copied to avoid side-effects
 
@@ -71,7 +71,7 @@ iterator zip[T1, T2](inp1: iterator(): T1, inp2: iterator(): T2): (T1, T2) {.noS
       break
     yield (val1, val2)
 
-iterator zip[T1, T2](inp1: iterator(): T1, b: openarray[T2]): (T1, T2) {.noSideEffect.} =
+iterator zip[T1, T2](inp1: iterator(): T1, b: openarray[T2]): (T1, T2)  =
   ## Inline iteration on a closure iterators and an openarray
   ## Input is first copied to avoid side-effects
 
@@ -82,7 +82,7 @@ iterator zip[T1, T2](inp1: iterator(): T1, b: openarray[T2]): (T1, T2) {.noSideE
       break
     yield (val1, b[i])
 
-iterator enumerate_zip[T1, T2](inp1: iterator(): T1, inp2: iterator(): T2): (int, T1, T2) {.noSideEffect.} =
+iterator enumerate_zip[T1, T2](inp1: iterator(): T1, inp2: iterator(): T2): (int, T1, T2)  =
   ## Inline iteration on 2 closure iterators at the same time
   ## Input is first copied to avoid side-effects
   ## Output also countains the iteration count and is similar
@@ -103,6 +103,6 @@ template product[T: SomeNumber](s: seq[T]): T =
   ## Get the product of all numbers in a sequence or array
   s.foldl(a*b)
 
-proc concatMap[T](s: seq[T], f: proc(ss: T):string): string  {.noSideEffect.}=
+proc concatMap[T](s: seq[T], f: proc(ss: T):string): string  =
   ## Map a function to a sequence of T and concatenate the result as string
   return s.foldl(a & f(b), "")

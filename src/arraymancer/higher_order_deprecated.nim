@@ -41,7 +41,7 @@ proc agg*[T: SomeNumber](t: Tensor[T],
                             f:(T, T)-> T,
                             start_val: T
                             ): T
-  {.noSideEffect, inline, deprecated.}=
+  {. inline, deprecated.}=
   ## DEPRECATED, use fold instead.
   ##
   ## Note: order between function f and start_val has changed
@@ -59,7 +59,7 @@ proc agg_inplace*[T: SomeNumber](
                             f: proc(x:var T, y:T), # We can't use the nice future syntax here for unknown reason
                             t: Tensor[T],
                             )
-  {.noSideEffect, inline, deprecated.}=
+  {. inline, deprecated.}=
   ## DEPRECATED, use fold instead.
   ##
   ## You will have to switch to a non-inplace function.
@@ -82,7 +82,7 @@ proc agg*[T: SomeNumber](t: Tensor[T],
                             start_val: Tensor[T],
                             axis: int
                             ): Tensor[T]
-  {.noSideEffect, inline, deprecated.}=
+  {. inline, deprecated.}=
   ## DEPRECATED, use fold instead.
   ##
   ## Note: order between function f and start_val has changed
@@ -101,7 +101,7 @@ proc agg_inplace*[T: SomeNumber](
                             t: Tensor[T],
                             axis: int
                             )
-  {.noSideEffect, inline, deprecated.}=
+  {. inline, deprecated.}=
   ## DEPRECATED, use fold instead.
   ##
   ## You will have to switch to a non-inplace function.

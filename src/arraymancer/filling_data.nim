@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc check_size(a, b:AnyTensor)  {.noSideEffect.}=
+proc check_size(a, b:AnyTensor)  =
   ## Check if the total number of elements match
   if a.size != b.size:
     raise newException(ValueError, "Both Tensors should have the same total number of elements")

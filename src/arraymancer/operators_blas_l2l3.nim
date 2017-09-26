@@ -14,7 +14,7 @@
 
 
 # Bounds checking functions
-proc check_matmat(a, b: AnyTensor) {.noSideEffect.}=
+proc check_matmat(a, b: AnyTensor) =
   let colA = a.shape[1]
   let rowB = b.shape[0]
 
@@ -24,7 +24,7 @@ proc check_matmat(a, b: AnyTensor) {.noSideEffect.}=
                     ", must be the same as the number of rows in the second matrix: " &
                     $(rowB))
 
-proc check_matvec(a, b: AnyTensor)  {.noSideEffect.}=
+proc check_matvec(a, b: AnyTensor)  =
   let colA = a.shape[1]
   let rowB = b.shape[0]
 
@@ -220,7 +220,7 @@ template matmat_fallback[T: SomeInteger](a, b, result: Tensor[T]): auto =
 # #################################################
 # Generic notation "*"
 
-proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T]  {.noSideEffect.} =
+proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T]   =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
   ##
   ## Float operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.
@@ -238,7 +238,7 @@ proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T]  {.noSideEffect.} =
   elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
   else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
 
-proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T]  {.noSideEffect.} =
+proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T]   =
   ## Matrix-Matrix and Matrix-Vector multiplications fallback for integer tensors.
   ##
   ## Integer BLAS has been implemented manually. While not as fast as BLAS for floats,

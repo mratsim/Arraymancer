@@ -36,7 +36,7 @@ proc mnegate*[T: SomeSignedInt|SomeReal](t: var Tensor[T]) =
   proc mnegate_closure(x: T): T = -x
   t.apply(mnegate_closure)
 
-proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] {. inline.} =
   ## Negate all values of a Tensor
   proc neg_closure(x: T): T = -x
   t.map(neg_closure)

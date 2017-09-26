@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect.} =
+proc toRawSeq*[T](t:Tensor[T]): seq[T]  =
   ## Convert a tensor to the raw sequence of data.
 
   # Due to forward declaration this proc must be declared
@@ -23,7 +23,7 @@ proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect.} =
     return t.cpu.data
 
 proc export_tensor*[T](t: Tensor[T]):
-  tuple[shape: seq[int], strides: seq[int], data: seq[T]] {.noSideEffect.}=
+  tuple[shape: seq[int], strides: seq[int], data: seq[T]] =
   ## Export the tensor as a tuple containing
   ## - shape
   ## - strides

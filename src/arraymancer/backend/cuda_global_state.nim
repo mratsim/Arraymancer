@@ -23,7 +23,7 @@ var defaultStream: cublas_api.cudaStream_t
 check cudaStreamCreate(addr defaultStream)
 
 # CuBLAS handle
-# Note: it prevents {.noSideEffect.} in all CuBLAS proc :/
+# Note: it prevents  in all CuBLAS proc :/
 var defaultHandle: cublasHandle_t
 check cublasCreate(addr defaultHandle)
 

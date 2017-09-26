@@ -15,7 +15,7 @@
 # ####################################################################
 # Mapping over tensors
 
-proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] {.noSideEffect.}=
+proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
   ## Usage with Nim's ``future`` module:
   ##  .. code:: nim
@@ -38,12 +38,16 @@ proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] {.noSideEffect.}=
 
   result = newTensorUninit[U](t.shape)
 
-  var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
-  for val in t:
-    result.data[i] = f(val)
-    inc i
+  if t.is_C_contiguous():
+    omp_parallel_countup(i, t.size-1):
+      result.data[i] = f(t.data[t.offset+i])
+  else:
+    var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
+    for val in t:
+      result.data[i] = f(val)
+      inc i
 
-proc apply*[T](t: var Tensor[T], f: T -> T) {.noSideEffect.}=
+proc apply*[T](t: var Tensor[T], f: T -> T) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
   ##
   ## Input:
@@ -62,10 +66,14 @@ proc apply*[T](t: var Tensor[T], f: T -> T) {.noSideEffect.}=
   ##       x + 1
   ##     a.apply(plusone) # Apply the function plusone in-place
 
-  for val in t.mitems_orderless:
-    val = f(val)
+  if t.isFullyIterable() or t.isContiguous():
+    omp_parallel_forup(i, t.offset, t.offset+t.size-1):
+      t.data[i] = f(t.data[i])
+  else:
+    for val in t.mitems_orderless:
+      val = f(val)
 
-proc apply*[T](t: var Tensor[T], f: proc(x:var T)) {.noSideEffect.}=
+proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
   ##
   ## Input:
@@ -84,10 +92,14 @@ proc apply*[T](t: var Tensor[T], f: proc(x:var T)) {.noSideEffect.}=
   ##     a.apply(pluseqone) # Apply the in-place function pluseqone
   ## ``apply`` is especially useful to do multiple element-wise operations on a tensor in a single loop over the data.
 
-  for val in t.mitems_orderless:
-    f(val)
+  if t.isFullyIterable() or t.isContiguous():
+    omp_parallel_forup(i, t.offset, t.offset+t.size-1):
+      f(t.data[i])
+  else:
+    for val in t.mitems_orderless:
+      f(val)
 
-proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] {.noSideEffect.}=
+proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] =
   ## Apply a binary function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ##
   ## The function is applied on the elements with the same coordinates.
@@ -112,9 +124,9 @@ proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] {.no
 
   result = newTensorUninit[U](t1.shape)
 
-  if t1.isFullyIterableAs(t2):
-    for i in 0..<t1.data.len:
-      result.data[i] = f(t1.data[i], t2.data[i])
+  if t1.isIterableAs(t2) and t1.is_C_contiguous():
+    omp_parallel_countup(i, t1.size-1):
+      result.data[i] = f(t1.data[t1.offset+i], t2.data[t2.offset+i])
   else:
     # TODO use mitems instead of result.data[i] cf profiling
     # TODO: inline iterators - pending https://github.com/nim-lang/Nim/issues/4516
@@ -123,7 +135,7 @@ proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] {.no
 
 proc apply2*[T, U](a: var Tensor[T],
                    f: proc(x:var T, y:T), # We can't use the nice future syntax here
-                   b: Tensor[U]) {.noSideEffect.}=
+                   b: Tensor[U]) =
   ## Apply a binary in-place function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ##
   ## The function is applied on the elements with the same coordinates.
@@ -146,9 +158,9 @@ proc apply2*[T, U](a: var Tensor[T],
   when compileOption("boundChecks"):
     check_elementwise(a,b)
 
-  if a.isFullyIterableAs(b):
-    for i in 0..<a.data.len:
-      f(a.data[i], b.data[i])
+  if a.isIterableAs(b):
+    omp_parallel_countup(i, a.size-1):
+      f(a.data[a.offset+i], b.data[b.offset+i])
   else:
     ## TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
     for a_idx, b_val in zip(a.real_indices, b.values):
@@ -163,7 +175,7 @@ proc apply2*[T, U](a: var Tensor[T],
 proc fold*[U, T](t: Tensor[U],
                 start_val: T,
                 f:(T, U) -> T,
-                ): T {.noSideEffect.}=
+                ): T =
   ## Chain result = f(result, element) over all elements of the Tensor
   ## Input:
   ##     - A tensor to aggregate on
@@ -185,7 +197,7 @@ proc fold*[U, T](t: Tensor[U],
                 start_val: Tensor[T],
                 f: (Tensor[T], Tensor[U])-> Tensor[T],
                 axis: int
-                ): Tensor[T] {.noSideEffect.}=
+                ): Tensor[T] =
   ## Chain result = f(result, element) over all elements of the Tensor
   ## Input:
   ##     - A tensor to aggregate on
@@ -201,7 +213,7 @@ proc fold*[U, T](t: Tensor[U],
 
 proc reduce*[T](t: Tensor[T],
                 f: (T, T) -> T
-                ): T {.noSideEffect.}=
+                ): T =
   ## Chain result = f(result, element) over all elements of the Tensor.
   ##
   ## The starting value is the first element of the Tensor.
@@ -222,7 +234,7 @@ proc reduce*[T](t: Tensor[T],
 proc reduce*[T](t: Tensor[T],
                 f: (Tensor[T], Tensor[T])-> Tensor[T],
                 axis: int
-                ): Tensor[T] {.noSideEffect.}=
+                ): Tensor[T] =
   ## Chain result = f(result, element) over all elements of the Tensor.
   ##
   ## The starting value is the first element of the Tensor.

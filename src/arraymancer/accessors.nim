@@ -140,7 +140,7 @@ iterator mitems*[T](t: var Tensor[T]): var T {.noSideEffect.}=
   ##       val += 42
   t.strided_iteration(IterKind.Values)
 
-iterator noncontiguous_mitems*[T](t: var Tensor[T]): var T {.noSideEffect.}=
+iterator mitems_orderless[T](t: var Tensor[T]): var T {.noSideEffect.}=
   ## Inline iterator on Tensor values.
   ## Values yielded can be directly modified
   ## The iterable order is non contiguous.

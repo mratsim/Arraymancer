@@ -62,7 +62,7 @@ proc apply*[T](t: var Tensor[T], f: T -> T) {.noSideEffect.}=
   ##       x + 1
   ##     a.apply(plusone) # Apply the function plusone in-place
 
-  for val in t.noncontiguous_mitems:
+  for val in t.mitems_orderless:
     val = f(val)
 
 proc apply*[T](t: var Tensor[T], f: proc(x:var T)) {.noSideEffect.}=
@@ -84,7 +84,7 @@ proc apply*[T](t: var Tensor[T], f: proc(x:var T)) {.noSideEffect.}=
   ##     a.apply(pluseqone) # Apply the in-place function pluseqone
   ## ``apply`` is especially useful to do multiple element-wise operations on a tensor in a single loop over the data.
 
-  for val in t.noncontiguous_mitems:
+  for val in t.mitems_orderless:
     f(val)
 
 proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] {.noSideEffect.}=

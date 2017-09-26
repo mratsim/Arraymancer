@@ -56,34 +56,42 @@ type
 template strided_iteration[T](t: Tensor[T], strider: IterKind): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
 
-  ## Iterator init
-  var iter_pos = t.offset
-  let rank = t.rank
-  let shape = t.shape
-  let strides = t.strides
-  var coord: array[MAXRANK, int]
-  var backstrides: array[MAXRANK, int]
-  for i in 0..<rank:
-    backstrides[i] = strides[i]*(shape[i]-1)
+  block:
+    let size = t.shape.product
 
-  ## Iterator loop
-  for i in 0 .. <shape.product:
-
-    ## Templating the return value
-    when strider == IterKind.Values: yield t.data[iter_pos]
-    elif strider == IterKind.Coord_Values: yield (coord[0..<rank], t.data[iter_pos])
-    elif strider == IterKind.MemOffset: yield iter_pos
-    elif strider == IterKind.MemOffset_Values: yield (iter_pos, t.data[iter_pos])
-
-    ## Computing the next position
-    for k in countdown(rank - 1,0):
-      if coord[k] < shape[k]-1:
-        coord[k] += 1
-        iter_pos += strides[k]
+    when strider != IterKind.Coord_Values:
+      if t.is_C_contiguous:
+        for i in t.offset..<(t.offset+size):
+          when strider == IterKind.Values: yield t.data[i]
+          when strider == IterKind.MemOffset: yield i
+          elif strider == IterKind.MemOffset_Values: yield (i, t.data[i])
         break
-      else:
-        coord[k] = 0
-        iter_pos -= backstrides[k]
+
+    ## Iterator init
+    var iter_pos = t.offset
+    let rank = t.rank
+    var coord: array[MAXRANK, int]
+    var backstrides {.noInit.}: array[MAXRANK, int]
+    for i in 0..<rank:
+      backstrides[i] = t.strides[i]*(t.shape[i]-1)
+
+    ## Iterator loop
+    for i in 0..<size:
+      ## Templating the return value
+      when strider == IterKind.Values: yield t.data[iter_pos]
+      elif strider == IterKind.Coord_Values: yield (coord[0..<rank], t.data[iter_pos])
+      elif strider == IterKind.MemOffset: yield iter_pos
+      elif strider == IterKind.MemOffset_Values: yield (iter_pos, t.data[iter_pos])
+
+      ## Computing the next position
+      for k in countdown(rank - 1,0):
+        if coord[k] < t.shape[k]-1:
+          coord[k] += 1
+          iter_pos += t.strides[k]
+          break
+        else:
+          coord[k] = 0
+          iter_pos -= backstrides[k]
 
 iterator items*[T](t: Tensor[T]): T {.noSideEffect.}=
   ## Inline iterator on Tensor values
@@ -131,6 +139,16 @@ iterator mitems*[T](t: var Tensor[T]): var T {.noSideEffect.}=
   ##     for val in t.mitems:
   ##       val += 42
   t.strided_iteration(IterKind.Values)
+
+iterator noncontiguous_mitems*[T](t: var Tensor[T]): var T {.noSideEffect.}=
+  ## Inline iterator on Tensor values.
+  ## Values yielded can be directly modified
+  ## The iterable order is non contiguous.
+  if t.isFullyIterable():
+    for i in 0..<t.data.len:
+      yield t.data[i]
+  else:
+    t.strided_iteration(IterKind.Values)
 
 iterator pairs*[T](t: Tensor[T]): (seq[int], T) {.noSideEffect.}=
   ## Inline iterator on Tensor (coordinates, values)

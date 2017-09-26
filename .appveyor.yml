@@ -3,6 +3,8 @@ version: '{build}'
 cache:
 - nim-0.17.2_x64.zip
 - x86_64-4.9.2-release-win32-seh-rt_v4-rev4.7z
+- packages -> **\packages.config
+- '%LocalAppData%\NuGet\Cache -> **\packages.config'
 
 matrix:
   fast_finish: true
@@ -19,12 +21,10 @@ environment:
 
 install:
   - MKDIR %CD%\tools_tmp
-  - cd tools_tmp
   - IF not exist "%MINGW_ARCHIVE%" appveyor DownloadFile "%MINGW_URL%" -FileName "%MINGW_ARCHIVE%"
-  - 7z x -y "%MINGW_ARCHIVE%" > nul
+  - 7z x -y "%MINGW_ARCHIVE%" -o"%CD%\tools_tmp"> nul
   - IF not exist "%NIM_ARCHIVE%" appveyor DownloadFile "%NIM_URL%" -FileName "%NIM_ARCHIVE%"
-  - 7z x -y "%NIM_ARCHIVE%" > nul
-  - cd ..
+  - 7z x -y "%NIM_ARCHIVE%" -o"%CD%\tools_tmp"> nul
   - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%CD%\tools_tmp\%MINGW_DIR%\bin;%PATH%
   - ps: nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}"
   - ps: cp OpenBLAS.0.2.14.1/lib/native/bin/x64/libopenblas.dll blas.dll

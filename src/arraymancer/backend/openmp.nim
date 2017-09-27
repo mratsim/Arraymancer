@@ -27,3 +27,21 @@ template omp_parallel_forup*(i: untyped, start, size: Natural, body: untyped): u
   let ompsize = size
   for i in `||`(start, ompsize, OMP_FOR_ANNOTATION):
     body
+
+const num_omp_parallel_blocks = 4 # TODO: use number of OMP threads instead
+
+template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, body: untyped): untyped =
+  when defined(openmp):
+    block:
+      if size >= OMP_FOR_THRESHOLD and size >= num_omp_parallel_blocks:
+        let bsize = size div num_omp_parallel_blocks
+        for j in 0||(num_omp_parallel_blocks-1):
+          let block_offset = bsize*j
+          let block_size = if j < num_omp_parallel_blocks-1: bsize else: size - block_offset
+          block:
+            body
+        break
+  let block_offset = 0
+  let block_size = size
+  block:
+    body

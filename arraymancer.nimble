@@ -22,10 +22,15 @@ srcDir = "src"
 ### BLIS support
 # switch("define","blis")
 
+### MKL support
+# Check the mkl switches in the test file for single-threaded and openp version
+
 ### Cuda configuration
 ## Pass -d:cuda to build arraymancer with cuda support
+## Use the cuda switches below
 ## Replace /opt/cuda by your own path
 ## TODO: auto detection or at least check in common directories
+## Note: It is import to gate compiler flags like -march=native  behind Xcompiler "-Xcompiler -march=native"
 
 template cudaSwitches() =
   switch("cincludes", "/opt/cuda/include")
@@ -85,7 +90,7 @@ task test_deprecated, "Run all tests on deprecated static[Backend] procs":
 task test_openblas, "Run all tests - OpenBLAS":
   ## Should work but somehow Nim doesn't find libopenblas.dylib on MacOS
   when defined(macosx):
-    switch("define","openblas")
+    switch("define","blas=openblas")
     switch("clibdir", "/usr/local/opt/openblas/lib")
     switch("cincludes", "/usr/local/opt/openblas/include")
   test "all_tests"
@@ -100,6 +105,26 @@ task test_native, "Run all tests - march=native":
 
 task test_openmp, "Run all tests - OpenMP":
   switch("define","openmp")
+  test "all_tests"
+
+task test_mkl, "Run all tests - Intel MKL - single threaded":
+  switch("define","blas=mkl_intel_lp64")
+  switch("clibdir", "/opt/intel/mkl/lib/intel64")
+  switch("passl", "/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a")
+  switch("passl", "-lmkl_core")
+  switch("passl", "-lmkl_sequential")
+  switch("dynlibOverride","mkl_intel_lp64")
+  test "all_tests"
+
+task test_mkl_omp, "Run all tests - Intel MKL + OpenMP":
+  switch("define","openmp")
+  switch("define","blas=mkl_intel_lp64")
+  switch("clibdir", "/opt/intel/mkl/lib/intel64")
+  switch("passl", "/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a")
+  switch("passl", "-lmkl_core")
+  switch("passl", "-lmkl_gnu_thread")
+  switch("passl", "-lgomp")
+  switch("dynlibOverride","mkl_intel_lp64")
   test "all_tests"
 
 task test_release, "Run all tests - Release mode":

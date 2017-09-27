@@ -238,3 +238,15 @@ suite "Slice mutations":
   test "Chained slicing - foo[1..^2,1..2][1..^1, 0]":
     let t_van = t_van_immut
     check: t_van[1..^2,1..2][1..^1, 0] == [[9],[16]].toTensor()
+
+  test "Ellipsis - foo[2, `...`], foo[`...`, 2], foo[2, `...`, 2]":
+    let a = randomTensor(3, 5, 4, 6, 7, 20)
+
+    check: a[2, `...`] == a[2, _, _, _, _]
+    check: a[`...`, 2] == a[_, _, _, _, 2]
+
+    check: a[2, 1..^1|2, `...`] == a[2, 1..^1|2, _, _, _]
+    check: a[`...`, 2, 1..^1|2] == a[_, _, _, 2, 1..^1|2]
+
+    check: a[2, `...`, 2] == a[2, _, _, _, 2]
+    check: a[2, 1..2, `...`, 2] == a[2, 1..2, _, _, 2]

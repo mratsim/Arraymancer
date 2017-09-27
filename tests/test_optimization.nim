@@ -1,4 +1,4 @@
-# Copyright 2017 Mamy André-Ratsimbazafy
+# Copyright 2017 the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../src/arraymancer,
-        ./test_init.nim,
-        ./test_comparison,
-        ./test_accessors,
-        ./test_accessors_slicer,
-        ./test_display,
-        ./test_operators_blas,
-        ./test_math_functions,
-        ./test_higherorder,
-        ./test_aggregate,
-        ./test_shapeshifting,
-        ./test_broadcasting,
-        ./test_ufunc,
-        ./test_filling_data,
-        ./test_optimization,
-        ./test_bugtracker
+import ../src/arraymancer
+import unittest, sequtils
+
+suite "Optimization":
+  test "Test if contiguous slices are detected as contiguous":
+    let a = [[1, 2, 3, 4, 5],
+            [6, 7, 8, 9, 10]].toTensor
+
+    check: a[1, 2..3].isContiguous == true

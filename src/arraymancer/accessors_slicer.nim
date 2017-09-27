@@ -72,6 +72,18 @@ type Step* = object
   b: int
   step: int
 
+# span is equivalent to `:` in Python. It returns the whole axis range.
+# Tensor[_, 3] will be replaced by Tensor[span, 3]
+const span = SteppedSlice(b: 1, step: 1, b_from_end: true)
+
+# Following https://github.com/mratsim/Arraymancer/issues/61 and
+# https://github.com/mratsim/Arraymancer/issues/43 we export _ directly
+const _* = span
+
+type Ellipsis* = object ##Dummy type for ellipsis i.e. "Don't slice the rest of dimensions"
+
+const `...`* = Ellipsis()
+
 proc check_steps(a,b, step:int) {.noSideEffect, inline.}=
   ## Though it might be convenient to automatically step in the correct direction like in Python
   ## I choose not to do it as this might introduce the typical silent bugs typechecking/Nim is helping avoid.
@@ -99,6 +111,10 @@ proc check_shape(a, b: Tensor|openarray) {.noSideEffect, inline.}=
         raise newException(IndexError, "Your tensors or openarrays do not have the same shape: " &
                                        $a.shape.join("x") &
                                        " and " & $b.shape.join("x"))
+
+
+# #########################################################################
+# Slicing notation
 
 # Procs to manage all integer, slice, SteppedSlice 
 proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
@@ -208,13 +224,10 @@ proc `^`*(s: Slice): SteppedSlice {.noSideEffect, inline.} =
   ## Note: This does not automatically inverse stepping, what if we want ^5..^1
   return SteppedSlice(a: s.a, b: s.b, step: 1, a_from_end: true)
 
-# span is equivalent to `:` in Python. It returns the whole axis range.
-# Tensor[_, 3] will be replaced by Tensor[span, 3]
-const span = SteppedSlice(b: 1, step: 1, b_from_end: true)
 
-# Following https://github.com/mratsim/Arraymancer/issues/61 and
-# https://github.com/mratsim/Arraymancer/issues/43 we export _ directly
-const _* = span
+# #########################################################################
+# Slicing macros
+
 
 macro desugar(args: untyped): typed =
   ## Transform all syntactic sugar in arguments to integer or SteppedSlices
@@ -398,6 +411,47 @@ proc slicer[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.n
   result = t
   slicerT(result, slices)
 
+proc slicer[T](t: AnyTensor[T],
+                slices: varargs[SteppedSlice],
+                ellipsis: Ellipsis): AnyTensor[T] {.noSideEffect.}=
+  ## Take a Tensor, SteppedSlices and Ellipsis
+  ## Returns:
+  ##    A copy of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+
+  result = t
+  let full_slices = @slices & newSeqWith(t.rank - slices.len, span)
+  slicerT(result, full_slices)
+
+proc slicer[T](t: AnyTensor[T],
+                ellipsis: Ellipsis,
+                slices: varargs[SteppedSlice]
+                ): AnyTensor[T] {.noSideEffect.}=
+  ## Take a Tensor, Ellipsis and SteppedSlices
+  ## Returns:
+  ##    A copy of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+
+  result = t
+  let full_slices = newSeqWith(t.rank - slices.len, span) & @slices
+  slicerT(result, full_slices)
+
+proc slicer[T](t: AnyTensor[T],
+                slices1: varargs[SteppedSlice],
+                ellipsis: Ellipsis,
+                slices2: varargs[SteppedSlice]
+                ): AnyTensor[T] {.noSideEffect.}=
+  ## Take a Tensor, Ellipsis and SteppedSlices
+  ## Returns:
+  ##    A copy of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+
+  result = t
+  let full_slices = concat(@slices1,
+                            newSeqWith(t.rank - slices1.len - slices2.len, span),
+                            @slices2)
+  slicerT(result, full_slices)
+
 proc unsafeSlicer[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
@@ -407,8 +461,60 @@ proc unsafeSlicer[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.n
   ##    As such a `var Tensor` is required
   ## WARNING: passing a non-var Tensor is unsafe
 
-  result = unsafeView(t) # TODO: Tests
+  result = unsafeView(t)
   slicerT(result, slices)
+
+
+proc unsafeSlicer[T](t: AnyTensor[T],
+                      slices: varargs[SteppedSlice],
+                      ellipsis: Ellipsis): AnyTensor[T] {.noSideEffect.}=
+  ## Take a Tensor, SteppedSlices and Ellipsis
+  ## Returns:
+  ##    A view of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+  ##    Warning: mutating the result will mutate the original
+  ##    As such a `var Tensor` is required
+  ## WARNING: passing a non-var Tensor is unsafe
+
+  result = unsafeView(t)
+  let full_slices = @slices & newSeqWith(t.rank - slices.len, span)
+  slicerT(result, full_slices)
+
+proc unsafeSlicer[T](t: AnyTensor[T],
+                      ellipsis: Ellipsis,
+                      slices: varargs[SteppedSlice]
+                      ): AnyTensor[T] {.noSideEffect.}=
+  ## Take a Tensor, Ellipsis and SteppedSlices
+  ## Returns:
+  ##    A view of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+  ##    Warning: mutating the result will mutate the original
+  ##    As such a `var Tensor` is required
+  ## WARNING: passing a non-var Tensor is unsafe
+
+  result = unsafeView(t)
+  let full_slices = newSeqWith(t.rank - slices.len, span) & @slices
+  slicerT(result, full_slices)
+
+proc unsafeSlicer[T](t: AnyTensor[T],
+                      slices1: varargs[SteppedSlice],
+                      ellipsis: Ellipsis,
+                      slices2: varargs[SteppedSlice]
+                      ): AnyTensor[T] {.noSideEffect.}=
+  ## Take a Tensor, SteppedSlices, Ellipsis and SteppedSlices
+  ## Returns:
+  ##    A view of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+  ##    Warning: mutating the result will mutate the original
+  ##    As such a `var Tensor` is required
+  ## WARNING: passing a non-var Tensor is unsafe
+
+  result = unsafeView(t)
+  let full_slices = concat(@slices1,
+                            newSeqWith(t.rank - slices1.len - slices2.len, span),
+                            @slices2)
+  slicerT(result, full_slices)
+
 
 macro inner_typed_dispatch(t: typed, args: varargs[typed]): untyped =
   ## Typed macro so that isAllInt has typed context and we can dispatch.

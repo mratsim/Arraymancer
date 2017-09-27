@@ -14,6 +14,7 @@
 
 when defined(openmp):
   {.passC: "-fopenmp".}
+  {.passL: "-fopenmp".}
 
 const OMP_FOR_ANNOTATION = "if(ompsize > " & $OMP_FOR_THRESHOLD & ")"
 

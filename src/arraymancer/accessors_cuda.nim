@@ -30,7 +30,7 @@ proc getIndexOfElementID[T](t: Tensor[T], element_id: int): int {.noSideEffect,u
   ## This is not meant to be used on serial architecture due to the division overhead.
   ## On GPU however it will allow threads to address the real memory addresses independantly.
 
-  when defined(boundsChecks):
+  when compileOption("boundChecks"):
     assert element_id < t.size
 
   result = t.offset

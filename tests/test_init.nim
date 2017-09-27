@@ -36,7 +36,7 @@ suite "Creating a new Tensor":
       vandermonde.add(row)
       for j, bb in b:
         vandermonde[i].add(aa^bb)
-    
+
     let t2 = vandermonde.toTensor()
     check: t2.rank == 2
     check: t2.shape == @[5, 5]
@@ -59,19 +59,23 @@ suite "Creating a new Tensor":
               @[6,6,6]
             ]
           ]
-    
+
     let t3 = nest3.toTensor()
     check: t3.rank == 3
     check: t3.shape == @[4, 2, 3]  # 4 rows, 2 cols, 3 depth. depth indices moves the fastest. Same scheme as Numpy.
 
     let u = @[@[1.0, -1, 2],@[0.0, -1]]
-    expect(IndexError):
-      discard u.toTensor()
+
+    when compileOption("boundChecks"):
+      expect(IndexError):
+        discard u.toTensor()
+    else:
+      echo "Bound-checking is disabled. The incorrect seq shape test has been skipped."
 
   test "Check that Tensor shape is in row-by-column order":
     let s = @[@[1,2,3],@[3,2,1]]
     let t = s.toTensor()
-    
+
     check: t.shape == @[2,3]
 
     let u = newTensor[int](@[2,3])

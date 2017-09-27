@@ -102,6 +102,10 @@ task test_openmp, "Run all tests - OpenMP":
   switch("define","openmp")
   test "all_tests"
 
+task test_release, "Run all tests - Release mode":
+  switch("define","release")
+  test "all_tests"
+
 task gen_doc, "Generate Arraymancer documentation":
   switch("define", "doc")
   exec "nim doc2 src/arraymancer"

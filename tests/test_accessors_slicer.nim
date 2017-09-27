@@ -130,9 +130,12 @@ suite "Testing indexing and slice syntax":
     let test2 = @[@[256],@[81],@[16],@[1]]
     check: t_van[^(4-2)..0|-1, 3] == test2.toTensor()
 
-  test "Slice from the end - expect non-negative step error - foo[^1..0, 3]":
-    expect(IndexError):
-      discard t_van[^1..0, 3]
+  when compileOption("boundChecks"):
+    test "Slice from the end - expect non-negative step error - foo[^1..0, 3]":
+      expect(IndexError):
+        discard t_van[^1..0, 3]
+  else:
+    echo "Bound-checking is disabled. The Slice from end, non-negative step error test has been skipped."
 
   test "Slice from the end - foo[^(2*2)..2*2, 3]":
     let test = @[@[16],@[81],@[256],@[625]]
@@ -224,16 +227,19 @@ suite "Slice mutations":
     t_van[^2..^1,2..4] = t_van[^1..^2|-1, 4..2|-1]
     check: t_van == t_test
   
-  test "Bounds checking":
-    var t_van = t_van_immut
-    expect(IndexError):
-      t_van[0..1,0..1] = [111, 222, 333, 444, 555]
-    expect(IndexError):
-      t_van[0..1,0..1] = [111, 222, 333]
-    expect(IndexError):
-      t_van[^2..^1,2..4] = t_van[1, 4..2|-1]
-    expect(IndexError):
-      t_van[^2..^1,2..4] = t_van[^1..^3|-1, 4..2|-1]
+  when compileOption("boundChecks"):
+    test "Bounds checking":
+      var t_van = t_van_immut
+      expect(IndexError):
+        t_van[0..1,0..1] = [111, 222, 333, 444, 555]
+      expect(IndexError):
+        t_van[0..1,0..1] = [111, 222, 333]
+      expect(IndexError):
+        t_van[^2..^1,2..4] = t_van[1, 4..2|-1]
+      expect(IndexError):
+        t_van[^2..^1,2..4] = t_van[^1..^3|-1, 4..2|-1]
+  else:
+    echo "Bound-checking is disabled. The Out of bound checking test has been skipped."
   
   test "Chained slicing - foo[1..^2,1..2][1..^1, 0]":
     let t_van = t_van_immut

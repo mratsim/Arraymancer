@@ -31,17 +31,20 @@ suite "Accessing and setting tensor values":
     check: b[2,3] == 111
 
 
-  test "Out of bounds checking":
-    var a = newTensor[int](@[2,3,4])
-    expect(IndexError):
-      a[2,0,0] = 200
-    var b = newTensor[int](@[3,4])
-    expect(IndexError):
-      b[3,4] = 999
-    expect(IndexError):
-      discard b[-1,0]
-    expect(IndexError):
-      discard b[0,-2]
+  when compileOption("boundChecks"):
+    test "Out of bounds checking":
+      var a = newTensor(@[2,3,4], int, Backend.Cpu)
+      expect(IndexError):
+        a[2,0,0] = 200
+      var b = newTensor(@[3,4], int, Backend.Cpu)
+      expect(IndexError):
+        b[3,4] = 999
+      expect(IndexError):
+        discard b[-1,0]
+      expect(IndexError):
+        discard b[0,-2]
+  else:
+    echo "Bound-checking is disabled. The out-of-bounds checking test has been skipped."
 
   test "Iterators":
     const

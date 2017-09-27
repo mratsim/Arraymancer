@@ -96,11 +96,14 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
     check: n1.astype(float) * n2.astype(float) == n1n2.astype(float)
 
-  test "GEMM - Bounds checking":
-    let c = @[@[1'f32,2,3],@[4'f32,5,6]].toTensor()
+  when compileOption("boundChecks"):
+    test "GEMM - Bounds checking":
+      let c = @[@[1'f32,2,3],@[4'f32,5,6]].toTensor()
 
-    expect(IndexError):
-      discard c * c
+      expect(IndexError):
+        discard c * c
+  else:
+    echo "Bound-checking is disabled. The out-of-bounds checking test has been skipped."
 
   test "GEMV - General Matrix to Vector Multiplication":
     ## TODO: test with slices
@@ -220,15 +223,19 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     check: a[0..1, 0..1] + a_t[0..1, 0..1] == [[2.0, 6], [6.0, 10]].toTensor()
     check: a[1..2, 1..2] - a_t[1..2, 1..2] == [[0.0, -2], [2.0, 0]].toTensor()
 
-  test "Addition-Substraction - Bounds checking":
-    let a = [[1.0,2,3], [4.0,5,6], [7.0,8,9]].toTensor()
-    let a_t = a.transpose()
+  when compileOption("boundChecks"):
+    test "Addition-Substraction - Bounds checking":
+      let a = [[1.0,2,3], [4.0,5,6], [7.0,8,9]].toTensor()
+      let a_t = a.transpose()
 
-    expect(ValueError):
-      discard a[1..2,1..2] + a_t
+      expect(ValueError):
+        discard a[1..2,1..2] + a_t
 
-    expect(ValueError):
-      discard a - a_t[1..2,1..2]
+      expect(ValueError):
+        discard a - a_t[1..2,1..2]
+
+  else:
+    echo "Bound-checking is disabled. The addition bounds-check checking test has been skipped."
 
   test "Integer Matrix-Vector Multiplication fallback":
     let a = [[1,2,3],
@@ -334,4 +341,3 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
                 [14,12, 9,22,27,17,51,23]].toTensor()
 
     check: n1 * n2 == n1n2
-

@@ -132,9 +132,12 @@ suite "CUDA: Testing indexing and slice syntax":
     let test2 = @[@[256],@[81],@[16],@[1]]
     check: t_van[^(4-2)..0|-1, 3].cpu == test2.toTensor().astype(float32)
 
-  test "Slice from the end - expect non-negative step error - foo[^1..0, 3]":
-    expect(IndexError):
-      discard t_van[^1..0, 3]
+  when compileOption("boundChecks"):
+    test "Slice from the end - expect non-negative step error - foo[^1..0, 3]":
+      expect(IndexError):
+        discard t_van[^1..0, 3]
+  else:
+    echo "Bound-checking is disabled. The non-negative step test has been skipped."
 
   test "Slice from the end - foo[^(2*2)..2*2, 3]":
     let test = @[@[16],@[81],@[256],@[625]]

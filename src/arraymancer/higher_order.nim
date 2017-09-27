@@ -43,7 +43,7 @@ proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] =
       result.data[i] = f(t.data[t.offset+i])
   else:
     omp_parallel_blocks(block_offset, block_size, t.size):
-      for i, val in t.partial_items(block_offset, block_size):
+      for i, val in t.indexed_partial_items(block_offset, block_size):
         result.data[i] = f(val)
 
 proc apply*[T](t: var Tensor[T], f: T -> T) =
@@ -71,7 +71,7 @@ proc apply*[T](t: var Tensor[T], f: T -> T) =
       t.data[i] = f(t.data[i])
   else:
     omp_parallel_blocks(block_offset, block_size, t.size):
-      for i, val in t.partial_mitems(block_offset, block_size):
+      for i, val in t.indexed_partial_mitems(block_offset, block_size):
         val = f(val)
 
 proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
@@ -98,7 +98,7 @@ proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
       f(t.data[i])
   else:
     omp_parallel_blocks(block_offset, block_size, t.size):
-      for i, val in t.partial_mitems(block_offset, block_size):
+      for i, val in t.indexed_partial_mitems(block_offset, block_size):
         f(val)
 
 proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] =
@@ -130,10 +130,11 @@ proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] =
     omp_parallel_countup(i, t1.size-1):
       result.data[i] = f(t1.data[t1.offset+i], t2.data[t2.offset+i])
   else:
-    # TODO use mitems instead of result.data[i] cf profiling
-    # TODO: inline iterators - pending https://github.com/nim-lang/Nim/issues/4516
-    for i, ai, bi in enumerate_zip(t1.values, t2.values):
-      result.data[i] = f(ai, bi)
+    omp_parallel_blocks(block_offset, block_size, t1.size):
+      # TODO use mitems instead of result.data[i] cf profiling
+      # TODO: inline iterators - pending https://github.com/nim-lang/Nim/issues/4516
+      for i, ai, bi in enumerate_zip(t1.partial_values(block_offset, block_size), t2.partial_values(block_offset, block_size), block_offset):
+        result.data[i] = f(ai, bi)
 
 proc apply2*[T, U](a: var Tensor[T],
                    f: proc(x:var T, y:T), # We can't use the nice future syntax here
@@ -164,9 +165,10 @@ proc apply2*[T, U](a: var Tensor[T],
     omp_parallel_countup(i, a.size-1):
       f(a.data[a.offset+i], b.data[b.offset+i])
   else:
-    ## TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
-    for a_idx, b_val in zip(a.real_indices, b.values):
-      f(a.data[a_idx], b_val)
+    omp_parallel_blocks(block_offset, block_size, a.size):
+      # TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
+      for a_idx, b_val in zip(a.partial_real_indices(block_offset, block_size), b.partial_values(block_offset, block_size)):
+        f(a.data[a_idx], b_val)
 
 # ####################################################################
 # Folds and reductions over a single Tensor

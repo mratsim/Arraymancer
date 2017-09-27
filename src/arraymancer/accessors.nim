@@ -115,7 +115,10 @@ iterator items*[T](t: Tensor[T]): T {.noSideEffect.}=
   ##       val += 42
   t.strided_iteration(IterKind.Values, 0, t.size)
 
-iterator partial_items[T](t: Tensor[T], offset, size: int): (int, T) {.noSideEffect.}=
+iterator partial_items[T](t: Tensor[T], offset, size: int): T {.noSideEffect.}=
+  t.strided_iteration(IterKind.Values, offset, size)
+
+iterator indexed_partial_items[T](t: Tensor[T], offset, size: int): (int, T) {.noSideEffect.}=
   t.strided_iteration(IterKind.Iter_Values, offset, size)
 
 proc values*[T](t: Tensor[T]): auto {.noSideEffect.}=
@@ -139,6 +142,14 @@ proc values*[T](t: Tensor[T]): auto {.noSideEffect.}=
   let ref_t = t.unsafeAddr # avoid extra copy
   return iterator(): T = ref_t[].strided_iteration(IterKind.Values, 0, ref_t[].size)
 
+proc indexed_partial_values[T](t: Tensor[T], offset, size: int): auto {.noSideEffect.}=
+  let ref_t = t.unsafeAddr # avoid extra copy
+  return iterator(): T = ref_t[].strided_iteration(IterKind.Iter_Values, offset, size)
+
+proc partial_values[T](t: Tensor[T], offset, size: int): auto {.noSideEffect.}=
+  let ref_t = t.unsafeAddr # avoid extra copy
+  return iterator(): T = ref_t[].strided_iteration(IterKind.Values, offset, size)
+
 iterator mitems*[T](t: var Tensor[T]): var T {.noSideEffect.}=
   ## Inline iterator on Tensor values.
   ## Values yielded can be directly modified
@@ -153,8 +164,11 @@ iterator mitems*[T](t: var Tensor[T]): var T {.noSideEffect.}=
   ##       val += 42
   t.strided_iteration(IterKind.Values, 0, t.size)
 
-iterator partial_mitems[T](t: var Tensor[T], offset, size: int): (int, var T) {.noSideEffect.}=
+iterator indexed_partial_mitems[T](t: var Tensor[T], offset, size: int): (int, var T) {.noSideEffect.}=
   t.strided_iteration(IterKind.Iter_Values, offset, size)
+
+iterator partial_mitems[T](t: var Tensor[T], offset, size: int): var T {.noSideEffect.}=
+  t.strided_iteration(IterKind.Values, offset, size)
 
 iterator pairs*[T](t: Tensor[T]): (seq[int], T) {.noSideEffect.}=
   ## Inline iterator on Tensor (coordinates, values)
@@ -180,11 +194,18 @@ iterator real_indices(t: Tensor): int {.noSideEffect.}=
   ## For loop will automatically use this one. (A closure iterator do not implement "items")
   t.strided_iteration(IterKind.MemOffset, 0, t.size)
 
+iterator partial_real_indices(t: Tensor, offset, size: int): int {.noSideEffect.}=
+  t.strided_iteration(IterKind.MemOffset, offset, size)
+
 proc real_indices(t: Tensor): auto {.noSideEffect.}=
   ## Closure stride-aware iterator on Tensor real indices in the seq storage
   ## For loop will not use this one. It must be assigned before use.
   let ref_t = t.unsafeAddr # avoid extra copy
   return iterator(): int = ref_t[].strided_iteration(IterKind.MemOffset, 0, ref_t[].size)
+
+proc partial_real_indices(t: Tensor, offset, size: int): auto {.noSideEffect.}=
+  let ref_t = t.unsafeAddr # avoid extra copy
+  return iterator(): int = ref_t[].strided_iteration(IterKind.MemOffset, offset, size)
 
 template axis_iterator[T](t: Tensor[T], axis: int): untyped =
   var out_t = t

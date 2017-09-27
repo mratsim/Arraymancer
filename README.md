@@ -1,4 +1,4 @@
-[![Join the chat at https://gitter.im/Arraymancer/Lobby](https://badges.gitter.im/Arraymancer/Lobby.svg)](https://gitter.im/Arraymancer/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Linux Build Status (Travis)](https://travis-ci.org/mratsim/Arraymancer.svg?branch=master "Linux build status (Travis)")](https://travis-ci.org/mratsim/Arraymancer) [![Windows build status (Appveyor)](https://ci.appveyor.com/api/projects/status/github/mratsim/arraymancer?branch=master&svg=true "Windows build status (Appveyor)")](https://ci.appveyor.com/project/mratsim/arraymancer) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![Stability](https://img.shields.io/badge/stability-experimental-orange.svg)
+[![Join the chat at https://gitter.im/Arraymancer/Lobby](https://badges.gitter.im/Arraymancer/Lobby.svg)](https://gitter.im/Arraymancer/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Linux Build Status (Travis)](https://img.shields.io/travis/mratsim/Arraymancer/master.svg?label=Linux%20/%20macOS "Linux/macOS build status (Travis)")](https://travis-ci.org/mratsim/Arraymancer) [![Windows build status (Appveyor)](https://img.shields.io/appveyor/ci/nicolargo/glances/master.svg?label=Windows "Windows build status (Appveyor)")](https://ci.appveyor.com/project/mratsim/arraymancer) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![Stability](https://img.shields.io/badge/stability-experimental-orange.svg)
 
 # Arraymancer - A n-dimensional tensor (ndarray) library
 
@@ -9,36 +9,38 @@ The library is inspired by Numpy and PyTorch.
 <!-- TOC -->
 
 - [Arraymancer - A n-dimensional tensor (ndarray) library](#arraymancer---a-n-dimensional-tensor-ndarray-library)
-    - [Why Arraymancer](#why-arraymancer)
-    - [Future ambitions](#future-ambitions)
-    - [Support (Types, OS, Hardware)](#support-types-os-hardware)
-    - [Limitations:](#limitations)
-    - [Installation:](#installation)
-    - [Features](#features)
-        - [Speed](#speed)
-        - [Safe vs unsafe: copy vs view](#safe-vs-unsafe-copy-vs-view)
-        - [Tensors on CPU and on Cuda](#tensors-on-cpu-and-on-cuda)
-        - [Tensor properties](#tensor-properties)
-        - [Tensor creation](#tensor-creation)
-        - [Accessing and modifying a value](#accessing-and-modifying-a-value)
-        - [Copying](#copying)
-        - [Slicing](#slicing)
-        - [Slice mutations](#slice-mutations)
-        - [Shapeshifting](#shapeshifting)
-            - [Transposing](#transposing)
-            - [Reshaping](#reshaping)
-            - [Permuting - Reordering dimension](#permuting---reordering-dimension)
-            - [Concatenation](#concatenation)
-        - [Universal functions](#universal-functions)
-        - [Type conversion](#type-conversion)
-        - [Matrix and vector operations](#matrix-and-vector-operations)
-        - [Broadcasting](#broadcasting)
-        - [Iterators](#iterators)
-        - [Higher-order functions (Map, Reduce, Fold)](#higher-order-functions-map-reduce-fold)
-            - [`map`, `apply`, `map2`, `apply2`](#map-apply-map2-apply2)
-            - [`reduce` on the whole Tensor or along an axis](#reduce-on-the-whole-tensor-or-along-an-axis)
-            - [`fold` on the whole Tensor or along an axis](#fold-on-the-whole-tensor-or-along-an-axis)
-        - [Aggregate and Statistics](#aggregate-and-statistics)
+  - [Why Arraymancer](#why-arraymancer)
+  - [Future ambitions](#future-ambitions)
+  - [Support (Types, OS, Hardware)](#support-types-os-hardware)
+  - [Limitations:](#limitations)
+  - [Installation:](#installation)
+  - [Features](#features)
+    - [Speed](#speed)
+      - [Logistic regression](#logistic-regression)
+      - [DNN - 3 hidden layers](#dnn---3-hidden-layers)
+    - [Safe vs unsafe: copy vs view](#safe-vs-unsafe-copy-vs-view)
+    - [Tensors on CPU and on Cuda](#tensors-on-cpu-and-on-cuda)
+    - [Tensor properties](#tensor-properties)
+    - [Tensor creation](#tensor-creation)
+    - [Accessing and modifying a value](#accessing-and-modifying-a-value)
+    - [Copying](#copying)
+    - [Slicing](#slicing)
+    - [Slice mutations](#slice-mutations)
+    - [Shapeshifting](#shapeshifting)
+      - [Transposing](#transposing)
+      - [Reshaping](#reshaping)
+      - [Permuting - Reordering dimension](#permuting---reordering-dimension)
+      - [Concatenation](#concatenation)
+    - [Universal functions](#universal-functions)
+    - [Type conversion](#type-conversion)
+    - [Matrix and vector operations](#matrix-and-vector-operations)
+    - [Broadcasting](#broadcasting)
+    - [Iterators](#iterators)
+    - [Higher-order functions (Map, Reduce, Fold)](#higher-order-functions-map-reduce-fold)
+      - [`map`, `apply`, `map2`, `apply2`](#map-apply-map2-apply2)
+      - [`reduce` on the whole Tensor or along an axis](#reduce-on-the-whole-tensor-or-along-an-axis)
+      - [`fold` on the whole Tensor or along an axis](#fold-on-the-whole-tensor-or-along-an-axis)
+    - [Aggregate and Statistics](#aggregate-and-statistics)
 
 <!-- /TOC -->
 
@@ -96,19 +98,25 @@ For now Arraymancer is still at the ndarray stage, however a [vision package](ht
 
 ### Speed
 
-On the demo benchmark, Arraymancer already reach speeds with comparable to Torch on logistic regression on OpenBLAS, though further MKL optimizations are possible (batched matmul probably):
+On the [demo benchmark](https://github.com/edubart/arraymancer-demos), Arraymancer already reach speeds with comparable to Torch on logistic regression on OpenBLAS, though further MKL optimizations are possible (batched matmul probably):
 
-| Library | Timing |
-| ------ | ------ |
-| Torch CUDA | 582 ms|
-| Torch MKL | 1417ms|
-| Torch OpenBLAS | 13044 ms|
-| Numpy MKL | 17906 ms|
-| Arraymancer MKL | 2325 ms|
-| Arraymancer OpenBLAS | 12502 ms|
+#### Logistic regression
+| Framework | Backend | Forward+Backward Pass Time  |
+|---|---|---|
+| Arraymancer | OpenMP + MKL | **0.553ms**  |
+| Torch7 | MKL | 0.733ms  |
+| Arraymancer | OpenMP + OpenBLAS | 1.824ms |
+| Numpy | MKL | 8.713ms  |
+
+#### DNN - 3 hidden layers
+| Framework | Backend | Forward+Backward Pass Time  |
+|---|---|---|
+| Arraymancer | OpenMP + MKL | **6.815ms**  |
+| PyTorch | MKL | 7.320ms  |
+| Arraymancer | OpenMP + OpenBLAS | 11.275ms |
 
 ```
-Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz GeForce GTX 1080 Ti ArchLinux (kernel 4.9.51-1-lts, glibc 2.26) GCC 7.2.0 MKL 2017.17.0.4.4 OpenBLAS 0.2.20 CUDA 8.0.61
+Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz, gcc 7.2.0, MKL 2017.17.0.4.4, OpenBLAS 0.2.20
 ```
 
 In the future, Arraymancer will leverage Nim compiler to automatically fuse operations

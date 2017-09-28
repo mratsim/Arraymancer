@@ -15,10 +15,6 @@
 # ####################################################################
 # Mapping over tensors
 
-
-# Note: As of Sep 2017, OpenMP + stacktraces + closures doesn't play nice.
-when defined(openmp):
-  {.push stackTrace:off.}
 proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
   ## Usage with Nim's ``future`` module:
@@ -46,15 +42,10 @@ proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] =
     omp_parallel_countup(i, t.size-1):
       result.data[i] = f(t.data[t.offset+i])
   else:
-    var i = 0 # TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
-    for val in t:
-      result.data[i] = f(val)
-      inc i
-when defined(openmp):
-  {.pop.}
+    omp_parallel_blocks(block_offset, block_size, t.size):
+      for i, val in t.indexed_partial_items(block_offset, block_size):
+        result.data[i] = f(val)
 
-when defined(openmp):
-  {.push stackTrace:off.}
 proc apply*[T](t: var Tensor[T], f: T -> T) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
   ##
@@ -79,13 +70,10 @@ proc apply*[T](t: var Tensor[T], f: T -> T) =
     omp_parallel_forup(i, t.offset, t.offset+t.size-1):
       t.data[i] = f(t.data[i])
   else:
-    for val in t.mitems:
-      val = f(val)
-when defined(openmp):
-  {.push stackTrace:off.}
+    omp_parallel_blocks(block_offset, block_size, t.size):
+      for i, val in t.indexed_partial_mitems(block_offset, block_size):
+        val = f(val)
 
-when defined(openmp):
-  {.push stackTrace:off.}
 proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
   ##
@@ -109,14 +97,10 @@ proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
     omp_parallel_forup(i, t.offset, t.offset+t.size-1):
       f(t.data[i])
   else:
-    for val in t.mitems:
-      f(val)
-when defined(openmp):
-  {.push stackTrace:off.}
+    omp_parallel_blocks(block_offset, block_size, t.size):
+      for i, val in t.indexed_partial_mitems(block_offset, block_size):
+        f(val)
 
-
-when defined(openmp):
-  {.push stackTrace:off.}
 proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] =
   ## Apply a binary function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ##
@@ -146,15 +130,12 @@ proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] =
     omp_parallel_countup(i, t1.size-1):
       result.data[i] = f(t1.data[t1.offset+i], t2.data[t2.offset+i])
   else:
-    # TODO use mitems instead of result.data[i] cf profiling
-    # TODO: inline iterators - pending https://github.com/nim-lang/Nim/issues/4516
-    for i, ai, bi in enumerate_zip(t1.values, t2.values):
-      result.data[i] = f(ai, bi)
-when defined(openmp):
-  {.push stackTrace:off.}
+    omp_parallel_blocks(block_offset, block_size, t1.size):
+      # TODO use mitems instead of result.data[i] cf profiling
+      # TODO: inline iterators - pending https://github.com/nim-lang/Nim/issues/4516
+      for i, ai, bi in enumerate_zip(t1.partial_values(block_offset, block_size), t2.partial_values(block_offset, block_size), block_offset):
+        result.data[i] = f(ai, bi)
 
-when defined(openmp):
-  {.push stackTrace:off.}
 proc apply2*[T, U](a: var Tensor[T],
                    f: proc(x:var T, y:T), # We can't use the nice future syntax here
                    b: Tensor[U]) =
@@ -184,11 +165,10 @@ proc apply2*[T, U](a: var Tensor[T],
     omp_parallel_countup(i, a.size-1):
       f(a.data[a.offset+i], b.data[b.offset+i])
   else:
-    ## TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
-    for a_idx, b_val in zip(a.real_indices, b.values):
-      f(a.data[a_idx], b_val)
-when defined(openmp):
-  {.push stackTrace:off.}
+    omp_parallel_blocks(block_offset, block_size, a.size):
+      # TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
+      for a_idx, b_val in zip(a.partial_real_indices(block_offset, block_size), b.partial_values(block_offset, block_size)):
+        f(a.data[a_idx], b_val)
 
 # ####################################################################
 # Folds and reductions over a single Tensor

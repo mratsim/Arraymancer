@@ -82,7 +82,7 @@ iterator zip[T1, T2](inp1: iterator(): T1, b: openarray[T2]): (T1, T2) {.noSideE
       break
     yield (val1, b[i])
 
-iterator enumerate_zip[T1, T2](inp1: iterator(): T1, inp2: iterator(): T2): (int, T1, T2) {.noSideEffect.} =
+iterator enumerate_zip[T1, T2](inp1: iterator(): T1, inp2: iterator(): T2, offset: Natural = 0): (int, T1, T2) {.noSideEffect.} =
   ## Inline iteration on 2 closure iterators at the same time
   ## Input is first copied to avoid side-effects
   ## Output also countains the iteration count and is similar
@@ -90,7 +90,7 @@ iterator enumerate_zip[T1, T2](inp1: iterator(): T1, inp2: iterator(): T2): (int
 
   let it1 = inp1
   let it2 = inp2
-  var i = 0
+  var i = offset
   while true:
     let val1 = it1()
     let val2 = it2()

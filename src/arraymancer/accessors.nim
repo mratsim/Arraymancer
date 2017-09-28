@@ -51,19 +51,18 @@ proc atIndexMut[T](t: var Tensor[T], idx: varargs[int], val: T) {.noSideEffect,i
 
 type
   IterKind = enum
-    Values, MemOffset, Coord_Values, MemOffset_Values
+    Values, MemOffset, Coord_Values, MemOffset_Values, Iter_Values
 
-template strided_iteration[T](t: Tensor[T], strider: IterKind): untyped =
+template strided_iteration[T](t: Tensor[T], strider: IterKind, iter_offset, iter_size: int): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
 
   block:
-    let size = t.size
-
     ## Shortcut if C contiguous
     when strider != IterKind.Coord_Values:
       if t.is_C_contiguous:
-        for i in t.offset..<(t.offset+size):
+        for i in (t.offset+iter_offset)..<(t.offset+iter_offset+iter_size):
           when strider == IterKind.Values: yield t.data[i]
+          elif strider == IterKind.Iter_Values: yield (i-t.offset, t.data[i])
           when strider == IterKind.MemOffset: yield i
           elif strider == IterKind.MemOffset_Values: yield (i, t.data[i])
         break # Get out of the block (i.e. out of the template)
@@ -76,10 +75,20 @@ template strided_iteration[T](t: Tensor[T], strider: IterKind): untyped =
     for i in 0..<rank:
       backstrides[i] = t.strides[i]*(t.shape[i]-1)
 
+    # Calculate initial coords and iter_pos from iteration offset
+    if iter_offset != 0:
+      var z = 1
+      for i in countdown(rank - 1,0):
+        let z2 = z*t.shape[i]
+        coord[i] = (iter_offset div z) mod z2
+        iter_pos += coord[i]*t.strides[i]
+        z = z2
+
     ## Iterator loop
-    for i in 0..<size:
+    for i in 0..<iter_size:
       ## Templating the return value
       when strider == IterKind.Values: yield t.data[iter_pos]
+      elif strider == IterKind.Iter_Values: yield (iter_offset+i, t.data[iter_pos])
       elif strider == IterKind.Coord_Values: yield (coord[0..<rank], t.data[iter_pos])
       elif strider == IterKind.MemOffset: yield iter_pos
       elif strider == IterKind.MemOffset_Values: yield (iter_pos, t.data[iter_pos])
@@ -104,7 +113,13 @@ iterator items*[T](t: Tensor[T]): T {.noSideEffect.}=
   ##  .. code:: nim
   ##     for val in t: # items is implicitly called
   ##       val += 42
-  t.strided_iteration(IterKind.Values)
+  t.strided_iteration(IterKind.Values, 0, t.size)
+
+iterator partial_items[T](t: Tensor[T], offset, size: int): T {.noSideEffect.}=
+  t.strided_iteration(IterKind.Values, offset, size)
+
+iterator indexed_partial_items[T](t: Tensor[T], offset, size: int): (int, T) {.noSideEffect.}=
+  t.strided_iteration(IterKind.Iter_Values, offset, size)
 
 proc values*[T](t: Tensor[T]): auto {.noSideEffect.}=
   ## Creates an closure iterator on Tensor values.
@@ -125,7 +140,15 @@ proc values*[T](t: Tensor[T]): auto {.noSideEffect.}=
   ##       # do stuff
   ## Contrary to other ndarray packages looping in Arraymancer is not slow.
   let ref_t = t.unsafeAddr # avoid extra copy
-  return iterator(): T = ref_t[].strided_iteration(IterKind.Values)
+  return iterator(): T = ref_t[].strided_iteration(IterKind.Values, 0, ref_t[].size)
+
+proc indexed_partial_values[T](t: Tensor[T], offset, size: int): auto {.noSideEffect.}=
+  let ref_t = t.unsafeAddr # avoid extra copy
+  return iterator(): T = ref_t[].strided_iteration(IterKind.Iter_Values, offset, size)
+
+proc partial_values[T](t: Tensor[T], offset, size: int): auto {.noSideEffect.}=
+  let ref_t = t.unsafeAddr # avoid extra copy
+  return iterator(): T = ref_t[].strided_iteration(IterKind.Values, offset, size)
 
 iterator mitems*[T](t: var Tensor[T]): var T {.noSideEffect.}=
   ## Inline iterator on Tensor values.
@@ -139,7 +162,13 @@ iterator mitems*[T](t: var Tensor[T]): var T {.noSideEffect.}=
   ##  .. code:: nim
   ##     for val in t.mitems:
   ##       val += 42
-  t.strided_iteration(IterKind.Values)
+  t.strided_iteration(IterKind.Values, 0, t.size)
+
+iterator indexed_partial_mitems[T](t: var Tensor[T], offset, size: int): (int, var T) {.noSideEffect.}=
+  t.strided_iteration(IterKind.Iter_Values, offset, size)
+
+iterator partial_mitems[T](t: var Tensor[T], offset, size: int): var T {.noSideEffect.}=
+  t.strided_iteration(IterKind.Values, offset, size)
 
 iterator pairs*[T](t: Tensor[T]): (seq[int], T) {.noSideEffect.}=
   ## Inline iterator on Tensor (coordinates, values)
@@ -158,18 +187,25 @@ iterator pairs*[T](t: Tensor[T]): (seq[int], T) {.noSideEffect.}=
   ##     for coordval in t.pairs: # pairs is explicitly called
   ##       echo coordval[0]
   ##       echo coordval[1]
-  t.strided_iteration(IterKind.Coord_Values)
+  t.strided_iteration(IterKind.Coord_Values, 0, t.size)
 
 iterator real_indices(t: Tensor): int {.noSideEffect.}=
   ## Inline stride-aware iterator on Tensor real indices in the seq storage
   ## For loop will automatically use this one. (A closure iterator do not implement "items")
-  t.strided_iteration(IterKind.MemOffset)
+  t.strided_iteration(IterKind.MemOffset, 0, t.size)
+
+iterator partial_real_indices(t: Tensor, offset, size: int): int {.noSideEffect.}=
+  t.strided_iteration(IterKind.MemOffset, offset, size)
 
 proc real_indices(t: Tensor): auto {.noSideEffect.}=
   ## Closure stride-aware iterator on Tensor real indices in the seq storage
   ## For loop will not use this one. It must be assigned before use.
   let ref_t = t.unsafeAddr # avoid extra copy
-  return iterator(): int = ref_t[].strided_iteration(IterKind.MemOffset)
+  return iterator(): int = ref_t[].strided_iteration(IterKind.MemOffset, 0, ref_t[].size)
+
+proc partial_real_indices(t: Tensor, offset, size: int): auto {.noSideEffect.}=
+  let ref_t = t.unsafeAddr # avoid extra copy
+  return iterator(): int = ref_t[].strided_iteration(IterKind.MemOffset, offset, size)
 
 template axis_iterator[T](t: Tensor[T], axis: int): untyped =
   var out_t = t

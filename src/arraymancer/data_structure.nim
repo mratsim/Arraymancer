@@ -57,7 +57,7 @@ type
     offset*: int
     data*: CudaSeq[T] # Memory on Cuda device will be automatically garbage-collected
 
-  AnyTensor[T] = Tensor[T] or CudaTensor[T]
+  AnyTensor*[T] = Tensor[T] or CudaTensor[T]
 
 template rank*(t: AnyTensor): int =
   ## Input:

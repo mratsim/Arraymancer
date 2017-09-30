@@ -1,3 +1,17 @@
+# Copyright 2017 the Arraymancer contributors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 
 const MAX_ARITY = 2 # Max arity/number of input of autograd operations
 
@@ -44,18 +58,18 @@ method backward*[TT](self: Gate[TT], gradient: TT): SmallDiffs[TT] {.base.} =
 method forward*[TT](self: Gate[TT], a, b: Variable[TT]): Variable[TT] {.base.} =
   raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
 
-proc newContext*(TT: typedesc): Context[TT] {.noSideEffect.} =
+proc newContext*(TT: typedesc): Context[TT] {.inline, noSideEffect.} =
   ## Initialize a context (Tape / Wengert list)
   new result
   result.nodes = newSeq[Node[TT]]()
 
-proc variable*[TT](ctx: Context[TT], value: TT): Variable[TT] {.noSideEffect.} =
+proc variable*[TT](ctx: Context[TT], value: TT): Variable[TT] {.inline, noSideEffect.} =
   ## Wrap a variable to the context
   ## T is a Tensour[T, CudaTensor[T] or scalar T
   # TODO make the grad initialization optional to optimize memory use
   return Variable[TT](tape: ctx, ancestor: nil, value: value, grad: value.zeros_like)
 
-proc len[TT](t: Context[TT]): int =
+template len[TT](t: Context[TT]): int =
   ## Returns the number of operations applied in the context
   t.nodes.len()
 
@@ -66,6 +80,13 @@ template push[TT](t: Context[TT], node: Node[TT]) =
 template value*[TT](v: Variable[TT]): TT  =
   ## Unwrap the value from its context
   v.value
+
+proc check_ctx(a, b: Variable) {.inline.} =
+  # This is broken, Nim does deep comparison and crash on nil pointer
+  echo repr a.tape
+  echo repr b.tape
+  if cast[ByteAddress](a.tape[]) != cast[ByteAddress](b.tape[]): # TODO comparing 2 ref objects address
+    raise newException(ValueError, "You cannot combine variable from different contexts")
 
 proc backprop*[TT](v: Variable[TT]) =
   ## Differentiate the chain of operations w.r.t to this variable.
@@ -87,7 +108,6 @@ proc backprop*[TT](v: Variable[TT]) =
   while v.tape.len > 0:
     let curNode = v.tape.nodes.pop
     let curVar = curNode.child
-    echo curVar.value
 
     let diffs = curNode.gate.backward(curVar.grad)
 

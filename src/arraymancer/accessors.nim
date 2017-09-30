@@ -22,7 +22,8 @@ proc check_index(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
 proc check_elementwise(a, b:AnyTensor)  {.noSideEffect.}=
   ## Check if element-wise operations can be applied to 2 Tensors
   if a.shape != b.shape:
-    raise newException(ValueError, "Both Tensors should have the same shape")
+    raise newException(ValueError, "Both Tensors should have the same shape.\n Left-hand side has shape " &
+                                   $a.shape & " while right-hand side has shape " & $b.shape)
 
 proc getIndex[T](t: Tensor[T], idx: varargs[int]): int {.noSideEffect,inline.} =
   ## Convert [i, j, k, l ...] to the proper index.

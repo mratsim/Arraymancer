@@ -173,7 +173,7 @@ proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}
 
   t.reshape_no_copy(new_shape)
 
-template broadcastT(t: var Tensor, shape: openarray[int]) =
+template broadcastT(t: Tensor, shape: openarray[int]) =
   assert t.rank == shape.len
 
   for i in 0..<t.rank:

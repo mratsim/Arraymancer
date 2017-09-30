@@ -2,4 +2,6 @@ import arraymancer, future, sequtils, typetraits, macros
 
 include ./autograd/utils,
         ./autograd/autograd,
-        ./autograd/basic_ops
+        ./autograd/gates_basic,
+        ./autograd/gates_blas,
+        ./autograd/gates_reduce

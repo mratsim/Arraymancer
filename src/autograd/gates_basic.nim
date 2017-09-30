@@ -16,8 +16,7 @@
 # b is the rhs (right-hand side)
 
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
-  a_shape: seq[int]
-  b_shape: seq[int]
+  ab_shape: seq[int]
 
 method forward*[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
   new result
@@ -33,8 +32,8 @@ method forward*[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inlin
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
 method backward*[TT](self: AddGate[TT], gradient: TT): SmallDiffs[TT] =
-  result[0] = ones[getSubType(TT)](self.a_shape)
-  result[1] = ones[getSubType(TT)](self.b_shape)
+  result[0] = gradient
+  result[1] = gradient
 
 proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   # when compileOption("boundChecks"):
@@ -44,8 +43,7 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   var gate: AddGate[TT]
   new gate
   gate.arity = 2
-  gate.a_shape = a.value.shape
-  gate.b_shape = b.value.shape
+  gate.ab_shape = a.value.shape # Shape equality will be checked in the forward proc
 
   # Node
   var node: Node[TT]

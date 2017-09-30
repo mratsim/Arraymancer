@@ -25,9 +25,9 @@ when defined(blis):
       discard bli_finalize()
   addQuitProc(quit_blis)
 
-else:
-  static: echo "Consider adding BLIS from \"https://github.com/flame/blis\" " &
-          "and compile Arraymancer with \"-d:blis\" " &
-          "for operations on array slices without copy. " &
-          "OSX users can install it through Homebrew."
+# else:
+#   static: echo "Consider adding BLIS from \"https://github.com/flame/blis\" " &
+#           "and compile Arraymancer with \"-d:blis\" " &
+#           "for operations on array slices without copy. " &
+#           "OSX users can install it through Homebrew."
 

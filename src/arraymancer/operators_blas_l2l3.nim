@@ -247,10 +247,10 @@ proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T]  {.noSideEffect.} =
   ## Note: Integers smaller than 2^31 can be converted to float64 without losing precision
   ## and can benefit from the optimized float BLAS implementations
 
-  static: echo "Please note that integer matrix-matrix and matrix-vector multiplications do not have optimized " &
-               "operations like how research has done for floats. If your integers are " &
-               "smaller than 2^31, you can convert them to float64 without losing precision before " &
-               "Matrix-Matrix or Matrix-Vector operations to benefit from accelerated routines."
+  # static: echo "Please note that integer matrix-matrix and matrix-vector multiplications do not have optimized " &
+  #              "operations like how research has done for floats. If your integers are " &
+  #              "smaller than 2^31, you can convert them to float64 without losing precision before " &
+  #              "Matrix-Matrix or Matrix-Vector operations to benefit from accelerated routines."
 
   if a.rank == 2 and b.rank == 2:    matmat_fallback(a, b, result)
   elif a.rank == 2 and b.rank == 1:  matvec_fallback(a, b, result)

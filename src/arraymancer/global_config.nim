@@ -22,9 +22,9 @@
 const MAXRANK = 8 # 8 because it's a nice number, more is possible upon request.
 
 
-const CUDA_HOF_TPB: cint = 32 * 32 # TODO, benchmark and move that to cuda global config
+const CUDA_HOF_TPB {.used.}: cint = 32 * 32 # TODO, benchmark and move that to cuda global config
                                    # Pascal GTX 1070+ have 1024 threads max
-const CUDA_HOF_BPG: cint = 256     # should be (grid-stride+threadsPerBlock-1) div threadsPerBlock ?
+const CUDA_HOF_BPG {.used.}: cint = 256     # should be (grid-stride+threadsPerBlock-1) div threadsPerBlock ?
                                    # From https://devblogs.nvidia.com/parallelforall/cuda-pro-tip-write-flexible-kernels-grid-stride-loops/
                                    # Lower allows threads re-use and limit overhead of thread creation/destruction
 

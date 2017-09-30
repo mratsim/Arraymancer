@@ -28,7 +28,9 @@ suite "Testing specific issues from bug tracker":
     # Check that our solution, export '_' doesn't create compatibility issue
 
     # tuple destructuring
+    {.push hints: off.}  ## TODO replaced by XDeclaredButNotUsed when https://github.com/nim-lang/Nim/issues/4044
     let (a, _, c) = (1, @[2,3],"hello")
+    {.pop.}
 
     # https://github.com/mratsim/Arraymancer/issues/61
     proc foo[T](t: Tensor[T], x: int): Tensor[T] =

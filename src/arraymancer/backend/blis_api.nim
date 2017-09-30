@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+{.push hints: off.} ## TODO replaced by XDeclaredButNotUsed when https://github.com/nim-lang/Nim/issues/4044
 type
   BlisError {.size: sizeof(cint).} = enum
     #### Nim wants ordered enum ...
@@ -189,3 +191,5 @@ proc bli_gemv(
   # Y := beta * Y + alpha * transa(A) * conjx(X)
   # A: Matrix
   # X, Y: Vector
+
+{.pop.}

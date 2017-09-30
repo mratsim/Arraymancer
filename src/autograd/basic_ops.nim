@@ -7,14 +7,13 @@ proc check_ctx[TT](a, b: Variable[TT]) =
 
 
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
-  arity: int
   a_shape*: seq[int]
   b_shape*: seq[int]
 
 method forward*[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
   Variable[TT](tape: a.tape, value: a.value + b.value)
 
-method backward*[TT](self: AddGate[TT], gradient: TT): SmallDiffArray[TT] =
+method backward*[TT](self: AddGate[TT], gradient: TT): SmallDiffs[TT] =
   result[0] = ones[getSubType(TT)](self.a_shape)
   result[1] = ones[getSubType(TT)](self.b_shape)
 
@@ -34,9 +33,12 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents[0] = a.parent
-  node.parents[1] = b.parent
+  node.parents[0] = a
+  node.parents[1] = b
 
   a.tape.push(node)
 
-  return gate.forward(a, b)
+  # Resulting var
+  result = gate.forward(a, b)
+  result.ancestor = node
+  node.child = result

@@ -136,7 +136,7 @@ proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.
   ##      - Type of its elements
   ## Result:
   ##      - A zero-ed Tensor of the same shape
-  return zeros(t.shape, T)
+  return zeros[T](t.shape)
 
 proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noSideEffect,inline.} =
   ## Creates a new Tensor filled with 1
@@ -155,7 +155,7 @@ proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noSideEffect, inline.} =
   ##      - Tensor
   ## Result:
   ##      - A one-ed Tensor of the same shape
-  return ones(t.shape, T)
+  return ones[T](t.shape)
 
 template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typed): untyped =
   tensorCpu(shape, t)

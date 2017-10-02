@@ -53,10 +53,19 @@ type
 
 # Somehow if you declare forward before backward, you get invalid declaration order
 # https://github.com/nim-lang/Nim/issues/5325
-method backward*[TT](self: Gate[TT], gradient: TT): SmallDiffs[TT] {.base.} =
+method backward*[TT](self: Gate[TT], gradient: TT): SmallDiffs[TT] {.base, inline.} =
   raise newException(ValueError, "backward method is not implemented for " & $self.type.name)
 
-method forward*[TT](self: Gate[TT], a, b: Variable[TT]): Variable[TT] {.base.} =
+method forward*[TT](self: Gate[TT], a, b: Variable[TT]): Variable[TT] {.base, inline.} =
+  # Binary forward
+  raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
+
+method forward*[TT](self: Gate[TT], a: Variable[TT]): Variable[TT] {.base, inline.}=
+  # Unary forward
+  raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
+
+method forward*[TT](self: Gate[TT], a: Variable[TT], target: TT): Variable[TT] {.base, inline.}=
+  # Forward for loss layers
   raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
 
 proc newContext*(TT: typedesc): Context[TT] {.inline, noSideEffect.} =
@@ -82,11 +91,8 @@ template value*[TT](v: Variable[TT]): TT  =
   ## Unwrap the value from its context
   v.value
 
-proc check_ctx(a, b: Variable) {.inline.} =
-  # This is broken, Nim does deep comparison and crash on nil pointer
-  echo repr a.tape
-  echo repr b.tape
-  if cast[ByteAddress](a.tape[]) != cast[ByteAddress](b.tape[]): # TODO comparing 2 ref objects address
+proc check_ctx*(a, b: Variable) {.inline.} =
+  if a.tape[].unsafeAddr != b.tape[].unsafeAddr: # compare pointer adress directly (avoid deep comparison)
     raise newException(ValueError, "You cannot combine variable from different contexts")
 
 proc backprop*[TT](v: Variable[TT]) =

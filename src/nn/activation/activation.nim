@@ -13,49 +13,40 @@
 # limitations under the License.
 
 import ../../arraymancer_ag, ../../arraymancer, ../../autograd/utils
+import ./activation_tensor
 
-type LinearLayer* {.final.} [TT] = ref object of Gate[TT]
+type SigmoidActivation* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: use fused AddMatMul gate: C <- alpha AB + beta C
   cache: TT
-  weight: TT
-  bias: TT
-  dW: TT
-  dB: TT
 
-method forward*[TT](self: LinearLayer[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
+method forward*[TT](self: SigmoidActivation[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
   result.tape = a.tape
-  result.value = self.weight * a.value
-  result.value .+= self.bias # Bias is broadcasted other the whole batch size
+  result.value = a.value.sigmoid
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
-method backward*[TT](self: LinearLayer[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
-  self.dW = gradient * self.cache.unsafeTranspose
-  self.dB = sum(gradient, axis=0) # https://mlxai.github.io/2017/01/10/a-modular-approach-to-implementing-fully-connected-neural-networks.html
+method backward*[TT](self: SigmoidActivation[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
+  proc sigmoid_deriv_closure[T](x: T): T =
+    ## We suppose the input was already passed through the logistic sigmoid.
+    ## Derivative is f' = f * (1 - f)
+    x * (1 - x)
+  result[0] = self.cache.map(sigmoid_deriv_closure)
 
-  result[0] = self.weight.unsafeTranspose * gradient
-
-proc linear*[TT](a: Variable[TT], out_shape: int): Variable[TT] =
+proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
   ## Input:
   ##   - A variable
   ##   - Number of features in the output
   ##
-  # TODO: introduce initialization scheme for weight and bias
 
   # TODO: batch_size, where to put it? (out_shape, N) or (N, out_shape)
 
-  when compileOption("boundChecks"):
-    if a.value.rank > 2:
-      raise newException(ValueError, "Tensor must be flattened for a linear layer (features, batch_size)")
+  # TODO: scale matmul wrt to input size: https://cs231n.github.io/optimization-2/
 
   # Gate
-  var gate: LinearLayer[TT]
+  var gate: SigmoidActivation[TT]
   new gate
   gate.arity = 1
-  gate.cache = a.value.unsafeView
-  gate.weight = zeros[getSubType(TT)](out_shape, a.value.shape[0])
-  gate.bias = zeros[getSubType(TT)](out_shape, 1)
 
   # Node
   var node: Node[TT]
@@ -70,3 +61,6 @@ proc linear*[TT](a: Variable[TT], out_shape: int): Variable[TT] =
   result = gate.forward(a)
   result.ancestor = node
   node.child = result
+
+  # Caching for backprop
+  gate.cache = result.value

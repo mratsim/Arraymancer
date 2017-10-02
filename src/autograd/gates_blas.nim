@@ -19,7 +19,7 @@ type MatMulGate* {.final.} [TT] = ref object of Gate[TT]
   a: TT
   b: TT
 
-method forward*[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
+method forward*[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
   result.tape = a.tape
@@ -32,13 +32,13 @@ method forward*[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.in
 
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
-method backward*[TT](self: MatMulGate[TT], gradient: TT): SmallDiffs[TT] =
+method backward*[TT](self: MatMulGate[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
   result[0] = gradient * self.b.transpose
   result[1] = self.a.transpose * gradient
 
 proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
-  # when compileOption("boundChecks"):
-  #   check_ctx(a, b)
+  when compileOption("boundChecks"):
+    check_ctx(a, b)
 
   # Gate
   var gate: MatMulGate[TT]

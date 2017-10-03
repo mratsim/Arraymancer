@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../arraymancer_ag, ../../arraymancer, ../../autograd/utils
-import ./activation_tensor
+import ../../arraymancer_nn_primitives
 
 type SigmoidActivation* {.final.} [TT] = ref object of Gate[TT]
   cache: TT

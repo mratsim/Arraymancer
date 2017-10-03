@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../arraymancer
+import ../arraymancer
 import math
 
 # Sigmoid cross-entropy function that works directly on Tensors

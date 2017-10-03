@@ -13,8 +13,9 @@
 # limitations under the License.
 
 import ../../arraymancer_ag, ../../arraymancer, ../../autograd/utils
-import ./loss, ./sigmoid_cross_entropy_tensor
-import math
+import ../../arraymancer_nn_primitives
+
+import ./loss
 
 type SigmoidCrossEntropyLoss* {.final.} [TT] = ref object of Loss[TT]
   cache: Variable[TT]

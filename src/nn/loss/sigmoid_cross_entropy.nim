@@ -73,7 +73,7 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T {.inline.} =
 
   result = 0.T
   for xi, ti in zip(input, target):
-    result += (-ti * xi +  max(xi,0) + ln(1 + exp(-abs(xi))) ) / T(input.shape[0]) #input.shape[0] is the batch size
+    result += (-ti * xi +  max(xi,0) + ln(1 + exp(-abs(xi))) ) / T(input.shape[1]) #input.shape[1] is the batch size
 
 
 type SigmoidCrossEntropyLoss* {.final.} [TT] = ref object of Loss[TT]
@@ -83,6 +83,7 @@ method forward*[TT](self: SigmoidCrossEntropyLoss[TT], a: Variable[TT], target: 
   new result
 
   result.tape = a.tape
+  # We expect a in shape @[features, batch_size]
   result.value = [a.value.sigmoid_cross_entropy(target)].toTensor
 
   result.grad = zeros[getSubType(TT)](1)

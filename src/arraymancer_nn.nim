@@ -17,8 +17,10 @@ import ./arraymancer, ./arraymancer_ag
 import  nn/activation/activation_tensor,
         nn/activation/[sigmoid, relu],
         nn/layers/linear,
-        nn/loss/sigmoid_cross_entropy
+        nn/loss/sigmoid_cross_entropy,
+        nn/optimizers/optimizers
 
 
 export activation_tensor, sigmoid, relu
 export linear, sigmoid_cross_entropy
+export optimizers

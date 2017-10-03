@@ -14,6 +14,9 @@
 
 import ../../arraymancer, math
 
+# Neural net activation functions that works directly on Tensors
+
+
 # Note:
 # 1. Canonical sigmoid "f(x) = 1 / (1 + exp(-x))" is unstable
 # for negative values < 709 (for float64)
@@ -41,13 +44,22 @@ proc sigmoid*[T: SomeReal](t: Tensor[T]): Tensor[T] {.inline.}=
 
   return t.map(sigmoid_closure)
 
+proc msigmoid*[T: SomeReal](t: var Tensor[T]): Tensor[T] {.inline.}=
+  ## Logistic sigmoid activation function, :math:`f(x) = 1 / (1 + \exp(-x))`
+  ## Note: Canonical sigmoid is not stable for large negative value
 
-proc relu*[T](t: Tensor[T]): Tensor[T] =
+  proc sigmoid_closure(x: T): T = 1.T / (1.T + exp(-x))
+
+  # stable: proc sigmoid_closure(x: T): T = 0.5.T * (tanh(0.5.T * x) + 1.T)
+
+  return t.map(sigmoid_closure)
+
+proc relu*[T](t: Tensor[T]): Tensor[T] {.inline.}=
   proc relu_closure(x: T): T =
     max(0.T, x)
   t.map(relu_closure)
 
-proc mrelu*[T](t: Tensor[T]): Tensor[T] =
+proc mrelu*[T](t: var Tensor[T]): Tensor[T] {.inline.}=
   proc relu_closure(x: T): T =
     max(0.T, x)
   t.apply(relu_closure)

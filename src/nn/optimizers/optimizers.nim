@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./arraymancer, ./arraymancer_ag
-
-import  nn/activation/activation_tensor,
-        nn/activation/[sigmoid, relu],
-        nn/layers/linear,
-        nn/loss/sigmoid_cross_entropy
+type
+  Optimizer*[T] = ref object {.inheritable.}
+    # Base class for optimizer
+    lr*: T # Learning rate. Gradient update are scaled by the learning rate
 
 
-export activation_tensor, sigmoid, relu
-export linear, sigmoid_cross_entropy
+
+
+
+
+type SGD*{.final.}[T] = ref object of Optimizer
+
+
+proc newSGD*[T](learning_rate: T): SGD[T] =
+  SGD(lr: learning_rate)

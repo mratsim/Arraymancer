@@ -13,38 +13,33 @@
 # limitations under the License.
 
 import ../../arraymancer_ag, ../../arraymancer, ../../autograd/utils
-import ./activation_tensor
+import math
 
-type SigmoidActivation* {.final.} [TT] = ref object of Gate[TT]
-  ## TODO: use fused AddMatMul gate: C <- alpha AB + beta C
+type ReluActivation* {.final.} [TT] = ref object of Gate[TT]
   cache: TT
 
-method forward*[TT](self: SigmoidActivation[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
+method forward*[TT](self: ReluActivation[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
   result.tape = a.tape
-  result.value = a.value.sigmoid
+  result.value = a.value.relu
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
-method backward*[TT](self: SigmoidActivation[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
-  proc sigmoid_deriv_closure[T](x: T): T =
-    ## We suppose the input was already passed through the logistic sigmoid.
-    ## Derivative is f' = f * (1 - f)
-    x * (1 - x)
-  result[0] = self.cache.map(sigmoid_deriv_closure)
+method backward*[TT](self: ReluActivation[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
+  proc relu_backward_closure[T](x: T): T =
+    if x <= 0.T:
+      return 0.T
+    return 1.T
 
-proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
+  self.cache.apply(relu_backward_closure)
+  result[0] = gradient .* self.cache
+
+proc relu*[TT](a: Variable[TT]): Variable[TT] =
   ## Input:
   ##   - A variable
-  ##   - Number of features in the output
-  ##
-
-  # TODO: batch_size, where to put it? (out_shape, N) or (N, out_shape)
-
-  # TODO: scale matmul wrt to input size: https://cs231n.github.io/optimization-2/
 
   # Gate
-  var gate: SigmoidActivation[TT]
+  var gate: ReluActivation[TT]
   new gate
   gate.arity = 1
 

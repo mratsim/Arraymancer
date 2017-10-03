@@ -40,3 +40,14 @@ proc sigmoid*[T: SomeReal](t: Tensor[T]): Tensor[T] {.inline.}=
   # stable: proc sigmoid_closure(x: T): T = 0.5.T * (tanh(0.5.T * x) + 1.T)
 
   return t.map(sigmoid_closure)
+
+
+proc relu*[T](t: Tensor[T]): Tensor[T] =
+  proc relu_closure(x: T): T =
+    max(0.T, x)
+  t.map(relu_closure)
+
+proc mrelu*[T](t: Tensor[T]): Tensor[T] =
+  proc relu_closure(x: T): T =
+    max(0.T, x)
+  t.apply(relu_closure)

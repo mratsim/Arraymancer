@@ -14,7 +14,7 @@
 
 import typetraits
 
-const MAX_ARITY = 2 # Max arity/number of input of autograd operations
+const MAX_ARITY = 3 # Max arity/number of input of autograd operations
 
 type
   Gate*[TT] = ref object {.inheritable.}
@@ -62,10 +62,6 @@ method forward*[TT](self: Gate[TT], a, b: Variable[TT]): Variable[TT] {.base, in
 
 method forward*[TT](self: Gate[TT], a: Variable[TT]): Variable[TT] {.base, inline.}=
   # Unary forward
-  raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
-
-method forward*[TT](self: Gate[TT], a: Variable[TT], target: TT): Variable[TT] {.base, inline.}=
-  # Forward for loss layers
   raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
 
 proc newContext*(TT: typedesc): Context[TT] {.inline, noSideEffect.} =

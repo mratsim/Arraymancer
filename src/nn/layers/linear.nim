@@ -13,60 +13,70 @@
 # limitations under the License.
 
 import ../../arraymancer_ag, ../../arraymancer, ../../autograd/utils
+import ./layer
 
-type LinearLayer* {.final.} [TT] = ref object of Gate[TT]
+type LinearGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: use fused AddMatMul gate: C <- alpha AB + beta C
-  cache: TT
-  weight: TT
-  bias: TT
-  dW: TT
-  dB: TT
+  x, W, b: Variable[TT]
 
-method forward*[TT](self: LinearLayer[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
+method forward*[TT](self: LinearGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
   result.tape = a.tape
-  result.value = self.weight * a.value
-  result.value .+= self.bias # Bias is broadcasted other the whole batch size
+  result.value = self.W.value * a.value
+  if not self.b.isNil:
+    result.value .+= self.b.value # Bias is broadcasted other the whole batch size
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
-method backward*[TT](self: LinearLayer[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
-  self.dW = gradient * self.cache.unsafeTranspose
-  self.dB = sum(gradient, axis=0) # https://mlxai.github.io/2017/01/10/a-modular-approach-to-implementing-fully-connected-neural-networks.html
+method backward*[TT](self: LinearGate[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
+  result[0] = self.W.value.unsafeTranspose * gradient
+  result[1] = gradient * self.x.value.unsafeTranspose
 
-  result[0] = self.weight.unsafeTranspose * gradient
+  if not self.b.isNil:
+    result[2] = sum(gradient, axis=0) # https://mlxai.github.io/2017/01/10/a-modular-approach-to-implementing-fully-connected-neural-networks.html
 
-proc linear*[TT](a: Variable[TT], out_shape: int): Variable[TT] =
+proc linear*[TT](x, weight: Variable[TT], bias: Variable[TT] = nil): Variable[TT] =
   ## Input:
-  ##   - A variable
-  ##   - Number of features in the output
+  ##   - A x Variable of shape @[in_features, batch_size]
+  ##   - A weight Variable of shape @[out_features, in_features]
+  ##   - Optionally a bias Variable of shape @[out_features, 1]
   ##
-  # TODO: introduce initialization scheme for weight and bias
-
-  # TODO: batch_size, where to put it? (out_shape, N) or (N, out_shape)
+  ## Return: Weight * x + bias
 
   when compileOption("boundChecks"):
-    if a.value.rank > 2:
+    if x.value.rank > 2:
       raise newException(ValueError, "Tensor must be flattened for a linear layer (features, batch_size)")
 
+    check_ctx(x, weight)
+    if not bias.isNil:
+      check_ctx(x, bias)
+
+    # weight has shape: Out_features * In_features
+    # bias must have shape: Out_features * 1
+    if not bias.isNil and not (bias.value.shape == @[weight.value.shape[0], 1]):
+      raise newException(ValueError, "Incompatible shape: bias must be a vector of shape @[out_features, 1]")
+
   # Gate
-  var gate: LinearLayer[TT]
+  var gate: LinearGate[TT]
   new gate
-  gate.arity = 1
-  gate.cache = a.value.unsafeView
-  gate.weight = zeros[getSubType(TT)](out_shape, a.value.shape[0])
-  gate.bias = zeros[getSubType(TT)](out_shape, 1)
+  gate.arity = if bias.isNil: 2 else: 3
+  gate.x = x
+  gate.W = weight
+  gate.b = bias
 
   # Node
   var node: Node[TT]
   new node
 
   node.gate = gate
-  node.parents[0] = a
+  node.parents[0] = x
+  node.parents[1] = weight
+  if not bias.isNil:
+    node.parents[2] = bias
 
-  a.tape.push(node)
+  x.tape.push(node)
 
   # Resulting var
-  result = gate.forward(a)
+  result = gate.forward(x)
   result.ancestor = node
   node.child = result

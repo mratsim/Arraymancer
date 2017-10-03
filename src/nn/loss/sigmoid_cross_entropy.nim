@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import ../../arraymancer_ag, ../../arraymancer, ../../autograd/utils
+import ./loss
 import math
 
 proc check_input_target[T](input, target: Tensor[T]) {.inline.}=
@@ -75,10 +76,8 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T {.inline.} =
     result += (-ti * xi +  max(xi,0) + ln(1 + exp(-abs(xi))) ) / T(input.shape[0]) #input.shape[0] is the batch size
 
 
-type SigmoidCrossEntropyLoss* {.final.} [TT] = ref object of Gate[TT]
-  batch_size: seq[int]
+type SigmoidCrossEntropyLoss* {.final.} [TT] = ref object of Loss[TT]
   cache: Variable[TT]
-  target: TT
 
 method forward*[TT](self: SigmoidCrossEntropyLoss[TT], a: Variable[TT], target: TT): Variable[TT] {.inline, locks:0.}=
   new result

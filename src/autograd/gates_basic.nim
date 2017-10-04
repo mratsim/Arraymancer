@@ -15,10 +15,12 @@
 # By convention a is the LHS (left-hand side)
 # b is the rhs (right-hand side)
 
+import ./autograd, ../arraymancer, ./utils
+
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
   ab_shape: seq[int]
 
-method forward*[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
+method forward*[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
   result.tape = a.tape
@@ -31,13 +33,13 @@ method forward*[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inlin
 
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
-method backward*[TT](self: AddGate[TT], gradient: TT): SmallDiffs[TT] =
+method backward*[TT](self: AddGate[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
   result[0] = gradient
   result[1] = gradient
 
 proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
-  # when compileOption("boundChecks"):
-  #   check_ctx(a, b)
+  when compileOption("boundChecks"):
+    check_ctx(a, b)
 
   # Gate
   var gate: AddGate[TT]

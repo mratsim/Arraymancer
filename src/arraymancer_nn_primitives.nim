@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./autograd/utils,
-        ./autograd/autograd,
-        ./autograd/gates_basic,
-        ./autograd/gates_blas,
-        ./autograd/gates_reduce
+import ./arraymancer
 
-export autograd, gates_basic, gates_blas, gates_reduce
+import ./nn_primitives/[activation_primitives, linear_primitives, sigmoid_cross_entropy_primitives]
+
+export activation_primitives, linear_primitives, sigmoid_cross_entropy_primitives

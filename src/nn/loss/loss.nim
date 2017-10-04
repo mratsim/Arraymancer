@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./autograd/utils,
-        ./autograd/autograd,
-        ./autograd/gates_basic,
-        ./autograd/gates_blas,
-        ./autograd/gates_reduce
+import ../../arraymancer_ag, typetraits
 
-export autograd, gates_basic, gates_blas, gates_reduce
+
+type Loss* [TT] = ref object of Gate[TT]
+  batch_size*: seq[int]
+  target*: TT
+
+
+method forward*[TT](self: Loss[TT], a: Variable[TT], target: TT): Variable[TT] {.base, inline.}=
+  # Forward for loss layers
+  raise newException(ValueError, "forward method is not implemented for " & $self.type.name)

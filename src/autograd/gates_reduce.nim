@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ./autograd, ../arraymancer, ./utils, sequtils
+
 type MeanGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
   a_shape: seq[int]
 
-method forward*[TT](self: MeanGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
+method forward*[TT](self: MeanGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
   result.tape = a.tape
@@ -25,15 +27,15 @@ method forward*[TT](self: MeanGate[TT], a: Variable[TT]): Variable[TT] {.inline.
   result.grad = zeros[getSubType(TT)](1)
 
 
-method backward*[TT](self: MeanGate[TT], gradient: TT): SmallDiffs[TT] =
+method backward*[TT](self: MeanGate[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
   result[0] = gradient / getSubType(TT)(self.a_shape.product) # Conversion to subtype T, oh Higher kinded-types ...
 
   let z_shape = newSeqWith(self.a_shape.len, 1) # We create a shape of 1 dimension that we will expand with broadcast
   result[0] = result[0].unsafeReshape(z_shape).unsafeBroadcast(self.a_shape)
 
 proc mean*[TT](a: Variable[TT]): Variable[TT] =
-  # when compileOption("boundChecks"):
-  #   check_ctx(a, b)
+  when compileOption("boundChecks"):
+    check_ctx(a, b)
 
   # Gate
   var gate: MeanGate[TT]

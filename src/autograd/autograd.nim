@@ -12,26 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import typetraits
 
-const MAX_ARITY = 2 # Max arity/number of input of autograd operations
+const MAX_ARITY = 3 # Max arity/number of input of autograd operations
 
 type
   Gate*[TT] = ref object {.inheritable.}
-    arity: int
+    arity*: int
     # Base operator or layer
     # Inherit from it and add a forward and backward method.
     # Each operations should set its arity (number of input)
     # Additional fields like weights, cache for bprop should be added too.
 
-  Node[TT] = ref NodeObj[TT]
-  Parents[TT] = array[MAX_ARITY, Variable[TT]]
-  SmallDiffs[TT] = array[MAX_ARITY, TT]
+  Node*[TT] = ref NodeObj[TT]
+  Parents*[TT] = array[MAX_ARITY, Variable[TT]]
+  SmallDiffs*[TT] = array[MAX_ARITY, TT]  #TODO: how not to export that
 
   NodeObj[TT] = object
     # Store an operator/layer + its parent
-    gate: Gate[TT]
-    parents: Parents[TT]
-    child: Variable[TT] # Todo: avoid reference to child and add {.acyclic.}
+    gate*: Gate[TT] #TODO: how not to export that
+    parents*: Parents[TT] #TODO: how not to export that
+    child*: Variable[TT] # Todo: avoid reference to child and add {.acyclic.}
 
   Context*[TT] = ref object
     ## Tape / Wengert list. Contains the list of applied operations or layers
@@ -43,8 +44,8 @@ type
 
   Variable*[TT] = ref object
     ## Wrapper for values
-    tape: Context[TT]
-    ancestor: Node[TT] # Absence of ancestor will be represented by the nil value. TODO: Option type with no overhead: https://forum.nim-lang.org/t/3082
+    tape*: Context[TT] #TODO: how not to export that
+    ancestor*: Node[TT] # Absence of ancestor will be represented by the nil value. TODO: Option type with no overhead: https://forum.nim-lang.org/t/3082
     value*: TT # TT should be a Tensor[T] or CudaTensor[T] or a scalar
     grad*: TT # gradient wrt to the last back propagation done
     # TODO make the grad initialization optional to optimize memory use
@@ -52,10 +53,15 @@ type
 
 # Somehow if you declare forward before backward, you get invalid declaration order
 # https://github.com/nim-lang/Nim/issues/5325
-method backward*[TT](self: Gate[TT], gradient: TT): SmallDiffs[TT] {.base.} =
+method backward*[TT](self: Gate[TT], gradient: TT): SmallDiffs[TT] {.base, inline.} =
   raise newException(ValueError, "backward method is not implemented for " & $self.type.name)
 
-method forward*[TT](self: Gate[TT], a, b: Variable[TT]): Variable[TT] {.base.} =
+method forward*[TT](self: Gate[TT], a, b: Variable[TT]): Variable[TT] {.base, inline.} =
+  # Binary forward
+  raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
+
+method forward*[TT](self: Gate[TT], a: Variable[TT]): Variable[TT] {.base, inline.}=
+  # Unary forward
   raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
 
 proc newContext*(TT: typedesc): Context[TT] {.inline, noSideEffect.} =
@@ -73,7 +79,7 @@ template len[TT](t: Context[TT]): int =
   ## Returns the number of operations applied in the context
   t.nodes.len()
 
-template push[TT](t: Context[TT], node: Node[TT]) =
+template push*[TT](t: Context[TT], node: Node[TT]) = #TODO: how not to export that
   ## Append a new operation to the context
   t.nodes.add(node) #Appending in Nim is add not push
 
@@ -81,11 +87,8 @@ template value*[TT](v: Variable[TT]): TT  =
   ## Unwrap the value from its context
   v.value
 
-proc check_ctx(a, b: Variable) {.inline.} =
-  # This is broken, Nim does deep comparison and crash on nil pointer
-  echo repr a.tape
-  echo repr b.tape
-  if cast[ByteAddress](a.tape[]) != cast[ByteAddress](b.tape[]): # TODO comparing 2 ref objects address
+proc check_ctx*(a, b: Variable) {.inline.} =
+  if a.tape[].unsafeAddr != b.tape[].unsafeAddr: # compare pointer adress directly (avoid deep comparison)
     raise newException(ValueError, "You cannot combine variable from different contexts")
 
 proc backprop*[TT](v: Variable[TT]) =

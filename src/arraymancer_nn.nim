@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./autograd/utils,
-        ./autograd/autograd,
-        ./autograd/gates_basic,
-        ./autograd/gates_blas,
-        ./autograd/gates_reduce
+import ./arraymancer, ./arraymancer_ag
 
-export autograd, gates_basic, gates_blas, gates_reduce
+import  nn/activation/[sigmoid, relu],
+        nn/layers/linear,
+        nn/loss/sigmoid_cross_entropy,
+        nn/optimizers/optimizers
+
+
+export sigmoid, relu
+export linear, sigmoid_cross_entropy
+export optimizers

@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./autograd/utils,
-        ./autograd/autograd,
-        ./autograd/gates_basic,
-        ./autograd/gates_blas,
-        ./autograd/gates_reduce
+import ../../arraymancer_ag, ../../arraymancer
 
-export autograd, gates_basic, gates_blas, gates_reduce
+type Layer*[TT] = ref object of Gate[TT]
+  ## Inherits from Gate (arity field)
+  ## Add required fields for gradient descent
+  weight*: TT
+  bias*: TT
+  dW*: TT
+  dB*: TT

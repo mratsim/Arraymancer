@@ -1,4 +1,7 @@
-macro getSubType(TT: typedesc): untyped =
+import macros, sequtils
+
+
+macro getSubType*(TT: typedesc): untyped =
   # Get the subtype T of an AnyTensor[T] input
   getTypeInst(TT)[1][1]
 
@@ -13,6 +16,6 @@ macro getSubType(TT: typedesc): untyped =
 #   return true
 
 
-template product[T: SomeNumber](s: seq[T]): T =
+template product*[T: SomeNumber](s: seq[T]): T =
   ## Get the product of all numbers in a sequence or array
   s.foldl(a*b)

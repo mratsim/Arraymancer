@@ -26,13 +26,7 @@ method forward*[TT](self: ReluActivation[TT], a: Variable[TT]): Variable[TT] {.i
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
 method backward*[TT](self: ReluActivation[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
-  proc relu_backward_closure[T](x: T): T =
-    if x <= 0.T:
-      return 0.T
-    return 1.T
-
-  self.cache.apply(relu_backward_closure)
-  result[0] = gradient .* self.cache
+  result[0] = gradient.relu_backward(self.cache)
 
 proc relu*[TT](a: Variable[TT]): Variable[TT] =
   ## Input:

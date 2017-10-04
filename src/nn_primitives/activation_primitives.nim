@@ -63,3 +63,22 @@ proc mrelu*[T](t: var Tensor[T]): Tensor[T] {.inline.}=
   proc relu_closure(x: T): T =
     max(0.T, x)
   t.apply(relu_closure)
+
+
+proc relu_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.inline.}=
+  proc relu_backward_closure[T](x: T): T =
+    if x <= 0.T:
+      return 0.T
+    return 1.T
+
+  result = cached_tensor.map(relu_backward_closure)
+  result .*= gradient
+
+proc sigmoid_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.inline.}=
+  proc sigmoid_backward_closure[T](x: T): T =
+    ## We suppose the input was already passed through the logistic sigmoid.
+    ## Derivative is f' = f * (1 - f)
+    x * (1 - x)
+  
+  result = cached_tensor.map(sigmoid_backward_closure)
+  result .*= gradient

@@ -26,11 +26,7 @@ method forward*[TT](self: SigmoidActivation[TT], a: Variable[TT]): Variable[TT] 
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
 method backward*[TT](self: SigmoidActivation[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
-  proc sigmoid_deriv_closure[T](x: T): T =
-    ## We suppose the input was already passed through the logistic sigmoid.
-    ## Derivative is f' = f * (1 - f)
-    x * (1 - x)
-  result[0] = self.cache.map(sigmoid_deriv_closure)
+  result[0] = gradient.sigmoid_backward(self.cache)
 
 proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
   ## Input:

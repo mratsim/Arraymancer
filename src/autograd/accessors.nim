@@ -12,15 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./autograd/utils,
-        ./autograd/autograd,
-        ./autograd/gates_basic,
-        ./autograd/gates_blas,
-        ./autograd/gates_reduce,
-        ./autograd/accessors
+import ./autograd, ../arraymancer
 
-export autograd,
-       gates_basic,
-       gates_blas,
-       gates_reduce,
-       accessors
+template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
+  # TODO: buggy, xor with minibatches get out of bounds exception
+  let result = v
+  result.value = result.value.unsafeSlice(args)
+  result.grad = result.grad.unsafeSlice(args)
+  result

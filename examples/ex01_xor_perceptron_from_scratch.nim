@@ -9,11 +9,18 @@ import future
 
 # Okay let's start
 # With x and y being one sample, the perceptron equation is
+#
+# Layer 1
 # n1 = relu(a1 * x + b1 * y + c1) # First neuron + relu activation
 # n2 = relu(a2 * x + b2 * y + c2) # 2nd neuron + relu activation
 # n3 = relu(a3 * x + b3 * y + c3) # 3nd neuron + relu activation
+#
+# Layer 2
 # classifier =  a4 * n1 + b4 * n2 + c4 * n3
+#
+# Loss
 # loss = cross_entropy(sigmoid(classifier))
+
 
 
 # In terms of high level layers this becomes:
@@ -93,7 +100,7 @@ let optim = newSGD[float32](
 
 # Now let's setup the training loops.
 # First loop is passing the mini-batch, bacpropagating, updating the gradients.
-# We do it until the whole x_train tensor ha sbeen passed through.
+# We do it until the whole x_train tensor has been passed through.
 # This is one "epoch".
 
 # Usually after each epoch we "validate" with a test set that the network was never trained on
@@ -122,19 +129,6 @@ for epoch in 0..5:
 
     # Compute the gradient (i.e. contribution of each parameter to the loss)
     loss.backprop()
-
-    ##  Some checks:
-    ##  echo "n2 grad"
-    ##  echo n2.grad
-    ##
-    ##  echo "n1 grad"
-    ##  echo n1.grad
-    ##
-    ##  echo "n1_act"
-    ##  echo n1.grad
-    ##
-    ##  echo "neuron1_W grad"
-    ##  echo neuron1_W.grad
 
     # Correct the weights now that we have the gradient information
     optim.update()

@@ -15,8 +15,14 @@
 import ./autograd, ../arraymancer
 
 template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
-  # TODO: buggy, xor with minibatches get out of bounds exception
-  let result = v
-  result.value = result.value.unsafeSlice(args)
-  result.grad = result.grad.unsafeSlice(args)
+  var result: type(v)
+  new result
+
+  result.tape = v.tape
+  result.ancestor = v.ancestor
+  result.value = v.value.unsafeSlice(args)
+  result.grad = v.grad.unsafeSlice(args)
+
   result
+
+  # TODO: tests for slicing correspondance

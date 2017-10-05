@@ -70,7 +70,6 @@ echo y_bool[0..<32, _]
 let x_train = ctx.variable(x_train_bool.astype(float32).transpose)
 let y = y_bool.astype(float32).transpose
 
-
 # Now we create layer of neurons W that we will train to reproduce the xor function.
 # Weights are of this shape: [W: out_features, in_features]
 
@@ -101,7 +100,7 @@ let optim = newSGD[float32](
 # how the network generalized. In this example we won't go there to keep it short.
 
 # We will do 5 epochs, passing the 32*100 minibatches
-for epoch in 0..<2:
+for epoch in 0..5:
 
   for batch_id in 0..<100:
 

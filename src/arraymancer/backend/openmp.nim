@@ -42,19 +42,19 @@ template omp_parallel_forup*(i: untyped, start, size: Natural, body: untyped): u
     body
 
 template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, body: untyped): untyped =
-  when defined(openmp):
-    block:
+  block ompblocks:
+    when defined(openmp):
       if size >= OMP_FOR_THRESHOLD:
         let omp_num_threads = omp_get_max_threads()
         if size >= omp_num_threads:
           let bsize = size div omp_num_threads
-          for j in 0..(omp_num_threads-1):
+          for j in 0||(omp_num_threads-1):
             let block_offset = bsize*j
             let block_size = if j < omp_num_threads-1: bsize else: size - block_offset
             block:
               body
-          break
-  let block_offset = 0
-  let block_size = size
-  block:
-    body
+          break ompblocks
+    let block_offset = 0
+    let block_size = size
+    block:
+      body

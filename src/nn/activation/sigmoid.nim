@@ -22,7 +22,7 @@ method forward*[TT](self: SigmoidActivation[TT], a: Variable[TT]): Variable[TT] 
   new result
 
   result.tape = a.tape
-  result.value = a.value.sigmoid
+  result.value = sigmoid a.value
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
 method backward*[TT](self: SigmoidActivation[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./arraymancer, ./arraymancer_ag
+import ./arraymancer, ./arraymancer_ag, ./arraymancer_nn_primitives
 
 import  nn/activation/[sigmoid, relu],
         nn/layers/linear,

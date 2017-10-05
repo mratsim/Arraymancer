@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import ../../arraymancer_ag, ../../arraymancer, ../../autograd/utils
+import ../../arraymancer_nn_primitives
 import math
 
 type ReluActivation* {.final.} [TT] = ref object of Gate[TT]
@@ -22,7 +23,7 @@ method forward*[TT](self: ReluActivation[TT], a: Variable[TT]): Variable[TT] {.i
   new result
 
   result.tape = a.tape
-  result.value = a.value.relu
+  result.value = relu a.value
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
 method backward*[TT](self: ReluActivation[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=

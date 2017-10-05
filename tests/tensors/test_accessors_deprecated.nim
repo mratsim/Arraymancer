@@ -12,17 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../src/arraymancer
+import ../../src/arraymancer
 import unittest, math
 
 
 suite "Accessing and setting tensor values":
   test "Accessing and setting a single value":
-    var a = zeros[int](@[2,3,4])
+    var a = zeros(@[2,3,4], int, Backend.Cpu)
     a[1,2,2] = 122
     check: a[1,2,2] == 122
 
-    var b = zeros[int](@[3,4])
+    var b = zeros(@[3,4], int, Backend.Cpu)
     b[1,2] = 12
     check: b[1,2] == 12
     b[0,0] = 999
@@ -31,20 +31,17 @@ suite "Accessing and setting tensor values":
     check: b[2,3] == 111
 
 
-  when compileOption("boundChecks"):
-    test "Out of bounds checking":
-      var a = newTensor(@[2,3,4], int, Backend.Cpu)
-      expect(IndexError):
-        a[2,0,0] = 200
-      var b = newTensor(@[3,4], int, Backend.Cpu)
-      expect(IndexError):
-        b[3,4] = 999
-      expect(IndexError):
-        discard b[-1,0]
-      expect(IndexError):
-        discard b[0,-2]
-  else:
-    echo "Bound-checking is disabled. The out-of-bounds checking test has been skipped."
+  test "Out of bounds checking":
+    var a = newTensor(@[2,3,4], int, Backend.Cpu)
+    expect(IndexError):
+      a[2,0,0] = 200
+    var b = newTensor(@[3,4], int, Backend.Cpu)
+    expect(IndexError):
+      b[3,4] = 999
+    expect(IndexError):
+      discard b[-1,0]
+    expect(IndexError):
+      discard b[0,-2]
 
   test "Iterators":
     const
@@ -60,7 +57,7 @@ suite "Accessing and setting tensor values":
       for j, bb in b:
         vd[i].add(aa^bb)
 
-    let nda_vd = vd.toTensor()
+    let nda_vd = vd.toTensor(Cpu)
 
     let expected_seq = @[1,1,1,2,4,8,3,9,27,4,16,64,5,25,125]
 
@@ -73,7 +70,7 @@ suite "Accessing and setting tensor values":
     var seq_validx: seq[tuple[idx: seq[int], val: int]] = @[]
     for i,j in nda_vd:
       seq_validx.add((i,j))
-
+    
     check: seq_validx[0] == (@[0,0], 1)
     check: seq_validx[10] == (@[3,1], 16)
 
@@ -82,24 +79,6 @@ suite "Accessing and setting tensor values":
     var seq_transpose: seq[tuple[idx: seq[int], val: int]] = @[]
     for i,j in t_nda:
       seq_transpose.add((i,j))
-
+    
     check: seq_transpose[0] == (@[0,0], 1)
     check: seq_transpose[8] == (@[1,3], 16)
-
-  test "indexing + in-place operator":
-    var a = newTensor[int]([3,3])
-
-    a[1,1] += 10
-
-    a[1,1] *= 20
-
-    check: a == [[0,0,0],[0,200,0],[0,0,0]].toTensor
-
-  test "Zipping two tensors":
-    let a = [[1,2],[3,4]].toTensor()
-    let b = [[5,6],[7,8]].toTensor()
-
-    var res = 0
-    for ai, bi in zip(a, b):
-      res += ai + bi
-    check: res == 36

@@ -14,6 +14,6 @@
 
 # Please compile with -d:cuda switch
 import ../src/arraymancer,
-        ./test_operators_blas_cuda,
-        ./test_accessors_slicer_cuda,
-        ./test_shapeshifting_cuda
+        ./tensors/test_operators_blas_cuda,
+        ./tensors/test_accessors_slicer_cuda,
+        ./tensors/test_shapeshifting_cuda

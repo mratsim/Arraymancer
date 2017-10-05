@@ -13,12 +13,12 @@
 # limitations under the License.
 
 import ../src/arraymancer,
-        ./test_init_deprecated,
-        ./test_comparison_deprecated,
-        ./test_accessors_deprecated,
-        ./test_accessors_slicer_deprecated,
-        ./test_display_deprecated,
-        ./test_operators_blas_deprecated,
-        ./test_aggregate_deprecated,
-        ./test_shapeshifting_deprecated,
-        ./test_ufunc_deprecated
+        ./tensors/test_init_deprecated,
+        ./tensors/test_comparison_deprecated,
+        ./tensors/test_accessors_deprecated,
+        ./tensors/test_accessors_slicer_deprecated,
+        ./tensors/test_display_deprecated,
+        ./tensors/test_operators_blas_deprecated,
+        ./tensors/test_aggregate_deprecated,
+        ./tensors/test_shapeshifting_deprecated,
+        ./tensors/test_ufunc_deprecated

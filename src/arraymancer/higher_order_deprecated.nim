@@ -14,14 +14,14 @@
 
 
 proc fmap*[T, U](t: Tensor[T], f: T -> U): Tensor[U]
-  {.deprecated, inline, noSideEffect.}=
+  {.deprecated, inline.}=
   ## DEPRECATED
   ##
   ## Replace by map2
   t.map(f)
 
 proc fmap2*[T, U, V](t1: Tensor[T], t2: Tensor[U], f: (T,U) -> V): Tensor[V]
-  {.deprecated, inline, noSideEffect.}=
+  {.deprecated, inline.}=
   ## DEPRECATED
   ##
   ## Replaced by map2

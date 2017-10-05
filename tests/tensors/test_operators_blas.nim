@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../src/arraymancer
+import ../../src/arraymancer
 import unittest, future
 
 suite "BLAS (Basic Linear Algebra Subprograms)":

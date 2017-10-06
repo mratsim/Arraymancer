@@ -27,4 +27,5 @@ import ../src/arraymancer,
         ./tensors/test_ufunc,
         ./tensors/test_filling_data,
         ./tensors/test_optimization,
-        ./tensors/test_bugtracker
+        ./tensors/test_bugtracker,
+        ./autograd/test_gate_blas

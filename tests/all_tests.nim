@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../src/arraymancer,
-        ./tensors/test_init.nim,
+        ./tensors/test_init,
         ./tensors/test_comparison,
         ./tensors/test_accessors,
         ./tensors/test_accessors_slicer,

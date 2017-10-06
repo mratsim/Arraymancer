@@ -24,7 +24,7 @@ proc check_dot_prod(a, b:AnyTensor)  {.noSideEffect.}=
   # FIXME: Can't use built-in proc `+` in map: https://github.com/nim-lang/Nim/issues/5702
   # map2(a, `+`, b)
 
-proc dot*[T: SomeReal](a, b: Tensor[T]): T {.noSideEffect, inline.} =
+proc dot*[T: SomeReal](a, b: Tensor[T]): T {.noSideEffect.} =
   ## Vector to Vector dot (scalar) product
   when compileOption("boundChecks"): check_dot_prod(a,b)
   return dot(a.shape[0], a.get_data_ptr, a.strides[0], b.get_data_ptr, b.strides[0])
@@ -33,7 +33,7 @@ proc dot*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
   ## Vector to Vector dot (scalar) product
   # Fallback for non-floats
   when compileOption("boundChecks"): check_dot_prod(a,b)
-  for ai, bi in zip(a.values, b.values):
+  for ai, bi in zip(a, b):
     result += ai * bi
 
 # #########################################################
@@ -42,67 +42,53 @@ proc dot*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
 
 proc `+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] =
   ## Tensor addition
-  # Note: proc cannot be inlined for unknown reason (closure with env variable?)
-  proc add_closure(x, y: T): T = x + y
-  return map2(a, add_closure, b)
+  map2T(a, b, x + y)
 
 proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] =
   ## Tensor substraction
-  # Note: proc cannot be inlined for unknown reason (closure with env variable?)
-  proc sub_closure(x, y: T): T = x - y
-  return map2(a, sub_closure, b)
+  map2T(a, b, x - y)
 
 # #########################################################
 # # Tensor-Tensor in-place linear algebra
 
-proc `+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.inline.} =
+proc `+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor in-place addition
-  # shape check done in apply2 proc
+  a.apply2T(b, x + y)
 
-  proc madd_closure(x: var T, y: T) = x += y
-  apply2(a, madd_closure, b)
-
-proc `-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.inline.} =
+proc `-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor in-place substraction
-  proc msub_closure(x: var T, y: T) = x -= y
-  apply2(a, msub_closure, b)
+  a.apply2T(b, x - y)
 
 # #########################################################
 # # Tensor-scalar linear algebra
 
-proc `*`*[T: SomeNumber](a: T, t: Tensor[T]): Tensor[T] {.inline.} =
+proc `*`*[T: SomeNumber](a: T, t: Tensor[T]): Tensor[T] =
   ## Element-wise multiplication by a scalar
-  proc scalmul_closure(x: T): T = a * x
-  return t.map(scalmul_closure)
+  t.mapT(x * a)
 
-proc `*`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] {.inline.} =
+proc `*`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] =
   ## Element-wise multiplication by a scalar
   a * t
 
-proc `/`*[T: SomeReal](t: Tensor[T], a: T): Tensor[T] {.inline.} =
+proc `/`*[T: SomeReal](t: Tensor[T], a: T): Tensor[T] =
   ## Element-wise division by a float scalar
-  proc scaldiv_closure(x: T): T = x / a
-  return t.map(scaldiv_closure)
+  t.mapT(x / a)
 
-proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.inline.} =
+proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] =
   ## Element-wise division by an integer
-  proc scalintdiv_closure(x: T): T = x div a
-  return t.map(scalintdiv_closure)
+  t.mapT(x div a)
 
 # #########################################################
 # # Tensor-scalar in-place linear algebra
 
-proc `*=`*[T: SomeNumber](t: var Tensor[T], a: T) {.inline.} =
+proc `*=`*[T: SomeNumber](t: var Tensor[T], a: T) =
   ## Element-wise multiplication by a scalar (in-place)
-  proc mscalmul_closure(x: var T) = x *= a
-  t.apply(mscalmul_closure)
+  t.applyT(x * a)
 
-proc `/=`*[T: SomeReal](t: var Tensor[T], a: T) {.inline.} =
+proc `/=`*[T: SomeReal](t: var Tensor[T], a: T) =
   ## Element-wise division by a scalar (in-place)
-  proc mscaldiv_closure(x: var T) = x /= a
-  t.apply(mscaldiv_closure)
+  t.applyT(x / a)
 
-proc `/=`*[T: SomeInteger](t: var Tensor[T], a: T) {.inline.} =
+proc `/=`*[T: SomeInteger](t: var Tensor[T], a: T) =
   ## Element-wise division by a scalar (in-place)
-  proc mscalintdiv_closure(x: T): T = x div a
-  t.apply(mscalintdiv_closure)
+  t.applyT(x div a)

@@ -15,6 +15,44 @@
 # ####################################################################
 # Mapping over tensors
 
+template applyT*(t: var Tensor, op: untyped): untyped =
+  omp_parallel_blocks(block_offset, block_size, t.size):
+    for x {.inject.} in t.mitems(block_offset, block_size):
+      x = op
+
+template apply2T*[T,U](dest: var Tensor[T], src: Tensor[U], op: untyped): untyped =
+  omp_parallel_blocks(block_offset, block_size, dest.size):
+    for x {.inject.}, y {.inject.} in mzip(dest, src, block_offset, block_size):
+      x = op
+
+template apply3T*[T,U,V](dest: var Tensor[T], t1: Tensor[U], t2: Tensor[V], op: untyped): untyped =
+  when compileOption("boundChecks"):
+    check_elementwise(t1,t2)
+    check_elementwise(dest,t2)
+
+  var data = dest.dataArray
+  omp_parallel_blocks(block_offset, block_size, t1.size):
+    for i, x {.inject.}, y {.inject.} in enumerateZip(t1, t2, block_offset, block_size):
+      data[i] = op
+
+template mapT*[T](t: Tensor[T], op:untyped): untyped =
+  var dest = newTensorUninit[T](t.shape)
+  omp_parallel_blocks(block_offset, block_size, dest.size):
+    for v, x {.inject.} in mzip(dest, t, block_offset, block_size):
+      v = op
+  dest
+
+template map2T*[T](t1, t2: Tensor[T], op:untyped): untyped =
+  when compileOption("boundChecks"):
+    check_elementwise(t1,t2)
+
+  var dest = newTensorUninit[T](t1.shape)
+  var data = dest.dataArray
+  omp_parallel_blocks(block_offset, block_size, t1.size):
+    for i, x {.inject.}, y {.inject.} in enumerateZip(t1, t2, block_offset, block_size):
+      data[i] = op
+  dest
+
 proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
   ## Usage with Nim's ``future`` module:
@@ -37,14 +75,7 @@ proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] =
   # And should benefit future computations on previously non-contiguous data
 
   result = newTensorUninit[U](t.shape)
-
-  if t.is_C_contiguous(): # new Tensor is created C contiguous
-    omp_parallel_countup(i, t.size-1):
-      result.data[i] = f(t.data[t.offset+i])
-  else:
-    omp_parallel_blocks(block_offset, block_size, t.size):
-      for i, val in t.indexed_partial_items(block_offset, block_size):
-        result.data[i] = f(val)
+  result.apply2T(t, f(y))
 
 proc apply*[T](t: var Tensor[T], f: T -> T) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
@@ -65,14 +96,7 @@ proc apply*[T](t: var Tensor[T], f: T -> T) =
   ##       x + 1
   ##     a.apply(plusone) # Apply the function plusone in-place
 
-
-  if t.isNaiveIterable() or t.isContiguous(): # TODO tests if isContiguous returns true for contiguous slice
-    omp_parallel_forup(i, t.offset, t.offset+t.size-1):
-      t.data[i] = f(t.data[i])
-  else:
-    omp_parallel_blocks(block_offset, block_size, t.size):
-      for i, val in t.indexed_partial_mitems(block_offset, block_size):
-        val = f(val)
+  t.applyT(f(x))
 
 proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
@@ -93,13 +117,9 @@ proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
   ##     a.apply(pluseqone) # Apply the in-place function pluseqone
   ## ``apply`` is especially useful to do multiple element-wise operations on a tensor in a single loop over the data.
 
-  if t.isNaiveIterable() or t.isContiguous(): # TODO tests if isContiguous returns true for contiguous slice
-    omp_parallel_forup(i, t.offset, t.offset+t.size-1):
-      f(t.data[i])
-  else:
-    omp_parallel_blocks(block_offset, block_size, t.size):
-      for i, val in t.indexed_partial_mitems(block_offset, block_size):
-        f(val)
+  omp_parallel_blocks(block_offset, block_size, t.size):
+    for x in t.mitems(block_offset, block_size):
+      f(x)
 
 proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] =
   ## Apply a binary function in an element-wise manner on two Tensor[T], returning a new Tensor.
@@ -124,17 +144,8 @@ proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] =
   when compileOption("boundChecks"):
     check_elementwise(t1,t2)
 
-  result = newTensorUninit[U](t1.shape)
-
-  if t1.isNaiveIterableWith(t2) and t1.is_C_contiguous(): # new Tensor is created C contiguous
-    omp_parallel_countup(i, t1.size-1):
-      result.data[i] = f(t1.data[t1.offset+i], t2.data[t2.offset+i])
-  else:
-    omp_parallel_blocks(block_offset, block_size, t1.size):
-      # TODO use mitems instead of result.data[i] cf profiling
-      # TODO: inline iterators - pending https://github.com/nim-lang/Nim/issues/4516
-      for i, ai, bi in enumerate_zip(t1.partial_values(block_offset, block_size), t2.partial_values(block_offset, block_size), block_offset):
-        result.data[i] = f(ai, bi)
+  result = newTensorUninit[V](t1.shape)
+  result.apply3T(t1, t2, f(x,y))
 
 proc apply2*[T, U](a: var Tensor[T],
                    f: proc(x:var T, y:T), # We can't use the nice future syntax here
@@ -161,14 +172,9 @@ proc apply2*[T, U](a: var Tensor[T],
   when compileOption("boundChecks"):
     check_elementwise(a,b)
 
-  if a.isNaiveIterableWith(b):
-    omp_parallel_countup(i, a.size-1):
-      f(a.data[a.offset+i], b.data[b.offset+i])
-  else:
-    omp_parallel_blocks(block_offset, block_size, a.size):
-      # TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
-      for a_idx, b_val in zip(a.partial_real_indices(block_offset, block_size), b.partial_values(block_offset, block_size)):
-        f(a.data[a_idx], b_val)
+  omp_parallel_blocks(block_offset, block_size, a.size):
+    for x, y in mzip(a, b, block_offset, block_size):
+      f(x, y)
 
 # ####################################################################
 # Folds and reductions over a single Tensor
@@ -217,7 +223,7 @@ proc fold*[U, T](t: Tensor[U],
 
 proc reduce*[T](t: Tensor[T],
                 f: (T, T) -> T
-                ): T {.noSideEffect.}=
+                ): T =
   ## Chain result = f(result, element) over all elements of the Tensor.
   ##
   ## The starting value is the first element of the Tensor.
@@ -230,10 +236,12 @@ proc reduce*[T](t: Tensor[T],
   ##  .. code:: nim
   ##     a.reduce(max) ## This returns the maximum value in the Tensor.
 
-  let it = t.values
-  result = it()
-  for val in it():
-    result = f(result, val)
+  var size = t.size
+  if size >= 1:
+    result = t.dataArray[0]
+    if size > 2:
+      for val in t.items(1, size-1):
+        result = f(result, val)
 
 proc reduce*[T](t: Tensor[T],
                 f: (Tensor[T], Tensor[T])-> Tensor[T],

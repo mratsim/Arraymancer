@@ -23,7 +23,7 @@ proc naive_gemv_fallback[T: SomeInteger](
           A: Tensor[T],
           x: Tensor[T],
           beta: T,
-          y: var Tensor[T]) {.noSideEffect.} =
+          y: var Tensor[T]) =
   ## y <- alpha * A * x + beta * y
 
 

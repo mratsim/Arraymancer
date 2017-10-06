@@ -65,21 +65,12 @@ proc unsafeTranspose*(t: Tensor): Tensor {.noSideEffect, inline.}=
   shallowCopy(result.data, t.data)
 
 template contiguousT[T](result, t: Tensor[T], layout: OrderType): untyped=
-  result = newTensorUninit[T](t.shape)
-
-  var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
-
   if layout == rowMajor:
-    for val in t:
-      result.data[i] = val
-      inc i
+    result = t.mapT(x)
   else:
-    for val in t.transpose:
-      result.data[i] = val
-      inc i
+    result = t.transpose().mapT(x)
 
-
-proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noSideEffect.}=
+proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T]=
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
   ##
   ## By default tensor will be rowMajor.
@@ -95,7 +86,7 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
     return t
   contiguousT(result, t, layout)
 
-proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noSideEffect.}=
+proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] =
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
   ##
   ## If the tensor is already contiguous it is returned without copy, underlying data is shared between the input and the output.
@@ -117,16 +108,12 @@ proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: boo
     return t.unsafeView
   contiguousT(result, t, layout)
 
-proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] {.noSideEffect.}=
+proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] =
   # Can't call "tensorCpu" template here for some reason
   result = newTensorUninit[T](new_shape)
+  result.apply2T(t,y)
 
-  var i = 0 ## TODO: use pairs/enumerate instead - pending https://forum.nim-lang.org/t/2972
-  for val in t:
-    result.data[i] = val
-    inc i
-
-proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect, inline.}=
+proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor =
   ## Reshape a tensor
   ##
   ## Input:
@@ -162,7 +149,7 @@ template reshape_no_copy(t: Tensor|var Tensor, new_shape: varargs[int]): untyped
 
   shallowCopy(result.data, t.data)
 
-proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noSideEffect.}=
+proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor =
   ## Reshape a tensor without copy.
   ##
   ## ⚠ Reshaping without copy is only possible on contiguous Tensors

@@ -68,7 +68,7 @@ proc slicerMut[T](t: var Tensor[T],
 
 template slicerMutT_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) =
   ## Assign value from openarrays
-  let sliced = t.unsafeSlicer(slices)
+  var sliced = t.unsafeSlicer(slices)
   when compileOption("boundChecks"):
     check_shape(sliced, oa)
 
@@ -79,10 +79,8 @@ template slicerMutT_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: o
   # Unfortunately we need to loop twice over data/oa
   # Reason 1: we can't check the iterator length before consuming it
   # Reason 2: we can't capture an open array, i.e. do zip(sliced.real_indices, flatClosureIter(oa))
-  # TODO: use mvalues/mitems instead of sliced.real_indices: https://forum.nim-lang.org/t/2971
-  # Or switch fully to inline iterators: https://forum.nim-lang.org/t/2972
-  for real_idx, val in zip(sliced.real_indices, data):
-    t.data[real_idx] = val
+  for i, x in sliced.menumerate:
+    x = data[i]
 
 
 proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) {.noSideEffect.}=
@@ -129,12 +127,12 @@ proc slicerMut[T](t: var Tensor[T],
 
 template slicerMutT_T[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T]) =
   ## Assign the value to the whole slice
-  let sliced = t.unsafeSlicer(slices)
+  var sliced = t.unsafeSlicer(slices)
 
   when compileOption("boundChecks"): check_shape(sliced, t2)
 
-  for real_idx, val in zip(sliced.real_indices, t2.values):
-    t.data[real_idx] = val
+  for x, val in mzip(sliced, t2):
+    x = val
 
 proc slicerMut[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T]) {.noSideEffect.}=
   ## Assign the value to the whole slice

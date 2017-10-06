@@ -27,6 +27,5 @@ proc copy_from*[T](dst: var Tensor[T], src: Tensor[T]) =
   when compileOption("boundChecks"):
     check_size(dst, src)
 
-  ## TODO: yield mutable values for a: https://forum.nim-lang.org/t/2972
-  for dst_idx, src_val in zip(dst.real_indices, src.values):
-    dst.data[dst_idx] = src_val
+  for x, val in mzip(dst, src):
+    x = val

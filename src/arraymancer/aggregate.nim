@@ -22,7 +22,7 @@ proc sum*[T: SomeNumber](t: Tensor[T]): T {.noSideEffect.}=
   for val in t:
     result += val
 
-proc sum*[T: SomeNumber](t: Tensor[T], axis: int): Tensor[T] {.noSideEffect, inline.}=
+proc sum*[T: SomeNumber](t: Tensor[T], axis: int): Tensor[T] {.inline.}=
   ## Compute the sum of all elements of T along an axis
   t.reduce(`+`, axis = axis)
 

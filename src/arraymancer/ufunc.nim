@@ -18,10 +18,8 @@ proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] =
 
 
 # Built-in nim functions that doesn't work with makeUniversal
-proc abs*[T](t: Tensor[T]): Tensor[T] {.inline.}=
-  proc abs_closure(x: T):T = abs(x)
-  t.map(abs_closure)
-
+proc abs*[T](t: Tensor[T]): Tensor[T] =
+  t.emap(abs(x))
 
 
 # #############################################################
@@ -37,11 +35,11 @@ template makeUniversal*(func_name: untyped) =
   # ``makeUniversal`` does not work when the internal type of the Tensor changes,
   # for example, a function "isEven: int -> bool".
   # Use ``map`` in this case instead instead
-  proc func_name*(t: Tensor): Tensor {.inline.}=
+  proc func_name*(t: Tensor): Tensor =
     ## Auto-generated universal version of the function.
     ##
     ## The function can be used directly on tensors and will work element-wise.
-    t.map(func_name)
+    t.emap(func_name(x))
   export func_name
 
 template makeUniversalLocal*(func_name: untyped) =
@@ -52,8 +50,8 @@ template makeUniversalLocal*(func_name: untyped) =
   # ``makeUniversalLocal`` does not work when the internal type of the Tensor changes,
   # for example, a function "isEven: int -> bool".
   # Use ``map`` in this case instead instead
-  proc func_name(t: Tensor): Tensor {.inline.}=
-    t.map(func_name)
+  proc func_name(t: Tensor): Tensor =
+    t.emap(func_name(x))
 
 # Unary functions from Nim math library
 

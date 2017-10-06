@@ -127,3 +127,6 @@ template get_data_ptr*[T](t: AnyTensor[T]): ptr T =
     unsafeAddr(t.data[0])
   elif t is CudaTensor:
     unsafeAddr(t.data.data[0])
+
+proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.inline.} =
+  cast[ptr UncheckedArray[T]](t.data[t.offset].unsafeAddr)

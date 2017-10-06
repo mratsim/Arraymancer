@@ -16,8 +16,8 @@ proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
   ## Tensor comparison
   if a.shape != b.shape: return false
 
-  for ai, bi in zip(a.values,b.values):
+  for a, b in zip(a,b):
     ## Iterate through the tensors using stride-aware iterators
     ## Returns early if false
-    if ai != bi: return false
+    if a != b: return false
   return true

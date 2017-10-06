@@ -67,10 +67,8 @@ proc disp2d(t: Tensor): string {.noSideEffect.} =
 
   # Add a position index to each value in the Tensor.
   var indexed_data: seq[(string,int)] = @[]
-  var i = 1  ## TODO: use pairs/enumerate instead. - pending https://forum.nim-lang.org/t/2972
-  for value in t:
+  for i, value in t.enumerate:
     indexed_data.add(($value,i))
-    i += 1
 
   # Create a closure to apply the boundaries transformation for the specific input
   proc curry_bounds(tup: (string,int)): string {.noSideEffect.}= t.bounds_display(tup)

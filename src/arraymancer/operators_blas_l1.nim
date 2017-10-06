@@ -42,29 +42,29 @@ proc dot*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
 
 proc `+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] =
   ## Tensor addition
-  emap2(a, b, x + y)
+  map2T(a, b, x + y)
 
 proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] =
   ## Tensor substraction
-  emap2(a, b, x - y)
+  map2T(a, b, x - y)
 
 # #########################################################
 # # Tensor-Tensor in-place linear algebra
 
 proc `+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor in-place addition
-  a.eapply2(b, x + y)
+  a.apply2T(b, x + y)
 
 proc `-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor in-place substraction
-  a.eapply2(b, x - y)
+  a.apply2T(b, x - y)
 
 # #########################################################
 # # Tensor-scalar linear algebra
 
 proc `*`*[T: SomeNumber](a: T, t: Tensor[T]): Tensor[T] =
   ## Element-wise multiplication by a scalar
-  t.emap(x * a)
+  t.mapT(x * a)
 
 proc `*`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] =
   ## Element-wise multiplication by a scalar
@@ -72,23 +72,23 @@ proc `*`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] =
 
 proc `/`*[T: SomeReal](t: Tensor[T], a: T): Tensor[T] =
   ## Element-wise division by a float scalar
-  t.emap(x / a)
+  t.mapT(x / a)
 
 proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] =
   ## Element-wise division by an integer
-  t.emap(x div a)
+  t.mapT(x div a)
 
 # #########################################################
 # # Tensor-scalar in-place linear algebra
 
 proc `*=`*[T: SomeNumber](t: var Tensor[T], a: T) =
   ## Element-wise multiplication by a scalar (in-place)
-  t.eapply(x * a)
+  t.applyT(x * a)
 
 proc `/=`*[T: SomeReal](t: var Tensor[T], a: T) =
   ## Element-wise division by a scalar (in-place)
-  t.eapply(x / a)
+  t.applyT(x / a)
 
 proc `/=`*[T: SomeInteger](t: var Tensor[T], a: T) =
   ## Element-wise division by a scalar (in-place)
-  t.eapply(x div a)
+  t.applyT(x div a)

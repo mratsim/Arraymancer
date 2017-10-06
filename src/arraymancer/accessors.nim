@@ -1,4 +1,4 @@
-# Copyright 2017 Mamy André-Ratsimbazafy
+# Copyright 2017 the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,49 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+# ######################################################
+# This file implements iterators to iterate on Tensors.
+
+# ##############################################################
+# The reference implementation below went through several optimizations:
+#  - Using non-initialized stack allocation (array instead of seq)
+#  - Avoiding closures in all higher-order functions, even when iterating on 2 tensors at the same time
+
+# ###### Reference implementation ######
+
+# template strided_iteration[T](t: Tensor[T], strider: IterKind): untyped =
+#   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
+#
+#   ## Iterator init
+#   var coord = newSeq[int](t.rank) # Coordinates in the n-dimentional space
+#   var backstrides: seq[int] = @[] # Offset between end of dimension and beginning
+#   for i,j in zip(t.strides,t.shape):
+#     backstrides.add(i*(j-1))
+#
+#   var iter_pos = t.offset
+#
+#   ## Iterator loop
+#   for i in 0 .. <t.shape.product:
+#
+#     ## Templating the return value
+#     when strider == IterKind.Values: yield t.data[iter_pos]
+#     elif strider == IterKind.Coord_Values: yield (coord, t.data[iter_pos])
+#     elif strider == IterKind.MemOffset: yield iter_pos
+#     elif strider == IterKind.MemOffset_Values: yield (iter_pos, t.data[iter_pos])
+#
+#     ## Computing the next position
+#     for k in countdown(t.rank - 1,0):
+#       if coord[k] < t.shape[k]-1:
+#         coord[k] += 1
+#         iter_pos += t.strides[k]
+#         break
+#       else:
+#         coord[k] = 0
+#         iter_pos -= backstrides[k]
+
+
 
 proc check_index(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
   if idx.len != t.rank:

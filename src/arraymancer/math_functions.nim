@@ -17,20 +17,20 @@
 
 proc reciprocal*[T: SomeReal](t: Tensor[T]): Tensor[T] =
   # Return a tensor with the reciprocal 1/x of all elements
-  t.emap(1.T/x)
+  t.mapT(1.T/x)
 
 proc mreciprocal*[T: SomeReal](t: var Tensor[T]) =
   # Apply the reciprocal 1/x in-place to all elements of the Tensor
-  t.eapply(1.T/x)
+  t.applyT(1.T/x)
 
 proc negate*[T: SomeSignedInt|SomeReal](t: Tensor[T]): Tensor[T] =
   # Return a tensor with all elements negated (10 -> -10)
-  t.emap(-x)
+  t.mapT(-x)
 
 proc mnegate*[T: SomeSignedInt|SomeReal](t: var Tensor[T]) =
   # Negate in-place all elements of the tensor (10 -> -10)
-  t.eapply(-x)
+  t.applyT(-x)
 
 proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] =
   ## Negate all values of a Tensor
-  t.emap(-x)
+  t.mapT(-x)

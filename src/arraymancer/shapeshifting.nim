@@ -66,9 +66,9 @@ proc unsafeTranspose*(t: Tensor): Tensor {.noSideEffect, inline.}=
 
 template contiguousT[T](result, t: Tensor[T], layout: OrderType): untyped=
   if layout == rowMajor:
-    result = t.emap(x)
+    result = t.mapT(x)
   else:
-    result = t.transpose().emap(x)
+    result = t.transpose().mapT(x)
 
 proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T]=
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
@@ -111,7 +111,7 @@ proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: boo
 proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] =
   # Can't call "tensorCpu" template here for some reason
   result = newTensorUninit[T](new_shape)
-  result.eapply2(t,y)
+  result.apply2T(t,y)
 
 proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor =
   ## Reshape a tensor

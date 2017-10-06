@@ -15,17 +15,17 @@
 # ####################################################################
 # Mapping over tensors
 
-template eapply*(t: var Tensor, op: untyped): untyped =
+template applyT*(t: var Tensor, op: untyped): untyped =
   omp_parallel_blocks(block_offset, block_size, t.size):
     for x {.inject.} in t.mitems(block_offset, block_size):
       x = op
 
-template eapply2*[T,U](dest: var Tensor[T], src: Tensor[U], op: untyped): untyped =
+template apply2T*[T,U](dest: var Tensor[T], src: Tensor[U], op: untyped): untyped =
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for x {.inject.}, y {.inject.} in mzip(dest, src, block_offset, block_size):
       x = op
 
-template eapply3*[T,U,V](dest: var Tensor[T], t1: Tensor[U], t2: Tensor[V], op: untyped): untyped =
+template apply3T*[T,U,V](dest: var Tensor[T], t1: Tensor[U], t2: Tensor[V], op: untyped): untyped =
   when compileOption("boundChecks"):
     check_elementwise(t1,t2)
     check_elementwise(dest,t2)
@@ -35,14 +35,14 @@ template eapply3*[T,U,V](dest: var Tensor[T], t1: Tensor[U], t2: Tensor[V], op: 
     for i, x {.inject.}, y {.inject.} in enumerateZip(t1, t2, block_offset, block_size):
       data[i] = op
 
-template emap*[T](t: Tensor[T], op:untyped): untyped =
+template mapT*[T](t: Tensor[T], op:untyped): untyped =
   var dest = newTensorUninit[T](t.shape)
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for v, x {.inject.} in mzip(dest, t, block_offset, block_size):
       v = op
   dest
 
-template emap2*[T](t1, t2: Tensor[T], op:untyped): untyped =
+template map2T*[T](t1, t2: Tensor[T], op:untyped): untyped =
   when compileOption("boundChecks"):
     check_elementwise(t1,t2)
 
@@ -75,7 +75,7 @@ proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] =
   # And should benefit future computations on previously non-contiguous data
 
   result = newTensorUninit[U](t.shape)
-  result.eapply2(t, f(y))
+  result.apply2T(t, f(y))
 
 proc apply*[T](t: var Tensor[T], f: T -> T) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
@@ -96,7 +96,7 @@ proc apply*[T](t: var Tensor[T], f: T -> T) =
   ##       x + 1
   ##     a.apply(plusone) # Apply the function plusone in-place
 
-  t.eapply(f(x))
+  t.applyT(f(x))
 
 proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
@@ -145,7 +145,7 @@ proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] =
     check_elementwise(t1,t2)
 
   result = newTensorUninit[V](t1.shape)
-  result.eapply3(t1, t2, f(x,y))
+  result.apply3T(t1, t2, f(x,y))
 
 proc apply2*[T, U](a: var Tensor[T],
                    f: proc(x:var T, y:T), # We can't use the nice future syntax here

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
+proc unsafeTranspose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   ## Transpose a Tensor.
   ##
   ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)

@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc check_size(a, b:AnyTensor)  {.noSideEffect.}=
-  ## Check if the total number of elements match
-  if a.size != b.size:
-    raise newException(ValueError, "Both Tensors should have the same total number of elements")
-
 proc copy_from*[T](dst: var Tensor[T], src: Tensor[T]) =
   ## Copy the data from a source Tensor. Both tensors must have the same number of elements
   ## but do not need to have the same shape.

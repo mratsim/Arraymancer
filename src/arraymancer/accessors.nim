@@ -68,6 +68,14 @@ proc check_elementwise(a, b:AnyTensor)  {.noSideEffect.}=
     raise newException(ValueError, "Both Tensors should have the same shape.\n Left-hand side has shape " &
                                    $a.shape & " while right-hand side has shape " & $b.shape)
 
+proc check_size[T,U](a:Tensor[T], b:Tensor[U])  {.noSideEffect.}=
+  ## Check if the total number of elements match
+  if a.size != b.size:
+    raise newException(ValueError, "Both Tensors should have the same total number of elements.\n" &
+      "Left-hand side has " & $a.size & " (shape: " & $a.shape & ") while right-hand side has " &
+      $b.size & " (shape: " & $b.shape & ")."
+    )
+
 proc getIndex[T](t: Tensor[T], idx: varargs[int]): int {.noSideEffect,inline.} =
   ## Convert [i, j, k, l ...] to the proper index.
   when compileOption("boundChecks"):
@@ -260,49 +268,57 @@ iterator mpairs*[T](t:var  Tensor[T]): (seq[int], var T) {.inline,noSideEffect.}
 iterator zip*[T,U](t1: Tensor[T], t2: Tensor[U]): (T,U) {.inline,noSideEffect.} =
   ## Iterates simultaneously on two tensors returning their elements in a tuple.
   ## Note: only tensors of the same shape will be zipped together.
-  assert t1.size == t2.size
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
   dualStridedIteration(IterKind.Values, t1, t2, 0, t1.size)
 
 iterator zip*[T,U](t1: Tensor[T], t2: Tensor[U], offset, size: int): (T,U) {.inline,noSideEffect.} =
   ## Iterates simultaneously on two tensors returning their elements in a tuple. (with offset)
   ## Note: only tensors of the same shape will be zipped together.
-  assert t1.size == t2.size
-  dualStridedIteration(IterKind.Values, t1, t2, offset, size)
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
+    dualStridedIteration(IterKind.Values, t1, t2, offset, size)
 
 iterator mzip*[T,U](t1: var Tensor[T], t2: Tensor[U]): (var T, U) {.inline,noSideEffect.} =
   ## Iterates simultaneously on two tensors returning their elements in a tuple. (mutable)
   ## Note: only tensors of the same shape will be zipped together.
-  assert t1.size == t2.size
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
   dualStridedIteration(IterKind.Values, t1, t2, 0, t1.size)
 
 iterator mzip*[T,U](t1: var Tensor[T], t2: Tensor[U], offset, size: int): (var T, U) {.inline,noSideEffect.} =
   ## Iterates simultaneously on two tensors returning their elements in a tuple. (mutable, with offset)
   ## Note: only tensors of the same shape will be zipped together.
-  assert t1.size == t2.size
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
   dualStridedIteration(IterKind.Values, t1, t2, offset, size)
 
 iterator enumerateZip*[T,U](t1: Tensor[T], t2: Tensor[U]): (int,T,U) {.inline,noSideEffect.} =
   ## Enumerate simultaneously on two tensors returning their elements in a tuple.
   ## Note: only tensors of the same shape will be zipped together.
-  assert t1.size == t2.size
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
   dualStridedIteration(IterKind.Iter_Values, t1, t2, 0, t1.size)
 
 iterator enumerateZip*[T,U](t1: Tensor[T], t2: Tensor[U], offset, size: int): (int,T,U) {.inline,noSideEffect.} =
   ## Enumerate simultaneously on two tensors returning their elements in a tuple. (with offset)
   ## Note: only tensors of the same shape will be zipped together.
-  assert t1.size == t2.size
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
   dualStridedIteration(IterKind.Iter_Values, t1, t2, offset, size)
 
 iterator menumerateZip*[T,U](t1: var Tensor[T], t2: Tensor[U]): (int, var T,U) {.inline,noSideEffect.} =
   ## Enumerate simultaneously on two tensors returning their elements in a tuple. (mutable)
   ## Note: only tensors of the same shape will be zipped together.
-  assert t1.size == t2.size
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
   dualStridedIteration(IterKind.Iter_Values, t1, t2, 0, t1.size)
 
 iterator menumerateZip*[T,U](t1: var Tensor[T], t2: Tensor[U], offset, size: int): (int, var T,U) {.inline,noSideEffect.} =
   ## Enumerate simultaneously on two tensors returning their elements in a tuple. (mutable, with offset)
   ## Note: only tensors of the same shape will be zipped together.
-  assert t1.size == t2.size
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
   dualStridedIteration(IterKind.Iter_Values, t1, t2, offset, size)
 
 template axis_iterator[T](t: Tensor[T], axis: int): untyped =

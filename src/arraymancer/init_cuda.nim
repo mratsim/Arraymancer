@@ -31,7 +31,7 @@ proc clone*[T](t: CudaTensor[T]): CudaTensor[T] =
   ## Copy will not share its data with the original.
   ##
   ## Tensor is copied as is. For example it will not be made contiguous.
-  ## Use `asContiguous` for this case
+  ## Use `unsafeContiguous` for this case
 
   # Note: due to modifying the defaultStream global var for async memcopy
   # proc cannot be tagged noSideEffect

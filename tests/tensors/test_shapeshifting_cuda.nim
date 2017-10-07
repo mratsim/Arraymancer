@@ -27,17 +27,17 @@ suite "CUDA: Shapeshifting":
     # |8      1       6       2       6       6|
     # |2      0       4       3       2       0|
 
-    let b = a.asContiguous()
+    let b = a.unsafeContiguous()
     check: b.cpu.toRawSeq == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
 
     # a is already contiguous, even if wrong layout.
     # Nothing should be done
-    let c = a.asContiguous(colMajor)
+    let c = a.unsafeContiguous(colMajor)
     check: c.cpu.toRawSeq == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
 
     # force parameter has been used.
     # Layout will change even if a was contiguous
-    let d = a.asContiguous(colMajor, force = true)
+    let d = a.unsafeContiguous(colMajor, force = true)
     check: d.cpu.toRawSeq == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
 
 
@@ -46,4 +46,4 @@ suite "CUDA: Shapeshifting":
     check: u.cpu.toRawSeq == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
     check: u.cpu == [7.0,4,8,1,2,0].toTensor.reshape([3,2])
 
-    check: u.asContiguous(rowMajor, force=true).cpu.toRawSeq == @[7.0,4,8,1,2,0]
+    check: u.unsafeContiguous(rowMajor, force=true).cpu.toRawSeq == @[7.0,4,8,1,2,0]

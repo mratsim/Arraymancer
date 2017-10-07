@@ -26,10 +26,10 @@ proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   result.offset = t.offset
   result.data = t.data
 
-proc cuda_asContiguous = discard # This is a hack so that the symbol is open
-cuda_assign_glue(cuda_asContiguous, "CopyOp")
+proc cuda_unsafeContiguous = discard # This is a hack so that the symbol is open
+cuda_assign_glue(cuda_unsafeContiguous, "CopyOp")
 
-proc asContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, force: bool = false):
+proc unsafeContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, force: bool = false):
   CudaTensor[T] {.noSideEffect.}=
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
   ##
@@ -51,4 +51,4 @@ proc asContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, 
 
   result = newCudaTensor[T](t.shape, layout)
 
-  cuda_assign_call(cuda_asContiguous, result, t)
+  cuda_assign_call(cuda_unsafeContiguous, result, t)

@@ -251,7 +251,7 @@ proc unsafeBroadcast2[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect
   ##   A broadcasted tensor should not be modified and only used for computation.
   let rank = max(a.rank, b.rank)
 
-  var shapeA, stridesA, shapeB, stridesB: MetadataArray # newSeq is initialized with 0
+  var shapeA, stridesA, shapeB, stridesB = newMetadataArray(rank) # initialized with 0
 
   for i in 0..<rank:
     let shape_A_iter = if i < rank: a.shape[i] else: 1

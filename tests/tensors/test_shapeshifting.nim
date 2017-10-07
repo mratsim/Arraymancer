@@ -87,25 +87,25 @@ suite "Shapeshifting":
       let a = toSeq(1..12).toTensor().reshape(1,3,1,2,1,1,2)
       let b = a.squeeze
 
-      check b == toSeq(1..12).toTensor().reshape(3,2,2)
+      check: b == toSeq(1..12).toTensor().reshape(3,2,2)
 
     block: # With slices
       let a = toSeq(1..12).toTensor().reshape(1,3,1,4)
       let b = a[0, 0, 0, 3..0|-1].squeeze
 
-      check b == [4,3,2,1].toTensor
+      check: b == [4,3,2,1].toTensor
 
     block: # Single axis
       let a = toSeq(1..12).toTensor().reshape(1,3,1,4)
       let b = a.squeeze(2)
 
-      check b == toSeq(1..12).toTensor().reshape(1,3,4)
+      check: b == toSeq(1..12).toTensor().reshape(1,3,4)
 
     block: # Single axis with slices
       let a = toSeq(1..12).toTensor().reshape(1,3,1,4)
       let b = a[0, 0..1, 0, 3..0|-1].squeeze(0)
 
-      check b == [4, 3, 2, 1, 8, 7, 6, 5].toTensor.reshape(2,1,4)
+      check: b == [4, 3, 2, 1, 8, 7, 6, 5].toTensor.reshape(2,1,4)
 
   test "To tensor reshape":
     block:

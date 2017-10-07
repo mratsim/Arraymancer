@@ -367,10 +367,6 @@ template squeezeT(t: var AnyTensor): untyped =
   t.shape = t.shape[0..<idx_real_dim]
   t.strides = t.strides[0..<idx_real_dim]
 
-  if t.rank == 0:
-    t.shape.add 1
-    t.strides.add 1
-
 proc squeeze*(t: AnyTensor): AnyTensor {.noSideEffect.}=
   ## Squeeze tensors. For example a Tensor of shape @[4,1,3] will become @[4,3]
   ## Input:

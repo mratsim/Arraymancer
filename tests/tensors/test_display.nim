@@ -48,6 +48,6 @@ suite "Displaying tensors":
 
     # TODO: Better display tests
 
-  test "Display + Concat + SlicerMut bug with MetadataArray":
+  test "Disp3d + Concat + SlicerMut bug with empty tensors":
     let a = [4, 3, 2, 1, 8, 7, 6, 5].toTensor.reshape(2, 1, 4)
     discard $a

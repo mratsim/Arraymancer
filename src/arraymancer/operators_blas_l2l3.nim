@@ -84,8 +84,8 @@ template matvec_blas[T: SomeReal](a, x, result: Tensor[T]): auto =
   when compileOption("boundChecks"): check_matvec(a,b)
 
   result.data = newSeqUninit[T](rowA)
-  result.shape = @[rowA]
-  result.strides = @[1]
+  result.shape = [rowA].toMetadataArray
+  result.strides = [1].toMetadataArray
   result.offset = 0
 
   # Stride for X is supported via incx argument of GEMV
@@ -109,8 +109,8 @@ template matvec_fallback[T: SomeInteger](a, x, result: Tensor[T]): auto =
   when compileOption("boundChecks"): check_matvec(a,b)
 
   result.data = newSeqUninit[T](rowA)
-  result.shape = @[rowA]
-  result.strides = @[1]
+  result.shape = [rowA].toMetadataArray
+  result.strides = [1].toMetadataArray
   result.offset = 0
 
   naive_gemv_fallback(
@@ -167,8 +167,8 @@ template matmat_blas[T: SomeReal](a, b, result: Tensor[T]): auto =
   when compileOption("boundChecks"): check_matmat(a,b)
 
   result.data = newSeqUninit[T](M * N)
-  result.shape = @[M, N]
-  result.strides = @[N, 1]
+  result.shape = [M, N].toMetadataArray
+  result.strides = [N, 1].toMetadataArray
   result.offset = 0
 
   # TODO use a GEMM kernel that supports strided arrays like BLIS
@@ -202,8 +202,8 @@ template matmat_fallback[T: SomeInteger](a, b, result: Tensor[T]): auto =
 
   when compileOption("boundChecks"): check_matmat(a,b)
 
-  result.shape = @[M, N]
-  result.strides = @[N, 1]
+  result.shape = [M, N].toMetadataArray
+  result.strides = [N, 1].toMetadataArray
   result.offset = 0
   result.data = newSeqUninit[T](M*N)
 

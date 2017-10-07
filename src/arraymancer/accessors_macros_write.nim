@@ -129,7 +129,8 @@ template slicerMutT_T[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Te
   ## Assign the value to the whole slice
   var sliced = t.unsafeSlicer(slices)
 
-  when compileOption("boundChecks"): check_shape(sliced, t2)
+  when compileOption("boundChecks"):
+    check_shape(sliced, t2)
 
   for x, val in mzip(sliced, t2):
     x = val

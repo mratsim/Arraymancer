@@ -29,8 +29,8 @@ type
     ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
     ##   - ``data``: A sequence that holds the actual data
     ## Fields are public so that external libraries can easily construct a Tensor.
-    shape*: seq[int]
-    strides*: seq[int]
+    shape*: MetadataArray
+    strides*: MetadataArray
     offset*: int
     data*: seq[T] # Perf note: seq are always deep copied on "var" assignement.
 
@@ -78,19 +78,28 @@ proc size*(t: AnyTensor): int {.noSideEffect, inline.}=
   ##     - The total number of elements it contains
   t.shape.product
 
-proc shape_to_strides*(shape: seq[int], layout: OrderType = rowMajor): seq[int] {.noSideEffect.} =
+proc shape_to_strides*(shape: MetadataArray, layout: OrderType = rowMajor): MetadataArray {.noSideEffect.} =
   ## Input:
-  ##     - A shape (seq of int), for example @[3,5] for a 3x5 matrix
+  ##     - A shape (MetadataArray), for example [3,5] for a 3x5 matrix
   ##     - Optionally rowMajor (C layout - default) or colMajor (Fortran)
   ## Returns:
   ##     - The strides in C or Fortran order corresponding to this shape and layout
   ##
   ## Arraymancer defaults to rowMajor. Temporarily, CudaTensors are colMajor by default.
   # See Design document for further considerations.
-  if layout == rowMajor:
-    return (shape & 1)[1..shape.len].scanr(a * b)
+  var accum = 1
+  result.len = shape.len
 
-  return (1 & shape)[0..shape.high].scanl(a * b)
+  if layout == rowMajor:
+    for i in countdown(shape.len-1,0):
+      result[i] = accum
+      accum *= shape[i]
+    return
+
+  for i in 0 ..< shape.len:
+    result[i] = accum
+    accum *= shape[i]
+  return
 
 proc is_C_contiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
   ## Check if the tensor follows C convention / is row major

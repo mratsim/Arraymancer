@@ -79,7 +79,7 @@ proc disp3d(t: Tensor): string =
   ## Display a 3D-tensor
 
   let sep: seq[string] = @["|"]
-  let empty: seq[string] = @[]
+  let empty: seq[string] = @[""]
 
   var buffer = empty.repeat(t.shape[1]).toTensor()
 
@@ -97,7 +97,7 @@ proc disp4d(t: Tensor): string =
 
   let sep: seq[string] = @["|"]
   let sepv: seq[string] = @["-"]
-  let empty: seq[string] = @[]
+  let empty: seq[string] = @[""]
 
   # First create seq of tensor to concat horizontally
   var hbuffer = newSeqWith(t.shape[0], empty.repeat(t.shape[2]).toTensor())
@@ -114,7 +114,7 @@ proc disp4d(t: Tensor): string =
     inc i
 
   # Then concat vertically
-  var vbuffer = empty.repeat(hbuffer[0].shape[1]).toTensor().reshape(0, hbuffer[0].shape[1])
+  var vbuffer = empty.repeat(hbuffer[0].shape[1]).toTensor.reshape(1, hbuffer[0].shape[1])
 
   for h in hbuffer:
     vbuffer = vbuffer.concat(
@@ -126,7 +126,7 @@ proc disp4d(t: Tensor): string =
 
 proc `$`*[T](t: Tensor[T]): string =
   ## Pretty-print a tensor (when using ``echo`` for example)
-  let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & "Cpu" & "\""
+  let desc = "Tensor of shape " & $t.shape & " of type \"" & T.name & "\" on backend \"" & "Cpu" & "\""
   if t.rank <= 2:
     return desc & "\n" & t.disp2d
   elif t.rank == 3:

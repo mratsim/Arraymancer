@@ -18,7 +18,7 @@ import unittest, math, sequtils
 suite "Creating a new Tensor":
   test "Creating from sequence":
     let t1 = @[1,2,3].toTensor()
-    check: t1.shape == @[3]
+    check: t1.shape == [3]
     check: t1.rank == 1
 
     const
@@ -39,7 +39,7 @@ suite "Creating a new Tensor":
 
     let t2 = vandermonde.toTensor()
     check: t2.rank == 2
-    check: t2.shape == @[5, 5]
+    check: t2.shape == [5, 5]
 
     let nest3 = @[
             @[
@@ -62,7 +62,7 @@ suite "Creating a new Tensor":
 
     let t3 = nest3.toTensor()
     check: t3.rank == 3
-    check: t3.shape == @[4, 2, 3]  # 4 rows, 2 cols, 3 depth. depth indices moves the fastest. Same scheme as Numpy.
+    check: t3.shape == [4, 2, 3] # 4 rows, 2 cols, 3 depth. depth indices moves the fastest. Same scheme as Numpy.
 
     let u = @[@[1.0, -1, 2],@[0.0, -1]]
 
@@ -76,10 +76,10 @@ suite "Creating a new Tensor":
     let s = @[@[1,2,3],@[3,2,1]]
     let t = s.toTensor()
 
-    check: t.shape == @[2,3]
+    check: t.shape == [2,3]
 
     let u = newTensor[int](@[2,3])
-    check: u.shape == @[2,3]
+    check: u.shape == [2,3]
 
     check: u.shape == t.shape
 

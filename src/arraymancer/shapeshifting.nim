@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc check_reshape(t: AnyTensor, new_shape:seq[int]) {.noSideEffect, inline.}=
+proc check_reshape(t: AnyTensor, new_shape:MetadataArray) {.noSideEffect, inline.}=
   if t.size != new_shape.product:
     raise newException(ValueError, "The total number of elements in the old (" &
                                     $t.size &
@@ -108,7 +108,7 @@ proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: boo
     return t.unsafeView
   contiguousT(result, t, layout)
 
-proc reshape_with_copy[T](t: Tensor[T], new_shape: seq[int]): Tensor[T] =
+proc reshape_with_copy[T](t: Tensor[T], new_shape: MetadataArray): Tensor[T] =
   # Can't call "tensorCpu" template here for some reason
   result = newTensorUninit[T](new_shape)
   result.apply2T(t,y)
@@ -122,14 +122,14 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor =
   ## Returns:
   ##   - a tensor with the same data but reshaped.
 
-  let ns = @new_shape
+  let ns = new_shape.toMetadataArray
   when compileOption("boundChecks"):
     check_reshape(t, ns)
 
   return t.reshape_with_copy(ns)
 
 template reshape_no_copy(t: AnyTensor, new_shape: varargs[int]): untyped =
-  let ns = @new_shape
+  let ns = new_shape.toMetadataArray
   when compileOption("boundChecks"):
     check_nocopyReshape t
     check_reshape(t, ns)
@@ -159,8 +159,9 @@ proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor =
   t.reshape_no_copy(new_shape)
   shallowCopy(result.data, t.data)
 
-template broadcastT(t: var AnyTensor, shape: openarray[int]) =
-  assert t.rank == shape.len
+template broadcastT(t: var AnyTensor, shape: varargs[int]|MetadataArray) =
+  when compileOption("boundChecks"):
+    assert t.rank == shape.len
 
   for i in 0..<t.rank:
     if t.shape[i] == 1:
@@ -196,6 +197,20 @@ proc unsafeBroadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noSideE
   result = t.unsafeView
   result.broadcastT(shape)
 
+proc unsafeBroadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noSideEffect.}=
+  ## Explicitly broadcast a Tensor to the specified shape.
+  ## The returned broadcasted Tensor share the underlying data with the input.
+  ##
+  ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
+  ## values along that dimension.
+  ##
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  ##   A broadcasted tensor should not be modified and only used for computation.
+  result = t.unsafeView
+  result.broadcastT(shape)
+
 proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noSideEffect.} =
   ## Broadcast a number
   ##
@@ -211,8 +226,8 @@ proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noSideE
   ## Warning ⚠:
   ##   A broadcasted tensor should not be modified and only used for computation.
   ##   Modifying any value from this broadcasted tensor will change all its values.
-  result.shape = @shape
-  result.strides = newSeqWith(result.shape.len, 0)
+  result.shape = shape.toMetadataArray
+  # result.strides # Unneeded, autoinitialized with 0
   result.offset = 0
   result.data = newSeqWith(1, val)
 
@@ -236,7 +251,7 @@ proc unsafeBroadcast2[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect
   ##   A broadcasted tensor should not be modified and only used for computation.
   let rank = max(a.rank, b.rank)
 
-  var shapeA, stridesA, shapeB, stridesB = newSeq[int](rank) # newSeq is initialized with 0
+  var shapeA, stridesA, shapeB, stridesB: MetadataArray # newSeq is initialized with 0
 
   for i in 0..<rank:
     let shape_A_iter = if i < rank: a.shape[i] else: 1

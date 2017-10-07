@@ -126,7 +126,7 @@ proc disp4d(t: Tensor): string =
 
 proc `$`*[T](t: Tensor[T]): string =
   ## Pretty-print a tensor (when using ``echo`` for example)
-  let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & "Cpu" & "\""
+  let desc = "Tensor of shape " & $t.shape & " of type \"" & T.name & "\" on backend \"" & "Cpu" & "\""
   if t.rank <= 2:
     return desc & "\n" & t.disp2d
   elif t.rank == 3:

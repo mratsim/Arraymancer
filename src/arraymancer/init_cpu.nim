@@ -34,8 +34,13 @@ proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect, inline.}=
   if (shape.product != len):
     raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
 
-template tensorCpu[T](out_shape: openarray, t: Tensor[T], layout: OrderType = rowMajor): untyped =
-  t.shape = @out_shape
+template tensorCpu[T](out_shape: varargs[int], t: Tensor[T], layout: OrderType = rowMajor): untyped =
+  t.shape = out_shape.toMetadataArray
+  t.strides = shape_to_strides(t.shape, layout)
+  t.offset = 0
+
+template tensorCpu[T](out_shape: MetadataArray, t: Tensor[T], layout: OrderType = rowMajor): untyped =
+  t.shape = out_shape
   t.strides = shape_to_strides(t.shape, layout)
   t.offset = 0
 
@@ -55,6 +60,18 @@ proc newSeqUninit[T](len: Natural): seq[T] {.noSideEffect, inline.} =
   result.setLen(len)
 
 proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.} =
+  ## Creates a new Tensor on Cpu backend
+  ## Input:
+  ##      - Shape of the Tensor
+  ##      - Type of its elements
+  ## Result:
+  ##      - A Tensor of the proper shape with NO initialization
+  ## Warning ⚠
+  ##   Tensor data is uninitialized an contains garbage.
+  tensorCpu(shape, result)
+  result.data = newSeqUninit[T](result.size)
+
+proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -129,6 +146,17 @@ proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noSideEffect, inlin
   tensorCpu(shape, result)
   result.data = newSeq[T](result.size)
 
+proc zeros*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noSideEffect, inline.} =
+  ## Creates a new Tensor filled with 0
+  ##
+  ## Input:
+  ##      - Shape of the Tensor
+  ##      - Type of its elements
+  ## Result:
+  ##      - A zero-ed Tensor of the input shape on backend Cpu
+  tensorCpu(shape, result)
+  result.data = newSeq[T](result.size)
+
 proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
   ## Input:
@@ -139,6 +167,16 @@ proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.
   return zeros[T](t.shape)
 
 proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noSideEffect,inline.} =
+  ## Creates a new Tensor filled with 1
+  ## Input:
+  ##      - Shape of the Tensor
+  ##      - Type of its elements
+  ## Result:
+  ##      - A one-ed Tensor of the same shape
+  tensorCpu(shape, result)
+  result.data = newSeqWith(result.size, 1.T)
+
+proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noSideEffect,inline.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor

@@ -103,14 +103,20 @@ proc check_steps(a,b, step:int) {.noSideEffect, inline.}=
 
 proc check_shape(a, b: Tensor|openarray) {.noSideEffect, inline.}=
   ## Compare shape
-  if a.shape == b.shape:
+
+  when b is Tensor:
+    let b_shape = b.shape
+  else:
+    let b_shape = b.shape.toMetadataArray
+
+  if a.shape == b_shape:
     return
   else:
-    for ai, bi in zip(a.shape, b.shape):
+    for ai, bi in zip(a.shape, b_shape):
       if ai != bi and not (ai == 0 or bi == 0): # We allow dim = 0 for initialization of concatenation with empty dimension
         raise newException(IndexError, "Your tensors or openarrays do not have the same shape: " &
-                                       $a.shape.join("x") &
-                                       " and " & $b.shape.join("x"))
+                                       $a.shape &
+                                       " and " & $b_shape)
 
 
 # #########################################################################

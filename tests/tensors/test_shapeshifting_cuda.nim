@@ -47,3 +47,26 @@ suite "CUDA: Shapeshifting":
     check: u.cpu == [7.0,4,8,1,2,0].toTensor.reshape([3,2])
 
     check: u.unsafeContiguous(rowMajor, force=true).cpu.toRawSeq == @[7.0,4,8,1,2,0]
+
+  test "Unsafe reshape":
+    block:
+      let a = toSeq(1..4).toTensor().astype(float).cuda
+      var a_view = a.unsafeReshape(2,2)
+      check: a_view.cpu == [[1.0,2],[3.0,4]].toTensor()
+
+      # TODO
+      # a_view[_, _] = 0.0
+      # check: a.cpu == [0.0,0,0,0].toTensor()
+
+    # on slices
+    block:
+      # not that 'a' here a let variable, however
+      # unsafeView and unsafeReshape allow us to
+      # modify its elements value
+      let a = toSeq(1..4).toTensor().astype(float).cuda
+      var a_view = a[1..2].unsafeReshape(1,2) # a[1..2] == a.unsafeSlice(1..2) for CudaTensors
+      check: a_view.cpu == [[2.0,3]].toTensor()
+
+      # TODO: pending slice assignation
+      # a_view[_, _].cpu = 0
+      # check: a.cpu == [1.0,0,0,4].toTensor()

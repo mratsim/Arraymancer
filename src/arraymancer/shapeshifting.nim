@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc check_reshape(t: Tensor, new_shape:seq[int]) {.noSideEffect, inline.}=
+proc check_reshape(t: AnyTensor, new_shape:seq[int]) {.noSideEffect, inline.}=
   if t.size != new_shape.product:
     raise newException(ValueError, "The total number of elements in the old (" &
                                     $t.size &
@@ -20,7 +20,7 @@ proc check_reshape(t: Tensor, new_shape:seq[int]) {.noSideEffect, inline.}=
                                     $new_shape.product &
                                     ") reshaped tensor must be the same")
 
-proc check_nocopyReshape(t: Tensor) {.noSideEffect, inline.}=
+proc check_nocopyReshape(t: AnyTensor) {.noSideEffect, inline.}=
   if not t.isContiguous:
     raise newException(ValueError, "The tensor must be contiguous for reshape without copy")
 
@@ -128,7 +128,7 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor =
 
   return t.reshape_with_copy(ns)
 
-template reshape_no_copy(t: Tensor|var Tensor, new_shape: varargs[int]): untyped =
+template reshape_no_copy(t: AnyTensor, new_shape: varargs[int]): untyped =
   let ns = @new_shape
   when compileOption("boundChecks"):
     check_nocopyReshape t
@@ -147,8 +147,6 @@ template reshape_no_copy(t: Tensor|var Tensor, new_shape: varargs[int]): untyped
   result.strides = t.strides[0..<matched_dims] & ext_strides
   result.offset = t.offset
 
-  shallowCopy(result.data, t.data)
-
 proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor =
   ## Reshape a tensor without copy.
   ##
@@ -159,8 +157,9 @@ proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor =
   ##   This proc does not guarantee that a ``let`` value is immutable.
 
   t.reshape_no_copy(new_shape)
+  shallowCopy(result.data, t.data)
 
-template broadcastT(t: Tensor, shape: openarray[int]) =
+template broadcastT(t: var AnyTensor, shape: openarray[int]) =
   assert t.rank == shape.len
 
   for i in 0..<t.rank:
@@ -384,7 +383,7 @@ template squeezeT(t: var AnyTensor, axis: int): untyped =
     t.shape.delete(axis)
     t.strides.delete(axis)
 
-proc squeeze*(t: AnyTensor, axis: int): AnyTensor {.noSideEffect.}=
+proc squeeze*(t: Tensor, axis: int): Tensor {.noSideEffect.}=
   ## Collapse the given axis, if the dimension is not 1, it does nothing.
   ## Input:
   ##   - a tensor
@@ -421,7 +420,7 @@ template unsqueezeT(t: var AnyTensor, axis: int): untyped =
   t.shape.insert(1, axis)
   t.strides.insert(stride, axis)
 
-proc unsqueeze*(t: AnyTensor, axis: int): AnyTensor {.noSideEffect.}=
+proc unsqueeze*(t: Tensor, axis: int): Tensor {.noSideEffect.}=
   ## Insert a new axis just before the given axis, increasing the tensor
   ## dimension (rank) by 1
   ## Input:

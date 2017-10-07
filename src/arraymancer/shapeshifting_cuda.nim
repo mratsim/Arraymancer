@@ -52,3 +52,53 @@ proc unsafeContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMaj
   result = newCudaTensor[T](t.shape, layout)
 
   cuda_assign_call(cuda_unsafeContiguous, result, t)
+
+
+proc unsafeReshape*(t: CudaTensor, new_shape: varargs[int]): CudaTensor =
+  ## Reshape a CudaTensor without copy.
+  ##
+  ## ⚠ Reshaping without copy is only possible on contiguous Tensors
+  ##
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+
+  t.reshape_no_copy(new_shape)
+  result.data = t.data
+
+proc unsafeBroadcast*(t: CudaTensor, shape: varargs[int]): CudaTensor {.noSideEffect.}=
+  ## Explicitly broadcast a CudaTensor to the specified shape.
+  ## The returned broadcasted CudaTensor share the underlying data with the input.
+  ##
+  ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
+  ## values along that dimension.
+  ##
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  ##   A broadcasted tensor should not be modified and only used for computation.
+  result = t
+  result.broadcastT(shape)
+
+proc unsafeSqueeze*(t: CudaTensor, axis: int): CudaTensor {.noSideEffect.}=
+  ## Collapse the given axis, if the dimension is not 1; it does nothing
+  ## Input:
+  ##   - a CudaTensor
+  ##   - an axis (dimension)
+  ## Returns:
+  ##   - a CudaTensor with singleton dimensions collapsed
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  result = t
+  result.squeezeT(axis)
+
+proc unsafeUnsqueeze*(t: CudaTensor, axis: int): CudaTensor {.noSideEffect.}=
+  ## Insert a new axis just before the given axis, increasing the CudaTensor
+  ## dimension (rank) by 1
+  ##   - a tensor with that new axis
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  result = t
+  result.unsqueezeT(axis)

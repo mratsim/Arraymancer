@@ -40,7 +40,7 @@ template mapT*[T](t: Tensor[T], op:untyped): untyped =
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for v, x {.inject.} in mzip(dest, t, block_offset, block_size):
       v = op
-  dest
+  dest.unsafeView()
 
 template map2T*[T](t1, t2: Tensor[T], op:untyped): untyped =
   when compileOption("boundChecks"):
@@ -51,7 +51,7 @@ template map2T*[T](t1, t2: Tensor[T], op:untyped): untyped =
   omp_parallel_blocks(block_offset, block_size, t1.size):
     for i, x {.inject.}, y {.inject.} in enumerateZip(t1, t2, block_offset, block_size):
       data[i] = op
-  dest
+  dest.unsafeView()
 
 proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.

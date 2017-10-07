@@ -135,7 +135,7 @@ template reshape_no_copy(t: AnyTensor, new_shape: varargs[int]): untyped =
     check_reshape(t, ns)
 
   var matched_dims = 0
-  for shapes in zip(t.shape, ns):
+  for shapes in zip(t.shape, ns): # This relies on zip stopping early
     if shapes[0] != shapes[1]:
       break
     inc matched_dims

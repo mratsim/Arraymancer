@@ -190,8 +190,9 @@ proc `^`*(x: int; a: MetadataArray): int {.inline.} =
   a.len - x
 
 iterator zip(a,b: MetadataArray): (int, int)=
-  when compileOption("boundChecks"):
-    assert a.len == b.len
 
-  for i in 0..<a.len:
+  # unsafeReshape relies on zip stopping early
+  let len = min(a.len, b.len)
+
+  for i in 0..<len:
     yield (a[i], b[i])

@@ -70,11 +70,13 @@ proc check_elementwise(a, b:AnyTensor)  {.noSideEffect.}=
 
 proc check_size[T,U](a:Tensor[T], b:Tensor[U])  {.noSideEffect.}=
   ## Check if the total number of elements match
-  if a.size != b.size:
-    raise newException(ValueError, "Both Tensors should have the same total number of elements.\n" &
-      "Left-hand side has " & $a.size & " (shape: " & $a.shape & ") while right-hand side has " &
-      $b.size & " (shape: " & $b.shape & ")."
-    )
+
+  discard # See check_shape, concatenation of empty dim is initialized with 0
+  # if a.size != b.size:
+  #   raise newException(ValueError, "Both Tensors should have the same total number of elements.\n" &
+  #     "Left-hand side has " & $a.size & " (shape: " & $a.shape & ") while right-hand side has " &
+  #     $b.size & " (shape: " & $b.shape & ")."
+  #   )
 
 proc getIndex[T](t: Tensor[T], idx: varargs[int]): int {.noSideEffect,inline.} =
   ## Convert [i, j, k, l ...] to the proper index.

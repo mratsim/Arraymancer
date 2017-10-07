@@ -337,15 +337,17 @@ proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noSideEffec
       check_concat(t0, t, axis)
     axis_dim += t.shape[axis]
 
-  let concat_shape = t0.shape[0..<axis] & axis_dim & t0.shape[axis+1..t0.shape.high]
+  let concat_shape = t0.shape[0..<axis] & axis_dim & t0.shape[axis+1..<t0.shape.len]
 
   ## Setup the Tensor
   result = newTensorUninit[T](concat_shape)
 
-  # Fill in the copy with the matching values
+  ## Fill in the copy with the matching values
+  ### First a sequence of SteppedSlices corresponding to each tensors to concatenate
   var slices = concat_shape.mapIt((0..<it)|1)
   var iaxis = 0
 
+  ### Now, create "windows" in the result tensor and assign corresponding tensors
   for t in t_list:
     slices[axis].a = iaxis
     slices[axis].b = iaxis + t.shape[axis] - 1
@@ -361,7 +363,7 @@ template squeezeT(t: var AnyTensor): untyped =
         t.shape[idx_real_dim] = t.shape[i]
         t.strides[idx_real_dim] = t.strides[i]
       inc idx_real_dim
-  
+
   t.shape = t.shape[0..<idx_real_dim]
   t.strides = t.strides[0..<idx_real_dim]
 

@@ -47,3 +47,7 @@ suite "Displaying tensors":
     # |5      25      125     625     3125|
 
     # TODO: Better display tests
+
+  test "Display + Concat + SlicerMut bug with MetadataArray":
+    let a = [4, 3, 2, 1, 8, 7, 6, 5].toTensor.reshape(2, 1, 4)
+    discard $a

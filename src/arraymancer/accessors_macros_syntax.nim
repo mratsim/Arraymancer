@@ -113,7 +113,7 @@ proc check_shape(a, b: Tensor|openarray) {.noSideEffect, inline.}=
     return
   else:
     for ai, bi in zip(a.shape, b_shape):
-      if ai != bi and not (ai == 0 or bi == 0): # We allow dim = 0 for initialization of concatenation with empty dimension
+      if ai != bi:
         raise newException(IndexError, "Your tensors or openarrays do not have the same shape: " &
                                        $a.shape &
                                        " and " & $b_shape)

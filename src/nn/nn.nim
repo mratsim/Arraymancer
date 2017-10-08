@@ -14,7 +14,8 @@
 
 import ../tensor/tensor, ../autograd/autograd, ../nn_primitives/nn_primitives
 
-import  ./activation/[sigmoid, relu],
+import  ./activation/sigmoid,
+        ./activation/relu,
         ./layers/linear,
         ./loss/sigmoid_cross_entropy,
         ./optimizers/optimizers

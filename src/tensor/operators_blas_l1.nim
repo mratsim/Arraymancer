@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-# Bounds checking functions
-proc check_dot_prod(a, b:AnyTensor)  {.noSideEffect.}=
-  if a.rank != 1 or b.rank != 1: raise newException(ValueError, "Dot product is only supported for vectors (tensors of rank 1)")
-  if a.shape != b.shape: raise newException(ValueError, "Vector should be the same length")
+import  ./private/p_checks,
+        ./data_structure,
+        ./accessors, ./higher_order,
+        nimblas
 
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)

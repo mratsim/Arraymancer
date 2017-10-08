@@ -106,3 +106,7 @@ proc check_squeezeAxis*(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
 proc check_unsqueezeAxis*(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
   if t.rank == 0 or axis > t.rank or axis < 0:
     raise newException(ValueError, "The new axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )
+
+proc check_dot_prod*(a, b:AnyTensor)  {.noSideEffect.}=
+  if a.rank != 1 or b.rank != 1: raise newException(ValueError, "Dot product is only supported for vectors (tensors of rank 1)")
+  if a.shape != b.shape: raise newException(ValueError, "Vector should be the same length")

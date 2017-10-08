@@ -31,7 +31,8 @@ import  ./backend/metadataArray,
         # ./higher_order_deprecated,
         ./shapeshifting,
         ./display,
-        ./ufunc
+        ./ufunc,
+        ./operators_blas_l1
 
 export  metadataArray,
         data_structure,
@@ -47,10 +48,10 @@ export  metadataArray,
         #higher_order_deprecated,
         shapeshifting,
         display,
-        ufunc
+        ufunc,
+        operators_blas_l1
 
-include ./operators_blas_l1,
-        ./fallback/blas_l3_gemm,
+include ./fallback/blas_l3_gemm,
         ./fallback/naive_l2_gemv,
         ./operators_blas_l2l3,
         ./operators_broadcasted,

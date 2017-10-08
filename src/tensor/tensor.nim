@@ -29,7 +29,8 @@ import  ./backend/metadataArray,
         ./comparison,
         ./higher_order,
         # ./higher_order_deprecated,
-        ./shapeshifting
+        ./shapeshifting,
+        ./display
 
 export  metadataArray,
         data_structure,
@@ -43,10 +44,10 @@ export  metadataArray,
         comparison,
         higher_order,
         #higher_order_deprecated,
-        shapeshifting
+        shapeshifting,
+        display
 
-include ./display,
-        ./ufunc,
+include ./ufunc,
         ./operators_blas_l1,
         ./fallback/blas_l3_gemm,
         ./fallback/naive_l2_gemv,

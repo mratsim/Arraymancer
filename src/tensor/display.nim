@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../private/functional
+import  ../private/functional,
+        ./data_structure, ./shapeshifting,
+        future, sequtils, typetraits
 
 proc bounds_display(t: Tensor,
           idx_data: tuple[val: string, idx: int]

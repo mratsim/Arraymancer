@@ -12,10 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
+import  ../accessors_macros_syntax,
+        macros
+
+# span is equivalent to `:` in Python. It returns the whole axis range.
+# Tensor[_, 3] will be replaced by Tensor[span, 3]
+const span* = SteppedSlice(b: 1, step: 1, b_from_end: true)
+
+
 # #########################################################################
 # Slicing macros - desugaring AST
 
-macro desugar(args: untyped): typed =
+macro desugar*(args: untyped): typed =
   ## Transform all syntactic sugar in arguments to integer or SteppedSlices
   ## It will then be dispatched to "atIndex" (if specific integers)
   ## or "slicer" if there are SteppedSlices

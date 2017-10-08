@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../private/nested_containers
+import  ../private/[nested_containers, functional],
+        ./private/p_checks,
+        ./data_structure
 
 # ## This file adds slicing syntactic sugar.
 # ## Foo being:
@@ -59,10 +61,10 @@ type SteppedSlice* = object
   ##   - step: The stepping of the slice (can be negative)
   ##   - a/b_from_end: Indicates if a/b should be counted from 0 or from the end of the tensor relevant dimension.
   ## Slicing syntax like a[2, 1..<5, _] will be converted at compile-time to SteppedSlices
-  a, b: int
-  step: int
-  a_from_end: bool
-  b_from_end: bool
+  a*, b*: int
+  step*: int
+  a_from_end*: bool
+  b_from_end*: bool
 
 type Step* = object
   ## Internal: Workaround to build ``SteppedSlice`` without using parenthesis.
@@ -73,51 +75,13 @@ type Step* = object
   b: int
   step: int
 
-# span is equivalent to `:` in Python. It returns the whole axis range.
-# Tensor[_, 3] will be replaced by Tensor[span, 3]
-const span = SteppedSlice(b: 1, step: 1, b_from_end: true)
-
 # Following https://github.com/mratsim/Arraymancer/issues/61 and
 # https://github.com/mratsim/Arraymancer/issues/43 we export _ directly
-const _* = span
+const _* = SteppedSlice(b: 1, step: 1, b_from_end: true)
 
 type Ellipsis* = object ##Dummy type for ellipsis i.e. "Don't slice the rest of dimensions"
 
 const `...`* = Ellipsis()
-
-proc check_steps(a,b, step:int) {.noSideEffect, inline.}=
-  ## Though it might be convenient to automatically step in the correct direction like in Python
-  ## I choose not to do it as this might introduce the typical silent bugs typechecking/Nim is helping avoid.
-  
-  if a == 0 and b == -1 and step == 1:
-    # Very specific scenario to allow initialization of concatenation with empty dimension
-    # like shape of (3, 0)
-    return
-  if ((b-a) * step < 0):
-    raise newException(IndexError, "Your slice start: " &
-                $a & ", and stop: " &
-                $b & ", or your step: " &
-                $step &
-                """, are not correct. If your step is positive
-                start must be inferior to stop and inversely if your step is negative
-                start must be superior to stop.""")
-
-proc check_shape(a, b: Tensor|openarray) {.noSideEffect, inline.}=
-  ## Compare shape
-
-  when b is Tensor:
-    let b_shape = b.shape
-  else:
-    let b_shape = b.shape.toMetadataArray
-
-  if a.shape == b_shape:
-    return
-  else:
-    for ai, bi in zip(a.shape, b_shape):
-      if ai != bi:
-        raise newException(IndexError, "Your tensors or openarrays do not have the same shape: " &
-                                       $a.shape &
-                                       " and " & $b_shape)
 
 
 # #########################################################################

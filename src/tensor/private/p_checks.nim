@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/functional,
+import  ../../private/[functional, nested_containers],
+        ../backend/metadataArray,
         ../data_structure
 
 proc check_nested_elements*(shape: seq[int], len: int) {.noSideEffect, inline.}=
@@ -44,3 +45,37 @@ proc check_size*[T,U](a:Tensor[T], b:Tensor[U])  {.noSideEffect.}=
       "Left-hand side has " & $a.size & " (shape: " & $a.shape & ") while right-hand side has " &
       $b.size & " (shape: " & $b.shape & ")."
     )
+
+proc check_steps*(a,b, step:int) {.noSideEffect, inline.}=
+  ## Though it might be convenient to automatically step in the correct direction like in Python
+  ## I choose not to do it as this might introduce the typical silent bugs typechecking/Nim is helping avoid.
+  
+  if a == 0 and b == -1 and step == 1:
+    # Very specific scenario to allow initialization of concatenation with empty dimension
+    # like shape of (3, 0)
+    return
+  if ((b-a) * step < 0):
+    raise newException(IndexError, "Your slice start: " &
+                $a & ", and stop: " &
+                $b & ", or your step: " &
+                $step &
+                """, are not correct. If your step is positive
+                start must be inferior to stop and inversely if your step is negative
+                start must be superior to stop.""")
+
+proc check_shape*(a, b: Tensor|openarray) {.noSideEffect, inline.}=
+  ## Compare shape
+
+  when b is Tensor:
+    let b_shape = b.shape
+  else:
+    let b_shape = b.shape.toMetadataArray
+
+  if a.shape == b_shape:
+    return
+  else:
+    for ai, bi in zip(a.shape, b_shape):
+      if ai != bi:
+        raise newException(IndexError, "Your tensors or openarrays do not have the same shape: " &
+                                       $a.shape &
+                                       " and " & $b_shape)

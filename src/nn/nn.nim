@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../tensor/tensor, ../autograd/autograd, ../nn_primitives/nn_primitives
-
 import  ./activation/sigmoid,
         ./activation/relu,
         ./layers/linear,
         ./loss/sigmoid_cross_entropy,
         ./optimizers/optimizers
-
 
 export sigmoid, relu
 export linear, sigmoid_cross_entropy

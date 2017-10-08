@@ -15,7 +15,7 @@
 import  ../../autograd/autograd,
         ../../tensor/tensor,
         ../../nn_primitives/nn_primitives,
-        ../../autograd/utils
+        ../../private/ast_utils
 
 type SigmoidActivation* {.final.} [TT] = ref object of Gate[TT]
   cache: TT

@@ -15,7 +15,9 @@
 # By convention a is the LHS (left-hand side)
 # b is the rhs (right-hand side)
 
-import ./data_structure, ../tensor/tensor, ./utils
+import  ../private/ast_utils,
+        ../tensor/tensor,
+        ./data_structure
 
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
   ab_shape: seq[int]

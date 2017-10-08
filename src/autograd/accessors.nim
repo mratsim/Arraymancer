@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./data_structure, ../tensor/tensor
+import ../tensor/tensor,
+       ./data_structure
 
 template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
   var result: type(v)

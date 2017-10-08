@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../tensor/tensor
-import math
+import  ../tensor/tensor,
+        math
 
 # Sigmoid cross-entropy function that works directly on Tensors
 # and provide control without autograd

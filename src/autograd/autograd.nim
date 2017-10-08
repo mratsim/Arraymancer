@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./utils,
-        ./data_structure,
+import  ./data_structure,
         ./gates_basic,
         ./gates_blas,
         ./gates_reduce,

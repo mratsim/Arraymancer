@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../tensor/tensor,
-        ../../autograd/autograd,
+import  ../../private/ast_utils,
+        ../../tensor/tensor,
         ../../nn_primitives/nn_primitives,
-        ../../autograd/utils
-
-import ./loss
+        ../../autograd/autograd,
+        ./loss
 
 type SigmoidCrossEntropyLoss* {.final.} [TT] = ref object of Loss[TT]
   cache: Variable[TT]

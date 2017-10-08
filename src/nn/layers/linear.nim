@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../autograd/autograd,
-        ../../tensor/tensor
+import  ../../private/ast_utils,
+        ../../tensor/tensor,
+        ../../autograd/autograd,
+        ./layer
 
-import  ./layer,
-        ../../autograd/utils
 
 
 type LinearGate* {.final.} [TT] = ref object of Gate[TT]

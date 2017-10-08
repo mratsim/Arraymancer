@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import  ./data_structure,
+        ./higher_order,
+        future, math
+
 proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] =
   ## Apply type conversion on the whole tensor
   result = t.map(x => x.U)

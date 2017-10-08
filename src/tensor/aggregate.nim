@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import  ./data_structure,
+        ./operators_blas_l1
+
 # ### Standard aggregate functions
 # TODO consider using stats from Nim standard lib: https://nim-lang.org/docs/stats.html#standardDeviation,RunningStat
 

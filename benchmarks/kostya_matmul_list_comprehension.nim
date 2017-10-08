@@ -1,12 +1,12 @@
 # From: https://github.com/kostya/benchmarks
 
 import os, strutils, future
-import ../arraymancer
+import ../src/arraymancer
 
 proc matgen(n: int): auto =
-    result = newTensor(@[n,n],float64,Backend.Cpu)
+    result = newTensor[float64](@[n,n])
     let tmp = 1.0 / (n*n).float64
-    return lc[tmp * (i - j).float64 * (i + j).float64 | (i <- 0..<n, j<- 0..<n), float64].toTensor(Cpu).reshape(n, n)
+    return lc[tmp * (i - j).float64 * (i + j).float64 | (i <- 0..<n, j<- 0..<n), float64].toTensor.reshape(n, n)
 
 
 var n = 100

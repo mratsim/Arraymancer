@@ -1,15 +1,14 @@
 # From: https://github.com/kostya/benchmarks
 
 import os, strutils, sequtils
-import ../arraymancer
+import ../src/arraymancer
 
 proc matgen(n: int): auto =
-    result = newTensor(@[n,n],float64,Backend.Cpu)
     let tmp = 1.0 / (n*n).float64
-    let j_idx = @[toSeq(0..<n)].toTensor(Cpu).astype(float64).broadcast([n,n])
-    let i_idx = j_idx.transpose
-    ## TODO: +, -, .* are very slow
-    return (i_idx - j_idx) .* (i_idx + j_idx) * tmp
+    let j_idx = [toSeq(0..<n)].toTensor().astype(float64).unsafeBroadcast([n,n])
+    let i_idx = j_idx.unsafeTranspose
+    result = map2T(i_idx, j_idx):
+        (x - y) * (x + y) * tmp
 
 var n = 100
 if paramCount()>0:

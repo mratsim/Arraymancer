@@ -1,10 +1,10 @@
 # From: https://github.com/kostya/benchmarks
 
 import os, strutils
-import ../arraymancer
+import ../src/arraymancer
 
 proc matgen(n: int): auto =
-    result = newTensor(@[n,n],float64,Backend.Cpu)
+    result = newTensor[float64](@[n,n])
     let tmp = 1.0 / (n*n).float64
     for i in 0 .. <n:
         for j in 0 .. <n:

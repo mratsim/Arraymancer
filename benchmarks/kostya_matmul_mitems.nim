@@ -1,14 +1,14 @@
 # From: https://github.com/kostya/benchmarks
 
 import os, strutils
-import ../arraymancer
+import ../src/arraymancer
 
 proc divmod[T: SomeInteger](n: T, b: T): (T, T) =
     ## return (n div base, n mod base)
     return (n div b, n mod b)
 
 proc matgen(n: int): auto =
-    result = newTensor(@[n,n],float64,Backend.Cpu)
+    result = newTensor[float64](@[n,n])
     let tmp = 1.0 / (n*n).float64
     var counter = 0
     for val in result.mitems:

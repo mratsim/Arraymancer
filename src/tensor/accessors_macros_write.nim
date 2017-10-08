@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./private/checks
+import ./private/p_checks
 
 # #########################################################################
 # Slicing macros - write access

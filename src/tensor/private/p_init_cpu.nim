@@ -15,7 +15,7 @@
 import  ../../private/nested_containers,
         ../backend/metadataArray,
         ../data_structure,
-        ./checks,
+        ./p_checks,
         nimblas,
         sequtils
 

@@ -17,7 +17,7 @@
 
 import  ../private/ast_utils,
         ../tensor/tensor,
-        ./autograd_core
+        ./ag_data_structure
 
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
   ab_shape: seq[int]

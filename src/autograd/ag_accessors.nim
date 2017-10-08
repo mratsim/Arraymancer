@@ -12,12 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../private/functional
+import ../tensor/tensor,
+       ./ag_data_structure
 
-proc check_nested_elements*(shape: seq[int], len: int) {.noSideEffect, inline.}=
-  ## Compare the detected shape from flatten with the real length of the data
-  ## Input:
-  ##   -- A shape (sequence of int)
-  ##   -- A length (int)
-  if (shape.product != len):
-    raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
+template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
+  var result: type(v)
+  new result
+
+  result.tape = v.tape
+  result.ancestor = v.ancestor
+  result.value = v.value.unsafeSlice(args)
+  result.grad = v.grad.unsafeSlice(args)
+
+  result
+
+  # TODO: tests for slicing correspondance

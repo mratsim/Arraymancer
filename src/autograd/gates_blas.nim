@@ -14,7 +14,7 @@
 
 import  ../private/ast_utils,
         ../tensor/tensor,
-        ./autograd_core
+        ./ag_data_structure
 
 type MatMulGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../private/nested_containers,
-       ./private/checks,
+       ./private/p_checks,
        ./private/p_init_cpu
 
 template toTensorReshapeT(oa: typed, shape: varargs[int]): untyped = 

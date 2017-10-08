@@ -67,7 +67,8 @@ proc sigmoid_cross_entropy_backward*[T](
   elif gradient is Tensor:
     let grad = gradient.data[gradient.offset]
 
-  return map2T(cached_tensor, target, grad * (1 / (1 + exp(-x)) - y) / T(batch_size))
+  result = map2T(cached_tensor, target):
+    grad * (1 / (1 + exp(-x)) - y) / T(batch_size)
 
 # ################################################
 # Explanation of sigmoid cross-entropy algorithms:

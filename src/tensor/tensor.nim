@@ -21,10 +21,7 @@ import ./backend/metadataArray
 
 export metadataArray
 
-include # ./global_config,
-        # ./backend/metadataArray,
-        ./backend/openmp,
-        ./data_structure,
+include ./data_structure,
         ./data_structure_helpers,
         ./init_cpu,
         ./init_deprecated_0_1_0,

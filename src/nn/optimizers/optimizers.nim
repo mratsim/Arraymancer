@@ -22,7 +22,7 @@ type
     params*: seq[Variable[Tensor[T]]] # Todo: we can't specify a collection of generic types like AnyTensor currently
     lr*: T # Learning rate. Gradient update are scaled by the learning rate
 
-method update*(self: Optimizer) {.base.} =
+method update*[T](self: Optimizer[T]) {.base.} =
   # Forward for loss layers
   raise newException(ValueError, "update method is not implemented for " & $self.type.name)
 
@@ -36,7 +36,7 @@ type SGD*{.final.}[T] = ref object of Optimizer[T]
 proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[T] =
   SGD[T](params: @params, lr: learning_rate)
 
-method update*(self: SGD) =
+method update*[T](self: SGD[T]) =
   # Update the params with formula Value -= lr * gradient
   # Note: SGD expects gradient to be scaled by batchsize (done by default in Arraymancer)
   for v in self.params:

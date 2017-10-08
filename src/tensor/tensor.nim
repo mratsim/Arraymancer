@@ -33,7 +33,9 @@ import  ./backend/metadataArray,
         ./display,
         ./ufunc,
         ./operators_blas_l1,
-        ./operators_blas_l2l3
+        ./operators_blas_l2l3,
+        ./operators_broadcasted,
+        ./math_functions
 
 export  metadataArray,
         data_structure,
@@ -51,11 +53,11 @@ export  metadataArray,
         display,
         ufunc,
         operators_blas_l1,
-        operators_blas_l2l3
+        operators_blas_l2l3,
+        operators_broadcasted,
+        math_functions
 
-include ./operators_broadcasted,
-        ./math_functions,
-        ./filling_data,
+include ./filling_data,
         ./aggregate,
         ./term_rewriting,
         ./shortcuts,

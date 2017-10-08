@@ -34,51 +34,34 @@ import ../arraymancer, math
 # Benchmarks available in the benchmark folder
 #
 
+# TODO: tests
+
 proc sigmoid*[T: SomeReal](t: Tensor[T]): Tensor[T] {.inline.}=
   ## Logistic sigmoid activation function, :math:`f(x) = 1 / (1 + \exp(-x))`
   ## Note: Canonical sigmoid is not stable for large negative value
 
-  proc sigmoid_closure(x: T): T = 1.T / (1.T + exp(-x))
-
   # stable: proc sigmoid_closure(x: T): T = 0.5.T * (tanh(0.5.T * x) + 1.T)
 
-  return t.map(sigmoid_closure)
+  return t.mapT(1.T / (1.T + exp(-x)))
 
-proc msigmoid*[T: SomeReal](t: var Tensor[T]): Tensor[T] {.inline.}=
+proc msigmoid*[T: SomeReal](t: var Tensor[T]) {.inline.}=
   ## Logistic sigmoid activation function, :math:`f(x) = 1 / (1 + \exp(-x))`
   ## Note: Canonical sigmoid is not stable for large negative value
 
-  proc sigmoid_closure(x: T): T = 1.T / (1.T + exp(-x))
-
   # stable: proc sigmoid_closure(x: T): T = 0.5.T * (tanh(0.5.T * x) + 1.T)
-
-  return t.map(sigmoid_closure)
+  t.applyT(1.T / (1.T + exp(-x)))
 
 proc relu*[T](t: Tensor[T]): Tensor[T] {.inline.}=
-  proc relu_closure(x: T): T =
-    max(0.T, x)
-  t.map(relu_closure)
+  t.mapT max(0.T,x)
 
-proc mrelu*[T](t: var Tensor[T]): Tensor[T] {.inline.}=
-  proc relu_closure(x: T): T =
-    max(0.T, x)
-  t.apply(relu_closure)
+proc mrelu*[T](t: var Tensor[T]) {.inline.}=
+  t.applyT max(0.T, x)
 
 
 proc relu_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.inline.}=
-  proc relu_backward_closure[T](x: T): T =
-    if x <= 0.T:
-      return 0.T
-    return 1.T
-
-  result = cached_tensor.map(relu_backward_closure)
+  result = cached_tensor.mapT(if x <= 0.T: 0.T else: 1.T)
   result .*= gradient
 
 proc sigmoid_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.inline.}=
-  proc sigmoid_backward_closure[T](x: T): T =
-    ## We suppose the input was already passed through the logistic sigmoid.
-    ## Derivative is f' = f * (1 - f)
-    x * (1 - x)
-  
-  result = cached_tensor.map(sigmoid_backward_closure)
+  result = cached_tensor.mapT(x * (1 - x))
   result .*= gradient

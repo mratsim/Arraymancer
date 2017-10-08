@@ -35,25 +35,21 @@ proc `.*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.inline.} =
   ## And broadcasted element-wise multiplication.
 
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
-  proc bc_mul_closure(x, y: T): T = x * y
-
-  return map2(tmp_a, bc_mul_closure, tmp_b)
+  return map2T(tmp_a, tmp_b, x * y)
 
 proc `./`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.inline.} =
   ## Tensor element-wise division for integer numbers.
   ##
   ## And broadcasted element-wise division.
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
-  proc bc_intdiv_closure(x, y: T): T = x div y
-  return map2(tmp_a, bc_intdiv_closure, tmp_b)
+  return map2T(tmp_a, tmp_b, x div y)
 
 proc `./`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.inline.} =
   ## Tensor element-wise division for real numbers.
   ##
   ## And broadcasted element-wise division.
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
-  proc bc_div_closure(x, y: T): T = x / y
-  return map2(tmp_a, bc_div_closure, tmp_b)
+  return map2T(tmp_a, tmp_b, x / y )
 
 # ##############################################
 # # Broadcasting in-place Tensor-Tensor
@@ -65,8 +61,7 @@ proc `.+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.inline.} =
   # shape check done in apply2 proc
 
   let tmp_b = b.unsafeBroadcast(a.shape)
-  proc bc_madd_closure(x: var T, y: T) = x += y
-  apply2(a, bc_madd_closure, tmp_b)
+  apply2T(a, tmp_b, x + y)
 
 proc `.-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.inline.} =
   ## Tensor broadcasted in-place substraction.
@@ -75,8 +70,7 @@ proc `.-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.inline.} =
   # shape check done in apply2 proc
 
   let tmp_b = b.unsafeBroadcast(a.shape)
-  proc bc_msub_closure(x: var T, y: T) = x -= y
-  apply2(a, bc_msub_closure, tmp_b)
+  apply2T(a, tmp_b, x - y)
 
 proc `.*=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.inline.} =
   ## Tensor broadcasted in-place multiplication (Hadamard product)
@@ -85,8 +79,7 @@ proc `.*=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) {.inline.} =
   # shape check done in apply2 proc
 
   let tmp_b = b.unsafeBroadcast(a.shape)
-  proc bc_mmul_closure(x: var T, y: T) = x *= y
-  apply2(a, bc_mmul_closure, tmp_b)
+  apply2T(a, tmp_b, x * y)
 
 proc `./=`*[T: SomeInteger](a: var Tensor[T], b: Tensor[T]) {.inline.} =
   ## Tensor broadcasted in-place integer division.
@@ -95,8 +88,7 @@ proc `./=`*[T: SomeInteger](a: var Tensor[T], b: Tensor[T]) {.inline.} =
   # shape check done in apply2 proc
 
   let tmp_b = b.unsafeBroadcast(a.shape)
-  proc bc_mintdiv_closure(x: var T, y: T) = x = x div y
-  apply2(a, bc_mintdiv_closure, tmp_b)
+  apply2T(a, tmp_b, x div y)
 
 proc `./=`*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) {.inline.} =
   ## Tensor broadcasted in-place float division.
@@ -105,8 +97,7 @@ proc `./=`*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) {.inline.} =
   # shape check done in apply2 proc
 
   let tmp_b = b.unsafeBroadcast(a.shape)
-  proc bc_mdiv_closure(x: var T, y: T) = x /= y
-  apply2(a, bc_mdiv_closure, tmp_b)
+  apply2T(a, tmp_b, x / y)
 
 
 # ##############################################
@@ -114,56 +105,43 @@ proc `./=`*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) {.inline.} =
 
 proc `.+`*[T: SomeNumber](val: T, t: Tensor[T]): Tensor[T] {.inline.} =
   ## Broadcasted addition for tensor + scalar.
-  proc bcs_add_closure(x: T): T = x + val
-  return t.map(bcs_add_closure)
+  return t.mapT(x + val)
 
 proc `.+`*[T: SomeNumber](t: Tensor[T], val: T): Tensor[T] {.inline.} =
   ## Broadcasted addition for scalar + tensor.
-  proc bcs2_add_closure(x: T): T = x + val
-  return t.map(bcs2_add_closure)
+  return t.mapT(x + val)
 
 proc `.-`*[T: SomeNumber](val: T, t: Tensor[T]): Tensor[T] {.inline.} =
   ## Broadcasted substraction for tensor - scalar.
-  proc bcs_min_closure(x: T): T = val - x
-  return t.map(bcs_min_closure)
+  return t.mapT(val - x)
 
 proc `.-`*[T: SomeNumber](t: Tensor[T], val: T): Tensor[T] {.inline.} =
   ## Broadcasted substraction for scalar - tensor.
-  proc bcs2_min_closure(x: T): T = x - val
-  return t.map(bcs2_min_closure)
+  return t.mapT(x - val)
 
 proc `./`*[T: SomeInteger](val: T, t: Tensor[T]): Tensor[T] {.inline.} =
   ## Broadcasted division of an integer by a tensor of integers.
-  proc bcs2_intdiv_closure(x: T): T = val div x
-  return t.map(bcs2_intdiv_closure)
+  return t.mapT(val div x)
 
 proc `./`*[T: SomeReal](val: T, t: Tensor[T]): Tensor[T] {.inline.} =
   ## Broadcasted division of a float by a tensor of floats.
-  proc bcs2_div_closure(x: T): T = val / x
-  return t.map(bcs2_div_closure)
+  return t.mapT(val / x)
 
 proc `.^`*[T: SomeReal](t: Tensor[T], exponent: T): Tensor[T] {.inline.} =
   ## Compute element-wise exponentiation
-  proc bc_pow_closure(x: T): T = pow(x, exponent)
-  return t.map(bc_pow_closure)
+  return t.mapT pow(x, exponent)
 
 # #####################################
 # # Broadcasting in-place Tensor-Scalar
 
 proc `.+=`*[T: SomeNumber](t: var Tensor[T], val: T) {.inline.} =
   ## Tensor in-place addition with a broadcasted scalar.
-
-  proc bcs_madd_closure(x: var T) = x += val
-  t.apply(bcs_madd_closure)
+  t.applyT(x + val)
 
 proc `.-=`*[T: SomeNumber](t: var Tensor[T], val: T) {.inline.} =
   ## Tensor in-place substraction with a broadcasted scalar.
-
-  proc bcs_msub_closure(x: var T) = x -= val
-  t.apply(bcs_msub_closure)
+  t.applyT(x - val)
 
 proc `.^=`*[T: SomeReal](t: var Tensor[T], exponent: T) {.inline.} =
   ## Compute in-place element-wise exponentiation
-
-  proc bcs_mpow_closure(x: T): T = pow(x, exponent)
-  t.apply(bcs_mpow_closure)
+  t.applyT pow(x, exponent)

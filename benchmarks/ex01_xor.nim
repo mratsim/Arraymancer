@@ -37,7 +37,7 @@ let optim = newSGD[float32](
   layer_3neurons, classifier_layer, 0.01f # 0.01 is the learning rate
 )
 
-for epoch in 0..100:
+for epoch in 0..10000:
 
   for batch_id in 0..<100:
 

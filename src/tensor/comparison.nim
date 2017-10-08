@@ -1,4 +1,4 @@
-# Copyright 2017 the Arraymancer contributors
+# Copyright 2017 Mamy André-Ratsimbazafy
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,15 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../autograd/autograd,
-        typetraits
+import ./data_structure, ./accessors
 
+proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
+  ## Tensor comparison
+  if a.shape != b.shape: return false
 
-type Loss* [TT] = ref object of Gate[TT]
-  batch_size*: seq[int]
-  target*: TT
-
-
-method forward*[TT](self: Loss[TT], a: Variable[TT], target: TT): Variable[TT] {.base, inline.}=
-  # Forward for loss layers
-  raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
+  for a, b in zip(a,b):
+    ## Iterate through the tensors using stride-aware iterators
+    ## Returns early if false
+    if a != b: return false
+  return true

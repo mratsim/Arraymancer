@@ -12,20 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../src/arraymancer,
-        ./tensor/test_init,
-        ./tensor/test_comparison,
-        ./tensor/test_accessors,
-        ./tensor/test_accessors_slicer,
-        ./tensor/test_display,
-        ./tensor/test_operators_blas,
-        ./tensor/test_math_functions,
-        ./tensor/test_higherorder,
-        ./tensor/test_aggregate,
-        ./tensor/test_shapeshifting,
-        ./tensor/test_broadcasting,
-        ./tensor/test_ufunc,
-        ./tensor/test_filling_data,
-        ./tensor/test_optimization,
-        ./tensor/test_bugtracker,
-        ./autograd/test_gate_blas
+# TODO remove the file
+import  ./data_structure,
+        nimblas
+
+proc getTransposeTarget*(t: AnyTensor): TransposeType {.noSideEffect.}=
+  ## TransposeType is introduced by ``nimblas``
+  ## Default layout is Row major.
+  ## Everytime it is worth it or fused with a BLAS operation we change the strides to Row-Major
+  if is_C_contiguous(t): return TransposeType.noTranspose
+  elif is_F_contiguous(t): return TransposeType.transpose
+  else: raise newException(ValueError,"Operation not supported for this matrix. It has a non-contiguous layout")

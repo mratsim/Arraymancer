@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../arraymancer_ag, ../../arraymancer, typetraits
+import  ../../tensor/tensor,
+        ../../autograd/autograd,
+        typetraits
 
 type
   Optimizer*[T] = ref object {.inheritable.}

@@ -12,15 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../autograd/autograd,
-        typetraits
+import ../tensor/tensor,
+       ./ag_data_structure
 
+template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
+  var result: type(v)
+  new result
 
-type Loss* [TT] = ref object of Gate[TT]
-  batch_size*: seq[int]
-  target*: TT
+  result.tape = v.tape
+  result.ancestor = v.ancestor
+  result.value = v.value.unsafeSlice(args)
+  result.grad = v.grad.unsafeSlice(args)
 
+  result
 
-method forward*[TT](self: Loss[TT], a: Variable[TT], target: TT): Variable[TT] {.base, inline.}=
-  # Forward for loss layers
-  raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
+  # TODO: tests for slicing correspondance

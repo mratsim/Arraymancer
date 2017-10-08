@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../arraymancer_ag, ../../arraymancer, ../../autograd/utils
-import ../../arraymancer_nn_primitives
-
-import ./loss
+import  ../../private/ast_utils,
+        ../../tensor/tensor,
+        ../../nn_primitives/nn_primitives,
+        ../../autograd/autograd,
+        ./loss
 
 type SigmoidCrossEntropyLoss* {.final.} [TT] = ref object of Loss[TT]
   cache: Variable[TT]

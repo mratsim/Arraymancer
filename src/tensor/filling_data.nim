@@ -12,20 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../src/arraymancer,
-        ./tensor/test_init,
-        ./tensor/test_comparison,
-        ./tensor/test_accessors,
-        ./tensor/test_accessors_slicer,
-        ./tensor/test_display,
-        ./tensor/test_operators_blas,
-        ./tensor/test_math_functions,
-        ./tensor/test_higherorder,
-        ./tensor/test_aggregate,
-        ./tensor/test_shapeshifting,
-        ./tensor/test_broadcasting,
-        ./tensor/test_ufunc,
-        ./tensor/test_filling_data,
-        ./tensor/test_optimization,
-        ./tensor/test_bugtracker,
-        ./autograd/test_gate_blas
+import  ./private/p_checks,
+        ./data_structure,
+        ./accessors
+
+proc copy_from*[T](dst: var Tensor[T], src: Tensor[T]) =
+  ## Copy the data from a source Tensor. Both tensors must have the same number of elements
+  ## but do not need to have the same shape.
+  ## Data is copied without re-allocation.
+  ## Warning ⚠
+  ##   The destination tensor data will be overwritten. It however conserves its shape and strides.
+
+  when compileOption("boundChecks"):
+    check_size(dst, src)
+
+  for x, val in mzip(dst, src):
+    x = val

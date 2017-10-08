@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./autograd, ../arraymancer, ./utils
+import  ../private/ast_utils,
+        ../tensor/tensor,
+        ./ag_data_structure
 
 type MatMulGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C

@@ -12,15 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../autograd/autograd,
-        typetraits
+import  ./activation_primitives,
+        ./linear_primitives,
+        ./sigmoid_cross_entropy_primitives
 
-
-type Loss* [TT] = ref object of Gate[TT]
-  batch_size*: seq[int]
-  target*: TT
-
-
-method forward*[TT](self: Loss[TT], a: Variable[TT], target: TT): Variable[TT] {.base, inline.}=
-  # Forward for loss layers
-  raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
+export activation_primitives, linear_primitives, sigmoid_cross_entropy_primitives

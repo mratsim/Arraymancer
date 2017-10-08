@@ -1,4 +1,4 @@
-import ../src/arraymancer_nn, ../src/arraymancer_ag, ../src/arraymancer
+import ../src/arraymancer
 
 let ctx = newContext Tensor[float32]
 

@@ -15,7 +15,9 @@
 # By convention a is the LHS (left-hand side)
 # b is the rhs (right-hand side)
 
-import ./autograd, ../arraymancer, ./utils
+import  ../private/ast_utils,
+        ../tensor/tensor,
+        ./ag_data_structure
 
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
   ab_shape: seq[int]

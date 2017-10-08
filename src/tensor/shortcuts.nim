@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import  ./data_structure,
+        ./shapeshifting
+
 template at*[T](t: Tensor[T], args: varargs[untyped]): untyped =
   ## Slice a Tensor and collapse singleton dimension.
   ##

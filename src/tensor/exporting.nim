@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ./data_structure
+
 proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect.} =
   ## Convert a tensor to the raw sequence of data.
 

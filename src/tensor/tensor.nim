@@ -38,7 +38,9 @@ import  ./backend/metadataArray,
         ./math_functions,
         ./filling_data,
         ./aggregate,
-        ./term_rewriting
+        ./term_rewriting,
+        ./shortcuts,
+        ./exporting
 
 export  metadataArray,
         data_structure,
@@ -61,10 +63,9 @@ export  metadataArray,
         math_functions,
         filling_data,
         aggregate,
-        term_rewriting
-
-include ./shortcuts,
-        ./exporting
+        term_rewriting,
+        shortcuts,
+        exporting
 
 
 when defined(cuda):

@@ -1,6 +1,8 @@
 import os, strutils, random
 import ../src/arraymancer
 
+{.passC: "-march=native" .}
+
 proc matgen(n: int): auto =
     result = randomTensor(n,n, 100)
 

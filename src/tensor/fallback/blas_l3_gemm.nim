@@ -52,7 +52,7 @@ const NC = 4096
 
 # The following should be bigger (4x8) but somehow it hurts my performance
 # It might be because the compiler is not using the large AVX registers by default.
-const MR = 2
+const MR = 2 # Note if MR is changed here, change the unroll loop factor in the micro kernel
 const NR = 2
 
 #                    Panels of B of size KC * NR resides in L1 cache

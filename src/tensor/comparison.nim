@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ./data_structure, ./accessors
+
 proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
   ## Tensor comparison
   if a.shape != b.shape: return false

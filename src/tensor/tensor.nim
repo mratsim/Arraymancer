@@ -23,7 +23,8 @@ import  ./backend/metadataArray,
         ./accessors,
         ./accessors_macros_syntax,
         ./accessors_macros_read,
-        ./accessors_macros_write
+        ./accessors_macros_write,
+        ./comparison
 
 export  metadataArray,
         data_structure,
@@ -33,10 +34,10 @@ export  metadataArray,
         accessors,
         accessors_macros_syntax,
         accessors_macros_read,
-        accessors_macros_write
+        accessors_macros_write,
+        comparison
 
-include ./comparison,
-        ./higher_order,
+include ./higher_order,
         ./higher_order_deprecated,
         ./shapeshifting,
         ./display,

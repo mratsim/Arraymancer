@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import  ./private/p_checks,
+        ./data_structure,
         ./accessors
 
 proc copy_from*[T](dst: var Tensor[T], src: Tensor[T]) =

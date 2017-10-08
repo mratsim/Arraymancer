@@ -35,7 +35,8 @@ import  ./backend/metadataArray,
         ./operators_blas_l1,
         ./operators_blas_l2l3,
         ./operators_broadcasted,
-        ./math_functions
+        ./math_functions,
+        ./filling_data
 
 export  metadataArray,
         data_structure,
@@ -55,10 +56,10 @@ export  metadataArray,
         operators_blas_l1,
         operators_blas_l2l3,
         operators_broadcasted,
-        math_functions
+        math_functions,
+        filling_data
 
-include ./filling_data,
-        ./aggregate,
+include ./aggregate,
         ./term_rewriting,
         ./shortcuts,
         ./exporting

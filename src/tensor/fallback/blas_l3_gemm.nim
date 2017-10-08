@@ -22,17 +22,6 @@
 # Blaze C++: http://www.mathematik.uni-ulm.de/~lehn/test_blaze/session1/page01.html
 # Rust BLIS inspired: https://github.com/bluss/matrixmultiply
 
-# ### TODO:
-# - OpenMP parallelization
-# {.passl: "-fopenmp".} # Issue: Clang OSX does not support openmp
-# {.passc: "-fopenmp".} # and the default GCC is actually a link to Clang
-
-# - Loop unrolling  # Currently Nim `unroll` pragma exists but is ignored.
-# - Pass `-march=native` to the compiler
-# - Align memory # should be automatic
-# - Is there a way to get L1/L2 cache size at compile-time
-# - Is there a way to get number of registers at compile-time
-
 # Best numbers depend on
 # L1, L2, L3 cache and register size
 
@@ -44,17 +33,15 @@
 
 # Int/float64 takes 4B
 # float32 takes 2B
-# --> use "when" to parametrize size at compile-time?
 
 # Specific setup for AVX/FMA
 const MC = 256
 const KC = 512
-const NC = 4096 # 4092 and not 4096 is intentional with the NR of 12
+const NC = 4096 # use 4092 if NR of 12
 
-# The following should be bigger (4x8) but somehow it hurts my performance
-# It might be because the compiler is not using the large AVX registers by default.
-const MR = 2 # Note if MR is changed here, change the unroll loop factor in the micro kernel
-const NR = 2
+# The following should be bigger (4x8 or 4x12) but somehow it hurts my performance on mac (no-OpenMP by default) or prevent OpenMP on Linux (modulo size issue?)
+const MR = 4 # Note if MR is changed here, change the unroll loop factor in the micro kernel
+const NR = 4
 
 #                    Panels of B of size KC * NR resides in L1 cache
 const MCKC = MC*KC # A resides in L2 cache

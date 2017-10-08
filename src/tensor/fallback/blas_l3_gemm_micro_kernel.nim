@@ -36,14 +36,14 @@ template gemm_micro_kernelT[T](
   for _ in 0 ..< kc:
     for j in 0 ..< NR:
       let jMR = j*MR
-      for i in countup(0, MR-1, 2): # Note MR is always a multiple of 4.
+      for i in countup(0, MR-1, 4): # Note MR is always a multiple of 4.
                                     # countup is inclusive
         # {.unroll: 4.} # Pragma ignored ヾ( ￣O￣)ツ
         let b_val = b[j + voffB]
         AB[i + jMR] += a[i + voffA] * b_val
         AB[i+1 + jMR] += a[i+1 + voffA] * b_val
-        # AB[i+2 + jMR] += a[i+2 + voffA] * b_val
-        # AB[i+3 + jMR] += a[i+3 + voffA] * b_val
+        AB[i+2 + jMR] += a[i+2 + voffA] * b_val
+        AB[i+3 + jMR] += a[i+3 + voffA] * b_val
     voffA += MR
     voffB += NR
 

@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../private/nested_containers,
-       ./private/p_checks,
-       ./private/p_init_cpu
+import  ../private/nested_containers,
+        ./private/p_checks,
+        ./private/p_init_cpu,
+        ./data_structure,
+        sequtils
 
 template toTensorReshapeT(oa: typed, shape: varargs[int]): untyped = 
   let data = toSeq(flatIter(oa))

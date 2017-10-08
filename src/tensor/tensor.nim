@@ -37,7 +37,8 @@ import  ./backend/metadataArray,
         ./operators_broadcasted,
         ./math_functions,
         ./filling_data,
-        ./aggregate
+        ./aggregate,
+        ./term_rewriting
 
 export  metadataArray,
         data_structure,
@@ -59,10 +60,10 @@ export  metadataArray,
         operators_broadcasted,
         math_functions,
         filling_data,
-        aggregate
+        aggregate,
+        term_rewriting
 
-include ./term_rewriting,
-        ./shortcuts,
+include ./shortcuts,
         ./exporting
 
 

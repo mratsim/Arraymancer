@@ -108,14 +108,14 @@ const
   BLIS_BITVAL_CONJ_TRANS = (BLIS_CONJ_BIT or BLIS_TRANS_BIT)
 
 type
-  BlisTrans {.size: sizeof(cint).} = enum
+  BlisTrans* {.size: sizeof(cint).} = enum
     BLIS_NO_TRANSPOSE = 0x00000000,
     BLIS_TRANSPOSE = BLIS_BITVAL_TRANS,
     BLIS_CONJ_NO_TRANSPOSE = BLIS_BITVAL_CONJ,
     BLIS_CONJ_TRANSPOSE = BLIS_BITVAL_CONJ_TRANS
 
 type
-  BlisConj {.size: sizeof(cint).} = enum
+  BlisConj* {.size: sizeof(cint).} = enum
     BLIS_NO_CONJUGATE = 0x00000000,
     BLIS_CONJUGATE = BLIS_BITVAL_CONJ
 
@@ -132,7 +132,7 @@ proc bli_init(): BlisError {.importc: "bli_init", dynlib: libblis.}
 proc bli_finalize(): BlisError {.importc: "bli_finalize", dynlib: libblis.}
 proc bli_is_initialized(): bool {.importc: "bli_is_initialized", dynlib: libblis.}
 
-proc bli_gemm(
+proc bli_gemm*(
       transa, transb: BlisTrans,
       M, N, K: int,
       alpha: ptr float64,
@@ -145,7 +145,7 @@ proc bli_gemm(
   {. dynlib: libblis, importc: "bli_dgemm" .}
 # C := beta * C + alpha * transa(A) * transb(B)
 
-proc bli_gemm(
+proc bli_gemm*(
       transa, transb: BlisTrans,
       M, N, K: int,
       alpha: ptr float32,
@@ -160,7 +160,7 @@ proc bli_gemm(
   # A: Matrix
   # X, Y: Vector
 
-proc bli_gemv(
+proc bli_gemv*(
       transa: BlisTrans,
       conjx: BlisConj,
       M, N: int,
@@ -176,7 +176,7 @@ proc bli_gemv(
   # A: Matrix
   # X, Y: Vector
 
-proc bli_gemv(
+proc bli_gemv*(
       transa: BlisTrans,
       conjx: BlisConj,
       M, N: int,

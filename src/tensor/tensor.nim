@@ -19,7 +19,6 @@ export OrderType
 
 include ./global_config,
         ./backend/metadataArray,
-        ./backend/blis,
         ./backend/openmp,
         ./data_structure,
         ./data_structure_helpers,

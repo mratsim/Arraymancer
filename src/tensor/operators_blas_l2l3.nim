@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ./backend/blis
 
 # Bounds checking functions
 proc check_matmat(a, b: AnyTensor) {.noSideEffect.}=
@@ -49,8 +50,8 @@ template matvec_blis[T: SomeReal](a, x, result: Tensor[T]): auto =
   when compileOption("boundChecks"): check_matvec(a,b)
 
   result.data = newSeqUninit[T](rowA)
-  result.shape = @[rowA]
-  result.strides = @[1]
+  result.shape = [rowA].toMetadataArray
+  result.strides = [1].toMetadataArray
   result.offset = 0
 
   let
@@ -135,8 +136,8 @@ template matmat_blis[T: SomeReal](a, b, result: Tensor[T]): auto =
   when compileOption("boundChecks"): check_matmat(a,b)
 
   result.data = newSeqUninit[T](rowA * colB)
-  result.shape = @[rowA, colB]
-  result.strides = @[rowA, 1]  # We force row-major after computation
+  result.shape = [rowA, colB].toMetadataArray
+  result.strides = [rowA, 1].toMetadataArray  # We force row-major after computation
   result.offset = 0
 
   let
@@ -220,12 +221,12 @@ template matmat_fallback[T: SomeInteger](a, b, result: Tensor[T]): auto =
 # #################################################
 # Generic notation "*"
 
-proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] =
+proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect.}=
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
   ##
   ## Float operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.
 
-  when defined(blis):
+  when declared(blis):
     ## When is evaluated at compile time and has no runtime cost
     if not a.isContiguous or not b.isContiguous:
       # OpenBLAS / MKL are still faster than BLIS in the contiguous case
@@ -238,7 +239,7 @@ proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] =
   elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
   else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
 
-proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] =
+proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.noSideEffect.}=
   ## Matrix-Matrix and Matrix-Vector multiplications fallback for integer tensors.
   ##
   ## Integer BLAS has been implemented manually. While not as fast as BLAS for floats,

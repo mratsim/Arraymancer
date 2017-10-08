@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/nested_containers,
-        ./private/p_checks
+import  ../private/[nested_containers, ast_utils],
+        ./private/p_accessors_macros_desugar,
+        ./private/p_accessors_macros_read,
+        ./private/p_checks,
+        ./private/p_accessors
 
 # #########################################################################
 # Slicing macros - write access

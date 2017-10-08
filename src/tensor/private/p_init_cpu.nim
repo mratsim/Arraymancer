@@ -40,7 +40,3 @@ template toTensorCpu*(s: typed): untyped =
   tensorCpu(shape, t)
   t.data = data
   return t
-
-proc newSeqUninit*[T](len: Natural): seq[T] {.noSideEffect, inline.} =
-  result = newSeqOfCap[T](len)
-  result.setLen(len)

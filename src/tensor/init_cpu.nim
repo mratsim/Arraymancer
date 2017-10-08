@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/[functional, nested_containers],
+import  ../private/[functional, nested_containers, sequninit],
         ./backend/metadataArray,
         ./private/p_checks,
         ./private/p_init_cpu,

@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# FIXME: Can't use built-in proc `+=` in map: https://github.com/nim-lang/Nim/issues/5702
-# apply(a, `+=`, b)
+import ./shapeshifting
 
 # #########################################################
 # # Broadcasting Tensor-Tensor

@@ -79,3 +79,30 @@ proc check_shape*(a, b: Tensor|openarray) {.noSideEffect, inline.}=
         raise newException(IndexError, "Your tensors or openarrays do not have the same shape: " &
                                        $a.shape &
                                        " and " & $b_shape)
+
+proc check_reshape*(t: AnyTensor, new_shape:MetadataArray) {.noSideEffect, inline.}=
+  if t.size != new_shape.product:
+    raise newException(ValueError, "The total number of elements in the old (" &
+                                    $t.size &
+                                    ") and the new (" &
+                                    $new_shape.product &
+                                    ") reshaped tensor must be the same")
+
+proc check_nocopyReshape*(t: AnyTensor) {.noSideEffect, inline.}=
+  if not t.isContiguous:
+    raise newException(ValueError, "The tensor must be contiguous for reshape without copy")
+
+proc check_concat*(t1, t2: Tensor, axis: int) {.noSideEffect,inline.}=
+  let check1 = t1.shape[0..<axis] == t2.shape[0..<axis]
+  let check2 = t2.shape[axis+1..t1.shape.high] == t2.shape[axis+1..t2.shape.high]
+
+  if not check1 or not check2:
+    raise newException(ValueError, "Concatenation Error: Except along the concatenation axis tensors must have the same shape")
+
+proc check_squeezeAxis*(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
+  if axis >= t.rank:
+    raise newException(ValueError, "The axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )
+
+proc check_unsqueezeAxis*(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
+  if t.rank == 0 or axis > t.rank or axis < 0:
+    raise newException(ValueError, "The new axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )

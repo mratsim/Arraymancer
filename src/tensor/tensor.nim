@@ -27,8 +27,9 @@ import  ./backend/metadataArray,
         ./accessors_macros_read,
         ./accessors_macros_write,
         ./comparison,
-        ./higher_order
+        ./higher_order,
         # ./higher_order_deprecated,
+        ./shapeshifting
 
 export  metadataArray,
         data_structure,
@@ -40,11 +41,11 @@ export  metadataArray,
         accessors_macros_read,
         accessors_macros_write,
         comparison,
-        higher_order
+        higher_order,
         #higher_order_deprecated,
+        shapeshifting
 
-include ./shapeshifting,
-        ./display,
+include ./display,
         ./ufunc,
         ./operators_blas_l1,
         ./fallback/blas_l3_gemm,

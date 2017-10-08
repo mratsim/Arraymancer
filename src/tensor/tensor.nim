@@ -22,7 +22,8 @@ import  ./backend/metadataArray,
         ./init_cpu,
         ./accessors,
         ./accessors_macros_syntax,
-        ./accessors_macros_read
+        ./accessors_macros_read,
+        ./accessors_macros_write
 
 export  metadataArray,
         data_structure,
@@ -31,11 +32,10 @@ export  metadataArray,
         # ./init_cpu_deprecated_0_2_0, # source of deprecation spam https://github.com/nim-lang/Nim/issues/6436
         accessors,
         accessors_macros_syntax,
-        accessors_macros_read
+        accessors_macros_read,
+        accessors_macros_write
 
-include # ./accessors_macros_read,
-        ./accessors_macros_write,
-        ./comparison,
+include ./comparison,
         ./higher_order,
         ./higher_order_deprecated,
         ./shapeshifting,

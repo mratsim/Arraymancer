@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./private/[p_accessors, p_checks],
+import  ./private/p_accessors,
+        ./private/p_checks,
         ./data_structure
 
 iterator items*[T](t: Tensor[T]): T {.inline,noSideEffect.} =

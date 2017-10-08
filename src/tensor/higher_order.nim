@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./backend/openmp
+import  ./backend/openmp,
+        ./private/p_checks
 
 # ####################################################################
 # Mapping over tensors

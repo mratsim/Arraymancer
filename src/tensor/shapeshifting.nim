@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ./private/p_accessors_macros_write
+
 proc check_reshape(t: AnyTensor, new_shape:MetadataArray) {.noSideEffect, inline.}=
   if t.size != new_shape.product:
     raise newException(ValueError, "The total number of elements in the old (" &

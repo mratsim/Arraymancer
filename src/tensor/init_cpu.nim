@@ -14,7 +14,8 @@
 
 import  ../private/[functional, nested_containers],
         ./backend/metadataArray,
-        ./private/[p_checks, p_init_cpu],
+        ./private/p_checks,
+        ./private/p_init_cpu,
         ./data_structure,
         nimblas,
         sequtils,

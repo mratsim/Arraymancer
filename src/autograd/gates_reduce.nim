@@ -14,7 +14,7 @@
 
 import  ../private/[ast_utils, functional],
         ../tensor/tensor,
-        ./data_structure,
+        ./autograd_core,
         sequtils
 
 type MeanGate* {.final.} [TT] = ref object of Gate[TT]

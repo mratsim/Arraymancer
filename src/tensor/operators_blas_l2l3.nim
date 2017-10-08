@@ -15,6 +15,10 @@
 when defined(blis):
   import ./backend/blis
 
+import  ./data_structure,
+        ./data_structure_helpers,
+        nimblas
+
 # Bounds checking functions
 proc check_matmat(a, b: AnyTensor) {.noSideEffect.}=
   let colA = a.shape[1]

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../tensor/tensor,
-       ./data_structure
+       ./autograd_core
 
 template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
   var result: type(v)

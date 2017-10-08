@@ -13,7 +13,8 @@
 # limitations under the License.
 
 import ../private/[functional, nested_containers],
-       ./backend/metadataArray
+       ./backend/metadataArray,
+       ./data_structure
 
 proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.}=
   ## Input:

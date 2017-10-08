@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./data_structure,
+import  ./autograd_core,
         ./gates_basic,
         ./gates_blas,
         ./gates_reduce,
         ./accessors
 
-export  data_structure,
+export  autograd_core,
         gates_basic,
         gates_blas,
         gates_reduce,

@@ -46,9 +46,10 @@
 # float32 takes 2B
 # --> use "when" to parametrize size at compile-time?
 
-const MC = 96
-const KC = 256
-const NC = 4096
+# Specific setup for AVX/FMA
+const MC = 256
+const KC = 512
+const NC = 4096 # 4092 and not 4096 is intentional with the NR of 12
 
 # The following should be bigger (4x8) but somehow it hurts my performance
 # It might be because the compiler is not using the large AVX registers by default.

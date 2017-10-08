@@ -110,3 +110,23 @@ proc check_unsqueezeAxis*(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
 proc check_dot_prod*(a, b:AnyTensor)  {.noSideEffect.}=
   if a.rank != 1 or b.rank != 1: raise newException(ValueError, "Dot product is only supported for vectors (tensors of rank 1)")
   if a.shape != b.shape: raise newException(ValueError, "Vector should be the same length")
+
+proc check_matmat*(a, b: AnyTensor) {.noSideEffect.}=
+  let colA = a.shape[1]
+  let rowB = b.shape[0]
+
+  if colA != rowB:
+    raise newException(IndexError, "Number of columns in the first matrix: " &
+                    $(colA) &
+                    ", must be the same as the number of rows in the second matrix: " &
+                    $(rowB))
+
+proc check_matvec*(a, b: AnyTensor)  {.noSideEffect.}=
+  let colA = a.shape[1]
+  let rowB = b.shape[0]
+
+  if colA != rowB:
+    raise newException(IndexError, "Number of columns in the matrix: " &
+                    $(colA) &
+                    ", must be the same as the number of rows in the vector: " &
+                    $(rowB))

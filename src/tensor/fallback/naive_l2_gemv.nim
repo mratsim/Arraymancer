@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import  ../data_structure,
+        ../operators_blas_l1
 
 # Notes on optimizing performance:
 # Google: https://github.com/google/gemmlowp/blob/master/todo/fast-gemv.txt
 # UlmBLAS: https://github.com/michael-lehn/ulmBLAS/blob/master/ulmblas/level2/gemv.tcc
 
 
-proc naive_gemv_fallback[T: SomeInteger](
+proc naive_gemv_fallback*[T: SomeInteger](
           alpha: T,
           A: Tensor[T],
           x: Tensor[T],

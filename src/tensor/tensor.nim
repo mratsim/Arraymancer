@@ -32,7 +32,8 @@ import  ./backend/metadataArray,
         ./shapeshifting,
         ./display,
         ./ufunc,
-        ./operators_blas_l1
+        ./operators_blas_l1,
+        ./operators_blas_l2l3
 
 export  metadataArray,
         data_structure,
@@ -49,12 +50,10 @@ export  metadataArray,
         shapeshifting,
         display,
         ufunc,
-        operators_blas_l1
+        operators_blas_l1,
+        operators_blas_l2l3
 
-include ./fallback/blas_l3_gemm,
-        ./fallback/naive_l2_gemv,
-        ./operators_blas_l2l3,
-        ./operators_broadcasted,
+include ./operators_broadcasted,
         ./math_functions,
         ./filling_data,
         ./aggregate,

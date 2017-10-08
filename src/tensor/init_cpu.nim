@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import  ../private/[functional, nested_containers],
+        ./backend/metadataArray,
+        ./private/[p_checks, p_init_cpu],
+        ./data_structure,
+        nimblas,
+        sequtils,
+        random
+
 proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
@@ -25,39 +33,6 @@ proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.}=
   result.strides = t.strides
   result.offset = t.offset
   shallowCopy(result.data, t.data)
-
-proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect, inline.}=
-  ## Compare the detected shape from flatten with the real length of the data
-  ## Input:
-  ##   -- A shape (sequence of int)
-  ##   -- A length (int)
-  if (shape.product != len):
-    raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
-
-template tensorCpu[T](out_shape: varargs[int], t: Tensor[T], layout: OrderType = rowMajor): untyped =
-  t.shape = out_shape.toMetadataArray
-  t.strides = shape_to_strides(t.shape, layout)
-  t.offset = 0
-
-template tensorCpu[T](out_shape: MetadataArray, t: Tensor[T], layout: OrderType = rowMajor): untyped =
-  t.shape = out_shape
-  t.strides = shape_to_strides(t.shape, layout)
-  t.offset = 0
-
-template toTensorCpu(s: typed): untyped =
-  let shape = s.shape
-  let data = toSeq(flatIter(s))
-
-  when compileOption("boundChecks"): check_nested_elements(shape, data.len)
-
-  var t: Tensor[type(data[0])]
-  tensorCpu(shape, t)
-  t.data = data
-  return t
-
-proc newSeqUninit[T](len: Natural): seq[T] {.noSideEffect, inline.} =
-  result = newSeqOfCap[T](len)
-  result.setLen(len)
 
 proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.} =
   ## Creates a new Tensor on Cpu backend

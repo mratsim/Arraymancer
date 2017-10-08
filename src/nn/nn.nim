@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./arraymancer
+import  ./activation/sigmoid,
+        ./activation/relu,
+        ./layers/linear,
+        ./loss/sigmoid_cross_entropy,
+        ./optimizers/optimizers
 
-import ./nn_primitives/[activation_primitives, linear_primitives, sigmoid_cross_entropy_primitives]
-
-export activation_primitives, linear_primitives, sigmoid_cross_entropy_primitives
+export sigmoid, relu
+export linear, sigmoid_cross_entropy
+export optimizers

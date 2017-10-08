@@ -12,15 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./autograd/utils,
-        ./autograd/autograd,
-        ./autograd/gates_basic,
-        ./autograd/gates_blas,
-        ./autograd/gates_reduce,
-        ./autograd/accessors
+import ../tensor/tensor,
+       ./ag_data_structure
 
-export autograd,
-       gates_basic,
-       gates_blas,
-       gates_reduce,
-       accessors
+template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
+  var result: type(v)
+  new result
+
+  result.tape = v.tape
+  result.ancestor = v.ancestor
+  result.value = v.value.unsafeSlice(args)
+  result.grad = v.grad.unsafeSlice(args)
+
+  result
+
+  # TODO: tests for slicing correspondance

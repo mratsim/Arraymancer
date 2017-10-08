@@ -1,4 +1,4 @@
-# Copyright 2017 the Arraymancer contributors
+# Copyright 2017 Mamy André-Ratsimbazafy
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./arraymancer, ./arraymancer_ag, ./arraymancer_nn_primitives
+import ./accessors
 
-import  nn/activation/[sigmoid, relu],
-        nn/layers/linear,
-        nn/loss/sigmoid_cross_entropy,
-        nn/optimizers/optimizers
+proc copy_from*[T](dst: var Tensor[T], src: Tensor[T]) =
+  ## Copy the data from a source Tensor. Both tensors must have the same number of elements
+  ## but do not need to have the same shape.
+  ## Data is copied without re-allocation.
+  ## Warning ⚠
+  ##   The destination tensor data will be overwritten. It however conserves its shape and strides.
 
+  when compileOption("boundChecks"):
+    check_size(dst, src)
 
-export sigmoid, relu
-export linear, sigmoid_cross_entropy
-export optimizers
+  for x, val in mzip(dst, src):
+    x = val

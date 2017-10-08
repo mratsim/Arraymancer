@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../arraymancer_ag, ../../arraymancer, ../../autograd/utils
-import ./layer
+import  ../../private/ast_utils,
+        ../../tensor/tensor,
+        ../../autograd/autograd,
+        ./layer
+
+
 
 type LinearGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: use fused AddMatMul gate: C <- alpha AB + beta C

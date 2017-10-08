@@ -12,17 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./autograd, ../arraymancer
+import  ./activation_primitives,
+        ./linear_primitives,
+        ./sigmoid_cross_entropy_primitives
 
-template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
-  var result: type(v)
-  new result
-
-  result.tape = v.tape
-  result.ancestor = v.ancestor
-  result.value = v.value.unsafeSlice(args)
-  result.grad = v.grad.unsafeSlice(args)
-
-  result
-
-  # TODO: tests for slicing correspondance
+export activation_primitives, linear_primitives, sigmoid_cross_entropy_primitives

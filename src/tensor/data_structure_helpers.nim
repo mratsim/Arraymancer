@@ -12,18 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO remove the file
+import  ./data_structure,
+        nimblas
 
-proc isNaiveIterable(t: AnyTensor): bool {.inline.}=
-  ## If t is not a slice we can iterate with a naive for loop
-  return t.data.len == t.size
-
-proc isNaiveIterableWith(t1: AnyTensor, t2: AnyTensor): bool {.inline.}=
-  ## If shape and strides are the same, we can iterate on both tensors at the same time
-  ## modulo their offsets
-  ## We don't need those to have data.len == size
-  return (t1.strides == t2.strides) and (t1.shape == t2.shape)
-
-proc getTransposeTarget(t: AnyTensor): TransposeType {.noSideEffect.}=
+proc getTransposeTarget*(t: AnyTensor): TransposeType {.noSideEffect.}=
   ## TransposeType is introduced by ``nimblas``
   ## Default layout is Row major.
   ## Everytime it is worth it or fused with a BLAS operation we change the strides to Row-Major

@@ -33,10 +33,10 @@ suite "Accessing and setting tensor values":
 
   when compileOption("boundChecks"):
     test "Out of bounds checking":
-      var a = newTensor(@[2,3,4], int, Backend.Cpu)
+      var a = newTensor[int](@[2,3,4])
       expect(IndexError):
         a[2,0,0] = 200
-      var b = newTensor(@[3,4], int, Backend.Cpu)
+      var b = newTensor[int](@[3,4])
       expect(IndexError):
         b[3,4] = 999
       expect(IndexError):

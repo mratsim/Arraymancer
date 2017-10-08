@@ -15,6 +15,10 @@
 # #########################################################################
 # Slicing macros - read access
 
+import  ../private/ast_utils,
+        ./private/p_accessors,
+        ./init_cpu
+
 template slicerT[T](result: AnyTensor[T], slices: varargs[SteppedSlice]): untyped=
   ## Slicing routine
 

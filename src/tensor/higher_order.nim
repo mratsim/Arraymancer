@@ -13,7 +13,9 @@
 # limitations under the License.
 
 import  ./backend/openmp,
-        ./private/p_checks
+        ./private/p_checks,
+        ./data_structure, ./init_cpu,
+        future
 
 # ####################################################################
 # Mapping over tensors

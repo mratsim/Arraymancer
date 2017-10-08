@@ -20,26 +20,30 @@ export OrderType
 import  ./backend/metadataArray,
         ./data_structure,
         ./init_cpu,
+        # ./init_deprecated_0_1_0,
+        # ./init_cpu_deprecated_0_2_0, # source of deprecation spam https://github.com/nim-lang/Nim/issues/6436
         ./accessors,
         ./accessors_macros_syntax,
         ./accessors_macros_read,
         ./accessors_macros_write,
-        ./comparison
+        ./comparison,
+        ./higher_order
+        # ./higher_order_deprecated,
 
 export  metadataArray,
         data_structure,
         init_cpu,
-        # ./init_deprecated_0_1_0,
-        # ./init_cpu_deprecated_0_2_0, # source of deprecation spam https://github.com/nim-lang/Nim/issues/6436
+        # init_deprecated_0_1_0,
+        # init_cpu_deprecated_0_2_0, # source of deprecation spam https://github.com/nim-lang/Nim/issues/6436
         accessors,
         accessors_macros_syntax,
         accessors_macros_read,
         accessors_macros_write,
-        comparison
+        comparison,
+        higher_order
+        #higher_order_deprecated,
 
-include ./higher_order,
-        ./higher_order_deprecated,
-        ./shapeshifting,
+include ./shapeshifting,
         ./display,
         ./ufunc,
         ./operators_blas_l1,

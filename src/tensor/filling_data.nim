@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./accessors
+import  ./private/p_checks,
+        ./accessors
 
 proc copy_from*[T](dst: var Tensor[T], src: Tensor[T]) =
   ## Copy the data from a source Tensor. Both tensors must have the same number of elements

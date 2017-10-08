@@ -98,10 +98,9 @@ template initStridedIteration*(coord, backstrides, iter_pos: untyped, t, iter_of
   if iter_offset != 0:
     var z = 1
     for i in countdown(t.rank - 1,0):
-      let z2 = z*t.shape[i]
-      coord[i] = (iter_offset div z) mod z2
+      coord[i] = (iter_offset div z) mod t.shape[i]
       iter_pos += coord[i]*t.strides[i]
-      z = z2
+      z *= t.shape[i]
 
 template advanceStridedIteration*(coord, backstrides, iter_pos, t, iter_offset, iter_size: typed): untyped =
   ## Computing the next position

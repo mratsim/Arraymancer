@@ -21,7 +21,8 @@ template contiguousT*[T](result, t: Tensor[T], layout: OrderType): untyped=
   if layout == rowMajor:
     result = t.mapT(x)
   else:
-    result = t.transpose().mapT(x)
+    let t_transposed = t.unsafeTranspose()
+    result = t_transposed.mapT(x)
 
 proc reshape_with_copy*[T](t: Tensor[T], new_shape: MetadataArray): Tensor[T] {.inline.}=
   # Can't call "tensorCpu" template here for some reason

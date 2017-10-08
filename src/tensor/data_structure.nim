@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ./backend/metadataArray
+
 type
   Backend* = enum
     ## ``Backend`` for tensor computation and memory allocation.

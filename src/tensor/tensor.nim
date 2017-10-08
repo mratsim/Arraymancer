@@ -17,8 +17,12 @@ import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros,
 # Export OrderType (rowMajor, colMajor) from nimblas
 export OrderType
 
-include ./global_config,
-        ./backend/metadataArray,
+import ./backend/metadataArray
+
+export metadataArray
+
+include # ./global_config,
+        # ./backend/metadataArray,
         ./backend/openmp,
         ./data_structure,
         ./data_structure_helpers,

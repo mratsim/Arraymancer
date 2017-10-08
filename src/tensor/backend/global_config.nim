@@ -19,17 +19,17 @@
 # It should improve performance on Cuda and for iterator by storing temporary shape/strides
 # that will be used extensively in the loop on the stack.
 # For now this is only partly implemented and only on Cuda temporary shape/strides arrays.
-const MAXRANK = 8 # 8 because it's a nice number, more is possible upon request.
+const MAXRANK* = 8 # 8 because it's a nice number, more is possible upon request.
 
 
-const CUDA_HOF_TPB {.used.}: cint = 32 * 32 # TODO, benchmark and move that to cuda global config
+const CUDA_HOF_TPB* {.used.}: cint = 32 * 32 # TODO, benchmark and move that to cuda global config
                                    # Pascal GTX 1070+ have 1024 threads max
-const CUDA_HOF_BPG {.used.}: cint = 256     # should be (grid-stride+threadsPerBlock-1) div threadsPerBlock ?
+const CUDA_HOF_BPG* {.used.}: cint = 256     # should be (grid-stride+threadsPerBlock-1) div threadsPerBlock ?
                                    # From https://devblogs.nvidia.com/parallelforall/cuda-pro-tip-write-flexible-kernels-grid-stride-loops/
                                    # Lower allows threads re-use and limit overhead of thread creation/destruction
 
 
-const OMP_FOR_THRESHOLD = 1000    # Tensor number of elements threshold before using OpenMP multithreading
+const OMP_FOR_THRESHOLD* = 1000    # Tensor number of elements threshold before using OpenMP multithreading
 
 # Full procesor optimization (AVX, AVX2, ARM neon, ... if applicable)
 when defined(native):

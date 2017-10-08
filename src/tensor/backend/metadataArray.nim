@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ./global_config
 
 type
   MetadataArray* = object
     ## Custom stack allocated array that holds tensors metadata
-    data: array[MAXRANK, int]
-    len: int
+    data*: array[MAXRANK, int]
+    len*: int
 
 proc newMetadataArray*(len: int): MetadataArray {.inline.} =
   result.len = len
@@ -190,7 +191,7 @@ proc `==`*(a: MetadataArray, s: MetadataArray): bool {.inline.} =
 proc `^`*(x: int; a: MetadataArray): int {.inline.} =
   a.len - x
 
-iterator zip(a,b: MetadataArray): (int, int)=
+iterator zip*(a,b: MetadataArray): (int, int)=
 
   # unsafeReshape relies on zip stopping early
   let len = min(a.len, b.len)

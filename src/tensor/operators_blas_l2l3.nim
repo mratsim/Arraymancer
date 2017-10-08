@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./backend/blis
+when defined(blis):
+  import ./backend/blis
 
 # Bounds checking functions
 proc check_matmat(a, b: AnyTensor) {.noSideEffect.}=

@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../private/[functional, nested_containers]
+import ../private/[functional, nested_containers],
+       ./backend/metadataArray
 
 proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.}=
   ## Input:
@@ -37,7 +38,7 @@ proc check_nested_elements(shape: seq[int], len: int) {.noSideEffect, inline.}=
     raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
 
 template tensorCpu[T](out_shape: varargs[int], t: Tensor[T], layout: OrderType = rowMajor): untyped =
-  t.shape = out_shape.toMetadataArray
+  t.shape = toMetadataArray(out_shape)
   t.strides = shape_to_strides(t.shape, layout)
   t.offset = 0
 

@@ -17,16 +17,18 @@ import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros,
 # Export OrderType (rowMajor, colMajor) from nimblas
 export OrderType
 
-import ./backend/metadataArray,
-       ./data_structure
+import  ./backend/metadataArray,
+        ./data_structure,
+        ./init_cpu
 
-export metadataArray,
-       data_structure
+export  metadataArray,
+        data_structure,
+        init_cpu
+        # ./init_deprecated_0_1_0,
+        # ./init_cpu_deprecated_0_2_0, # source of deprecation spam https://github.com/nim-lang/Nim/issues/6436
 
-include ./init_cpu,
-        ./init_deprecated_0_1_0,
-        ./init_cpu_deprecated_0_2_0, # source of deprecation spam https://github.com/nim-lang/Nim/issues/6436
-        ./accessors,
+
+include ./accessors,
         ./accessors_macros_syntax,
         ./accessors_macros_desugar,
         ./accessors_macros_read,

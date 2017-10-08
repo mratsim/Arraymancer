@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ../private/nested_containers
 
 # ## This file adds slicing syntactic sugar.
 # ## Foo being:

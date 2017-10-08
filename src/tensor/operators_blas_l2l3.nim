@@ -15,7 +15,8 @@
 when defined(blis):
   import ./backend/blis
 
-import  ./data_structure,
+import  ./private/p_init_cpu,
+        ./data_structure,
         ./data_structure_helpers,
         nimblas
 

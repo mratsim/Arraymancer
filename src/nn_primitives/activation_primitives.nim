@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../arraymancer, math
+import ../tensor/tensor, math
 
 # Neural net activation functions that works directly on Tensors
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../arraymancer_ag, ../../arraymancer
+import  ../../autograd/autograd
 
 type Layer*[TT] = ref object of Gate[TT]
   ## Inherits from Gate (arity field)

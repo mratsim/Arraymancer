@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./autograd, ../arraymancer
+import ./data_structure, ../tensor/tensor
 
 template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
   var result: type(v)

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./autograd, ../arraymancer, ./utils, sequtils
+import ./data_structure, ../tensor/tensor, ./utils, sequtils
 
 type MeanGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C

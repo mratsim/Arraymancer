@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./arraymancer
+import ../tensor/tensor
 
-import ./nn_primitives/[activation_primitives, linear_primitives, sigmoid_cross_entropy_primitives]
+import ./activation_primitives,
+       ./linear_primitives,
+       ./sigmoid_cross_entropy_primitives
 
 export activation_primitives, linear_primitives, sigmoid_cross_entropy_primitives

@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../arraymancer_ag, ../../arraymancer, ../../autograd/utils
-import ../../arraymancer_nn_primitives
+import  ../../tensor/tensor,
+        ../../autograd/autograd,
+        ../../nn_primitives/nn_primitives,
+        ../../autograd/utils
 
 import ./loss
 

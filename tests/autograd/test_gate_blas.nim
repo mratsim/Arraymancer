@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/[arraymancer, arraymancer_ag]
+import ../../src/arraymancer
 import unittest, sequtils
 
 # # Differentiating through matmul:

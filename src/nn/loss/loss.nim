@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../arraymancer_ag, typetraits
+import  ../../autograd/autograd,
+        typetraits
 
 
 type Loss* [TT] = ref object of Gate[TT]

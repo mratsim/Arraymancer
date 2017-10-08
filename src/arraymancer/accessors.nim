@@ -278,7 +278,7 @@ iterator zip*[T,U](t1: Tensor[T], t2: Tensor[U], offset, size: int): (T,U) {.inl
   ## Note: only tensors of the same shape will be zipped together.
   when compileOption("boundChecks"):
     check_size(t1, t2)
-    dualStridedIteration(IterKind.Values, t1, t2, offset, size)
+  dualStridedIteration(IterKind.Values, t1, t2, offset, size)
 
 iterator mzip*[T,U](t1: var Tensor[T], t2: Tensor[U]): (var T, U) {.inline,noSideEffect.} =
   ## Iterates simultaneously on two tensors returning their elements in a tuple. (mutable)

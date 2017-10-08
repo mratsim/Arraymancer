@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros, random
-
+import nimblas
 # Export OrderType (rowMajor, colMajor) from nimblas
 export OrderType
 

@@ -17,9 +17,9 @@ proc gemm_macro_kernel[T](mc, nc, kc: int,
                           beta: T,
                           C: var seq[T], offC: int,
                           incRowC, incColC: int,
-                          buffer_A: var ref array[MCKC, T],
-                          buffer_B: var ref array[KCNC, T],
-                          buffer_C: var ref array[MRNR, T])
+                          buffer_A: var BlasBufferArray[T],
+                          buffer_B: var BlasBufferArray[T],
+                          buffer_C: var BlasBufferArray[T])
                           {.noSideEffect.} =
   let mp = (mc+MR-1) div MR
   let np = (nc+NR-1) div NR

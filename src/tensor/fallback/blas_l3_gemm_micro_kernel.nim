@@ -57,10 +57,10 @@ template gemm_micro_kernelT[T](
 
 proc gemm_micro_kernel[T](kc: int,
                           alpha: T,
-                          A: ref array[MCKC, T], offA: int,
-                          B: ref array[KCNC, T], offB: int,
+                          A: BlasBufferArray[T], offA: int,
+                          B: BlasBufferArray[T], offB: int,
                           beta: T,
-                          C: var ref array[MRNR, T],
+                          C: var BlasBufferArray[T],
                           offC: int,
                           incRowC, incColC: int)
                           {.noSideEffect.} =
@@ -68,8 +68,8 @@ proc gemm_micro_kernel[T](kc: int,
 
 proc gemm_micro_kernel[T](kc: int,
                           alpha: T,
-                          A: ref array[MCKC, T], offA: int,
-                          B: ref array[KCNC, T], offB: int,
+                          A: BlasBufferArray[T], offA: int,
+                          B: BlasBufferArray[T], offB: int,
                           beta: T,
                           C: var seq[T],
                           offC: int,

@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc pack_panel[T, N](k: int,
-                      M: seq[T], offset: int, # Tensor data + offset
-                      lsm, ssm: int, # Leading and secondary (dimension) stride of M, Leading: incColA/incRowB.
-                      LR: static[int], # Leading block dimension, MR for A (MxK), NR for B (KxN)
-                      buffer: var ref array[N, T], # N = MCKC for A, KCNC for B
-                      offBuf: var int) {.noSideEffect.} =
+proc pack_panel[T](k: int,
+                    M: seq[T], offset: int, # Tensor data + offset
+                    lsm, ssm: int, # Leading and secondary (dimension) stride of M, Leading: incColA/incRowB.
+                    LR: static[int], # Leading block dimension, MR for A (MxK), NR for B (KxN)
+                    buffer: var BlasBufferArray[T], # N = MCKC for A, KCNC for B
+                    offBuf: var int) {.noSideEffect.} =
   ## Pack blocks of size LR of the matrices in the corresponding buffer
   var offM = offset
   for s in 0 ..< k: # Loop along the leaing dimension
@@ -26,12 +26,12 @@ proc pack_panel[T, N](k: int,
     offBuf += LR
     offM += ssm
 
-proc pack_dim[T, N](lc, kc: int, # lc = mc for A (MxK matrix) and lc = nc for B (KxN matrix)
-                    M: seq[T], offset: int, # Tensor data + offset
-                    lsm, ssm: int, # Leading and secondary (dimension) stride of M, Leading: incColA/incRowB.
-                    LR: static[int], # Leading block dimension, MR for A (MxK), NR for B (KxN)
-                    buffer: var ref array[N, T]) # N = MCKC for A, KCNC for B
-                    {.noSideEffect.} =
+proc pack_dim[T](lc, kc: int, # lc = mc for A (MxK matrix) and lc = nc for B (KxN matrix)
+                  M: seq[T], offset: int, # Tensor data + offset
+                  lsm, ssm: int, # Leading and secondary (dimension) stride of M, Leading: incColA/incRowB.
+                  LR: static[int], # Leading block dimension, MR for A (MxK), NR for B (KxN)
+                  buffer: var BlasBufferArray[T]) # N = MCKC for A, KCNC for B
+                  {.noSideEffect.} =
 
   let lp = lc div LR # Number of whole blocks along leading dim
   let lr = lc mod LR # Reminder of leading dim

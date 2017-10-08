@@ -39,7 +39,7 @@ proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect.}=
   elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
   else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
 
-proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.noSideEffect.}=
+proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] =
   ## Matrix-Matrix and Matrix-Vector multiplications fallback for integer tensors.
   ##
   ## Integer BLAS has been implemented manually. While not as fast as BLAS for floats,

@@ -31,17 +31,20 @@
 # Loading int in AVX registers needs AVX2 support in CPU.
 # Everything must be aligned in memory for faster loading in registers.
 
-# Int/float64 takes 4B
-# float32 takes 2B
+# MC must be a multiple of:
+# (a) MR (for zero-padding purposes)
+# (b) NR (for zero-padding purposes when MR and NR are "swapped")
+# NC must be a multiple of
+# (a) NR (for zero-padding purposes)
+# (b) MR (for zero-padding purposes when MR and NR are "swapped")
 
 # Specific setup for AVX/FMA
-const MC = 256
-const KC = 512
-const NC = 4096 # use 4092 if NR of 12
+const MC = 152
+const KC = 160
+const NC = 4080
 
-# The following should be bigger (4x8 or 4x12) but somehow it hurts my performance on mac (no-OpenMP by default) or prevent OpenMP on Linux (modulo size issue?)
-const MR = 4 # Note if MR is changed here, change the unroll loop factor in the micro kernel
-const NR = 4
+const MR = 4 # Note if MR is not a multiple of 4, change the unroll loop factor in the micro kernel
+const NR = 12
 
 #                    Panels of B of size KC * NR resides in L1 cache
 const MCKC = MC*KC # A resides in L2 cache
@@ -114,3 +117,73 @@ proc gemm_nn_fallback*[T](m, n, k: int,
                           alpha, tmp_beta,
                           C, i*MC*incRowC + j*NC*incColC + offC,
                           incRowC, incColC, buffer_A, buffer_B, buffer_C)
+
+
+
+##### See blis config: https://github.com/flame/blis/blob/master/config/haswell/bli_kernel.h
+
+
+
+#// -- sgemm micro-kernel --
+
+#if 0
+#define BLIS_SGEMM_UKERNEL         bli_sgemm_asm_4x24
+#define BLIS_DEFAULT_MC_S          256
+#define BLIS_DEFAULT_KC_S          256
+#define BLIS_DEFAULT_NC_S          4080
+#define BLIS_DEFAULT_MR_S          4
+#define BLIS_DEFAULT_NR_S          24
+#define BLIS_SGEMM_UKERNEL_PREFERS_CONTIG_ROWS
+#endif
+
+#if 1
+#define BLIS_SGEMM_UKERNEL         bli_sgemm_asm_6x16
+#define BLIS_DEFAULT_MC_S          144
+#define BLIS_DEFAULT_KC_S          256
+#define BLIS_DEFAULT_NC_S          4080
+#define BLIS_DEFAULT_MR_S          6
+#define BLIS_DEFAULT_NR_S          16
+
+#define BLIS_SGEMM_UKERNEL_PREFERS_CONTIG_ROWS
+#endif
+
+#if 0
+#define BLIS_SGEMM_UKERNEL         bli_sgemm_asm_16x6
+#define BLIS_DEFAULT_MC_S          144
+#define BLIS_DEFAULT_KC_S          256
+#define BLIS_DEFAULT_NC_S          4080
+#define BLIS_DEFAULT_MR_S          16
+#define BLIS_DEFAULT_NR_S          6
+#endif
+
+#// -- dgemm micro-kernel --
+
+#if 0
+#define BLIS_DGEMM_UKERNEL         bli_dgemm_asm_4x12
+#define BLIS_DEFAULT_MC_D          152
+#define BLIS_DEFAULT_KC_D          160
+#define BLIS_DEFAULT_NC_D          4080
+#define BLIS_DEFAULT_MR_D          4
+#define BLIS_DEFAULT_NR_D          12
+#define BLIS_DGEMM_UKERNEL_PREFERS_CONTIG_ROWS
+#endif
+
+#if 1
+#define BLIS_DGEMM_UKERNEL         bli_dgemm_asm_6x8
+#define BLIS_DEFAULT_MC_D          72
+#define BLIS_DEFAULT_KC_D          256
+#define BLIS_DEFAULT_NC_D          4080
+#define BLIS_DEFAULT_MR_D          6
+#define BLIS_DEFAULT_NR_D          8
+
+#define BLIS_DGEMM_UKERNEL_PREFERS_CONTIG_ROWS
+#endif
+
+#if 0
+#define BLIS_DGEMM_UKERNEL         bli_dgemm_asm_8x6
+#define BLIS_DEFAULT_MC_D          72
+#define BLIS_DEFAULT_KC_D          256
+#define BLIS_DEFAULT_NC_D          4080
+#define BLIS_DEFAULT_MR_D          8
+#define BLIS_DEFAULT_NR_D          6
+#endif

@@ -39,19 +39,19 @@
 # (b) MR (for zero-padding purposes when MR and NR are "swapped")
 
 # Specific setup for AVX/FMA
-const MC = 72
-const KC = 256
-const NC = 4080
+const MC = 96
+const KC = 128
+const NC = 2048
 
-const MR = 6 # Note if MR is not a multiple of 4, change the unroll loop factor in the micro kernel
-const NR = 8
+const MR = 4
+const NR = 4
 
 #                    Panels of B of size KC * NR resides in L1 cache
 const MCKC = MC*KC # A resides in L2 cache
 const KCNC = KC*NC # B resides in L3 cache
 const MRNR = MR*NR # Work area: Fit in registers
 
-const FORCE_ALIGN = 32
+const FORCE_ALIGN = 64
 
 include ./blas_l3_gemm_data_structure
 include ./blas_l3_gemm_packing

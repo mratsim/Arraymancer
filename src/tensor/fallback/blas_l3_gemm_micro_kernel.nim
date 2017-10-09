@@ -12,6 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import macros
+
+macro unroll_ukernel[MRNR, T](AB: array[MRNR, T],
+                              a: ptr UncheckedArray[T], offA: int,
+                              b: ptr UncheckedArray[T], offB: int,
+                              MR, NR: static[int]): untyped =
+  ## Unroll the following at compile time
+  # for j in 0 ..< NR:
+  #   for i in 0 .. < MR:
+  #     AB[i + j*MR] += A[i + voffA] * B[j + voffB]
+  result = newNimNode(nnkStmtList)
+  for j in 0..NR-1:
+    for i in 0..MR-1:
+      result.add(
+        newTree(
+          nnkInfix,
+            ident("+="),
+            newTree(
+              nnkBracketExpr,
+              AB,newLit(i + j*MR)
+              ),
+          newTree(
+            nnkInfix,
+              ident("*"),
+              newTree(
+                nnkBracketExpr,
+                a, newTree(nnkInfix, ident("+"), newLit(i), offA)
+              ),
+              newTree(
+                nnkBracketExpr,
+                b, newTree(nnkInfix, ident("+"), newLit(j), offB)
+              ),
+          )
+        )
+      )
+
+
 template gemm_micro_kernelT[T](
             kc: int,
             alpha: T,
@@ -23,8 +60,8 @@ template gemm_micro_kernelT[T](
             incRowC, incColC: int): untyped =
 
   ## Template and use FORCE_ALIGN
-  {.pragma: align32, codegenDecl: "$# $# __attribute__((aligned(32)))".}
-  var AB{.align32.}: array[MR*NR, T]
+  {.pragma: align64, codegenDecl: "$# $# __attribute__((aligned(64)))".}
+  var AB{.align64.}: array[MRNR, T]
   var voffA = offA
   var voffB = offB
 
@@ -34,16 +71,10 @@ template gemm_micro_kernelT[T](
 
   ## Compute A*B
   for _ in 0 ..< kc:
-    for j in 0 ..< NR:
-      # for i in countup(0, MR-1, 4): # Warning: unroll by a divisor or MR.
-      #                               # countup is inclusive
-      #  # {.unroll: 4.} # Pragma ignored ヾ( ￣O￣)ツ
-      AB[j*MR] += a[voffA] * b[j + voffB]
-      AB[1 + j*MR] += a[1 + voffA] * b[j + voffB]
-      AB[2 + j*MR] += a[2 + voffA] * b[j + voffB]
-      AB[3 + j*MR] += a[3 + voffA] * b[j + voffB]
-      AB[4 + j*MR] += a[4 + voffA] * b[j + voffB]
-      AB[5 + j*MR] += a[5 + voffA] * b[j + voffB]
+    # for j in 0 ..< NR:
+    #   for i in 0 .. < MR:
+    #     AB[i + j*MR] += A[i + voffA] * B[j + voffB]
+    unroll_ukernel(AB, a, voffA, b, voffB, MR, NR)
     voffA += MR
     voffB += NR
 

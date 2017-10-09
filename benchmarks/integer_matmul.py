@@ -1,22 +1,19 @@
-import os, strutils, random
-import ../src/arraymancer
+import numpy as np
 
-{.passC: "-march=native" .}
-# {.passl: "-fopenmp".}
-# {.passc: "-fopenmp".}
+def main(n):
+    a = np.random.randint(100000000, size=(n,n)) # Default type is np.int which should also be int64
+    b = a
+    c = np.dot(a, b)
+    print(c[n // 2][n // 2])
 
-proc main(n: int) =
-  let even_n = n div 2 * 2
 
-  let a, b = randomTensor(n,n, 100_000_000.int) # Nim ints are int64 on x86_64
-  let c = a*b
-  echo $c[even_n div 2, even_n div 2]
+if __name__=='__main__':
+    import sys
 
-when isMainModule:
-  if paramCount()>0:
-    main(parseInt(paramStr(1)))
-  else:
-    main(100)
+    if len(sys.argv) > 1:
+        main(int(sys.argv[1]))
+    else:
+        main(100)
 
 #########
 # Results on MacOS + i5-5257U (Broadwell dual-core mobile 2.7GHz, turbo 3.1)

@@ -1,22 +1,21 @@
-import os, strutils, random
-import ../src/arraymancer
+function main(n)
+  n = round(Int, n / 2 * 2)
+  a = rand(0:100_000_000, n, n)
+  b = a
+  c = a * b
+  v = round(Int, n/2) + 1
+  println(c[v, v])
+end
 
-{.passC: "-march=native" .}
-# {.passl: "-fopenmp".}
-# {.passc: "-fopenmp".}
+function when_isMainModule()
+  n = 100
+  if length(ARGS) >= 1
+    n = parse(Int, ARGS[1])
+  end
+  main(n)
+end
 
-proc main(n: int) =
-  let even_n = n div 2 * 2
-
-  let a, b = randomTensor(n,n, 100_000_000.int) # Nim ints are int64 on x86_64
-  let c = a*b
-  echo $c[even_n div 2, even_n div 2]
-
-when isMainModule:
-  if paramCount()>0:
-    main(parseInt(paramStr(1)))
-  else:
-    main(100)
+when_isMainModule()
 
 #########
 # Results on MacOS + i5-5257U (Broadwell dual-core mobile 2.7GHz, turbo 3.1)
@@ -26,7 +25,7 @@ when isMainModule:
 # Julia v6.0
 # Python 3.5.2 + Numpy 1.12
 
-# Nim: 1.72s, 90 MB
+# Nim: 1.66s, 90 MB
 # Julia: 4.49s, 185.2 MB
 # Python Numpy: 9.49s, 55.8 MB
 

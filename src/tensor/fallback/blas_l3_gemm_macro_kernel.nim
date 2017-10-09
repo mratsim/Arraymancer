@@ -31,7 +31,7 @@ proc gemm_macro_kernel[T](mc, nc, kc: int,
   var mr: int
   var nr: int
 
-  omp_parallel_countup(j, np-1):
+  for j in 0||(np-1):
     nr = if (j != np-1 or mod_nr == 0): NR
          else: mod_nr
     for i in 0 ..< mp:

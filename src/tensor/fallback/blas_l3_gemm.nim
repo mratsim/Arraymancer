@@ -39,12 +39,12 @@
 # (b) MR (for zero-padding purposes when MR and NR are "swapped")
 
 # Specific setup for AVX/FMA
-const MC = 152
-const KC = 160
+const MC = 72
+const KC = 256
 const NC = 4080
 
-const MR = 4 # Note if MR is not a multiple of 4, change the unroll loop factor in the micro kernel
-const NR = 12
+const MR = 6 # Note if MR is not a multiple of 4, change the unroll loop factor in the micro kernel
+const NR = 8
 
 #                    Panels of B of size KC * NR resides in L1 cache
 const MCKC = MC*KC # A resides in L2 cache

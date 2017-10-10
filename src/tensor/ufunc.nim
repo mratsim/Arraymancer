@@ -20,12 +20,6 @@ proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] =
   ## Apply type conversion on the whole tensor
   result = t.map(x => x.U)
 
-
-# Built-in nim functions that doesn't work with makeUniversal
-proc abs*[T](t: Tensor[T]): Tensor[T] =
-  t.map_inline(abs(x))
-
-
 # #############################################################
 # Autogen universal functions
 

@@ -44,4 +44,4 @@ proc gescal[T]( m, n: int,
   else:
     for j in 0 ..< n:
       for i in 0 ..< m:
-        X[i*incRowX + j*incColX + offX] = 0
+        X[i*incRowX + j*incColX + offX] = 0.T

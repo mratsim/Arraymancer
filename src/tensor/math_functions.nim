@@ -36,3 +36,12 @@ proc mnegate*[T: SomeSignedInt|SomeReal](t: var Tensor[T]) =
 proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] =
   ## Negate all values of a Tensor
   t.map_inline(-x)
+
+# Built-in nim function that doesn't work with makeUniversal
+proc abs*[T](t: Tensor[T]): Tensor[T] =
+  ## Return a Tensor with absolute values of all elements
+  t.map_inline(abs(x))
+
+proc mabs*[T](t: Tensor[T]): Tensor[T] =
+  ## Return a Tensor with absolute values of all elements
+  t.apply_inline(abs(x))

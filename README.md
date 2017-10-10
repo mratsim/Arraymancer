@@ -14,8 +14,10 @@ The library is inspired by Numpy and PyTorch.
   - [Support (Types, OS, Hardware)](#support-types-os-hardware)
   - [Limitations:](#limitations)
   - [Installation:](#installation)
+  - [Full documentation](#full-documentation)
   - [Features](#features)
     - [Speed](#speed)
+      - [Micro benchmark: Int64 matrix multiplication](#micro-benchmark-int64-matrix-multiplication)
       - [Logistic regression](#logistic-regression)
       - [DNN - 3 hidden layers](#dnn---3-hidden-layers)
     - [Safe vs unsafe: copy vs view](#safe-vs-unsafe-copy-vs-view)
@@ -90,20 +92,54 @@ Nim is available in some Linux repositories and on Homebrew for macOS.
 
 I however recommend installing Nim in your user profile via [``choosenim``](https://github.com/dom96/choosenim). Once choosenim installed Nim, you can `nimble arraymancer` which will pull arraymancer and all its dependencies.
 
-## Features
+## Full documentation
 
 Detailed API is available on Arraymancer official [documentation](https://mratsim.github.io/Arraymancer/).
 
-For now Arraymancer is still at the ndarray stage, however a [vision package](https://github.com/edubart/arraymancer-vision) and a [machine learning demo](https://github.com/edubart/arraymancer-demos) have started.
+## Features
+
+For now Arraymancer is still at the ndarray stage, however a [vision package](https://github.com/edubart/arraymancer-vision) and a [deep learning demo](https://github.com/edubart/arraymancer-demos) are available with logistic regression and perceptron from scratch.
+
+You can also check the [detailed example](https://github.com/mratsim/Arraymancer/blob/master/examples/ex01_xor_perceptron_from_scratch.nim) or [benchmark](https://github.com/mratsim/Arraymancer/blob/master/benchmarks/ex01_xor.nim) perceptron for a preview of Arraymancer deep learning usage.
 
 ### Speed
 
-On the [demo benchmark](https://github.com/edubart/arraymancer-demos), Arraymancer already reach speeds with comparable to Torch on logistic regression on OpenBLAS, though further MKL optimizations are possible (batched matmul probably):
+#### Micro benchmark: Int64 matrix multiplication
+
+Integers seem to be the abandoned children of ndarrays and tensors libraries. Everyone is optimising the hell of floating points. Not so with Arraymancer:
+
+```
+Archlinux, E3-1230v5 (Skylake quad-core 3.4 GHz, turbo 3.8)
+Input 1500x1500 random large int64 matrix
+Arraymancer 0.2.90 (master branch 2017-10-10)
+```
+
+| Language | Speed | Memory |
+|---|---|---|
+| Nim 0.17.3 (devel) + OpenMP | **0.36s** | 55.5 MB |
+| Julia v0.6.0 | 3.11s | 207.6 MB |
+| Python 3.6.2 + Numpy 1.12 compiled from source | 8.03s | 58.9 MB |
+
+```
+MacOS + i5-5257U (Broadwell dual-core mobile 2.7GHz, turbo 3.1)
+Input 1500x1500 random large int64 matrix
+Arraymancer 0.2.90 (master branch 2017-10-10)
+```
+
+| Language | Speed | Memory |
+|---|---|---|
+| Nim 0.17.3 (devel) without OpenMP | **1.72s** | 90.0 MB |
+| Julia v0.6.0 | 4.49s | 185.2 MB |
+| Python 3.5.2 + Numpy 1.12 | 9.49s | 55.8 MB |
+
+Benchmark setup is in the `./benchmarks` folder and similar to (stolen from) [Kostya's](https://github.com/kostya/benchmarks#matmul). Note: Arraymancer float matmul is as fast as `Julia Native Thread`.
 
 #### Logistic regression
+On the [demo benchmark](https://github.com/edubart/arraymancer-demos), Arraymancer is already faster than Torch in v0.2.0, further improvements in the "master" branch widened the gap since that benchmark.
+
 | Framework | Backend | Forward+Backward Pass Time  |
 |---|---|---|
-| Arraymancer | OpenMP + MKL | **0.553ms**  |
+| Arraymancer v0.2.0| OpenMP + MKL | **0.553ms**  |
 | Torch7 | MKL | 0.733ms  |
 | Arraymancer | OpenMP + OpenBLAS | 1.824ms |
 | Numpy | MKL | 8.713ms  |
@@ -111,7 +147,7 @@ On the [demo benchmark](https://github.com/edubart/arraymancer-demos), Arraymanc
 #### DNN - 3 hidden layers
 | Framework | Backend | Forward+Backward Pass Time  |
 |---|---|---|
-| Arraymancer | OpenMP + MKL | **6.815ms**  |
+| Arraymancer v0.2.0| OpenMP + MKL | **6.815ms**  |
 | PyTorch | MKL | 7.320ms  |
 | Arraymancer | OpenMP + OpenBLAS | 11.275ms |
 
@@ -556,7 +592,7 @@ The following linear algebra operations are supported for tensors of rank 1 (vec
 - matrix-vector multiplication using `*`
 - element-wise multiplication (Hadamard product) using `.*`
 
-Note: Matrix operations for floats are accelerated using BLAS (Intel MKL, OpenBLAS, Apple Accelerate ...). Unfortunately there is no acceleration routine for integers. Integer matrix-matrix and matrix-vector multiplications are implemented via semi-optimized routines (no naive loops but don't leverage CPU-specific features).
+Note: Matrix operations for floats are accelerated using BLAS (Intel MKL, OpenBLAS, Apple Accelerate ...). Unfortunately there is no acceleration routine for integers. Integer matrix-matrix and matrix-vector multiplications are implemented via semi-optimized routines, see the [benchmarks section.](#micro-benchmark-int64-matrix-multiplication)
 
 ```Nim
 echo foo_float * foo_float # Accelerated Matrix-Matrix multiplication (needs float)

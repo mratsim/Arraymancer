@@ -281,8 +281,6 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
 
     let b3 = b.unsafeSlice(2..3, 3..1|-2)
-    echo b3
-    echo u2
 
     check: b3*u2 == [-3682, -4783].toTensor
 

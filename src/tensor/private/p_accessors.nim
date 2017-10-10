@@ -190,3 +190,46 @@ template dualStridedIteration*(strider: IterKind, t1, t2, iter_offset, iter_size
       dualStridedIterationYield(strider, t1data, t2data, i, t1_iter_pos, t2_iter_pos)
       advanceStridedIteration(t1_coord, t1_backstrides, t1_iter_pos, t1, iter_offset, iter_size)
       advanceStridedIteration(t2_coord, t2_backstrides, t2_iter_pos, t2, iter_offset, iter_size)
+
+template tripleStridedIterationYield*(strider: IterKind, t1data, t2data, t3data, i, t1_iter_pos, t2_iter_pos, t3_iter_pos: typed) =
+  ## Iterator the return value
+  when strider == IterKind.Values: yield (t1data[t1_iter_pos], t2data[t2_iter_pos], t3data[t3_iter_pos])
+  elif strider == IterKind.Iter_Values: yield (i, t1data[t1_iter_pos], t2data[t2_iter_pos], t3data[t3_iter_pos])
+
+template tripleStridedIteration*(strider: IterKind, t1, t2, t3, iter_offset, iter_size: typed): untyped =
+  ## Iterate over two Tensors, displaying data as in C order, whatever the strides.
+  let t1_contiguous = t1.is_C_Contiguous()
+  let t2_contiguous = t2.is_C_Contiguous()
+  let t3_contiguous = t3.is_C_Contiguous()
+
+  # Get tensor data address with offset builtin
+  var t1data = t1.dataArray
+  var t2data = t2.dataArray
+  var t3data = t3.dataArray
+
+  # Optimize for loops in contiguous cases
+  # Note that not all cases are handled here, just some probable ones
+  if t1_contiguous and t2_contiguous and t3_contiguous:
+    for i in iter_offset..<(iter_offset+iter_size):
+      tripleStridedIterationYield(strider, t1data, t2data, t3data, i, i, i, i)
+  elif t1_contiguous and t2_contiguous:
+    initStridedIteration(t3_coord, t3_backstrides, t3_iter_pos, t3, iter_offset, iter_size)
+    for i in iter_offset..<(iter_offset+iter_size):
+      tripleStridedIterationYield(strider, t1data, t2data, t3data, i, i, i, t3_iter_pos)
+      advanceStridedIteration(t3_coord, t3_backstrides, t3_iter_pos, t3, iter_offset, iter_size)
+  elif t1_contiguous:
+    initStridedIteration(t2_coord, t2_backstrides, t2_iter_pos, t2, iter_offset, iter_size)
+    initStridedIteration(t3_coord, t3_backstrides, t3_iter_pos, t3, iter_offset, iter_size)
+    for i in iter_offset..<(iter_offset+iter_size):
+      tripleStridedIterationYield(strider, t1data, t2data, t3data, i, i, t2_iter_pos, t3_iter_pos)
+      advanceStridedIteration(t2_coord, t2_backstrides, t2_iter_pos, t2, iter_offset, iter_size)
+      advanceStridedIteration(t3_coord, t3_backstrides, t3_iter_pos, t3, iter_offset, iter_size)
+  else:
+    initStridedIteration(t1_coord, t1_backstrides, t1_iter_pos, t1, iter_offset, iter_size)
+    initStridedIteration(t2_coord, t2_backstrides, t2_iter_pos, t2, iter_offset, iter_size)
+    initStridedIteration(t3_coord, t3_backstrides, t3_iter_pos, t3, iter_offset, iter_size)
+    for i in iter_offset..<(iter_offset+iter_size):
+      tripleStridedIterationYield(strider, t1data, t2data, t3data, i, t1_iter_pos, t2_iter_pos, t3_iter_pos)
+      advanceStridedIteration(t1_coord, t1_backstrides, t1_iter_pos, t1, iter_offset, iter_size)
+      advanceStridedIteration(t2_coord, t2_backstrides, t2_iter_pos, t2, iter_offset, iter_size)
+      advanceStridedIteration(t3_coord, t3_backstrides, t3_iter_pos, t3, iter_offset, iter_size)

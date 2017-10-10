@@ -18,8 +18,8 @@ import  ../tensor/tensor,
 # Sigmoid cross-entropy function that works directly on Tensors
 # and provide control without autograd
 
-proc check_input_target[T](input, target: Tensor[T]) {.inline.}=
-  if input.shape != target.shape:
+proc check_input_target[T](input, target: Tensor[T]) {.noSideEffect, inline.}=
+  if unlikely(input.shape != target.shape):
     raise newException(ValueError, "Input shape " & $input.shape &
       " and target shape " & $target.shape & " should be the same")
 

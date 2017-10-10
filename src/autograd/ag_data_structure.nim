@@ -87,8 +87,8 @@ template value*[TT](v: Variable[TT]): TT  =
   ## Unwrap the value from its context
   v.value
 
-proc check_ctx*(a, b: Variable) {.inline.} =
-  if a.tape[].unsafeAddr != b.tape[].unsafeAddr: # compare pointer adress directly (avoid deep comparison)
+proc check_ctx*(a, b: Variable) {.noSideEffect, inline.} =
+  if unlikely(a.tape[].unsafeAddr != b.tape[].unsafeAddr): # compare pointer adress directly (avoid deep comparison)
     raise newException(ValueError, "You cannot combine variable from different contexts")
 
 proc backprop*[TT](v: Variable[TT]) =

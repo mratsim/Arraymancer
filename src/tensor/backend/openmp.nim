@@ -44,19 +44,83 @@ template omp_parallel_forup*(i: untyped, start, size: Natural, body: untyped): u
     body
 
 template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, body: untyped): untyped =
-  block ompblocks:
-    when defined(openmp):
-      if size >= OMP_FOR_THRESHOLD:
-        let omp_num_threads = omp_get_max_threads()
-        if size >= omp_num_threads:
-          let bsize = size div omp_num_threads
-          for j in 0||(omp_num_threads-1):
-            let block_offset = bsize*j
-            let block_size = if j < omp_num_threads-1: bsize else: size - block_offset
-            block:
-              body
-          break ompblocks
-    let block_offset = 0
-    let block_size = size
-    block:
-      body
+  if size > 0:
+    block ompblocks:
+      when defined(openmp):
+        if size >= OMP_FOR_THRESHOLD:
+          let num_blocks = min(omp_get_max_threads(), size)
+          if num_blocks > 1:
+            let bsize = size div num_blocks
+            for block_index in 0||(num_blocks-1):
+              let block_offset = bsize*block_index
+              let block_size = if block_index < num_blocks-1: bsize else: size - block_offset
+              block:
+                body
+            break ompblocks
+
+      let block_offset = 0
+      let block_size = size
+      block:
+        body
+
+template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: untyped, size, weight: Natural, op, body_init, body: untyped): untyped =
+  if size > 0:
+    block ompblocks:
+      when defined(openmp):
+        if size*weight >= OMP_FOR_THRESHOLD:
+          let num_blocks = min(min(size, omp_get_max_threads()), OMP_MAX_REDUCE_BLOCKS)
+          if num_blocks > 1:
+            var results : array[OMP_MAX_REDUCE_BLOCKS, type(reduced)]
+            let bsize = size div num_blocks
+
+            if bsize > 1:
+              # Initialize first elements
+              for block_index in 0..<num_blocks:
+                let block_offset = bsize*block_index
+                #let block_size = if block_index < num_blocks-1: bsize else: size - block_offset
+                block:
+                  results[block_index] = body_init
+
+              # Reduce blocks
+              for block_index in 0||(num_blocks-1):
+                var block_offset = bsize*block_index
+                let block_size = (if block_index < num_blocks-1: bsize else: size - block_offset) - 1
+                block_offset += 1
+
+                # Inject x using a template to able to mutate it
+                template x(): untyped =
+                  results[block_index]
+
+                block:
+                  body
+
+              # Finally reduce results from openmp
+              block:
+                shallowCopy(reduced, results[0])
+
+                # Inject x using a template to able to mutate it
+                template x(): untyped =
+                  reduced
+
+                for block_index in 1..<num_blocks:
+                  let y {.inject.} = results[block_index]
+                  op
+
+              break ompblocks
+
+      # Fallback normal sequential reduce
+      block:
+        # Initialize first elements
+        var block_offset = 0
+        reduced = body_init
+
+        # Offset to reduce rest of elements
+        block_offset = 1
+        let block_size = size-1
+
+        if block_size > 0:
+          # Inject x using a template to able to mutate it
+          template x(): untyped =
+            reduced
+          block:
+            body

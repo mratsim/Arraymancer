@@ -13,21 +13,22 @@
 # limitations under the License.
 
 import  ./data_structure,
+        ./higher_order,
         ./operators_blas_l1
 
 # ### Standard aggregate functions
 # TODO consider using stats from Nim standard lib: https://nim-lang.org/docs/stats.html#standardDeviation,RunningStat
 
-proc sum*[T: SomeNumber](t: Tensor[T]): T {.noSideEffect.}=
+proc sum*[T: SomeNumber](t: Tensor[T]): T =
   ## Compute the sum of all elements of T
 
-  result = 0.T
-  for val in t:
-    result += val
+  t.reduceT():
+    x+=y
 
-proc sum*[T: SomeNumber](t: Tensor[T], axis: int): Tensor[T] {.inline.}=
+proc sum*[T: SomeNumber](t: Tensor[T], axis: int): Tensor[T] =
   ## Compute the sum of all elements of T along an axis
-  t.reduce(`+`, axis = axis)
+  t.reduceAxisT(axis):
+    x+=y
 
 proc mean*[T: SomeReal](t: Tensor[T]): T {.inline.}=
   ## Compute the mean of all elements of T

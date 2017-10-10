@@ -31,6 +31,13 @@ proc check_index*(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
                     ", is different from tensor rank: " &
                     $(t.rank))
 
+proc check_contiguous_index*(t: Tensor, idx: int) {.noSideEffect.}=
+  if idx < 0 or idx >= t.size:
+    raise newException(IndexError, "Invalid contigous index: " &
+                    $idx &
+                    " while tensor size is" &
+                    $(t.size))
+
 proc check_elementwise*(a, b:AnyTensor)  {.noSideEffect.}=
   ## Check if element-wise operations can be applied to 2 Tensors
   if unlikely(a.shape != b.shape):
@@ -130,3 +137,10 @@ proc check_matvec*(a, b: AnyTensor)  {.noSideEffect.}=
                     $(colA) &
                     ", must be the same as the number of rows in the vector: " &
                     $(rowB))
+
+proc check_axis_index*(t: AnyTensor, axis, index: int) =
+  if not (axis < t.rank and index < t.shape[axis]):
+    raise newException(IndexError, "The axis is out of range, axis is " &
+                                    $axis &
+                                    " at index " & $index &
+                                    " while tensor shape is " & $(t.shape))

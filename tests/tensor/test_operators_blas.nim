@@ -262,6 +262,30 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
     check: b * u == bu
 
+    # Now we check with non-contiguous slices
+    # [[53, -70]    *  [[69]
+    #  [-56, -2]]   *   [-91]]
+    # http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%2253%22,%22-70%22],[%22-56%22,%22-2%22]]&matrix2=[[%2269%22],[%2281%22]]&operator=*
+
+    let b2 = b.unsafeSlice(4..2|-2, 3..1|-2)
+
+    let u2 = u.unsafeSlice(2..0|-2)
+
+    check: b2*u2 == [10027, -3682].toTensor()
+
+    # Now with optimized C contiguous slices
+    #  [[-56, -2]   *   [[69]
+    #   [23, 70]]  *   [-91]]
+    # http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%2253%22,%22-70%22],[%22-56%22,%22-2%22]]&matrix2=[[%2269%22],[%2281%22]]&operator=*
+
+
+
+    let b3 = b.unsafeSlice(2..3, 3..1|-2)
+    echo b3
+    echo u2
+
+    check: b3*u2 == [-3682, -4783].toTensor
+
   test "Integer Matrix-Matrix Multiplication fallback":
     ## TODO: test with slices
     let a = [[1,2,3],

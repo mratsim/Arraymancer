@@ -47,6 +47,11 @@ proc naive_gemv_fallback*[T: SomeInteger](
   var i: int = 0
   let colA = A.shape[1]
 
-  for ai in A.axis(0):
-    y[i] = y[i] + alpha * dot(ai.reshape(colA),x)
-    i += 1
+  if likely(A.is_C_contiguous): #if A is C contiguous (row-major) slices along the row are also contiguous
+    for ai in A.axis(0):
+      y[i] += alpha * dot(ai.unsafeReshape(colA),x)
+      i += 1
+  else:
+    for ai in A.axis(0):
+      y[i] += alpha * dot(ai.reshape(colA),x)
+      i += 1

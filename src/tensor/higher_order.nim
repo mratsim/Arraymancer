@@ -14,7 +14,7 @@
 
 import  ./backend/openmp,
         ./private/p_checks,
-        ./data_structure, ./init_cpu,
+        ./data_structure, ./init_cpu, ./accessors,
         future
 
 # ####################################################################
@@ -57,6 +57,25 @@ template map2T*[T](t1, t2: Tensor[T], op:untyped): untyped =
     for i, x {.inject.}, y {.inject.} in enumerateZip(t1, t2, block_offset, block_size):
       data[i] = op
   dest.unsafeView()
+
+template reduceT*[T](t: Tensor[T], op: untyped): untyped =
+  var reduced : T
+  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.size, 1, op) do:
+    t.atContiguousIndex(block_offset)
+  do:
+    for y {.inject.} in t.items(block_offset, block_size):
+      op
+  reduced
+
+template reduceAxisT*[T](t: Tensor[T], axis: int, op: untyped): untyped =
+  var reduced : type(t)
+  let weight = t.size div t.shape[axis]
+  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[axis], weight, op) do:
+    t.atAxisIndex(axis, block_offset).unsafeView()
+  do:
+    for y {.inject.} in t.axis(axis, block_offset, block_size):
+      op
+  reduced.unsafeView()
 
 proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
@@ -190,7 +209,7 @@ proc apply2*[T, U](a: var Tensor[T],
 proc fold*[U, T](t: Tensor[U],
                 start_val: T,
                 f:(T, U) -> T,
-                ): T {.noSideEffect.}=
+                ): T =
   ## Chain result = f(result, element) over all elements of the Tensor
   ## Input:
   ##     - A tensor to aggregate on
@@ -212,7 +231,7 @@ proc fold*[U, T](t: Tensor[U],
                 start_val: Tensor[T],
                 f: (Tensor[T], Tensor[U])-> Tensor[T],
                 axis: int
-                ): Tensor[T] {.noSideEffect.}=
+                ): Tensor[T] =
   ## Chain result = f(result, element) over all elements of the Tensor
   ## Input:
   ##     - A tensor to aggregate on
@@ -241,17 +260,13 @@ proc reduce*[T](t: Tensor[T],
   ##  .. code:: nim
   ##     a.reduce(max) ## This returns the maximum value in the Tensor.
 
-  var size = t.size
-  if size >= 1:
-    result = t.dataArray[0]
-    if size >= 2:
-      for val in t.items(1, size-1):
-        result = f(result, val)
+  t.reduceT():
+    shallowCopy(x, f(x,y))
 
 proc reduce*[T](t: Tensor[T],
                 f: (Tensor[T], Tensor[T])-> Tensor[T],
                 axis: int
-                ): Tensor[T] {.noSideEffect.}=
+                ): Tensor[T] =
   ## Chain result = f(result, element) over all elements of the Tensor.
   ##
   ## The starting value is the first element of the Tensor.
@@ -262,34 +277,5 @@ proc reduce*[T](t: Tensor[T],
   ## Result:
   ##     - A tensor aggregate of the function called all elements of the tensor
 
-  var size = t.shape[axis]
-  if size >= 1:
-    var first = t.unsafeView()
-    first.shape[axis] = 1
-    result = first.asContiguous()
-    if size >= 2:
-      for val in t.axis(axis, 1, size-1):
-        result = f(result, val)
-
-proc reduce*[T](t: Tensor[T],
-                f: proc(x:var Tensor[T], y:Tensor[T]),
-                axis: int
-                ): Tensor[T] {.noSideEffect.}=
-  ## Chain result = f(result, element) over all elements of the Tensor.
-  ##
-  ## The starting value is the first element of the Tensor.
-  ## Input:
-  ##     - A tensor to aggregate on
-  ##     - The aggregation function. It is applied this way: new_aggregate = f(old_aggregate, current_value)
-  ##     - An axis to aggregate on
-  ## Result:
-  ##     - A tensor aggregate of the function called all elements of the tensor
-
-  var size = t.shape[axis]
-  if size >= 1:
-    var first = t.unsafeView()
-    first.shape[axis] = 1
-    result = first.asContiguous()
-    if size >= 2:
-      for val in t.axis(axis, 1, size-1):
-        f(result, val)
+  t.reduceAxisT(axis):
+    shallowCopy(x, f(x,y))

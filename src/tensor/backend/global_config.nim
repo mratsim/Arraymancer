@@ -30,6 +30,7 @@ const CUDA_HOF_BPG* {.used.}: cint = 256     # should be (grid-stride+threadsPer
 
 
 const OMP_FOR_THRESHOLD* = 1000    # Tensor number of elements threshold before using OpenMP multithreading
+const OMP_MAX_REDUCE_BLOCKS* = 8   # Max number of expected OpenMP threads (used in reduce)
 
 # Full procesor optimization (AVX, AVX2, ARM neon, ... if applicable)
 when defined(native):

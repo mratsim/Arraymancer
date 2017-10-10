@@ -16,6 +16,32 @@ import  ./private/p_accessors,
         ./private/p_checks,
         ./data_structure
 
+proc atContiguousIndex*[T](t: Tensor[T], idx: int): T {.noSideEffect,inline.} =
+  ## Return value of tensor at contiguous index
+  ## i.e. as treat the tensor as flattened
+  return t.data[t.getContiguousIndex(idx)]
+
+proc atContiguousIndex*[T](t: var Tensor[T], idx: int): var T {.noSideEffect,inline.} =
+  ## Return value of tensor at contiguous index (mutable)
+  ## i.e. as treat the tensor as flattened
+  return t.data[t.getContiguousIndex(idx)]
+
+proc unsafeAtAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.inline.} =
+  ## Returns a sliced tensor in the given axis index (unsafe)
+  when compileOption("boundChecks"):
+    check_axis_index(t, axis, idx)
+
+  result = t.unsafeView()
+  result.shape[axis] = 1
+  result.offset += result.strides[axis]*idx
+
+proc atAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.inline.} =
+  ## Returns a sliced tensor in the given axis index
+
+  # As contiguous is called to force a copy of the slice
+  # otherwise the result would copy the whole parent tensor data
+  t.unsafeAtAxisIndex(axis, idx).asContiguous()
+
 iterator items*[T](t: Tensor[T]): T {.inline,noSideEffect.} =
   ## Inline iterator on Tensor values
   ##
@@ -30,6 +56,9 @@ iterator items*[T](t: Tensor[T]): T {.inline,noSideEffect.} =
 
 iterator items*[T](t: Tensor[T], offset, size: int): T {.inline,noSideEffect.} =
   ## Inline iterator on Tensor values (with offset)
+  when compileOption("boundChecks"):
+    check_contiguous_index(t, offset)
+    check_contiguous_index(t, offset+size-1)
   stridedIteration(IterKind.Values, t, offset, size)
 
 iterator mitems*[T](t: var Tensor[T]): var T {.inline,noSideEffect.} =
@@ -38,6 +67,9 @@ iterator mitems*[T](t: var Tensor[T]): var T {.inline,noSideEffect.} =
 
 iterator mitems*[T](t: var Tensor[T], offset, size: int): var T {.inline,noSideEffect.} =
   ## Inline iterator on Tensor values (mutable, with offset)
+  when compileOption("boundChecks"):
+    check_contiguous_index(t, offset)
+    check_contiguous_index(t, offset+size-1)
   stridedIteration(IterKind.Values, t, offset, size)
 
 iterator enumerate*[T](t: Tensor[T]): (int, T) {.inline.} =
@@ -46,6 +78,9 @@ iterator enumerate*[T](t: Tensor[T]): (int, T) {.inline.} =
 
 iterator enumerate*[T](t: Tensor[T], offset, size: int): (int, T) {.inline,noSideEffect.} =
   ## Enumerate Tensor values (with offset)
+  when compileOption("boundChecks"):
+    check_contiguous_index(t, offset)
+    check_contiguous_index(t, offset+size-1)
   stridedIteration(IterKind.Iter_Values, t, offset, size)
 
 iterator menumerate*[T](t: Tensor[T]): (int, var T) {.inline,noSideEffect.} =
@@ -54,6 +89,9 @@ iterator menumerate*[T](t: Tensor[T]): (int, var T) {.inline,noSideEffect.} =
 
 iterator menumerate*[T](t: Tensor[T], offset, size: int): (int, var T) {.inline,noSideEffect.} =
   ## Enumerate Tensor values (mutable, with offset)
+  when compileOption("boundChecks"):
+    check_contiguous_index(t, offset)
+    check_contiguous_index(t, offset+size-1)
   stridedIteration(IterKind.Iter_Values, t, offset, size)
 
 iterator pairs*[T](t: Tensor[T]): (seq[int], T) {.inline,noSideEffect.} =
@@ -91,6 +129,8 @@ iterator zip*[T,U](t1: Tensor[T], t2: Tensor[U], offset, size: int): (T,U) {.inl
   ## Note: only tensors of the same shape will be zipped together.
   when compileOption("boundChecks"):
     check_size(t1, t2)
+    check_contiguous_index(t1, offset)
+    check_contiguous_index(t1, offset+size-1)
   dualStridedIteration(IterKind.Values, t1, t2, offset, size)
 
 iterator mzip*[T,U](t1: var Tensor[T], t2: Tensor[U]): (var T, U) {.inline,noSideEffect.} =
@@ -105,6 +145,8 @@ iterator mzip*[T,U](t1: var Tensor[T], t2: Tensor[U], offset, size: int): (var T
   ## Note: only tensors of the same shape will be zipped together.
   when compileOption("boundChecks"):
     check_size(t1, t2)
+    check_contiguous_index(t1, offset)
+    check_contiguous_index(t1, offset+size-1)
   dualStridedIteration(IterKind.Values, t1, t2, offset, size)
 
 iterator enumerateZip*[T,U](t1: Tensor[T], t2: Tensor[U]): (int,T,U) {.inline,noSideEffect.} =
@@ -119,6 +161,8 @@ iterator enumerateZip*[T,U](t1: Tensor[T], t2: Tensor[U], offset, size: int): (i
   ## Note: only tensors of the same shape will be zipped together.
   when compileOption("boundChecks"):
     check_size(t1, t2)
+    check_contiguous_index(t1, offset)
+    check_contiguous_index(t1, offset+size-1)
   dualStridedIteration(IterKind.Iter_Values, t1, t2, offset, size)
 
 iterator menumerateZip*[T,U](t1: var Tensor[T], t2: Tensor[U]): (int, var T,U) {.inline,noSideEffect.} =
@@ -133,6 +177,8 @@ iterator menumerateZip*[T,U](t1: var Tensor[T], t2: Tensor[U], offset, size: int
   ## Note: only tensors of the same shape will be zipped together.
   when compileOption("boundChecks"):
     check_size(t1, t2)
+    check_contiguous_index(t1, offset)
+    check_contiguous_index(t1, offset+size-1)
   dualStridedIteration(IterKind.Iter_Values, t1, t2, offset, size)
 
 template axis_iterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyped =
@@ -150,20 +196,18 @@ template axis_iterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): unty
   ##     for subtensor in t.axis(1):
   ##       # do stuff
   when compileOption("boundChecks"):
-    check_axis(t, axis, iter_offset+iter_size-1)
+    check_axis_index(t, axis, iter_offset)
+    check_axis_index(t, axis, iter_offset+iter_size-1)
 
-  var out_t = t.unsafeView()
-
+  var out_t = t.unsafeAtAxisIndex(axis, iter_offset)
   let axis_stride = t.strides[axis]
-  out_t.shape[axis] = 1
-  out_t.offset += iter_offset*axis_stride
 
   for _ in 0..<iter_size:
     yield out_t
     out_t.offset += axis_stride
 
-iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] {.inline,noSideEffect.}=
+iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] {.inline.}=
   axis_iterator(t, axis, 0, t.shape[axis])
 
-iterator axis*[T](t: Tensor[T], axis, offset, size: int): Tensor[T] {.inline,noSideEffect.}=
+iterator axis*[T](t: Tensor[T], axis, offset, size: int): Tensor[T] {.inline.}=
   axis_iterator(t, axis, offset, size)

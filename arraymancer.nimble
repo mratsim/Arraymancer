@@ -105,6 +105,7 @@ task test_native, "Run all tests - march=native":
 
 task test_openmp, "Run all tests - OpenMP":
   switch("define","openmp")
+  switch("stackTrace","off")
   test "all_tests"
 
 task test_mkl, "Run all tests - Intel MKL - single threaded":

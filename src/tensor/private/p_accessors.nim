@@ -66,6 +66,15 @@ proc getIndex*[T](t: Tensor[T], idx: varargs[int]): int {.noSideEffect,inline.} 
     real_idx += t.strides[i]*idx[i]
   return real_idx
 
+proc getContiguousIndex*[T](t: Tensor[T], idx: int): int {.noSideEffect,inline.} =
+  result = t.offset
+  if idx != 0:
+    var z = 1
+    for i in countdown(t.rank - 1,0):
+      let coord = (idx div z) mod t.shape[i]
+      result += coord*t.strides[i]
+      z *= t.shape[i]
+
 proc atIndex*[T](t: Tensor[T], idx: varargs[int]): T {.noSideEffect,inline.} =
   ## Get the value at input coordinates
   ## This used to be `[]` before slicing was implemented
@@ -80,6 +89,7 @@ proc atIndexMut*[T](t: var Tensor[T], idx: varargs[int], val: T) {.noSideEffect,
   ## Set the value at input coordinates
   ## This used to be `[]=` before slicing was implemented
   t.data[t.getIndex(idx)] = val
+
 ## Iterators
 type
   IterKind* = enum

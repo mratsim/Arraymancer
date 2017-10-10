@@ -27,7 +27,9 @@ proc sum*[T: SomeNumber](t: Tensor[T]): T {.noSideEffect.}=
 
 proc sum*[T: SomeNumber](t: Tensor[T], axis: int): Tensor[T] {.inline.}=
   ## Compute the sum of all elements of T along an axis
-  t.reduce(`+`, axis = axis)
+  proc sum_closure(r: var Tensor[T], x: Tensor[T]) =
+    r += x
+  t.reduce(sum_closure, axis)
 
 proc mean*[T: SomeReal](t: Tensor[T]): T {.inline.}=
   ## Compute the mean of all elements of T

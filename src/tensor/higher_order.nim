@@ -244,7 +244,7 @@ proc reduce*[T](t: Tensor[T],
   var size = t.size
   if size >= 1:
     result = t.dataArray[0]
-    if size > 2:
+    if size >= 2:
       for val in t.items(1, size-1):
         result = f(result, val)
 
@@ -262,7 +262,34 @@ proc reduce*[T](t: Tensor[T],
   ## Result:
   ##     - A tensor aggregate of the function called all elements of the tensor
 
-  let it = t.axis(axis)
-  result = it()
-  for val in it():
-    result = f(result, val)
+  var size = t.shape[axis]
+  if size >= 1:
+    var first = t.unsafeView()
+    first.shape[axis] = 1
+    result = first.asContiguous()
+    if size >= 2:
+      for val in t.axis(axis, 1, size-1):
+        result = f(result, val)
+
+proc reduce*[T](t: Tensor[T],
+                f: proc(x:var Tensor[T], y:Tensor[T]),
+                axis: int
+                ): Tensor[T] {.noSideEffect.}=
+  ## Chain result = f(result, element) over all elements of the Tensor.
+  ##
+  ## The starting value is the first element of the Tensor.
+  ## Input:
+  ##     - A tensor to aggregate on
+  ##     - The aggregation function. It is applied this way: new_aggregate = f(old_aggregate, current_value)
+  ##     - An axis to aggregate on
+  ## Result:
+  ##     - A tensor aggregate of the function called all elements of the tensor
+
+  var size = t.shape[axis]
+  if size >= 1:
+    var first = t.unsafeView()
+    first.shape[axis] = 1
+    result = first.asContiguous()
+    if size >= 2:
+      for val in t.axis(axis, 1, size-1):
+        f(result, val)

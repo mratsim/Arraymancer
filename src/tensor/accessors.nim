@@ -135,18 +135,7 @@ iterator menumerateZip*[T,U](t1: var Tensor[T], t2: Tensor[U], offset, size: int
     check_size(t1, t2)
   dualStridedIteration(IterKind.Iter_Values, t1, t2, offset, size)
 
-template axis_iterator[T](t: Tensor[T], axis: int): untyped =
-  var out_t = t
-
-  let axis_len = t.shape[axis]
-  let axis_stride = t.strides[axis]
-  out_t.shape[axis] = 1
-
-  for _ in 0..<axis_len:
-    yield out_t
-    out_t.offset += axis_stride
-
-iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] {.inline,noSideEffect.}=
+template axis_iterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyped =
   ## Inline iterator over an axis.
   ##
   ## Returns:
@@ -160,18 +149,21 @@ iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] {.inline,noSideEffect.}=
   ##  .. code:: nim
   ##     for subtensor in t.axis(1):
   ##       # do stuff
-  axis_iterator(t,axis)
+  when compileOption("boundChecks"):
+    check_axis(t, axis, iter_offset+iter_size-1)
 
-proc axis*[T](t: Tensor[T], axis: int): auto {.noSideEffect.}=
-  ## Closure iterator on axis
-  ##
-  ## A closure iterator must be assigned to an iterator variable first.
-  ## Usage:
-  ##  .. code:: nim
-  ##     let it = t.axis(1)
-  ##     for subtensor in it():
-  ##       # do stuff
-  ##
-  ## Note: This is mostly useful for iterator chaining.
-  ## Prefer the inline iterator ``axis`` for simple iteration.
-  return iterator(): Tensor[T] = axis_iterator(t,axis)
+  var out_t = t.unsafeView()
+
+  let axis_stride = t.strides[axis]
+  out_t.shape[axis] = 1
+  out_t.offset += iter_offset*axis_stride
+
+  for _ in 0..<iter_size:
+    yield out_t
+    out_t.offset += axis_stride
+
+iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] {.inline,noSideEffect.}=
+  axis_iterator(t, axis, 0, t.shape[axis])
+
+iterator axis*[T](t: Tensor[T], axis, offset, size: int): Tensor[T] {.inline,noSideEffect.}=
+  axis_iterator(t, axis, offset, size)

@@ -21,7 +21,7 @@ import  ./private/p_operator_blas_l2l3,
 # #################################################
 # Generic notation "*"
 
-proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noSideEffect.}=
+proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
   ##
   ## Float operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.

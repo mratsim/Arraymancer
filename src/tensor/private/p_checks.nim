@@ -130,3 +130,10 @@ proc check_matvec*(a, b: AnyTensor)  {.noSideEffect.}=
                     $(colA) &
                     ", must be the same as the number of rows in the vector: " &
                     $(rowB))
+
+proc check_axis*(t: AnyTensor, axis, index: int) =
+  if not (axis < t.rank and index < t.shape[axis]):
+    raise newException(IndexError, "The axis is out of range, axis is " &
+                                    $axis &
+                                    " at index " & $index &
+                                    " while tensor shape is " & $(t.shape))

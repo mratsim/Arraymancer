@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../tensor/tensor,
+import  ../ops_fusion/ops_fusion,
+        ../tensor/tensor,
         math
 
 # Sigmoid cross-entropy function that works directly on Tensors
@@ -44,7 +45,9 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T {.inline.} =
 
   result = 0.T
   for xi, ti in zip(input, target):
-    result += (-ti * xi +  max(xi,0) + ln(1 + exp(-abs(xi))) ) / T(input.shape[1]) #input.shape[1] is the batch size
+    result += (-ti * xi +  max(xi,0) + ln1p(exp(-abs(xi))) / T(input.shape[1])
+    # input.shape[1] is the batch size
+    # ln1p(x) does ln(1 + x) but avoids catastrophic cancellation if x << 1.
 
 
 proc sigmoid_cross_entropy_backward*[T](

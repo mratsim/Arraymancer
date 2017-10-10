@@ -131,9 +131,9 @@ proc insert*(a: var MetadataArray, value: int, index: int = 0) {.inline.} =
 
 proc delete*(a: var MetadataArray, index: int) {.inline.} =
   # boundsChecks automatically done for array indexing
-  when compileOption("boundChecks"):
-    assert a.len > 0 #TODO: support tensor rank 0
-    assert index >= 0 and index < a.len
+  # when compileOption("boundChecks"):
+  #   assert a.len > 0 #TODO: support tensor rank 0
+  #   assert index >= 0 and index < a.len
 
   dec(a.len)
   for i in index..<a.len:

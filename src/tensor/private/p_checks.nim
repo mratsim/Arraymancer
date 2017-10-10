@@ -25,7 +25,7 @@ proc check_nested_elements*(shape: seq[int], len: int) {.noSideEffect, inline.}=
     raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
 
 proc check_index*(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
-  if idx.len != t.rank:
+  if unlikely(idx.len != t.rank):
     raise newException(IndexError, "Number of arguments: " &
                     $(idx.len) &
                     ", is different from tensor rank: " &
@@ -33,14 +33,14 @@ proc check_index*(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
 
 proc check_elementwise*(a, b:AnyTensor)  {.noSideEffect.}=
   ## Check if element-wise operations can be applied to 2 Tensors
-  if a.shape != b.shape:
+  if unlikely(a.shape != b.shape):
     raise newException(ValueError, "Both Tensors should have the same shape.\n Left-hand side has shape " &
                                    $a.shape & " while right-hand side has shape " & $b.shape)
 
 proc check_size*[T,U](a:Tensor[T], b:Tensor[U])  {.noSideEffect.}=
   ## Check if the total number of elements match
 
-  if a.size != b.size:
+  if unlikely(a.size != b.size):
     raise newException(ValueError, "Both Tensors should have the same total number of elements.\n" &
       "Left-hand side has " & $a.size & " (shape: " & $a.shape & ") while right-hand side has " &
       $b.size & " (shape: " & $b.shape & ")."
@@ -50,11 +50,11 @@ proc check_steps*(a,b, step:int) {.noSideEffect, inline.}=
   ## Though it might be convenient to automatically step in the correct direction like in Python
   ## I choose not to do it as this might introduce the typical silent bugs typechecking/Nim is helping avoid.
   
-  if a == 0 and b == -1 and step == 1:
+  if unlikely(a == 0 and b == -1 and step == 1):
     # Very specific scenario to allow initialization of concatenation with empty dimension
     # like shape of (3, 0)
     return
-  if ((b-a) * step < 0):
+  if unlikely((b-a) * step < 0):
     raise newException(IndexError, "Your slice start: " &
                 $a & ", and stop: " &
                 $b & ", or your step: " &
@@ -71,7 +71,7 @@ proc check_shape*(a, b: Tensor|openarray) {.noSideEffect, inline.}=
   else:
     let b_shape = b.shape.toMetadataArray
 
-  if a.shape == b_shape:
+  if likely(a.shape == b_shape):
     return
   else:
     for ai, bi in zip(a.shape, b_shape):
@@ -81,7 +81,7 @@ proc check_shape*(a, b: Tensor|openarray) {.noSideEffect, inline.}=
                                        " and " & $b_shape)
 
 proc check_reshape*(t: AnyTensor, new_shape:MetadataArray) {.noSideEffect, inline.}=
-  if t.size != new_shape.product:
+  if unlikely(t.size != new_shape.product):
     raise newException(ValueError, "The total number of elements in the old (" &
                                     $t.size &
                                     ") and the new (" &
@@ -89,33 +89,33 @@ proc check_reshape*(t: AnyTensor, new_shape:MetadataArray) {.noSideEffect, inlin
                                     ") reshaped tensor must be the same")
 
 proc check_nocopyReshape*(t: AnyTensor) {.noSideEffect, inline.}=
-  if not t.isContiguous:
+  if unlikely(not t.isContiguous):
     raise newException(ValueError, "The tensor must be contiguous for reshape without copy")
 
 proc check_concat*(t1, t2: Tensor, axis: int) {.noSideEffect,inline.}=
   let check1 = t1.shape[0..<axis] == t2.shape[0..<axis]
   let check2 = t2.shape[axis+1..t1.shape.high] == t2.shape[axis+1..t2.shape.high]
 
-  if not check1 or not check2:
+  if unlikely(not check1 or not check2):
     raise newException(ValueError, "Concatenation Error: Except along the concatenation axis tensors must have the same shape")
 
 proc check_squeezeAxis*(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
-  if axis >= t.rank:
+  if unlikely(axis >= t.rank):
     raise newException(ValueError, "The axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )
 
 proc check_unsqueezeAxis*(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
-  if t.rank == 0 or axis > t.rank or axis < 0:
+  if unlikely(t.rank == 0 or axis > t.rank or axis < 0):
     raise newException(ValueError, "The new axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )
 
 proc check_dot_prod*(a, b:AnyTensor)  {.noSideEffect.}=
-  if a.rank != 1 or b.rank != 1: raise newException(ValueError, "Dot product is only supported for vectors (tensors of rank 1)")
-  if a.shape != b.shape: raise newException(ValueError, "Vector should be the same length")
+  if unlikely(a.rank != 1 or b.rank != 1): raise newException(ValueError, "Dot product is only supported for vectors (tensors of rank 1)")
+  if unlikely(a.shape != b.shape): raise newException(ValueError, "Vector should be the same length")
 
 proc check_matmat*(a, b: AnyTensor) {.noSideEffect.}=
   let colA = a.shape[1]
   let rowB = b.shape[0]
 
-  if colA != rowB:
+  if unlikely(colA != rowB):
     raise newException(IndexError, "Number of columns in the first matrix: " &
                     $(colA) &
                     ", must be the same as the number of rows in the second matrix: " &
@@ -125,7 +125,7 @@ proc check_matvec*(a, b: AnyTensor)  {.noSideEffect.}=
   let colA = a.shape[1]
   let rowB = b.shape[0]
 
-  if colA != rowB:
+  if unlikely(colA != rowB):
     raise newException(IndexError, "Number of columns in the matrix: " &
                     $(colA) &
                     ", must be the same as the number of rows in the vector: " &

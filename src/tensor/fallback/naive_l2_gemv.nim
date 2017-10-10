@@ -13,7 +13,8 @@
 # limitations under the License.
 
 import  ../data_structure,
-        ../operators_blas_l1
+        ../operators_blas_l1,
+        nimblas
 
 # Notes on optimizing performance:
 # Google: https://github.com/google/gemmlowp/blob/master/todo/fast-gemv.txt
@@ -36,7 +37,8 @@ proc naive_gemv_fallback*[T: SomeInteger](
   for val in y.mitems:
     val *= beta
 
-  if alpha == 0.T: return
+  if alpha == 0.T:
+    return
 
   # TODO: instead of a naive implementation use BLIS/ulmBLAS implementation with
   # - if A is colMajor, use fused axpy BLAS op
@@ -44,14 +46,13 @@ proc naive_gemv_fallback*[T: SomeInteger](
   # - packing
 
   # Naive implementation: split the matrices along vertical axis
-  var i: int = 0
-  let colA = A.shape[1]
 
-  if likely(A.is_C_contiguous): #if A is C contiguous (row-major) slices along the row are also contiguous
-    for ai in A.axis(0):
-      y[i] += alpha * dot(ai.unsafeReshape(colA),x)
-      i += 1
-  else:
-    for ai in A.axis(0):
-      y[i] += alpha * dot(ai.reshape(colA),x)
-      i += 1
+  let cont_A = A.unsafeContiguous(rowMajor, force=true)
+  # if A is C_contiguous (row-major) slices along the row are also contiguous
+  # so we can use unsafeReshape and avoid allocation inside the for loop
+  let colA = cont_A.shape[1]
+
+  var i: int = 0
+  for ai in cont_A.axis(0):
+    y[i] += alpha * dot(ai.unsafeReshape(colA), x)
+    i += 1

@@ -43,7 +43,7 @@ proc sigmoid*[T: SomeReal](t: Tensor[T]): Tensor[T] {.inline.}=
 
   # stable: proc sigmoid_closure(x: T): T = 0.5.T * (tanh(0.5.T * x) + 1.T)
 
-  result = mapT(t):
+  result = map_inline(t):
     1.T / (1.T + exp(-x))
 
 proc msigmoid*[T: SomeReal](t: var Tensor[T]) {.inline.}=
@@ -51,18 +51,18 @@ proc msigmoid*[T: SomeReal](t: var Tensor[T]) {.inline.}=
   ## Note: Canonical sigmoid is not stable for large negative value
 
   # stable: proc sigmoid_closure(x: T): T = 0.5.T * (tanh(0.5.T * x) + 1.T)
-  applyT(t):
+  apply_inline(t):
     1.T / (1.T + exp(-x))
 
 proc relu*[T](t: Tensor[T]): Tensor[T] {.inline.}=
-  t.mapT max(0.T,x)
+  t.map_inline max(0.T,x)
 
 proc mrelu*[T](t: var Tensor[T]) {.inline.}=
-  t.applyT max(0.T, x)
+  t.apply_inline max(0.T, x)
 
 
 proc relu_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.inline.}=
-  result = mapT(cached_tensor):
+  result = map_inline(cached_tensor):
     if x <= 0.T:
       0.T
     else:
@@ -70,6 +70,6 @@ proc relu_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]
   result .*= gradient
 
 proc sigmoid_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.inline.}=
-  result = mapT(cached_tensor):
+  result = map_inline(cached_tensor):
     x * (1 - x)
   result .*= gradient

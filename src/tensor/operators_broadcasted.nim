@@ -37,21 +37,21 @@ proc `.*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] =
   ## And broadcasted element-wise multiplication.
 
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
-  return map2T(tmp_a, tmp_b, x * y)
+  return map2_inline(tmp_a, tmp_b, x * y)
 
 proc `./`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] =
   ## Tensor element-wise division for integer numbers.
   ##
   ## And broadcasted element-wise division.
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
-  return map2T(tmp_a, tmp_b, x div y)
+  return map2_inline(tmp_a, tmp_b, x div y)
 
 proc `./`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] =
   ## Tensor element-wise division for real numbers.
   ##
   ## And broadcasted element-wise division.
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
-  return map2T(tmp_a, tmp_b, x / y )
+  return map2_inline(tmp_a, tmp_b, x / y )
 
 # ##############################################
 # # Broadcasting in-place Tensor-Tensor
@@ -63,7 +63,7 @@ proc `.+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
   # shape check done in apply2 proc
 
   let tmp_b = b.unsafeBroadcast(a.shape)
-  apply2T(a, tmp_b, x + y)
+  apply2_inline(a, tmp_b, x + y)
 
 proc `.-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor broadcasted in-place substraction.
@@ -72,7 +72,7 @@ proc `.-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
   # shape check done in apply2 proc
 
   let tmp_b = b.unsafeBroadcast(a.shape)
-  apply2T(a, tmp_b, x - y)
+  apply2_inline(a, tmp_b, x - y)
 
 proc `.*=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor broadcasted in-place multiplication (Hadamard product)
@@ -81,7 +81,7 @@ proc `.*=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
   # shape check done in apply2 proc
 
   let tmp_b = b.unsafeBroadcast(a.shape)
-  apply2T(a, tmp_b, x * y)
+  apply2_inline(a, tmp_b, x * y)
 
 proc `./=`*[T: SomeInteger](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor broadcasted in-place integer division.
@@ -90,7 +90,7 @@ proc `./=`*[T: SomeInteger](a: var Tensor[T], b: Tensor[T]) =
   # shape check done in apply2 proc
 
   let tmp_b = b.unsafeBroadcast(a.shape)
-  apply2T(a, tmp_b, x div y)
+  apply2_inline(a, tmp_b, x div y)
 
 proc `./=`*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor broadcasted in-place float division.
@@ -99,7 +99,7 @@ proc `./=`*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) =
   # shape check done in apply2 proc
 
   let tmp_b = b.unsafeBroadcast(a.shape)
-  apply2T(a, tmp_b, x / y)
+  apply2_inline(a, tmp_b, x / y)
 
 
 # ##############################################
@@ -107,43 +107,43 @@ proc `./=`*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) =
 
 proc `.+`*[T: SomeNumber](val: T, t: Tensor[T]): Tensor[T] =
   ## Broadcasted addition for tensor + scalar.
-  return t.mapT(x + val)
+  return t.map_inline(x + val)
 
 proc `.+`*[T: SomeNumber](t: Tensor[T], val: T): Tensor[T] =
   ## Broadcasted addition for scalar + tensor.
-  return t.mapT(x + val)
+  return t.map_inline(x + val)
 
 proc `.-`*[T: SomeNumber](val: T, t: Tensor[T]): Tensor[T] =
   ## Broadcasted substraction for tensor - scalar.
-  return t.mapT(val - x)
+  return t.map_inline(val - x)
 
 proc `.-`*[T: SomeNumber](t: Tensor[T], val: T): Tensor[T] =
   ## Broadcasted substraction for scalar - tensor.
-  return t.mapT(x - val)
+  return t.map_inline(x - val)
 
 proc `./`*[T: SomeInteger](val: T, t: Tensor[T]): Tensor[T] =
   ## Broadcasted division of an integer by a tensor of integers.
-  return t.mapT(val div x)
+  return t.map_inline(val div x)
 
 proc `./`*[T: SomeReal](val: T, t: Tensor[T]): Tensor[T] =
   ## Broadcasted division of a float by a tensor of floats.
-  return t.mapT(val / x)
+  return t.map_inline(val / x)
 
 proc `.^`*[T: SomeReal](t: Tensor[T], exponent: T): Tensor[T] =
   ## Compute element-wise exponentiation
-  return t.mapT pow(x, exponent)
+  return t.map_inline pow(x, exponent)
 
 # #####################################
 # # Broadcasting in-place Tensor-Scalar
 
 proc `.+=`*[T: SomeNumber](t: var Tensor[T], val: T) =
   ## Tensor in-place addition with a broadcasted scalar.
-  t.applyT(x + val)
+  t.apply_inline(x + val)
 
 proc `.-=`*[T: SomeNumber](t: var Tensor[T], val: T) =
   ## Tensor in-place substraction with a broadcasted scalar.
-  t.applyT(x - val)
+  t.apply_inline(x - val)
 
 proc `.^=`*[T: SomeReal](t: var Tensor[T], exponent: T) =
   ## Compute in-place element-wise exponentiation
-  t.applyT pow(x, exponent)
+  t.apply_inline pow(x, exponent)

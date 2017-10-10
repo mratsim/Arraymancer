@@ -20,30 +20,30 @@ import  ./backend/openmp,
 # ####################################################################
 # Mapping over tensors
 
-template applyT*(t: var Tensor, op: untyped): untyped =
+template apply_inline*(t: var Tensor, op: untyped): untyped =
   omp_parallel_blocks(block_offset, block_size, t.size):
     for x {.inject.} in t.mitems(block_offset, block_size):
       x = op
 
-template apply2T*[T,U](dest: var Tensor[T], src: Tensor[U], op: untyped): untyped =
+template apply2_inline*[T,U](dest: var Tensor[T], src: Tensor[U], op: untyped): untyped =
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for x {.inject.}, y {.inject.} in mzip(dest, src, block_offset, block_size):
       x = op
 
-template apply3T*[T,U,V](dest: var Tensor[T], src1: Tensor[U], src2: Tensor[V], op: untyped): untyped =
+template apply3_inline*[T,U,V](dest: var Tensor[T], src1: Tensor[U], src2: Tensor[V], op: untyped): untyped =
   var data = dest.dataArray
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for x {.inject.}, y {.inject.}, z {.inject.} in mzip(dest, src1, src2, block_offset, block_size):
       x = op
 
-template mapT*[T](t: Tensor[T], op:untyped): untyped =
+template map_inline*[T](t: Tensor[T], op:untyped): untyped =
   var dest = newTensorUninit[T](t.shape)
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for v, x {.inject.} in mzip(dest, t, block_offset, block_size):
       v = op
   dest.unsafeView()
 
-template map2T*[T](t1, t2: Tensor[T], op:untyped): untyped =
+template map2_inline*[T](t1, t2: Tensor[T], op:untyped): untyped =
   when compileOption("boundChecks"):
     check_elementwise(t1,t2)
 
@@ -54,7 +54,7 @@ template map2T*[T](t1, t2: Tensor[T], op:untyped): untyped =
       data[i] = op
   dest.unsafeView()
 
-template map3T*[T](t1, t2, t3: Tensor[T], op:untyped): untyped =
+template map3_inline*[T](t1, t2, t3: Tensor[T], op:untyped): untyped =
   when compileOption("boundChecks"):
     check_elementwise(t1,t2)
     check_elementwise(t1,t3)
@@ -107,7 +107,7 @@ proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] =
   # And should benefit future computations on previously non-contiguous data
 
   result = newTensorUninit[U](t.shape)
-  result.apply2T(t, f(y))
+  result.apply2_inline(t, f(y))
 
 proc apply*[T](t: var Tensor[T], f: T -> T) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
@@ -128,7 +128,7 @@ proc apply*[T](t: var Tensor[T], f: T -> T) =
   ##       x + 1
   ##     a.apply(plusone) # Apply the function plusone in-place
 
-  t.applyT(f(x))
+  t.apply_inline(f(x))
 
 proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
@@ -177,7 +177,7 @@ proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] =
     check_elementwise(t1,t2)
 
   result = newTensorUninit[V](t1.shape)
-  result.apply3T(t1, t2, f(y,z))
+  result.apply3_inline(t1, t2, f(y,z))
 
 proc apply2*[T, U](a: var Tensor[T],
                    f: proc(x:var T, y:T), # We can't use the nice future syntax here

@@ -19,15 +19,15 @@ import  ../backend/metadataArray,
 
 template contiguousT*[T](result, t: Tensor[T], layout: OrderType): untyped=
   if layout == rowMajor:
-    result = t.mapT(x)
+    result = t.map_inline(x)
   else:
     let t_transposed = t.unsafeTranspose()
-    result = t_transposed.mapT(x)
+    result = t_transposed.map_inline(x)
 
 proc reshape_with_copy*[T](t: Tensor[T], new_shape: MetadataArray): Tensor[T] {.inline.}=
   # Can't call "tensorCpu" template here for some reason
   result = newTensorUninit[T](new_shape)
-  result.apply2T(t,y)
+  result.apply2_inline(t,y)
 
 template reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]): untyped =
   let ns = new_shape.toMetadataArray

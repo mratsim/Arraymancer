@@ -133,6 +133,24 @@ iterator zip*[T,U](t1: Tensor[T], t2: Tensor[U], offset, size: int): (T,U) {.inl
     check_contiguous_index(t1, offset+size-1)
   dualStridedIteration(IterKind.Values, t1, t2, offset, size)
 
+iterator zip*[T,U,V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V]): (T,U,V) {.inline,noSideEffect.} =
+  ## Iterates simultaneously on two tensors returning their elements in a tuple.
+  ## Note: only tensors of the same shape will be zipped together.
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
+    check_size(t1, t3)
+  tripleStridedIteration(IterKind.Values, t1, t2, t3, 0, t1.size)
+
+iterator zip*[T,U,V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], offset, size: int): (T,U,V) {.inline,noSideEffect.} =
+  ## Iterates simultaneously on two tensors returning their elements in a tuple. (with offset)
+  ## Note: only tensors of the same shape will be zipped together.
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
+    check_size(t1, t3)
+    check_contiguous_index(t1, offset)
+    check_contiguous_index(t1, offset+size-1)
+  tripleStridedIteration(IterKind.Values, t1, t2, t3, offset, size)
+
 iterator mzip*[T,U](t1: var Tensor[T], t2: Tensor[U]): (var T, U) {.inline,noSideEffect.} =
   ## Iterates simultaneously on two tensors returning their elements in a tuple. (mutable)
   ## Note: only tensors of the same shape will be zipped together.
@@ -149,6 +167,23 @@ iterator mzip*[T,U](t1: var Tensor[T], t2: Tensor[U], offset, size: int): (var T
     check_contiguous_index(t1, offset+size-1)
   dualStridedIteration(IterKind.Values, t1, t2, offset, size)
 
+iterator mzip*[T,U,V](t1: var Tensor[T], t2: Tensor[U], t3: Tensor[V]): (var T, U, V) {.inline,noSideEffect.} =
+  ## Iterates simultaneously on two tensors returning their elements in a tuple. (mutable)
+  ## Note: only tensors of the same shape will be zipped together.
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
+  tripleStridedIteration(IterKind.Values, t1, t2, t3, 0, t1.size)
+
+iterator mzip*[T,U,V](t1: var Tensor[T], t2: Tensor[U], t3: Tensor[V], offset, size: int): (var T, U, V) {.inline,noSideEffect.} =
+  ## Iterates simultaneously on two tensors returning their elements in a tuple. (mutable, with offset)
+  ## Note: only tensors of the same shape will be zipped together.
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
+    check_size(t1, t3)
+    check_contiguous_index(t1, offset)
+    check_contiguous_index(t1, offset+size-1)
+  tripleStridedIteration(IterKind.Values, t1, t2, t3, offset, size)
+
 iterator enumerateZip*[T,U](t1: Tensor[T], t2: Tensor[U]): (int,T,U) {.inline,noSideEffect.} =
   ## Enumerate simultaneously on two tensors returning their elements in a tuple.
   ## Note: only tensors of the same shape will be zipped together.
@@ -164,6 +199,24 @@ iterator enumerateZip*[T,U](t1: Tensor[T], t2: Tensor[U], offset, size: int): (i
     check_contiguous_index(t1, offset)
     check_contiguous_index(t1, offset+size-1)
   dualStridedIteration(IterKind.Iter_Values, t1, t2, offset, size)
+
+iterator enumerateZip*[T,U,V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V]): (int,T,U,V) {.inline,noSideEffect.} =
+  ## Enumerate simultaneously on two tensors returning their elements in a tuple.
+  ## Note: only tensors of the same shape will be zipped together.
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
+    check_size(t1, t3)
+  tripleStridedIteration(IterKind.Iter_Values, t1, t2, t3, 0, t1.size)
+
+iterator enumerateZip*[T,U,V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], offset, size: int): (int,T,U,V) {.inline,noSideEffect.} =
+  ## Enumerate simultaneously on two tensors returning their elements in a tuple. (with offset)
+  ## Note: only tensors of the same shape will be zipped together.
+  when compileOption("boundChecks"):
+    check_size(t1, t2)
+    check_size(t1, t3)
+    check_contiguous_index(t1, offset)
+    check_contiguous_index(t1, offset+size-1)
+  tripleStridedIteration(IterKind.Iter_Values, t1, t2, t3, offset, size)
 
 iterator menumerateZip*[T,U](t1: var Tensor[T], t2: Tensor[U]): (int, var T,U) {.inline,noSideEffect.} =
   ## Enumerate simultaneously on two tensors returning their elements in a tuple. (mutable)

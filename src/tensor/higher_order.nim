@@ -85,7 +85,7 @@ template reduceAxisT*[T](t: Tensor[T], axis: int, op: untyped): untyped =
       op
   reduced.unsafeView()
 
-proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] =
+proc map*[T; U: not (ref|string|seq)](t: Tensor[T], f: T -> U): Tensor[U] =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
   ## Usage with Nim's ``future`` module:
   ##  .. code:: nim
@@ -101,13 +101,24 @@ proc map*[T, U](t: Tensor[T], f: T -> U): Tensor[U] =
   ##  .. code:: nim
   ##     a .+ 1
   ## ``map`` is especially useful to do multiple element-wise operations on a tensor in a single loop over the data.
-
-  # We use this opportunity to reshape the data internally to contiguous.
-  # Iteration should be almost as fast for contiguous non-sliced Tensors
-  # And should benefit future computations on previously non-contiguous data
+  ##
+  ## For OpenMP compatibility, this ``map`` doesn't allow ref types as result like seq or string
 
   result = newTensorUninit[U](t.shape)
   result.apply2_inline(t, f(y))
+
+proc map*[T; U: ref|string|seq](t: Tensor[T], f: T -> U): Tensor[U] {.noSideEffect.}=
+  ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
+  ##
+  ##
+  ## This is a fallback for ref types as
+  ## OpenMP will not work with if the results allocate memory managed by GC.
+
+  result = newTensorUninit[U](t.shape)
+  var i = 0
+  for val in t:            #Note we don't use mzip to avoid issues on the C++ backend
+    result.data[i] = f(val)
+    inc i
 
 proc apply*[T](t: var Tensor[T], f: T -> T) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
@@ -153,7 +164,9 @@ proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
     for x in t.mitems(block_offset, block_size):
       f(x)
 
-proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] =
+proc map2*[T, U; V: not (ref|string|seq)](t1: Tensor[T],
+                                          f: (T,U) -> V,
+                                          t2: Tensor[U]): Tensor[V] =
   ## Apply a binary function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ##
   ## The function is applied on the elements with the same coordinates.
@@ -173,11 +186,28 @@ proc map2*[T, U, V](t1: Tensor[T], f: (T,U) -> V, t2: Tensor[U]): Tensor[V] =
   ##     map2(a, `**`, b)
   ## ``map2`` is especially useful to do multiple element-wise operations on a two tensors in a single loop over the data.
   ## for example ```alpha * sin(A) + B```
+  ##
+  ## For OpenMP compatibility, this ``map2`` doesn't allow ref types as result like seq or string
   when compileOption("boundChecks"):
     check_elementwise(t1,t2)
 
   result = newTensorUninit[V](t1.shape)
   result.apply3_inline(t1, t2, f(y,z))
+
+proc map2*[T, U; V: ref|string|seq](t1: Tensor[T],
+                                    f: (T,U) -> V,
+                                    t2: Tensor[U]): Tensor[V] {.noSideEffect.}=
+  ## Apply a binary function in an element-wise manner on two Tensor[T], returning a new Tensor.
+  ##
+  ##
+  ## This is a fallback for ref types as
+  ## OpenMP will not work with if the results allocate memory managed by GC.
+  when compileOption("boundChecks"):
+    check_elementwise(t1,t2)
+
+  result = newTensorUninit[V](t1.shape)
+  for r, a, b in mzip(result, t1, t2):
+    r = f(t1, t2)
 
 proc apply2*[T, U](a: var Tensor[T],
                    f: proc(x:var T, y:T), # We can't use the nice future syntax here

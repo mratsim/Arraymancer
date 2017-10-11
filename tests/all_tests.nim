@@ -28,4 +28,5 @@ import ../src/arraymancer,
         ./tensor/test_filling_data,
         ./tensor/test_optimization,
         ./tensor/test_bugtracker,
-        ./autograd/test_gate_blas
+        ./autograd/test_gate_blas,
+        ./load_tests/test_load_openmp

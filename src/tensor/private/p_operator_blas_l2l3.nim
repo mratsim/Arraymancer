@@ -120,7 +120,7 @@ proc fallbackMM_C_eq_aAB_p_bC*[T: SomeInteger](
 
 proc blasMM_C_eq_aAB_p_bC*[T: SomeReal](
   alpha: T, a, b: Tensor[T],
-  beta: T, c: var Tensor[T]) {.inline, noSideEffect.}=
+  beta: T, c: var Tensor[T]) {.noSideEffect.}=
   # Matrix: C = alpha A matmul B + beta C
   # If needed, we trick BLAS to get a rowMajor result
 

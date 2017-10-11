@@ -21,68 +21,75 @@ import  ./private/p_checks,
         ./data_structure,
         ./init_cpu
 
-# #################################################
-# Generic notation "*"
+proc gemv*[T: SomeReal](
+          alpha: T,
+          A: Tensor[T],
+          x: Tensor[T],
+          beta: T,
+          y: var Tensor[T]) {.inline,noSideEffect.}=
+  ## General Matrix-Vector multiplication:
+  ## y <- alpha * A * x + beta * y
+  when compileOption("boundChecks"):
+    check_matvec(A,x)
+    # TODO: check y + tests
+  when declared(blis):
+    # OpenBLAS / MKL are still faster than BLIS in the contiguous case
+    # For matrix vector, the vector can be non-contiguous for MKL / OpenBLAS
+    if not A.isContiguous:
+      blisMV_y_eq_aAx_p_by(alpha, A, x, beta, y)
+      return
 
-proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] =
+  blasMV_y_eq_aAx_p_by(alpha, A, x, beta, y)
+
+proc gemv*[T: SomeInteger](
+          alpha: T,
+          A: Tensor[T],
+          x: Tensor[T],
+          beta: T,
+          y: var Tensor[T]) {.inline.}=
+  ## General Matrix-Vector multiplication:
+  ## y <- alpha * A * x + beta * y
+  when compileOption("boundChecks"):
+    check_matvec(A,x)
+    # TODO: check y + tests
+
+  naive_gemv_fallback(alpha, A, x, beta, y)
+
+proc gemm*[T: SomeReal](
+  alpha: T, A, B: Tensor[T],
+  beta: T, C: var Tensor[T]) {.inline, noSideEffect.}=
+  # Matrix: C = alpha A matmul B + beta C
+  when compileOption("boundChecks"):
+    check_matvec(A,B)
+    # TODO: check c + tests
+
+  when declared(blis):
+    if not A.isContiguous or not B.isContiguous or not C.isContiguous:
+      blisMM_C_eq_aAB_p_bC(alpha, A, B, beta, C)
+      return
+
+  blasMM_C_eq_aAB_p_bC(alpha, A, B, beta, C)
+
+proc gemm*[T: SomeInteger](
+  alpha: T, A, B: Tensor[T],
+  beta: T, C: var Tensor[T]) {.inline.}=
+  # Matrix: C = alpha A matmul B + beta C
+  when compileOption("boundChecks"):
+    check_matvec(A,B)
+    # TODO: check c + tests
+
+  fallbackMM_C_eq_aAB_p_bC(1.T, A, B, 0.T, C)
+
+proc `*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
   ##
   ## Float operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.
 
-  when declared(blis):
-    ## When is evaluated at compile time and has no runtime cost
-    if not a.isContiguous or not b.isContiguous:
-      # OpenBLAS / MKL are still faster than BLIS in the contiguous case
-      if a.rank == 2 and b.rank == 2:
-        when compileOption("boundChecks"):
-          check_matmat(a,b)
-        result = newTensorUninit[T](a.shape[0], b.shape[1])
-        blisMM_C_eq_aAB_p_bC(1.T, a, b, 0.T, result)
-      elif a.rank == 2 and b.rank == 1:
-        when compileOption("boundChecks"):
-          check_matvec(a,b)
-        result = newTensorUninit[T](a.shape[0])
-        blisMV_y_eq_aAx_p_by(1.T, a, b, 0.T, result)
-      else:
-        raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
-      return
-
   if a.rank == 2 and b.rank == 2:
-    when compileOption("boundChecks"):
-      check_matmat(a,b)
     result = newTensorUninit[T](a.shape[0], b.shape[1])
-    blasMM_C_eq_aAB_p_bC(1.T, a, b, 0.T, result)
+    gemm(1.T, a, b, 0.T, result)
   elif a.rank == 2 and b.rank == 1:
-    when compileOption("boundChecks"):
-      check_matvec(a,b)
     result = newTensorUninit[T](a.shape[0])
-    blasMV_y_eq_aAx_p_by(1.T, a, b, 0.T, result)
-  else:
-    raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
-
-proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] =
-  ## Matrix-Matrix and Matrix-Vector multiplications fallback for integer tensors.
-  ##
-  ## Integer BLAS has been implemented manually. While not as fast as BLAS for floats,
-  ## it should be much faster than naive loops.
-  ##
-  ## Note: Integers smaller than 2^31 can be converted to float64 without losing precision
-  ## and can benefit from the optimized float BLAS implementations
-
-  # static: echo "Please note that integer matrix-matrix and matrix-vector multiplications do not have optimized " &
-  #              "operations like how research has done for floats. If your integers are " &
-  #              "smaller than 2^31, you can convert them to float64 without losing precision before " &
-  #              "Matrix-Matrix or Matrix-Vector operations to benefit from accelerated routines."
-
-  if a.rank == 2 and b.rank == 2:
-    when compileOption("boundChecks"):
-      check_matmat(a,b)
-    result = newTensorUninit[T](a.shape[0], b.shape[1])
-    fallbackMM_C_eq_aAB_p_bC(1.T, a, b, 0.T, result)
-  elif a.rank == 2 and b.rank == 1:
-    when compileOption("boundChecks"):
-      check_matvec(a,b)
-    result = newTensorUninit[T](a.shape[0])
-    naive_gemv_fallback(1.T, a, b, 0.T, result)
+    gemv(1.T, a, b, 0.T, result)
   else:
     raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")

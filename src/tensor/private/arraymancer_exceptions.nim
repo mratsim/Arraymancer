@@ -32,7 +32,6 @@ Exception Hierarchy
 
         1. SliceStepError
 
-    2. ArgRankError
 
 2. ValueError
 
@@ -42,19 +41,21 @@ Exception Hierarchy
 
     2. IncompatibleSizeError
 
+        1. IncompatibleSizeReshapeError
+
+    3. ArgRankError
+
+    4. AxisRankError
+
 3. TypeError
 
     1. TensorLayoutTypeError
 
+    2. IncompatibleRankError
+
 ]#
 
 ###### Exceptions inheriting IndexError #######
-
-ArgRankError* = object of IndexError
-  ## Raised if the number of arguments does not match the tensor rank
-
-AxisRankError* = object of IndexError
-  ## Raised if the number of axis does not match the tensor rank
 
 SliceError* =  object of IndexError
   ## Raised if there is an error in slicing.
@@ -76,6 +77,13 @@ IncompatibleSizeError* = object of ValueError
 IncompatibleSizeReshapeError* = object of IncompatibleSizeError
   ## Raised if the sizes of tensors are incompatible for reshaping
 
+ArgRankError* = object of ValueError
+  ## Raised if the number of arguments does not match the tensor rank
+
+AxisRankError* = object of ValueError
+  ## Raised if the number of axis does not match the tensor rank
+
+
 
 ####### Exceptions inheriting TypeError #########
 
@@ -86,3 +94,7 @@ ObjectTypeError* = object of Exception
 TensorLayoutTypeError* = object of ObjectTypeError
   ## Raised when tensor layout is not contigous.
   # Data_structure_helpers.nim de kaldın
+
+IncompatibleRankError* = object of ObjectTypeError
+  ## Raised when tensor's rank does not satisfy the necessary conditions
+  ## for an operation.

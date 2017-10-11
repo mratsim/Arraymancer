@@ -105,7 +105,7 @@ task test_native, "Run all tests - march=native":
 
 task test_openmp, "Run all tests - OpenMP":
   switch("define","openmp")
-  switch("stackTrace","off")
+  switch("stackTrace","off") # stacktraces interfere with OpenMP
   test "all_tests"
 
 task test_mkl, "Run all tests - Intel MKL - single threaded":
@@ -119,6 +119,7 @@ task test_mkl, "Run all tests - Intel MKL - single threaded":
 
 task test_mkl_omp, "Run all tests - Intel MKL + OpenMP":
   switch("define","openmp")
+  switch("stackTrace","off")
   switch("define","blas=mkl_intel_lp64")
   switch("clibdir", "/opt/intel/mkl/lib/intel64")
   switch("passl", "/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a")

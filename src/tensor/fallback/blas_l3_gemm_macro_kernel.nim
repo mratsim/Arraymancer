@@ -28,15 +28,12 @@ proc gemm_macro_kernel[T](mc, nc, kc: int,
   let mod_mr = mc mod MR
   let mod_nr = nc mod NR
 
-  var mr: int
-  var nr: int
-
-  for j in 0||(np-1):
-    nr = if (j != np-1 or mod_nr == 0): NR
-         else: mod_nr
+  for j in 0||(np-1): # OpenMP loop
+    let nr = if (j != np-1 or mod_nr == 0): NR
+             else: mod_nr
     for i in 0 ..< mp:
-      mr = if (i != mp-1 or mod_mr == 0): MR
-           else: mod_mr
+      let mr = if (i != mp-1 or mod_mr == 0): MR
+               else: mod_mr
 
       if (mr==MR and nr==NR):
         gemm_micro_kernel(kc, alpha,

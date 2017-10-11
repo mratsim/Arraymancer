@@ -15,8 +15,11 @@
 when defined(blis):
   import ./backend/blis
 
-import  ./private/p_operator_blas_l2l3,
-        ./data_structure
+import  ./private/p_checks,
+        ./private/p_operator_blas_l2l3,
+        ./fallback/naive_l2_gemv,
+        ./data_structure,
+        ./init_cpu
 
 # #################################################
 # Generic notation "*"
@@ -30,14 +33,32 @@ proc `*`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] =
     ## When is evaluated at compile time and has no runtime cost
     if not a.isContiguous or not b.isContiguous:
       # OpenBLAS / MKL are still faster than BLIS in the contiguous case
-      if a.rank == 2 and b.rank == 2:    matmat_blis(a, b, result)
-      elif a.rank == 2 and b.rank == 1:  matvec_blis(a, b, result)
-      else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+      if a.rank == 2 and b.rank == 2:
+        when compileOption("boundChecks"):
+          check_matmat(a,b)
+        result = newTensorUninit[T](a.shape[0], b.shape[1])
+        blisMM_C_eq_aAB_p_bC(1.T, a, b, 0.T, result)
+      elif a.rank == 2 and b.rank == 1:
+        when compileOption("boundChecks"):
+          check_matvec(a,b)
+        result = newTensorUninit[T](a.shape[0])
+        blisMV_y_eq_aAx_p_by(1.T, a, b, 0.T, result)
+      else:
+        raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
       return
 
-  if a.rank == 2 and b.rank == 2:    matmat_blas(a, b, result)
-  elif a.rank == 2 and b.rank == 1:  matvec_blas(a, b, result)
-  else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+  if a.rank == 2 and b.rank == 2:
+    when compileOption("boundChecks"):
+      check_matmat(a,b)
+    result = newTensorUninit[T](a.shape[0], b.shape[1])
+    blasMM_C_eq_aAB_p_bC(1.T, a, b, 0.T, result)
+  elif a.rank == 2 and b.rank == 1:
+    when compileOption("boundChecks"):
+      check_matvec(a,b)
+    result = newTensorUninit[T](a.shape[0])
+    blasMV_y_eq_aAx_p_by(1.T, a, b, 0.T, result)
+  else:
+    raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
 
 proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] =
   ## Matrix-Matrix and Matrix-Vector multiplications fallback for integer tensors.
@@ -53,6 +74,15 @@ proc `*`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] =
   #              "smaller than 2^31, you can convert them to float64 without losing precision before " &
   #              "Matrix-Matrix or Matrix-Vector operations to benefit from accelerated routines."
 
-  if a.rank == 2 and b.rank == 2:    matmat_fallback(a, b, result)
-  elif a.rank == 2 and b.rank == 1:  matvec_fallback(a, b, result)
-  else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+  if a.rank == 2 and b.rank == 2:
+    when compileOption("boundChecks"):
+      check_matmat(a,b)
+    result = newTensorUninit[T](a.shape[0], b.shape[1])
+    fallbackMM_C_eq_aAB_p_bC(1.T, a, b, 0.T, result)
+  elif a.rank == 2 and b.rank == 1:
+    when compileOption("boundChecks"):
+      check_matvec(a,b)
+    result = newTensorUninit[T](a.shape[0])
+    naive_gemv_fallback(1.T, a, b, 0.T, result)
+  else:
+    raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")

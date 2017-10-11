@@ -16,7 +16,7 @@ when defined(blis):
   static: echo "--USING BLIS--"
   include ./blis_api
   let blis_status = bli_init()
-  echo "Blis initiatialization status: " & $blis_status
+  echo "Blis initialization status: " & $blis_status
 
   proc quit_blis() {.noconv.}=
     when defined(debug):

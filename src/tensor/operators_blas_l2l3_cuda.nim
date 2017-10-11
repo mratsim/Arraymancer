@@ -26,12 +26,12 @@ proc cudaMV_y_eq_aAx_p_by[T: SomeReal](
 
     transpose_A = if a_is_colMajor: CUBLAS_OP_N
                   else: CUBLAS_OP_T
-    ld_A = if a_is_colMajor: a.strides[1]
-           else: a.strides[0]
+    lda = if a_is_colMajor: a.strides[1]
+          else: a.strides[0]
 
   cublas_gemv(
       transpose_A, a.shape[0], a.shape[1],
-      alpha, a.get_data_ptr, ld_A,
+      alpha, a.get_data_ptr, lda,
       x.get_data_ptr, x.strides[0],
       beta, y.get_data_ptr, y.strides[0])
 
@@ -50,21 +50,21 @@ proc cudaMM_C_eq_aAB_p_bC[T: SomeReal](
 
     transpose_A = if a_is_colMajor: CUBLAS_OP_N
                   else: CUBLAS_OP_T
-    ld_A = if a_is_colMajor: a.strides[1]
-           else: a.strides[0]
+    lda = if a_is_colMajor: a.strides[1]
+          else: a.strides[0]
 
     transpose_B = if b_is_colMajor: CUBLAS_OP_N
                   else: CUBLAS_OP_T
-    ld_B = if b_is_colMajor: b.strides[1]
-           else: b.strides[0]
+    ldb = if b_is_colMajor: b.strides[1]
+          else: b.strides[0]
 
-    ld_C = c.strides[1] # C is always F contiguous (TODO test)
+    ldc = c.strides[1] # C is always F contiguous (TODO test)
 
   cublas_gemm(transpose_A, transpose_B,
               a.shape[0], b.shape[1], a.shape[1],
-              alpha, a.get_data_ptr, ld_A,
-              b.get_data_ptr, ld_B,
-              beta, c.get_data_ptr, ld_C)
+              alpha, a.get_data_ptr, lda,
+              b.get_data_ptr, ldb,
+              beta, c.get_data_ptr, ldc)
 
 proc `*`*[T: SomeReal](a, b: CudaTensor[T]): CudaTensor[T] =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector) on CUDA
@@ -74,7 +74,7 @@ proc `*`*[T: SomeReal](a, b: CudaTensor[T]): CudaTensor[T] =
     result = newCudaTensor[T]([a.shape[0], b.shape[1]])
     cudaMM_C_eq_aAB_p_bC(1.T, a, b, 0.T, result)
   elif a.rank == 2 and b.rank == 1:
-    when compileOption("boundChecks"): check_matvec(a,b)
+    when compileOption("boundChecks"):check_matvec(a,b)
     result = newCudaTensor[T]([a.shape[0]])
     cudaMV_y_eq_aAx_p_by(1.T,a, b, 0.T, result)
   else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")

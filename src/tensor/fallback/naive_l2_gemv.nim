@@ -14,6 +14,7 @@
 
 import  ../data_structure,
         ../operators_blas_l1,
+        ../private/p_accessors_cpp, # Workaround for C++ mitems codegen bug
         nimblas
 
 # Notes on optimizing performance:
@@ -34,8 +35,14 @@ proc naive_gemv_fallback*[T: SomeInteger](
 
   # BLAS: scal (multiplication by a scalar)
   # WARNING: This will multiply all values, regardless of stepping.
-  for val in y.mitems:
-    val *= beta
+  when not defined(cpp):
+    for val in y.mitems:
+      val *= beta
+  else: ## C++ workaround
+    var data = y.dataArray
+    for offset, _ in y.offsetValues:
+      data[offset] *= beta
+
 
   if alpha == 0.T:
     return

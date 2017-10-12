@@ -14,33 +14,56 @@
 
 import  ./backend/openmp,
         ./private/p_checks,
+        ./private/p_accessors_cpp,
         ./data_structure, ./init_cpu, ./accessors,
         future
+
+# Note: Due to C++ restrictions + Nim codegen, mutable iterators are not possible with the C++ backend.
+# Cuda and C++ need a specific code path (with no performance implication since what was done in the iterator
+# is no done in the higher order function/template context)
 
 # ####################################################################
 # Mapping over tensors
 
 template apply_inline*(t: var Tensor, op: untyped): untyped =
-  omp_parallel_blocks(block_offset, block_size, t.size):
-    for x {.inject.} in t.mitems(block_offset, block_size):
-      x = op
+  when not defined(cpp):
+    omp_parallel_blocks(block_offset, block_size, t.size):
+      for x {.inject.} in t.mitems(block_offset, block_size):
+        x = op
+  else:  # C++ workaround
+    var data = t.dataArray
+    omp_parallel_blocks(block_offset, block_size, t.size):
+      for offset, x {.inject.} in t.offsetValues(block_offset, block_size):
+        data[offset] = op
 
 template apply2_inline*[T,U](dest: var Tensor[T], src: Tensor[U], op: untyped): untyped =
-  omp_parallel_blocks(block_offset, block_size, dest.size):
-    for x {.inject.}, y {.inject.} in mzip(dest, src, block_offset, block_size):
-      x = op
+  when not defined(cpp):
+    omp_parallel_blocks(block_offset, block_size, dest.size):
+      for x {.inject.}, y {.inject.} in mzip(dest, src, block_offset, block_size):
+        x = op
+  else:  # C++ workaround
+    var data = dest.dataArray
+    omp_parallel_blocks(block_offset, block_size, dest.size):
+      for offset, x {.inject.}, y {.inject.} in zipOV(dest, src, block_offset, block_size):
+        data[offset] = op
 
 template apply3_inline*[T,U,V](dest: var Tensor[T], src1: Tensor[U], src2: Tensor[V], op: untyped): untyped =
-  var data = dest.dataArray
-  omp_parallel_blocks(block_offset, block_size, dest.size):
-    for x {.inject.}, y {.inject.}, z {.inject.} in mzip(dest, src1, src2, block_offset, block_size):
-      x = op
+  when not defined(cpp):
+    omp_parallel_blocks(block_offset, block_size, dest.size):
+      for x {.inject.}, y {.inject.}, z {.inject.} in mzip(dest, src1, src2, block_offset, block_size):
+        x = op
+  else:
+    var data = dest.dataArray
+    omp_parallel_blocks(block_offset, block_size, dest.size):
+      for offset, x {.inject.}, y {.inject.}, z {.inject.} in zipOV(dest, src1, src2, block_offset, block_size): # C++ workaround
+        data[offset] = op
 
 template map_inline*[T](t: Tensor[T], op:untyped): untyped =
   var dest = newTensorUninit[T](t.shape)
+  var data = dest.dataArray
   omp_parallel_blocks(block_offset, block_size, dest.size):
-    for v, x {.inject.} in mzip(dest, t, block_offset, block_size):
-      v = op
+    for i, x {.inject.} in enumerate(t, block_offset, block_size):
+      data[i] = op
   dest.unsafeView()
 
 template map2_inline*[T](t1, t2: Tensor[T], op:untyped): untyped =
@@ -115,10 +138,8 @@ proc map*[T; U: ref|string|seq](t: Tensor[T], f: T -> U): Tensor[U] {.noSideEffe
   ## OpenMP will not work with if the results allocate memory managed by GC.
 
   result = newTensorUninit[U](t.shape)
-  var i = 0
-  for val in t:            #Note we don't use mzip to avoid issues on the C++ backend
+  for i, val in enumerate(t):
     result.data[i] = f(val)
-    inc i
 
 proc apply*[T](t: var Tensor[T], f: T -> T) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
@@ -160,9 +181,15 @@ proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
   ##     a.apply(pluseqone) # Apply the in-place function pluseqone
   ## ``apply`` is especially useful to do multiple element-wise operations on a tensor in a single loop over the data.
 
-  omp_parallel_blocks(block_offset, block_size, t.size):
-    for x in t.mitems(block_offset, block_size):
-      f(x)
+  when not defined(cpp):
+    omp_parallel_blocks(block_offset, block_size, t.size):
+      for x in t.mitems(block_offset, block_size):
+        f(x)
+  else: ## C++ workaround
+    var data = t.dataArray
+    omp_parallel_blocks(block_offset, block_size, t.size):
+      for offset, _ in t.offsetValues(block_offset, block_size):
+        f(data[offset])
 
 proc map2*[T, U; V: not (ref|string|seq)](t1: Tensor[T],
                                           f: (T,U) -> V,

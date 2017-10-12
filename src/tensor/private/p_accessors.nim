@@ -93,7 +93,7 @@ proc atIndexMut*[T](t: var Tensor[T], idx: varargs[int], val: T) {.noSideEffect,
 ## Iterators
 type
   IterKind* = enum
-    Values, Iter_Values
+    Values, Iter_Values, Offset_Values
 
 template initStridedIteration*(coord, backstrides, iter_pos: untyped, t, iter_offset, iter_size: typed): untyped =
   ## Iterator init
@@ -127,6 +127,7 @@ template stridedIterationYield*(strider: IterKind, data, i, iter_pos: typed) =
   ## Iterator the return value
   when strider == IterKind.Values: yield data[iter_pos]
   elif strider == IterKind.Iter_Values: yield (i, data[iter_pos])
+  elif strider == IterKind.Offset_Values: yield (iter_pos, data[iter_pos]) ## TODO: remove workaround for C++ backend
 
 template stridedIteration*(strider: IterKind, t, iter_offset, iter_size: typed): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
@@ -159,6 +160,8 @@ template dualStridedIterationYield*(strider: IterKind, t1data, t2data, i, t1_ite
   ## Iterator the return value
   when strider == IterKind.Values: yield (t1data[t1_iter_pos], t2data[t2_iter_pos])
   elif strider == IterKind.Iter_Values: yield (i, t1data[t1_iter_pos], t2data[t2_iter_pos])
+  elif strider == IterKind.Offset_Values: yield (t1_iter_pos, t1data[t1_iter_pos], t2data[t2_iter_pos])  ## TODO: remove workaround for C++ backend
+
 
 template dualStridedIteration*(strider: IterKind, t1, t2, iter_offset, iter_size: typed): untyped =
   ## Iterate over two Tensors, displaying data as in C order, whatever the strides.
@@ -195,6 +198,7 @@ template tripleStridedIterationYield*(strider: IterKind, t1data, t2data, t3data,
   ## Iterator the return value
   when strider == IterKind.Values: yield (t1data[t1_iter_pos], t2data[t2_iter_pos], t3data[t3_iter_pos])
   elif strider == IterKind.Iter_Values: yield (i, t1data[t1_iter_pos], t2data[t2_iter_pos], t3data[t3_iter_pos])
+  elif strider == IterKind.Offset_Values: yield (t1_iter_pos, t1data[t1_iter_pos], t2data[t2_iter_pos], t3data[t3_iter_pos])  ## TODO: remove workaround for C++ backend
 
 template tripleStridedIteration*(strider: IterKind, t1, t2, t3, iter_offset, iter_size: typed): untyped =
   ## Iterate over two Tensors, displaying data as in C order, whatever the strides.

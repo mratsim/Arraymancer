@@ -51,7 +51,7 @@ when defined(blis):
 
 proc blasMV_y_eq_aAx_p_by*[T: SomeReal](
   alpha: T, a, x: Tensor[T],
-  beta: T, y: var Tensor[T]) {.noSideEffect.}=
+  beta: T, y: var Tensor[T]) =
   # Matrix-Vector: y = alpha A matvecmul x + beta y
 
   # Note: bounds checking must be done by the calling proc
@@ -120,7 +120,7 @@ proc fallbackMM_C_eq_aAB_p_bC*[T: SomeInteger](
 
 proc blasMM_C_eq_aAB_p_bC*[T: SomeReal](
   alpha: T, a, b: Tensor[T],
-  beta: T, c: var Tensor[T]) {.noSideEffect.}=
+  beta: T, c: var Tensor[T]) =
   # Matrix: C = alpha A matmul B + beta C
   # If needed, we trick BLAS to get a rowMajor result
 

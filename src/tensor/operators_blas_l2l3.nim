@@ -26,7 +26,7 @@ proc gemv*[T: SomeReal](
           A: Tensor[T],
           x: Tensor[T],
           beta: T,
-          y: var Tensor[T]) {.inline,noSideEffect.}=
+          y: var Tensor[T]) {.inline.}=
   ## General Matrix-Vector multiplication:
   ## y <- alpha * A * x + beta * y
   when compileOption("boundChecks"):
@@ -57,7 +57,7 @@ proc gemv*[T: SomeInteger](
 
 proc gemm*[T: SomeReal](
   alpha: T, A, B: Tensor[T],
-  beta: T, C: var Tensor[T]) {.inline, noSideEffect.}=
+  beta: T, C: var Tensor[T]) {.inline.}=
   # Matrix: C = alpha A matmul B + beta C
   when compileOption("boundChecks"):
     check_matvec(A,B)

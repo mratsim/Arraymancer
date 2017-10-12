@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../tensor/tensor,
+import  ../../tensor/[tensor, higher_order],
         ../../autograd/autograd,
         typetraits
 
@@ -40,5 +40,7 @@ method update*[T](self: SGD[T]) =
   # Update the params with formula Value -= lr * gradient
   # Note: SGD expects gradient to be scaled by batchsize (done by default in Arraymancer)
   for v in self.params:
-    v.value -= self.lr * v.grad
+    # v.value -= learning rate * grad
+    apply2_inline(v.value, v.grad):
+      x - self.lr * y
     v.grad = v.value.zeros_like

@@ -32,7 +32,7 @@ proc linear_backward*[T](
         weight, bias: Tensor[T],
         dW, db: var Tensor[T]): Tensor[T] {.inline.} =
   result = weight.unsafeTranspose * gradient
-  dW += gradient * cached_tensor.unsafeTranspose
+  gemm(gradient, cached_tensor.unsafeTranspose, dW)
 
   db = sum(gradient, axis=0) # https://mlxai.github.io/2017/01/10/a-modular-approach-to-implementing-fully-connected-neural-networks.html
 
@@ -42,5 +42,5 @@ proc linear_backward*[T](
         weight: Tensor[T],
         dW: var Tensor[T]): Tensor[T] {.inline.} =
   result = weight.unsafeTranspose * gradient
-  dW += gradient * cached_tensor.unsafeTranspose
+  gemm(gradient, cached_tensor.unsafeTranspose, dW)
 

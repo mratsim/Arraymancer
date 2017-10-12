@@ -1,5 +1,4 @@
-import ../src/arraymancer_nn, ../src/arraymancer_ag, ../src/arraymancer, ../src/arraymancer_nn_primitives
-import future
+import ../src/arraymancer
 
 # Example multilayer perceptron in Arraymancer.
 

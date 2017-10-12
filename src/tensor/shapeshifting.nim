@@ -39,8 +39,8 @@ proc unsafeTranspose*(t: Tensor): Tensor {.noSideEffect, inline.}=
   ##   This proc does not guarantee that a ``let`` value is immutable.
   ##
   ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
-  result.shape = t.shape.reversed
-  result.strides = t.strides.reversed
+  t.shape.reversed(result.shape)
+  t.strides.reversed(result.strides)
   result.offset = t.offset
   shallowCopy(result.data, t.data)
 

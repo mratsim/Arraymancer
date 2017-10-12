@@ -66,11 +66,11 @@ suite "Creating a new Tensor":
 
     let u = @[@[1.0, -1, 2],@[0.0, -1]]
 
-    when compileOption("boundChecks"):
+    when compileOption("boundChecks") and not defined(openmp):
       expect(IndexError):
         discard u.toTensor()
     else:
-      echo "Bound-checking is disabled. The incorrect seq shape test has been skipped."
+      echo "Bound-checking is disabled or OpenMP is used. The incorrect seq shape test has been skipped."
 
   test "Check that Tensor shape is in row-by-column order":
     let s = @[@[1,2,3],@[3,2,1]]

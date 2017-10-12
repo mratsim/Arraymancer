@@ -31,7 +31,7 @@ suite "Accessing and setting tensor values":
     check: b[2,3] == 111
 
 
-  when compileOption("boundChecks"):
+  when compileOption("boundChecks") and not defined(openmp):
     test "Out of bounds checking":
       var a = newTensor[int](@[2,3,4])
       expect(IndexError):
@@ -44,7 +44,7 @@ suite "Accessing and setting tensor values":
       expect(IndexError):
         discard b[0,-2]
   else:
-    echo "Bound-checking is disabled. The out-of-bounds checking test has been skipped."
+    echo "Bound-checking is disabled or OpenMP is used. The out-of-bounds checking test has been skipped."
 
   test "Iterators":
     const

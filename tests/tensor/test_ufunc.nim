@@ -62,11 +62,11 @@ suite "Universal functions":
     check: td.map(stringify) == te
     check: td.map(stringify)[0,1] == "4"
 
-    when compileOption("boundChecks"):
+    when compileOption("boundChecks") and not defined(openmp):
       expect(IndexError):
         discard td.map(stringify)[1,3]
     else:
-      echo "Bound-checking is disabled. The incorrect seq shape test has been skipped."
+      echo "Bound-checking is disabled or OpenMP is used. The incorrect seq shape test has been skipped."
 
 
   test "Abs":

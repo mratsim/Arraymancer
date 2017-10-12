@@ -77,6 +77,9 @@ proc test(name: string, lang: string = "c") =
 task test, "Run all tests - Default BLAS":
   test "all_tests"
 
+task test_cpp, "Run all tests - Cpp codegen":
+  test "all_tests", "cpp"
+
 task test_cuda, "Run all tests - Cuda backend with CUBLAS":
   switch("define","cuda")
   cudaSwitches # Unfortunately the "switch" line doesn't also trigger

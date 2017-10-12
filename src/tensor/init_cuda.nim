@@ -86,7 +86,7 @@ proc newCudaTensor[T: SomeReal](shape: varargs[int], layout: OrderType = colMajo
   # for inplace operation that requires column major layout.
 
   result.shape = @shape
-  result.strides = shape_to_strides(result.shape, layout)
+  shape_to_strides(result.shape, layout, result.strides)
   result.offset = 0
   result.data = newCudaSeq[T](result.size)
 

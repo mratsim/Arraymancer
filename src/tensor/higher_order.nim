@@ -85,7 +85,7 @@ template reduceAxisT*[T](t: Tensor[T], axis: int, op: untyped): untyped =
       op
   reduced.unsafeView()
 
-proc map*[T; U: not (ref|string|seq)](t: Tensor[T], f: T -> U): Tensor[U] =
+proc map*[T; U: not (ref|string|seq)](t: Tensor[T], f: T -> U): Tensor[U] {.noInit.} =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
   ## Usage with Nim's ``future`` module:
   ##  .. code:: nim
@@ -107,7 +107,7 @@ proc map*[T; U: not (ref|string|seq)](t: Tensor[T], f: T -> U): Tensor[U] =
   result = newTensorUninit[U](t.shape)
   result.apply2_inline(t, f(y))
 
-proc map*[T; U: ref|string|seq](t: Tensor[T], f: T -> U): Tensor[U] {.noSideEffect.}=
+proc map*[T; U: ref|string|seq](t: Tensor[T], f: T -> U): Tensor[U] {.noInit,noSideEffect.}=
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
   ##
   ##
@@ -166,7 +166,7 @@ proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
 
 proc map2*[T, U; V: not (ref|string|seq)](t1: Tensor[T],
                                           f: (T,U) -> V,
-                                          t2: Tensor[U]): Tensor[V] =
+                                          t2: Tensor[U]): Tensor[V] {.noInit.} =
   ## Apply a binary function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ##
   ## The function is applied on the elements with the same coordinates.
@@ -196,7 +196,7 @@ proc map2*[T, U; V: not (ref|string|seq)](t1: Tensor[T],
 
 proc map2*[T, U; V: ref|string|seq](t1: Tensor[T],
                                     f: (T,U) -> V,
-                                    t2: Tensor[U]): Tensor[V] {.noSideEffect.}=
+                                    t2: Tensor[U]): Tensor[V] {.noInit,noSideEffect.}=
   ## Apply a binary function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ##
   ##
@@ -304,7 +304,7 @@ proc reduce*[T](t: Tensor[T],
 proc reduce*[T](t: Tensor[T],
                 f: (Tensor[T], Tensor[T])-> Tensor[T],
                 axis: int
-                ): Tensor[T] =
+                ): Tensor[T] {.noInit.} =
   ## Chain result = f(result, element) over all elements of the Tensor.
   ##
   ## The starting value is the first element of the Tensor.

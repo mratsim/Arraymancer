@@ -81,7 +81,7 @@ proc size*(t: AnyTensor): int {.noSideEffect, inline.}=
   ##     - The total number of elements it contains
   t.shape.product
 
-proc shape_to_strides*(shape: MetadataArray, layout: OrderType = rowMajor): MetadataArray {.noSideEffect.} =
+proc shape_to_strides*(shape: MetadataArray, layout: OrderType = rowMajor, result: var MetadataArray) {.noSideEffect.} =
   ## Input:
   ##     - A shape (MetadataArray), for example [3,5] for a 3x5 matrix
   ##     - Optionally rowMajor (C layout - default) or colMajor (Fortran)

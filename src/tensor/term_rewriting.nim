@@ -87,14 +87,14 @@ template toTensorReshapeT(oa: typed, shape: varargs[int]): untyped =
   shallowCopy(t.data, data)
   return t
 
-proc toTensorReshape(oa: string, shape: varargs[int]): auto {.noSideEffect.}=
+proc toTensorReshape(oa: string, shape: varargs[int]): auto {.noInit,noSideEffect.}=
   ## Fuse toTensor and reshape in one operation.
   ##
   ## Deal specifically with strings/seq[char]
 
   toTensorReshapeT(oa, shape)
 
-proc toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto {.noSideEffect.}=
+proc toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto {.noInit,noSideEffect.}=
   ## Fuse toTensor and reshape in one operation
   ##
   # Dummy_bugfix param is necessary due to: https://github.com/nim-lang/Nim/issues/6343

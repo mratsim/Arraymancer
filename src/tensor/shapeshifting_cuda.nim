@@ -21,8 +21,8 @@ proc unsafeTranspose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
 
-  result.shape = t.shape.reversed
-  result.strides = t.strides.reversed
+  t.shape.reversed(result.shape)
+  t.strides.reversed(result.strides)
   result.offset = t.offset
   result.data = t.data
 

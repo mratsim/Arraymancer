@@ -24,28 +24,17 @@ template contiguousT*[T](result, t: Tensor[T], layout: OrderType): untyped=
     let t_transposed = t.unsafeTranspose()
     result = t_transposed.map_inline(x)
 
-proc reshape_with_copy*[T](t: Tensor[T], new_shape: MetadataArray): Tensor[T] {.inline.}=
+proc reshape_with_copy*[T](t: Tensor[T], new_shape: MetadataArray): Tensor[T] {.noInit,inline.}=
   # Can't call "tensorCpu" template here for some reason
   result = newTensorUninit[T](new_shape)
   result.apply2_inline(t,y)
 
 template reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]): untyped =
-  let ns = new_shape.toMetadataArray
   when compileOption("boundChecks"):
     check_nocopyReshape t
-    check_reshape(t, ns)
-
-  var matched_dims = 0
-  for shapes in zip(t.shape, ns): # This relies on zip stopping early
-    if shapes[0] != shapes[1]:
-      break
-    inc matched_dims
-
-  result.shape = ns
-
-  # Strides extended for unmatched dimension
-  let ext_strides = result.shape[matched_dims..result.shape.high].shape_to_strides
-  result.strides = t.strides[0..<matched_dims] & ext_strides
+    check_reshape(t, new_shape.toMetadataArray)
+  result.shape.copyFrom(new_shape)
+  shape_to_strides(result.shape, rowMajor, result.strides)
   result.offset = t.offset
 
 template broadcastT*(t: var AnyTensor, shape: varargs[int]|MetadataArray) =
@@ -60,7 +49,7 @@ template broadcastT*(t: var AnyTensor, shape: varargs[int]|MetadataArray) =
     elif t.shape[i] != shape[i]:
       raise newException(ValueError, "The broadcasted size of the tensor must match existing size for non-singleton dimension")
 
-proc exch_dim*(t: Tensor, dim1, dim2: int): Tensor {.noSideEffect.}=
+proc exch_dim*(t: Tensor, dim1, dim2: int): Tensor {.noInit,noSideEffect.}=
   if dim1 == dim2:
     return
 

@@ -16,7 +16,7 @@ import  ./data_structure,
         ./higher_order,
         future, math
 
-proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] =
+proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noInit.} =
   ## Apply type conversion on the whole tensor
   result = t.map(x => x.U)
 
@@ -33,7 +33,7 @@ template makeUniversal*(func_name: untyped) =
   # ``makeUniversal`` does not work when the internal type of the Tensor changes,
   # for example, a function "isEven: int -> bool".
   # Use ``map`` in this case instead instead
-  proc func_name*(t: Tensor): Tensor =
+  proc func_name*(t: Tensor): Tensor {.noInit.} =
     ## Auto-generated universal version of the function.
     ##
     ## The function can be used directly on tensors and will work element-wise.
@@ -48,7 +48,7 @@ template makeUniversalLocal*(func_name: untyped) =
   # ``makeUniversalLocal`` does not work when the internal type of the Tensor changes,
   # for example, a function "isEven: int -> bool".
   # Use ``map`` in this case instead instead
-  proc func_name(t: Tensor): Tensor =
+  proc func_name(t: Tensor): Tensor {.noInit.} =
     t.map_inline(func_name(x))
 
 # Unary functions from Nim math library

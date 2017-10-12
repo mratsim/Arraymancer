@@ -26,7 +26,7 @@ proc atContiguousIndex*[T](t: var Tensor[T], idx: int): var T {.noSideEffect,inl
   ## i.e. as treat the tensor as flattened
   return t.data[t.getContiguousIndex(idx)]
 
-proc unsafeAtAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.inline.} =
+proc unsafeAtAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.noInit,inline.} =
   ## Returns a sliced tensor in the given axis index (unsafe)
   when compileOption("boundChecks"):
     check_axis_index(t, axis, idx)
@@ -35,7 +35,7 @@ proc unsafeAtAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.inline.} =
   result.shape[axis] = 1
   result.offset += result.strides[axis]*idx
 
-proc atAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.inline.} =
+proc atAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.noInit,inline.} =
   ## Returns a sliced tensor in the given axis index
 
   # As contiguous is called to force a copy of the slice

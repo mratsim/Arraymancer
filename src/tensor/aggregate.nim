@@ -25,7 +25,7 @@ proc sum*[T: SomeNumber](t: Tensor[T]): T =
   t.reduceT():
     x+=y
 
-proc sum*[T: SomeNumber](t: Tensor[T], axis: int): Tensor[T] =
+proc sum*[T: SomeNumber](t: Tensor[T], axis: int): Tensor[T] {.noInit,noInit.} =
   ## Compute the sum of all elements of T along an axis
   t.reduceAxisT(axis):
     x+=y
@@ -34,6 +34,6 @@ proc mean*[T: SomeReal](t: Tensor[T]): T {.inline.}=
   ## Compute the mean of all elements of T
   t.sum / t.size.T
 
-proc mean*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.inline.}=
+proc mean*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
   ## Compute the mean of T along an axis
   t.sum(axis) / t.shape[axis].T

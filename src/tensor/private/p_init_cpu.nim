@@ -20,13 +20,13 @@ import  ../../private/nested_containers,
         sequtils
 
 template tensorCpu*[T](out_shape: varargs[int], t: Tensor[T], layout: OrderType = rowMajor): untyped =
-  t.shape = toMetadataArray(out_shape)
-  t.strides = shape_to_strides(t.shape, layout)
+  t.shape.copyFrom(out_shape)
+  shape_to_strides(t.shape, layout, t.strides)
   t.offset = 0
 
 template tensorCpu*[T](out_shape: MetadataArray, t: Tensor[T], layout: OrderType = rowMajor): untyped =
-  t.shape = out_shape
-  t.strides = shape_to_strides(t.shape, layout)
+  t.shape.copyFrom(out_shape)
+  shape_to_strides(t.shape, layout, t.strides)
   t.offset = 0
 
 template toTensorCpu*(s: typed): untyped =

@@ -42,7 +42,7 @@ template slicerT[T](result: AnyTensor[T], slices: varargs[SteppedSlice]): untype
     result.strides[i] *= slice.step
     result.shape[i] = abs((b-a) div slice.step) + 1
 
-proc slicer[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.noSideEffect.}=
+proc slicer[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -53,7 +53,7 @@ proc slicer[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.n
 
 proc slicer[T](t: AnyTensor[T],
                 slices: varargs[SteppedSlice],
-                ellipsis: Ellipsis): AnyTensor[T] {.noSideEffect.}=
+                ellipsis: Ellipsis): AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor, SteppedSlices and Ellipsis
   ## Returns:
   ##    A copy of the original Tensor
@@ -66,7 +66,7 @@ proc slicer[T](t: AnyTensor[T],
 proc slicer[T](t: AnyTensor[T],
                 ellipsis: Ellipsis,
                 slices: varargs[SteppedSlice]
-                ): AnyTensor[T] {.noSideEffect.}=
+                ): AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor, Ellipsis and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -80,7 +80,7 @@ proc slicer[T](t: AnyTensor[T],
                 slices1: varargs[SteppedSlice],
                 ellipsis: Ellipsis,
                 slices2: varargs[SteppedSlice]
-                ): AnyTensor[T] {.noSideEffect.}=
+                ): AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor, Ellipsis and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -92,7 +92,7 @@ proc slicer[T](t: AnyTensor[T],
                             @slices2)
   slicerT(result, full_slices)
 
-proc unsafeSlicer*[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noSideEffect.}=
+proc unsafeSlicer*[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
@@ -107,7 +107,7 @@ proc unsafeSlicer*[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.
 
 proc unsafeSlicer*[T](t: AnyTensor[T],
                       slices: varargs[SteppedSlice],
-                      ellipsis: Ellipsis): AnyTensor[T] {.noSideEffect.}=
+                      ellipsis: Ellipsis): AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor, SteppedSlices and Ellipsis
   ## Returns:
   ##    A view of the original Tensor
@@ -123,7 +123,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
 proc unsafeSlicer*[T](t: AnyTensor[T],
                       ellipsis: Ellipsis,
                       slices: varargs[SteppedSlice]
-                      ): AnyTensor[T] {.noSideEffect.}=
+                      ): AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor, Ellipsis and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
@@ -140,7 +140,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
                       slices1: varargs[SteppedSlice],
                       ellipsis: Ellipsis,
                       slices2: varargs[SteppedSlice]
-                      ): AnyTensor[T] {.noSideEffect.}=
+                      ): AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor, SteppedSlices, Ellipsis and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor

@@ -39,11 +39,11 @@ proc dot*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
 # # Tensor-Tensor linear algebra
 # # shape checks are done in map2 proc
 
-proc `+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] =
+proc `+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Tensor addition
   map2_inline(a, b, x + y)
 
-proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] =
+proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Tensor substraction
   map2_inline(a, b, x - y)
 
@@ -61,19 +61,19 @@ proc `-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
 # #########################################################
 # # Tensor-scalar linear algebra
 
-proc `*`*[T: SomeNumber](a: T, t: Tensor[T]): Tensor[T] =
+proc `*`*[T: SomeNumber](a: T, t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Element-wise multiplication by a scalar
   t.map_inline(x * a)
 
-proc `*`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] =
+proc `*`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
   ## Element-wise multiplication by a scalar
   a * t
 
-proc `/`*[T: SomeReal](t: Tensor[T], a: T): Tensor[T] =
+proc `/`*[T: SomeReal](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
   ## Element-wise division by a float scalar
   t.map_inline(x / a)
 
-proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] =
+proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
   ## Element-wise division by an integer
   t.map_inline(x div a)
 

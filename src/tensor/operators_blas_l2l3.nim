@@ -80,7 +80,7 @@ proc gemm*[T: SomeInteger](
 
   fallbackMM_C_eq_aAB_p_bC(alpha, A, B, beta, C)
 
-proc `*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] =
+proc `*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
   ##
   ## Float operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.

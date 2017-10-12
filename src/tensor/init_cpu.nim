@@ -21,7 +21,7 @@ import  ../private/[functional, nested_containers, sequninit],
         sequtils,
         random
 
-proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.}=
+proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect,noInit,inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
@@ -35,7 +35,7 @@ proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.}=
   result.offset = t.offset
   shallowCopy(result.data, t.data)
 
-proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.} =
+proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -47,7 +47,7 @@ proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.
   tensorCpu(shape, result)
   result.data = newSeqUninit[T](result.size)
 
-proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noSideEffect, inline.} =
+proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -59,7 +59,7 @@ proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noSideEffect, inline
   tensorCpu(shape, result)
   result.data = newSeqUninit[T](result.size)
 
-proc newTensor*[T](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.} =
+proc newTensor*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -70,7 +70,7 @@ proc newTensor*[T](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.} =
   tensorCpu(shape, result)
   result.data = newSeq[T](result.size)
 
-proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noSideEffect, inline.} =
+proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor filled with the given value
   ## Input:
   ##      - Shape of the Tensor
@@ -94,7 +94,7 @@ proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect
   # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
   toTensorCpu(s)
 
-proc unsafeToTensor*[T: SomeNumber](data: seq[T]): Tensor[T] {.noSideEffect.} =
+proc unsafeToTensor*[T: SomeNumber](data: seq[T]): Tensor[T] {.noInit,noSideEffect.} =
   ## Convert a seq to a Tensor, sharing the seq data
   ## Input:
   ##      - A seq with the tensor data
@@ -111,7 +111,7 @@ proc toTensor*(s:string): auto {.noSideEffect.} =
   toTensorCpu(s)
 
 # TODO add tests for randomTensor
-proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noSideEffect, inline.} =
+proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -122,7 +122,7 @@ proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noSideEffect, inlin
   tensorCpu(shape, result)
   result.data = newSeq[T](result.size)
 
-proc zeros*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noSideEffect, inline.} =
+proc zeros*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -133,7 +133,7 @@ proc zeros*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noSideEffect, inli
   tensorCpu(shape, result)
   result.data = newSeq[T](result.size)
 
-proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.} =
+proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
   ## Input:
   ##      - Shape of the Tensor
@@ -142,7 +142,7 @@ proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noSideEffect, inline.
   ##      - A zero-ed Tensor of the same shape
   return zeros[T](t.shape)
 
-proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noSideEffect,inline.} =
+proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect,inline.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -152,7 +152,7 @@ proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noSideEffect,inline.
   tensorCpu(shape, result)
   result.data = newSeqWith(result.size, 1.T)
 
-proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noSideEffect,inline.} =
+proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit,noSideEffect,inline.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -162,7 +162,7 @@ proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noSideEffect,inline
   tensorCpu(shape, result)
   result.data = newSeqWith(result.size, 1.T)
 
-proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noSideEffect, inline.} =
+proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
   ## and filled with 1
   ## Input:
@@ -175,7 +175,7 @@ template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typ
   tensorCpu(shape, t)
   t.data = newSeqWith(t.size, T(random(max_or_range))) # Due to automatic converter (float32 -> float64), we must force T #68
 
-proc randomTensor*[T:SomeReal](shape: varargs[int], max: T): Tensor[T] =
+proc randomTensor*[T:SomeReal](shape: varargs[int], max: T): Tensor[T] {.noInit.} =
   ## Creates a new float Tensor filled with values between 0 and max.
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
@@ -187,7 +187,7 @@ proc randomTensor*[T:SomeReal](shape: varargs[int], max: T): Tensor[T] =
   ##      - A tensor of the input shape filled with random value between 0 and max input value
   randomTensorCpu(result, shape, max)
 
-proc randomTensor*(shape: varargs[int], max: int): Tensor[int] =
+proc randomTensor*(shape: varargs[int], max: int): Tensor[int] {.noInit.} =
   ## Creates a new int Tensor filled with values between 0 and max-1.
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
@@ -199,7 +199,7 @@ proc randomTensor*(shape: varargs[int], max: int): Tensor[int] =
   ##      - A tensor of the input shape filled with random value between 0 and max input value (excluded)
   randomTensorCpu(result, shape, max)
 
-proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] =
+proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] {.noInit.} =
   ## Creates a new int Tensor filled with values in the Slice range.
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``

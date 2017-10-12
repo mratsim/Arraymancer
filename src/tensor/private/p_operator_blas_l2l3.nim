@@ -153,7 +153,7 @@ proc blasMM_C_eq_aAB_p_bC*[T: SomeReal](
           else: M
 
   # General Matrix Multiply from nimblas.
-  gemm( rowMajor,
+  gemm( order_C,
         transpose_A, transpose_B,
         M, N, K,
         alpha, a.get_data_ptr, lda,

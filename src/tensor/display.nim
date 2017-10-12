@@ -87,6 +87,7 @@ proc disp3d(t: Tensor): string =
 
   var buffer = empty.repeat(t.shape[1]).toTensor()
 
+  {.push hint[Pattern]: off.} # Remove Pattern hint for toTensor.reshape
   for t0 in t.axis(0):
     buffer = buffer.concat(
               sep.repeat(t0.shape[1]).toTensor().reshape(t.shape[1],1),
@@ -106,6 +107,7 @@ proc disp4d(t: Tensor): string =
   # First create seq of tensor to concat horizontally
   var hbuffer = newSeqWith(t.shape[0], empty.repeat(t.shape[2]).toTensor())
 
+  {.push hint[Pattern]: off.} # Remove Pattern hint for toTensor.reshape
   var i = 0
   for s0 in t.axis(0):
     let s0r = s0.reshape(t.shape[1],t.shape[2],t.shape[3])
@@ -116,6 +118,7 @@ proc disp4d(t: Tensor): string =
                 axis = 1
                 )
     inc i
+
 
   # Then concat vertically
   var vbuffer = empty.repeat(hbuffer[0].shape[1]).toTensor.reshape(1, hbuffer[0].shape[1])

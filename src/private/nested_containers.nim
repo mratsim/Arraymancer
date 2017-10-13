@@ -21,7 +21,10 @@ proc shape*[T: not char](s: openarray[T], parent_shape: seq[int] = @[]): seq[int
   ## The second argument "shape" is used for recursive call on nested arrays/sequences
   # Dimension check is using only the first nested element so further checking
   # must be one to confirm that the total number of elements match the shape.
-  result = parent_shape & s.len
+
+  result = parent_shape # Note result = parent_shape & s.len breaks at a random but deterministic point with C++ backend
+  result.add(s.len)     # on the full test suite
+
   when (T is seq|array):
     result = shape(s[0], result)
 

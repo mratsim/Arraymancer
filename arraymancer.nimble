@@ -49,6 +49,36 @@ template cudaSwitches() =
 when defined(cuda):
   cudaSwitches
 
+template mkl_threadedSwitches() =
+  switch("define","openmp")
+  switch("stackTrace","off")
+  switch("define","blas=mkl_intel_lp64")
+  switch("clibdir", "/opt/intel/mkl/lib/intel64")
+  switch("passl", "/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a")
+  switch("passl", "-lmkl_core")
+  switch("passl", "-lmkl_gnu_thread")
+  switch("passl", "-lgomp")
+  switch("dynlibOverride","mkl_intel_lp64")
+
+template mkl_singleSwitches() =
+  switch("define","blas=mkl_intel_lp64")
+  switch("clibdir", "/opt/intel/mkl/lib/intel64")
+  switch("passl", "/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a")
+  switch("passl", "-lmkl_core")
+  switch("passl", "-lmkl_sequential")
+  switch("dynlibOverride","mkl_intel_lp64")
+
+template cuda_mkl_openmp() =
+  mkl_threadedSwitches()
+  switch("cincludes", "/opt/cuda/include")
+  switch("cc", "gcc") # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
+  switch("gcc.exe", "/opt/cuda/bin/nvcc")
+  switch("gcc.linkerexe", "/opt/cuda/bin/nvcc")
+  switch("gcc.cpp.exe", "/opt/cuda/bin/nvcc")
+  switch("gcc.cpp.linkerexe", "/opt/cuda/bin/nvcc")
+  switch("gcc.options.always", "-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native")
+  switch("gcc.cpp.options.always", "-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native")
+
 ########################################################
 # Optimization
 
@@ -74,21 +104,27 @@ proc test(name: string, lang: string = "c") =
   switch("out", ("./bin/" & name))
   setCommand lang, "tests/" & name & ".nim"
 
+task all_tests, "Run all tests - Intel MKL + OpenMP + Cuda + march=native + release":
+  cuda_mkl_openmp
+  switch("define","cuda")
+  cuda_mkl_openmp
+  test "full_test_suite", "cpp"
+
 task test, "Run all tests - Default BLAS":
-  test "all_tests"
+  test "tests_cpu"
 
 task test_cpp, "Run all tests - Cpp codegen":
-  test "all_tests", "cpp"
+  test "tests_cpu", "cpp"
 
 task test_cuda, "Run all tests - Cuda backend with CUBLAS":
   switch("define","cuda")
-  cudaSwitches # Unfortunately the "switch" line doesn't also trigger
-               # the "when defined(cuda)" part of this nimble file
-               # hence the need to call cudaSwitches explicitly
-  test "all_tests_cuda", "cpp"
+  cudaSwitches  # Unfortunately the "switch" line doesn't also trigger
+                # the "when defined(cuda)" part of this nimble file
+                # hence the need to call cudaSwitches explicitly
+  test "tests_cuda", "cpp"
 
 task test_deprecated, "Run all tests on deprecated static[Backend] procs":
-  test "all_tests_deprecated"
+  test "tests_cpu_deprecated"
 
 task test_openblas, "Run all tests - OpenBLAS":
   ## Should work but somehow Nim doesn't find libopenblas.dylib on MacOS
@@ -96,45 +132,32 @@ task test_openblas, "Run all tests - OpenBLAS":
     switch("define","blas=openblas")
     switch("clibdir", "/usr/local/opt/openblas/lib")
     switch("cincludes", "/usr/local/opt/openblas/include")
-  test "all_tests"
+  test "tests_cpu"
 
 task test_blis, "Run all tests - BLIS":
   switch("define","blis")
-  test "all_tests"
+  test "tests_cpu"
 
 task test_native, "Run all tests - march=native":
   switch("define","native")
-  test "all_tests"
+  test "tests_cpu"
 
 task test_openmp, "Run all tests - OpenMP":
   switch("define","openmp")
   switch("stackTrace","off") # stacktraces interfere with OpenMP
-  test "all_tests"
+  test "tests_cpu"
 
 task test_mkl, "Run all tests - Intel MKL - single threaded":
-  switch("define","blas=mkl_intel_lp64")
-  switch("clibdir", "/opt/intel/mkl/lib/intel64")
-  switch("passl", "/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a")
-  switch("passl", "-lmkl_core")
-  switch("passl", "-lmkl_sequential")
-  switch("dynlibOverride","mkl_intel_lp64")
-  test "all_tests"
+  mkl_singleSwitches
+  test "tests_cpu"
 
 task test_mkl_omp, "Run all tests - Intel MKL + OpenMP":
-  switch("define","openmp")
-  switch("stackTrace","off")
-  switch("define","blas=mkl_intel_lp64")
-  switch("clibdir", "/opt/intel/mkl/lib/intel64")
-  switch("passl", "/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a")
-  switch("passl", "-lmkl_core")
-  switch("passl", "-lmkl_gnu_thread")
-  switch("passl", "-lgomp")
-  switch("dynlibOverride","mkl_intel_lp64")
-  test "all_tests"
+  mkl_threadedSwitches
+  test "tests_cpu"
 
 task test_release, "Run all tests - Release mode":
   switch("define","release")
-  test "all_tests"
+  test "tests_cpu"
 
 task gen_doc, "Generate Arraymancer documentation":
   switch("define", "doc")

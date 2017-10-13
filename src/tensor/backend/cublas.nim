@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import nimcuda/[nimcuda, cublas_v2, cublas_api]
+export nimcuda, cublas_v2, cublas_api
+
+import ./cuda_global_state
+
 # #####################################################
 # Redefinition of imported CUDA proc with standard name
 # and use of streams for parallel async processing
@@ -19,7 +24,7 @@
 # L1 BLAS
 
 # Vector copy
-proc cublas_copy[T: SomeReal](
+proc cublas_copy*[T: SomeReal](
   n: int; x: ptr T; incx: int;
   y: ptr T; incy: int) {.inline.}=
 
@@ -33,7 +38,7 @@ proc cublas_copy[T: SomeReal](
     raise newException(ValueError, "Unreachable")
 
 # Vector dot product
-proc cublas_dot[T: SomeReal](
+proc cublas_dot*[T: SomeReal](
   n: int;
   x: ptr T; incx: int;
   y: ptr T; incy: int;
@@ -49,7 +54,7 @@ proc cublas_dot[T: SomeReal](
     raise newException(ValueError, "Unreachable")
 
 # Vector addition
-proc cublas_axpy[T: SomeReal](
+proc cublas_axpy*[T: SomeReal](
   n: int;
   alpha: T;
   x: ptr T; incx: int;
@@ -72,7 +77,7 @@ proc cublas_axpy[T: SomeReal](
     raise newException(ValueError, "Unreachable")
 
 # Scalar multiplication
-proc cublas_scal[T: SomeReal](
+proc cublas_scal*[T: SomeReal](
   n: int; alpha: T;
   x: ptr T; incx: int) {.inline.}=
 
@@ -92,7 +97,7 @@ proc cublas_scal[T: SomeReal](
 
 # BLAS extension (L1-like)
 # Matrix addition (non-standard BLAS)
-proc cublas_geam[T: SomeReal](
+proc cublas_geam*[T: SomeReal](
   transa, transb: cublasOperation_t;
   m, n: int;
   alpha: T; A: ptr T; lda: int;
@@ -125,7 +130,7 @@ proc cublas_geam[T: SomeReal](
     raise newException(ValueError, "Unreachable")
 
 # L2 BLAS
-proc cublas_gemv[T: SomeReal](
+proc cublas_gemv*[T: SomeReal](
   trans: cublasOperation_t, m, n: int,
   alpha: T, A: ptr T, lda: int,
   x: ptr T, incx: int,
@@ -153,9 +158,11 @@ proc cublas_gemv[T: SomeReal](
                 trans, m.cint, n.cint,
                 addr al, A, lda.cint, x, incx.cint,
                 addr be, y, incy.cint)
+  else:
+    raise newException(ValueError, "Unreachable")
 
 # L3 BLAS
-proc cublas_gemm[T: SomeReal](
+proc cublas_gemm*[T: SomeReal](
   transa, transb: cublasOperation_t,
   m, n, k: int,
   alpha: T, A: ptr T, lda: int,
@@ -187,15 +194,16 @@ proc cublas_gemm[T: SomeReal](
                 addr al, A, lda.cint,
                 B, ldb.cint,
                 addr be, C, ldc.cint)
+  else:
+    raise newException(ValueError, "Unreachable")
 
-
-proc cublas_gemmStridedBatched[T: SomeReal](
+proc cublas_gemmStridedBatched*[T: SomeReal](
   transa, transb: cublasOperation_t;
   m, n, k: int;
   alpha: T; A: ptr T; lda: int; strideA: int;
   B: ptr T; ldb: int; strideB: int;
   beta: T; C: ptr T; ldc: int; strideC: int;
-  batchCount: int) {.inline, used.} =
+  batchCount: int) {.inline.} =
   # C + i*strideC = αop(A + i*strideA)op(B + i*strideB)+β(C + i*strideC),
   # for i  ∈ [ 0 , b a t c h C o u n t − 1 ]
   # A, B, C: matrices
@@ -229,3 +237,5 @@ proc cublas_gemmStridedBatched[T: SomeReal](
       addr be, C, ldc.cint, strideC,
       batchCount.cint
     )
+  else:
+    raise newException(ValueError, "Unreachable")

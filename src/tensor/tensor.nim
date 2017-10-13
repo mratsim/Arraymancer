@@ -66,22 +66,6 @@ export  metadataArray,
         shortcuts,
         exporting
 
-
 when defined(cuda):
-  # Nimcuda poses issues with Nim docgen
-  import nimcuda/[cuda_runtime_api, driver_types, cublas_api, cublas_v2, nimcuda]
-
-when defined(cuda) or defined(doc):
-  include ./backend/cuda_global_state,
-          ./backend/cuda,
-          ./backend/cublas,
-          # ./backend/cublas_helper_proc,
-          ./init_cuda,
-          ./accessors_cuda,
-          ./display_cuda,
-          ./elementwise_cuda.nim,
-          ./elementwise_glue_cuda.nim,
-          ./higher_order_cuda,
-          ./operators_blas_l1_cuda,
-          ./operators_blas_l2l3_cuda,
-          ./shapeshifting_cuda
+  import ./tensor_cuda
+  export tensor_cuda

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import nimcuda/[nimcuda, cuda_runtime_api, cublas_v2, cublas_api]
 
 # ###################################################
 # Global Cuda and CuBLAS state
@@ -19,12 +20,12 @@
 # CuBLAS stream for parallel async processing on GPU
 # Computations/Memcpy on different streams are done in simultaneously
 # Streams are also necessary for async Cuda procs like cudaMemcpyAsync
-var defaultStream: cublas_api.cudaStream_t
+var defaultStream*: cudaStream_t
 check cudaStreamCreate(addr defaultStream)
 
 # CuBLAS handle
 # Note: it prevents {.noSideEffect.} in all CuBLAS proc :/
-var defaultHandle: cublasHandle_t
+var defaultHandle*: cublasHandle_t
 check cublasCreate(addr defaultHandle)
 
 proc cudaRelease() {.noconv.}=

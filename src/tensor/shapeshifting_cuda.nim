@@ -12,6 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ./private/p_kernels_interface_cuda,
+       ./private/p_init_cuda,
+       ./private/p_shapeshifting,
+       ./data_structure
+
+include ./private/incl_accessors_cuda,
+        ./private/incl_higher_order_cuda,
+        ./private/incl_kernels_cuda
+
 proc unsafeTranspose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   ## Transpose a Tensor.
   ##

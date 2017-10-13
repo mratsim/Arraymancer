@@ -1,4 +1,4 @@
-# Copyright 2017 Mamy André-Ratsimbazafy
+# Copyright 2017 the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,13 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../src/arraymancer,
-        ./tensors/test_init_deprecated,
-        ./tensors/test_comparison_deprecated,
-        ./tensors/test_accessors_deprecated,
-        ./tensors/test_accessors_slicer_deprecated,
-        ./tensors/test_display_deprecated,
-        ./tensors/test_operators_blas_deprecated,
-        ./tensors/test_aggregate_deprecated,
-        ./tensors/test_shapeshifting_deprecated,
-        ./tensors/test_ufunc_deprecated
+import ./tests_cpu,
+       ./tests_cuda

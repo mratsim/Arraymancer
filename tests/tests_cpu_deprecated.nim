@@ -12,8 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Please compile with -d:cuda switch
 import ../src/arraymancer,
-        ./tensor/test_operators_blas_cuda,
-        ./tensor/test_accessors_slicer_cuda,
-        ./tensor/test_shapeshifting_cuda
+        ./tensor/test_init_deprecated,
+        ./tensor/test_comparison_deprecated,
+        ./tensor/test_accessors_deprecated,
+        ./tensor/test_accessors_slicer_deprecated,
+        ./tensor/test_display_deprecated,
+        ./tensor/test_operators_blas_deprecated,
+        ./tensor/test_aggregate_deprecated,
+        ./tensor/test_shapeshifting_deprecated,
+        ./tensor/test_ufunc_deprecated

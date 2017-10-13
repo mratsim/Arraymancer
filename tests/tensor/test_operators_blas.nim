@@ -223,7 +223,10 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     check: a[0..1, 0..1] + a_t[0..1, 0..1] == [[2.0, 6], [6.0, 10]].toTensor()
     check: a[1..2, 1..2] - a_t[1..2, 1..2] == [[0.0, -2], [2.0, 0]].toTensor()
 
-  when compileOption("boundChecks") and not defined(openmp):
+  when compileOption("boundChecks") and not defined(openmp) and not defined(cpp):
+    # OpenMP or cpp backend are crashing the test suite.
+    # OpenMP: always
+    # C++: only if all tests are run together
     test "Addition-Substraction - Bounds checking":
       let a = [[1.0,2,3], [4.0,5,6], [7.0,8,9]].toTensor()
       let a_t = a.transpose()
@@ -233,58 +236,58 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
       expect(ValueError):
         discard a - a_t[1..2,1..2]
-
   else:
-    echo "Bound-checking is disabled or OpenMP is used. The addition bounds-check checking test has been skipped."
+    echo "Bound-checking is disabled or OpenMP or C++ is used. The addition bounds-check checking test has been skipped."
 
-  # test "Integer Matrix-Vector Multiplication fallback":
-  #   let a = [[1,2,3],
-  #            [4,5,6],
-  #            [7,8,9]].toTensor()
-  #   let x = [2,1,3].toTensor()
+  test "Integer Matrix-Vector Multiplication fallback":
+    let a = [[1,2,3],
+             [4,5,6],
+             [7,8,9]].toTensor()
+    let x = [2,1,3].toTensor()
 
-  #   let ax = [13,31,49].toTensor()
+    let ax = [13,31,49].toTensor()
 
-  #   check: a * x == ax
+    check: a * x == ax
 
-  #   # example from http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%22-87%22,%2244%22,%2213%22,%221%22],[%228%22,%22-16%22,%228%22,%2291%22],[%226%22,%22-2%22,%2256%22,%22-56%22],[%2282%22,%2270%22,%2234%22,%2223%22],[%2252%22,%22-70%22,%220%22,%2253%22],[%2235%22,%2294%22,%2239%22,%2236%22]]&matrix2=[[%22-91%22],[%2281%22],[%2269%22],[%22-75%22]]&operator=*
+    # example from http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%22-87%22,%2244%22,%2213%22,%221%22],[%228%22,%22-16%22,%228%22,%2291%22],[%226%22,%22-2%22,%2256%22,%22-56%22],[%2282%22,%2270%22,%2234%22,%2223%22],[%2252%22,%22-70%22,%220%22,%2253%22],[%2235%22,%2294%22,%2239%22,%2236%22]]&matrix2=[[%22-91%22],[%2281%22],[%2269%22],[%22-75%22]]&operator=*
 
-  #   let b = [[-87, 44, 13, 1],
-  #            [8, -16, 8, 91],
-  #            [6, -2, 56, -56],
-  #            [82, 70, 34, 23],
-  #            [52, -70, 0, 53],
-  #            [35, 94, 39, 36]].toTensor()
+    let b = [[-87, 44, 13, 1],
+             [8, -16, 8, 91],
+             [6, -2, 56, -56],
+             [82, 70, 34, 23],
+             [52, -70, 0, 53],
+             [35, 94, 39, 36]].toTensor()
 
-  #   let u = [-91, 81, 69, -75].toTensor()
+    let u = [-91, 81, 69, -75].toTensor()
 
-  #   let bu = [12303, -8297, 7356, -1171, -14377, 4420].toTensor()
+    let bu = [12303, -8297, 7356, -1171, -14377, 4420].toTensor()
 
-  #   check: b * u == bu
+    check: b * u == bu
 
-  #   # Now we check with non-contiguous slices
-  #   # [[53, -70]    *  [[69]
-  #   #  [-56, -2]]   *   [-91]]
-  #   # http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%2253%22,%22-70%22],[%22-56%22,%22-2%22]]&matrix2=[[%2269%22],[%2281%22]]&operator=*
+    # Now we check with non-contiguous slices
+    # [[53, -70]    *  [[69]
+    #  [-56, -2]]   *   [-91]]
+    # http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%2253%22,%22-70%22],[%22-56%22,%22-2%22]]&matrix2=[[%2269%22],[%2281%22]]&operator=*
 
-  #   let b2 = b.unsafeSlice(4..2|-2, 3..1|-2)
+    let b2 = b.unsafeSlice(4..2|-2, 3..1|-2)
 
-  #   let u2 = u.unsafeSlice(2..0|-2)
+    let u2 = u.unsafeSlice(2..0|-2)
 
-  #   check: b2*u2 == [10027, -3682].toTensor()
+    check: b2*u2 == [10027, -3682].toTensor()
 
-  #   # Now with optimized C contiguous slices
-  #   #  [[-56, -2]   *   [[69]
-  #   #   [23, 70]]  *   [-91]]
-  #   # http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%2253%22,%22-70%22],[%22-56%22,%22-2%22]]&matrix2=[[%2269%22],[%2281%22]]&operator=*
+    # Now with optimized C contiguous slices
+    #  [[-56, -2]   *   [[69]
+    #   [23, 70]]  *   [-91]]
+    # http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%2253%22,%22-70%22],[%22-56%22,%22-2%22]]&matrix2=[[%2269%22],[%2281%22]]&operator=*
 
 
 
-  #   let b3 = b.unsafeSlice(2..3, 3..1|-2)
+    let b3 = b.unsafeSlice(2..3, 3..1|-2)
 
-  #   check: b3*u2 == [-3682, -4783].toTensor
+    check: b3*u2 == [-3682, -4783].toTensor
 
   test "Integer Matrix-Matrix Multiplication fallback":
+
     ## TODO: test with slices
     let a = [[1,2,3],
              [4,5,6]].toTensor()

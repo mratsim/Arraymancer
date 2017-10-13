@@ -18,6 +18,7 @@ import  ../../private/[nested_containers, ast_utils],
         ./p_accessors_macros_read,
         ./p_checks,
         ./p_accessors,
+        ./p_accessors_cpp,
         sequtils, macros
 
 # #########################################################################
@@ -28,8 +29,13 @@ import  ../../private/[nested_containers, ast_utils],
 
 template slicerMutT_val[T](t: var Tensor[T], slices: varargs[SteppedSlice], val: T): untyped =
   var sliced = t.unsafeSlicer(slices)
-  for old_val in sliced.mitems:
-    old_val = val
+  when not defined(cpp):
+    for old_val in sliced.mitems:
+      old_val = val
+  else: ## C++ workaround for mitems codegen
+    var data = sliced.dataArray
+    for offset, _ in sliced.offsetValues:
+      data[offset] = val
 
 proc slicerMut*[T](t: var Tensor[T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
   ## Assign the value to the whole slice
@@ -87,8 +93,15 @@ template slicerMutT_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: o
   # Unfortunately we need to loop twice over data/oa
   # Reason 1: we can't check the iterator length before consuming it
   # Reason 2: we can't capture an open array, i.e. do zip(sliced.real_indices, flatClosureIter(oa))
-  for i, x in sliced.menumerate:
-    x = data[i]
+  when not defined(cpp):
+    for i, x in sliced.menumerate:
+      x = data[i]
+  else: # C++ codegen workaround
+    var i = 0
+    var sliced_data = sliced.dataArray
+    for offset, _ in offsetValues(sliced):
+      sliced_data[offset] = data[i]
+      inc i
 
 
 proc slicerMut*[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) {.noSideEffect.}=
@@ -140,8 +153,13 @@ template slicerMutT_T[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Te
   when compileOption("boundChecks"):
     check_shape(sliced, t2)
 
-  for x, val in mzip(sliced, t2):
-    x = val
+  when not defined(cpp):
+    for x, val in mzip(sliced, t2):
+      x = val
+  else:
+    var data = sliced.dataArray
+    for offset, _, val in zipOV(sliced, t2):
+      data[offset] = val
 
 proc slicerMut*[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T]) {.noSideEffect.}=
   ## Assign the value to the whole slice

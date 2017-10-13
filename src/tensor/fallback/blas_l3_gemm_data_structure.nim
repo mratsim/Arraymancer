@@ -15,7 +15,17 @@
 
 # Custom data structure to force alignment of the buffer arrays
 
-proc assume_aligned[T](data: ptr T, n: csize): ptr T {.importc: "__builtin_assume_aligned",noDecl.}
+proc builtin_assume_aligned[T](data: ptr T, n: csize): ptr T {.importc: "__builtin_assume_aligned",noDecl.}
+
+when defined(cpp):
+  proc static_cast[T](input: T): T
+    {.importcpp: "static_cast<'0>(@)".}
+
+template assume_aligned[T](data: ptr T, n: csize): ptr T =
+  when not defined(cpp):
+    builtin_assume_aligned(data, n)
+  else: # builtin_assume_aligned returns void pointers, this does not compile in C++, they must all be typed
+    static_cast builtin_assume_aligned(data, n)
 
 type
   BlasBufferArray[T]  = object

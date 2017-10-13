@@ -72,7 +72,9 @@ proc disp2d(t: Tensor): string {.noSideEffect.} =
   # Add a position index to each value in the Tensor.
   var indexed_data: seq[(string,int)] = @[]
   for i, value in t.enumerate:
-    indexed_data.add(($value,i+1))
+    indexed_data.add(($value,i+1))  # TODO Note: the $conversion is unstable if the whole test suite is done.
+                                    # it fails at the test_load_openmp.
+                                    # if done alone there is no issue
 
   # Create a closure to apply the boundaries transformation for the specific input
   proc curry_bounds(tup: (string,int)): string {.noSideEffect.}= t.bounds_display(tup)

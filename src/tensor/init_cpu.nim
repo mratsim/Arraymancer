@@ -19,7 +19,8 @@ import  ../private/[functional, nested_containers, sequninit],
         ./data_structure,
         nimblas,
         sequtils,
-        random
+        random,
+        math
 
 proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect,noInit,inline.}=
   ## Input:
@@ -210,3 +211,31 @@ proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] {.noInit.
   ## Result:
   ##      - A tensor of the input shape filled with random value in the slice range
   randomTensorCpu(result, shape, slice)
+
+proc randomNormal(mean = 0.0, std = 1.0): float =
+  ## Random number in the normal distribution using Box-Muller method
+  ## See https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
+  var valid {.global.} = false
+  var x {.global.}, y {.global.}, rho {.global.}: float
+  if not valid:
+    x = random(1.0)
+    y = random(1.0)
+    rho = sqrt(-2.0 * ln(1.0 - y))
+    valid = true
+    return rho*cos(2.0*PI*x)*std+mean
+  else:
+    valid = false
+    return rho*sin(2.0*PI*x)*std+mean
+
+proc randomNormalTensor*[T:SomeReal](shape: varargs[int], mean:T = 0, std:T = 1): Tensor[T] {.noInit.} =
+  ## Creates a new Tensor filled with values in the normal distribution
+  ##
+  ## Random seed can be set by importing ``random`` and ``randomize(seed)``
+  ## Input:
+  ##      - a shape
+  ##      - the mean (default 0)
+  ##      - the standard deviation (default 1)
+  ## Result:
+  ##      - A tensor of the input shape filled with random values in the normal distribution
+  tensorCpu(shape, result)
+  result.data = newSeqWith(result.size, T(randomNormal(mean.float, std.float)))

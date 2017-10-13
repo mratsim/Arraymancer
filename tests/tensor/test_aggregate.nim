@@ -84,14 +84,14 @@ suite "Testing aggregation functions":
 
   test "Standard Deviation":
     let a = [-3.0,-2,-1,0,1,2,3].toTensor()
-    check: abs(a.standard_deviation() - 2.1602468994693) < 1e-8
+    check: abs(a.std() - 2.1602468994693) < 1e-8
     let b = [[1.0,2,3,-4],[0.0,4,-2,5]].toTensor()
     check: abs(
-      b.standard_deviation(0) -
+      b.std(0) -
       [[0.7071067811865476,1.414213562373095,
         3.535533905932738,6.363961030678928]].toTensor()
     ).abs().sum() < 1e-8
     check: abs(
-      b.standard_deviation(1) -
+      b.std(1) -
       [[3.109126351029605],[3.304037933599835]].toTensor()
     ).abs().sum() < 1e-8

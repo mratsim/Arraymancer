@@ -110,12 +110,12 @@ proc variance*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
     x += y
   result /= (t.shape[axis]-1).T
 
-proc standard_deviation*[T: SomeReal](t: Tensor[T]): T {.inline.} =
+proc std*[T: SomeReal](t: Tensor[T]): T {.inline.} =
   ## Compute the standard deviation of all elements
   ## The normalization is by the (n-1), like in the formal definition
   sqrt(t.variance())
 
-proc standard_deviation*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.} =
+proc std*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.} =
   ## Compute the standard deviation of all elements
   ## The normalization is by the (n-1), like in the formal definition
   sqrt(t.variance(axis))

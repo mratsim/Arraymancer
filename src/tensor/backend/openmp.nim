@@ -15,8 +15,9 @@
 import ./global_config
 
 when defined(openmp):
-  {.passC: "-fopenmp".}
-  {.passL: "-fopenmp".}
+  when not defined(cuda): # For cuda, OpenMP flags must be passeed
+    {.passC: "-fopenmp".} # behind -Xcompiler -fopenmp
+    {.passL: "-fopenmp".}
 
   {. pragma: omp, header:"omp.h" .}
 

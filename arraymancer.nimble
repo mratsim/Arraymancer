@@ -76,8 +76,8 @@ template cuda_mkl_openmp() =
   switch("gcc.linkerexe", "/opt/cuda/bin/nvcc")
   switch("gcc.cpp.exe", "/opt/cuda/bin/nvcc")
   switch("gcc.cpp.linkerexe", "/opt/cuda/bin/nvcc")
-  switch("gcc.options.always", "-arch=sm_61 --x cu -Xcompiler -fopenmp -fno-strict-aliasing")
-  switch("gcc.cpp.options.always", "-arch=sm_61 --x cu -Xcompiler -fopenmp -fpermissive") # Note the -fopenmp
+  switch("gcc.options.always", "-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native")
+  switch("gcc.cpp.options.always", "-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native")
 
 ########################################################
 # Optimization
@@ -103,6 +103,12 @@ proc test(name: string, lang: string = "c") =
   --nimcache: "nimcache"
   switch("out", ("./bin/" & name))
   setCommand lang, "tests/" & name & ".nim"
+
+task all_tests, "Run all tests - Intel MKL + OpenMP + Cuda + march=native + release":
+  cuda_mkl_openmp
+  switch("define","cuda")
+  cuda_mkl_openmp
+  test "full_test_suite", "cpp"
 
 task test, "Run all tests - Default BLAS":
   test "tests_cpu"

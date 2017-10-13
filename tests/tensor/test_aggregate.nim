@@ -21,10 +21,8 @@ suite "Testing aggregation functions":
           [6, 7, 8],
           [9, 10, 11]].toTensor()
 
-  test "Sum all elements":
+  test "Sum":
     check: t.sum == 66
-
-  test "Sum over axis":
     let row_sum = [[18, 22, 26]].toTensor()
     let col_sum = [[3],
                    [12],
@@ -33,11 +31,9 @@ suite "Testing aggregation functions":
     check: t.sum(axis=0) == row_sum
     check: t.sum(axis=1) == col_sum
 
-    ## TODO: 3D axis sum
-  test "Mean of all elements":
+  test "Mean":
     check: t.astype(float).mean == 5.5 # Note: may fail due to float rounding
 
-  test "Mean over axis":
     let row_mean = [[4.5, 5.5, 6.5]].toTensor()
     let col_mean = [[1.0],
                     [4.0],
@@ -45,6 +41,14 @@ suite "Testing aggregation functions":
                     [10.0]].toTensor()
     check: t.astype(float).mean(axis=0) == row_mean
     check: t.astype(float).mean(axis=1) == col_mean
+
+  test "Product":
+    let a = [[1,2,4],[8,16,32]].toTensor()
+    check: t.product() == 0
+    check: a.product() == 32768
+    check: a.astype(float).product() == 32768.0
+    check: a.product(0) == [[8,32,128]].toTensor()
+    check: a.product(1) == [[8],[4096]].toTensor()
 
   test "Min":
     let a = [2,-1,3,-3,5,0].toTensor()

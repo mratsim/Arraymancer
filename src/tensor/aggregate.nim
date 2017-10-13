@@ -31,6 +31,16 @@ proc sum*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit,noInit.} =
   t.reduce_axis_inline(axis):
     x+=y
 
+proc product*[T](t: Tensor[T]): T {.inline.}=
+  ## Compute the product of all elements
+  t.reduce_inline():
+    x*=y
+
+proc product*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
+  ## Compute the product along an axis
+  t.reduce_axis_inline(axis):
+    x.melwise_mul(y)
+
 proc mean*[T: SomeInteger](t: Tensor[T]): T {.inline.}=
   ## Compute the mean of all elements
   t.sum div t.size.T

@@ -13,7 +13,8 @@
 # limitations under the License.
 
 import  ./data_structure,
-        ./higher_order
+        ./higher_order,
+        ./ufunc
 
 # Non-operator math functions
 
@@ -45,3 +46,9 @@ proc abs*[T](t: Tensor[T]): Tensor[T] {.noInit.} =
 proc mabs*[T](t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Return a Tensor with absolute values of all elements
   t.apply_inline(abs(x))
+
+proc square*[T](x: T): T {.inline.} =
+  ## Return x*x
+  x*x
+
+makeUniversal(square)

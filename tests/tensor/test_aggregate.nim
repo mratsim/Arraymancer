@@ -45,3 +45,49 @@ suite "Testing aggregation functions":
                     [10.0]].toTensor()
     check: t.astype(float).mean(axis=0) == row_mean
     check: t.astype(float).mean(axis=1) == col_mean
+
+  test "Min":
+    let a = [2,-1,3,-3,5,0].toTensor()
+    check: a.min() == -3
+    check: a.astype(float32).min() == -3.0f
+
+    let b = [[1,2,3,-4],[0,4,-2,5]].toTensor()
+    check: b.min(0) == [[0,2,-2,-4]].toTensor()
+    check: b.min(1) == [[-4],[-2]].toTensor()
+    check: b.astype(float32).min(0) == [[0.0f,2,-2,-4]].toTensor()
+    check: b.astype(float32).min(1) == [[-4.0f],[-2.0f]].toTensor()
+
+  test "Max":
+    let a = [2,-1,3,-3,5,0].toTensor()
+    check: a.max() == 5
+    check: a.astype(float32).max() == 5.0f
+
+    let b = [[1,2,3,-4],[0,4,-2,5]].toTensor()
+    check: b.max(0) == [[1,4,3,5]].toTensor()
+    check: b.max(1) == [[3],[5]].toTensor()
+    check: b.astype(float32).max(0) == [[1.0f,4,3,5]].toTensor()
+    check: b.astype(float32).max(1) == [[3.0f],[5.0f]].toTensor()
+
+  test "Variance":
+    let a = [-3.0,-2,-1,0,1,2,3].toTensor()
+    check: abs(a.variance() - 4.6666666666667) < 1e-8
+    let b = [[1.0,2,3,-4],[0.0,4,-2,5]].toTensor()
+    check: b.variance(0) == [[0.5,2.0,12.5,40.5]].toTensor()
+    check: (
+      b.variance(1) -
+      [[9.666666666666666], [10.91666666666667]].toTensor()
+    ).abs().sum() < 1e-8
+
+  test "Standard Deviation":
+    let a = [-3.0,-2,-1,0,1,2,3].toTensor()
+    check: abs(a.standard_deviation() - 2.1602468994693) < 1e-8
+    let b = [[1.0,2,3,-4],[0.0,4,-2,5]].toTensor()
+    check: abs(
+      b.standard_deviation(0) -
+      [[0.7071067811865476,1.414213562373095,
+        3.535533905932738,6.363961030678928]].toTensor()
+    ).abs().sum() < 1e-8
+    check: abs(
+      b.standard_deviation(1) -
+      [[3.109126351029605],[3.304037933599835]].toTensor()
+    ).abs().sum() < 1e-8

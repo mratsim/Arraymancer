@@ -63,7 +63,7 @@ template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, 
       block:
         body
 
-template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: untyped, size, weight: Natural, op, body_init, body: untyped): untyped =
+template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: untyped, size, weight: Natural, op_final, op_init, op_middle: untyped): untyped =
   if size > 0:
     block ompblocks:
       when defined(openmp):
@@ -78,8 +78,13 @@ template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: u
               for block_index in 0..<num_blocks:
                 let block_offset = bsize*block_index
                 #let block_size = if block_index < num_blocks-1: bsize else: size - block_offset
+
+                # Inject x using a template to able to mutate it
+                template x(): untyped =
+                  results[block_index]
+
                 block:
-                  results[block_index] = body_init
+                  op_init
 
               # Reduce blocks
               for block_index in 0||(num_blocks-1):
@@ -92,7 +97,7 @@ template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: u
                   results[block_index]
 
                 block:
-                  body
+                  op_middle
 
               # Finally reduce results from openmp
               block:
@@ -104,7 +109,7 @@ template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: u
 
                 for block_index in 1..<num_blocks:
                   let y {.inject.} = results[block_index]
-                  op
+                  op_final
 
               break ompblocks
 
@@ -112,7 +117,12 @@ template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: u
       block:
         # Initialize first elements
         var block_offset = 0
-        reduced = body_init
+        block:
+          template x(): untyped =
+            reduced
+
+          block:
+            op_init
 
         # Offset to reduce rest of elements
         block_offset = 1
@@ -123,4 +133,4 @@ template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: u
           template x(): untyped =
             reduced
           block:
-            body
+            op_middle

@@ -12,6 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import  ../private/sequninit,
+        ./private/p_init_cuda,
+        ./backend/cuda,
+        ./backend/cuda_global_state,
+        ./data_structure,
+        nimcuda/[cuda_runtime_api, driver_types]
+
 proc unsafeView*[T](t: CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect.}=
   ## Input:
   ##     - A CudaTensor
@@ -26,7 +33,7 @@ proc unsafeView*[T](t: CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect.}=
   # CudaSeq has ref semantics
   system.`=`(result, t)
 
-proc clone*[T](t: CudaTensor[T]): CudaTensor[T] =
+proc clone*[T](t: CudaTensor[T]): CudaTensor[T] {.noInit.}=
   ## Clone (deep copy) a CudaTensor.
   ## Copy will not share its data with the original.
   ##
@@ -76,21 +83,7 @@ proc clone*[T](t: CudaTensor[T]): CudaTensor[T] =
 #   system.`=`(result, t)
 #   echo "Value moved"
 
-proc newCudaTensor[T: SomeReal](shape: varargs[int], layout: OrderType = colMajor): CudaTensor[T] {.noSideEffect.}=
-  ## Internal proc
-  ## Allocate a CudaTensor
-  ## WARNING: The Cuda memory is not initialized to 0
-
-  # TODO: default to RowMajor. Pending https://github.com/mratsim/Arraymancer/issues/22
-  # As mentionned in design doc, an element-wise kernel will avoid relying on CuBLAS
-  # for inplace operation that requires column major layout.
-
-  result.shape = @shape
-  shape_to_strides(result.shape, layout, result.strides)
-  result.offset = 0
-  result.data = newCudaSeq[T](result.size)
-
-proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] =
+proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] {.noInit.}=
   ## Convert a tensor on Cpu to a tensor on a Cuda device.
   # Note: due to modifying the defaultStream global var for async copy
   # proc cannot be tagged noSideEffect
@@ -110,7 +103,7 @@ proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] =
                         cudaMemcpyHostToDevice,
                         defaultStream) # defaultStream is a cudaStream_t global var
 
-proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect.}=
+proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect, noInit.}=
   ## Convert a tensor on a Cuda device to a tensor on Cpu.
   # We use blocking copy in this case to make sure
   # all data is available for future computation

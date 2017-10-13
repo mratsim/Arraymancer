@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import  ./backend/cublas,
+        ./private/p_init_cuda,
+        ./private/p_checks,
+        ./data_structure
+
 proc cudaMV_y_eq_aAx_p_by[T: SomeReal](
   alpha: T, a, x: CudaTensor[T],
   beta: T, y: var CudaTensor[T]) =
@@ -70,11 +75,13 @@ proc `*`*[T: SomeReal](a, b: CudaTensor[T]): CudaTensor[T] =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector) on CUDA
 
   if a.rank == 2 and b.rank == 2:
-    when compileOption("boundChecks"): check_matmat(a,b)
+    when compileOption("boundChecks"):
+      check_matmat(a,b)
     result = newCudaTensor[T]([a.shape[0], b.shape[1]])
     cudaMM_C_eq_aAB_p_bC(1.T, a, b, 0.T, result)
   elif a.rank == 2 and b.rank == 1:
-    when compileOption("boundChecks"):check_matvec(a,b)
+    when compileOption("boundChecks"):
+      check_matvec(a,b)
     result = newCudaTensor[T]([a.shape[0]])
     cudaMV_y_eq_aAx_p_by(1.T,a, b, 0.T, result)
   else: raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")

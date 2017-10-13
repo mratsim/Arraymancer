@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import  ../data_structure,
+        ./global_config,
+        nimcuda/[nimcuda, cuda_runtime_api, driver_types]
+
+export nimcuda.check
+
 # Data structures to ease interfacing with Cuda and kernels
 
 proc cudaMalloc[T](size: int): ptr T {.noSideEffect, inline.}=
@@ -29,7 +35,7 @@ proc deallocCuda[T](p: ref[ptr T]) {.noSideEffect.}=
 # # Base CudaSeq type
 # # End goal is for it to have value semantics like Nim seq
 
-proc newCudaSeq[T: SomeReal](length: int): CudaSeq[T] {.noSideEffect.}=
+proc newCudaSeq*[T: SomeReal](length: int): CudaSeq[T] {.noSideEffect.}=
   result.len = length
   new(result.data, deallocCuda)
   result.data[] = cast[ptr UncheckedArray[T]](cudaMalloc[T](result.len))
@@ -75,12 +81,12 @@ type
     ## Check https://github.com/mratsim/Arraymancer/issues/26 (Optimizing Host <-> Cuda transfer)
     ## on why I don't (yet?) use Unified Memory and choose to manage it manually.
 
-    rank: cint               # Number of dimension of the tensor
-    shape: CudaLayoutArray
-    strides: CudaLayoutArray
-    offset: cint
-    data: ptr T              # Data on Cuda device
-    len: cint                # Number of elements allocated in memory
+    rank*: cint               # Number of dimension of the tensor
+    shape*: CudaLayoutArray
+    strides*: CudaLayoutArray
+    offset*: cint
+    data*: ptr T              # Data on Cuda device
+    len*: cint                # Number of elements allocated in memory
 
 proc layoutOnDevice*[T:SomeReal](t: CudaTensor[T]): CudaTensorLayout[T] {.noSideEffect.}=
   ## Store a CudaTensor shape, strides, etc information on the GPU

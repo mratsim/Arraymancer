@@ -1,4 +1,4 @@
-# Copyright 2017 Mamy André-Ratsimbazafy
+# Copyright 2017 the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Please compile with -d:cuda switch
-import ../src/arraymancer,
-        ./tensor/test_operators_blas_cuda,
-        ./tensor/test_accessors_slicer_cuda,
-        ./tensor/test_shapeshifting_cuda
+import ./backend/cuda_global_state,
+        ./backend/cuda,
+        ./backend/cublas,
+        # ./backend/cublas_helper_proc,
+        ./init_cuda,
+        ./display_cuda,
+        ./operators_blas_l1_cuda,
+        ./operators_blas_l2l3_cuda,
+        ./shapeshifting_cuda
+
+export  init_cuda,
+        display_cuda,
+        operators_blas_l1_cuda,
+        operators_blas_l2l3_cuda,
+        shapeshifting_cuda

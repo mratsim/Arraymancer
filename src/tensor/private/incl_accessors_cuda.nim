@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-
 # For element-wise operations, instead of a sequential iterator like for CPU,
 # it will be faster to have many threads compute the index -> offset and update
 # the data at this offset.
@@ -24,26 +22,26 @@
 #     the kernels won't use tensor[2,5] as an index
 
 
-proc getIndexOfElementID[T](t: Tensor[T], element_id: int): int {.noSideEffect,used.} =
-  ## Convert "Give me element 10" to the real index/memory offset.
-  ## Reference Nim CPU version
-  ## This is not meant to be used on serial architecture due to the division overhead.
-  ## On GPU however it will allow threads to address the real memory addresses independantly.
-
-  when compileOption("boundChecks"):
-    assert element_id < t.size
-
-  result = t.offset
-  var currentOffset = element_id
-  var dimIdx: int
-
-  for k in countdown(t.rank - 1,0):
-    ## hopefully the compiler doesn't do division twice ...
-    dimIdx = currentOffset mod t.shape[k]
-    currentOffset = currentOffset div t.shape[k]
-
-    # cf atIndex proc to compute real_idx
-    result += dimIdx * t.strides[k]
+# proc getIndexOfElementID[T](t: Tensor[T], element_id: int): int {.noSideEffect,used.} =
+#   ## Convert "Give me element 10" to the real index/memory offset.
+#   ## Reference Nim CPU version
+#   ## This is not meant to be used on serial architecture due to the division overhead.
+#   ## On GPU however it will allow threads to address the real memory addresses independantly.
+#
+#   when compileOption("boundChecks"):
+#     assert element_id < t.size
+#
+#   result = t.offset
+#   var currentOffset = element_id
+#   var dimIdx: int
+#
+#   for k in countdown(t.rank - 1,0):
+#     ## hopefully the compiler doesn't do division twice ...
+#     dimIdx = currentOffset mod t.shape[k]
+#     currentOffset = currentOffset div t.shape[k]
+#
+#     # cf atIndex proc to compute real_idx
+#     result += dimIdx * t.strides[k]
 
 # Note we don't bound-checks the CUDA implementation
 {.emit:["""

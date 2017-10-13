@@ -15,6 +15,8 @@
 import  ./backend/metadataArray,
         nimblas
 
+export nimblas.OrderType
+
 type
   Backend* = enum
     ## ``Backend`` for tensor computation and memory allocation.
@@ -41,8 +43,8 @@ type
     ## Seq-like structure on the Cuda backend.
     ##
     ## Nim garbage collector will automatically ask cuda to clear GPU memory if ``data`` becomes unused.
-    len: int
-    data: ref[ptr UncheckedArray[T]]
+    len*: int
+    data*: ref[ptr UncheckedArray[T]]
 
   CudaTensor*[T: SomeReal] = object
     ## Tensor data structure stored on Nvidia GPU (Cuda)
@@ -55,8 +57,8 @@ type
     ##
     ## In the future CudaTensor will leverage Nim compiler to automatically
     ## copy if a memory location would be used more than once in a mutable manner.
-    shape*: seq[int]
-    strides*: seq[int]
+    shape*: MetadataArray
+    strides*: MetadataArray
     offset*: int
     data*: CudaSeq[T] # Memory on Cuda device will be automatically garbage-collected
 

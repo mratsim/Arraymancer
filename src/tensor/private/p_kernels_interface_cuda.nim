@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import  ../backend/cuda,
+        ../backend/global_config,
+        ../data_structure
 
 # Auto-generate glue between Nim functions, cuda higher-order functions and basic op
 
 # ##################################################
 # # Assignements, copy and in-place operations
-template cuda_assign_glue(
+template cuda_assign_glue*(
   kernel_name: untyped, op_name: string): untyped =
   # Kernel_name must be an open symbol
   # As a hack to avoid building an AST macro with new call
@@ -58,13 +61,13 @@ template cuda_assign_glue(
     src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
   ) {.importcpp: import_string, noSideEffect.}
 
-template cuda_assign_call[T: SomeReal](
+template cuda_assign_call*[T: SomeReal](
   kernel_name: untyped, destination: var CudaTensor[T], source: CudaTensor[T]): untyped =
   ## Does the heavy-lifting to format the tensors for the cuda call
-  # TODO: why doesn't this template works with the global 
+  # TODO: why doesn't this template works with the global
 
-  let dst = destination.layoutOnDevice
-  let src = source.layoutOnDevice
+  let dst = layoutOnDevice destination
+  let src = layoutOnDevice source
 
   kernel_name(
     CUDA_HOF_TPB, CUDA_HOF_BPG,
@@ -77,7 +80,7 @@ template cuda_assign_call[T: SomeReal](
 
 # ##################################################
 # # Binary operations
-template cuda_binary_glue(
+template cuda_binary_glue*(
   kernel_name: untyped, op_name: string): untyped =
   # Kernel_name must be an open symbol
   # As a hack to avoid building an AST macro with new call
@@ -126,14 +129,14 @@ template cuda_binary_glue(
     b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
   ) {.importcpp: import_string, noSideEffect.}
 
-template cuda_binary_call[T: SomeReal](
+template cuda_binary_call*[T: SomeReal](
   kernel_name: untyped, destination: var CudaTensor[T], a, b: CudaTensor[T]): untyped =
   ## Does the heavy-lifting to format the tensors for the cuda call
   # TODO: why doesn't this template works with the global
 
-  let dst = destination.layoutOnDevice
-  let src_a = a.layoutOnDevice
-  let src_b = b.layoutOnDevice
+  let dst = layoutOnDevice destination
+  let src_a = layoutOnDevice a
+  let src_b = layoutOnDevice b
 
   kernel_name(
     CUDA_HOF_TPB, CUDA_HOF_BPG,

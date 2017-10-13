@@ -121,7 +121,7 @@ task test_cuda, "Run all tests - Cuda backend with CUBLAS":
   cudaSwitches  # Unfortunately the "switch" line doesn't also trigger
                 # the "when defined(cuda)" part of this nimble file
                 # hence the need to call cudaSwitches explicitly
-  test "tests_cuda", "cpp"
+  test "tests_cuda", "c"
 
 task test_deprecated, "Run all tests on deprecated static[Backend] procs":
   test "tests_cpu_deprecated"

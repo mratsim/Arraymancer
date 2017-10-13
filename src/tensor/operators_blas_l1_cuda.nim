@@ -14,13 +14,10 @@
 
 import  ./backend/cublas,
         ./private/p_kernels_interface_cuda,
+        ./private/p_kernels_cuda,
         ./private/p_init_cuda,
         ./private/p_checks,
         ./data_structure
-
-include ./private/incl_accessors_cuda,
-        ./private/incl_higher_order_cuda,
-        ./private/incl_kernels_cuda
 
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
@@ -34,9 +31,6 @@ proc dot*[T: SomeReal](a, b: CudaTensor[T]): T {.inline.}=
               b.get_data_ptr, b.strides[0],
               addr result)
 
-proc cuda_inPlaceAdd = discard # This is a hack so that the symbol is open
-cuda_assign_glue(cuda_inPlaceAdd, "InPlaceAddOp")
-
 proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## CudaTensor in-place addition
 
@@ -47,9 +41,6 @@ proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
 
   # TODO: if a and b share the same location, TEST
 
-proc cuda_Add = discard # This is a hack so that the symbol is open
-cuda_binary_glue(cuda_Add, "AddOp")
-
 proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.}=
   ## CudaTensor addition
 
@@ -58,9 +49,6 @@ proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.}=
 
   result = newCudaTensor[T](a.shape)
   cuda_binary_call(cuda_Add, result, a, b)
-
-proc cuda_inPlaceSub = discard # This is a hack so that the symbol is open
-cuda_assign_glue(cuda_inPlaceSub, "InPlaceSubOp")
 
 proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## CudaTensor in-place substraction
@@ -71,10 +59,6 @@ proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   cuda_assign_call(cuda_inPlaceSub, a, b)
 
   # TODO: if a and b share the same location, TEST
-
-
-proc cuda_Sub = discard # This is a hack so that the symbol is open
-cuda_binary_glue(cuda_Sub, "SubOp")
 
 proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   ## CudaTensor substraction

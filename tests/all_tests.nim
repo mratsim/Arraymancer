@@ -28,5 +28,7 @@ import ../src/arraymancer,
         ./tensor/test_filling_data,
         ./tensor/test_optimization,
         ./tensor/test_bugtracker,
-        ./autograd/test_gate_blas,
-        ./load_tests/test_load_openmp
+        ./autograd/test_gate_blas
+
+when not defined(cpp): # FIXME: The load test deterministically crash at a random iteration with C++ backend on string conversion
+  import ./load_tests/test_load_openmp

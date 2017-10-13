@@ -226,7 +226,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
   when compileOption("boundChecks") and not defined(openmp) and not defined(cpp):
     # OpenMP or cpp backend are crashing the test suite.
     # OpenMP: always
-    # C++: only if all tests are run together
+    # FIXME: C++: only if all tests are run together
     test "Addition-Substraction - Bounds checking":
       let a = [[1.0,2,3], [4.0,5,6], [7.0,8,9]].toTensor()
       let a_t = a.transpose()

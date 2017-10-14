@@ -1,4 +1,4 @@
-# Copyright 2017 Mamy André-Ratsimbazafy
+# Copyright 2017 the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,61 +23,30 @@ import  ../backend/cuda,
 
 # Explanation:
 #
-# - To avoid creating a proc AST from scratch: we create a dummy proc.
-# - pass it to an overloading template (cuda_assign_glue for in-place/assignments)
-# - overloading template creates the cuda code, the import and a Nim wrapper
-# - Unfortunately the Nim wrapper cannot be called as-is in other file as it uses C++ semantics
-# - So we add an indirection that will be exported.
+# - Cuda C++ code is handled by p_kernels_cuda
+# - p_kernels_cuda is compiled separately as a C++ file to avoid polluting the whole project with C++ semantics
+# - The compiled C++ is renamed to .cu to make NVCC happy
+# - We tell Nim not to forget to compile/link to this .cu
+
+# #########################################################
+# Compiling cuda kernels separately
+
+const nimCliArgs = "nim e script_kernels_interface_cuda.nims"
+const execCmd {.used.}= staticExec(nimCliArgs,"","")
+
+static:
+  echo  " ### Begin: cuda kernels compilation ###\n" &
+        execCmd &
+        "\n ### End: cuda kernels compilation ###"
 
 
-# Important: the glue templates must be isolated in files like "p_kernels" that should
-# only depends on this file. Those files will be compiled to C++.
-# Linking won't happen properly if that file uses non-primitive type like CudaTensor.
+# Tell Nim/NVCC to compile and link against the kernels file
+# We go from "./src/tensor/private" to "./nimcache"
+{.compile: "../../../nimcache/arraymancer_p_kernels_cuda.cu".}
 
-# The call templates should be used to interact with the "p_kernels" file.
 
-# ##################################################
-# # Assignements, copy and in-place operations
-template cuda_assign_glue*(
-  kernel_name: untyped, op_name: string): untyped =
-  # Kernel_name must be an open symbol
-  # As a hack to avoid building an AST macro with new call
-  # declare a dummy proc with `proc kernel_name = discard`
-
-  {.emit:["""
-  template<typename T>
-  inline void """,kernel_name.astToStr,"""(
-    const int blocksPerGrid, const int threadsPerBlock,
-    const int rank,
-    const int len,
-    const int * __restrict__ dst_shape,
-    const int * __restrict__ dst_strides,
-    const int dst_offset,
-    T * __restrict__ dst_data,
-    const int * __restrict__ src_shape,
-    const int * __restrict__ src_strides,
-    const int src_offset,
-    const T * __restrict__ src_data){
-
-      cuda_apply2<<<blocksPerGrid, threadsPerBlock>>>(
-        rank, len,
-        dst_shape, dst_strides, dst_offset, dst_data,
-        """,op_name,"""<T>(),
-        src_shape, src_strides, src_offset, src_data
-      );
-    }
-    """].}
-
-  const import_string:string = kernel_name.astToStr & "<'*8>(@)"
-  # We pass the 8th parameter type to the template.
-  # The "*" in '*8 is needed to remove the pointer *
-
-  proc kernel_name[T: SomeReal](
-    blocksPerGrid, threadsPerBlock: cint,
-    rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
-  ) {.importcpp: import_string, noSideEffect.}
+# #########################################################
+# # Call assignements, copy and in-place operations kernels
 
 template cuda_assign_call*[T: SomeReal](
   kernel_name: untyped, destination: var CudaTensor[T], source: CudaTensor[T]): untyped =
@@ -97,55 +66,7 @@ template cuda_assign_call*[T: SomeReal](
   )
 
 # ##################################################
-# # Binary operations
-template cuda_binary_glue*(
-  kernel_name: untyped, op_name: string): untyped =
-  # Kernel_name must be an open symbol
-  # As a hack to avoid building an AST macro with new call
-  # declare a dummy proc with `proc kernel_name = discard`
-
-  # TODO: optimize number of args to reduce register pressure
-
-  {.emit:["""
-  template<typename T>
-  inline void """,kernel_name.astToStr,"""(
-    const int blocksPerGrid, const int threadsPerBlock,
-    const int rank,
-    const int len,
-    const int * __restrict__ dst_shape,
-    const int * __restrict__ dst_strides,
-    const int dst_offset,
-    T * __restrict__ dst_data,
-    const int * __restrict__ A_shape,
-    const int * __restrict__ A_strides,
-    const int A_offset,
-    const T * __restrict__ A_data,
-    const int * __restrict__ B_shape,
-    const int * __restrict__ B_strides,
-    const int B_offset,
-    const T * __restrict__ B_data){
-
-      cuda_apply3<<<blocksPerGrid, threadsPerBlock>>>(
-        rank, len,
-        dst_shape, dst_strides, dst_offset, dst_data,
-        A_shape, A_strides, A_offset, A_data,
-        """,op_name,"""<T>(),
-        B_shape, B_strides, B_offset, B_data
-      );
-    }
-    """].}
-
-  const import_string:string = kernel_name.astToStr & "<'*8>(@)"
-  # We pass the 8th parameter type to the template.
-  # The "*" in '*8 is needed to remove the pointer *
-
-  proc kernel_name[T: SomeReal](
-    blocksPerGrid, threadsPerBlock: cint,
-    rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
-    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
-  ) {.importcpp: import_string, noSideEffect.}
+# # Call binary operations kernels
 
 template cuda_binary_call*[T: SomeReal](
   kernel_name: untyped, destination: var CudaTensor[T], a, b: CudaTensor[T]): untyped =
@@ -165,4 +86,111 @@ template cuda_binary_call*[T: SomeReal](
     src_a.offset, src_a.data,
     src_b.shape[], src_b.strides[],
     src_b.offset, src_b.data
+  )
+
+###########################
+
+proc cuda_mAdd_cpp*[T: SomeReal](
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+  ) {.importc.}
+
+proc cuda_mAdd*[T: SomeReal](
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+  ) =
+  cuda_mAdd_cpp[T](blocksPerGrid, threadsPerBlock, rank, len,
+  dst_shape, dst_strides, dst_offset, dst_data,
+  src_shape, src_strides, src_offset, src_data)
+
+
+
+proc cuda_mSub_cpp*[T: SomeReal](
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+  ) {.importc.}
+
+proc cuda_mSub*[T: SomeReal](
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+  ) =
+  cuda_mSub_cpp[T](blocksPerGrid, threadsPerBlock, rank, len,
+  dst_shape, dst_strides, dst_offset, dst_data,
+  src_shape, src_strides, src_offset, src_data)
+
+
+
+proc cuda_unsafeContiguous_cpp*[T: SomeReal](
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+  ) {.importc.}
+
+proc cuda_unsafeContiguous*[T: SomeReal](
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+  ) =
+  cuda_unsafeContiguous_cpp[T](blocksPerGrid, threadsPerBlock, rank, len,
+  dst_shape, dst_strides, dst_offset, dst_data,
+  src_shape, src_strides, src_offset, src_data)
+
+
+
+proc cuda_Add_cpp*[T: SomeReal](
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
+  ) {.importc.}
+
+proc cuda_Add*[T: SomeReal](
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
+  ) =
+  cuda_Add_cpp[T](
+    blocksPerGrid, threadsPerBlock,
+    rank, len,
+    dst_shape, dst_strides, dst_offset, dst_data,
+    a_shape, a_strides, a_offset, a_data,
+    b_shape, b_strides, b_offset, b_data
+  )
+
+
+
+proc cuda_Sub_cpp*[T: SomeReal](
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
+  ) {.importc.}
+
+proc cuda_Sub*[T: SomeReal](
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
+  ) =
+  cuda_Sub_cpp[T](
+    blocksPerGrid, threadsPerBlock,
+    rank, len,
+    dst_shape, dst_strides, dst_offset, dst_data,
+    a_shape, a_strides, a_offset, a_data,
+    b_shape, b_strides, b_offset, b_data
   )

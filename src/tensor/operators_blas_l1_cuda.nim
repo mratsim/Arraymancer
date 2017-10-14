@@ -37,7 +37,7 @@ proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   when compileOption("boundChecks"):
     check_elementwise(a,b)
 
-  cuda_assign_call(cuda_inPlaceAdd, a, b)
+  cuda_assign_call(cuda_mAdd, a, b)
 
   # TODO: if a and b share the same location, TEST
 
@@ -56,7 +56,7 @@ proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   when compileOption("boundChecks"):
     check_elementwise(a,b)
 
-  cuda_assign_call(cuda_inPlaceSub, a, b)
+  cuda_assign_call(cuda_mSub, a, b)
 
   # TODO: if a and b share the same location, TEST
 
@@ -70,7 +70,7 @@ proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   cuda_binary_call(cuda_Sub, result, a, b)
 
 proc `*=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
-  ## CudaTensor inplace multiplication by a scalar
+  ## CudaTensor m multiplication by a scalar
 
   # We multiply all elements of the CudaTensor regardless of shape/strides
   # So this operation can be applied to tensors of all ranks.

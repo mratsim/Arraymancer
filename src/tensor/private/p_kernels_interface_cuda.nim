@@ -16,7 +16,25 @@ import  ../backend/cuda,
         ../backend/global_config,
         ../data_structure
 
-# Auto-generate glue between Nim functions, cuda higher-order functions and basic op
+# Design: due to limitations and difficulties in C++
+# (no mutable iterators, stack hidden from GC, exception issue, casting workaround for builtin_assume_aligned)
+# I choose to sacrifice readability here to avoid a plethora of "when not defined(cpp) in the codebase.
+# This file will serve as a bridge between Cuda C++ and Nim C.
+
+# Explanation:
+#
+# - To avoid creating a proc AST from scratch: we create a dummy proc.
+# - pass it to an overloading template (cuda_assign_glue for in-place/assignments)
+# - overloading template creates the cuda code, the import and a Nim wrapper
+# - Unfortunately the Nim wrapper cannot be called as-is in other file as it uses C++ semantics
+# - So we add an indirection that will be exported.
+
+
+# Important: the glue templates must be isolated in files like "p_kernels" that should
+# only depends on this file. Those files will be compiled to C++.
+# Linking won't happen properly if that file uses non-primitive type like CudaTensor.
+
+# The call templates should be used to interact with the "p_kernels" file.
 
 # ##################################################
 # # Assignements, copy and in-place operations

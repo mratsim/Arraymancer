@@ -31,29 +31,32 @@ include incl_accessors_cuda,
 # - Unfortunately the Nim wrapper cannot be called as-is in other file as it uses C++ semantics
 # - So we add an indirection that will be exported.
 
-proc cuda_inPlaceAdd_cpp = discard # This is a hack so that the symbol is open
-cuda_assign_glue(cuda_inPlaceAdd_cpp, "InPlaceAddOp")
+# Important: this file will be compiled to C++, only primitive types like pointers and float should be used,
+# other here be dragons during linking with C code.
 
-proc cuda_inPlaceAdd*[T: SomeReal](
+proc cuda_mAdd_cpp = discard # This is a hack so that the symbol is open
+cuda_assign_glue(cuda_mAdd_cpp, "mAddOp")
+
+proc cuda_mAdd*[T: SomeReal](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
     dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
     src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
   ) =
-  cuda_inPlaceAdd_cpp[T](blocksPerGrid, threadsPerBlock, rank, len,
+  cuda_mAdd_cpp[T](blocksPerGrid, threadsPerBlock, rank, len,
   dst_shape, dst_strides, dst_offset, dst_data,
   src_shape, src_strides, src_offset, src_data)
 
-proc cuda_inPlaceSub_cpp = discard # This is a hack so that the symbol is open
-cuda_assign_glue(cuda_inPlaceSub_cpp, "InPlaceSubOp")
+proc cuda_mSub_cpp = discard # This is a hack so that the symbol is open
+cuda_assign_glue(cuda_mSub_cpp, "mSubOp")
 
-proc cuda_inPlaceSub*[T: SomeReal](
+proc cuda_mSub*[T: SomeReal](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
     dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
     src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
   ) =
-  cuda_inPlaceSub_cpp[T](blocksPerGrid, threadsPerBlock, rank, len,
+  cuda_mSub_cpp[T](blocksPerGrid, threadsPerBlock, rank, len,
   dst_shape, dst_strides, dst_offset, dst_data,
   src_shape, src_strides, src_offset, src_data)
 

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import  ./private/p_checks,
-        ./private/p_accessors_cpp,
         ./data_structure,
         ./accessors
 
@@ -27,10 +26,5 @@ proc copy_from*[T](dst: var Tensor[T], src: Tensor[T]) =
   when compileOption("boundChecks"):
     check_size(dst, src)
 
-  when not defined(cpp):
-    for x, val in mzip(dst, src):
-      x = val
-  else: ## Workaround for C++ codegen
-    var data = dst.dataArray
-    for offset, _, val in zipOV(dst, src):
-      data[offset] = val
+  for x, val in mzip(dst, src):
+    x = val

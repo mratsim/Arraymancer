@@ -90,79 +90,130 @@ template cuda_binary_call*[T: SomeReal](
 
 ###########################
 
-proc cuda_mAdd_cpp*[T: SomeReal](
+proc cuda_mAdd_f32*(
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float32,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr float32
   ) {.importc.}
 
-proc cuda_mAdd*[T: SomeReal](
+proc cuda_mAdd*(
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float32,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr float32
   ) =
-  cuda_mAdd_cpp[T](blocksPerGrid, threadsPerBlock, rank, len,
+  cuda_mAdd_f32(blocksPerGrid, threadsPerBlock, rank, len,
+  dst_shape, dst_strides, dst_offset, dst_data,
+  src_shape, src_strides, src_offset, src_data)
+
+proc cuda_mAdd_f64*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float64,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr float64
+  ) {.importc.}
+
+proc cuda_mAdd*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float64,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr float64
+  ) =
+  cuda_mAdd_f64(blocksPerGrid, threadsPerBlock, rank, len,
   dst_shape, dst_strides, dst_offset, dst_data,
   src_shape, src_strides, src_offset, src_data)
 
 
-
-proc cuda_mSub_cpp*[T: SomeReal](
+############################################
+proc cuda_mSub_f32*(
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float32,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr float32
   ) {.importc.}
 
-proc cuda_mSub*[T: SomeReal](
+proc cuda_mSub*(
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float32,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr float32
   ) =
-  cuda_mSub_cpp[T](blocksPerGrid, threadsPerBlock, rank, len,
+  cuda_mSub_f32(blocksPerGrid, threadsPerBlock, rank, len,
+  dst_shape, dst_strides, dst_offset, dst_data,
+  src_shape, src_strides, src_offset, src_data)
+
+proc cuda_mSub_f64*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float64,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr float64
+  ) {.importc.}
+
+proc cuda_mSub*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float64,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr float64
+  ) =
+  cuda_mSub_f64(blocksPerGrid, threadsPerBlock, rank, len,
+  dst_shape, dst_strides, dst_offset, dst_data,
+  src_shape, src_strides, src_offset, src_data)
+
+##############################################
+proc cuda_unsafeContiguous_f32*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float32,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr float32
+  ) {.importc.}
+
+proc cuda_unsafeContiguous*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float32,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr float32
+  ) =
+  cuda_unsafeContiguous_f32(blocksPerGrid, threadsPerBlock, rank, len,
+  dst_shape, dst_strides, dst_offset, dst_data,
+  src_shape, src_strides, src_offset, src_data)
+
+proc cuda_unsafeContiguous_f64*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float64,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr float64
+  ) {.importc.}
+
+proc cuda_unsafeContiguous*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float64,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr float64
+  ) =
+  cuda_unsafeContiguous_f64(blocksPerGrid, threadsPerBlock, rank, len,
   dst_shape, dst_strides, dst_offset, dst_data,
   src_shape, src_strides, src_offset, src_data)
 
 
+################################################
 
-proc cuda_unsafeContiguous_cpp*[T: SomeReal](
+proc cuda_Add_f32*(
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float32,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr float32,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr float32
   ) {.importc.}
 
-proc cuda_unsafeContiguous*[T: SomeReal](
+proc cuda_Add*(
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float32,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr float32,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr float32
   ) =
-  cuda_unsafeContiguous_cpp[T](blocksPerGrid, threadsPerBlock, rank, len,
-  dst_shape, dst_strides, dst_offset, dst_data,
-  src_shape, src_strides, src_offset, src_data)
-
-
-
-proc cuda_Add_cpp*[T: SomeReal](
-    blocksPerGrid, threadsPerBlock: cint,
-    rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
-    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
-  ) {.importc.}
-
-proc cuda_Add*[T: SomeReal](
-    blocksPerGrid, threadsPerBlock: cint,
-    rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
-    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
-  ) =
-  cuda_Add_cpp[T](
+  cuda_Add_f32(
     blocksPerGrid, threadsPerBlock,
     rank, len,
     dst_shape, dst_strides, dst_offset, dst_data,
@@ -171,23 +222,69 @@ proc cuda_Add*[T: SomeReal](
   )
 
 
-
-proc cuda_Sub_cpp*[T: SomeReal](
+proc cuda_Add_f64*(
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
-    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float64,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr float64,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr float64
   ) {.importc.}
 
-proc cuda_Sub*[T: SomeReal](
+proc cuda_Add*(
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
-    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float64,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr float64,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr float64
   ) =
-  cuda_Sub_cpp[T](
+  cuda_Add_f64(
+    blocksPerGrid, threadsPerBlock,
+    rank, len,
+    dst_shape, dst_strides, dst_offset, dst_data,
+    a_shape, a_strides, a_offset, a_data,
+    b_shape, b_strides, b_offset, b_data
+  )
+
+############################################
+proc cuda_Sub_f32*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float32,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr float32,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr float32
+  ) {.importc.}
+
+proc cuda_Sub*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float32,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr float32,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr float32
+  ) =
+  cuda_Sub_f32(
+    blocksPerGrid, threadsPerBlock,
+    rank, len,
+    dst_shape, dst_strides, dst_offset, dst_data,
+    a_shape, a_strides, a_offset, a_data,
+    b_shape, b_strides, b_offset, b_data
+  )
+
+proc cuda_Sub_f64*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float64,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr float64,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr float64
+  ) {.importc.}
+
+proc cuda_Sub*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr float64,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr float64,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr float64
+  ) =
+  cuda_Sub_f64(
     blocksPerGrid, threadsPerBlock,
     rank, len,
     dst_shape, dst_strides, dst_offset, dst_data,

@@ -34,17 +34,9 @@ include incl_accessors_cuda,
 # Important: this file will be compiled to C++, only primitive types like pointers and float should be used,
 # other here be dragons during linking with C code.
 
-proc cuda_mAdd_cpp = discard # This is a hack so that the symbol is open
-cuda_genkernel_assign(cuda_mAdd_cpp, "mAddOp")
 
-proc cuda_mSub_cpp = discard # This is a hack so that the symbol is open
-cuda_genkernel_assign(cuda_mSub_cpp, "mSubOp")
-
-proc cuda_unsafeContiguous_cpp = discard # This is a hack so that the symbol is open
-cuda_genkernel_assign(cuda_unsafeContiguous_cpp, "CopyOp")
-
-proc cuda_Add_cpp = discard # This is a hack so that the symbol is open
-cuda_genkernel_binary(cuda_Add_cpp, "AddOp")
-
-proc cuda_Sub_cpp = discard # This is a hack so that the symbol is open
-cuda_genkernel_binary(cuda_Sub_cpp, "SubOp")
+cuda_genkernel_assign("cuda_mAdd", "mAddOp", cuda_mAdd_f32, cuda_mAdd_f64)
+cuda_genkernel_assign("cuda_mSub", "mSubOp", cuda_mSub_f32, cuda_mSub_f64)
+cuda_genkernel_assign("cuda_unsafeContiguous", "CopyOp", cuda_unsfeContiguous_f32, cuda_unsafeContiguous_f64)
+cuda_genkernel_binary("cuda_Add", "AddOp", cuda_Add_f32, cuda_Add_f64)
+cuda_genkernel_binary("cuda_Sub", "SubOp", cuda_Sub_f32, cuda_Sub_f64)

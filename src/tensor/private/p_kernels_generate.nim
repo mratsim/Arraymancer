@@ -16,15 +16,32 @@
 
 # ##################################################
 # # Assignements, copy and in-place operations
+
+template cuda_genkernel_assign_bindings[T](
+  kernel_name: string, binding_name: untyped) =
+
+  const import_string: string = kernel_name & "<'*8>(@)"
+  # We pass the 8th parameter type to the template.
+  # The "*" in '*8 is needed to remove the pointer *
+
+  proc `binding_name`*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+  ) {.importcpp: import_string, noSideEffect, exportc.}
+
+  export `binding_name`
+
 template cuda_genkernel_assign*(
-  kernel_name: untyped, op_name: string): untyped =
+  kernel_name: string, op_name: string, binding_name_f32, binding_name_f64: untyped) =
   # Kernel_name must be an open symbol
   # As a hack to avoid building an AST macro with new call
   # declare a dummy proc with `proc kernel_name = discard`
 
   {.emit:["""
   template<typename T>
-  inline void """,kernel_name.astToStr,"""(
+  inline void """,kernel_name,"""(
     const int blocksPerGrid, const int threadsPerBlock,
     const int rank,
     const int len,
@@ -46,22 +63,31 @@ template cuda_genkernel_assign*(
     }
     """].}
 
-  const import_string:string = kernel_name.astToStr & "<'*8>(@)"
-  # We pass the 8th parameter type to the template.
-  # The "*" in '*8 is needed to remove the pointer *
-
-  proc kernel_name[T: SomeReal](
-    blocksPerGrid, threadsPerBlock: cint,
-    rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
-  ) {.importcpp: import_string, noSideEffect, exportc.}
-
+  cuda_genkernel_assign_bindings[float32](kernel_name, binding_name_f32)
+  cuda_genkernel_assign_bindings[float64](kernel_name, binding_name_f64)
 
 # ##################################################
 # # Binary operations
+
+template cuda_genkernel_binary_bindings[T](
+  kernel_name: string, binding_name: untyped) =
+
+  const import_string: string = kernel_name & "<'*8>(@)"
+  # We pass the 8th parameter type to the template.
+  # The "*" in '*8 is needed to remove the pointer *
+
+  proc `binding_name`*(
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
+  ) {.importcpp: import_string, noSideEffect, exportc.}
+
+  export `binding_name`
+
 template cuda_genkernel_binary*(
-  kernel_name: untyped, op_name: string): untyped =
+  kernel_name: string, op_name: string, binding_name_f32, binding_name_f64: untyped) =
   # Kernel_name must be an open symbol
   # As a hack to avoid building an AST macro with new call
   # declare a dummy proc with `proc kernel_name = discard`
@@ -70,7 +96,7 @@ template cuda_genkernel_binary*(
 
   {.emit:["""
   template<typename T>
-  inline void """,kernel_name.astToStr,"""(
+  inline void """, kernel_name,"""(
     const int blocksPerGrid, const int threadsPerBlock,
     const int rank,
     const int len,
@@ -97,14 +123,5 @@ template cuda_genkernel_binary*(
     }
     """].}
 
-  const import_string:string = kernel_name.astToStr & "<'*8>(@)"
-  # We pass the 8th parameter type to the template.
-  # The "*" in '*8 is needed to remove the pointer *
-
-  proc kernel_name[T: SomeReal](
-    blocksPerGrid, threadsPerBlock: cint,
-    rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
-    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
-  ) {.importcpp: import_string, noSideEffect, exportc.}
+  cuda_genkernel_binary_bindings[float32](kernel_name, binding_name_f32)
+  cuda_genkernel_binary_bindings[float64](kernel_name, binding_name_f64)

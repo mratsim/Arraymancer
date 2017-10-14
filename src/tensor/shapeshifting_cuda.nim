@@ -12,14 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./private/p_kernels_interface_cuda,
-       ./private/p_init_cuda,
-       ./private/p_shapeshifting,
-       ./data_structure
-
-include ./private/incl_accessors_cuda,
-        ./private/incl_higher_order_cuda,
-        ./private/incl_kernels_cuda
+import  ./private/p_kernels_interface_cuda,
+        ./private/p_init_cuda,
+        ./private/p_shapeshifting,
+        ./data_structure
 
 proc unsafeTranspose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   ## Transpose a Tensor.
@@ -34,9 +30,6 @@ proc unsafeTranspose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   t.strides.reversed(result.strides)
   result.offset = t.offset
   result.data = t.data
-
-proc cuda_unsafeContiguous = discard # This is a hack so that the symbol is open
-cuda_assign_glue(cuda_unsafeContiguous, "CopyOp")
 
 proc unsafeContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, force: bool = false):
   CudaTensor[T] {.noSideEffect.}=

@@ -32,6 +32,9 @@ srcDir = "src"
 ## TODO: auto detection or at least check in common directories
 ## Note: It is import to gate compiler flags like -march=native  behind Xcompiler "-Xcompiler -march=native"
 
+## -fpermissive flag is needed to allow implicit cast of void pointers
+## which are used in Nim stdlib when compiling to C++
+
 template cudaSwitches() =
   switch("cincludes", "/opt/cuda/include")
   switch("cc", "gcc") # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
@@ -43,8 +46,8 @@ template cudaSwitches() =
   # we only support compute capabilities 3.5+
   # See here: http://docs.nvidia.com/cuda/pascal-compatibility-guide/index.html
   # And wikipedia for GPU capabilities: https://en.wikipedia.org/wiki/CUDA
-  switch("gcc.options.always", "-arch=sm_61 --x cu") # Interpret .c files as .cu
-  switch("gcc.cpp.options.always", "-arch=sm_61 --x cu -Xcompiler -fpermissive") # Interpret .c files as .cu, gate fpermissive behind Xcompiler
+  switch("gcc.options.always", "-arch=sm_61 -Xcompiler -fpermissive") # Interpret .c files as .cu
+  switch("gcc.cpp.options.always", "-arch=sm_61 -Xcompiler -fpermissive") # Interpret .cpp files as .cu, gate fpermissive behind Xcompiler
 
 when defined(cuda):
   cudaSwitches
@@ -76,8 +79,8 @@ template cuda_mkl_openmp() =
   switch("gcc.linkerexe", "/opt/cuda/bin/nvcc")
   switch("gcc.cpp.exe", "/opt/cuda/bin/nvcc")
   switch("gcc.cpp.linkerexe", "/opt/cuda/bin/nvcc")
-  switch("gcc.options.always", "-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native")
-  switch("gcc.cpp.options.always", "-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native")
+  switch("gcc.options.always", "-arch=sm_61 -Xcompiler -fopenmp -Xcompiler -march=native -Xcompiler -fpermissive")
+  switch("gcc.cpp.options.always", "-arch=sm_61 -Xcompiler -fopenmp -Xcompiler -march=native -Xcompiler -fpermissive")
 
 ########################################################
 # Optimization
@@ -108,11 +111,12 @@ task all_tests, "Run all tests - Intel MKL + OpenMP + Cuda + march=native + rele
   cuda_mkl_openmp
   switch("define","cuda")
   cuda_mkl_openmp
-  test "full_test_suite", "cpp"
+  test "full_test_suite", "c"
 
 task test, "Run all tests - Default BLAS":
   test "tests_cpu"
 
+# C++ backend is not supported. It is isolated internally to just be used with Cuda
 task test_cpp, "Run all tests - Cpp codegen":
   test "tests_cpu", "cpp"
 
@@ -121,7 +125,7 @@ task test_cuda, "Run all tests - Cuda backend with CUBLAS":
   cudaSwitches  # Unfortunately the "switch" line doesn't also trigger
                 # the "when defined(cuda)" part of this nimble file
                 # hence the need to call cudaSwitches explicitly
-  test "tests_cuda", "cpp"
+  test "tests_cuda", "c"
 
 task test_deprecated, "Run all tests on deprecated static[Backend] procs":
   test "tests_cpu_deprecated"

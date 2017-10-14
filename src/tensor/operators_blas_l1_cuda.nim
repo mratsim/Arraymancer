@@ -18,10 +18,6 @@ import  ./backend/cublas,
         ./private/p_checks,
         ./data_structure
 
-include ./private/incl_accessors_cuda,
-        ./private/incl_higher_order_cuda,
-        ./private/incl_kernels_cuda
-
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
 
@@ -34,21 +30,15 @@ proc dot*[T: SomeReal](a, b: CudaTensor[T]): T {.inline.}=
               b.get_data_ptr, b.strides[0],
               addr result)
 
-proc cuda_inPlaceAdd = discard # This is a hack so that the symbol is open
-cuda_assign_glue(cuda_inPlaceAdd, "InPlaceAddOp")
-
 proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## CudaTensor in-place addition
 
   when compileOption("boundChecks"):
     check_elementwise(a,b)
 
-  cuda_assign_call(cuda_inPlaceAdd, a, b)
+  cuda_assign_call(cuda_mAdd, a, b)
 
   # TODO: if a and b share the same location, TEST
-
-proc cuda_Add = discard # This is a hack so that the symbol is open
-cuda_binary_glue(cuda_Add, "AddOp")
 
 proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.}=
   ## CudaTensor addition
@@ -59,22 +49,15 @@ proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.}=
   result = newCudaTensor[T](a.shape)
   cuda_binary_call(cuda_Add, result, a, b)
 
-proc cuda_inPlaceSub = discard # This is a hack so that the symbol is open
-cuda_assign_glue(cuda_inPlaceSub, "InPlaceSubOp")
-
 proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## CudaTensor in-place substraction
 
   when compileOption("boundChecks"):
     check_elementwise(a,b)
 
-  cuda_assign_call(cuda_inPlaceSub, a, b)
+  cuda_assign_call(cuda_mSub, a, b)
 
   # TODO: if a and b share the same location, TEST
-
-
-proc cuda_Sub = discard # This is a hack so that the symbol is open
-cuda_binary_glue(cuda_Sub, "SubOp")
 
 proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   ## CudaTensor substraction
@@ -86,7 +69,7 @@ proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   cuda_binary_call(cuda_Sub, result, a, b)
 
 proc `*=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
-  ## CudaTensor inplace multiplication by a scalar
+  ## CudaTensor m multiplication by a scalar
 
   # We multiply all elements of the CudaTensor regardless of shape/strides
   # So this operation can be applied to tensors of all ranks.

@@ -54,7 +54,7 @@ template cuda_assign_glue*(
   # We pass the 8th parameter type to the template.
   # The "*" in '*8 is needed to remove the pointer *
 
-  proc kernel_name*[T: SomeReal](
+  proc kernel_name[T: SomeReal](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
     dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
@@ -121,7 +121,7 @@ template cuda_binary_glue*(
   # We pass the 8th parameter type to the template.
   # The "*" in '*8 is needed to remove the pointer *
 
-  proc kernel_name*[T: SomeReal](
+  proc kernel_name[T: SomeReal](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
     dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,

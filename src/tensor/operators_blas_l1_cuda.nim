@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import  ./backend/cublas,
-        ./private/p_kernels_interface_cuda,
         ./private/p_kernels_cuda,
+        ./private/p_kernels_interface_cuda,
         ./private/p_init_cuda,
         ./private/p_checks,
         ./data_structure

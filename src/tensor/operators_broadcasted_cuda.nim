@@ -17,7 +17,8 @@ import  ./private/p_init_cuda,
         ./private/p_checks,
         ./data_structure,
         ./higher_order,
-        ./shapeshifting_cuda
+        ./shapeshifting_cuda,
+        ./operators_blas_l1_cuda
 
 include ./private/incl_accessors_cuda,
         ./private/incl_higher_order_cuda,
@@ -58,3 +59,46 @@ proc `./`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
 
   result = newCudaTensor[T](tmp_a.shape)
   cuda_binary_call(cuda_Div, result, tmp_a, tmp_b)
+
+# ##############################################
+# # Broadcasting in-place Tensor-Tensor
+
+proc `.+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
+  ## Tensor broadcasted in-place addition.
+  ##
+  ## Only the right hand side tensor can be broadcasted.
+  # shape check done in apply2 proc
+
+  let tmp_b = b.unsafeBroadcast(a.shape)
+  a += tmp_b
+
+proc `.-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
+  ## Tensor broadcasted in-place substraction.
+  ##
+  ## Only the right hand side tensor can be broadcasted.
+  # shape check done in apply2 proc
+
+  let tmp_b = b.unsafeBroadcast(a.shape)
+  a -= b
+
+cuda_assign_glue("cuda_mMulOp", "mMulOp", cuda_mMulOp)
+
+proc `.*=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
+  ## Tensor broadcasted in-place multiplication (Hadamard product)
+  ##
+  ## Only the right hand side tensor can be broadcasted
+  # shape check done in apply2 proc
+
+  let tmp_b = b.unsafeBroadcast(a.shape)
+  cuda_assign_call(cuda_mMulOp, a, tmp_b)
+
+cuda_assign_glue("cuda_mDivOp", "mDivOp", cuda_mDivOp)
+
+proc `./=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
+  ## Tensor broadcasted in-place float division.
+  ##
+  ## Only the right hand side tensor can be broadcasted.
+  # shape check done in apply2 proc
+
+  let tmp_b = b.unsafeBroadcast(a.shape)
+  cuda_assign_call(cuda_mDivOp, a, tmp_b)

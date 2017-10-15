@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./private/p_kernels_interface_cuda,
+import ./backend/metadataArray,
+       ./private/p_kernels_interface_cuda,
        ./private/p_init_cuda,
        ./private/p_shapeshifting,
        ./data_structure
@@ -75,6 +76,20 @@ proc unsafeReshape*(t: CudaTensor, new_shape: varargs[int]): CudaTensor =
   result.data = t.data
 
 proc unsafeBroadcast*(t: CudaTensor, shape: varargs[int]): CudaTensor {.noSideEffect.}=
+  ## Explicitly broadcast a CudaTensor to the specified shape.
+  ## The returned broadcasted CudaTensor share the underlying data with the input.
+  ##
+  ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
+  ## values along that dimension.
+  ##
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  ##   A broadcasted tensor should not be modified and only used for computation.
+  result = t
+  result.broadcastT(shape)
+
+proc unsafeBroadcast*(t: CudaTensor, shape: MetadataArray): CudaTensor {.noSideEffect.}=
   ## Explicitly broadcast a CudaTensor to the specified shape.
   ## The returned broadcasted CudaTensor share the underlying data with the input.
   ##

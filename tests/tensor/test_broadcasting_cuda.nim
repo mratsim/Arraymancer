@@ -71,3 +71,59 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                               [5.0, 2, 1],
                               [10.0, 4, 2],
                               [15.0, 6, 3]].toTensor
+
+  test "Implicit tensor-tensor broadcasting - basic in-place operations .+=, .-=, .*=, ./=":
+    block: # Addition
+      # Note: We can't broadcast the lhs with in-place operations
+      var a = [0, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).astype(float32).cuda
+      let b = [0, 1, 2].toTensor().reshape(1,3).astype(float32).cuda
+
+      a .+= b
+      check: a.cpu == [[0, 1, 2],
+                      [10, 11, 12],
+                      [20, 21, 22],
+                      [30, 31, 32]].toTensor.astype(float32)
+
+    block: # Substraction
+      # Note: We can't broadcast the lhs with in-place operations
+      var a = [0, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).astype(float32).cuda
+      let b = [0, 1, 2].toTensor().reshape(1,3).astype(float32).cuda
+
+      a .-= b
+      check: a.cpu  == [[0, -1, -2],
+                    [10, 9, 8],
+                    [20, 19, 18],
+                    [30, 29, 28]].toTensor.astype(float32)
+
+    block: # Multiplication
+      # Note: We can't broadcast the lhs with in-place operations
+      var a = [0, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).astype(float32).cuda
+      let b = [0, 1, 2].toTensor().reshape(1,3).astype(float32).cuda
+
+      a .*= b
+      check: a.cpu == [[0, 0, 0],
+                      [0, 10, 20],
+                      [0, 20, 40],
+                      [0, 30, 60]].toTensor.astype(float32)
+
+    block: # Integer division
+      # Note: We can't broadcast the lhs with in-place operations
+      var a = [100, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).astype(float32).cuda
+      let b = [2, 5, 10].toTensor().reshape(1,3).astype(float32).cuda
+
+      a ./= b
+      check: a.cpu == [[50, 20, 10],
+                      [5, 2, 1],
+                      [10, 4, 2],
+                      [15, 6, 3]].toTensor.astype(float32)
+
+    block: # Float division
+      # Note: We can't broadcast the lhs with in-place operations
+      var a = [100.0, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).cuda
+      let b = [2.0, 5, 10].toTensor().reshape(1,3).cuda
+
+      a ./= b
+      check: a.cpu == [[50.0, 20, 10],
+                      [5.0, 2, 1],
+                      [10.0, 4, 2],
+                      [15.0, 6, 3]].toTensor

@@ -34,7 +34,7 @@ proc dot*[T: SomeReal](a, b: CudaTensor[T]): T {.inline.}=
               b.get_data_ptr, b.strides[0],
               addr result)
 
-cuda_assign_glue(cuda_inPlaceAdd, "InPlaceAddOp")
+cuda_assign_glue("cuda_mAdd", "mAddOp", cuda_mAdd)
 
 proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## CudaTensor in-place addition
@@ -42,11 +42,11 @@ proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   when compileOption("boundChecks"):
     check_elementwise(a,b)
 
-  cuda_assign_call(cuda_inPlaceAdd, a, b)
+  cuda_assign_call(cuda_mAdd, a, b)
 
   # TODO: if a and b share the same location, TEST
 
-cuda_binary_glue(cuda_Add, "AddOp")
+cuda_binary_glue("cuda_Add", "AddOp", cuda_Add)
 
 proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.}=
   ## CudaTensor addition
@@ -57,7 +57,7 @@ proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.}=
   result = newCudaTensor[T](a.shape)
   cuda_binary_call(cuda_Add, result, a, b)
 
-cuda_assign_glue(cuda_inPlaceSub, "InPlaceSubOp")
+cuda_assign_glue("cuda_mSub", "mSubOp", cuda_mSub)
 
 proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## CudaTensor in-place substraction
@@ -65,12 +65,12 @@ proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   when compileOption("boundChecks"):
     check_elementwise(a,b)
 
-  cuda_assign_call(cuda_inPlaceSub, a, b)
+  cuda_assign_call(cuda_mSub, a, b)
 
   # TODO: if a and b share the same location, TEST
 
 
-cuda_binary_glue(cuda_Sub, "SubOp")
+cuda_binary_glue("cuda_Sub", "SubOp", cuda_Sub)
 
 proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   ## CudaTensor substraction

@@ -35,7 +35,7 @@ proc unsafeTranspose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   result.offset = t.offset
   result.data = t.data
 
-cuda_assign_glue(cuda_unsafeContiguous, "CopyOp")
+cuda_assign_glue("cuda_unsafeContiguous", "CopyOp", cuda_unsafeContiguous)
 
 proc unsafeContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, force: bool = false):
   CudaTensor[T] {.noSideEffect.}=

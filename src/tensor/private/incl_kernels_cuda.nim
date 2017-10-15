@@ -110,16 +110,16 @@ template cuda_unary_op(op_name, op_symbol: string)=
   """].}
 
 cuda_assign_op("CopyOp", "=")
-cuda_assign_op("InPlaceAddOp", "+=")
-cuda_assign_op("InPlaceSubOp", "-=")
-cuda_assign_op("InPlaceMulOp", "*=")
-cuda_assign_op("InPlaceDivOp", "/=")
+cuda_assign_op("mAddOp", "+=")
+cuda_assign_op("mSubOp", "-=")
+cuda_assign_op("mMulOp", "*=")
+cuda_assign_op("mDivOp", "/=")
 
 cuda_assignscal_op("CopyScalOp", "=")
-cuda_assignscal_op("InPscalAddOp", "+=")
-cuda_assignscal_op("InPscalSubOp", "-=")
-cuda_assignscal_op("InPscalMulOp", "*=")
-cuda_assignscal_op("InPscalDivOp", "/=")
+cuda_assignscal_op("mscalAddOp", "+=")
+cuda_assignscal_op("mscalSubOp", "-=")
+cuda_assignscal_op("mscalMulOp", "*=")
+cuda_assignscal_op("mscalDivOp", "/=")
 
 cuda_binary_op("AddOp", "+")
 cuda_binary_op("SubOp", "-")

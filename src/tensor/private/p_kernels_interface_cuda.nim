@@ -20,8 +20,25 @@ import  ../backend/cuda,
 
 # ##################################################
 # # Assignements, copy and in-place operations
+template cuda_assign_binding(kernel_name: string, binding_name: untyped)=
+  # Generate a Nim proc that wraps the C++/Cuda kernel proc
+
+  const import_string:string = kernel_name & "<'*8>(@)"
+  # We pass the 8th parameter type to the template.
+  # The "*" in '*8 is needed to remove the pointer *
+
+  # We create an new identifier on the fly with backticks
+  proc `binding_name`[T: SomeReal](
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+  ) {.importcpp: import_string, noSideEffect.}
+
+
+
 template cuda_assign_glue*(
-  kernel_name: untyped, op_name: string): untyped =
+  kernel_name, op_name: string, binding_name: untyped): untyped =
   # Input
   #   - kernel_name and the Cuda function object
   # Result
@@ -31,7 +48,7 @@ template cuda_assign_glue*(
 
   {.emit:["""
   template<typename T>
-  inline void """,astToStr(kernel_name {.inject.}),"""(
+  inline void """, kernel_name,"""(
     const int blocksPerGrid, const int threadsPerBlock,
     const int rank,
     const int len,
@@ -53,20 +70,12 @@ template cuda_assign_glue*(
     }
     """].}
 
-  const import_string:string = kernel_name.astToStr & "<'*8>(@)"
-  # We pass the 8th parameter type to the template.
-  # The "*" in '*8 is needed to remove the pointer *
-
-  proc `kernel_name`[T: SomeReal](
-    blocksPerGrid, threadsPerBlock: cint,
-    rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
-  ) {.importcpp: import_string, noSideEffect.}
+  cuda_assign_binding(kernel_name, binding_name)
 
 template cuda_assign_call*[T: SomeReal](
   kernel_name: untyped, destination: var CudaTensor[T], source: CudaTensor[T]): untyped =
   ## Does the heavy-lifting to format the tensors for the cuda call
+  #
   # TODO: why doesn't this template works with "cudaLaunchKernel" instead
   # of triple-chevrons notation kernel<<<blocksPerGrid, threadsPerBlock>>>(params).
   # This would avoid an intermediate function call
@@ -85,8 +94,26 @@ template cuda_assign_call*[T: SomeReal](
 
 # ##################################################
 # # Binary operations
+
+template cuda_binary_binding(kernel_name: string, binding_name: untyped)=
+  # Generate a Nim proc that wraps the C++/Cuda kernel proc
+
+  const import_string:string = kernel_name & "<'*8>(@)"
+  # We pass the 8th parameter type to the template.
+  # The "*" in '*8 is needed to remove the pointer *
+
+  # We create an new identifier on the fly with backticks
+  proc `binding_name`[T: SomeReal](
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
+    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
+  ) {.importcpp: import_string, noSideEffect.}
+
+
 template cuda_binary_glue*(
-  kernel_name: untyped, op_name: string): untyped =
+  kernel_name, op_name: string, binding_name: untyped): untyped =
   # Input
   #   - kernel_name and the Cuda function object
   # Result
@@ -98,7 +125,7 @@ template cuda_binary_glue*(
 
   {.emit:["""
   template<typename T>
-  inline void """,astToStr(kernel_name {.inject.}),"""(
+  inline void """, kernel_name,"""(
     const int blocksPerGrid, const int threadsPerBlock,
     const int rank,
     const int len,
@@ -125,17 +152,8 @@ template cuda_binary_glue*(
     }
     """].}
 
-  const import_string:string = kernel_name.astToStr & "<'*8>(@)"
-  # We pass the 8th parameter type to the template.
-  # The "*" in '*8 is needed to remove the pointer *
+  cuda_binary_binding(kernel_name, binding_name)
 
-  proc `kernel_name`[T: SomeReal](
-    blocksPerGrid, threadsPerBlock: cint,
-    rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
-    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
-  ) {.importcpp: import_string, noSideEffect.}
 
 template cuda_binary_call*[T: SomeReal](
   kernel_name: untyped, destination: var CudaTensor[T], a, b: CudaTensor[T]): untyped =

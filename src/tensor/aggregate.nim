@@ -80,8 +80,9 @@ proc max*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
       ex = max(ex,ey)
 
 proc variance*[T: SomeReal](t: Tensor[T]): T =
-  ## Compute the variance of all elements
-  ## The normalization is by the (n-1), like in the formal definition
+  ## Compute the sample variance of all elements
+  ## The normalization is by (n-1), also known as Bessel's correction,
+  ## which partially correct the bias of estimating a population variance from a sample of this population.
   let mean = t.mean()
   result = t.fold_inline() do:
     # Initialize to the first element

@@ -31,7 +31,7 @@ template cuda_assign_glue*(
 
   {.emit:["""
   template<typename T>
-  inline void """,astToStr kernel_name {.inject.},"""(
+  inline void """,astToStr(kernel_name {.inject.}),"""(
     const int blocksPerGrid, const int threadsPerBlock,
     const int rank,
     const int len,
@@ -67,7 +67,9 @@ template cuda_assign_glue*(
 template cuda_assign_call*[T: SomeReal](
   kernel_name: untyped, destination: var CudaTensor[T], source: CudaTensor[T]): untyped =
   ## Does the heavy-lifting to format the tensors for the cuda call
-  # TODO: why doesn't this template works with the global
+  # TODO: why doesn't this template works with "cudaLaunchKernel" instead
+  # of triple-chevrons notation kernel<<<blocksPerGrid, threadsPerBlock>>>(params).
+  # This would avoid an intermediate function call
 
   let dst = layoutOnDevice destination
   let src = layoutOnDevice source
@@ -96,7 +98,7 @@ template cuda_binary_glue*(
 
   {.emit:["""
   template<typename T>
-  inline void """,astToStr kernel_name {.inject.},"""(
+  inline void """,astToStr(kernel_name {.inject.}),"""(
     const int blocksPerGrid, const int threadsPerBlock,
     const int rank,
     const int len,
@@ -138,7 +140,10 @@ template cuda_binary_glue*(
 template cuda_binary_call*[T: SomeReal](
   kernel_name: untyped, destination: var CudaTensor[T], a, b: CudaTensor[T]): untyped =
   ## Does the heavy-lifting to format the tensors for the cuda call
-  # TODO: why doesn't this template works with the global
+  #
+  # TODO: why doesn't this template works with "cudaLaunchKernel" instead
+  # of triple-chevrons notation kernel<<<blocksPerGrid, threadsPerBlock>>>(params).
+  # This would avoid an intermediate function call
 
   let dst = layoutOnDevice destination
   let src_a = layoutOnDevice a

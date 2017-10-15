@@ -16,8 +16,6 @@
 
 ########### Arraymancer Exceptions ############
 
-Author: Kaan Eraslan
-
 Purpose: Implement exceptions that are more specific to tensors and
 their usecases.
 This file also contains the hierarchy of arraymancer specific exceptions.
@@ -29,29 +27,15 @@ Exception Hierarchy
 1. IndexError
 
     1. SliceError
-
-        1. SliceStepError
-
+    2. AxisIndexError
 
 2. ValueError
 
     1. IncompatibleShapeError
-
-        1. ElementWiseShapeError
-
     2. IncompatibleSizeError
-
-        1. IncompatibleSizeReshapeError
-
-    3. ArgRankError
-
-    4. AxisRankError
-
-3. TypeError
-
-    1. TensorLayoutTypeError
-
-    2. IncompatibleRankError
+    3. RankError
+    4. TensorLayoutError
+    5. IncompatibleRankError
 
 ]#
 
@@ -60,41 +44,31 @@ Exception Hierarchy
 SliceError* =  object of IndexError
   ## Raised if there is an error in slicing.
 
-SliceStepError* = object of SliceError
-  ## Raised if the error concerns slicing in a process that operates with steps
+AxisIndexError* = object of IndexError
+  ## Raised if the number of axis does not match the tensor rank
+
+LevelLengthError* = object of IndexError
+  ## Raised if the lengths of sequences at the same level differs.
+
 
 ###### Exceptions inheriting ValueError ########
 
 IncompatibleShapeError* = object of ValueError
   ## Raised if the shapes of tensors are incompatible for some reason.
 
-ElementWiseShapeError* =  object of IncompatibleShapeError
-  ## Raised if the shapes of tensors are incompatible for elementwise operations
-
 IncompatibleSizeError* = object of ValueError
   ## Raised if the sizes of tensors are incompatible for some reason.
 
-IncompatibleSizeReshapeError* = object of IncompatibleSizeError
-  ## Raised if the sizes of tensors are incompatible for reshaping
-
-ArgRankError* = object of ValueError
+RankError* = object of ValueError
   ## Raised if the number of arguments does not match the tensor rank
-
-AxisRankError* = object of ValueError
-  ## Raised if the number of axis does not match the tensor rank
 
 
 
 ####### Exceptions inheriting TypeError #########
 
-ObjectTypeError* = object of Exception
-  ## Raised when the object does not satisfy the necessary conditions
-  ## for an operation
-
-TensorLayoutTypeError* = object of ObjectTypeError
+TensorLayoutError* = object of ValueError
   ## Raised when tensor layout is not contigous.
-  # Data_structure_helpers.nim de kaldın
 
-IncompatibleRankError* = object of ObjectTypeError
+IncompatibleRankError* = object of ValueError
   ## Raised when tensor's rank does not satisfy the necessary conditions
   ## for an operation.

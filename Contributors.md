@@ -7,6 +7,11 @@ Arraymancer contributors (sorted alphabetically)
     - Uninitialized seq
   - Shapeshifting procs
   - Developing the ecosystem with [arraymancer-vision](https://github.com/edubart/arraymancer-vision) and [arraymancer-demos](https://github.com/edubart/arraymancer-demos)
+  
+### Kaan Eraslan
+
+  - Exceptions
 
 ### Mamy Ratsimbazafy
   - Lead dev
+  

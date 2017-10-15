@@ -23,11 +23,11 @@ proc check_nested_elements*(shape: seq[int], len: int) {.noSideEffect, inline.}=
   ##   -- A shape (sequence of int)
   ##   -- A length (int)
   if (shape.product != len):
-    raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
+    raise newException(LevelLengthError, "Each nested sequence at the same level must have the same number of elements")
 
 proc check_index*(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
   if idx.len != t.rank:
-    raise newException(ArgRankError, "Number of arguments: " &
+    raise newException(RankError, "Number of arguments: " &
                     $(idx.len) &
                     ", is different from tensor rank: " &
                     $(t.rank))
@@ -35,7 +35,7 @@ proc check_index*(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
 proc check_elementwise*(a, b:AnyTensor)  {.noSideEffect.}=
   ## Check if element-wise operations can be applied to 2 Tensors
   if a.shape != b.shape:
-    raise newException(ElementWiseShapeError, "Both Tensors should have the same shape.\n Left-hand side has shape " &
+    raise newException(IncompatibleShapeError, "Both Tensors should have the same shape.\n Left-hand side has shape " &
                                    $a.shape & " while right-hand side has shape " & $b.shape)
 
 proc check_size*[T,U](a:Tensor[T], b:Tensor[U])  {.noSideEffect.}=
@@ -56,7 +56,7 @@ proc check_steps*(a,b, step:int) {.noSideEffect, inline.}=
     # like shape of (3, 0)
     return
   if ((b-a) * step < 0):
-    raise newException(SliceStepError, "Your slice start: " &
+    raise newException(SliceError, "Your slice start: " &
                 $a & ", and stop: " &
                 $b & ", or your step: " &
                 $step &
@@ -83,7 +83,7 @@ proc check_shape*(a, b: Tensor|openarray) {.noSideEffect, inline.}=
 
 proc check_reshape*(t: AnyTensor, new_shape:MetadataArray) {.noSideEffect, inline.}=
   if t.size != new_shape.product:
-    raise newException(IncompatibleSizeReshapeError, "The total number of elements in the old (" &
+    raise newException(IncompatibleSizeError, "The total number of elements in the old (" &
                                     $t.size &
                                     ") and the new (" &
                                     $new_shape.product &
@@ -91,7 +91,7 @@ proc check_reshape*(t: AnyTensor, new_shape:MetadataArray) {.noSideEffect, inlin
 
 proc check_nocopyReshape*(t: AnyTensor) {.noSideEffect, inline.}=
   if not t.isContiguous:
-    raise newException(TensorLayoutTypeError, "The tensor must be contiguous for reshape without copy")
+    raise newException(TensorLayoutError, "The tensor must be contiguous for reshape without copy")
 
 proc check_concat*(t1, t2: Tensor, axis: int) {.noSideEffect,inline.}=
   let check1 = t1.shape[0..<axis] == t2.shape[0..<axis]
@@ -102,11 +102,11 @@ proc check_concat*(t1, t2: Tensor, axis: int) {.noSideEffect,inline.}=
 
 proc check_squeezeAxis*(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
   if axis >= t.rank:
-    raise newException(AxisRankError, "The axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )
+    raise newException(AxisIndexError, "The axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )
 
 proc check_unsqueezeAxis*(t: AnyTensor, axis: int) {.noSideEffect, inline.}=
   if t.rank == 0 or axis > t.rank or axis < 0:
-    raise newException(AxisRankError, "The new axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )
+    raise newException(AxisIndexError, "The new axis is out of range, axis is " & $axis & " while the tensor rank is " & $t.rank )
 
 proc check_dot_prod*(a, b:AnyTensor)  {.noSideEffect.}=
   if a.rank != 1 or b.rank != 1: raise newException(IncompatibleRankError, "Dot product is only supported for vectors (tensors of rank 1)")
@@ -117,7 +117,7 @@ proc check_matmat*(a, b: AnyTensor) {.noSideEffect.}=
   let rowB = b.shape[0]
 
   if colA != rowB:
-    raise newException(ElementWiseShapeError, "Number of columns in the first matrix: " &
+    raise newException(IncompatibleShapeError, "Number of columns in the first matrix: " &
                     $(colA) &
                     ", must be the same as the number of rows in the second matrix: " &
                     $(rowB))
@@ -127,7 +127,7 @@ proc check_matvec*(a, b: AnyTensor)  {.noSideEffect.}=
   let rowB = b.shape[0]
 
   if colA != rowB:
-    raise newException(ElementWiseShapeError, "Number of columns in the matrix: " &
+    raise newException(IncompatibleShapeError, "Number of columns in the matrix: " &
                     $(colA) &
                     ", must be the same as the number of rows in the vector: " &
                     $(rowB))

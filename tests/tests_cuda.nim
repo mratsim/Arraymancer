@@ -16,4 +16,5 @@
 import ../src/arraymancer,
         ./tensor/test_operators_blas_cuda,
         ./tensor/test_accessors_slicer_cuda,
-        ./tensor/test_shapeshifting_cuda
+        ./tensor/test_shapeshifting_cuda,
+        ./tensor/test_broadcasting_cuda

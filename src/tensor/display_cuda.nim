@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./data_structure,
-        ./display
+import  ./private/p_display,
+        ./data_structure,
+        typetraits
 
 proc `$`*[T](t: CudaTensor[T]): string =
   ## Pretty-print a CudaTensor (when using ``echo`` for example)
-  let desc = "Tensor of shape " & t.shape.join("x") & " of type \"" & T.name & "\" on backend \"" & "Cuda" & "\""
-  
+  let desc = "Tensor of shape " & $t.shape & " of type \"" & T.name & "\" on backend \"" & "Cpu" & "\""
+
   let cpu_t = t.cpu()
-  
+
   if t.rank <= 2:
     return desc & "\n" & cpu_t.disp2d
   elif t.rank == 3:

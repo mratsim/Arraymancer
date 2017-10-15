@@ -49,6 +49,46 @@ template broadcastT*(t: var AnyTensor, shape: varargs[int]|MetadataArray) =
     elif t.shape[i] != shape[i]:
       raise newException(ValueError, "The broadcasted size of the tensor must match existing size for non-singleton dimension")
 
+template broadcast2T*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T]]) =
+  let rank = max(a.rank, b.rank)
+
+  var shapeA, stridesA, shapeB, stridesB = newMetadataArray(rank) # initialized with 0
+
+  for i in 0..<rank:
+    let shape_A_iter = if i < rank: a.shape[i] else: 1
+    let shape_B_iter = if i < rank: b.shape[i] else: 1
+
+    if shape_A_iter == shape_B_iter:
+      shapeA[i] = shape_A_iter
+      shapeB[i] = shape_A_iter
+
+      stridesA[i] = a.strides[i]
+      stridesB[i] = b.strides[i]
+
+    elif shape_A_iter == 1:
+      shapeA[i] = shape_B_iter
+      shapeB[i] = shape_B_iter
+
+      # stridesA[i] is already 0
+      stridesB[i] = b.strides[i]
+    elif shape_B_iter == 1:
+      shapeA[i] = shape_A_iter
+      shapeB[i] = shape_A_iter
+
+      stridesA[i] = a.strides[i]
+      # stridesB[i] is already 0
+    else:
+      raise newException(ValueError, "Broadcasting error: non-singleton dimensions must be the same in both tensors")
+
+  result.a.shape = shapeA
+  result.a.strides = stridesA
+  result.a.offset = a.offset
+
+  result.b.shape = shapeB
+  result.b.strides = stridesB
+  result.b.offset = b.offset
+
+
 proc exch_dim*(t: Tensor, dim1, dim2: int): Tensor {.noInit,noSideEffect.}=
   if dim1 == dim2:
     return

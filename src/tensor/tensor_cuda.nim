@@ -20,10 +20,12 @@ import ./backend/cuda_global_state,
         ./display_cuda,
         ./operators_blas_l1_cuda,
         ./operators_blas_l2l3_cuda,
+        ./operators_broadcasted_cuda,
         ./shapeshifting_cuda
 
 export  init_cuda,
         display_cuda,
         operators_blas_l1_cuda,
         operators_blas_l2l3_cuda,
+        operators_broadcasted_cuda,
         shapeshifting_cuda

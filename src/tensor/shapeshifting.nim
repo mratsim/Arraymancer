@@ -187,44 +187,10 @@ proc unsafeBroadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffec
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
   ##   A broadcasted tensor should not be modified and only used for computation.
-  let rank = max(a.rank, b.rank)
 
-  var shapeA, stridesA, shapeB, stridesB = newMetadataArray(rank) # initialized with 0
+  broadcast2T(a,b, result)
 
-  for i in 0..<rank:
-    let shape_A_iter = if i < rank: a.shape[i] else: 1
-    let shape_B_iter = if i < rank: b.shape[i] else: 1
-
-    if shape_A_iter == shape_B_iter:
-      shapeA[i] = shape_A_iter
-      shapeB[i] = shape_A_iter
-
-      stridesA[i] = a.strides[i]
-      stridesB[i] = b.strides[i]
-
-    elif shape_A_iter == 1:
-      shapeA[i] = shape_B_iter
-      shapeB[i] = shape_B_iter
-
-      # stridesA[i] is already 0
-      stridesB[i] = b.strides[i]
-    elif shape_B_iter == 1:
-      shapeA[i] = shape_A_iter
-      shapeB[i] = shape_A_iter
-
-      stridesA[i] = a.strides[i]
-      # stridesB[i] is already 0
-    else:
-      raise newException(ValueError, "Broadcasting error: non-singleton dimensions must be the same in both tensors")
-
-  result.a.shape = shapeA
-  result.a.strides = stridesA
-  result.a.offset = a.offset
   shallowCopy(result.a.data, a.data)
-
-  result.b.shape = shapeB
-  result.b.strides = stridesB
-  result.b.offset = b.offset
   shallowCopy(result.b.data, b.data)
 
 proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=

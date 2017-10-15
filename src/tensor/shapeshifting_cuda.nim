@@ -88,6 +88,26 @@ proc unsafeBroadcast*(t: CudaTensor, shape: varargs[int]): CudaTensor {.noSideEf
   result = t
   result.broadcastT(shape)
 
+proc unsafeBroadcast2*[T](a, b: CudaTensor[T]): tuple[a, b: CudaTensor[T]] {.noSideEffect.}=
+  ## Broadcast 2 tensors so they have compatible shapes for element-wise computations.
+  ##
+  ## Tensors in the tuple can be accessed with output.a and output.b
+  ##
+  ## The returned broadcasted Tensors share the underlying data with the input.
+  ##
+  ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
+  ## values along that dimension.
+  ##
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  ##   A broadcasted tensor should not be modified and only used for computation.
+
+  broadcast2T(a,b, result)
+
+  result.a.data = a.data
+  result.b.data = b.data
+
 proc unsafeSqueeze*(t: CudaTensor, axis: int): CudaTensor {.noSideEffect.}=
   ## Collapse the given axis, if the dimension is not 1; it does nothing
   ## Input:

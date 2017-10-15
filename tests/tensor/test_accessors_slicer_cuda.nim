@@ -134,7 +134,7 @@ suite "CUDA: Testing indexing and slice syntax":
 
   when compileOption("boundChecks"):
     test "Slice from the end - expect non-negative step error - foo[^1..0, 3]":
-      expect(IndexError):
+      expect(SliceError):
         discard t_van[^1..0, 3]
   else:
     echo "Bound-checking is disabled. The non-negative step test has been skipped."

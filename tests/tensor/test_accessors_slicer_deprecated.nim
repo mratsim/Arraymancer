@@ -131,7 +131,7 @@ suite "Testing indexing and slice syntax":
     check: t_van[^(4-2)..0|-1, 3] == test2.toTensor(Cpu)
 
   test "Slice from the end - expect non-negative step error - foo[^1..0, 3]":
-    expect(IndexError):
+    expect(SliceError):
       discard t_van[^1..0, 3]
 
   test "Slice from the end - foo[^(2*2)..2*2, 3]":
@@ -226,13 +226,13 @@ suite "Slice mutations":
   
   test "Bounds checking":
     var t_van = t_van_immut
-    expect(IndexError):
+    expect(RankError):
       t_van[0..1,0..1] = [111, 222, 333, 444, 555]
-    expect(IndexError):
+    expect(RankError):
       t_van[0..1,0..1] = [111, 222, 333]
-    expect(IndexError):
+    expect(RankError):
       t_van[^2..^1,2..4] = t_van[1, 4..2|-1]
-    expect(IndexError):
+    expect(RankError):
       t_van[^2..^1,2..4] = t_van[^1..^3|-1, 4..2|-1]
   
   test "Chained slicing - foo[1..^2,1..2][1..^1, 0]":

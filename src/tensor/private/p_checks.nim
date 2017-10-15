@@ -14,8 +14,8 @@
 
 import  ../../private/[functional, nested_containers],
         ../backend/metadataArray,
-        ../data_structure
-        ./arraymancer_exceptions
+        ../data_structure,
+        ./p_exceptions
 
 proc check_nested_elements*(shape: seq[int], len: int) {.noSideEffect, inline.}=
   ## Compare the detected shape from flatten with the real length of the data
@@ -23,22 +23,22 @@ proc check_nested_elements*(shape: seq[int], len: int) {.noSideEffect, inline.}=
   ##   -- A shape (sequence of int)
   ##   -- A length (int)
   if (shape.product != len):
-    raise newException(LevelLengthError, "Each nested sequence at the same level must have the same number of elements")
+    raise newException(IncompatibleShapeError, "Each nested sequence at the same level must have the same number of elements")
 
-proc check_index*(t: Tensor, idx: varargs[int]) {.noSideEffect.}=
+proc check_index*(t: Tensor, idx: varargs[int]) {.noSideEffect, inline.}=
   if idx.len != t.rank:
     raise newException(RankError, "Number of arguments: " &
                     $(idx.len) &
                     ", is different from tensor rank: " &
                     $(t.rank))
 
-proc check_elementwise*(a, b:AnyTensor)  {.noSideEffect.}=
+proc check_elementwise*(a, b:AnyTensor)  {.noSideEffect, inline.}=
   ## Check if element-wise operations can be applied to 2 Tensors
   if a.shape != b.shape:
     raise newException(IncompatibleShapeError, "Both Tensors should have the same shape.\n Left-hand side has shape " &
                                    $a.shape & " while right-hand side has shape " & $b.shape)
 
-proc check_size*[T,U](a:Tensor[T], b:Tensor[U])  {.noSideEffect.}=
+proc check_size*[T,U](a:Tensor[T], b:Tensor[U])  {.noSideEffect, inline.}=
   ## Check if the total number of elements match
 
   if a.size != b.size:

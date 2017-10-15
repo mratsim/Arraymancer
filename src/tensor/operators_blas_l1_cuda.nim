@@ -34,7 +34,6 @@ proc dot*[T: SomeReal](a, b: CudaTensor[T]): T {.inline.}=
               b.get_data_ptr, b.strides[0],
               addr result)
 
-proc cuda_inPlaceAdd = discard # This is a hack so that the symbol is open
 cuda_assign_glue(cuda_inPlaceAdd, "InPlaceAddOp")
 
 proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
@@ -47,7 +46,6 @@ proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
 
   # TODO: if a and b share the same location, TEST
 
-proc cuda_Add = discard # This is a hack so that the symbol is open
 cuda_binary_glue(cuda_Add, "AddOp")
 
 proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.}=
@@ -59,7 +57,6 @@ proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.}=
   result = newCudaTensor[T](a.shape)
   cuda_binary_call(cuda_Add, result, a, b)
 
-proc cuda_inPlaceSub = discard # This is a hack so that the symbol is open
 cuda_assign_glue(cuda_inPlaceSub, "InPlaceSubOp")
 
 proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
@@ -73,7 +70,6 @@ proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   # TODO: if a and b share the same location, TEST
 
 
-proc cuda_Sub = discard # This is a hack so that the symbol is open
 cuda_binary_glue(cuda_Sub, "SubOp")
 
 proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =

@@ -22,13 +22,16 @@ import  ../backend/cuda,
 # # Assignements, copy and in-place operations
 template cuda_assign_glue*(
   kernel_name: untyped, op_name: string): untyped =
-  # Kernel_name must be an open symbol
-  # As a hack to avoid building an AST macro with new call
-  # declare a dummy proc with `proc kernel_name = discard`
+  # Input
+  #   - kernel_name and the Cuda function object
+  # Result
+  #   - Auto-generate cuda kernel based on the function object
+  #   - Bindings with name "kernel_name" that can be called directly
+  #   or with the convenience function ``cuda_assign_call``
 
   {.emit:["""
   template<typename T>
-  inline void """,kernel_name.astToStr,"""(
+  inline void """,astToStr kernel_name {.inject.},"""(
     const int blocksPerGrid, const int threadsPerBlock,
     const int rank,
     const int len,
@@ -54,7 +57,7 @@ template cuda_assign_glue*(
   # We pass the 8th parameter type to the template.
   # The "*" in '*8 is needed to remove the pointer *
 
-  proc kernel_name[T: SomeReal](
+  proc `kernel_name`[T: SomeReal](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
     dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
@@ -69,7 +72,7 @@ template cuda_assign_call*[T: SomeReal](
   let dst = layoutOnDevice destination
   let src = layoutOnDevice source
 
-  kernel_name(
+  kernel_name[T](
     CUDA_HOF_TPB, CUDA_HOF_BPG,
     src.rank, dst.len, # Note: small shortcut, in this case len and size are the same
     dst.shape[], dst.strides[],
@@ -82,15 +85,18 @@ template cuda_assign_call*[T: SomeReal](
 # # Binary operations
 template cuda_binary_glue*(
   kernel_name: untyped, op_name: string): untyped =
-  # Kernel_name must be an open symbol
-  # As a hack to avoid building an AST macro with new call
-  # declare a dummy proc with `proc kernel_name = discard`
+  # Input
+  #   - kernel_name and the Cuda function object
+  # Result
+  #   - Auto-generate cuda kernel based on the function object
+  #   - Bindings with name "kernel_name" that can be called directly
+  #   or with the convenience function ``cuda_binary_call``
 
   # TODO: optimize number of args to reduce register pressure
 
   {.emit:["""
   template<typename T>
-  inline void """,kernel_name.astToStr,"""(
+  inline void """,astToStr kernel_name {.inject.},"""(
     const int blocksPerGrid, const int threadsPerBlock,
     const int rank,
     const int len,
@@ -121,7 +127,7 @@ template cuda_binary_glue*(
   # We pass the 8th parameter type to the template.
   # The "*" in '*8 is needed to remove the pointer *
 
-  proc kernel_name[T: SomeReal](
+  proc `kernel_name`[T: SomeReal](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
     dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,

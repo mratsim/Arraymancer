@@ -35,7 +35,6 @@ proc unsafeTranspose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
   result.offset = t.offset
   result.data = t.data
 
-proc cuda_unsafeContiguous = discard # This is a hack so that the symbol is open
 cuda_assign_glue(cuda_unsafeContiguous, "CopyOp")
 
 proc unsafeContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, force: bool = false):

@@ -21,10 +21,8 @@ suite "Testing aggregation functions":
           [6, 7, 8],
           [9, 10, 11]].toTensor()
 
-  test "Sum all elements":
+  test "Sum":
     check: t.sum == 66
-
-  test "Sum over axis":
     let row_sum = [[18, 22, 26]].toTensor()
     let col_sum = [[3],
                    [12],
@@ -33,11 +31,9 @@ suite "Testing aggregation functions":
     check: t.sum(axis=0) == row_sum
     check: t.sum(axis=1) == col_sum
 
-    ## TODO: 3D axis sum
-  test "Mean of all elements":
+  test "Mean":
     check: t.astype(float).mean == 5.5 # Note: may fail due to float rounding
 
-  test "Mean over axis":
     let row_mean = [[4.5, 5.5, 6.5]].toTensor()
     let col_mean = [[1.0],
                     [4.0],
@@ -45,3 +41,57 @@ suite "Testing aggregation functions":
                     [10.0]].toTensor()
     check: t.astype(float).mean(axis=0) == row_mean
     check: t.astype(float).mean(axis=1) == col_mean
+
+  test "Product":
+    let a = [[1,2,4],[8,16,32]].toTensor()
+    check: t.product() == 0
+    check: a.product() == 32768
+    check: a.astype(float).product() == 32768.0
+    check: a.product(0) == [[8,32,128]].toTensor()
+    check: a.product(1) == [[8],[4096]].toTensor()
+
+  test "Min":
+    let a = [2,-1,3,-3,5,0].toTensor()
+    check: a.min() == -3
+    check: a.astype(float32).min() == -3.0f
+
+    let b = [[1,2,3,-4],[0,4,-2,5]].toTensor()
+    check: b.min(0) == [[0,2,-2,-4]].toTensor()
+    check: b.min(1) == [[-4],[-2]].toTensor()
+    check: b.astype(float32).min(0) == [[0.0f,2,-2,-4]].toTensor()
+    check: b.astype(float32).min(1) == [[-4.0f],[-2.0f]].toTensor()
+
+  test "Max":
+    let a = [2,-1,3,-3,5,0].toTensor()
+    check: a.max() == 5
+    check: a.astype(float32).max() == 5.0f
+
+    let b = [[1,2,3,-4],[0,4,-2,5]].toTensor()
+    check: b.max(0) == [[1,4,3,5]].toTensor()
+    check: b.max(1) == [[3],[5]].toTensor()
+    check: b.astype(float32).max(0) == [[1.0f,4,3,5]].toTensor()
+    check: b.astype(float32).max(1) == [[3.0f],[5.0f]].toTensor()
+
+  test "Variance":
+    let a = [-3.0,-2,-1,0,1,2,3].toTensor()
+    check: abs(a.variance() - 4.6666666666667) < 1e-8
+    let b = [[1.0,2,3,-4],[0.0,4,-2,5]].toTensor()
+    check: b.variance(0) == [[0.5,2.0,12.5,40.5]].toTensor()
+    check: (
+      b.variance(1) -
+      [[9.666666666666666], [10.91666666666667]].toTensor()
+    ).abs().sum() < 1e-8
+
+  test "Standard Deviation":
+    let a = [-3.0,-2,-1,0,1,2,3].toTensor()
+    check: abs(a.std() - 2.1602468994693) < 1e-8
+    let b = [[1.0,2,3,-4],[0.0,4,-2,5]].toTensor()
+    check: abs(
+      b.std(0) -
+      [[0.7071067811865476,1.414213562373095,
+        3.535533905932738,6.363961030678928]].toTensor()
+    ).abs().sum() < 1e-8
+    check: abs(
+      b.std(1) -
+      [[3.109126351029605],[3.304037933599835]].toTensor()
+    ).abs().sum() < 1e-8

@@ -48,3 +48,10 @@ suite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
                   [-10.0],
                   [-20.0],
                   [-30.0]].toTensor
+
+  test "Clamp":
+    var a = [-5,2,3,5,10,0,1,-1].toTensor()
+    let target = [-2,2,2,2,2,0,1,-1].toTensor()
+    check: a.clamp(-2,2) == target
+    a.mclamp(-2,2)
+    check: a == target

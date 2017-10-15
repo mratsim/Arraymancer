@@ -121,3 +121,8 @@ suite "Creating a new Tensor":
       check: a[0,0] is float32
   # TODO add tests for randomTensor
 
+  test "Random normal tensor":
+    for i in 0..<4:
+      let t = randomNormalTensor[float32](1000)
+      check: abs(t.mean()) <= 2e-1
+      check: abs(t.std() - 1.0) <= 2e-1

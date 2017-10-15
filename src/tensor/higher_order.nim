@@ -70,23 +70,44 @@ template map3_inline*[T](t1, t2, t3: Tensor[T], op:untyped): untyped =
       data[i] = op
   dest.unsafeView()
 
-template reduceT*[T](t: Tensor[T], op: untyped): untyped =
+template reduce_inline*[T](t: Tensor[T], op: untyped): untyped =
   var reduced : T
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.size, 1, op) do:
-    t.atContiguousIndex(block_offset)
+    x = t.atContiguousIndex(block_offset)
   do:
     for y {.inject.} in t.items(block_offset, block_size):
       op
   reduced
 
-template reduceAxisT*[T](t: Tensor[T], axis: int, op: untyped): untyped =
+template fold_inline*[T](t: Tensor[T], op_initial, op_middle, op_final: untyped): untyped =
+  var reduced : T
+  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.size, 1, op_final) do:
+    let y {.inject.} = t.atContiguousIndex(block_offset)
+    op_initial
+  do:
+    for y {.inject.} in t.items(block_offset, block_size):
+      op_middle
+  reduced
+
+template reduce_axis_inline*[T](t: Tensor[T], axis: int, op: untyped): untyped =
   var reduced : type(t)
   let weight = t.size div t.shape[axis]
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[axis], weight, op) do:
-    t.atAxisIndex(axis, block_offset).unsafeView()
+    x = t.atAxisIndex(axis, block_offset).unsafeView()
   do:
     for y {.inject.} in t.axis(axis, block_offset, block_size):
       op
+  reduced.unsafeView()
+
+template fold_axis_inline*[T](t: Tensor[T], axis: int, op_initial, op_middle, op_final: untyped): untyped =
+  var reduced : type(t)
+  let weight = t.size div t.shape[axis]
+  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[axis], weight, op_final) do:
+    let y {.inject.} = t.atAxisIndex(axis, block_offset).unsafeView()
+    op_initial
+  do:
+    for y {.inject.} in t.axis(axis, block_offset, block_size):
+      op_middle
   reduced.unsafeView()
 
 proc map*[T; U: not (ref|string|seq)](t: Tensor[T], f: T -> U): Tensor[U] {.noInit.} =
@@ -300,7 +321,7 @@ proc reduce*[T](t: Tensor[T],
   ##  .. code:: nim
   ##     a.reduce(max) ## This returns the maximum value in the Tensor.
 
-  t.reduceT():
+  t.reduce_inline():
     shallowCopy(x, f(x,y))
 
 proc reduce*[T](t: Tensor[T],
@@ -317,5 +338,5 @@ proc reduce*[T](t: Tensor[T],
   ## Result:
   ##     - A tensor aggregate of the function called all elements of the tensor
 
-  t.reduceAxisT(axis):
+  t.reduce_axis_inline(axis):
     shallowCopy(x, f(x,y))

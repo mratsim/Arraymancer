@@ -13,24 +13,49 @@
 # limitations under the License.
 
 import  ./data_structure,
-        ./higher_order
+        ./higher_order,
+        ./ufunc
 
 # Non-operator math functions
 
+proc elwise_mul*[T](a, b: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Element-wise multiply
+  map2_inline(a, b, x * y)
+
+proc melwise_mul*[T](a: var Tensor[T], b: Tensor[T]) =
+  ## Element-wise multiply
+  a.apply2_inline(b, x * y)
+
+proc elwise_div*[T: Someinteger](a, b: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Element-wise division
+  map2_inline(a, b, x div y)
+
+proc elwise_div*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Element-wise division
+  map2_inline(a, b, x / y)
+
+proc melwise_div*[T: Someinteger](a: var Tensor[T], b: Tensor[T]) =
+  ## Element-wise division (in-place)
+  a.apply2_inline(b, x div y)
+
+proc melwise_div*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) =
+  ## Element-wise division (in-place)
+  a.apply2_inline(b, x / y)
+
 proc reciprocal*[T: SomeReal](t: Tensor[T]): Tensor[T] {.noInit.} =
-  # Return a tensor with the reciprocal 1/x of all elements
+  ## Return a tensor with the reciprocal 1/x of all elements
   t.map_inline(1.T/x)
 
 proc mreciprocal*[T: SomeReal](t: var Tensor[T]) =
-  # Apply the reciprocal 1/x in-place to all elements of the Tensor
+  ## Apply the reciprocal 1/x in-place to all elements of the Tensor
   t.apply_inline(1.T/x)
 
 proc negate*[T: SomeSignedInt|SomeReal](t: Tensor[T]): Tensor[T] {.noInit.} =
-  # Return a tensor with all elements negated (10 -> -10)
+  ## Return a tensor with all elements negated (10 -> -10)
   t.map_inline(-x)
 
 proc mnegate*[T: SomeSignedInt|SomeReal](t: var Tensor[T]) =
-  # Negate in-place all elements of the tensor (10 -> -10)
+  ## Negate in-place all elements of the tensor (10 -> -10)
   t.apply_inline(-x)
 
 proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit.} =
@@ -45,3 +70,15 @@ proc abs*[T](t: Tensor[T]): Tensor[T] {.noInit.} =
 proc mabs*[T](t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Return a Tensor with absolute values of all elements
   t.apply_inline(abs(x))
+
+proc clamp*[T](t: Tensor[T], min, max: T): Tensor[T] {.noInit.} =
+  t.map_inline(clamp(x, min, max))
+
+proc mclamp*[T](t: var Tensor[T], min, max: T) =
+  t.apply_inline(clamp(x, min, max))
+
+proc square*[T](x: T): T {.inline.} =
+  ## Return x*x
+  x*x
+
+makeUniversal(square)

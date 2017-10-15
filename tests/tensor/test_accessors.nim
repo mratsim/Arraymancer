@@ -38,9 +38,9 @@ suite "Accessing and setting tensor values":
         a[2,0,0] = 200
       var b = newTensor[int](@[3,4])
       expect(IndexError):
-        b[3,4] = 999 #FIXME: C++ backend doesn't throuw this exception
+        b[3,4] = 999 #FIXME: C++ backend doesn't throw this exception
       expect(IndexError):
-        discard b[-1,0] #FIXME: C++ backend doesn't throuw this exception
+        discard b[-1,0] #FIXME: C++ backend doesn't throw this exception
       expect(IndexError):
         discard b[0,-2]
   else:

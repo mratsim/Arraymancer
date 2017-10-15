@@ -223,7 +223,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     check: a[0..1, 0..1] + a_t[0..1, 0..1] == [[2.0, 6], [6.0, 10]].toTensor()
     check: a[1..2, 1..2] - a_t[1..2, 1..2] == [[0.0, -2], [2.0, 0]].toTensor()
 
-  when compileOption("boundChecks") and not defined(openmp) and not defined(cpp):
+  when compileOption("boundChecks") and not defined(openmp):
     # OpenMP or cpp backend are crashing the test suite.
     # OpenMP: always
     # FIXME: C++: only if all tests are run together

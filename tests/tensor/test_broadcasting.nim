@@ -186,11 +186,11 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                     [-90],
                     [-80],
                     [-70]].toTensor
-    
+
     block: # Float Exponentiation
       var a = [1.0, 10, 20, 30].toTensor().reshape(4,1)
       var b = a
-    
+
       a .^= 2.0
       check: a  == [[1.0],
                     [100.0],

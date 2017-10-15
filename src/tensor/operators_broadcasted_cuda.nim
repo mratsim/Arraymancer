@@ -27,6 +27,8 @@ include ./private/incl_accessors_cuda,
 # #########################################################
 # # Broadcasting Tensor-Tensor
 # # And element-wise multiplication (Hadamard) and division
+cuda_binary_glue("cuda_Mul", "MulOp", cuda_Mul)
+cuda_binary_glue("cuda_Div", "DivOp", cuda_Div)
 
 proc `.+`*[T: SomeReal](a, b: CudaTensor[T]): CudaTensor[T] {.noInit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
@@ -38,7 +40,6 @@ proc `.-`*[T: SomeReal](a, b: CudaTensor[T]): CudaTensor[T] {.noInit,inline.} =
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
   return tmp_a - tmp_b
 
-cuda_binary_glue("cuda_Mul", "MulOp", cuda_Mul)
 
 proc `.*`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   ## Element-wise multiplication (Hadamard product).
@@ -50,8 +51,6 @@ proc `.*`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   result = newCudaTensor[T](tmp_a.shape)
   cuda_binary_call(cuda_Mul, result, tmp_a, tmp_b)
 
-cuda_binary_glue("cuda_Div", "DivOp", cuda_Div)
-
 proc `./`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   ## CudaTensor substraction
 
@@ -62,6 +61,9 @@ proc `./`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
 
 # ##############################################
 # # Broadcasting in-place Tensor-Tensor
+
+cuda_assign_glue("cuda_mMulOp", "mMulOp", cuda_mMulOp)
+cuda_assign_glue("cuda_mDivOp", "mDivOp", cuda_mDivOp)
 
 proc `.+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Tensor broadcasted in-place addition.
@@ -79,9 +81,7 @@ proc `.-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   # shape check done in apply2 proc
 
   let tmp_b = b.unsafeBroadcast(a.shape)
-  a -= b
-
-cuda_assign_glue("cuda_mMulOp", "mMulOp", cuda_mMulOp)
+  a -= tmp_b
 
 proc `.*=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Tensor broadcasted in-place multiplication (Hadamard product)
@@ -92,8 +92,6 @@ proc `.*=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   let tmp_b = b.unsafeBroadcast(a.shape)
   cuda_assign_call(cuda_mMulOp, a, tmp_b)
 
-cuda_assign_glue("cuda_mDivOp", "mDivOp", cuda_mDivOp)
-
 proc `./=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Tensor broadcasted in-place float division.
   ##
@@ -102,3 +100,54 @@ proc `./=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
 
   let tmp_b = b.unsafeBroadcast(a.shape)
   cuda_assign_call(cuda_mDivOp, a, tmp_b)
+
+# ##############################################
+# # Broadcasting Tensor-Scalar and Scalar-Tensor
+
+cuda_assign_glue("cuda_rscalSub","RscalSub", cuda_rscalSub)
+cuda_assign_glue("cuda_rscalAdd","RscalAdd", cuda_rscalAdd)
+
+proc `.+`*[T: SomeReal](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+  ## Broadcasted addition for tensor + scalar.
+  result = newCudaTensor[T](t.shape)
+  cuda_rscal_call(cuda_rscalAdd, result, t, val)
+
+proc `.+`*[T: SomeReal](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
+  ## Broadcasted addition for scalar + tensor.
+  result = newCudaTensor[T](t.shape)
+  cuda_rscal_call(cuda_rscalAdd, result, t, val)
+
+# proc `.-`*[T: SomeReal](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+#   ## Broadcasted substraction for tensor - scalar.
+#   result = newCudaTensor[T](t.shape)
+#   cuda_lscal_call(cuda_rscalSub, result, val, t)
+
+proc `.-`*[T: SomeReal](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
+  ## Broadcasted substraction for scalar - tensor.
+  result = newCudaTensor[T](t.shape)
+  cuda_rscal_call(cuda_rscalSub, result, t, val)
+
+# proc `./`*[T: SomeReal](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+#   ## Broadcasted division of a float by a tensor of floats.
+#   result = newCudaTensor[T](t.shape)
+#   cuda_lscal_call(cuda_rscalDiv, result, val, t)
+
+# proc `.^`*[T: SomeReal](t: CudaTensor[T], exponent: T): CudaTensor[T] {.noInit.} =
+#   ## Compute element-wise exponentiation
+#   result = newCudaTensor[T](t.shape)
+#   cuda_rscal_call(cuda_rscalPow, result, t, val)
+
+# #####################################
+# # Broadcasting in-place Tensor-Scalar
+
+proc `.+=`*[T: SomeReal](t: var CudaTensor[T], val: T) =
+  ## Tensor in-place addition with a broadcasted scalar.
+  t.apply_inline(x + val)
+
+proc `.-=`*[T: SomeReal](t: var CudaTensor[T], val: T) =
+  ## Tensor in-place substraction with a broadcasted scalar.
+  t.apply_inline(x - val)
+
+proc `.^=`*[T: SomeReal](t: var CudaTensor[T], exponent: T) =
+  ## Compute in-place element-wise exponentiation
+  t.apply_inline pow(x, exponent)

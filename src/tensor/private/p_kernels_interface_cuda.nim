@@ -225,7 +225,7 @@ template cuda_rscal_glue*(
     const T * __restrict__ src_data,
     const T beta){
 
-      cuda_apply2<<<blocksPerGrid, threadsPerBlock>>>(
+      cuda_apply_rscal<<<blocksPerGrid, threadsPerBlock>>>(
         rank, len,
         dst_shape, dst_strides, dst_offset, dst_data,
         """,op_name,"""<T>(),

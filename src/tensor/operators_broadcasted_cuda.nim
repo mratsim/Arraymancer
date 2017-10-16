@@ -104,16 +104,21 @@ proc `./=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
 # ##############################################
 # # Broadcasting Tensor-Scalar and Scalar-Tensor
 
-cuda_assign_glue("cuda_rscalSub","RscalSub", cuda_rscalSub)
-cuda_assign_glue("cuda_rscalAdd","RscalAdd", cuda_rscalAdd)
-
-proc `.+`*[T: SomeReal](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
-  ## Broadcasted addition for tensor + scalar.
-  result = newCudaTensor[T](t.shape)
-  cuda_rscal_call(cuda_rscalAdd, result, t, val)
+cuda_rscal_glue("cuda_rscalSub","RscalSub", cuda_rscalSub)
+cuda_rscal_glue("cuda_rscalAdd","RscalAdd", cuda_rscalAdd)
 
 proc `.+`*[T: SomeReal](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
   ## Broadcasted addition for scalar + tensor.
+  result = newCudaTensor[T](t.shape)
+  cuda_rscal_call(cuda_rscalAdd, result, t, val)
+
+proc `.-`*[T: SomeReal](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
+  ## Broadcasted substraction for scalar - tensor.
+  result = newCudaTensor[T](t.shape)
+  cuda_rscal_call(cuda_rscalSub, result, t, val)
+
+proc `.+`*[T: SomeReal](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+  ## Broadcasted addition for tensor + scalar.
   result = newCudaTensor[T](t.shape)
   cuda_rscal_call(cuda_rscalAdd, result, t, val)
 
@@ -121,11 +126,6 @@ proc `.+`*[T: SomeReal](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
 #   ## Broadcasted substraction for tensor - scalar.
 #   result = newCudaTensor[T](t.shape)
 #   cuda_lscal_call(cuda_rscalSub, result, val, t)
-
-proc `.-`*[T: SomeReal](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
-  ## Broadcasted substraction for scalar - tensor.
-  result = newCudaTensor[T](t.shape)
-  cuda_rscal_call(cuda_rscalSub, result, t, val)
 
 # proc `./`*[T: SomeReal](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
 #   ## Broadcasted division of a float by a tensor of floats.

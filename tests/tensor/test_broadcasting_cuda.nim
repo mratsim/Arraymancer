@@ -127,3 +127,20 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                       [5.0, 2, 1],
                       [10.0, 4, 2],
                       [15.0, 6, 3]].toTensor
+
+  test "Implicit tensor-scalar broadcasting - basic operations .+, .-, TODO: .^":
+    block: # Addition
+      var a = [0, 10, 20, 30].toTensor().reshape(4,1).astype(float32).cuda
+
+      check: (a .+ 100'f32).cpu == [[100],
+                                [110],
+                                [120],
+                                [130]].toTensor.astype(float32)
+
+    block: # Substraction
+      var a = [0, 10, 20, 30].toTensor().reshape(4,1).astype(float32).cuda
+
+      check: (a .- 100'f32).cpu == [[-100],
+                                [-90],
+                                [-80],
+                                [-70]].toTensor.astype(float32)

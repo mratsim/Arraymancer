@@ -106,15 +106,9 @@ proc `/=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
   ## CudaTensor in-place division by a scalar
   t *= (1/a)
 
-proc `/`*[T:SomeReal](t: CudaTensor[T], a: T): CudaTensor[T] {.noInit, inline.}=
-  ## CudaTensor division by a scalar
+cuda_rscal_glue("cuda_rscalDiv","RscalDiv", cuda_rscalDiv)
 
-  # TODO replace by a custom kernel
-  # Instead of a full clone we keep only the useful which is advantageous if t was a slice
-  # It also makes it contiguous
-  # Furthermore doing t[i]/a instead of 1/a * t[i] will be much better for speed and numerical stability
-  (1/a) * t
-
-proc `/`*[T:SomeReal](a: T, t: CudaTensor[T]): CudaTensor[T] {.noInit, inline.}=
+proc `/`*[T: SomeReal](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
   ## CudaTensor division by a scalar
-  (1/a) * t
+  result = newCudaTensor[T](t.shape)
+  cuda_rscal_call(cuda_rscalDiv, result, t, val)

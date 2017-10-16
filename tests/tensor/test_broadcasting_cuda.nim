@@ -168,3 +168,22 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       check: (120'f32 ./ a).cpu == [[12],
                                     [6],
                                     [4]].toTensor.astype(float32)
+
+  test "Implicit tensor-scalar broadcasting - basic operations .+=, .-=":
+    block: # Addition
+      var a = [0, 10, 20, 30].toTensor().reshape(4,1).astype(float32).cuda
+
+      a .+= 100
+      check: a.cpu == [[100],
+                      [110],
+                      [120],
+                      [130]].toTensor.astype(float32)
+
+    block: # Substraction
+      var a = [0, 10, 20, 30].toTensor().reshape(4,1).astype(float32).cuda
+
+      a .-= 100
+      check: a.cpu == [[-100],
+                      [-90],
+                      [-80],
+                      [-70]].toTensor.astype(float32)

@@ -102,9 +102,11 @@ proc `*`*[T:SomeReal](t: CudaTensor[T], a: T): CudaTensor[T] {.noInit, inline.}=
   ## CudaTensor multiplication by a scalar
   a * t
 
+cuda_assignscal_glue("cuda_mscalDiv","mscalDivOp", cuda_mscalDiv)
+
 proc `/=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
   ## CudaTensor in-place division by a scalar
-  t *= (1/a)
+  cuda_assignscal_call(cuda_mscalDiv, t, val)
 
 cuda_rscal_glue("cuda_rscalDiv","RscalDiv", cuda_rscalDiv)
 

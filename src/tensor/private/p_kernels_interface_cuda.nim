@@ -338,3 +338,71 @@ template cuda_lscal_call*[T: SomeReal](
     src.shape[], src.strides[],
     src.offset, src.data
     )
+
+# ##################################################
+# # Assignements and in-place operation with scalar as rhs
+template cuda_assignscal_binding(kernel_name: string, binding_name: untyped)=
+  # Generate a Nim proc that wraps the C++/Cuda kernel proc
+
+  const import_string:string = kernel_name & "<'*8>(@)"
+  # We pass the 8th parameter type to the template.
+  # The "*" in '*8 is needed to remove the pointer *
+
+  # We create an new identifier on the fly with backticks
+  proc `binding_name`[T: SomeReal](
+    blocksPerGrid, threadsPerBlock: cint,
+    rank, len: cint,
+    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    scalar: T
+  ) {.importcpp: import_string, noSideEffect.}
+
+
+
+template cuda_assignscal_glue*(
+  kernel_name, op_name: string, binding_name: untyped): untyped =
+  # Input
+  #   - kernel_name and the Cuda function object
+  # Result
+  #   - Auto-generate cuda kernel based on the function object
+  #   - Bindings with name "kernel_name" that can be called directly
+  #   or with the convenience function ``cuda_assign_call``
+
+  {.emit:["""
+  template<typename T>
+  inline void """, kernel_name,"""(
+    const int blocksPerGrid, const int threadsPerBlock,
+    const int rank,
+    const int len,
+    const int * __restrict__ dst_shape,
+    const int * __restrict__ dst_strides,
+    const int dst_offset,
+    T * __restrict__ dst_data,
+    const T val){
+
+      cuda_apply_scal<<<blocksPerGrid, threadsPerBlock>>>(
+        rank, len,
+        dst_shape, dst_strides, dst_offset, dst_data,
+        """,op_name,"""<T>(), val
+      );
+    }
+    """].}
+
+  cuda_assignscal_binding(kernel_name, binding_name)
+
+template cuda_assignscal_call*[T: SomeReal](
+  kernel_name: untyped, destination: var CudaTensor[T], val: T): untyped =
+  ## Does the heavy-lifting to format the tensors for the cuda call
+  #
+  # TODO: why doesn't this template works with "cudaLaunchKernel" instead
+  # of triple-chevrons notation kernel<<<blocksPerGrid, threadsPerBlock>>>(params).
+  # This would avoid an intermediate function call
+
+  let dst = layoutOnDevice destination
+
+  kernel_name[T](
+    CUDA_HOF_TPB, CUDA_HOF_BPG,
+    dst.rank, dst.len, # Note: small shortcut, in this case len and size are the same
+    dst.shape[], dst.strides[],
+    dst.offset, dst.data,
+    val
+  )

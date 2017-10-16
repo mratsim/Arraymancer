@@ -44,7 +44,7 @@ template cuda_assignscal_op(op_name, op_symbol: string)=
   struct """,op_name,"""{
   __device__ __forceinline__ void operator()(
       T *  __restrict__ dst,
-      const T *  __restrict__ scal){
+      const T scal){
       *dst """,op_symbol,""" scal;
       }
   };

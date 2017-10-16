@@ -117,37 +117,22 @@ proc `.-`*[T: SomeReal](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
   result = newCudaTensor[T](t.shape)
   cuda_rscal_call(cuda_rscalSub, result, t, val)
 
+
+cuda_lscal_glue("cuda_lscalSub","LscalSub", cuda_lscalSub)
+cuda_lscal_glue("cuda_lscalAdd","LscalAdd", cuda_lscalAdd)
+cuda_lscal_glue("cuda_lscalDiv","LscalDiv", cuda_lscalDiv)
+
 proc `.+`*[T: SomeReal](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   ## Broadcasted addition for tensor + scalar.
   result = newCudaTensor[T](t.shape)
-  cuda_rscal_call(cuda_rscalAdd, result, t, val)
+  cuda_lscal_call(cuda_lscalAdd, result, val, t)
 
-# proc `.-`*[T: SomeReal](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
-#   ## Broadcasted substraction for tensor - scalar.
-#   result = newCudaTensor[T](t.shape)
-#   cuda_lscal_call(cuda_rscalSub, result, val, t)
+proc `.-`*[T: SomeReal](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+  ## Broadcasted substraction for tensor - scalar.
+  result = newCudaTensor[T](t.shape)
+  cuda_lscal_call(cuda_lscalSub, result, val, t)
 
-# proc `./`*[T: SomeReal](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
-#   ## Broadcasted division of a float by a tensor of floats.
-#   result = newCudaTensor[T](t.shape)
-#   cuda_lscal_call(cuda_rscalDiv, result, val, t)
-
-# proc `.^`*[T: SomeReal](t: CudaTensor[T], exponent: T): CudaTensor[T] {.noInit.} =
-#   ## Compute element-wise exponentiation
-#   result = newCudaTensor[T](t.shape)
-#   cuda_rscal_call(cuda_rscalPow, result, t, val)
-
-# #####################################
-# # Broadcasting in-place Tensor-Scalar
-
-proc `.+=`*[T: SomeReal](t: var CudaTensor[T], val: T) =
-  ## Tensor in-place addition with a broadcasted scalar.
-  t.apply_inline(x + val)
-
-proc `.-=`*[T: SomeReal](t: var CudaTensor[T], val: T) =
-  ## Tensor in-place substraction with a broadcasted scalar.
-  t.apply_inline(x - val)
-
-proc `.^=`*[T: SomeReal](t: var CudaTensor[T], exponent: T) =
-  ## Compute in-place element-wise exponentiation
-  t.apply_inline pow(x, exponent)
+proc `./`*[T: SomeReal](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+  ## Broadcasted division of a float by a tensor of floats.
+  result = newCudaTensor[T](t.shape)
+  cuda_lscal_call(cuda_lscalDiv, result, val, t)

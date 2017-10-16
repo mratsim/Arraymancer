@@ -126,11 +126,11 @@
                                   const int *  __restrict__ dst_strides,
                                   const int dst_offset,
                                   T * __restrict__ dst_data,
-                                  Op f,
                                   const int *  __restrict__ src_shape,
                                   const int *  __restrict__ src_strides,
                                   const int src_offset,
                                   const T * __restrict__ src_data,
+                                  Op f,
                                   const T beta){
 
     for (int elemID = blockIdx.x * blockDim.x + threadIdx.x;
@@ -154,6 +154,47 @@
                                elemID);
 
       f(&dst_data[dst_real_idx], &src_data[src_real_idx], beta);
+    }
+  }
+"""].}
+
+
+{.emit:["""
+  template<typename T, typename Op>
+  __global__ void cuda_apply_lscal(const int rank,
+                                  const int len,
+                                  const int *  __restrict__ dst_shape,
+                                  const int *  __restrict__ dst_strides,
+                                  const int dst_offset,
+                                  T * __restrict__ dst_data,
+                                  const T alpha,
+                                  Op f,
+                                  const int *  __restrict__ src_shape,
+                                  const int *  __restrict__ src_strides,
+                                  const int src_offset,
+                                  const T * __restrict__ src_data){
+
+    for (int elemID = blockIdx.x * blockDim.x + threadIdx.x;
+         elemID < len;
+         elemID += blockDim.x * gridDim.x) {
+
+      // ## we can't instantiate the variable outside the loop
+      // ## each threads will store its own in parallel
+      const int dst_real_idx = cuda_getIndexOfElementID(
+                               rank,
+                               dst_shape,
+                               dst_strides,
+                               dst_offset,
+                               elemID);
+
+      const int src_real_idx = cuda_getIndexOfElementID(
+                               rank,
+                               src_shape,
+                               src_strides,
+                               src_offset,
+                               elemID);
+
+      f(&dst_data[dst_real_idx], alpha, &src_data[src_real_idx]);
     }
   }
 """].}

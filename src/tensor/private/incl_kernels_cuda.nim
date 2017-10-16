@@ -129,6 +129,7 @@ cuda_binary_op("DivOp", "/")
 cuda_lscal_op("LscalMul","*")
 cuda_lscal_op("LscalDiv","/")
 cuda_lscal_op("LscalSub","-")
+cuda_lscal_op("LscalAdd","+")
 
 cuda_rscal_op("RscalDiv","/")
 cuda_rscal_op("RscalSub","-")

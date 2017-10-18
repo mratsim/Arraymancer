@@ -19,6 +19,10 @@ import  ./backend/metadataArray,
         ./data_structure, ./init_cpu, ./higher_order,
         nimblas, sequtils
 
+# NOTE: Procs that accepts shape are duplicated to accept both varargs and MetadataArray
+# until either https://github.com/nim-lang/Nim/issues/6528 or https://github.com/nim-lang/Nim/issues/6529
+# are solved/added.
+
 proc transpose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
   ## Transpose a Tensor.
   ##
@@ -96,7 +100,33 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
 
   return t.reshape_with_copy(new_shape)
 
+proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
+  ## Reshape a tensor
+  ##
+  ## Input:
+  ##   - a tensor
+  ##   - a new shape. Number of elements must be the same
+  ## Returns:
+  ##   - a tensor with the same data but reshaped.
+
+  when compileOption("boundChecks"):
+    check_reshape(t, new_shape.toMetadataArray)
+
+  return t.reshape_with_copy(new_shape)
+
 proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
+  ## Reshape a tensor without copy.
+  ##
+  ## ⚠ Reshaping without copy is only possible on contiguous Tensors
+  ##
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+
+  t.reshape_no_copy(new_shape)
+  shallowCopy(result.data, t.data)
+
+proc unsafeReshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ## Reshape a tensor without copy.
   ##
   ## ⚠ Reshaping without copy is only possible on contiguous Tensors
@@ -110,6 +140,18 @@ proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
 
 
 proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.}=
+  ## Explicitly broadcast a tensor to the specified shape.
+  ##
+  ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
+  ## values along that dimension.
+  ##
+  ## Warning ⚠:
+  ##   A broadcasted tensor should not be modified and only used for computation.
+
+  result = t
+  result.broadcastT(shape)
+
+proc broadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit,noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.
   ##
   ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
@@ -169,7 +211,31 @@ proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit,
   result.offset = 0
   result.data = newSeqWith(1, val)
 
+proc broadcast*[T: SomeNumber](val: T, shape: MetadataArray): Tensor[T] {.noInit,noSideEffect.} =
+  ## Broadcast a number
+  ##
+  ## Input:
+  ##   - a number to be broadcasted
+  ##   - a tensor shape that will be broadcasted to
+  ## Returns:
+  ##   - a tensor with the broadcasted shape where all elements has the broadcasted value
+  ##
+  ## The broadcasting is made using tensor data of size 1 and 0 strides, i.e.
+  ## the operation is memory efficient.
+  ##
+  ## Warning ⚠:
+  ##   A broadcasted tensor should not be modified and only used for computation.
+  ##   Modifying any value from this broadcasted tensor will change all its values.
+  result.shape.copyFrom(shape)
+  # result.strides # Unneeded, autoinitialized with 0
+  result.offset = 0
+  result.data = newSeqWith(1, val)
+
 template bc*(t: (Tensor|SomeNumber), shape: varargs[int]): untyped =
+  ## Alias for ``broadcast``
+  t.broadcast(shape)
+
+template bc*(t: (Tensor|SomeNumber), shape: MetadataArray): untyped =
   ## Alias for ``broadcast``
   t.broadcast(shape)
 

@@ -13,7 +13,11 @@
 # limitations under the License.
 
 import  ./activation_primitives,
+        ./convolution_primitives,
         ./linear_primitives,
         ./sigmoid_cross_entropy_primitives
 
-export activation_primitives, linear_primitives, sigmoid_cross_entropy_primitives
+export activation_primitives,
+       convolution_primitives,
+       linear_primitives,
+       sigmoid_cross_entropy_primitives

@@ -138,9 +138,9 @@ template get_data_ptr*[T](t: AnyTensor[T]): ptr T =
   ## Returns:
   ##     - A pointer to the start of its data
   when t is Tensor:
-    unsafeAddr(t.data[0])
+    unsafeAddr(t.data[t.offset])
   elif t is CudaTensor:
-    unsafeAddr(t.data.data[0])
+    unsafeAddr(t.data.data[t.offset])
 
 proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.inline.} =
   cast[ptr UncheckedArray[T]](t.data[t.offset].unsafeAddr)

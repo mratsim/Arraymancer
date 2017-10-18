@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import  ./data_structure,
+        ./init_cpu,
         ./higher_order,
         ./ufunc
 
@@ -82,3 +83,83 @@ proc square*[T](x: T): T {.inline.} =
   x*x
 
 makeUniversal(square)
+
+proc absolute_error*[T](y_true, y: T): T {.inline.} =
+  ## Absolute error for a single value, |y_true - y|
+  result = abs(y_true - y)
+
+proc absolute_error*[T](y_true, y: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Element-wise absolute error for a tensor
+  result = map2_inline(y_true, y, absolute_error(x,y))
+
+proc mean_absolute_error*[T](y_true, y: Tensor[T]): T =
+  ## Also known as L1 loss, absolute error between elements:
+  ## sum(|y_true - y|)/m
+  ## where m is the number of elements
+  result = map2_inline(y_true, y, absolute_error(x,y)).mean()
+
+proc squared_error*[T](y_true, y: T): T {.inline.} =
+  ## Squared error for a single value, |y_true - y|^2
+  result = square(y_true - y)
+
+proc squared_error*[T](y_true, y: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Element-wise squared error for a tensor, |y_true - y|^2
+  result = map2_inline(y_true, y, squared_error(x,y))
+
+proc mean_squared_error*[T](y_true, y: Tensor[T]): T =
+  ## Also known as MSE or L2 loss, mean squared error between elements:
+  ## sum(|y_true - y|^2)/m
+  ## where m is the number of elements
+  result = squared_error(y_true, y).mean()
+
+proc relative_error*[T](y_true, y: T): T {.inline.} =
+  ## Relative error, |y_true - y|/max(|y_true|, |y|)
+  ## Normally the relative error is defined as |y_true - y| / |y_true|,
+  ## but here max is used to make it symmetric and to prevent dividing by zero,
+  ## guaranteed to return zero in the case when both values are zero.
+  let denom = max(abs(y_true), abs(y))
+  if denom == 0.T:
+    return 0.T
+  result = abs(y_true - y) / denom
+
+proc relative_error*[T](y_true, y: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Relative error for Tensor, element-wise |y_true - x|/max(|y_true|, |x|)
+  ## Normally the relative error is defined as |y_true - x| / |y_true|,
+  ## but here max is used to make it symmetric and to prevent dividing by zero,
+  ## guaranteed to return zero in the case when both values are zero.
+  result = map2_inline(y_true, y, relative_error(x,y))
+
+proc mean_relative_error*[T](y_true, y: Tensor[T]): T =
+  ## Mean relative error for Tensor, mean of the element-wise
+  ## |y_true - y|/max(|y_true|, |y|)
+  ## Normally the relative error is defined as |y_true - y| / |y_true|,
+  ## but here max is used to make it symmetric and to prevent dividing by zero,
+  ## guaranteed to return zero in the case when both values are zero.
+  result = relative_error(y_true, y).mean()
+
+proc numerical_gradient*[T](input: T, f: (proc(x: T): T), h: T = 1e-5.T): T {.inline.} =
+  ## Compute numerical gradient for any function w.r.t. to an input value,
+  ## useful for gradient checking, recommend using float64 types to assure
+  ## numerical precision. The gradient is calculated as:
+  ## (f(x + h) - f(x - h)) / (2*h)
+  ## where h is a small number, typically 1e-5.
+  result = (f(input + h) - f(input - h)) / (2.0.T * h)
+
+proc numerical_gradient*[T](input: Tensor[T], f: (proc(x: Tensor[T]): T), h: T = 1e-5.T): Tensor[T] {.noInit.} =
+  ## Compute numerical gradient for any function w.r.t. to an input Tensor,
+  ## useful for gradient checking, recommend using float64 types to assure
+  ## numerical precision. The gradient is calculated as:
+  ## (f(x + h) - f(x - h)) / (2*h)
+  ## where h is a small number, typically 1e-5
+  ## f(x) will be called for each input elements with +h and -h pertubation.
+  # Iterate over all elements calculating each partial derivative
+  result = newTensorUninit[T](input.shape)
+  var x = input
+  for i, val in x.menumerate:
+    let orig_val = val
+    val = orig_val + h
+    let fa = f(x)
+    val = orig_val - h
+    let fb = f(x)
+    val = orig_val
+    result.data[i] = (fa - fb) / (2.0.T * h)

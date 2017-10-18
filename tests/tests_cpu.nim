@@ -28,6 +28,7 @@ import ../src/arraymancer,
         ./tensor/test_filling_data,
         ./tensor/test_optimization,
         ./tensor/test_bugtracker,
+        ./nn_primitives/test_convolution_primitives,
         ./autograd/test_gate_blas
 
 import ./load_tests/test_load_openmp

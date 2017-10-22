@@ -68,13 +68,13 @@ when NimVersion >= "0.17.3":
   # Need to deal with BackwardsIndex and multi-type slice introduced by:
   # https://github.com/nim-lang/Nim/commit/d52a1061b35bbd2abfbd062b08023d986dbafb3c
 
-  type Index = int or BackwardsIndex
+  type Index = SomeInteger or BackwardsIndex
   template `^^`(s, i: untyped): untyped =
     when i is BackwardsIndex:
       s.len - int(i)
     else: int(i)
 else:
-  type Index = int
+  type Index = SomeInteger
   template `^^`(s, i: untyped): untyped =
     i
 

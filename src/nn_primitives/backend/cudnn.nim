@@ -12,23 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./nnp_activation,
-        ./nnp_convolution,
-        ./nnp_linear,
-        ./nnp_sigmoid_cross_entropy,
-        ./nnp_softmax_cross_entropy
+# Nvidia CuDNN backend configuration
+# Note: Having CUDA installed does not mean CuDNN is installed
 
-export  nnp_activation,
-        nnp_convolution,
-        nnp_linear,
-        nnp_sigmoid_cross_entropy,
-        nnp_softmax_cross_entropy
+import nimcuda/[nimcuda, cudnn]
 
-import private/p_nnp_types
-export Size2D
+export nimcuda, cudnn
 
-when defined(cudnn):
-  import  ./backend/cudnn,
-          ./nnp_conv2d_cudnn
 
-  export  nnp_conv2d_cudnn
+var defaultHandle_cudnn*: cudnnHandle_t
+check cudnnCreate(addr defaultHandle_cudnn)
+
+proc cudnnRelease() {.noconv.} =
+  # Release CuDNN resources
+  check cudnnDestroy(defaultHandle_cudnn)
+
+  when defined(debug):
+    echo "CuDNN resources successfully released"
+
+addQuitProc(cudnnRelease)

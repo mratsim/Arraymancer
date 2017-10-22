@@ -12,15 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./activation_primitives,
-        ./linear_primitives,
-        ./sigmoid_cross_entropy_primitives
+# Nvidia CuDNN backend configuration
+# Note: Having CUDA installed does not mean CuDNN is installed
 
-when defined(cudnn):
-  import ./backend/cudnn,
-        ./conv2d_cudnn_primitives
+import nimcuda/[nimcuda, cudnn]
 
-export activation_primitives, linear_primitives, sigmoid_cross_entropy_primitives
+export nimcuda, cudnn
 
-when defined(cudnn):
-  export conv2d_cudnn_primitives
+
+var defaultHandle_cudnn*: cudnnHandle_t
+check cudnnCreate(addr defaultHandle_cudnn)
+
+proc cudnnRelease() {.noconv.} =
+  # Release CuDNN resources
+  check cudnnDestroy(defaultHandle_cudnn)
+
+  when defined(debug):
+    echo "CuDNN resources successfully released"
+
+addQuitProc(cudnnRelease)

@@ -20,7 +20,7 @@ export nimcuda.check
 
 # Data structures to ease interfacing with Cuda and kernels
 
-proc cudaMalloc[T](size: int): ptr T {.noSideEffect, inline.}=
+proc cudaMalloc[T](size: Natural): ptr T {.noSideEffect, inline.}=
   ## Internal proc.
   ## Wrap CudaMAlloc(var pointer, size) -> Error_code
   let s = size * sizeof(T)

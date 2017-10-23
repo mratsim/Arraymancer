@@ -23,17 +23,26 @@ import  ./private/p_checks,
   # FIXME: Can't use built-in proc `+` in map: https://github.com/nim-lang/Nim/issues/5702
   # map2(a, `+`, b)
 
-proc dot*[T: SomeReal](a, b: Tensor[T]): T {.noSideEffect.} =
-  ## Vector to Vector dot (scalar) product
-  when compileOption("boundChecks"): check_dot_prod(a,b)
-  return dot(a.shape[0], a.get_data_ptr, a.strides[0], b.get_data_ptr, b.strides[0])
+when not defined(js):
+  proc dot*[T: SomeReal](a, b: Tensor[T]): T {.noSideEffect.} =
+    ## Vector to Vector dot (scalar) product
+    when compileOption("boundChecks"): check_dot_prod(a,b)
+    return dot(a.shape[0], a.get_data_ptr, a.strides[0], b.get_data_ptr, b.strides[0])
 
-proc dot*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
-  ## Vector to Vector dot (scalar) product
-  # Fallback for non-floats
-  when compileOption("boundChecks"): check_dot_prod(a,b)
-  for ai, bi in zip(a, b):
-    result += ai * bi
+  proc dot*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
+    ## Vector to Vector dot (scalar) product
+    # Fallback for non-floats
+    when compileOption("boundChecks"): check_dot_prod(a,b)
+    for ai, bi in zip(a, b):
+      result += ai * bi
+
+else: # Don't use BLAS for js backend
+  proc dot*[T: SomeNumber](a, b: Tensor[T]): T {.noSideEffect.} =
+    ## Vector to Vector dot (scalar) product
+    # Fallback for non-floats
+    when compileOption("boundChecks"): check_dot_prod(a,b)
+    for ai, bi in zip(a, b):
+      result += ai * bi
 
 # #########################################################
 # # Tensor-Tensor linear algebra

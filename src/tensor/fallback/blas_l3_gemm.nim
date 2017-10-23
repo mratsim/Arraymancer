@@ -53,11 +53,19 @@ const MRNR = MR*NR # Work area: Fit in registers
 
 const FORCE_ALIGN = 64
 
-include ./blas_l3_gemm_data_structure
+when not defined(js):
+  include ./blas_l3_gemm_data_structure
+else:
+  include ./blas_l3_gemm_data_structure_javascript
+
 include ./blas_l3_gemm_packing
 include ./blas_l3_gemm_aux
 include ./blas_l3_gemm_micro_kernel
-include ./blas_l3_gemm_macro_kernel
+
+when not defined(js):
+  include ./blas_l3_gemm_macro_kernel
+else:
+  include ./blas_l3_gemm_macro_kernel_javascript
 
 proc gemm_nn_fallback*[T](m, n, k: int,
                 alpha: T,

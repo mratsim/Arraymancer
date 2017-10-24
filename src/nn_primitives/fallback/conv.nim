@@ -15,7 +15,7 @@
 import  ../../tensor/tensor, ../types
 
 proc im2col[T](input: Tensor[T], kernel_size: Size2D,
-               padding: Size2D = (0,0), stride: Size2D = (1,1)): Tensor[T] =
+               padding: Size2D = (0,0), stride: Size2D = (1,1), result: var Tensor[T])  =
   ## Convert blocks of an image into columns, useful for preprocessing
   ## an image before convolutions
   let
@@ -25,8 +25,15 @@ proc im2col[T](input: Tensor[T], kernel_size: Size2D,
     channels_col = channels * kernel_size.height * kernel_size.width
     height_col = (height + (2 * padding.height) - kernel_size.height) div stride.height + 1
     width_col = (width + (2 * padding.width) - kernel_size.width) div stride.width + 1
-  result = newTensorUninit[T](channels_col, height_col * width_col)
-  for c in 0..<channels_col:
+    flatten_size_col = height_col * width_col
+    flatten_size = height * width
+
+  assert result.is_C_contiguous and input.is_C_contiguous
+  assert result.shape == [channels_col, flatten_size_col]
+
+  var odata = result.dataArray
+  var idata = input.dataArray
+  for c in 0||(channels_col-1):
     let
       w_offset = (c mod kernel_size.width) - padding.width
       h_offset = ((c div kernel_size.width) mod kernel_size.height) - padding.height
@@ -37,10 +44,12 @@ proc im2col[T](input: Tensor[T], kernel_size: Size2D,
         offset_col = h * width_col
       for w in 0..<width_col:
         let col = w_offset + (w * stride.width)
-        if row < 0 or col < 0 or row >= height or col >= width:
-          result[c, offset_col + w] = 0
-        else:
-          result[c, offset_col + w] = input[c_offset, row, col]
+        var v = 0.T
+        if row >= 0 and col >= 0 and row < height and col < width:
+          let iidx = (c_offset * flatten_size) + row * width + col
+          v = idata[iidx]
+        let oidx = (c * flatten_size_col) + offset_col + w
+        odata[oidx] = v
 
 proc col2im*[T](input: Tensor[T], channels, height, width: int,
                 kernel_size: Size2D,
@@ -78,13 +87,16 @@ proc im2colgemm_conv2d*[T](input, kernel, bias: Tensor[T],
     kernel_size = (height: kernel.nchw_height, width: kernel.nchw_width)
     output_height = (input.nchw_height + (2*padding.height) - kernel.nchw_height) div stride.height + 1
     output_width = (input.nchw_width + (2*padding.width) - kernel.nchw_width) div stride.width + 1
-    kernel_col = kernel.unsafeReshape(output_channels, input.nchw_channels*kernel.nchw_height*kernel.nchw_width)
+    channels_col = input.nchw_channels * kernel.nchw_height * kernel.nchw_width
+    kernel_col = kernel.unsafeReshape(output_channels, channels_col)
 
   result = newTensorUninit[T](batch_size, output_channels, output_height, output_width)
+  var input_col = newTensorUninit[T](channels_col, output_height * output_width)
+  var output: Tensor[T]
 
   for i in 0..<batch_size:
-    let input_col = im2col(input.unsafeAtAxisIndex(0, i).unsafeSqueeze(0), kernel_size, padding, stride)
-    var output = result.unsafeAtAxisIndex(0, i).unsafeReshape(kernel_col.shape[0], input_col.shape[1])
+    im2col(input.unsafeAtAxisIndex(0, i).unsafeSqueeze(0), kernel_size, padding, stride, input_col)
+    output = result.unsafeAtAxisIndex(0, i).unsafeReshape(kernel_col.shape[0], input_col.shape[1])
     gemm(kernel_col, input_col, output)
 
   if bias.rank > 0:
@@ -103,6 +115,7 @@ proc im2colgemm_conv2d_gradient*[T](input, kernel: Tensor[T],
     output_height = (input.nchw_height + (2*padding.height) - kernel.nchw_height) div stride.height + 1
     output_width = (input.nchw_width + (2*padding.width) - kernel.nchw_width) div stride.width + 1
     output_flatten_size = output_height*output_width
+    channels_col = input.nchw_channels * kernel_size.height * kernel_size.width
     kernel_col = kernel.unsafeReshape(output_channels, input.nchw_channels*kernel.nchw_height*kernel.nchw_width)
 
   # Check if grad output shape looks correct
@@ -112,11 +125,13 @@ proc im2colgemm_conv2d_gradient*[T](input, kernel: Tensor[T],
 
   grad_input = zeros[T](batch_size, input.nchw_channels, input.nchw_height, input.nchw_width)
   grad_weight = zeros[T](output_channels, kernel.nchw_channels, kernel.nchw_height, kernel.nchw_width)
+  var input_col = newTensorUninit[T](channels_col, output_height * output_width)
 
   for i in 0..<batch_size:
     let
-      input_col = im2col(input.unsafeAtAxisIndex(0, i).unsafeSqueeze(0), kernel_size, padding, stride)
       grad_output_col = grad_output.unsafeAtAxisIndex(0, i).unsafeReshape(output_channels, output_flatten_size)
       grad_input_col = kernel_col.unsafeTranspose() * grad_output_col
+
+    im2col(input.unsafeAtAxisIndex(0, i).unsafeSqueeze(0), kernel_size, padding, stride, input_col)
     grad_input[i, _, _, _] = col2im(grad_input_col, input.nchw_channels, input.nchw_height, input.nchw_width, kernel_size, padding, stride).unsafeUnsqueeze(0)
     grad_weight += (grad_output_col * input_col.unsafeTranspose()).unsafeReshape(grad_weight.shape)

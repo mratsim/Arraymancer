@@ -60,7 +60,7 @@ proc gemm*[T: SomeReal](
   beta: T, C: var Tensor[T]) {.inline.}=
   # Matrix: C = alpha A matmul B + beta C
   when compileOption("boundChecks"):
-    check_matvec(A,B)
+    check_matmat(A,B)
     # TODO: check c + tests
 
   when declared(blis):
@@ -79,6 +79,11 @@ proc gemm*[T: SomeInteger](
     # TODO: check c + tests
 
   fallbackMM_C_eq_aAB_p_bC(alpha, A, B, beta, C)
+
+proc gemm*[T: SomeNumber](
+  A, B: Tensor[T],
+  C: var Tensor[T]) {.inline.}=
+  gemm(1.T, A, B, 0.T, C)
 
 proc `*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)

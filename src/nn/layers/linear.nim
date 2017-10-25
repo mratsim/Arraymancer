@@ -52,6 +52,9 @@ proc linear*[TT](x, weight: Variable[TT], bias: Variable[TT] = nil): Variable[TT
   ## Future TODO:
   ##   In the future the linear layer will allow different input layout
   ##   so that x can also be of shape @[batch_size, in_features]
+  ##
+  ## Warning ⚠:
+  ##  - Experimental, there is no tests yet for this layer
 
   when compileOption("boundChecks"):
     if x.value.rank > 2:

@@ -15,9 +15,10 @@
 import  ./activation/sigmoid,
         ./activation/relu,
         ./layers/linear,
+        ./layers/conv2D,
         ./loss/sigmoid_cross_entropy,
         ./optimizers/optimizers
 
 export sigmoid, relu
-export linear, sigmoid_cross_entropy
+export linear, conv2D, sigmoid_cross_entropy
 export optimizers

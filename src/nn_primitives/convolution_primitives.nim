@@ -46,8 +46,11 @@ proc conv2d*[T](input, weight, bias: Tensor[T],
   ## Valid algorithms:
   ##    - ``Im2ColGEMM`` im2col + GEMM algorithm, this is the default
   ##    - ``NNPackAuto`` Use NNPack and let it auto detect the best algorithm
+  ##
+  ## Future:
+  ##    bias will leverage the upcoming Optional type to be really optional.
   assert input.rank == 4 and weight.rank == 4
-  assert bias.rank == 3 or bias.rank == 0
+  assert bias.rank == 3 or bias.rank == 0 # TODO make bias truly optional and not just a tensor of rank 0
 
   case algorithm:
     of NNPackAuto:
@@ -85,7 +88,7 @@ proc conv2d_backward*[T](input, weight, bias: Tensor[T],
   assert bias.rank == 3 or bias.rank == 0
 
   # Bias gradient
-  if bias.rank > 0:
+  if bias.rank > 0: # TODO make bias truly optional and not just a tensor of rank 0
     # TODO: sum over many axes
     grad_bias = grad_output.sum(3).sum(2).sum(0).unsafeReshape(bias.shape)
 

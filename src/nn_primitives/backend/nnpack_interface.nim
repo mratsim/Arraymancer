@@ -28,14 +28,15 @@ proc nnpack_conv2d*(input, weight, bias: Tensor[float32], padding, stride: Size2
   # Make sure the data is contiguous before passing to nnpack
   let input = input.unsafeContiguous()
   let weight = weight.unsafeContiguous()
-  var bias: Tensor[float32]
+  var bias_nonnil: Tensor[float32] # TODO make bias truly optional and not just a tensor of rank 0
+
 
   # Bias with 0 rank means no bias at all
   if bias.rank == 0:
     # Temporary bias filled with zeros just to pass to nnpack
-    bias = zeros[float32](output_channels)
+    bias_nonnil = zeros[float32](output_channels)
   else:
-    bias = bias.unsafeContiguous()
+    bias_nonnil = bias.unsafeContiguous()
 
   # Prepare tensor that the result will be stored on
   result = newTensorUninit[float32](input.shape[0], output_channels, output_height, output_width)
@@ -51,7 +52,7 @@ proc nnpack_conv2d*(input, weight, bias: Tensor[float32], padding, stride: Size2
     kernel_size=nnp_size(height:weight.nchw_height, width: weight.nchw_width),
     input=cast[ptr cfloat](input.get_data_ptr),
     kernel=cast[ptr cfloat](weight.get_data_ptr),
-    bias=cast[ptr cfloat](bias.get_data_ptr),
+    bias=cast[ptr cfloat](bias_nonnil.get_data_ptr),
     output=cast[ptr cfloat](result.get_data_ptr))
   assert status == nnp_status_success
 

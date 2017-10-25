@@ -15,9 +15,9 @@
 import ../../tensor/tensor, ../types
 import ./nnpack
 
-proc nnpack_conv2d*(input, weight, bias: Tensor[float32], padding, stride: Size2D): Tensor[float32] =
+proc nnpack_conv2d*(input, weight, bias: Tensor[float32], padding, stride: Size2D): Tensor[float32] {.noInit.}= # TODO use a single convention, return value or var result
   # Only accepts stride 1
-  assert stride.width == 1 and stride.height == 1
+  assert stride.width == 1 and stride.height == 1 # TODO CHange to a check + exception
 
   let
     batch_size = input.shape[0]

@@ -19,6 +19,9 @@ import  ../tensor/tensor,
 # and provide control without autograd
 
 # Linear forward and backward
+# TODO: layout version to accept both:
+# - batch_first, NCHW (5D: NTCHW or NDCHW)
+# - batch_last, CHWN (5D: CHWNT or CHWND) tensors.
 proc linear*[T](x: var Tensor[T], weight: Tensor[T], bias: Tensor[T]) {.inline.} =
   x = weight * x
   x .+= bias

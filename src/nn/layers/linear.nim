@@ -30,14 +30,15 @@ method forward*[TT](self: LinearGate[TT], a: Variable[TT]): Variable[TT] {.inlin
   result.value = self.W.value * a.value
   if not self.b.isNil:
     result.value .+= self.b.value # Bias is broadcasted other the whole batch size
-  result.grad = zeros[getSubType(TT)](result.value.shape)
+  result.grad = zeros_like(result.value)
 
 method backward*[TT](self: LinearGate[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
-  result[0] = self.W.value.unsafeTranspose * gradient
-  result[1] = gradient * self.x.value.unsafeTranspose
+  result[0] = self.W.value.unsafeTranspose * gradient # grad w.r.t. x
+  result[1] = gradient * self.x.value.unsafeTranspose # grad w.r.t. weight
 
   if not self.b.isNil:
-    result[2] = sum(gradient, axis=0) # https://mlxai.github.io/2017/01/10/a-modular-approach-to-implementing-fully-connected-neural-networks.html
+    result[2] = sum(gradient, axis=0) # grad w.r.t. bias
+    # https://mlxai.github.io/2017/01/10/a-modular-approach-to-implementing-fully-connected-neural-networks.html
 
 proc linear*[TT](x, weight: Variable[TT], bias: Variable[TT] = nil): Variable[TT] =
   ## Input:
@@ -45,7 +46,12 @@ proc linear*[TT](x, weight: Variable[TT], bias: Variable[TT] = nil): Variable[TT
   ##   - A weight Variable of shape @[out_features, in_features]
   ##   - Optionally a bias Variable of shape @[out_features, 1]
   ##
-  ## Return: Weight * x + bias
+  ## Return:
+  ##   - Weight * x + bias
+  ##
+  ## Future TODO:
+  ##   In the future the linear layer will allow different input layout
+  ##   so that x can also be of shape @[batch_size, in_features]
 
   when compileOption("boundChecks"):
     if x.value.rank > 2:

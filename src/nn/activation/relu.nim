@@ -25,7 +25,7 @@ method forward*[TT](self: ReluActivation[TT], a: Variable[TT]): Variable[TT] {.i
 
   result.tape = a.tape
   result.value = relu a.value
-  result.grad = zeros[getSubType(TT)](result.value.shape)
+  result.grad = zeros_like(result.value)
 
 method backward*[TT](self: ReluActivation[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
   result[0] = gradient.relu_backward(self.cache)

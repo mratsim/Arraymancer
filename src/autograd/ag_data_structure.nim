@@ -24,11 +24,10 @@ type
     # Each operations should set its arity (number of input)
     # Additional fields like weights, cache for bprop should be added too.
 
-  Node*[TT] = ref NodeObj[TT]
   Parents*[TT] = array[MAX_ARITY, Variable[TT]]
   SmallDiffs*[TT] = array[MAX_ARITY, TT]  #TODO: how not to export that
 
-  NodeObj[TT] = object
+  Node*[TT] = ref object
     # Store an operator/layer + its parent
     gate*: Gate[TT] #TODO: how not to export that
     parents*: Parents[TT] #TODO: how not to export that

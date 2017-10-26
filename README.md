@@ -135,24 +135,42 @@ Arraymancer 0.2.90 (master branch 2017-10-10)
 Benchmark setup is in the `./benchmarks` folder and similar to (stolen from) [Kostya's](https://github.com/kostya/benchmarks#matmul). Note: Arraymancer float matmul is as fast as `Julia Native Thread`.
 
 #### Logistic regression
-On the [demo benchmark](https://github.com/edubart/arraymancer-demos), Arraymancer is already faster than Torch in v0.2.0, further improvements in the "master" branch widened the gap since that benchmark.
+On the [demo benchmark](https://github.com/edubart/arraymancer-demos), Arraymancer is faster than Torch in v0.2.90.
+
+CPU
 
 | Framework | Backend | Forward+Backward Pass Time  |
 |---|---|---|
-| Arraymancer v0.2.0| OpenMP + MKL | **0.553ms**  |
-| Torch7 | MKL | 0.733ms  |
-| Arraymancer | OpenMP + OpenBLAS | 1.824ms |
-| Numpy | MKL | 8.713ms  |
+| Arraymancer v0.2.90| OpenMP + MKL | **0.458ms**  |
+| Torch7 | MKL | 0.686ms  |
+| Numpy | MKL | 0.723ms  |
+
+GPU
+
+| Framework | Backend | Forward+Backward Pass Time  |
+|---|---|---|
+| Arraymancer v0.2.90| Cuda | WIP  |
+| Torch7 | Cuda | 0.286ms  |
 
 #### DNN - 3 hidden layers
+
+CPU
+
 | Framework | Backend | Forward+Backward Pass Time  |
 |---|---|---|
-| Arraymancer v0.2.0| OpenMP + MKL | **6.815ms**  |
-| PyTorch | MKL | 7.320ms  |
-| Arraymancer | OpenMP + OpenBLAS | 11.275ms |
+| Arraymancer v0.2.90| OpenMP + MKL | **2.907ms**  |
+| PyTorch | MKL | 6.797ms  |
+
+GPU
+
+| Framework | Backend | Forward+Backward Pass Time  |
+|---|---|---|
+| Arraymancer v0.2.90| Cuda | WIP |
+| PyTorch | Cuda | 4.765ms  |
+
 
 ```
-Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz, gcc 7.2.0, MKL 2017.17.0.4.4, OpenBLAS 0.2.20
+Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz, gcc 7.2.0, MKL 2017.17.0.4.4, OpenBLAS 0.2.20, Cuda 8.0.61, Geforce GTX 1080 Ti, Nim 0.18.0
 ```
 
 In the future, Arraymancer will leverage Nim compiler to automatically fuse operations

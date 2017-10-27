@@ -27,7 +27,6 @@ type
     Cuda
 
   Tensor*[T] = object
-    # Size of the datastructure is 32 bytes - perfect !
     ## Tensor data structure stored on Cpu
     ##   - ``shape``: Dimensions of the tensor
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.

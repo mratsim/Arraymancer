@@ -5,23 +5,24 @@ This is a notepad to track ideas, challenges, future work and open issues/limita
 <!-- TOC -->
 
 - [Design document](#design-document)
-    - [Storage convention](#storage-convention)
-    - [Pending issues](#pending-issues)
-    - [Memory/Perf considerations](#memoryperf-considerations)
-    - [Data structure considerations](#data-structure-considerations)
-    - [CUDA considerations](#cuda-considerations)
-    - [Coding-style](#coding-style)
-    - [Features](#features)
-    - [TODO](#todo)
-    - [Ideas rejected](#ideas-rejected)
-        - [Having an unified Tensor type instead of Tensor, CudaTensor, etc.](#having-an-unified-tensor-type-instead-of-tensor-cudatensor-etc)
-        - [Have the rank of the Tensor be part of its type.](#have-the-rank-of-the-tensor-be-part-of-its-type)
-        - [Have the kind of stride (C_contiguous, F_contiguous) be part of its type.](#have-the-kind-of-stride-c_contiguous-f_contiguous-be-part-of-its-type)
-        - [Implement offsets and iterator using pointers.](#implement-offsets-and-iterator-using-pointers)
-        - [Shallow-copy by default:](#shallow-copy-by-default)
-        - [Have polymorphic procs depending on a backend parameter](#have-polymorphic-procs-depending-on-a-backend-parameter)
-    - [Readings](#readings)
-        - [Performance](#performance)
+  - [Storage convention](#storage-convention)
+  - [Pending issues](#pending-issues)
+  - [Data structure considerations](#data-structure-considerations)
+  - [Memory/Perf considerations](#memoryperf-considerations)
+  - [CUDA considerations](#cuda-considerations)
+  - [Coding-style](#coding-style)
+  - [Future features](#future-features)
+    - [Software features](#software-features)
+    - [Backend/hardware features](#backendhardware-features)
+  - [Ideas rejected](#ideas-rejected)
+    - [Having an unified Tensor type instead of Tensor, CudaTensor, etc.](#having-an-unified-tensor-type-instead-of-tensor-cudatensor-etc)
+    - [Have the rank of the Tensor be part of its type.](#have-the-rank-of-the-tensor-be-part-of-its-type)
+    - [Have the kind of stride (C_contiguous, F_contiguous) be part of its type.](#have-the-kind-of-stride-c_contiguous-f_contiguous-be-part-of-its-type)
+    - [Implement offsets and iterator using pointers.](#implement-offsets-and-iterator-using-pointers)
+    - [Shallow-copy by default:](#shallow-copy-by-default)
+    - [Have polymorphic procs depending on a backend parameter](#have-polymorphic-procs-depending-on-a-backend-parameter)
+  - [Readings](#readings)
+    - [Performance](#performance)
 
 <!-- /TOC -->
 
@@ -41,23 +42,11 @@ On CUDA, Arraymancer follows (temporarily) the column-major layout, as many CUBL
 Arraymancer will use row-major on CUDA when CUBLAS operations are replaced with custom kernels.
 
 ## Pending issues
-* Switch to full inline iterators: https://forum.nim-lang.org/t/2972
-* Load images as tensors:
-https://github.com/define-private-public/stb_image-Nim/issues/3
-
-## Memory/Perf considerations
-* Current CPUs cache line is 64 bytes. The Tensor data structure at 32 bytes has an ideal size.
-However, every time we retrieve its shape and strides there is a pointer resolution + bounds checking for seq with constant length. See Data structure considerations section.
-
-* Most copy operations (from nested arrays/seq, for slice assignments from nested arrays/seq or Tensor) uses iterators and avoid intermediate representation.
-
-* `slicerMut` can be implemented with shallow-copy to avoid extra memory copies. This is done for single value assignments but not for assignment from Tensor or openarray: https://forum.nim-lang.org/t/2971 and https://forum.nim-lang.org/t/2972
-
-* For mean / stdev, should I implement the numerically stable but slow Welford algorithm?
+* Some slicing syntax does not work inside generic procs: https://github.com/mratsim/Arraymancer/issues/62
 
 ## Data structure considerations
 
-* Shape and strides have a static size known at runtime. They might be best implemented as VLAs (Variable Length Array) from an indirection point of view. Inconvenient: 2 tensors will not fit in a cache line.
+* Shape and strides are stored in a 72 bytes stack data structure (64B 8-element array + 8B int64). Cache-line wise (64B on consumer CPUs), this is not the best but stack allocated array are much better than heap-allocated and GC-managed seq (~40% perf diff by switching from seq)
 
 * For now, shallowCopies will be used only in strategic places, for example when we want to mutate the original reference but use another striding scheme in `slicerMut`. Slicing will not return views.
 Contrary to Python, the compiler can do the following optimization:
@@ -65,20 +54,35 @@ Contrary to Python, the compiler can do the following optimization:
   - Move on assignment
   - Detect if the original Tensor is not used anymore and the copy is unneeded.
 If further no-copy optimizations are needed, move optimization with {call} can be used so the compiler automatically choose a no-copy version if only one reference exists: https://nim-lang.org/docs/manual.html#ast-based-overloading-move-optimization
+In the future Nim will support a more general `=move` operator and destructors. It will carefully be evaluated see Araq's blog post: https://nim-lang.org/araq/destructors.html
+
+## Memory/Perf considerations
+* Current CPUs cache line is 64 bytes. We tried a Tensor data structure at 32 bytes with shape and strides being a seq instead of 8-elem array + actual len: Heap allocation was far too slow. We will probably get further improvement if shape and strides fit each in 64 bytes.
+Using uint is dangerous because if we do tensor[0 - 1] it will rollover to tensor[2^32]. Using int32 is possible but in the future we could expect huge sparse tensors that needs int64 indexing and int (int64) is the default in Nim. Also this might be a way to grab users from this limitation of Numpy: https://github.com/ContinuumIO/anaconda-issues/issues/3823, https://github.com/numpy/numpy/issues/5906
+
+* Most copy operations (from nested arrays/seq, for slice assignments from nested arrays/seq or Tensor) uses iterators and avoid intermediate representation.
+
+* Map: Tensor[T] -> Tensor[string] or Tensor[ref AnyObject] uses a non multithreaded slow path because heap allocation does not work with OpenMP.
+
+* The tensor module is already very optimized regarding memory allocations.
+Manual memory management is probably overkill, Nim GC is already extremely fast.
+
+* Autograd module must be optimized as well as between each batch the batch temporaries are free.
+One way to do that is via a memory pool or a custom allocator (buddy allocator, slab allocator, slub allocator ...). 
+One of the challenge is that since Arraymancer is a dynamic framework, some batch may be bigger or smaller than the other so we can't just reuse the same memory location.
 
 ## CUDA considerations
 
 * Reclaiming memory: currently all CudaTensors are created via new + finalizer. The finalizer proc is automatically used after (at a non-deterministic time) the object goes out of scope. In case there are memory leaks, it might be because a CudaTensor wasn't created by new, and so need a `=destroy` destructor proc. Discussions on IRC highlight that finalizer is enough for yglukhov's game engine.
+
+* Allocations on Cuda are much more expensive than on CPU and a custom allocator will be needed. (Memory management is already manual anyway)
 
 * Default to column-major layout (Fortran order).
 Internally CUDA/CuBLAS works with column major layout. Creating CudaTensor column-major by default may avoid temporary transpose allocation.
 
 * Currently CudaTensor are shallow-copied by default.
 From a consistency point of view it would be best if both Tensor and CudaTensor have the same behaviour.
-WIP: Implementing value semantics with overloading the assignment operator:
-https://nim-lang.org/docs/manual.html#type-bound-operations
-To avoid unnecessary allocation a no-copy assignment can be used if references are unique.
-https://nim-lang.org/docs/manual.html#ast-based-overloading-move-optimization
+This is pending Nim improvement on assignment operator overloading and destructors + move optimization implementation
 
 * Async operations
 Operations on CUDA device ("Host -> GPU" copy, additions, substraction, etc) are non-blocking for the host.
@@ -91,26 +95,45 @@ In the future, independant operations like A+B and C+D might be scheduled in dif
 ## Coding-style
 * Prefer `when` to `if` for compile-time evaluation
 * Let the compiler do its job:
-    - proc everywhere, without the `inline` tag
+    - proc everywhere, `inline` tag to nudge him towards expected optimization (it might choose not to inline after a cost analysis anyway)
     - template if proc does not work or to access an object field
     - macro as last resort to manipulate AST tree or rewrite code
 * Readibility, maintainability and performance are very important (in no particular order)
-* Use functional constructs like `map`, `scanr` instead of `for loop` when you don't need side-effects or a iterator
+* Use functional constructs like `map`, `scanr` instead of `for loop` when you don't need side-effects or an iterator
 
-## Features
+## Future features
+
+### Software features
 
 * Implement a Tensor comprehension macro. It may be able to leverage mitems instead of result[i,j] = alpha * (i - j) * (i + j).
 
-* Implement einsum: http://ajcr.net/Basic-guide-to-einsum/
+* Implement einsum: https://obilaniu6266h16.wordpress.com/2016/02/04/einstein-summation-in-numpy/
+
+* Automatically pull nnpack for optimized convolution on CPU (Linux/macOS only)
+
+* Provide config files for Cuda, MKL, OpenMP, etc
+
+* BLAS operation fusion: `transpose(A) * B` or `Ax + y` should be fused in one operation.
+
+* Implement a Scalar[T] concept so that regular float are considered as Tensors
+
+* (Needs thinking) Support sparse matrices. There is Magma and CuSparse for GPU. What to use for CPU? Interface should be similar to BLAS and should compile on ARM/embedded devices like Jetson TX1.
+
+* Implement Bayesian neural networks
+
+* Implement Graph neural networks
+
+### Backend/hardware features
+
+* OpenCL, probably via CLBlast
+
+* AMD Rocm. (I don't have any AMD GPU though)
+
+* Javascript backend. Using the Nim compiler directly is difficult, see PR https://github.com/mratsim/Arraymancer/pull/126, we can start with emscripten though.
+
+* Metal Performance Shader backend for iPhone compat (Can we emulate/test this on macOS?)
 
 
-## TODO
-1. Tests for array creation utilities (zeros, ones, zeros_like, random ...)
-2. Tests for axis iterators
-3. GPU support: Cuda and Magma first. OpenCL/ROCm when AMD gets its act together.
-4. BLAS operation fusion: `transpose(A) * B` or `Ax + y` should be fused in one operation.
-
-999. (Needs thinking) Support sparse matrices. There is Magma and CuSparse for GPU. What to use for CPU? Interface should be similar to BLAS and should compile on ARM/embedded devices like Jetson TX1.
 
 ## Ideas rejected
 
@@ -217,3 +240,5 @@ Two alternatives are possible to avoid that:
 - Implementing matmul from scratch: http://apfel.mathematik.uni-ulm.de/~lehn/ulmBLAS/
 - Implementing matmul in Nvidia assembler from scratch: https://github.com/NervanaSystems/maxas/wiki/SGEMM
 - In-depth discussion on fast convolution (NCHW vs CHNW representation, Winograd kernel): https://github.com/soumith/convnet-benchmarks/issues/93
+- Roofline performance model, arithmetic intensity - CPU-bound vs memory-bound: https://crd.lbl.gov/departments/computer-science/PAR/research/roofline/
+

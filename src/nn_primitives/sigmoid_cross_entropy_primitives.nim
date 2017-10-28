@@ -43,11 +43,19 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T {.inline.} =
   when compileOption("boundChecks"):
     check_input_target(input, target)
 
-  result = 0.T
-  for xi, ti in zip(input, target):
-    result += (-ti * xi +  max(xi,0) + ln1p(exp(-abs(xi))) ) / T(input.shape[1])
-    # input.shape[1] is the batch size
-    # ln1p(x) does ln(1 + x) but avoids catastrophic cancellation if x << 1.
+  # input.shape[1] is the batch size
+  # ln1p(x) does ln(1 + x) but avoids catastrophic cancellation if x << 1.
+
+  # result = 0.T
+  # for xi, ti in zip(input, target):
+  #   result += (-ti * xi +  max(xi,0) + ln1p(exp(-abs(xi))) ) / T(input.shape[1])
+
+  # We need fused map2 -> reduce for all loss functions
+  let map_tmp = map2_inline(input, target):
+    (-y * x +  max(x,0) + ln1p(exp(-abs(x))) ) / T(input.shape[1])
+
+  result = map_tmp.reduce_inline():
+    x+=y
 
 proc sigmoid_cross_entropy_backward*[T](
         gradient: Tensor[T] or T,

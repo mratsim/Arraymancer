@@ -105,7 +105,6 @@ proc test(name: string, lang: string = "c") =
   setCommand lang, "tests/" & name & ".nim"
 
 task all_tests, "Run all tests - Intel MKL + OpenMP + Cuda + march=native + release":
-  cuda_mkl_openmp
   switch("define","cuda")
   cuda_mkl_openmp
   test "full_test_suite", "cpp"
@@ -127,9 +126,9 @@ task test_deprecated, "Run all tests on deprecated static[Backend] procs":
   test "tests_cpu_deprecated"
 
 task test_openblas, "Run all tests - OpenBLAS":
-  ## Should work but somehow Nim doesn't find libopenblas.dylib on MacOS
+  switch("define","blas=openblas")
   when defined(macosx):
-    switch("define","blas=openblas")
+    ## Should work but somehow Nim doesn't find libopenblas.dylib on MacOS
     switch("clibdir", "/usr/local/opt/openblas/lib")
     switch("cincludes", "/usr/local/opt/openblas/include")
   test "tests_cpu"
@@ -145,6 +144,11 @@ task test_native, "Run all tests - march=native":
 task test_openmp, "Run all tests - OpenMP":
   switch("define","openmp")
   switch("stackTrace","off") # stacktraces interfere with OpenMP
+  when defined(macosx): # Default compiler on Mac is clang without OpenMP and gcc is an alias to clang.
+                        # Use Homebrew GCC instead for OpenMP support. GCC (v7), must be properly linked via `brew link gcc`
+    switch("cc", "gcc")
+    switch("gcc.exe", "/usr/local/bin/gcc-7")
+    switch("gcc.linkerexe", "/usr/local/bin/gcc-7")
   test "tests_cpu"
 
 task test_mkl, "Run all tests - Intel MKL - single threaded":

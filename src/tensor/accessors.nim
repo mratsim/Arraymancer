@@ -278,7 +278,7 @@ iterator menumerateZip*[T,U](t1: var Tensor[T], t2: Tensor[U], offset, size: int
     check_contiguous_index(t1, offset+size-1)
   dualStridedIteration(IterKind.Iter_Values, t1, t2, offset, size)
 
-template axis_iterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyped =
+template axisIterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyped =
   ## Inline iterator over an axis.
   ##
   ## Returns:
@@ -297,14 +297,44 @@ template axis_iterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): unty
     check_axis_index(t, axis, iter_offset+iter_size-1)
 
   var out_t = t.unsafeAtAxisIndex(axis, iter_offset)
-  let axis_stride = t.strides[axis]
 
   for _ in 0..<iter_size:
     yield out_t
-    out_t.offset += axis_stride
+    out_t.offset += t.strides[axis]
+
+
+template dualAxisIterator[T](a, b: Tensor[T], axis, iter_offset, iter_size: int): untyped =
+  ## Inline iterator over 2 tensors over an axis.
+  ##
+  ## Returns:
+  ##   - 2 slices along the given axis at each iteration.
+  ##
+  ## Note: The slice dimension is not collapsed by default.
+  ## You can use ``unsafeSqueeze`` to collapse it without copy.
+  ## In this case ``unsafeSqueeze`` is safe.
+  ##
+  ## Usage:
+  ##  .. code:: nim
+  ##     for subtensor in axis(a, b, 1):
+  ##       # do stuff
+  when compileOption("boundChecks"):
+    check_axis_index(a, axis, iter_offset)
+    check_axis_index(b, axis, iter_offset+iter_size-1)
+    assert a.shape[axis] == b.shape[axis] # TODO use a proper check
+
+  var out_a = a.unsafeAtAxisIndex(axis, iter_offset)
+  var out_b = b.unsafeAtAxisIndex(axis, iter_offset)
+
+  for _ in 0..<iter_size:
+    yield (out_a, out_b)
+    out_a.offset += a.strides[axis]
+    out_b.offset += b.strides[axis]
 
 iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] {.inline.}=
-  axis_iterator(t, axis, 0, t.shape[axis])
+  axisIterator(t, axis, 0, t.shape[axis])
 
 iterator axis*[T](t: Tensor[T], axis, offset, size: int): Tensor[T] {.inline.}=
-  axis_iterator(t, axis, offset, size)
+  axisIterator(t, axis, offset, size)
+
+iterator zipAxis*[T](a, b: Tensor[T], axis: int): tuple[a, b: Tensor[T]] {.inline.}=
+  dualAxisIterator(a, b, axis, 0, a.shape[axis])

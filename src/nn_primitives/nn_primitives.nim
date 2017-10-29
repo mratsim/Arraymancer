@@ -15,12 +15,14 @@
 import  ./nnp_activation,
         ./nnp_convolution,
         ./nnp_linear,
-        ./nnp_sigmoid_cross_entropy
+        ./nnp_sigmoid_cross_entropy,
+        ./nnp_softmax_cross_entropy
 
 export  nnp_activation,
         nnp_convolution,
         nnp_linear,
-        nnp_sigmoid_cross_entropy
+        nnp_sigmoid_cross_entropy,
+        nnp_softmax_cross_entropy
 
 import private/p_nnp_types
 export Size2D

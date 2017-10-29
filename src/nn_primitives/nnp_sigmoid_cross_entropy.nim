@@ -28,7 +28,7 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T {.inline.} =
   ##   - A Tensor
   ##   - The target values
   ## Returns:
-  ##   - Apply and sigmoid activation and returns the cross-entropy loss.
+  ##   - Apply a sigmoid activation and returns the cross-entropy loss.
   ## Shape:
   ##   - Both the cache and target shape should be @[features, batchsize] i.e. number of samples as last dimension
   # TODO: add a `batch_axis` parameter
@@ -46,12 +46,12 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T {.inline.} =
   # for xi, ti in zip(input, target):
   #   result += (-ti * xi +  max(xi,0) + ln1p(exp(-abs(xi))) ) / T(input.shape[1])
 
-  # We need fused map2 -> reduce for all loss functions
+  # We need parallel fused map2 -> reduce for all loss functions
   let map_tmp = map2_inline(input, target):
     (-y * x +  max(x,0) + ln1p(exp(-abs(x))) ) / T(input.shape[1])
 
-  result = map_tmp.reduce_inline():
-    x+=y
+  # Reduce with sum
+  result = map_tmp.sum()
 
 proc sigmoid_cross_entropy_backward*[T](
         gradient: Tensor[T] or T,
@@ -84,38 +84,38 @@ proc sigmoid_cross_entropy_backward*[T](
 # ############
 # Forward pass
 
-# Cross-entropy has the following form for a single sample
-# CEi(yi, yi') = − ( ti ln(yi) + (1−ti) ln(1−yi) )
+# Binary cross-entropy has the following form for a single sample (ti' being the truth/target probabilities and yi the predicted probabilities)
+# BCEi(yi, ti') = − ( ti' ln(yi) + (1−ti') ln(1−yi) )
 
 # Since we pass a minibatch of several samples we should average by minibatch size (1/batchsize)
 # to keep the gradient magnitude/weight updates on the same scale as a single sample pass
-# CE(y, y') = − 1/n ∑i( ti ln(yi) + (1−ti) ln(1−yi) )
+# BCE(y, t') = − 1/n ∑i( ti' ln(yi) + (1−ti') ln(1−yi) )
 
-# yi = ln(sigmoid(xi)) = ln(1/(1+e^-xi)) = ln(e^xi/( 1 + e^xi ))
-# yi = x - ln(1 + e^xi)
+# ln(yi) = ln(sigmoid(xi)) = ln(1/(1+e^-xi)) = ln(e^xi/( 1 + e^xi ))
+# ln(yi) = x - ln(1 + e^xi)
 
-# 1 - yi = ln(1 - sigmoid(xi)) = ln(1 + e^xi - e^xi) / (1 + e^xi))
-# 1 - yi = - ln(1 + e^xi)
+# ln(1 - yi) = ln(1 - sigmoid(xi)) = ln(1 + e^xi - e^xi) / (1 + e^xi))
+# ln(1 - yi) = - ln(1 + e^xi)
 
 # Replacing Sigmoid Cross Entropy
-# SCE(x, y') = − 1/n ∑i(ti * (xi - ln(1 + e^xi)) + (1−ti) * -ln(1 + e^xi) )
-#            = − 1/n ∑i(ti * xi - ti * ln(1 + e^xi) -ln(1 + e^xi) + ti * ln(1 + e^xi) )
-#            = − 1/n ∑i(ti * xi - ln(1 + e^xi) )
-#            = − 1/n ∑i(ti * xi - ln(e^0 + e^xi) )
+# SCE(x, t') = − 1/n ∑i(ti' * (xi - ln(1 + e^xi)) + (1−ti') * -ln(1 + e^xi) )
+#            = − 1/n ∑i(ti' * xi - ti' * ln(1 + e^xi) -ln(1 + e^xi) + ti' * ln(1 + e^xi) )
+#            = − 1/n ∑i(ti' * xi - ln(1 + e^xi) )
+#            = − 1/n ∑i(ti' * xi - ln(e^0 + e^xi) )
 #
 # Using the logsumexp trick with factorize by a constant
 # c = max(xi, 0)
 #
-# SCE(x, y') = − 1/n ∑i(ti * xi - ln(e^c *( e^(0-c) + e^(xi-c))
-#            = − 1/n ∑i(ti * xi - ln(e^c *( e^(0-c) + e^(xi-c))
-#            = − 1/n ∑i(ti * xi - c - ln(e^-c + e^(xi-c))
+# SCE(x, t') = − 1/n ∑i(ti' * xi - ln(e^c *( e^(0-c) + e^(xi-c))
+#            = − 1/n ∑i(ti' * xi - ln(e^c *( e^(0-c) + e^(xi-c))
+#            = − 1/n ∑i(ti' * xi - c - ln(e^-c + e^(xi-c))
 #
 # If c = xi (xi > 0), ln(e^-c + e^(xi-c)) becomes ln(e^-xi + 1)
 # else c = 0 (xi < 0 ), ln(e^-c + e^(xi-c)) becomes ln(1 + e^xi)
 # Both cases are covered by ln(1 + e^-|xi|)
 #
 # Finally
-# SCE(x, y') = − 1/n ∑i(ti * xi - max(xi,0) - ln(1 + e^-|xi|)
+# SCE(x, t') = − 1/n ∑i(ti' * xi - max(xi,0) - ln(1 + e^-|xi|)
 #
 #
 #
@@ -126,13 +126,13 @@ proc sigmoid_cross_entropy_backward*[T](
 # Backward pass
 
 # Derivative of Sigmoid-CE:
-# We start from this formula: SCE(x, y') = − 1/n ∑i(ti * xi - ln(1 + e^xi) )
-#                                        = 1/n ∑i(-ti * xi + ln(1 + e^xi) )
+# We start from this formula: SCE(x, t') = − 1/n ∑i(ti' * xi - ln(1 + e^xi) )
+#                                        = 1/n ∑i(-ti' * xi + ln(1 + e^xi) )
 #
 # On a single sample:
-# dSCE/dxi = d/dxi (-ti * xi + ln(1 + e^xi))
-#          = -ti + e^xi * 1/(1 + e^xi))
-#          = -ti * sigmoid(xi)
+# dSCE/dxi = d/dxi (-ti' * xi + ln(1 + e^xi))
+#          = -ti' + e^xi * 1/(1 + e^xi))
+#          = -ti' * sigmoid(xi)
 #
 # For a vector of samples
-# dSCE/dx = 1/n ∑i( sigmoid(xi) - ti )
+# dSCE/dx = 1/n ∑i( sigmoid(xi) - ti' )

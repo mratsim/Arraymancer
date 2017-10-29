@@ -26,17 +26,17 @@ proc sum*[T](t: Tensor[T]): T =
   t.reduce_inline():
     x+=y
 
-proc sum*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit,noInit.} =
+proc sum*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
   ## Compute the sum of all elements along an axis
   t.reduce_axis_inline(axis):
     x+=y
 
-proc product*[T](t: Tensor[T]): T {.inline.}=
+proc product*[T](t: Tensor[T]): T =
   ## Compute the product of all elements
   t.reduce_inline():
     x*=y
 
-proc product*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
+proc product*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.}=
   ## Compute the product along an axis
   t.reduce_axis_inline(axis):
     x.melwise_mul(y)

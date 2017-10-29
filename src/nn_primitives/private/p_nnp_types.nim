@@ -1,7 +1,9 @@
-import ../tensor/tensor
+import ../../tensor/tensor
 
 type
   Size2D* = tuple
+    ## Tuple of height and width
+    ## This is notably used to specify padding and stride parameters for Convolution2D.
     height: int
     width: int
 

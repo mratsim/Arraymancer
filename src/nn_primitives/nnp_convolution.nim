@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../tensor/tensor, ./types
-import ./fallback/conv
+import  ../tensor/tensor,
+        ./private/p_nnp_types,
+        ./fallback/conv
 
 when defined(nnpack):
   import backend/nnpack_interface

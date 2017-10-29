@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../tensor/tensor, ../types
+import  ../../tensor/tensor,
+        ../private/p_nnp_types
 
-proc im2col[T](input: Tensor[T], kernel_size: Size2D,
-               padding: Size2D = (0,0), stride: Size2D = (1,1), result: var Tensor[T])  =
+proc im2col[T]( input: Tensor[T], kernel_size: Size2D,
+                padding: Size2D = (0,0), stride: Size2D = (1,1), result: var Tensor[T])  =
   ## Convert blocks of an image into columns, useful for preprocessing
   ## an image before convolutions
   let

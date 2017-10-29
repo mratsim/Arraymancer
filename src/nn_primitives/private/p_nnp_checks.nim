@@ -12,15 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./nnp_activation,
-        ./nnp_convolution,
-        ./nnp_linear,
-        ./nnp_sigmoid_cross_entropy
+import ../../tensor/tensor
 
-export  nnp_activation,
-        nnp_convolution,
-        nnp_linear,
-        nnp_sigmoid_cross_entropy
-
-import private/p_nnp_types
-export Size2D
+proc check_input_target*[T](input, target: Tensor[T]) {.noSideEffect, inline.}=
+  if unlikely(input.shape != target.shape):
+    raise newException(ValueError, "Input shape " & $input.shape &
+      " and target shape " & $target.shape & " should be the same")

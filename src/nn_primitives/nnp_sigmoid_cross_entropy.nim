@@ -14,15 +14,10 @@
 
 import  ../ops_fusion/ops_fusion,
         ../tensor/tensor,
+        ./private/p_nnp_checks,
         math
 
-# Sigmoid cross-entropy function that works directly on Tensors
-# and provide control without autograd
-
-proc check_input_target[T](input, target: Tensor[T]) {.noSideEffect, inline.}=
-  if unlikely(input.shape != target.shape):
-    raise newException(ValueError, "Input shape " & $input.shape &
-      " and target shape " & $target.shape & " should be the same")
+# Fused numerically stable sigmoid + cross-entropy loss function
 
 proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T {.inline.} =
   ## Sigmoid function + Cross-Entropy loss fused in one layer.
@@ -36,6 +31,7 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T {.inline.} =
   ##   - Apply and sigmoid activation and returns the cross-entropy loss.
   ## Shape:
   ##   - Both the cache and target shape should be @[features, batchsize] i.e. number of samples as last dimension
+  # TODO: add a `batch_axis` parameter
 
 
   # TODO: term rewriting macro for auto fusion
@@ -69,6 +65,8 @@ proc sigmoid_cross_entropy_backward*[T](
   ##   - The target values
   ## Shape:
   ##   - Both the cache and target shape should be @[features, batchsize] i.e. number of samples as last dimension
+  # TODO: add a `batch_axis` parameter
+
   let batch_size = cached_tensor.shape[^1]
 
   # Deal with scalar and tensor gradient

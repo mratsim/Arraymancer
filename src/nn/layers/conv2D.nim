@@ -15,7 +15,7 @@
 import  ../../private/ast_utils,
         ../../tensor/tensor,
         ../../autograd/autograd,
-        ../../nn_primitives/[types, convolution_primitives],
+        ../../nn_primitives/nn_primitives,
         ./layer
 
 

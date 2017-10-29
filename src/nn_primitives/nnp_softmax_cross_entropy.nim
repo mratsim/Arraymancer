@@ -20,18 +20,28 @@ import  ../tensor/tensor,
 # Fused numerically stable softmax + cross-entropy loss function
 
 
-proc softmax_cross_entropy*[T](input, target: Tensor[T]): T {.inline.} =
+proc softmax_cross_entropy*[T](input, target: Tensor[T]): T =
   ## Softmax function + Cross-Entropy loss fused in one layer.
-  ## This leverage the log-sum-exp trick for improved numerical stability
-  ## It is also faster than calling both separately
   ##
   ## Input:
-  ##   - A Tensor
-  ##   - The target values
+  ##   - A Tensor of shape @[predicted_labels_probabilities, batchsize]
+  ##   - The target values of shape @[truth_labels_probability, batchsize]
   ## Returns:
   ##   - Apply a softmax activation and returns the cross-entropy loss.
-  ## Shape:
-  ##   - Both the cache and target shape should be @[features, batchsize] i.e. number of samples as last dimension
+  ##
+  ## ``Softmax_cross_entropy`` measures the cross-entropy error for multiclass classification.
+  ## Classes are mutually exclusive (only 1 label is true) but the truth labels (``target``) need not be.
+  ##
+  ## Note: Instead of one-hot-encoded labels, it is more efficient to use ``sparse_softmax_cross_entropy``
+  ## instead of feeding ``softmax_cross_entropy``.
+  ##
+  ## For example if your true probablities are (car: 0.10, airplane: 0.60, bike: 0.05, bus: 0.25),
+  ## you have to use ``softmax_cross_entropy``
+  ##
+  ## However if your true probablities are (car: 0, airplane: 1, bike: 0, bus: 0) (a one-hot-encoded vector),
+  ## you should prefer ``sparse_softmax_cross_entropy``
+
+
   # TODO: add a `batch_axis` parameter
 
 
@@ -49,15 +59,62 @@ proc softmax_cross_entropy*[T](input, target: Tensor[T]): T {.inline.} =
   var sample_softmax_xentropy = zeros[T](1, input.shape[1])
   var i = 0
   for sample_input, sample_target in zipAxis(input, target, 1):
+    # SCEi(yi, ti') = ti * ( ln ∑j exp(yij) - yij ) # see below
     sample_softmax_xentropy[0, i] = sum:
       map2_inline(sample_input, sample_target):
-        # SCEi(yi, ti') = ti * ( ln ∑j exp(yij) - yij ) # see below
         y * (sample_input.logsumexp - x)
     inc i
 
-  # 2. Sum the sample crossentropies
-  result = sample_softmax_xentropy.sum
+  # 2. Sum the sample crossentropies and normalize by batchsize
+  result = sample_softmax_xentropy.mean
 
+proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T =
+  ## Softmax function + Cross-Entropy loss fused in one layer.
+  ##
+  ## Input:
+  ##   - A Tensor of shape @[predicted_labels_probabilities, batchsize]
+  ##   - The target values of shape @[batchsize] containing the truth label id
+  ## Returns:
+  ##   - Apply a softmax activation and returns the cross-entropy loss.
+  ##
+  ## ``sparse_softmax_cross_entropy`` measures the cross-entropy error for multiclass classification.
+  ## Classes are mutually exclusive (only 1 label is true).
+  ##
+  ## Important: [0, 0, 1] means label 2 is true i.e. labels start at 0
+  ##
+  ## Note: Instead of one-hot-encoded labels, it is more efficient to use ``sparse_softmax_cross_entropy``
+  ## instead of feeding ``softmax_cross_entropy``.
+  ##
+  ## For example if your true probablities are (car: 0.10, airplane: 0.60, bike: 0.05, bus: 0.25),
+  ## you have to use ``softmax_cross_entropy``
+  ##
+  ## However if your true probablities are (car: 0, airplane: 1, bike: 0, bus: 0) (a one-hot-encoded vector),
+  ## you should prefer ``sparse_softmax_cross_entropy``
+
+
+  # TODO: term rewriting macro for auto fusion
+
+  # TODO proper check
+  assert input.shape[1] == target.shape[0]
+
+  # We need parallel fused:
+  #   fold_axis (log softmax per sample)
+  #   -> map2 (cross-entropy)
+  #   -> reduce (sum) for all loss functions
+
+  # 1. Create a temporary tensor with the crossentropy per sample
+  var sample_softmax_xentropy = zeros[T](1, input.shape[1])
+  var i = 0
+  for sample_input, sample_target in zipAxis(input, target, 1):
+    # SCEi(yi, ti') = ti * ( ln ∑j exp(yij) - yij )
+    # ti is 1 or 0 since labels are sparse
+    # So we can simplify to SCEi(yi, ti') = ln ∑j exp(yij) - yi[ti] i.e. use target label id as index
+    # While iterating on the axis ``ti`` is sample_target[0]
+    sample_softmax_xentropy[0, i] = sample_input.logsumexp - sample_input[sample_target[0]]
+    inc i
+
+  # 2. Sum the sample crossentropies and normalize by batchsize
+  result = sample_softmax_xentropy.mean
 
 # ################################################
 # Explanation of softmax cross-entropy algorithms:

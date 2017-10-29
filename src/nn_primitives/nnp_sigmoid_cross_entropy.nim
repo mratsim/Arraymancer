@@ -19,10 +19,8 @@ import  ../ops_fusion/ops_fusion,
 
 # Fused numerically stable sigmoid + cross-entropy loss function
 
-proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T {.inline.} =
+proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T =
   ## Sigmoid function + Cross-Entropy loss fused in one layer.
-  ## This leverage the log-sum-exp trick for improved numerical stability
-  ## It is also faster than calling both separately
   ##
   ## Input:
   ##   - A Tensor
@@ -32,7 +30,6 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T {.inline.} =
   ## Shape:
   ##   - Both the cache and target shape should be @[features, batchsize] i.e. number of samples as last dimension
   # TODO: add a `batch_axis` parameter
-
 
   # TODO: term rewriting macro for auto fusion
 
@@ -47,17 +44,15 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T {.inline.} =
   #   result += (-ti * xi +  max(xi,0) + ln1p(exp(-abs(xi))) ) / T(input.shape[1])
 
   # We need parallel fused map2 -> reduce for all loss functions
-  let map_tmp = map2_inline(input, target):
-    (-y * x +  max(x,0) + ln1p(exp(-abs(x))) ) / T(input.shape[1])
-
-  # Reduce with sum
-  result = map_tmp.sum()
+  result = sum:
+    map2_inline(input, target):
+      (-y * x +  max(x,0) + ln1p(exp(-abs(x))) ) / T(input.shape[1]) # This leverage the logsumexp trick to improve numerical stability
 
 proc sigmoid_cross_entropy_backward*[T](
         gradient: Tensor[T] or T,
         cached_tensor: Tensor[T],
         target: Tensor[T]
-        ): Tensor[T] {.inline.} =
+        ): Tensor[T] =
   ## Derivatives of sigmoid_cross_entropy
   ## Input:
   ##   - The input gradient as a scalar or a Tensor
@@ -103,7 +98,7 @@ proc sigmoid_cross_entropy_backward*[T](
 #            = − 1/n ∑i(ti' * xi - ln(1 + e^xi) )
 #            = − 1/n ∑i(ti' * xi - ln(e^0 + e^xi) )
 #
-# Using the logsumexp trick with factorize by a constant
+# Using the logsumexp trick with factorize by a constant to improve numerical stability
 # c = max(xi, 0)
 #
 # SCE(x, t') = − 1/n ∑i(ti' * xi - ln(e^c *( e^(0-c) + e^(xi-c))

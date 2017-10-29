@@ -303,7 +303,7 @@ template axisIterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyp
     out_t.offset += t.strides[axis]
 
 
-template dualAxisIterator[T](a, b: Tensor[T], axis, iter_offset, iter_size: int): untyped =
+template dualAxisIterator[T, U](a: Tensor[T], b: Tensor[U], axis, iter_offset, iter_size: int): untyped =
   ## Inline iterator over 2 tensors over an axis.
   ##
   ## Returns:
@@ -336,5 +336,5 @@ iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] {.inline.}=
 iterator axis*[T](t: Tensor[T], axis, offset, size: int): Tensor[T] {.inline.}=
   axisIterator(t, axis, offset, size)
 
-iterator zipAxis*[T](a, b: Tensor[T], axis: int): tuple[a, b: Tensor[T]] {.inline.}=
+iterator zipAxis*[T, U](a: Tensor[T], b: Tensor[U], axis: int): tuple[a: Tensor[T], b: Tensor[U]] {.inline.}=
   dualAxisIterator(a, b, axis, 0, a.shape[axis])

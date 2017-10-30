@@ -34,7 +34,7 @@ proc im2col[T]( input: Tensor[T], kernel_size: Size2D,
 
   var odata = result.dataArray
   var idata = input.dataArray
-  for c in `||`(0, channels_col-1, "simd"):
+  for c in 0||(channels_col-1):
     let
       w_offset = (c mod kernel_size.width) - padding.width
       h_offset = ((c div kernel_size.width) mod kernel_size.height) - padding.height

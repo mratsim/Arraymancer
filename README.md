@@ -17,6 +17,8 @@ The library is inspired by Numpy and PyTorch.
   - [Full documentation](#full-documentation)
   - [Features](#features)
     - [Speed](#speed)
+      - [Parallelism](#parallelism)
+      - [Memory allocation](#memory-allocation)
       - [Micro benchmark: Int64 matrix multiplication](#micro-benchmark-int64-matrix-multiplication)
       - [Logistic regression](#logistic-regression)
       - [DNN - 3 hidden layers](#dnn---3-hidden-layers)
@@ -103,6 +105,22 @@ For now Arraymancer is still at the ndarray stage, however a [vision package](ht
 You can also check the [detailed example](https://github.com/mratsim/Arraymancer/blob/master/examples/ex01_xor_perceptron_from_scratch.nim) or [benchmark](https://github.com/mratsim/Arraymancer/blob/master/benchmarks/ex01_xor.nim) perceptron for a preview of Arraymancer deep learning usage.
 
 ### Speed
+
+#### Parallelism
+
+Most operations in Arraymancer are parallelized through OpenMP including linear algebra functions, universal functions, `map`, `reduce` and `fold`.
+
+Note: On OSX in some cases, OpenMP might be significantly slower than the single-threaded load, probably due to memory allocation differences. Unfortunately this is platform specific, Linux doesn't have the same issue. See [here](https://github.com/mratsim/Arraymancer/issues/134#issuecomment-340425671) for details.
+
+#### Memory allocation
+
+For most operations in machine linear, memory and cache is the bottleneck, for example taking the log of a Tensor can use at most 20% of your theoretical max CPU speed (in GFLOPS) while matrix multiplication can use 70%-90%+ for the best implementations (MKL, OpenBLAS).
+
+In the log case, the processor gives a result faster than it can load data into its cache. In the matrix multiplication case, each element of a matrix can be reused several times before loading data again.
+
+Arraymancer strives hard to limit memory allocation with `inline` version of `map`, `apply`, `reduce`, `fold` (`map_inline`, `apply_inline`, `reduce_inline`, `fold_inline`)
+
+Furthermore while Arraymancer uses copy on assignment by default, most procedures have an `unsafe` equivalent that provides no-copy operations like `reshape` and `unsafeReshape`. Warning ⚠: Memory is shared in that case, modifying one of these tensors will modify the other.
 
 #### Micro benchmark: Int64 matrix multiplication
 

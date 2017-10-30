@@ -107,8 +107,13 @@ when isMainModule:
   echo " Dummy value: ", dummy # This is to avoid compiler optimization
 
 
-## Results on i5-5257U (dual-core mobile 2.7GHz, turbo 3.1)
-## Note: OpenMP is significantly SLOWER
+## Results on i5-5257U (macOS High Sierra, dual-core mobile 2.7GHz, turbo 3.1)
+## Note: OpenMP is significantly SLOWER on macOS than single-threaded
+## while on Linux it scales with number of cores.
+## See https://github.com/mratsim/Arraymancer/issues/134#issuecomment-340425671
+## Potential reasons are:
+## - memory fragmentation due to OSX mmap implementation
+## - "False sharing"
 
 # Compilation flags
 # nim c -d:native -d:release --out:bin/logsumexp --nimcache:./nimcache benchmarks/implementation/logsumexp.nim

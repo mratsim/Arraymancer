@@ -32,7 +32,7 @@ else:
   template omp_get_max_threads*(): cint = 1
   template omp_get_thread_num*(): cint = 0
 
-const OMP_FOR_ANNOTATION = "if(ompsize > " & $OMP_FOR_THRESHOLD & ")"
+const OMP_FOR_ANNOTATION = "simd if(ompsize > " & $OMP_FOR_THRESHOLD & ")"
 
 template omp_parallel_countup*(i: untyped, size: Natural, body: untyped): untyped =
   let ompsize = size
@@ -52,7 +52,7 @@ template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, 
           let num_blocks = min(omp_get_max_threads(), size)
           if num_blocks > 1:
             let bsize = size div num_blocks
-            for block_index in 0||(num_blocks-1):
+            for block_index in `||`(0, num_blocks-1, "simd"):
               let block_offset = bsize*block_index
               let block_size = if block_index < num_blocks-1: bsize else: size - block_offset
               block:
@@ -88,7 +88,7 @@ template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: u
                   op_init
 
               # Reduce blocks
-              for block_index in 0||(num_blocks-1):
+              for block_index in `||`(0, num_blocks-1, "simd"):
                 var block_offset = bsize*block_index
                 let block_size = (if block_index < num_blocks-1: bsize else: size - block_offset) - 1
                 block_offset += 1

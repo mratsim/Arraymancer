@@ -31,7 +31,7 @@ suite "Universal functions":
     let expected_a = @[@[cos(1'f64),cos(2'f64),cos(3'f64)],@[cos(4'f64),cos(5'f64),cos(6'f64)]]
     let expected_b = @[@[ln(7'f64), ln(8'f64)],@[ln(9'f64), ln(10'f64)],@[ln(11'f64), ln(12'f64)]]
 
-    check: cos(ta) == expected_a.toTensor()
+    check: mean_absolute_error(cos(ta), expected_a.toTensor()) <= 1e-15 # We have slight precision loss with OpenMP
     check: ln(tb) == expected_b.toTensor()
 
   test "Creating custom universal functions is supported":

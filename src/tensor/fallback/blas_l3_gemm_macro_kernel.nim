@@ -28,15 +28,12 @@ proc gemm_macro_kernel[T](mc, nc, kc: int,
   let mod_mr = mc mod MR
   let mod_nr = nc mod NR
 
-  for j in `||`(0, np - 1, "simd"): # OpenMP loop
-    let nr =  if (j != np-1 or mod_nr == 0): NR
-              else: mod_nr
-
-    ## We can't declare private(i) in Nim OpenMP at the j level so we use a while loop instead of for loop.
-    var i = 0
-    while i < mp:
-      let mr =  if (i != mp-1 or mod_mr == 0): MR
-                else: mod_mr
+  for j in 0..<np:
+    let nr = if (j != np-1 or mod_nr == 0): NR
+             else: mod_nr
+    for i in 0 || (mp - 1): # OpenMP loop
+      let mr = if (i != mp-1 or mod_mr == 0): MR
+               else: mod_mr
 
       if (mr==MR and nr==NR):
         gemm_micro_kernel(kc, alpha,
@@ -61,5 +58,3 @@ proc gemm_macro_kernel[T](mc, nc, kc: int,
                 1, MR,
                 C, i*MR*incRowC+j*NR*incColC + offC,
                 incRowC, incColC)
-
-      inc i

@@ -52,7 +52,7 @@ template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, 
           let num_blocks = min(omp_get_max_threads(), size)
           if num_blocks > 1:
             let bsize = size div num_blocks
-            for block_index in `||`(0, num_blocks-1, "simd"):
+            for block_index in `||`(0, num_blocks-1, "simd schedule(static, 4)"):
               let block_offset = bsize*block_index
               let block_size = if block_index < num_blocks-1: bsize else: size - block_offset
               block:
@@ -64,14 +64,26 @@ template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, 
       block:
         body
 
-template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: untyped, size, weight: Natural, op_final, op_init, op_middle: untyped): untyped =
+
+template omp_parallel_reduce_blocks*[T](reduced: T, block_offset, block_size: untyped, size, weight: Natural, op_final, op_init, op_middle: untyped): untyped =
+
+
+  # To prevent false sharing, results will be stored in an array but
+  # padded to be a cache line apart atleast.
+  # All CPUs cache line is 64B, 16 float32/int32 fits or 8 float64/int64
+
+  # TODO compile time evaluation depending of sizeof(T)
+  # Pending https://github.com/nim-lang/Nim/pull/5664
+  const maxItemsPerCacheLine = 16
+
   if likely(size > 0):
     block ompblocks:
       when defined(openmp):
         if size*weight >= OMP_FOR_THRESHOLD:
           let num_blocks = min(min(size, omp_get_max_threads()), OMP_MAX_REDUCE_BLOCKS)
           if num_blocks > 1:
-            var results : array[OMP_MAX_REDUCE_BLOCKS, type(reduced)]
+            {.pragma: align64, codegenDecl: "$# $# __attribute__((aligned(64)))".}
+            var results{.align64.}: array[OMP_MAX_REDUCE_BLOCKS * maxItemsPerCacheLine, type(reduced)]
             let bsize = size div num_blocks
 
             if bsize > 1:
@@ -82,7 +94,7 @@ template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: u
 
                 # Inject x using a template to able to mutate it
                 template x(): untyped =
-                  results[block_index]
+                  results[block_index * maxItemsPerCacheLine]
 
                 block:
                   op_init
@@ -95,7 +107,7 @@ template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: u
 
                 # Inject x using a template to able to mutate it
                 template x(): untyped =
-                  results[block_index]
+                  results[block_index * maxItemsPerCacheLine]
 
                 block:
                   op_middle
@@ -109,7 +121,7 @@ template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: u
                   reduced
 
                 for block_index in 1..<num_blocks:
-                  let y {.inject.} = results[block_index]
+                  let y {.inject.} = results[block_index * maxItemsPerCacheLine]
                   op_final
 
               break ompblocks

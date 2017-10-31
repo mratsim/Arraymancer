@@ -78,9 +78,6 @@ proc gemm_nn_fallback*[T](m, n, k: int,
     mod_nc = n mod NC
     mod_kc = k mod KC
 
-  var mc, nc, kc: int
-  var tmp_beta: T
-
   var buffer_A = newBlasBuffer[T](MCKC)
   var buffer_B = newBlasBuffer[T](KCNC)
   var buffer_C = newBlasBuffer[T](MRNR)
@@ -90,23 +87,23 @@ proc gemm_nn_fallback*[T](m, n, k: int,
     return
 
   for j in 0 ..< nb:
-    nc =  if (j != nb-1 or mod_nc == 0): NC
-          else: mod_nc
+    let nc =  if (j != nb-1 or mod_nc == 0): NC
+              else: mod_nc
 
     for k in 0 ..< kb:
-      kc       =  if (k != kb-1 or mod_kc == 0): KC
-                  else: mod_kc
-      tmp_beta =  if k == 0: beta
-                  else: 1.T
+      let kc       =  if (k != kb-1 or mod_kc == 0): KC
+                      else: mod_kc
+      let tmp_beta =  if k == 0: beta
+                      else: 1.T
 
       pack_dim( nc, kc,
                 B, k*KC*incRowB + j*NC*incColB + offB,
                 incColB, incRowB, NR,
                 buffer_B)
 
-      for i in 0 ..< mb:
-        mc = if (i != mb-1 or mod_mc == 0): MC
-             else: mod_mc
+      for i in `||`(0, mb-1, "simd"):
+        let mc =  if (i != mb-1 or mod_mc == 0): MC
+                  else: mod_mc
 
         pack_dim( mc, kc,
                   A, i*MC*incRowA + k*KC*incColA + offA,
@@ -117,8 +114,6 @@ proc gemm_nn_fallback*[T](m, n, k: int,
                           alpha, tmp_beta,
                           C, i*MC*incRowC + j*NC*incColC + offC,
                           incRowC, incColC, buffer_A, buffer_B, buffer_C)
-
-
 
 ##### See blis config: https://github.com/flame/blis/blob/master/config/haswell/bli_kernel.h
 

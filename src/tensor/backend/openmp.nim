@@ -45,7 +45,7 @@ template omp_parallel_forup*(i: untyped, start, size: Natural, body: untyped): u
     body
 
 template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, body: untyped): untyped =
-  if size > 0:
+  if likely(size > 0):
     block ompblocks:
       when defined(openmp):
         if size >= OMP_FOR_THRESHOLD:
@@ -65,7 +65,7 @@ template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, 
         body
 
 template omp_parallel_reduce_blocks*(reduced: typed, block_offset, block_size: untyped, size, weight: Natural, op_final, op_init, op_middle: untyped): untyped =
-  if size > 0:
+  if likely(size > 0):
     block ompblocks:
       when defined(openmp):
         if size*weight >= OMP_FOR_THRESHOLD:

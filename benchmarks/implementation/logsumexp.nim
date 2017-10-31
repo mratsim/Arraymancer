@@ -158,14 +158,13 @@ when isMainModule:
 # nim c d:openmp -d:native -d:release --out:bin/logsumexp --nimcache:./nimcache benchmarks/implementation/logsumexp.nim
 
 # ## 1000 logsumexp with batch 256 x 1000 labels tensors (~ImageNet)
-#  1000 elements - logsumexp: 2.416302919387817
+#  1000 elements - logsumexp: 1.074860095977783
 #  Dummy value: 12994.19921875
-#  1000 elements - logsumexp_stream: 1.478353023529053
+#  1000 elements - logsumexp_stream: 1.465465068817139
 #  Dummy value: 12994.2001953125
 
 
 # ## 3 logsumexp with batch 256 x 3 labels tensors
-#  3 elements - logsumexp: 0.005849123001098633
+#  3 elements - logsumexp: 0.005573034286499023
 #  Dummy value: 7180.666015625
-#  3 elements - logsumexp_stream: 0.004467964172363281
-#  Dummy value: 7180.666015625
+#  3 elements - logsumexp_stream: 0.004441022872924805

@@ -110,8 +110,6 @@ You can also check the [detailed example](https://github.com/mratsim/Arraymancer
 
 Most operations in Arraymancer are parallelized through OpenMP including linear algebra functions, universal functions, `map`, `reduce` and `fold`.
 
-Note: On OSX in some cases, OpenMP might be significantly slower than the single-threaded load, probably due to memory allocation differences. Unfortunately this is platform specific, Linux doesn't have the same issue. See [here](https://github.com/mratsim/Arraymancer/issues/134#issuecomment-340425671) for details.
-
 #### Memory allocation
 
 For most operations in machine linear, memory and cache is the bottleneck, for example taking the log of a Tensor can use at most 20% of your theoretical max CPU speed (in GFLOPS) while matrix multiplication can use 70%-90%+ for the best implementations (MKL, OpenBLAS).
@@ -141,12 +139,16 @@ Arraymancer 0.2.90 (master branch 2017-10-10)
 ```
 MacOS + i5-5257U (Broadwell dual-core mobile 2.7GHz, turbo 3.1)
 Input 1500x1500 random large int64 matrix
-Arraymancer 0.2.90 (master branch 2017-10-10)
+Arraymancer 0.2.90 (master branch 2017-10-31)
+
+no OpenMP compilation: nim c -d:native -d:release --out:bin/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
+with OpenMP: nim c -d:openmp --cc:gcc --gcc.exe:"/usr/local/bin/gcc-6" --gcc.linkerexe:"/usr/local/bin/gcc-6"  -d:native -d:release --out:bin/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
 ```
 
 | Language | Speed | Memory |
 |---|---|---|
-| Nim 0.17.3 (devel) without OpenMP | **1.72s** | 90.0 MB |
+| Nim 0.18.0 (devel) - GCC 6 + OpenMP | **0.95s** | 71.9 MB |
+| Nim 0.18.0 (devel) - Apple Clang 9 - no OpenMP | **1.73s** | 71.7 MB |
 | Julia v0.6.0 | 4.49s | 185.2 MB |
 | Python 3.5.2 + Numpy 1.12 | 9.49s | 55.8 MB |
 

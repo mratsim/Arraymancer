@@ -52,13 +52,15 @@ template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, 
           let num_blocks = min(omp_get_max_threads(), size)
           if num_blocks > 1:
             let bsize = size div num_blocks
-            for block_index in `||`(0, num_blocks-1, "simd schedule(static, 4)"):
+            for block_index in `||`(0, num_blocks-1, "simd"):
+              # block_offset and block_size are injected into the calling proc
               let block_offset = bsize*block_index
               let block_size = if block_index < num_blocks-1: bsize else: size - block_offset
               block:
                 body
             break ompblocks
 
+      # block_offset and block_size are injected into the calling proc
       let block_offset = 0
       let block_size = size
       block:
@@ -89,8 +91,9 @@ template omp_parallel_reduce_blocks*[T](reduced: T, block_offset, block_size: un
             if bsize > 1:
               # Initialize first elements
               for block_index in 0..<num_blocks:
+                # block_offset and block_size are injected into the calling proc
                 let block_offset = bsize*block_index
-                #let block_size = if block_index < num_blocks-1: bsize else: size - block_offset
+                let block_size = if block_index < num_blocks-1: bsize else: size - block_offset
 
                 # Inject x using a template to able to mutate it
                 template x(): untyped =
@@ -101,6 +104,7 @@ template omp_parallel_reduce_blocks*[T](reduced: T, block_offset, block_size: un
 
               # Reduce blocks
               for block_index in `||`(0, num_blocks-1, "simd"):
+                # block_offset and block_size are injected into the calling proc
                 var block_offset = bsize*block_index
                 let block_size = (if block_index < num_blocks-1: bsize else: size - block_offset) - 1
                 block_offset += 1

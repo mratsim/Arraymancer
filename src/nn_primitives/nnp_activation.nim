@@ -13,12 +13,59 @@
 # limitations under the License.
 
 import  ../tensor/tensor,
-        math
+        ./private/p_activation
 
 # Neural net activation functions that works directly on Tensors
+# TODO: tests
+
+proc sigmoid*[T: SomeReal](t: Tensor[T]): Tensor[T] {.inline, noInit.}=
+  ## Logistic sigmoid activation function, :math:`f(x) = 1 / (1 + \exp(-x))`
+  ## Note: Canonical sigmoid is not stable for large negative value
+
+  # stable: proc sigmoid_closure(x: T): T = 0.5.T * (tanh(0.5.T * x) + 1.T)
+
+  result = map_inline(t):
+    sigmoid(x)
+
+proc relu*[T](t: Tensor[T]): Tensor[T] {.inline, noInit.}=
+  t.map_inline max(0.T,x)
 
 
-# Note:
+# ##################################################################################################
+# In-place
+
+proc msigmoid*[T: SomeReal](t: var Tensor[T]) {.inline.}=
+  ## Logistic sigmoid activation function, :math:`f(x) = 1 / (1 + \exp(-x))`
+  ## Note: Canonical sigmoid is not stable for large negative value
+
+  # stable: proc sigmoid_closure(x: T): T = 0.5.T * (tanh(0.5.T * x) + 1.T)
+  apply_inline(t):
+    sigmoid(x)
+
+proc mrelu*[T](t: var Tensor[T]) {.inline.}=
+  t.apply_inline max(0.T, x)
+
+
+# ##################################################################################################
+# Backward
+
+proc sigmoid_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.inline, noInit.}=
+  result = map_inline(cached_tensor):
+    x * (1 - x)
+  result .*= gradient
+
+proc relu_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.inline, noInit.}=
+  result = map_inline(cached_tensor):
+    if x <= 0.T:
+      0.T
+    else:
+      1.T
+  result .*= gradient
+
+# ####################################################################################################
+# Documentation
+
+# Sigmoid implementation doc:
 # 1. Canonical sigmoid "f(x) = 1 / (1 + exp(-x))" is unstable
 # for negative values < 709 (for float64)
 #
@@ -34,42 +81,3 @@ import  ../tensor/tensor,
 #
 # Benchmarks available in the benchmark folder
 #
-
-# TODO: tests
-
-proc sigmoid*[T: SomeReal](t: Tensor[T]): Tensor[T] {.inline.}=
-  ## Logistic sigmoid activation function, :math:`f(x) = 1 / (1 + \exp(-x))`
-  ## Note: Canonical sigmoid is not stable for large negative value
-
-  # stable: proc sigmoid_closure(x: T): T = 0.5.T * (tanh(0.5.T * x) + 1.T)
-
-  result = map_inline(t):
-    1.T / (1.T + exp(-x))
-
-proc msigmoid*[T: SomeReal](t: var Tensor[T]) {.inline.}=
-  ## Logistic sigmoid activation function, :math:`f(x) = 1 / (1 + \exp(-x))`
-  ## Note: Canonical sigmoid is not stable for large negative value
-
-  # stable: proc sigmoid_closure(x: T): T = 0.5.T * (tanh(0.5.T * x) + 1.T)
-  apply_inline(t):
-    1.T / (1.T + exp(-x))
-
-proc relu*[T](t: Tensor[T]): Tensor[T] {.inline.}=
-  t.map_inline max(0.T,x)
-
-proc mrelu*[T](t: var Tensor[T]) {.inline.}=
-  t.apply_inline max(0.T, x)
-
-
-proc relu_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.inline.}=
-  result = map_inline(cached_tensor):
-    if x <= 0.T:
-      0.T
-    else:
-      1.T
-  result .*= gradient
-
-proc sigmoid_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.inline.}=
-  result = map_inline(cached_tensor):
-    x * (1 - x)
-  result .*= gradient

@@ -24,10 +24,12 @@ type SigmoidCrossEntropyLoss* {.final.} [TT] = ref object of Loss[TT]
   # target, from Loss
 
 method forward*[TT](self: SigmoidCrossEntropyLoss[TT], a: Variable[TT], target: TT): Variable[TT] {.inline, locks:0.}=
-  new result
-
-  result.tape = a.tape
   # We expect a in shape @[features, batch_size]
+
+  new result
+  result.tape = a.tape
+
+  # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
   result.value = [sigmoid_cross_entropy(a.value, target)].toTensor.unsafeView
 
   result.grad = zeros[getSubType(TT)](1)

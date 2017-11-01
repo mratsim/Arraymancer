@@ -67,6 +67,8 @@ proc softmax_cross_entropy*[T](input, target: Tensor[T]): T =
     inc i
 
   # 2. Sum the sample crossentropies and normalize by batchsize
+  # In the softmax case batchsize = sample_softmax_xentropy.size
+  # So we can use the "mean" function
   result = sample_softmax_xentropy.mean
 
 proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T =

@@ -15,6 +15,7 @@
 import  ../ops_fusion/ops_fusion,
         ../tensor/tensor,
         ./private/p_nnp_checks,
+        ./private/p_activation,
         math
 
 # Fused numerically stable sigmoid + cross-entropy loss function
@@ -47,13 +48,15 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T =
   result = sum:
     map2_inline(input, target):
       -y * x +  max(x,0) + ln1p(exp(-abs(x))) # This leverage the logsumexp trick to improve numerical stability
+
+  # Normalize by batch_size
   result /= T(input.shape[1])
 
 proc sigmoid_cross_entropy_backward*[T](
         gradient: Tensor[T] or T,
         cached_tensor: Tensor[T],
         target: Tensor[T]
-        ): Tensor[T] =
+        ): Tensor[T] {.noInit.}=
   ## Derivatives of sigmoid_cross_entropy
   ## Input:
   ##   - The input gradient as a scalar or a Tensor
@@ -72,7 +75,7 @@ proc sigmoid_cross_entropy_backward*[T](
     let grad = gradient.data[gradient.offset]
 
   result = map2_inline(cached_tensor, target):
-    grad * (1 / (1 + exp(-x)) - y) / T(batch_size)
+    grad * (sigmoid(x) - y) / T(batch_size)
 
 # ################################################
 # Explanation of sigmoid cross-entropy algorithms:

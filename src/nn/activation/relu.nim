@@ -54,4 +54,4 @@ proc relu*[TT](a: Variable[TT]): Variable[TT] =
   node.child = result
 
   # Caching for backprop
-  gate.cache = result.value
+  gate.cache = result.value.unsafeView

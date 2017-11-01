@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import math
-
 # Importing this library provides fusion operations.
 # Those gives either a performance improvements (Fused Multiply-Add)
 # Or accuracy improvement by avoiding catastrophic cancellation

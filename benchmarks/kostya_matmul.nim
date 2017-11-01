@@ -6,8 +6,8 @@ import ../src/arraymancer
 proc matgen(n: int): auto =
     result = newTensor[float64](@[n,n])
     let tmp = 1.0 / (n*n).float64
-    for i in 0 .. <n:
-        for j in 0 .. <n:
+    for i in 0 ..< n:
+        for j in 0 ..< n:
             result[i,j] = tmp * (i - j).float64 * (i + j).float64
 
 var n = 100

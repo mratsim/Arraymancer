@@ -20,7 +20,7 @@ macro unroll_ukernel[MRNR, T](AB: array[MRNR, T],
                               MR, NR: static[int]): untyped =
   ## Unroll the following at compile time
   # for j in 0 ..< NR:
-  #   for i in 0 .. < MR:
+  #   for i in 0 ..< MR:
   #     AB[i + j*MR] += A[i + voffA] * B[j + voffB]
   result = newNimNode(nnkStmtList)
   for j in 0..NR-1:
@@ -72,7 +72,7 @@ template gemm_micro_kernelT[T](
   ## Compute A*B
   for _ in 0 ..< kc:
     # for j in 0 ..< NR:
-    #   for i in 0 .. < MR:
+    #   for i in 0 ..< MR:
     #     AB[i + j*MR] += A[i + voffA] * B[j + voffB]
     unroll_ukernel(AB, a, voffA, b, voffB, MR, NR)
     voffA += MR

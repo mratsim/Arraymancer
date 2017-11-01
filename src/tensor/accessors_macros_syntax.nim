@@ -167,13 +167,13 @@ proc `..`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
   return SteppedSlice(a: a, b: s.b, step: s.step)
 
 proc `..<`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
-  ## Internal: Build a SteppedSlice from [a ..< (b|step)] (workaround to operator precedence and ..<b not being interpreted as .. <b)
+  ## Internal: Build a SteppedSlice from [a ..< (b|step)] (workaround to operator precedence)
   ## Input:
   ##     - the beginning of the slice range
   ##     - a ``Step`` workaround object
   ## Returns:
   ##     - a ``SteppedSlice``, end of range will be exclusive.
-  return SteppedSlice(a: a, b: <s.b, step: s.step)
+  return SteppedSlice(a: a, b: s.b - 1, step: s.step)
 
 proc `..^`*(a: int, s: Step): SteppedSlice {.noSideEffect, inline.} =
   ## Internal: Build a SteppedSlice from [a ..^ (b|step)] (workaround to operator precedence and ..^b not being interpreted as .. ^b)

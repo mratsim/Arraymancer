@@ -38,7 +38,7 @@ import  ../backend/global_config,
 #   var iter_pos = t.offset
 #
 #   ## Iterator loop
-#   for i in 0 .. <t.shape.product:
+#   for i in 0 ..< t.shape.product:
 #
 #     ## Templating the return value
 #     when strider == IterKind.Values: yield t.data[iter_pos]

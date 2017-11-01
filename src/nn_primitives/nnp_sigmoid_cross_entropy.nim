@@ -46,7 +46,8 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T =
   # We need parallel fused map2 -> reduce for all loss functions
   result = sum:
     map2_inline(input, target):
-      (-y * x +  max(x,0) + ln1p(exp(-abs(x))) ) / T(input.shape[1]) # This leverage the logsumexp trick to improve numerical stability
+      -y * x +  max(x,0) + ln1p(exp(-abs(x))) # This leverage the logsumexp trick to improve numerical stability
+  result /= T(input.shape[1])
 
 proc sigmoid_cross_entropy_backward*[T](
         gradient: Tensor[T] or T,

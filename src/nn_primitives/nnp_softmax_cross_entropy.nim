@@ -116,6 +116,77 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
   # 2. Sum the sample crossentropies and normalize by batchsize
   result = sample_softmax_xentropy.mean
 
+# ############
+# Backward pass
+
+proc stable_softmax[T](x, max, sumexp: T): T {.noSideEffect, inline.}=
+  # Numerically stable streaming softmax helper
+  result = exp(x - max) / sumexp
+
+proc softmax_cross_entropy_backward*[T](
+        gradient: Tensor[T] or T,
+        cached_tensor: Tensor[T],
+        target: Tensor[T]
+        ): Tensor[T] {.noInit.}=
+  ## Derivatives of softmax_cross_entropy
+  ## Input:
+  ##   - The input gradient as a scalar or a Tensor
+  ##   - A cache tensor that contains data from before the forward pass
+  ##   - The target values
+  ## Shape:
+  ##   - Both the cache and target shape should be [features, batchsize] i.e. number of samples as last dimension
+  # TODO: add a `batch_axis` parameter
+
+  let batch_size = cached_tensor.shape[^1]
+
+  # Deal with scalar and tensor gradient
+  when gradient is T:
+    let grad = gradient
+  elif gradient is Tensor:
+    let grad = gradient.data[gradient.offset]
+
+  let (max, sumexp) = cached_tensor.streaming_max_sumexp
+
+  result = map2_inline(cached_tensor, target):
+    grad * (stable_softmax(x, max, sumexp) / T(batch_size) - y)
+
+proc sparse_softmax_cross_entropy_backward*[T](
+        gradient: Tensor[T] or T,
+        cached_tensor: Tensor[T],
+        target: Tensor[int]
+        ): Tensor[T] {.noInit.}=
+  ## Derivatives of sparse_softmax_cross_entropy
+  ## Input:
+  ##   - The input gradient as a scalar or a Tensor
+  ##   - A cache tensor that contains data from before the forward pass
+  ##   - The target values
+  ## Shape:
+  ##   - Both the cache should be [features, batchsize] i.e. number of samples as last dimension
+  ##   - target shape should be [batchsize]
+  # TODO: add a `batch_axis` parameter
+
+  let batch_size = cached_tensor.shape[^1]
+
+  # Deal with scalar and tensor gradient
+  when gradient is T:
+    let grad = gradient
+  elif gradient is Tensor:
+    let grad = gradient.data[gradient.offset]
+
+  let (max, sumexp) = cached_tensor.streaming_max_sumexp
+
+  result = zeros_like(cached_tensor)
+
+  # With sparse target grad * (softmax - y) becomes:
+  #   - "grad * (softmax - 1)" for the truth labels
+  #   - "grad * softmax for the wrong labels
+  for i, truth_idx in enumerate(target):
+    result[0, truth_idx] = - 1
+
+  apply2_inline(result, cached_tensor):
+    grad * (stable_softmax(y, max, sumexp) + x)
+
+
 # ################################################
 # Explanation of softmax cross-entropy algorithms:
 
@@ -140,7 +211,3 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
 # to keep the gradient magnitude/weight updates on the same scale as a single sample pass
 
 # SCE(y, t') = 1/n ∑i(- ti * yij + ln ∑j exp(yij))
-
-
-# ############
-# Backward pass

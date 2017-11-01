@@ -16,20 +16,41 @@ import ../../src/arraymancer, unittest
 
 
 suite "Loss functions":
-
   proc `~=`[T: SomeReal](a, b: T): bool =
     let eps = 2e-5.T
     result = abs(a - b) <= eps
 
-  test "Softmax cross-entropy & sparse softmax cross-entrop":
+  test "Softmax cross-entropy & sparse softmax cross-entropy":
     # https://www.pyimagesearch.com/2016/09/12/softmax-classifiers-explained/
 
     # Reminder, for now batch_size is the innermost index
-    let predicted = [-3.44'f32, 1.16, -0.81, 3.91].toTensor.reshape(4,1)
-    let truth = [0'f32, 0, 0, 1].toTensor.reshape(4,1)
+    let predicted = [-3.44, 1.16, -0.81, 3.91].toTensor.reshape(4,1)
+    let truth = [0'f64, 0, 0, 1].toTensor.reshape(4,1)
 
-    check: softmax_cross_entropy(predicted, truth) ~= 0.0709'f32
+    let sce_loss = softmax_cross_entropy(predicted, truth)
+    check: sce_loss ~= 0.0709
 
     let sparse_truth = [3].toTensor.reshape(1,1)
 
-    check: sparse_softmax_cross_entropy(predicted, sparse_truth) ~= 0.0709'f32
+    let sparse_sce_loss = sparse_softmax_cross_entropy(predicted, sparse_truth)
+    check: sparse_sce_loss ~= 0.0709
+
+
+    ## Test the gradient, create closures first:
+    proc sce(pred: Tensor[float]): float =
+      pred.softmax_cross_entropy(truth)
+
+    proc sparse_sce(pred: Tensor[float]): float =
+      pred.sparse_softmax_cross_entropy(sparse_truth)
+
+    let expected_grad = sce_loss * numerical_gradient(predicted, sce)
+    let expected_sparse_grad = sparse_sce_loss * numerical_gradient(predicted, sparse_sce)
+
+    check: mean_relative_error(expected_grad, expected_sparse_grad) < 1e-6
+
+    let grad = softmax_cross_entropy_backward(sce_loss, predicted, truth)
+    check: mean_relative_error(grad, expected_grad) < 1e-6
+
+
+    let sparse_grad = sparse_softmax_cross_entropy_backward(sparse_sce_loss, predicted, sparse_truth)
+    check: mean_relative_error(sparse_grad, expected_sparse_grad) < 1e-6

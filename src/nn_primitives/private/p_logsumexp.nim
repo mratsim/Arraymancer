@@ -27,6 +27,17 @@ import  ../../tensor/tensor,
 # from batches of 256x3 classes to 256x1000 classes
 # (see project_root/benchmark_implementation)
 
+proc streaming_max_sumexp*[T](t: Tensor[T]): tuple[max:T, sumexp: T] {.noSideEffect, inline.}=
+  result.max = -Inf.T   # will store the streaming max of the tensor
+  result.sumexp = 0.T   # will store the streaming sum of exp of the tensor
+
+  for x in t:
+    if x <= result.max:
+      result.sumexp += exp(x - result.max)
+    else:
+      result.sumexp *= exp(result.max - x)
+      result.sumexp += 1
+      result.max = x
 
 proc logsumexp*[T: SomeReal](t: Tensor[T]): T =
   # Advantage:
@@ -44,18 +55,8 @@ proc logsumexp*[T: SomeReal](t: Tensor[T]): T =
   # Also as problem size grow, the 1-pass version should scale much better
   # However so does parallel code. ==> Benchmark needed with low, medium and huge scale problem.
 
-  var alpha = -Inf.T
-  var r = 0.T
-
-  for x in t:
-    if x <= alpha:
-      r += exp(x - alpha)
-    else:
-      r *= exp(alpha - x)
-      r += 1
-      alpha = x
-
-  result = alpha + ln(r)
+  let (max, sumexp) = t.streaming_max_sumexp
+  result = max + ln(sumexp)
 
 
 # proc logsumexp_classic[T: SomeReal](t: Tensor[T]): T =

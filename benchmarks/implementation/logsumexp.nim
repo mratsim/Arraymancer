@@ -39,27 +39,36 @@ proc logsumexp[T: SomeReal](t: Tensor[T]): T =
   result = alpha + ln(result)
 
 
-proc logsumexp_stream[T: SomeReal](t: Tensor[T]): T =
+proc streaming_max_sumexp*[T](t: Tensor[T]): tuple[max:T, sumexp: T] {.noSideEffect, inline.}=
+  result.max = -Inf.T   # will store the streaming max of the tensor
+  result.sumexp = 0.T   # will store the streaming sum of exp of the tensor
+
+  for x in t:
+    if x <= result.max:
+      result.sumexp += exp(x - result.max)
+    else:
+      result.sumexp *= exp(result.max - x)
+      result.sumexp += 1
+      result.max = x
+
+proc logsumexp_stream*[T: SomeReal](t: Tensor[T]): T =
   # Advantage:
   #  - Only one loop over the data
   #  - Can be done "on-the-fly"
   # Disadvantage:
   #  - no parallelization
-  #  - branching
-  # Note: most problems have less than 1000 classes (or even 100)
+  #  - branching in tight loop
+  #
+  # Note: most image problems have less than 1000 classes (or even 100)
+  # However NLP problems may have 50000+ words in dictionary
+  # It would be great to parallelize the one-pass version
+  # (there are parallel running version algorithm we can draw inspiration from)
 
-  var alpha = -Inf.T
-  var r = 0.T
+  # Also as problem size grow, the 1-pass version should scale much better
+  # However so does parallel code. ==> Benchmark needed with low, medium and huge scale problem.
 
-  for x in t:
-    if x <= alpha:
-      r += exp(x - alpha)
-    else:
-      r *= exp(alpha - x)
-      r += 1
-      alpha = x
-
-  result = alpha + ln(r)
+  let (max, sumexp) = t.streaming_max_sumexp
+  result = max + ln(sumexp)
 
 when isMainModule:
   const nb_iter = 1_000

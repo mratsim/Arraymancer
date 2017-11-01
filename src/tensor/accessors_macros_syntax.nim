@@ -87,8 +87,8 @@ const `...`* = Ellipsis()
 # #########################################################################
 # Slicing notation
 
-# Procs to manage all integer, slice, SteppedSlice 
-proc `|`*(s: Slice[int,int], step: int): SteppedSlice {.noSideEffect, inline.}=
+# Procs to manage all integer, slice, SteppedSlice
+proc `|`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
   ## Internal: A ``SteppedSlice`` constructor
   ## Input:
   ##     - a slice
@@ -120,7 +120,7 @@ proc `|`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
   result = ss
   result.step = step
 
-proc `|+`*(s: Slice[int,int], step: int): SteppedSlice {.noSideEffect, inline.}=
+proc `|+`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
   ## Internal: Alias for ``|``
   return `|`(s, step)
 
@@ -132,7 +132,7 @@ proc `|+`*(ss: SteppedSlice, step: int): SteppedSlice {.noSideEffect, inline.}=
   ## Internal: Alias for ``|``
   return `|`(ss, step)
 
-proc `|-`*(s: Slice[int,int], step: int): SteppedSlice {.noSideEffect, inline.}=
+proc `|-`*(s: Slice[int], step: int): SteppedSlice {.noSideEffect, inline.}=
   ## Internal: A ``SteppedSlice`` constructor
   ##
   ## Workaround to tensor[slice|-1] being interpreted as [slice `|-` 1]

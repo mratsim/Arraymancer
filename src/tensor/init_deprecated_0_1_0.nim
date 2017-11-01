@@ -119,7 +119,7 @@ proc randomTensor*(shape: openarray[int], max: int, backend: static[Backend]): a
     randomTensorCpu(t, shape, max)
     return t
 
-proc randomTensor*[T](shape: openarray[int], slice: Slice[T,T], B: static[Backend]): auto {.deprecated.}=
+proc randomTensor*[T](shape: openarray[int], slice: Slice[T], B: static[Backend]): auto {.deprecated.}=
   ## DEPRECATED - The backend: static[Backend] argument has been deprecated for easier maintenance.
   ##
   ## Creates a new int Tensor filled with values in the Slice range.

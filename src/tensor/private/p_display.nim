@@ -29,7 +29,7 @@ proc bounds_display(t: Tensor,
   if val == "|":
     return " | "
 
-  for i,j in s[0 .. ^2]: # We don't take the last element (the row in C convention)
+  for i,j in s[0 .. s.len-2]: # We don't take the last element (the row in C convention)
     if idx mod j == 0:
       return "\t" & $val & "|\n"
     if idx mod j == 1:

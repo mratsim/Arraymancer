@@ -59,33 +59,39 @@ proc high*(a: MetadataArray): int {.inline.} =
   a.len-1
 
 
-# Need to deal with BackwardsIndex and multi-type slice introduced by:
-# https://github.com/nim-lang/Nim/commit/d52a1061b35bbd2abfbd062b08023d986dbafb3c
-template `^^`(s, i: untyped): untyped =
-  when i is BackwardsIndex:
-    s.len - int(i)
-  else: int(i)
+when NimVersion >= "0.17.3":
+  # Need to deal with BackwardsIndex and multi-type slice introduced by:
+  # https://github.com/nim-lang/Nim/commit/d52a1061b35bbd2abfbd062b08023d986dbafb3c
 
+  type Index = int or BackwardsIndex
+  template `^^`(s, i: untyped): untyped =
+    when i is BackwardsIndex:
+      s.len - int(i)
+    else: int(i)
+else:
+  type Index = int
+  template `^^`(s, i: untyped): untyped =
+    i
 
-proc `[]`*(a: MetadataArray, idx: int|BackwardsIndex): int {.inline.} =
+proc `[]`*(a: MetadataArray, idx: Index): int {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert idx >= 0 and idx < MAXRANK
   a.data[a ^^ idx]
 
-proc `[]`*(a: var MetadataArray, idx: int|BackwardsIndex): var int {.inline.} =
+proc `[]`*(a: var MetadataArray, idx: Index): var int {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert idx >= 0 and idx < MAXRANK
   a.data[a ^^ idx]
 
-proc `[]=`*(a: var MetadataArray, idx: int|BackwardsIndex, v: int) {.inline.} =
+proc `[]=`*(a: var MetadataArray, idx: Index, v: int) {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert idx >= 0 and idx < MAXRANK
   a.data[a ^^ idx] = v
 
-proc `[]`*[T,U: int|BackwardsIndex](a: MetadataArray, slice: Slice[T, U]): MetadataArray {.inline.} =
+proc `[]`*(a: MetadataArray, slice: Slice[int]): MetadataArray {.inline.} =
   let bgn_slice = a ^^ slice.a
   let end_slice = a ^^ slice.b
 

@@ -47,7 +47,7 @@ template map_inline*[T](t: Tensor[T], op:untyped): untyped =
       data[i] = op
   dest.unsafeView()
 
-template map2_inline*[T](t1, t2: Tensor[T], op:untyped): untyped =
+template map2_inline*[T, U](t1: Tensor[T], t2: Tensor[U], op:untyped): untyped =
   when compileOption("boundChecks"):
     check_elementwise(t1,t2)
 
@@ -58,7 +58,7 @@ template map2_inline*[T](t1, t2: Tensor[T], op:untyped): untyped =
       data[i] = op
   dest.unsafeView()
 
-template map3_inline*[T](t1, t2, t3: Tensor[T], op:untyped): untyped =
+template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:untyped): untyped =
   when compileOption("boundChecks"):
     check_elementwise(t1,t2)
     check_elementwise(t1,t3)

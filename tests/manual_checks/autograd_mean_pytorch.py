@@ -22,9 +22,9 @@ def forwardNeuron(a,b,c,x,y):
 s = forwardNeuron(a,b,c,x,y).mean()
 
 print(s)
-Variable containing:
- 599
-[torch.FloatTensor of size 1]
+# Variable containing:
+#  599
+# [torch.FloatTensor of size 1]
 
 s.backward()
 

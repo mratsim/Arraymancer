@@ -63,7 +63,7 @@ proc sigmoid_cross_entropy_backward*[T](
   ##   - A cache tensor that contains data from before the forward pass
   ##   - The target values
   ## Shape:
-  ##   - Both the cache and target shape should be @[features, batchsize] i.e. number of samples as last dimension
+  ##   - Both the cache and target shape should be [features, batchsize] i.e. number of samples as last dimension
   # TODO: add a `batch_axis` parameter
 
   let batch_size = cached_tensor.shape[^1]

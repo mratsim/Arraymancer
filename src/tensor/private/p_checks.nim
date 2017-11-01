@@ -136,7 +136,7 @@ proc check_matvec*(a, b: AnyTensor) {.noSideEffect, inline.}=
 
 proc check_axis_index*(t: AnyTensor, axis, index: int) {.noSideEffect, inline.}=
   if unlikely(not (axis < t.rank and index < t.shape[axis])):
-    raise newException(IndexError, "The axis is out of range, axis is " &
+    raise newException(IndexError, "The axis is out of range, axis requested is " &
                                     $axis &
-                                    " at index " & $index &
+                                    " and index requested " & $index &
                                     " while tensor shape is " & $(t.shape))

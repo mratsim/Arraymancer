@@ -153,6 +153,8 @@ proc numerical_gradient*[T](input: Tensor[T], f: (proc(x: Tensor[T]): T), h: T =
   ## where h is a small number, typically 1e-5
   ## f(x) will be called for each input elements with +h and -h pertubation.
   # Iterate over all elements calculating each partial derivative
+
+  # Note: If T: float32, Nim may compile but produce incompatible type in C code
   result = newTensorUninit[T](input.shape)
   var x = input
   for i, val in x.menumerate:

@@ -33,7 +33,7 @@ method forward*[TT](self: SigmoidCrossEntropyLoss[TT], a: Variable[TT], target: 
   result.grad = zeros[getSubType(TT)](1)
 
 
-method backward*[TT](self: SigmoidCrossEntropyLoss[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
+method backward*[TT](self: SigmoidCrossEntropyLoss[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = sigmoid_cross_entropy_backward(gradient, self.cache.value, self.target)
 
 proc sigmoid_cross_entropy*[TT](a: Variable[TT], target: TT): Variable[TT] =

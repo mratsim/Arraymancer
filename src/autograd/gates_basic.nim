@@ -35,7 +35,7 @@ method forward*[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inlin
 
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
-method backward*[TT](self: AddGate[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
+method backward*[TT](self: AddGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = gradient
   result[1] = gradient
 

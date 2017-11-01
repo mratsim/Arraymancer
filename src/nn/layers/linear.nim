@@ -32,7 +32,7 @@ method forward*[TT](self: LinearGate[TT], a: Variable[TT]): Variable[TT] {.inlin
     result.value .+= self.b.value # Bias is broadcasted other the whole batch size
   result.grad = zeros_like(result.value)
 
-method backward*[TT](self: LinearGate[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
+method backward*[TT](self: LinearGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = self.W.value.unsafeTranspose * gradient # grad w.r.t. x
   result[1] = gradient * self.x.value.unsafeTranspose # grad w.r.t. weight
 

@@ -34,7 +34,7 @@ method forward*[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.in
 
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
-method backward*[TT](self: MatMulGate[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
+method backward*[TT](self: MatMulGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = gradient * self.b.value.unsafeTranspose
   result[1] = self.a.value.unsafeTranspose * gradient
 

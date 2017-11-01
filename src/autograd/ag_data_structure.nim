@@ -52,7 +52,7 @@ type
 
 # Somehow if you declare forward before backward, you get invalid declaration order
 # https://github.com/nim-lang/Nim/issues/5325
-method backward*[TT](self: Gate[TT], gradient: TT): SmallDiffs[TT] {.base, inline.} =
+method backward*[TT](self: Gate[TT], gradient: TT): SmallDiffs[TT] {.noInit, base, inline.} =
   raise newException(ValueError, "backward method is not implemented for " & $self.type.name)
 
 method forward*[TT](self: Gate[TT], a, b: Variable[TT]): Variable[TT] {.base, inline.} =

@@ -36,7 +36,7 @@ method forward*[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.inlin
                         self.stride
                         )
 
-method backward*[TT](self: Conv2DGate[TT], gradient: TT): SmallDiffs[TT] {.inline, locks:0.}=
+method backward*[TT](self: Conv2DGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   conv2d_backward(
     self.cached_input.value,
     self.weight.value, self.bias.value,

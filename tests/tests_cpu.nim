@@ -32,4 +32,4 @@ import ../src/arraymancer,
         ./nn_primitives/test_nnp_loss,
         ./autograd/test_gate_blas
 
-import ./load_tests/test_load_openmp
+import ./stability_tests/test_stability_openmp

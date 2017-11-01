@@ -60,9 +60,10 @@ proc softmax_cross_entropy*[T](input, target: Tensor[T]): T =
   var i = 0
   for sample_input, sample_target in zipAxis(input, target, 1):
     # SCEi(yi, ti') = ti * ( ln ∑j exp(yij) - yij ) # see below
+    let lse = sample_input.logsumexp
     sample_softmax_xentropy[0, i] = sum:
       map2_inline(sample_input, sample_target):
-        y * (sample_input.logsumexp - x)
+        y * (lse - x)
     inc i
 
   # 2. Sum the sample crossentropies and normalize by batchsize
@@ -97,10 +98,7 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
   # TODO proper check
   assert input.shape[1] == target.shape[0]
 
-  # We need parallel fused:
-  #   fold_axis (log softmax per sample)
-  #   -> map2 (cross-entropy)
-  #   -> reduce (sum) for all loss functions
+  # We need parallel mapAxis_inline
 
   # 1. Create a temporary tensor with the crossentropy per sample
   var sample_softmax_xentropy = zeros[T](1, input.shape[1])
@@ -110,7 +108,7 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
     # ti is 1 or 0 since labels are sparse
     # So we can simplify to SCEi(yi, ti') = ln ∑j exp(yij) - yi[ti] i.e. use target label id as index
     # While iterating on the axis ``ti`` is sample_target[0]
-    sample_softmax_xentropy[0, i] = sample_input.logsumexp - sample_input[sample_target[0]]
+    sample_softmax_xentropy[0, i] = sample_input.logsumexp - sample_input[sample_target[0,i], 0]
     inc i
 
   # 2. Sum the sample crossentropies and normalize by batchsize

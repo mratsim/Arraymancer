@@ -35,7 +35,14 @@ proc logsumexp*[T: SomeReal](t: Tensor[T]): T =
   # Disadvantage:
   #  - no parallelization
   #  - branching in tight loop
-  # Note: most problems have less than 1000 classes (or even 100)
+  #
+  # Note: most image problems have less than 1000 classes (or even 100)
+  # However NLP problems may have 50000+ words in dictionary
+  # It would be great to parallelize the one-pass version
+  # (there are parallel running version algorithm we can draw inspiration from)
+
+  # Also as problem size grow, the 1-pass version should scale much better
+  # However so does parallel code. ==> Benchmark needed with low, medium and huge scale problem.
 
   var alpha = -Inf.T
   var r = 0.T
@@ -57,7 +64,8 @@ proc logsumexp*[T: SomeReal](t: Tensor[T]): T =
 #   #  - No branching in a tight loop
 #   # Disadvantage:
 #   #  - Two loops over the data, might be costly if tensor is big
-#   # Note: it should be rare to have over than 1000 classes (ImageNet) for softmax
+#   # Note: most image problems have less than 1000 classes (or even 100)
+#   # However NLP problems may have 50000+ words in dictionary
 
 #   let alpha = t.max
 

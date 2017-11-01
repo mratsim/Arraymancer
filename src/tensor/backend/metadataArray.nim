@@ -52,41 +52,50 @@ proc setLen*(a: var MetadataArray, len: int) {.inline.} =
     assert len <= MAXRANK
   a.len = len
 
-template len*(a: MetadataArray): int =
-  a.len
-
 proc low*(a: MetadataArray): int {.inline.} =
   0
 
 proc high*(a: MetadataArray): int {.inline.} =
   a.len-1
 
-proc `[]`*(a: MetadataArray, idx: int): int {.inline.} =
+
+# Need to deal with BackwardsIndex and multi-type slice introduced by:
+# https://github.com/nim-lang/Nim/commit/d52a1061b35bbd2abfbd062b08023d986dbafb3c
+template `^^`(s, i: untyped): untyped =
+  when i is BackwardsIndex:
+    s.len - int(i)
+  else: int(i)
+
+
+proc `[]`*(a: MetadataArray, idx: int|BackwardsIndex): int {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert idx >= 0 and idx < MAXRANK
-  a.data[idx]
+  a.data[a ^^ idx]
 
-proc `[]`*(a: var MetadataArray, idx: int): var int {.inline.} =
+proc `[]`*(a: var MetadataArray, idx: int|BackwardsIndex): var int {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert idx >= 0 and idx < MAXRANK
-  a.data[idx]
+  a.data[a ^^ idx]
 
-proc `[]=`*(a: var MetadataArray, idx: int, v: int) {.inline.} =
+proc `[]=`*(a: var MetadataArray, idx: int|BackwardsIndex, v: int) {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert idx >= 0 and idx < MAXRANK
-  a.data[idx] = v
+  a.data[a ^^ idx] = v
 
-proc `[]`*(a: MetadataArray, slice: Slice[int]): MetadataArray {.inline.} =
-  if slice.b >= slice.a:
+proc `[]`*[T,U: int|BackwardsIndex](a: MetadataArray, slice: Slice[T, U]): MetadataArray {.inline.} =
+  let bgn_slice = a ^^ slice.a
+  let end_slice = a ^^ slice.b
+
+  if end_slice >= bgn_slice:
     # boundsChecks automatically done for array indexing
     # when compileOption("boundChecks"):
     #   assert slice.a >= 0 and slice.b < a.len
-    result.len = (slice.b - slice.a + 1)
-    for i in 0..result.len:
-      result[i] = a[slice.a+i]
+    result.len = (end_slice - bgn_slice + 1)
+    for i in 0..<result.len:
+      result[i] = a[bgn_slice+i]
 
 iterator items*(a: MetadataArray): int {.inline.} =
   for i in 0..<a.len:

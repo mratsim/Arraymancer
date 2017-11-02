@@ -89,24 +89,24 @@ template fold_inline*[T](t: Tensor[T], op_initial, op_middle, op_final: untyped)
       op_middle
   reduced
 
-template reduce_axis_inline*[T](t: Tensor[T], axis: int, op: untyped): untyped =
+template reduce_axis_inline*[T](t: Tensor[T], reduction_axis: int, op: untyped): untyped =
   var reduced : type(t)
-  let weight = t.size div t.shape[axis]
-  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[axis], weight, op) do:
-    x = t.atAxisIndex(axis, block_offset).unsafeView()
+  let weight = t.size div t.shape[reduction_axis]
+  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[reduction_axis], weight, op) do:
+    x = t.atAxisIndex(reduction_axis, block_offset).unsafeView()
   do:
-    for y {.inject.} in t.axis(axis, block_offset, block_size):
+    for y {.inject.} in t.axis(reduction_axis, block_offset, block_size):
       op
   reduced.unsafeView()
 
-template fold_axis_inline*[T](t: Tensor[T], axis: int, op_initial, op_middle, op_final: untyped): untyped =
+template fold_axis_inline*[T](t: Tensor[T], fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
   var reduced : type(t)
-  let weight = t.size div t.shape[axis]
-  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[axis], weight, op_final) do:
-    let y {.inject.} = t.atAxisIndex(axis, block_offset).unsafeView()
+  let weight = t.size div t.shape[fold_axis]
+  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[fold_axis], weight, op_final) do:
+    let y {.inject.} = t.atAxisIndex(fold_axis, block_offset).unsafeView()
     op_initial
   do:
-    for y {.inject.} in t.axis(axis, block_offset, block_size):
+    for y {.inject.} in t.axis(fold_axis, block_offset, block_size):
       op_middle
   reduced.unsafeView()
 

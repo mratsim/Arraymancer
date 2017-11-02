@@ -51,6 +51,11 @@ macro `[]=`*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
   result = quote do:
     inner_typed_dispatch_mut(`t`, `new_args`,`val`)
 
+
+# # Linked to: https://github.com/mratsim/Arraymancer/issues/52
+# Unfortunately enabling this breaksthe test suite
+# "Setting a slice from a view of the same Tensor"
+
 # macro `[]`*[T](t: var AnyTensor[T], args: varargs[untyped]): untyped =
 #   ## Slice a Tensor or a CudaTensor
 #   ## Input:

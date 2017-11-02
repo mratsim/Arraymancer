@@ -28,7 +28,7 @@ suite "Load test - OpenMP":
 
     randomize(1337) # seed for reproducibility
 
-    for _ in 0..<1000:
+    for _ in 0..<100:
 
       # Shape of the matrices
       let M = random(2..100)

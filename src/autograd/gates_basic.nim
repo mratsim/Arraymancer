@@ -20,7 +20,7 @@ import  ../private/ast_utils,
         ./ag_data_structure
 
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
-  ab_shape: seq[int]
+  ab_shape: MetadataArray
 
 method forward*[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result

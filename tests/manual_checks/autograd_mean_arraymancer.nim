@@ -1,5 +1,5 @@
 
-import ../src/arraymancer, ../src/arraymancer_ag
+import ../../src/arraymancer
 import sequtils
 
 let ctx = newContext Tensor[float32]

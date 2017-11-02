@@ -19,7 +19,7 @@ import  ../private/[ast_utils, functional],
 
 type MeanGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
-  a_shape: seq[int]
+  a_shape: MetadataArray
 
 method forward*[TT](self: MeanGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result

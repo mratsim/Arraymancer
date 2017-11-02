@@ -104,13 +104,15 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
 
   # 1. Create a temporary tensor with the crossentropy per sample
   var sample_softmax_xentropy = zeros[T](1, input.shape[1])
+
   var i = 0
-  for sample_input, sample_target in zipAxis(input, target, 1):
+  for sample_input, sample_target in zipAxis(input, target.unsafeUnsqueeze(0), 1):
     # SCEi(yi, ti') = ti * ( ln ∑j exp(yij) - yij )
     # ti is 1 or 0 since labels are sparse
     # So we can simplify to SCEi(yi, ti') = ln ∑j exp(yij) - yi[ti] i.e. use target label id as index
     # While iterating on the axis ``ti`` is sample_target[0]
-    sample_softmax_xentropy[0, i] = sample_input.logsumexp - sample_input[sample_target[0,i], 0]
+    let lse = sample_input.logsumexp
+    sample_softmax_xentropy[0, i] = lse - sample_input[sample_target[0,0], 0]
     inc i
 
   # 2. Sum the sample crossentropies and normalize by batchsize
@@ -145,10 +147,16 @@ proc softmax_cross_entropy_backward*[T](
   elif gradient is Tensor:
     let grad = gradient.data[gradient.offset]
 
-  let (max, sumexp) = cached_tensor.streaming_max_sumexp
+  result = zeros_like(cached_tensor)
 
-  result = map2_inline(cached_tensor, target):
-    grad * (stable_softmax(x, max, sumexp) / T(batch_size) - y)
+  var sample_id = 0
+  for truth_idx in axis(target, 1):
+    let (max, sumexp) = cached_tensor[_,sample_id].streaming_max_sumexp
+
+    result[_,sample_id] = map2_inline(cached_tensor[_,sample_id], target[_,sample_id]):
+      grad * (stable_softmax(x, max, sumexp) - y) / T(batch_size)
+
+    inc sample_id
 
 proc sparse_softmax_cross_entropy_backward*[T](
         gradient: Tensor[T] or T,
@@ -173,18 +181,22 @@ proc sparse_softmax_cross_entropy_backward*[T](
   elif gradient is Tensor:
     let grad = gradient.data[gradient.offset]
 
-  let (max, sumexp) = cached_tensor.streaming_max_sumexp
-
   result = zeros_like(cached_tensor)
-
   # With sparse target grad * (softmax - y) becomes:
   #   - "grad * (softmax - 1)" for the truth labels
   #   - "grad * softmax for the wrong labels
-  for i, truth_idx in enumerate(target):
-    result[0, truth_idx] = - 1
+  for sample_id, truth_idx in enumerate(target):
+    result[truth_idx, sample_id] = -1
 
-  apply2_inline(result, cached_tensor):
-    grad * (stable_softmax(y, max, sumexp) + x)
+  for sample_id, truth_idx in enumerate(target):
+    let (max, sumexp) = cached_tensor[_,sample_id].streaming_max_sumexp
+
+    # We can't directly use apply2_inline on result[_, sample_id]
+    # due to https://github.com/mratsim/Arraymancer/issues/52
+    var res_slice = result.unsafeSlice(_, sample_id)
+
+    apply2_inline(res_slice, cached_tensor[_,sample_id]):
+      grad * (stable_softmax(y, max, sumexp) + x) / T(batch_size)
 
 
 # ################################################

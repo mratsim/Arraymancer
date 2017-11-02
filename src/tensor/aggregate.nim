@@ -99,7 +99,7 @@ proc variance*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
   ## Compute the variance of all elements
   ## The normalization is by the (n-1), like in the formal definition
   let mean = t.mean(axis)
-  result = t.fold_axis_inline(axis) do:
+  result = t.fold_axis_inline(Tensor[T], axis) do:
     # Initialize to the first element
     x = square(y - mean)
   do:

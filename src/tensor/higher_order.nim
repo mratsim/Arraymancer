@@ -99,8 +99,8 @@ template reduce_axis_inline*[T](t: Tensor[T], reduction_axis: int, op: untyped):
       op
   reduced.unsafeView()
 
-template fold_axis_inline*[T](t: Tensor[T], fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
-  var reduced : type(t)
+template fold_axis_inline*[T](t: Tensor[T], result_type: typedesc, fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
+  var reduced : result_type
   let weight = t.size div t.shape[fold_axis]
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[fold_axis], weight, op_final) do:
     let y {.inject.} = t.atAxisIndex(fold_axis, block_offset).unsafeView()
@@ -108,7 +108,12 @@ template fold_axis_inline*[T](t: Tensor[T], fold_axis: int, op_initial, op_middl
   do:
     for y {.inject.} in t.axis(fold_axis, block_offset, block_size):
       op_middle
-  reduced.unsafeView()
+
+  # If the result is a Tensor, return without copy
+  when reduced is AnyTensor:
+    reduced.unsafeView()
+  else:
+    reduced
 
 proc map*[T; U: not (ref|string|seq)](t: Tensor[T], f: T -> U): Tensor[U] {.noInit.} =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.

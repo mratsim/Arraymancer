@@ -50,3 +50,20 @@ macro `[]=`*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
 
   result = quote do:
     inner_typed_dispatch_mut(`t`, `new_args`,`val`)
+
+# macro `[]`*[T](t: var AnyTensor[T], args: varargs[untyped]): untyped =
+#   ## Slice a Tensor or a CudaTensor
+#   ## Input:
+#   ##   - a Tensor or a CudaTensor
+#   ##   - and:
+#   ##     - specific coordinates (``varargs[int]``)
+#   ##     - or a slice (cf. tutorial)
+#   ## Returns:
+#   ##   - a value or a tensor corresponding to the slice
+#   ## Warning ⚠ CudaTensor temporary default:
+#   ##   For CudaTensor only, this is a no-copy operation, data is shared with the input.
+#   ##   This proc does not guarantee that a ``let`` value is immutable.
+#   let new_args = getAST(desugar(args))
+
+#   result = quote do:
+#     inner_typed_dispatch_var(`t`, `new_args`)

@@ -195,3 +195,76 @@ macro inner_typed_dispatch_mut*(t: typed, args: varargs[typed], val: typed): unt
       else:
         result.add(slice)
     result.add(val)
+
+# ############################################################################
+# Slicing a var returns a var (for Result[_] += support)
+# And apply2(result[_], foo) support
+
+proc slicer_var[T](t: var AnyTensor[T], slices: varargs[SteppedSlice]): var AnyTensor[T] {.noInit,noSideEffect.}=
+  ## Take a Tensor and SteppedSlices
+  ## Returns:
+  ##    A copy of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+
+  result = t
+  slicerT(result, slices)
+
+proc slicer_var[T](t: var AnyTensor[T],
+                slices: varargs[SteppedSlice],
+                ellipsis: Ellipsis): var AnyTensor[T] {.noInit,noSideEffect.}=
+  ## Take a Tensor, SteppedSlices and Ellipsis
+  ## Returns:
+  ##    A copy of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+
+  result = t
+  let full_slices = @slices & newSeqWith(t.rank - slices.len, span)
+  slicerT(result, full_slices)
+
+proc slicer_var[T](t: var AnyTensor[T],
+                ellipsis: Ellipsis,
+                slices: varargs[SteppedSlice]
+                ): var AnyTensor[T] {.noInit,noSideEffect.}=
+  ## Take a Tensor, Ellipsis and SteppedSlices
+  ## Returns:
+  ##    A copy of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+
+  result = t
+  let full_slices = newSeqWith(t.rank - slices.len, span) & @slices
+  slicerT(result, full_slices)
+
+proc slicer_var[T](t: var AnyTensor[T],
+                slices1: varargs[SteppedSlice],
+                ellipsis: Ellipsis,
+                slices2: varargs[SteppedSlice]
+                ): var AnyTensor[T] {.noInit,noSideEffect.}=
+  ## Take a Tensor, Ellipsis and SteppedSlices
+  ## Returns:
+  ##    A copy of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+
+  result = t
+  let full_slices = concat(@slices1,
+                            newSeqWith(t.rank - slices1.len - slices2.len, span),
+                            @slices2)
+  slicerT(result, full_slices)
+
+macro inner_typed_dispatch_var*(t: typed, args: varargs[typed]): untyped =
+  ## Typed macro so that isAllInt has typed context and we can dispatch.
+  ## If args are all int, we dispatch to atIndex and return T
+  ## Else, all ints are converted to SteppedSlices and we return a Tensor.
+  ## Note, normal slices and `_` were already converted in the `[]` macro
+  ## TODO in total we do 3 passes over the list of arguments :/. It is done only at compile time though
+  if isAllInt(args):
+    result = newCall(bindSym("atIndex"), t)
+    for slice in args:
+      result.add(slice)
+  else:
+    result = newCall(bindSym("slicer_var"), t)
+    for slice in args:
+      if isInt(slice):
+        ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
+        result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
+      else:
+        result.add(slice)

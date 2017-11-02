@@ -20,7 +20,7 @@ import  ../../private/ast_utils,
         ./p_checks, ./p_accessors, ./p_accessors_macros_desugar,
         sequtils, macros
 
-template slicerT[T](result: AnyTensor[T], slices: varargs[SteppedSlice]): untyped=
+template slicerT*[T](result: AnyTensor[T]|var AnyTensor[T], slices: varargs[SteppedSlice]): untyped=
   ## Slicing routine
 
   for i, slice in slices:

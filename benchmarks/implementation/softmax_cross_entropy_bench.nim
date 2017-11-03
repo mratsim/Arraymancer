@@ -73,7 +73,13 @@ proc sparse_softmax_cross_entropy2*[T](input: Tensor[T], target: Tensor[int]): T
   let batch_size = input.shape[1]
 
   for i in 0||(batch_size-1):
-    result += input[target[i], i]
+    # Unfortunately we can't use `result` in a parallel for reduction declaration so we need atomic
+    when not declared(openmp):
+      result = input[target[i], i]
+    else:
+      let tmp = input[target[i], i]
+      {.emit:"#pragma omp atomic".}
+      {.emit:"`result` += `tmp`;".}
 
   let sum_logsumexp = fold_axis_inline(input, T, fold_axis=1) do:
     x = y.logsumexp
@@ -121,21 +127,21 @@ for i in 0..<5:
   discard softmax_cross_entropy1(pred, labels)
 
 var start = epochTime()
-for i in 0..<20:
-  discard softmax_cross_entropy1(pred, labels)
-echo " Softmax xentropy zipAxis, mean(sum <- map2): ", epochTime() - start
+# for i in 0..<20:
+#   discard softmax_cross_entropy1(pred, labels)
+# echo " Softmax xentropy zipAxis, mean(sum <- map2): ", epochTime() - start
 
 
 start = epochTime()
 for i in 0..<20:
   discard softmax_cross_entropy2(pred, labels)
-echo " Softmax xentropy Froebenius fold: ", epochTime() - start
+echo " Softmax xentropy Frobenius fold: ", epochTime() - start
 
 
-start = epochTime()
-for i in 0..<20:
-  discard sparse_softmax_cross_entropy1(pred, sparse_labels)
-echo " Sparse softmax naive loop: ", epochTime() - start
+# start = epochTime()
+# for i in 0..<20:
+#   discard sparse_softmax_cross_entropy1(pred, sparse_labels)
+# echo " Sparse softmax naive loop: ", epochTime() - start
 
 start = epochTime()
 for i in 0..<20:
@@ -154,3 +160,81 @@ echo " Sparse softmax simplified loop + fold: ", epochTime() - start
 #  Softmax xentropy Froebenius fold: 10.49299907684326
 #  Sparse softmax naive loop: 102.5834209918976
 #  Sparse softmax simplified loop + fold: 9.73446798324585
+
+
+
+###### Backprop bench
+proc stable_softmax[T](x, max, sumexp: T): T {.noSideEffect, inline.}=
+  # Numerically stable streaming softmax helper
+  result = exp(x - max) / sumexp
+
+proc softmax_cross_entropy_backward1*[T](
+        gradient: Tensor[T] or T,
+        cached_tensor: Tensor[T],
+        target: Tensor[T]
+        ): Tensor[T] {.noInit.}=
+  let batch_size = cached_tensor.shape[1]
+
+  when gradient is T:
+    let grad = gradient
+  elif gradient is Tensor:
+    let grad = gradient.data[gradient.offset]
+
+  result = zeros_like(cached_tensor)
+
+  for i in 0 ..< batch_size: # Can't use OpenMP here, Illegal storage access
+    let (max, sumexp) = cached_tensor[_,i].streaming_max_sumexp
+
+    result[_,i] = map2_inline(cached_tensor[_,i], target[_,i]):
+      grad * (stable_softmax(x, max, sumexp) - y) / T(batch_size)
+
+proc sparse_softmax_cross_entropy_backward1*[T](
+        gradient: Tensor[T] or T,
+        cached_tensor: Tensor[T],
+        target: Tensor[int]
+        ): Tensor[T] {.noInit.}=
+
+  when gradient is T:
+    let grad = gradient
+  elif gradient is Tensor:
+    let grad = gradient.data[gradient.offset]
+
+  let batch_size = cached_tensor.shape[1]
+
+  result = zeros_like(cached_tensor)
+
+  for i, truth_idx in enumerate(target):
+    result[truth_idx, i] = -1
+
+  for i in 0 ..< batch_size: # Can't use OpenMP here, Illegal storage access
+    let (max, sumexp) = cached_tensor[_,i].streaming_max_sumexp
+
+    var res_slice = result.unsafeSlice(_, i)
+
+    apply2_inline(res_slice, cached_tensor[_,i]):
+      grad * (stable_softmax(y, max, sumexp) + x) / T(batch_size)
+
+######
+
+echo "###### Backpropagation"
+
+let loss = softmax_cross_entropy1(pred, labels)
+
+echo "### Reference - too slow ... more than 5min"
+# echo softmax_cross_entropy_backward1(loss, pred, labels)
+echo "### Sparse reference - too slow ... more than 5min"
+# echo sparse_softmax_cross_entropy_backward1(loss, pred, sparse_labels)
+
+## Warmup for OpenMP threadpool and CPU on "on-demand" governor
+# for i in 0..<5:
+#   discard softmax_cross_entropy_backward1(loss, pred, labels)
+
+# start = epochTime()
+# for i in 0..<20:
+#   discard softmax_cross_entropy_backward1(loss, pred, labels)
+# echo " Softmax xentropy backward: ", epochTime() - start
+
+# start = epochTime()
+# for i in 0..<20:
+#   discard sparse_softmax_cross_entropy_backward1(loss, pred, sparse_labels)
+# echo " Sparse softmax xentropy backward: ", epochTime() - start

@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../tensor/tensor,
+import  ../tensor/backend/openmp,
+        ../tensor/tensor,
         ./private/p_nnp_checks,
         ./private/p_logsumexp,
         math
@@ -96,7 +97,13 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
   # ∑i(- ti * yi) is either -yi or 0 in the sparse case.
   # Since target holds coordinates: ∑i(- ti * yi) = - yi[ti]
   for i in 0||(batch_size-1):
-    result += input[target[i], i]
+    # Unfortunately we can't use `result` in a parallel for reduction declaration so we need atomic
+    when not declared(openmp):
+      result = input[target[i], i]
+    else:
+      let tmp = input[target[i], i]
+      {.emit:"#pragma omp atomic".}
+      {.emit:"`result` += `tmp`;".}
 
   let sum_logsumexp = fold_axis_inline(input, T, fold_axis=1) do:
     x = y.logsumexp

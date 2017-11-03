@@ -58,8 +58,8 @@ suite "Loss functions":
       check: mean_relative_error(sparse_grad, expected_sparse_grad) < 1e-6
 
     block: # with batch
-      let batch_size = 64
-      let nb_classes = 10
+      let batch_size = 256
+      let nb_classes = 20
 
       # Create a sparse label tensor of shape: [batch_size]
       let sparse_labels = randomTensor(batch_size, nb_classes)

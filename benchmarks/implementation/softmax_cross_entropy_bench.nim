@@ -61,6 +61,29 @@ proc softmax_cross_entropy2*[T](input, target: Tensor[T]): T =
 
   result = (sum_logsumexp - result) / T(input.shape[1])
 
+####### Sparse
+proc sparse_softmax_cross_entropy1*[T](input: Tensor[T], target: Tensor[int]): T =
+  var sample_softmax_xentropy = zeros[T](1, input.shape[1])
+  for i in 0..<input.shape[1]:  # Can't use OpenMP here, Illegal storage access
+    let lse = input[_,i].logsumexp
+    sample_softmax_xentropy[0, i] = lse - input[target[i], i]
+  result = sample_softmax_xentropy.mean
+
+proc sparse_softmax_cross_entropy2*[T](input: Tensor[T], target: Tensor[int]): T =
+  let batch_size = input.shape[1]
+
+  for i in 0||(batch_size-1):
+    result += input[target[i], i]
+
+  let sum_logsumexp = fold_axis_inline(input, T, fold_axis=1) do:
+    x = y.logsumexp
+  do:
+    x += y.logsumexp
+  do:
+    x += y
+
+  result = (sum_logsumexp - result) / T(batch_size)
+
 ####### Bench:
 
 let batch_size = 200
@@ -88,7 +111,10 @@ echo "### Reference"
 echo softmax_cross_entropy1(pred, labels)
 echo "### Challenger"
 echo softmax_cross_entropy2(pred, labels)
-
+echo "### Sparse reference - super slow due to generalSeqAssign"
+echo sparse_softmax_cross_entropy1(pred, sparse_labels)
+echo "### Sparse challenger"
+echo sparse_softmax_cross_entropy1(pred, sparse_labels)
 
 ## Warmup for OpenMP threadpool and CPU on "on-demand" governor
 for i in 0..<5:
@@ -106,18 +132,25 @@ for i in 0..<20:
 echo " Softmax xentropy Froebenius fold: ", epochTime() - start
 
 
+start = epochTime()
+for i in 0..<20:
+  discard sparse_softmax_cross_entropy1(pred, sparse_labels)
+echo " Sparse softmax naive loop: ", epochTime() - start
+
+start = epochTime()
+for i in 0..<20:
+  discard sparse_softmax_cross_entropy2(pred, sparse_labels)
+echo " Sparse softmax simplified loop + fold: ", epochTime() - start
+
+
 ### On i5-5257U - no OpenMP
-# ### Reference
-# 11.67763585880838
-# ### Challenger
-# 11.67763585880838
-#  Softmax xentropy zipAxis, mean(sum <- map2): 30.27224016189575
-#  Softmax xentropy Froebenius fold: 17.71994495391846
+#  Softmax xentropy zipAxis, mean(sum <- map2): 30.71215105056763
+#  Softmax xentropy Froebenius fold: 18.18636608123779
+#  Sparse softmax naive loop: 113.4928979873657
+#  Sparse softmax simplified loop + fold: 16.42902994155884
 
 ### On i5-5257U - with OpenMP
-# ### Reference
-# 11.67763585880838
-# ### Challenger
-# 11.67763585880837
-#  Softmax xentropy zipAxis, mean(sum <- map2): 28.51023387908936
-#  Softmax xentropy Froebenius fold: 10.95725297927856
+#  Softmax xentropy zipAxis, mean(sum <- map2): 25.62056088447571
+#  Softmax xentropy Froebenius fold: 10.49299907684326
+#  Sparse softmax naive loop: 102.5834209918976
+#  Sparse softmax simplified loop + fold: 9.73446798324585

@@ -146,13 +146,11 @@ proc softmax_cross_entropy_backward*[T](
   elif gradient is Tensor:
     let grad = gradient.data[gradient.offset]
 
-  result = zeros_like(cached_tensor)
+  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
 
-  for i in 0 ..< batch_size: # Can't use OpenMP here, Illegal storage access
-    let (max, sumexp) = cached_tensor[_,i].streaming_max_sumexp
+  result = map3_inline(cached_tensor, target, axis_max_sumexp):
+      grad * (stable_softmax(x, z.max, z.sumexp) - y) / T(batch_size)
 
-    result[_,i] = map2_inline(cached_tensor[_,i], target[_,i]):
-      grad * (stable_softmax(x, max, sumexp) - y) / T(batch_size)
 
 proc sparse_softmax_cross_entropy_backward*[T](
         gradient: Tensor[T] or T,

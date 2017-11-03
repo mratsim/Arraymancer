@@ -90,79 +90,6 @@ proc sparse_softmax_cross_entropy2*[T](input: Tensor[T], target: Tensor[int]): T
 
   result = (sum_logsumexp - result) / T(batch_size)
 
-####### Bench:
-
-let batch_size = 200
-let nb_classes = 100000
-
-# Create a sparse label tensor of shape: [batch_size]
-let sparse_labels = randomTensor(batch_size, nb_classes)
-
-# Create the corresponding dense label tensor of shape [nb_classes, batch_size]
-var labels = zeros[float64](nb_classes, batch_size)
-
-# Fill in the non-zeros values
-for sample_id, nonzero_idx in enumerate(sparse_labels):
-  labels[nonzero_idx, sample_id] = 1
-
-# Create a random tensor with predictions:
-let pred = randomTensor(nb_classes, batch_size, -1.0..1.0)
-
-# Display
-# echo "### Pred & Labels"
-# echo pred
-# echo labels
-
-echo "### Reference"
-echo softmax_cross_entropy1(pred, labels)
-echo "### Challenger"
-echo softmax_cross_entropy2(pred, labels)
-echo "### Sparse reference - super slow due to generalSeqAssign"
-echo sparse_softmax_cross_entropy1(pred, sparse_labels)
-echo "### Sparse challenger"
-echo sparse_softmax_cross_entropy1(pred, sparse_labels)
-
-## Warmup for OpenMP threadpool and CPU on "on-demand" governor
-for i in 0..<5:
-  discard softmax_cross_entropy1(pred, labels)
-
-var start = epochTime()
-# for i in 0..<20:
-#   discard softmax_cross_entropy1(pred, labels)
-# echo " Softmax xentropy zipAxis, mean(sum <- map2): ", epochTime() - start
-
-
-start = epochTime()
-for i in 0..<20:
-  discard softmax_cross_entropy2(pred, labels)
-echo " Softmax xentropy Frobenius fold: ", epochTime() - start
-
-
-# start = epochTime()
-# for i in 0..<20:
-#   discard sparse_softmax_cross_entropy1(pred, sparse_labels)
-# echo " Sparse softmax naive loop: ", epochTime() - start
-
-start = epochTime()
-for i in 0..<20:
-  discard sparse_softmax_cross_entropy2(pred, sparse_labels)
-echo " Sparse softmax simplified loop + fold: ", epochTime() - start
-
-
-### On i5-5257U - no OpenMP
-#  Softmax xentropy zipAxis, mean(sum <- map2): 30.71215105056763
-#  Softmax xentropy Froebenius fold: 18.18636608123779
-#  Sparse softmax naive loop: 113.4928979873657
-#  Sparse softmax simplified loop + fold: 16.42902994155884
-
-### On i5-5257U - with OpenMP
-#  Softmax xentropy zipAxis, mean(sum <- map2): 25.62056088447571
-#  Softmax xentropy Froebenius fold: 10.49299907684326
-#  Sparse softmax naive loop: 102.5834209918976
-#  Sparse softmax simplified loop + fold: 9.73446798324585
-
-
-
 ###### Backprop bench
 proc stable_softmax[T](x, max, sumexp: T): T {.noSideEffect, inline.}=
   # Numerically stable streaming softmax helper
@@ -214,11 +141,137 @@ proc sparse_softmax_cross_entropy_backward1*[T](
     apply2_inline(res_slice, cached_tensor[_,i]):
       grad * (stable_softmax(y, max, sumexp) + x) / T(batch_size)
 
-######
+############ New optimized
+proc streaming_max_sumexp*[T](t: Tensor[T], axis: int): Tensor[tuple[max:T, sumexp: T]] {.noInit.}=
+  # Only 2D tensor are supported for now. (i.e. no 3D Softmax)
+  assert axis in {0, 1}
+
+  result = newTensorUninit[tuple[max:T, sumexp: T]](t.shape[axis])
+
+  for i in `||`(0, t.shape[axis]-1, "simd"):
+    result.data[i] = t.unsafeAtAxisIndex(axis, i).streaming_max_sumexp
+
+  # Reexpand the tensor to be consistent with fold_axis/reduce_axis
+  if axis == 0:
+    result = result.unsafeUnsqueeze(1)
+  else:
+    result = result.unsafeUnsqueeze(0)
+
+proc softmax_cross_entropy_backward2*[T](
+        gradient: Tensor[T] or T,
+        cached_tensor: Tensor[T],
+        target: Tensor[T]
+        ): Tensor[T] {.noInit.}=
+  let batch_size = cached_tensor.shape[1]
+
+  when gradient is T:
+    let grad = gradient
+  elif gradient is Tensor:
+    let grad = gradient.data[gradient.offset]
+
+  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
+
+  result = map3_inline(cached_tensor, target, axis_max_sumexp):
+      grad * (stable_softmax(x, z.max, z.sumexp) - y) / T(batch_size)
+
+
+proc sparse_softmax_cross_entropy_backward2*[T](
+        gradient: Tensor[T] or T,
+        cached_tensor: Tensor[T],
+        target: Tensor[int]
+        ): Tensor[T] {.noInit.}=
+  when gradient is T:
+    let grad = gradient
+  elif gradient is Tensor:
+    let grad = gradient.data[gradient.offset]
+
+  let batch_size = cached_tensor.shape[1]
+
+  result = zeros_like(cached_tensor)
+  for i, truth_idx in enumerate(target):
+    result[truth_idx, i] = -1
+
+  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
+
+  apply3_inline(result, cached_tensor, axis_max_sumexp):
+      grad * (stable_softmax(y, z.max, z.sumexp) + x) / T(batch_size)
+
+
+####### Bench:
+
+let batch_size = 200
+let nb_classes = 100000
+
+# Create a sparse label tensor of shape: [batch_size]
+let sparse_labels = randomTensor(batch_size, nb_classes)
+
+# Create the corresponding dense label tensor of shape [nb_classes, batch_size]
+var labels = zeros[float64](nb_classes, batch_size)
+
+# Fill in the non-zeros values
+for sample_id, nonzero_idx in enumerate(sparse_labels):
+  labels[nonzero_idx, sample_id] = 1
+
+# Create a random tensor with predictions:
+let pred = randomTensor(nb_classes, batch_size, -1.0..1.0)
+
+# Display
+# echo "### Pred & Labels"
+# echo pred
+# echo labels
+
+echo "### Reference"
+let sce_loss = softmax_cross_entropy1(pred, labels)
+echo sce_loss
+echo "### Challenger"
+echo softmax_cross_entropy2(pred, labels)
+echo "### Sparse reference - super slow due to generalSeqAssign"
+echo sparse_softmax_cross_entropy1(pred, sparse_labels)
+echo "### Sparse challenger"
+echo sparse_softmax_cross_entropy2(pred, sparse_labels)
+
+## Warmup for OpenMP threadpool and CPU on "on-demand" governor
+discard pred .* pred
+
+var start = epochTime()
+
+# start = epochTime()
+# for i in 0..<20:
+#   discard softmax_cross_entropy1(pred, labels)
+# echo " Softmax xentropy zipAxis, mean(sum <- map2): ", epochTime() - start
+
+
+# start = epochTime()
+# for i in 0..<20:
+#   discard softmax_cross_entropy2(pred, labels)
+# echo " Softmax xentropy Frobenius fold: ", epochTime() - start
+
+
+# start = epochTime()
+# for i in 0..<20:
+#   discard sparse_softmax_cross_entropy1(pred, sparse_labels)
+# echo " Sparse softmax naive loop: ", epochTime() - start
+
+# start = epochTime()
+# for i in 0..<20:
+#   discard sparse_softmax_cross_entropy2(pred, sparse_labels)
+# echo " Sparse softmax simplified loop + fold: ", epochTime() - start
+
+
+### On i5-5257U - no OpenMP
+#  Softmax xentropy zipAxis, mean(sum <- map2): 30.71215105056763
+#  Softmax xentropy Froebenius fold: 18.18636608123779
+#  Sparse softmax naive loop: 113.4928979873657
+#  Sparse softmax simplified loop + fold: 16.42902994155884
+
+### On i5-5257U - with OpenMP
+#  Softmax xentropy zipAxis, mean(sum <- map2): 25.62056088447571
+#  Softmax xentropy Froebenius fold: 10.49299907684326
+#  Sparse softmax naive loop: 102.5834209918976
+#  Sparse softmax simplified loop + fold: 9.73446798324585
+
 
 echo "###### Backpropagation"
-
-let loss = softmax_cross_entropy1(pred, labels)
 
 echo "### Reference - too slow ... more than 5min"
 # echo softmax_cross_entropy_backward1(loss, pred, labels)
@@ -238,3 +291,17 @@ echo "### Sparse reference - too slow ... more than 5min"
 # for i in 0..<20:
 #   discard sparse_softmax_cross_entropy_backward1(loss, pred, sparse_labels)
 # echo " Sparse softmax xentropy backward: ", epochTime() - start
+
+start = epochTime()
+for i in 0..<20:
+  discard softmax_cross_entropy_backward2(sce_loss, pred, labels)
+echo "Backprop SCE optimized: ", epochTime() - start
+
+start = epochTime()
+for i in 0..<20:
+  discard sparse_softmax_cross_entropy_backward2(sce_loss, pred, sparse_labels)
+echo "Backprop Sparse SCE optimized: ", epochTime() - start
+
+### On i5-5257U - no OpenMP
+# References dense and sparse killed more than 5 min
+# Backprop SCE optimized: 20.88150691986084

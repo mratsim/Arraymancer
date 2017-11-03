@@ -16,6 +16,8 @@ import  ../../private/[functional, nested_containers],
         ../backend/metadataArray,
         ../data_structure
 
+include ./p_checks_cuda
+
 proc check_nested_elements*(shape: seq[int], len: int) {.noSideEffect, inline.}=
   ## Compare the detected shape from flatten with the real length of the data
   ## Input:
@@ -38,7 +40,7 @@ proc check_contiguous_index*(t: Tensor, idx: int) {.noSideEffect, inline.}=
                     " while tensor size is" &
                     $(t.size))
 
-proc check_elementwise*(a, b:AnyTensor)  {.noSideEffect, inline.}=
+proc check_elementwise*[T,U](a:Tensor[T], b:Tensor[U])  {.noSideEffect, inline.}=
   ## Check if element-wise operations can be applied to 2 Tensors
   if unlikely(a.shape != b.shape):
     raise newException(ValueError, "Both Tensors should have the same shape.\n Left-hand side has shape " &

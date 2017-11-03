@@ -35,9 +35,25 @@ proc streaming_max_sumexp*[T](t: Tensor[T]): tuple[max:T, sumexp: T] {.noSideEff
     if x <= result.max:
       result.sumexp += exp(x - result.max)
     else:
-      result.sumexp *= exp(result.max - x)
-      result.sumexp += 1
+      result.sumexp = result.sumexp * exp(result.max - x) + 1
       result.max = x
+
+proc streaming_max_sumexp*[T](t: Tensor[T], axis: int): Tensor[tuple[max:T, sumexp: T]] {.noInit.}=
+  # Only 2D tensor are supported for now. (i.e. no 3D Softmax)
+  assert axis in {0, 1} # TODO proper error message/check
+
+  result = newTensorUninit[tuple[max:T, sumexp: T]](t.shape[axis])
+
+  for i in `||`(0, t.shape[axis]-1, "simd"):
+    result.data[i] = t.unsafeAtAxisIndex(axis, i).streaming_max_sumexp
+
+  # Reexpand the tensor to be consistent with fold_axis/reduce_axis
+  if axis == 0:
+    result = result.unsafeUnsqueeze(1)
+  else:
+    result = result.unsafeUnsqueeze(0)
+
+
 
 proc logsumexp*[T: SomeReal](t: Tensor[T]): T =
   # Advantage:
@@ -68,7 +84,7 @@ proc logsumexp*[T: SomeReal](t: Tensor[T]): T =
 #   # Note: most image problems have less than 1000 classes (or even 100)
 #   # However NLP problems may have 50000+ words in dictionary
 
-#   let alpha = t.max
+#   let alpha = t.max # first loop over data
 
 #   result = t.fold_inline() do:
 #     # Init first element

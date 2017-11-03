@@ -43,33 +43,22 @@ proc softmax_cross_entropy*[T](input, target: Tensor[T]): T =
 
 
   # TODO: add a `batch_axis` parameter
-
-
   # TODO: term rewriting macro for auto fusion
 
   when compileOption("boundChecks"):
     check_input_target(input, target)
 
-  # We need parallel fused:
-  #   fold_axis (log softmax per sample)
-  #   -> map2 (cross-entropy)
-  #   -> reduce (sum) for all loss functions
+  # See at the bottom of the file for explanation/proof
+  result = frobenius_inner_prod(input, target)
 
-  # 1. Create a temporary tensor with the crossentropy per sample
-  var sample_softmax_xentropy = zeros[T](1, input.shape[1])
-  var i = 0
-  for sample_input, sample_target in zipAxis(input, target, 1):
-    # SCEi(yi, ti') = ti * ( ln ∑j exp(yij) - yij ) # see below
-    let lse = sample_input.logsumexp
-    sample_softmax_xentropy[0, i] = sum:
-      map2_inline(sample_input, sample_target):
-        y * (lse - x)
-    inc i
+  let sum_logsumexp = fold_axis_inline(input, T, 1) do:
+    x = y.logsumexp
+  do:
+    x += y.logsumexp
+  do:
+    x += y
 
-  # 2. Sum the sample crossentropies and normalize by batchsize
-  # In the softmax case batchsize = sample_softmax_xentropy.size
-  # So we can use the "mean" function
-  result = sample_softmax_xentropy.mean
+  result = (sum_logsumexp - result) / T(input.shape[1])
 
 proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T =
   ## Softmax function + Cross-Entropy loss fused in one layer.
@@ -214,12 +203,21 @@ proc sparse_softmax_cross_entropy_backward*[T](
 # Softmax has the form:
 # Softmax(yj) = exp(yj) / ∑j exp(yj)
 
-# SCEi(yi, ti') = - ti' * ln( exp(yij) / ∑j exp(yij) )
-#               = - ti' * (ln(exp(yij)) - (-ln ∑j exp(yij))
-#               = ti' * ( ln ∑j exp(yij) - yij )
+# SCEi(yi, ti') = - ti' * ln( exp(yi) / ∑j exp(yj) )
+#               = - ti' * (ln(exp(yi)) - (-ln ∑j exp(yj))
+#               = ti' * ( ln ∑j exp(yj) - yi )
 
-# Now by considering the whole batch
 # Since we pass a minibatch of several samples we should average by minibatch size (1/batchsize)
 # to keep the gradient magnitude/weight updates on the same scale as a single sample pass
 
-# SCE(y, t') = 1/n ∑i(- ti * yij + ln ∑j exp(yij))
+# SCE(y, t') = 1/n ∑i(- ti * yi + ti * ln ∑j exp(yj))
+# SCE(y, t') = 1/n [ ∑i(- ti * yi) + ∑i(ti * ln ∑j exp(yj)) ]
+
+# ∑i(- ti * yi) is the negative dot product between 2 vectors
+# ∑i(ti * ln ∑j exp(yj)) = ln ∑j exp(yj) as `ti` is a probability distribution
+# and must sum to 1
+
+# Over a batch n we have the batched_softmax_cross_entropy =
+# BSCE(y, t') = 1/n ∑n dot(-tn, yn) + ∑n ln ∑j exp(yj)
+# ∑n dot(-tn, yn), the generalization of dot product to matrices is
+# also called the Frobenius inner product

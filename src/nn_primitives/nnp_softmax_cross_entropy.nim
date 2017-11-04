@@ -25,8 +25,8 @@ proc softmax_cross_entropy*[T](input, target: Tensor[T]): T =
   ## Softmax function + Cross-Entropy loss fused in one layer.
   ##
   ## Input:
-  ##   - A Tensor of shape @[predicted_labels_probabilities, batchsize]
-  ##   - The target values of shape @[truth_labels_probability, batchsize]
+  ##   - A Tensor of shape [predicted_labels_probabilities, batchsize]
+  ##   - The target values of shape [truth_labels_probability, batchsize]
   ## Returns:
   ##   - Apply a softmax activation and returns the cross-entropy loss.
   ##
@@ -66,8 +66,8 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
   ## Softmax function + Cross-Entropy loss fused in one layer.
   ##
   ## Input:
-  ##   - A Tensor of shape @[predicted_labels_probabilities, batchsize]
-  ##   - The target values of shape @[batchsize] containing the truth label id
+  ##   - A Tensor of shape [predicted_labels_probabilities, batchsize]
+  ##   - The target values of shape [batchsize] containing the truth label id
   ## Returns:
   ##   - Apply a softmax activation and returns the cross-entropy loss.
   ##
@@ -96,23 +96,17 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
   # See at the bottom of the file for explanation/proof
   # ∑i(- ti * yi) is either -yi or 0 in the sparse case.
   # Since target holds coordinates: ∑i(- ti * yi) = - yi[ti]
-  for i in 0||(batch_size-1):
-    # Unfortunately we can't use `result` in a parallel for reduction declaration so we need atomic
+  for i in 0||(input.shape[1]-1):
+    let lse = input.unsafeSlice(_,i).logsumexp
+
     when not declared(openmp):
-      result = input[target[i], i]
+      result += lse - input.unsafeSlice(target.unsafeSlice(i), i)
     else:
-      let tmp = input[target[i], i]
+      let tmp = lse - input.unsafeSlice(target.unsafeSlice(i), i)
       {.emit:"#pragma omp atomic".}
       {.emit:"`result` += `tmp`;".}
 
-  let sum_logsumexp = fold_axis_inline(input, T, fold_axis=1) do:
-    x = y.logsumexp
-  do:
-    x += y.logsumexp
-  do:
-    x += y
-
-  result = (sum_logsumexp - result) / T(batch_size)
+  result /= T(batch_size)
 
 # ############
 # Backward pass
@@ -182,15 +176,12 @@ proc sparse_softmax_cross_entropy_backward*[T](
   for i, truth_idx in enumerate(target):
     result[truth_idx, i] = -1
 
-  for i in 0 ..< batch_size: # Can't use OpenMP here, Illegal storage access
-    let (max, sumexp) = cached_tensor[_,i].streaming_max_sumexp
+  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
+  # let axis_max_sumexp = cached_tensor.classic_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
 
-    # We can't directly use apply2_inline on result[_, i]
-    # due to https://github.com/mratsim/Arraymancer/issues/52
-    var res_slice = result.unsafeSlice(_, i)
 
-    apply2_inline(res_slice, cached_tensor[_,i]):
-      grad * (stable_softmax(y, max, sumexp) + x) / T(batch_size)
+  apply3_inline(result, cached_tensor, axis_max_sumexp):
+      grad * (stable_softmax(y, z.max, z.sumexp) + x) / T(batch_size)
 
 
 # ################################################

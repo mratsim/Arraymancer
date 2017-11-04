@@ -116,6 +116,25 @@ when isMainModule:
   echo " Dummy value: ", dummy # This is to avoid compiler optimization
 
 
+  ##########################################################################
+  echo "\n\n## 3 logsumexp with batch 256 x 50000 labels tensors (NLP - language dictionary)"
+  let t50000 = randomTensor(256, 50000, 1'f32)
+
+  dummy = 0'f32
+  start = epochTime()
+  for i in 0..< nb_iter:
+    dummy += logsumexp t50000
+  echo " 50000 elements - logsumexp: ", epochTime() - start
+  echo " Dummy value: ", dummy # This is to avoid compiler optimization
+
+  dummy = 0'f32
+  start = epochTime()
+  for i in 0..< nb_iter:
+    dummy += logsumexp_stream t50000
+  echo " 50000 elements - logsumexp_stream: ", epochTime() - start
+  echo " Dummy value: ", dummy # This is to avoid compiler optimization
+
+
 ## Results on i5-5257U (macOS High Sierra, dual-core mobile 2.7GHz, turbo 3.1)
 ## Note: OpenMP is significantly SLOWER on macOS than single-threaded
 ## while on Linux it scales with number of cores.
@@ -177,3 +196,50 @@ when isMainModule:
 #  3 elements - logsumexp: 0.005573034286499023
 #  Dummy value: 7180.666015625
 #  3 elements - logsumexp_stream: 0.004441022872924805
+
+
+
+##########################################################
+# After branch stack-array-of-slice, completely different performance profile
+
+# NO OPENMP
+# ## 1000 logsumexp with batch 256 x 1000 labels tensors (~ImageNet)
+#  1000 elements - logsumexp: 2.175843000411987
+#  Dummy value: 12994.2001953125
+#  1000 elements - logsumexp_stream: 5.314570188522339
+#  Dummy value: 12994.2001953125
+
+
+# ## 3 logsumexp with batch 256 x 3 labels tensors
+#  3 elements - logsumexp: 0.006352901458740234
+#  Dummy value: 7180.666015625
+#  3 elements - logsumexp_stream: 0.01533412933349609
+#  Dummy value: 7180.666015625
+
+
+# ## 3 logsumexp with batch 256 x 50000 labels tensors (NLP - language dictionary)
+#  50000 elements - logsumexp: 103.6776480674744
+#  Dummy value: 16920.689453125
+#  50000 elements - logsumexp_stream: 263.6669411659241
+#  Dummy value: 16920.689453125
+
+# WITH OPENMP
+# ## 1000 logsumexp with batch 256 x 1000 labels tensors (~ImageNet)
+#  1000 elements - logsumexp: 1.03753399848938
+#  Dummy value: 12994.19921875
+#  1000 elements - logsumexp_stream: 1.65704607963562
+#  Dummy value: 12994.2001953125
+
+
+# ## 3 logsumexp with batch 256 x 3 labels tensors
+#  3 elements - logsumexp: 0.005845785140991211
+#  Dummy value: 7180.666015625
+#  3 elements - logsumexp_stream: 0.004522085189819336
+#  Dummy value: 7180.666015625
+
+
+# ## 3 logsumexp with batch 256 x 50000 labels tensors (NLP - language dictionary)
+#  50000 elements - logsumexp: 47.58395099639893
+#  Dummy value: 16905.359375
+#  50000 elements - logsumexp_stream: 91.42335796356201
+#  Dummy value: 16920.689453125

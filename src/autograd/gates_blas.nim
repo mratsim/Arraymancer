@@ -26,12 +26,6 @@ method forward*[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.in
 
   result.tape = a.tape
   result.value = a.value * b.value
-
-  ## Unfortunately using broadcasts to save memory doesn't work
-  # let z_shape = newSeqWith(result.value.rank, 1) # We create a shape of 1 dimension that we will expand with broadcast
-  # let z = zeros[getSubType(TT)](z_shape)
-  # result.grad = z.unsafeBroadcast(result.value.shape) # to save memory, we allocate as low as possible
-
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
 method backward*[TT](self: MatMulGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=

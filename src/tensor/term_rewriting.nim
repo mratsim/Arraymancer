@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import  ../private/[nested_containers, ast_utils],
+        ./backend/metadataArray,
         ./private/p_checks,
         ./private/p_init_cpu,
         ./data_structure,
@@ -78,9 +79,10 @@ template rewriteTensor_MultiplyAdd_inplace*{C += `*`(A,B)}[T](
 
 template toTensorReshapeT(oa: typed, shape: varargs[int]): untyped = 
   let data = toSeq(flatIter(oa))
-  let seq_shape = @shape
+  let seq_shape = shape.toMetadataArray
 
-  when compileOption("boundChecks"): check_nested_elements(seq_shape, data.len)
+  when compileOption("boundChecks"):
+    check_nested_elements(seq_shape, data.len)
 
   var t: Tensor[type(data[0])]
   tensorCpu(seq_shape, t)
@@ -113,7 +115,8 @@ template rewriteToTensorReshape*{reshape(toTensor(oa, dummy_bugfix), shape)}(
 proc unsafeToTensorReshape*[T](data: seq[T], shape: varargs[int]): Tensor[T] {.noSideEffect.} =
   ## Fuse unsafeToTensor and unsafeReshape in one operation
 
-  when compileOption("boundChecks"): check_nested_elements(@shape, data.len)
+  when compileOption("boundChecks"):
+    check_nested_elements(shape.toMetadataArray, data.len)
 
   tensorCpu(shape, result)
   shallowCopy(result.data, data)

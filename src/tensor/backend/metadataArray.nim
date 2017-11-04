@@ -14,13 +14,18 @@
 
 import ./global_config
 
-type
-  MetadataArray* = object
-    ## Custom stack allocated array that holds tensors metadata
-    data*: array[MAXRANK, int]
+type DynamicStackArray*[T] = object
+    ## Custom stack allocated array that behaves like seq.
+    ## We must avoid seq creation when modifying tensor shapes, strides or slicing in a tight loop.
+    ## Seq creation are also not possible within an OpenMP loop.
+    data*: array[MAXRANK, T]
     len*: int
 
-proc newMetadataArray*(len: int): MetadataArray {.inline.} =
+type
+  MetadataArray* = DynamicStackArray[int]
+    ## Custom stack allocated array that holds tensors metadata
+
+proc initMetadataArray*(len: int): MetadataArray {.inline.} =
   result.len = len
 
 converter toMetadataArray*(s: varargs[int]): MetadataArray {.inline.} =
@@ -31,7 +36,7 @@ converter toMetadataArray*(s: varargs[int]): MetadataArray {.inline.} =
   for i in 0..<s.len:
     result.data[i] = s[i]
 
-proc copyFrom*(a: var MetadataArray, s: varargs[int]) {.inline.} =
+proc copyFrom*(a: var DynamicStackArray, s: varargs[int]) {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert s.len <= MAXRANK
@@ -39,7 +44,7 @@ proc copyFrom*(a: var MetadataArray, s: varargs[int]) {.inline.} =
   for i in 0..<s.len:
     a.data[i] = s[i]
 
-proc copyFrom*(a: var MetadataArray, s: MetadataArray) {.inline.} =
+proc copyFrom*(a: var DynamicStackArray, s: DynamicStackArray) {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert s.len <= MAXRANK
@@ -47,15 +52,15 @@ proc copyFrom*(a: var MetadataArray, s: MetadataArray) {.inline.} =
   for i in 0..<s.len:
     a.data[i] = s.data[i]
 
-proc setLen*(a: var MetadataArray, len: int) {.inline.} =
+proc setLen*(a: var DynamicStackArray, len: int) {.inline.} =
   when compileOption("boundChecks"):
     assert len <= MAXRANK
   a.len = len
 
-proc low*(a: MetadataArray): int {.inline.} =
+proc low*(a: DynamicStackArray): int {.inline.} =
   0
 
-proc high*(a: MetadataArray): int {.inline.} =
+proc high*(a: DynamicStackArray): int {.inline.} =
   a.len-1
 
 
@@ -73,25 +78,25 @@ else:
   template `^^`(s, i: untyped): untyped =
     i
 
-proc `[]`*(a: MetadataArray, idx: Index): int {.inline.} =
+proc `[]`*[T](a: DynamicStackArray[T], idx: Index): T {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert idx >= 0 and idx < MAXRANK
   a.data[a ^^ idx]
 
-proc `[]`*(a: var MetadataArray, idx: Index): var int {.inline.} =
+proc `[]`*[T](a: var DynamicStackArray[T], idx: Index): var T {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert idx >= 0 and idx < MAXRANK
   a.data[a ^^ idx]
 
-proc `[]=`*(a: var MetadataArray, idx: Index, v: int) {.inline.} =
+proc `[]=`*[T](a: var DynamicStackArray[T], idx: Index, v: T) {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert idx >= 0 and idx < MAXRANK
   a.data[a ^^ idx] = v
 
-proc `[]`*(a: MetadataArray, slice: Slice[int]): MetadataArray {.inline.} =
+proc `[]`*[T](a: DynamicStackArray[T], slice: Slice[int]): DynamicStackArray[T] {.inline.} =
   let bgn_slice = a ^^ slice.a
   let end_slice = a ^^ slice.b
 
@@ -103,24 +108,24 @@ proc `[]`*(a: MetadataArray, slice: Slice[int]): MetadataArray {.inline.} =
     for i in 0..<result.len:
       result[i] = a[bgn_slice+i]
 
-iterator items*(a: MetadataArray): int {.inline.} =
+iterator items*[T](a: DynamicStackArray[T]): T {.inline.} =
   for i in 0..<a.len:
     yield a.data[i]
 
-iterator mitems*(a: var MetadataArray): var int {.inline.} =
+iterator mitems*[T](a: var DynamicStackArray[T]): var T {.inline.} =
   for i in 0..<a.len:
     yield a.data[i]
 
-iterator pairs*(a: MetadataArray): (int, int) {.inline.} =
+iterator pairs*[T](a: DynamicStackArray[T]): (int, T) {.inline.} =
   for i in 0..<a.len:
     yield (i,a.data[i])
 
-proc `@`*(a: MetadataArray): seq[int] {.inline.} =
+proc `@`*[T](a: DynamicStackArray[T]): seq[T] {.inline.} =
   result = newSeq[int](a.len)
   for i in 0..<a.len:
     result[i] = a.data[i]
 
-proc `$`*(a: MetadataArray): string {.inline.} =
+proc `$`*(a: DynamicStackArray): string {.inline.} =
   result = "["
   var firstElement = true
   for value in items(a):
@@ -129,12 +134,12 @@ proc `$`*(a: MetadataArray): string {.inline.} =
     firstElement = false
   result.add("]")
 
-proc product*(a: MetadataArray): int {.inline.} =
+proc product*[T:SomeNumber](a: DynamicStackArray[T]): T {.inline.} =
   result = 1
   for value in items(a):
     result *= value
 
-proc insert*(a: var MetadataArray, value: int, index: int = 0) {.inline.} =
+proc insert*[T](a: var DynamicStackArray[T], value: T, index: int = 0) {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert a.len+1 < MAXRANK
@@ -144,7 +149,7 @@ proc insert*(a: var MetadataArray, value: int, index: int = 0) {.inline.} =
   a[index] = value
   inc a.len
 
-proc delete*(a: var MetadataArray, index: int) {.inline.} =
+proc delete*(a: var DynamicStackArray, index: int) {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert a.len > 0 #TODO: support tensor rank 0
@@ -155,18 +160,18 @@ proc delete*(a: var MetadataArray, index: int) {.inline.} =
     a[i] = a[i+1]
   a[a.len] = 0
 
-proc add*(a: var MetadataArray, value: int) {.inline.} =
+proc add*[T](a: var DynamicStackArray[T], value: T) {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert a.len+1 < MAXRANK
   a[a.len] = value
   inc a.len
 
-proc `&`*(a: MetadataArray, value: int): MetadataArray {.inline.} =
+proc `&`*[T](a: DynamicStackArray[T], value: T): DynamicStackArray[T] {.inline.} =
   result = a
   result.add(value)
 
-proc `&`*(a: MetadataArray, b: MetadataArray): MetadataArray {.inline.} =
+proc `&`*(a, b: DynamicStackArray): DynamicStackArray {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert a.len+b.len < MAXRANK
@@ -175,19 +180,19 @@ proc `&`*(a: MetadataArray, b: MetadataArray): MetadataArray {.inline.} =
   for i in 0..<b.len:
     result[a.len + i] = b[i]
 
-proc reversed*(a: MetadataArray): MetadataArray {.inline.} =
+proc reversed*(a: DynamicStackArray): DynamicStackArray {.inline.} =
   for i in 0..<a.len:
     result[a.len-i-1] = a[i]
   result.len = a.len
 
-proc reversed*(a: MetadataArray, result: var MetadataArray) {.inline.} =
+proc reversed*(a: DynamicStackArray, result: var DynamicStackArray) {.inline.} =
   for i in 0..<a.len:
     result[a.len-i-1] = a[i]
   for i in a.len..<result.len:
     result[i] = 0
   result.len = a.len
 
-proc `==`*(a: MetadataArray, s: openarray[int]): bool {.inline.} =
+proc `==`*[T](a: DynamicStackArray[T], s: openarray[T]): bool {.inline.} =
   if a.len != s.len:
     return false
   for i in 0..<s.len:
@@ -195,7 +200,7 @@ proc `==`*(a: MetadataArray, s: openarray[int]): bool {.inline.} =
       return false
   return true
 
-proc `==`*(a: MetadataArray, s: MetadataArray): bool {.inline.} =
+proc `==`*(a, s: DynamicStackArray): bool {.inline.} =
   if a.len != s.len:
     return false
   for i in 0..<s.len:
@@ -203,13 +208,28 @@ proc `==`*(a: MetadataArray, s: MetadataArray): bool {.inline.} =
       return false
   return true
 
-proc `^`*(x: int; a: MetadataArray): int {.inline.} =
+proc `^`*(x: int; a: DynamicStackArray): int {.inline.} =
   a.len - x
 
-iterator zip*(a,b: MetadataArray): (int, int)=
+iterator zip*[T, U](a: DynamicStackArray[T], b: DynamicStackArray[U]): (T, T)=
 
   # unsafeReshape relies on zip stopping early
   let len = min(a.len, b.len)
 
   for i in 0..<len:
     yield (a[i], b[i])
+
+proc concat*[T](dsas: varargs[DynamicStackArray[T]]): DynamicStackArray[T] =
+
+  var total_len = 0
+  for dsa in dsas:
+    inc(total_len, dsa.len)
+
+  assert total_len <= MAXRANK
+
+  result.len = total_len
+  var i = 0
+  for dsa in dsas:
+    for val in dsa:
+      result[i] = val
+      inc(i)

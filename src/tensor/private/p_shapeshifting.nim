@@ -52,7 +52,7 @@ template broadcastT*(t: var AnyTensor, shape: varargs[int]|MetadataArray) =
 template broadcast2T*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T]]) =
   let rank = max(a.rank, b.rank)
 
-  var shapeA, stridesA, shapeB, stridesB = newMetadataArray(rank) # initialized with 0
+  var shapeA, stridesA, shapeB, stridesB = initMetadataArray(rank) # initialized with 0
 
   for i in 0..<rank:
     let shape_A_iter = if i < rank: a.shape[i] else: 1

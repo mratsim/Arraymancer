@@ -14,6 +14,7 @@
 
 import  ../../private/[nested_containers, ast_utils],
         ../data_structure, ../accessors_macros_syntax,
+        ../backend/metadataArray,
         ./p_accessors_macros_desugar,
         ./p_accessors_macros_read,
         ./p_checks,
@@ -26,14 +27,14 @@ import  ../../private/[nested_containers, ast_utils],
 # #########################################################################
 # Setting a single value
 
-template slicerMutT_val[T](t: var Tensor[T], slices: varargs[SteppedSlice], val: T): untyped =
+template slicerMutT_val[T](t: var Tensor[T], slices: ArrayOfSlices, val: T): untyped =
   var sliced = t.unsafeSlicer(slices)
   for old_val in sliced.mitems:
     old_val = val
 
 proc slicerMut*[T](t: var Tensor[T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
   ## Assign the value to the whole slice
-  slicerMutT_val(t, slices, val)
+  slicerMutT_val(t, slices.toArrayOfSlices, val)
 
 proc slicerMut*[T](t: var Tensor[T],
                 slices: varargs[SteppedSlice],
@@ -43,7 +44,7 @@ proc slicerMut*[T](t: var Tensor[T],
   ## Assign the value to the whole slice
   # TODO: tests
 
-  let full_slices = @slices & newSeqWith(t.rank - slices.len, span)
+  let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
   slicerMutT_val(t, full_slices, val)
 
 proc slicerMut*[T](t: var Tensor[T],
@@ -54,7 +55,7 @@ proc slicerMut*[T](t: var Tensor[T],
   ## Assign the value to the whole slice
   # TODO: tests
 
-  let full_slices = newSeqWith(t.rank - slices.len, span) & @slices
+  let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
   slicerMutT_val(t, full_slices, val)
 
 proc slicerMut*[T](t: var Tensor[T],
@@ -66,9 +67,9 @@ proc slicerMut*[T](t: var Tensor[T],
   ## Assign the value to the whole slice
   # TODO: tests
 
-  let full_slices = concat(@slices1,
-                            newSeqWith(t.rank - slices1.len - slices2.len, span),
-                            @slices2)
+  let full_slices = concat(slices1,
+                            initSpanSlices(t.rank - slices1.len - slices2.len),
+                            slices2)
   slicerMutT_val(t, full_slices, val)
 
 # ###########################################################################
@@ -80,7 +81,7 @@ template slicerMutT_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: o
   when compileOption("boundChecks"):
     check_shape(sliced, oa)
 
-  let data = toSeq(flatIter(oa))
+  var data = toSeq(flatIter(oa))
   when compileOption("boundChecks"):
     check_nested_elements(oa.shape, data.len)
 
@@ -102,7 +103,7 @@ proc slicerMut*[T](t: var Tensor[T],
   ## Assign value from openarrays
   ## The openarray must have the same shape as the slice
   # TODO: tests
-  let full_slices = @slices & newSeqWith(t.rank - slices.len, span)
+  let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
   slicerMutT_oa(t, slices, oa)
 
 proc slicerMut*[T](t: var Tensor[T],
@@ -112,7 +113,7 @@ proc slicerMut*[T](t: var Tensor[T],
   ## Assign value from openarrays
   ## The openarray must have the same shape as the slice
   # TODO: tests
-  let full_slices = newSeqWith(t.rank - slices.len, span) & @slices
+  let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
   slicerMutT_oa(t, slices, oa)
 
 
@@ -124,9 +125,9 @@ proc slicerMut*[T](t: var Tensor[T],
   ## Assign value from openarrays
   ## The openarray must have the same shape as the slice
   # TODO: tests
-  let full_slices = concat(@slices1,
-                            newSeqWith(t.rank - slices1.len - slices2.len, span),
-                            @slices2)
+  let full_slices = concat(slices1,
+                            initSpanSlices(t.rank - slices1.len - slices2.len),
+                            slices2)
   slicerMutT_oa(t, full_slices, val)
 
 # #########################################################################
@@ -152,7 +153,7 @@ proc slicerMut*[T](t: var Tensor[T],
                   t2: Tensor[T]) {.noSideEffect.}=
   ## Assign the value to the whole slice
   # TODO: tests
-  let full_slices = @slices & newSeqWith(t.rank - slices.len, span)
+  let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
   slicerMutT_T(t, slices, t2)
 
 proc slicerMut*[T](t: var Tensor[T],
@@ -161,7 +162,7 @@ proc slicerMut*[T](t: var Tensor[T],
                   t2: Tensor[T]) {.noSideEffect.}=
   ## Assign the value to the whole slice
   # TODO: tests
-  let full_slices = newSeqWith(t.rank - slices.len, span) & @slices
+  let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
   slicerMutT_T(t, slices, t2)
 
 proc slicerMut*[T](t: var Tensor[T],
@@ -171,9 +172,9 @@ proc slicerMut*[T](t: var Tensor[T],
                   t2: Tensor[T]) {.noSideEffect.}=
   ## Assign the value to the whole slice
   # TODO: tests
-  let full_slices = concat(@slices1,
-                            newSeqWith(t.rank - slices1.len - slices2.len, span),
-                            @slices2)
+  let full_slices = concat(slices1,
+                            initSpanSlices(t.rank - slices1.len - slices2.len),
+                            slices2)
   slicerMutT_T(t, slices, t2)
 
 # #########################################################################
@@ -218,7 +219,7 @@ proc slicer_var[T](t: var AnyTensor[T],
   ##    Offset and strides are changed to achieve the desired effect.
 
   result = t
-  let full_slices = @slices & newSeqWith(t.rank - slices.len, span)
+  let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
   slicerT(result, full_slices)
 
 proc slicer_var[T](t: var AnyTensor[T],
@@ -231,7 +232,7 @@ proc slicer_var[T](t: var AnyTensor[T],
   ##    Offset and strides are changed to achieve the desired effect.
 
   result = t
-  let full_slices = newSeqWith(t.rank - slices.len, span) & @slices
+  let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
   slicerT(result, full_slices)
 
 proc slicer_var[T](t: var AnyTensor[T],
@@ -245,9 +246,9 @@ proc slicer_var[T](t: var AnyTensor[T],
   ##    Offset and strides are changed to achieve the desired effect.
 
   result = t
-  let full_slices = concat(@slices1,
-                            newSeqWith(t.rank - slices1.len - slices2.len, span),
-                            @slices2)
+  let full_slices = concat(slices1.toArrayOfSlices,
+                            initSpanSlices(t.rank - slices1.len - slices2.len),
+                            slices1.toArrayOfSlices)
   slicerT(result, full_slices)
 
 macro inner_typed_dispatch_var*(t: typed, args: varargs[typed]): untyped =

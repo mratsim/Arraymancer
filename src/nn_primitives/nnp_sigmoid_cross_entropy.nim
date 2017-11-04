@@ -29,7 +29,7 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T =
   ## Returns:
   ##   - Apply a sigmoid activation and returns the cross-entropy loss.
   ## Shape:
-  ##   - Both the cache and target shape should be @[features, batchsize] i.e. number of samples as last dimension
+  ##   - Both the cache and target shape should be [features, batchsize] i.e. number of samples as last dimension
   # TODO: add a `batch_axis` parameter
 
   # TODO: term rewriting macro for auto fusion

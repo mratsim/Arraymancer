@@ -176,15 +176,12 @@ proc sparse_softmax_cross_entropy_backward*[T](
   for i, truth_idx in enumerate(target):
     result[truth_idx, i] = -1
 
-  for i in 0 ..< batch_size: # Can't use OpenMP here, Illegal storage access
-    let (max, sumexp) = cached_tensor[_,i].streaming_max_sumexp
+  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
+  # let axis_max_sumexp = cached_tensor.classic_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
 
-    # We can't directly use apply2_inline on result[_, i]
-    # due to https://github.com/mratsim/Arraymancer/issues/52
-    var res_slice = result.unsafeSlice(_, i)
 
-    apply2_inline(res_slice, cached_tensor[_,i]):
-      grad * (stable_softmax(y, max, sumexp) + x) / T(batch_size)
+  apply3_inline(result, cached_tensor, axis_max_sumexp):
+      grad * (stable_softmax(y, z.max, z.sumexp) + x) / T(batch_size)
 
 
 # ################################################

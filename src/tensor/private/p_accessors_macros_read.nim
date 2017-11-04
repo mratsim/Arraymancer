@@ -17,10 +17,11 @@
 
 import  ../../private/ast_utils,
         ../data_structure, ../init_cpu, ../accessors_macros_syntax,
+        ../backend/metadataArray,
         ./p_checks, ./p_accessors, ./p_accessors_macros_desugar,
         sequtils, macros
 
-template slicerT*[T](result: AnyTensor[T]|var AnyTensor[T], slices: varargs[SteppedSlice]): untyped=
+template slicerT*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSlices): untyped=
   ## Slicing routine
 
   for i, slice in slices:
@@ -49,7 +50,7 @@ proc slicer[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.n
   ##    Offset and strides are changed to achieve the desired effect.
 
   result = t
-  slicerT(result, slices)
+  slicerT(result, slices.toArrayOfSlices)
 
 proc slicer[T](t: AnyTensor[T],
                 slices: varargs[SteppedSlice],
@@ -60,7 +61,7 @@ proc slicer[T](t: AnyTensor[T],
   ##    Offset and strides are changed to achieve the desired effect.
 
   result = t
-  let full_slices = @slices & newSeqWith(t.rank - slices.len, span)
+  let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
   slicerT(result, full_slices)
 
 proc slicer[T](t: AnyTensor[T],
@@ -73,7 +74,7 @@ proc slicer[T](t: AnyTensor[T],
   ##    Offset and strides are changed to achieve the desired effect.
 
   result = t
-  let full_slices = newSeqWith(t.rank - slices.len, span) & @slices
+  let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
   slicerT(result, full_slices)
 
 proc slicer[T](t: AnyTensor[T],
@@ -87,9 +88,72 @@ proc slicer[T](t: AnyTensor[T],
   ##    Offset and strides are changed to achieve the desired effect.
 
   result = t
-  let full_slices = concat(@slices1,
-                            newSeqWith(t.rank - slices1.len - slices2.len, span),
-                            @slices2)
+  let full_slices = concat(slices1.toArrayOfSlices,
+                            initSpanSlices(t.rank - slices1.len - slices2.len),
+                            slices2.toArrayOfSlices)
+  slicerT(result, full_slices)
+
+proc unsafeSlicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,noSideEffect.}=
+  ## Take a Tensor and SteppedSlices
+  ## Returns:
+  ##    A view of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+  ##    Warning: mutating the result will mutate the original
+  ##    As such a `var Tensor` is required
+  ## WARNING: passing a non-var Tensor is unsafe
+
+  result = unsafeView(t)
+  slicerT(result, slices)
+
+
+proc unsafeSlicer*[T](t: AnyTensor[T],
+                      slices: ArrayOfSlices,
+                      ellipsis: Ellipsis): AnyTensor[T] {.noInit,noSideEffect.}=
+  ## Take a Tensor, SteppedSlices and Ellipsis
+  ## Returns:
+  ##    A view of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+  ##    Warning: mutating the result will mutate the original
+  ##    As such a `var Tensor` is required
+  ## WARNING: passing a non-var Tensor is unsafe
+
+  result = unsafeView(t)
+  let full_slices = slices & initSpanSlices(t.rank - slices.len)
+  slicerT(result, full_slices)
+
+proc unsafeSlicer*[T](t: AnyTensor[T],
+                      ellipsis: Ellipsis,
+                      slices: ArrayOfSlices
+                      ): AnyTensor[T] {.noInit,noSideEffect.}=
+  ## Take a Tensor, Ellipsis and SteppedSlices
+  ## Returns:
+  ##    A view of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+  ##    Warning: mutating the result will mutate the original
+  ##    As such a `var Tensor` is required
+  ## WARNING: passing a non-var Tensor is unsafe
+
+  result = unsafeView(t)
+  let full_slices = initSpanSlices(t.rank - slices.len) & slices
+  slicerT(result, full_slices)
+
+proc unsafeSlicer*[T](t: AnyTensor[T],
+                      slices1: ArrayOfSlices,
+                      ellipsis: Ellipsis,
+                      slices2: ArrayOfSlices
+                      ): AnyTensor[T] {.noInit,noSideEffect.}=
+  ## Take a Tensor, SteppedSlices, Ellipsis and SteppedSlices
+  ## Returns:
+  ##    A view of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+  ##    Warning: mutating the result will mutate the original
+  ##    As such a `var Tensor` is required
+  ## WARNING: passing a non-var Tensor is unsafe
+
+  result = unsafeView(t)
+  let full_slices = concat(slices1,
+                            initSpanSlices(t.rank - slices1.len - slices2.len) ,
+                            slices2)
   slicerT(result, full_slices)
 
 proc unsafeSlicer*[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noInit,noSideEffect.}=
@@ -102,7 +166,7 @@ proc unsafeSlicer*[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.
   ## WARNING: passing a non-var Tensor is unsafe
 
   result = unsafeView(t)
-  slicerT(result, slices)
+  slicerT(result, slices.toArrayOfSlices)
 
 
 proc unsafeSlicer*[T](t: AnyTensor[T],
@@ -117,7 +181,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
   ## WARNING: passing a non-var Tensor is unsafe
 
   result = unsafeView(t)
-  let full_slices = @slices & newSeqWith(t.rank - slices.len, span)
+  let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
   slicerT(result, full_slices)
 
 proc unsafeSlicer*[T](t: AnyTensor[T],
@@ -133,7 +197,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
   ## WARNING: passing a non-var Tensor is unsafe
 
   result = unsafeView(t)
-  let full_slices = newSeqWith(t.rank - slices.len, span) & @slices
+  let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
   slicerT(result, full_slices)
 
 proc unsafeSlicer*[T](t: AnyTensor[T],
@@ -150,9 +214,9 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
   ## WARNING: passing a non-var Tensor is unsafe
 
   result = unsafeView(t)
-  let full_slices = concat(@slices1,
-                            newSeqWith(t.rank - slices1.len - slices2.len, span),
-                            @slices2)
+  let full_slices = concat(slices1.toArrayOfSlices,
+                            initSpanSlices(t.rank - slices1.len - slices2.len) ,
+                            slices2.toArrayOfSlices)
   slicerT(result, full_slices)
 
 # #########################################################################

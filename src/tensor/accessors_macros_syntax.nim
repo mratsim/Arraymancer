@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import  ../private/[nested_containers, functional],
+        ./backend/metadataArray,
         ./private/p_checks,
         ./data_structure
 
@@ -82,6 +83,25 @@ const _* = SteppedSlice(b: 1, step: 1, b_from_end: true)
 type Ellipsis* = object ##Dummy type for ellipsis i.e. "Don't slice the rest of dimensions"
 
 const `...`* = Ellipsis()
+
+# #########################################################################
+# Collection of slices
+
+type ArrayOfSlices* = DynamicStackArray[SteppedSlice]
+
+converter toArrayOfSlices*(s: varargs[SteppedSlice]): ArrayOfSlices {.inline.} =
+  # boundsChecks automatically done for array indexing
+  # when compileOption("boundChecks"):
+  #   assert s.len <= MAXRANK
+  result.len = s.len
+  for i in 0..<s.len:
+    result.data[i] = s[i]
+
+proc initSpanSlices*(len: int): ArrayOfSlices {.inline.} =
+  result.len = len
+  for i in 0..<len:
+    result.data[i] = SteppedSlice(b: 1, step: 1, b_from_end: true)
+
 
 
 # #########################################################################

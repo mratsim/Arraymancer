@@ -63,11 +63,15 @@ proc softmax_cross_entropy2*[T](input, target: Tensor[T]): T =
 
 ####### Sparse
 proc sparse_softmax_cross_entropy1*[T](input: Tensor[T], target: Tensor[int]): T =
-  var sample_softmax_xentropy = zeros[T](1, input.shape[1])
-  for i in 0..<input.shape[1]:  # Can't use OpenMP here, Illegal storage access
-    let lse = input[_,i].logsumexp
-    sample_softmax_xentropy[0, i] = lse - input[target[i], i]
-  result = sample_softmax_xentropy.mean
+  for i in 0||(input.shape[1]-1):
+    let lse = input.unsafeSlice(_,i).logsumexp
+    when not declared(openmp):
+      result += lse - input.unsafeSlice(target.unsafeSlice(i), i)
+    else:
+      let tmp = lse - input.unsafeSlice(target.unsafeSlice(i), i)
+      {.emit:"#pragma omp atomic".}
+      {.emit:"`result` += `tmp`;".}
+  result /= T(input.shape[1])
 
 proc sparse_softmax_cross_entropy2*[T](input: Tensor[T], target: Tensor[int]): T =
   let batch_size = input.shape[1]
@@ -109,11 +113,13 @@ proc softmax_cross_entropy_backward1*[T](
 
   result = zeros_like(cached_tensor)
 
-  for i in 0 ..< batch_size: # Can't use OpenMP here, Illegal storage access
-    let (max, sumexp) = cached_tensor[_,i].streaming_max_sumexp
+  for i in 0||(batch_size-1): # Can't use OpenMP - SIGSEGV Illegal Address
+    let (max, sumexp) = cached_tensor.unsafeSlice(_,i).streaming_max_sumexp
 
-    result[_,i] = map2_inline(cached_tensor[_,i], target[_,i]):
-      grad * (stable_softmax(x, max, sumexp) - y) / T(batch_size)
+    var res_slice = result.unsafeSlice(_, i)
+
+    apply3_inline(res_slice, cached_tensor.unsafeSlice(_,i), target.unsafeSlice(_,i)):
+      grad * (stable_softmax(y, max, sumexp) - z) / T(batch_size)
 
 proc sparse_softmax_cross_entropy_backward1*[T](
         gradient: Tensor[T] or T,
@@ -133,12 +139,12 @@ proc sparse_softmax_cross_entropy_backward1*[T](
   for i, truth_idx in enumerate(target):
     result[truth_idx, i] = -1
 
-  for i in 0 ..< batch_size: # Can't use OpenMP here, Illegal storage access
-    let (max, sumexp) = cached_tensor[_,i].streaming_max_sumexp
+  for i in 0||(batch_size-1):
+    let (max, sumexp) = cached_tensor.unsafeSlice(_,i).streaming_max_sumexp
 
     var res_slice = result.unsafeSlice(_, i)
 
-    apply2_inline(res_slice, cached_tensor[_,i]):
+    apply2_inline(res_slice, cached_tensor.unsafeSlice(_,i)):
       grad * (stable_softmax(y, max, sumexp) + x) / T(batch_size)
 
 ############ New optimized
@@ -225,72 +231,65 @@ let sce_loss = softmax_cross_entropy1(pred, labels)
 echo sce_loss
 echo "### Challenger"
 echo softmax_cross_entropy2(pred, labels)
-echo "### Sparse reference - super slow due to generalSeqAssign"
+echo "### Sparse reference"
 echo sparse_softmax_cross_entropy1(pred, sparse_labels)
 echo "### Sparse challenger"
-echo sparse_softmax_cross_entropy2(pred, sparse_labels)
+echo sparse_softmax_cross_entropy2(pred, sparse_labels) # Warning it's only accurate at 1e-3 and precision is at 1e-2 with OpenMP
 
 ## Warmup for OpenMP threadpool and CPU on "on-demand" governor
 discard pred .* pred
 
 var start = epochTime()
 
-# start = epochTime()
-# for i in 0..<20:
-#   discard softmax_cross_entropy1(pred, labels)
-# echo " Softmax xentropy zipAxis, mean(sum <- map2): ", epochTime() - start
+start = epochTime()
+for i in 0..<20:
+  discard softmax_cross_entropy1(pred, labels)
+echo " Softmax xentropy zipAxis, mean(sum <- map2): ", epochTime() - start
 
 
-# start = epochTime()
-# for i in 0..<20:
-#   discard softmax_cross_entropy2(pred, labels)
-# echo " Softmax xentropy Frobenius fold: ", epochTime() - start
+start = epochTime()
+for i in 0..<20:
+  discard softmax_cross_entropy2(pred, labels)
+echo " Softmax xentropy Frobenius fold: ", epochTime() - start
 
 
-# start = epochTime()
-# for i in 0..<20:
-#   discard sparse_softmax_cross_entropy1(pred, sparse_labels)
-# echo " Sparse softmax naive loop: ", epochTime() - start
+start = epochTime()
+for i in 0..<20:
+  discard sparse_softmax_cross_entropy1(pred, sparse_labels)
+echo " Sparse softmax naive loop: ", epochTime() - start
 
-# start = epochTime()
-# for i in 0..<20:
-#   discard sparse_softmax_cross_entropy2(pred, sparse_labels)
-# echo " Sparse softmax simplified loop + fold: ", epochTime() - start
-
-
-### On i5-5257U - no OpenMP
-#  Softmax xentropy zipAxis, mean(sum <- map2): 30.71215105056763
-#  Softmax xentropy Froebenius fold: 18.18636608123779
-#  Sparse softmax naive loop: 113.4928979873657
-#  Sparse softmax simplified loop + fold: 16.42902994155884
-
-### On i5-5257U - with OpenMP
-#  Softmax xentropy zipAxis, mean(sum <- map2): 25.62056088447571
-#  Softmax xentropy Froebenius fold: 10.49299907684326
-#  Sparse softmax naive loop: 102.5834209918976
-#  Sparse softmax simplified loop + fold: 9.73446798324585
+start = epochTime()
+for i in 0..<20:
+  discard sparse_softmax_cross_entropy2(pred, sparse_labels)
+echo " Sparse softmax simplified loop + fold: ", epochTime() - start
 
 
 echo "###### Backpropagation"
 
-echo "### Reference - too slow ... more than 5min"
-# echo softmax_cross_entropy_backward1(loss, pred, labels)
-echo "### Sparse reference - too slow ... more than 5min"
-# echo sparse_softmax_cross_entropy_backward1(loss, pred, sparse_labels)
+# We can't display those insane sized tensors
+# echo "### Reference"
+# echo softmax_cross_entropy_backward1(sce_loss, pred, labels)
+# echo "### Sparse reference"
+# echo sparse_softmax_cross_entropy_backward1(sce_loss, pred, sparse_labels)
+# echo "### Dense Challenger"
+# echo softmax_cross_entropy_backward2(sce_loss, pred, labels)
+# echo "### Sparse Challenger"
+# echo sparse_softmax_cross_entropy_backward2(sce_loss, pred, sparse_labels)
+
 
 ## Warmup for OpenMP threadpool and CPU on "on-demand" governor
 # for i in 0..<5:
 #   discard softmax_cross_entropy_backward1(loss, pred, labels)
 
-# start = epochTime()
-# for i in 0..<20:
-#   discard softmax_cross_entropy_backward1(loss, pred, labels)
-# echo " Softmax xentropy backward: ", epochTime() - start
+start = epochTime()
+for i in 0..<20:
+  discard softmax_cross_entropy_backward1(sce_loss, pred, labels)
+echo " Softmax xentropy backward: ", epochTime() - start
 
-# start = epochTime()
-# for i in 0..<20:
-#   discard sparse_softmax_cross_entropy_backward1(loss, pred, sparse_labels)
-# echo " Sparse softmax xentropy backward: ", epochTime() - start
+start = epochTime()
+for i in 0..<20:
+  discard sparse_softmax_cross_entropy_backward1(sce_loss, pred, sparse_labels)
+echo " Sparse softmax xentropy backward: ", epochTime() - start
 
 start = epochTime()
 for i in 0..<20:
@@ -302,6 +301,25 @@ for i in 0..<20:
   discard sparse_softmax_cross_entropy_backward2(sce_loss, pred, sparse_labels)
 echo "Backprop Sparse SCE optimized: ", epochTime() - start
 
-### On i5-5257U - no OpenMP
-# References dense and sparse killed more than 5 min
-# Backprop SCE optimized: 20.88150691986084
+
+# on i5-5257 - single Threaded measure with cpuTime
+# Softmax xentropy zipAxis, mean(sum <- map2): 29.35189
+# Softmax xentropy Frobenius fold: 18.456986
+# Sparse softmax naive loop: 17.82747199999999           # Warning non-deterministic with OpenMP but usually accurate (result returned too fast?)
+# Sparse softmax simplified loop + fold: 17.091408       # Warning it's only accurate at 1e-3 and precision is at 1e-2 with OpenMP
+# ###### Backpropagation
+# Softmax xentropy backward: 51.11628800000001
+# Sparse softmax xentropy backward: 42.925082
+# Backprop SCE optimized: 22.24859699999999
+# Backprop Sparse SCE optimized: 22.251161
+
+# on i5-5257 - OpenMP (dual core) measure with epochTIme
+# Softmax xentropy zipAxis, mean(sum <- map2): 28.42937207221985
+# Softmax xentropy Frobenius fold: 10.25611519813538
+# Sparse softmax naive loop: 9.594135999679565                 # Warning non-deterministic with OpenMP but usually accurate (result returned too fast?)
+# Sparse softmax simplified loop + fold: 9.48567008972168      # Warning it's only accurate at 1e-3 and precision is at 1e-2 with OpenMP
+# ###### Backpropagation
+# Softmax xentropy backward: 28.29611706733704
+# Sparse softmax xentropy backward: 27.54323387145996
+# Backprop SCE optimized: 12.00534200668335
+# Backprop Sparse SCE optimized: 12.78955292701721

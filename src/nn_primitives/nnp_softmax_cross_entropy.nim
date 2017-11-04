@@ -96,23 +96,17 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
   # See at the bottom of the file for explanation/proof
   # ∑i(- ti * yi) is either -yi or 0 in the sparse case.
   # Since target holds coordinates: ∑i(- ti * yi) = - yi[ti]
-  for i in 0||(batch_size-1):
-    # Unfortunately we can't use `result` in a parallel for reduction declaration so we need atomic
+  for i in 0||(input.shape[1]-1):
+    let lse = input.unsafeSlice(_,i).logsumexp
+
     when not declared(openmp):
-      result = input[target[i], i]
+      result += lse - input.unsafeSlice(target.unsafeSlice(i), i)
     else:
-      let tmp = input[target[i], i]
+      let tmp = lse - input.unsafeSlice(target.unsafeSlice(i), i)
       {.emit:"#pragma omp atomic".}
       {.emit:"`result` += `tmp`;".}
 
-  let sum_logsumexp = fold_axis_inline(input, T, fold_axis=1) do:
-    x = y.logsumexp
-  do:
-    x += y.logsumexp
-  do:
-    x += y
-
-  result = (sum_logsumexp - result) / T(batch_size)
+  result /= T(batch_size)
 
 # ############
 # Backward pass

@@ -24,7 +24,7 @@ type SigmoidCrossEntropyLoss* {.final.} [TT] = ref object of Loss[TT]
   # target, from Loss
 
 method forward*[TT](self: SigmoidCrossEntropyLoss[TT], a: Variable[TT], target: TT): Variable[TT] {.inline, locks:0.}=
-  # We expect a in shape @[features, batch_size]
+  # We expect a in shape [features, batch_size]
 
   new result
   result.tape = a.tape

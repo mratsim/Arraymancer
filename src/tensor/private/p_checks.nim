@@ -18,7 +18,7 @@ import  ../../private/[functional, nested_containers],
 
 include ./p_checks_cuda
 
-proc check_nested_elements*(shape: seq[int], len: int) {.noSideEffect, inline.}=
+proc check_nested_elements*(shape: MetadataArray, len: int) {.noSideEffect, inline.}=
   ## Compare the detected shape from flatten with the real length of the data
   ## Input:
   ##   -- A shape (sequence of int)
@@ -75,10 +75,7 @@ proc check_steps*(a,b, step:int) {.noSideEffect, inline.}=
 proc check_shape*(a, b: Tensor|openarray) {.noSideEffect, inline.}=
   ## Compare shape
 
-  when b is Tensor:
-    let b_shape = b.shape
-  else:
-    let b_shape = b.shape.toMetadataArray
+  let b_shape = b.shape # There is a shape proc that converts openarray to MetadataArray
 
   if unlikely(a.shape != b_shape):
     raise newException(IndexError, "Your tensors or openarrays do not have the same shape: " &

@@ -14,6 +14,7 @@
 
 import  ../../private/[nested_containers, ast_utils],
         ../data_structure, ../accessors_macros_syntax,
+        ../backend/metadataArray,
         ./p_accessors_macros_desugar,
         ./p_accessors_macros_read,
         ./p_checks,
@@ -80,7 +81,7 @@ template slicerMutT_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: o
   when compileOption("boundChecks"):
     check_shape(sliced, oa)
 
-  let data = toSeq(flatIter(oa))
+  var data = toSeq(flatIter(oa))
   when compileOption("boundChecks"):
     check_nested_elements(oa.shape, data.len)
 
@@ -245,9 +246,9 @@ proc slicer_var[T](t: var AnyTensor[T],
   ##    Offset and strides are changed to achieve the desired effect.
 
   result = t
-  let full_slices = concat(@slices1,
-                            newSeqWith(t.rank - slices1.len - slices2.len, span),
-                            @slices2)
+  let full_slices = concat(slices1.toArrayOfSlices,
+                            initSpanSlices(t.rank - slices1.len - slices2.len),
+                            slices1.toArrayOfSlices)
   slicerT(result, full_slices)
 
 macro inner_typed_dispatch_var*(t: typed, args: varargs[typed]): untyped =

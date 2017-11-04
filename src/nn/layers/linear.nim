@@ -42,16 +42,16 @@ method backward*[TT](self: LinearGate[TT], gradient: TT): SmallDiffs[TT] {.noIni
 
 proc linear*[TT](x, weight: Variable[TT], bias: Variable[TT] = nil): Variable[TT] =
   ## Input:
-  ##   - A x Variable of shape @[in_features, batch_size]
-  ##   - A weight Variable of shape @[out_features, in_features]
-  ##   - Optionally a bias Variable of shape @[out_features, 1]
+  ##   - A x Variable of shape [in_features, batch_size]
+  ##   - A weight Variable of shape [out_features, in_features]
+  ##   - Optionally a bias Variable of shape [out_features, 1]
   ##
   ## Return:
   ##   - Weight * x + bias
   ##
   ## Future TODO:
   ##   In the future the linear layer will allow different input layout
-  ##   so that x can also be of shape @[batch_size, in_features]
+  ##   so that x can also be of shape [batch_size, in_features]
   ##
   ## Warning ⚠:
   ##  - Experimental, there is no tests yet for this layer
@@ -66,8 +66,8 @@ proc linear*[TT](x, weight: Variable[TT], bias: Variable[TT] = nil): Variable[TT
 
     # weight has shape: Out_features * In_features
     # bias must have shape: Out_features * 1
-    if not bias.isNil and not (bias.value.shape == @[weight.value.shape[0], 1]):
-      raise newException(ValueError, "Incompatible shape: bias must be a vector of shape @[out_features, 1]")
+    if not bias.isNil and not (bias.value.shape == [weight.value.shape[0], 1].toMetadataArray):
+      raise newException(ValueError, "Incompatible shape: bias must be a vector of shape [out_features, 1]")
 
   # Gate
   var gate: LinearGate[TT]

@@ -25,8 +25,8 @@ proc softmax_cross_entropy*[T](input, target: Tensor[T]): T =
   ## Softmax function + Cross-Entropy loss fused in one layer.
   ##
   ## Input:
-  ##   - A Tensor of shape @[predicted_labels_probabilities, batchsize]
-  ##   - The target values of shape @[truth_labels_probability, batchsize]
+  ##   - A Tensor of shape [predicted_labels_probabilities, batchsize]
+  ##   - The target values of shape [truth_labels_probability, batchsize]
   ## Returns:
   ##   - Apply a softmax activation and returns the cross-entropy loss.
   ##
@@ -66,8 +66,8 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
   ## Softmax function + Cross-Entropy loss fused in one layer.
   ##
   ## Input:
-  ##   - A Tensor of shape @[predicted_labels_probabilities, batchsize]
-  ##   - The target values of shape @[batchsize] containing the truth label id
+  ##   - A Tensor of shape [predicted_labels_probabilities, batchsize]
+  ##   - The target values of shape [batchsize] containing the truth label id
   ## Returns:
   ##   - Apply a softmax activation and returns the cross-entropy loss.
   ##

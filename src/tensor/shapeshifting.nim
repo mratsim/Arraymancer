@@ -271,7 +271,7 @@ proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
   ##     a.permute(0,2,1) # dim 0 stays at 0, dim 1 becomes dim 2 and dim 2 becomes dim 1
 
   # TODO: bounds check
-  var perm = @dims
+  var perm = dims.toMetadataArray
   result = t
   for i, p in perm:
     if p != i and p != -1:
@@ -317,7 +317,7 @@ proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit,noSi
     iaxis += t.shape[axis]
 
 proc squeeze*(t: AnyTensor): AnyTensor {.noInit,noSideEffect.}=
-  ## Squeeze tensors. For example a Tensor of shape @[4,1,3] will become @[4,3]
+  ## Squeeze tensors. For example a Tensor of shape [4,1,3] will become [4,3]
   ## Input:
   ##   - a tensor
   ## Returns:
@@ -326,7 +326,7 @@ proc squeeze*(t: AnyTensor): AnyTensor {.noInit,noSideEffect.}=
   result.squeezeT
 
 proc unsafeSqueeze*(t: Tensor): Tensor {.noInit,noSideEffect.}=
-  ## Squeeze tensors. For example a Tensor of shape @[4,1,3] will become @[4,3]
+  ## Squeeze tensors. For example a Tensor of shape [4,1,3] will become [4,3]
   ## Input:
   ##   - a tensor
   ## Returns:

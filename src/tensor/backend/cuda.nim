@@ -20,7 +20,7 @@ export nimcuda.check
 
 # Data structures to ease interfacing with Cuda and kernels
 
-proc cudaMalloc[T](size: int): ptr T {.noSideEffect, inline.}=
+proc cudaMalloc[T](size: Natural): ptr T {.noSideEffect, inline.}=
   ## Internal proc.
   ## Wrap CudaMAlloc(var pointer, size) -> Error_code
   let s = size * sizeof(T)
@@ -35,7 +35,7 @@ proc deallocCuda[T](p: ref[ptr T]) {.noSideEffect.}=
 # # Base CudaSeq type
 # # End goal is for it to have value semantics like Nim seq
 
-proc newCudaSeq*[T: SomeReal](length: int): CudaSeq[T] {.noSideEffect.}=
+proc newCudaSeq*[T: SomeReal](length: Natural): CudaSeq[T] {.noSideEffect.}=
   result.len = length
   new(result.data, deallocCuda)
   result.data[] = cast[ptr UncheckedArray[T]](cudaMalloc[T](result.len))

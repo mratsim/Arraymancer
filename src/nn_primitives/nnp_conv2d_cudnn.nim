@@ -18,13 +18,15 @@ import  ./backend/cudnn,
         ../tensor/private/p_init_cuda # TODO: it might be worth it to export newCudaTensor
 
 type
-  SizeHW* = array[2, int]
+  SizeHW* = array[2, cint]
     ## height
     ## width
 
-proc toPtrCint(s: SizeHW): ptr cint =
-  var tmp = [s[0].cint, s[1].cint] # TODO: when tmp goes out of scope
-  result = addr tmp[0]             # what is happening to the pointer?
+template toPtrCint(s: typed): ptr cint =
+  unsafeAddr s[0]
+
+proc check_CuDNN(msg: cudnnStatus_t) =
+  echo $msg & " " & $int(msg)
 
 template typeToCudnnType[T: SomeReal]: cudnnDataType_t =
   when T is float32:
@@ -37,9 +39,12 @@ template typeToCudnnType[T: SomeReal]: cudnnDataType_t =
 template newCudnn4DTensorDesc[T: SomeReal](t: CudaTensor[T]): cudnnTensorDescriptor_t =
   # TODO: destroy descriptor automatically
   var td: cudnnTensorDescriptor_t
-  check cudnnCreateTensorDescriptor addr td
 
-  check cudnnSetTensor4dDescriptorEx(
+  echo "\ncudnnCreateTensorDescriptor"
+  check_CuDNN cudnnCreateTensorDescriptor addr td
+
+  echo "\ncudnnSetTensor4dDescriptorEx"
+  check_CuDNN cudnnSetTensor4dDescriptorEx(
     td,
     typeToCudnnType[T](),
     t.shape[0].cint, # n
@@ -54,50 +59,61 @@ template newCudnn4DTensorDesc[T: SomeReal](t: CudaTensor[T]): cudnnTensorDescrip
   td
 
 template newCudnnFilterDesc[T: SomeReal](
-  rank, in_feats, out_feats, kH, kW: int): cudnnFilterDescriptor_t =
+  rank: cint, in_feats, out_feats, kH, kW: int): cudnnFilterDescriptor_t =
   # TODO: destroy descriptor automatically
   var fd: cudnnFilterDescriptor_t
-  check cudnnCreateFilterDescriptor addr fd
 
-  var filters = [in_feats.cint, out_feats.cint, kH.cint, kW.cint]
+  echo "\ncudnnCreateFilterDescriptor"
+  check_CuDNN cudnnCreateFilterDescriptor addr fd
 
-  check cudnnSetFilterNdDescriptor(
+  var filters = [out_feats.cint, in_feats.cint, kH.cint, kW.cint]
+
+  echo "\ncudnnSetFilterNdDescriptor"
+  check_CuDNN cudnnSetFilterNdDescriptor(
     fd,
     typeToCudnnType[T](),
     CUDNN_TENSOR_NCHW, # TODO do not hardcode the format
-    rank.cint,
+    rank,
     addr filters[0]
   )
   fd
 
 
 proc conv2d*[T: SomeReal](input, weight, bias: CudaTensor[T],
-                padding: SizeHW = [0,0],
-                stride: SizeHW = [1,1]): CudaTensor[T] {.inline.} =
+                padding: SizeHW = [0.cint,0],
+                stride: SizeHW = [1.cint,1]): CudaTensor[T] {.inline.} =
   ## Input:
   ##     - ``input`` 4D Tensor batch of images of the size [N,C_in,H_in,W_in]
   ##     - ``weight`` 4D Tensor convolving kernel weights of the size [C_out,C_in,kH,kW]
   ##     - ``bias`` 3D Tensor bias of the size [C_out,1,1] or an empty tensor for no bias
 
-  const convDims = 2
+  const convDims: cint = 2
   const rank = 4
 
   var conv_W_cd: cudnnConvolutionDescriptor_t
+  echo "\ncudnnCreateConvolutionDescriptor"
+  check_CuDNN cudnnCreateConvolutionDescriptor(addr conv_W_cd)
+
+  echo "Kernel shape"
+  echo weight.shape
 
   let conv_filter_desc = newCudnnFilterDesc[T](
     rank,
     weight.shape[1], # in_features (ex: 3 color channels)
     weight.shape[0], # out_features
-    weight.shape[2], # convolving kernel height
-    weight.shape[3]  # convolving kernel width
+    weight.shape[2]-1, # convolving kernel height
+    weight.shape[3]-1  # convolving kernel width
     )
   let conv_in_td = newCudnn4DTensorDesc input
+  echo input.shape
+  echo input.strides
 
-  let dilation = [1, 1]
+  let dilation: SizeHW = [1.cint, 1]
 
   mixin typeToCudnnType # The template needs mixin to work in an exported proc
 
-  check cudnnSetConvolutionNdDescriptor(
+  echo "\ncudnnSetConvolutionNdDescriptor"
+  check_CuDNN cudnnSetConvolutionNdDescriptor(
     conv_W_cd,
     convDims,
     padding.toPtrCint,
@@ -109,7 +125,8 @@ proc conv2d*[T: SomeReal](input, weight, bias: CudaTensor[T],
 
   var tensorOutputDim: array[rank, cint]
 
-  check cudnnGetConvolutionNdForwardOutputDim(
+  echo "\ncudnnGetConvolutionNdForwardOutputDim"
+  check_CuDNN cudnnGetConvolutionNdForwardOutputDim(
     conv_W_cd,
     conv_in_td,
     conv_filter_desc,
@@ -127,6 +144,8 @@ proc conv2d*[T: SomeReal](input, weight, bias: CudaTensor[T],
     h = tensorOutputDim[2].int
     w = tensorOutputDim[3].int
 
+  echo "Cimputed output dims: " & $ [n, c, h, w]
+
   result = newCudaTensor[T]([n, c, h, w])
 
   let conv_out_td = newCudnn4DTensorDesc result
@@ -135,7 +154,8 @@ proc conv2d*[T: SomeReal](input, weight, bias: CudaTensor[T],
 
   # TODO make it a parameter so it's only calculated for
   # the very first convolution
-  check cudnnGetConvolutionForwardAlgorithm(
+  echo "\ncudnnGetConvolutionForwardAlgorithm"
+  check_CuDNN cudnnGetConvolutionForwardAlgorithm(
     defaultHandle_cudnn,
     conv_in_td,
     conv_filter_desc,
@@ -150,7 +170,8 @@ proc conv2d*[T: SomeReal](input, weight, bias: CudaTensor[T],
 
   var sizeInBytes: csize
 
-  check cudnnGetConvolutionForwardWorkspaceSize(
+  echo "\ncudnnGetConvolutionForwardWorkspaceSize"
+  check_CuDNN cudnnGetConvolutionForwardWorkspaceSize(
     defaultHandle_cudnn,
     conv_in_td,
     conv_filter_desc,
@@ -170,7 +191,8 @@ proc conv2d*[T: SomeReal](input, weight, bias: CudaTensor[T],
 
   # TODO: use strides
 
-  check cudnnConvolutionForward(
+  echo "\nudnnConvolutionForward"
+  check_CuDNN cudnnConvolutionForward(
     defaultHandle_cudnn,
     addr alpha,
     conv_in_td,
@@ -186,6 +208,9 @@ proc conv2d*[T: SomeReal](input, weight, bias: CudaTensor[T],
     result.get_data_ptr
   )
 
-  result += bias
+  echo result
+  echo bias
+
+  result .+= bias
 
   # TODO: destroy descriptors

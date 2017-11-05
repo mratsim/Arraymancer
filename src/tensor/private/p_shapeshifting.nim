@@ -32,7 +32,10 @@ proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray):
 template reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray): untyped =
   when compileOption("boundChecks"):
     check_nocopyReshape t
-    check_reshape(t, new_shape)
+    when not (new_shape is MetadataArray):
+      check_reshape(t, new_shape.toMetadataArray)
+    else:
+      check_reshape(t, new_shape)
   result.shape.copyFrom(new_shape)
   shape_to_strides(result.shape, rowMajor, result.strides)
   result.offset = t.offset

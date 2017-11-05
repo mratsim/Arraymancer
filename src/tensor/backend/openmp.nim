@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./global_config
+import  ./global_config,
+        ./memory_optimization_hints
 
 when defined(openmp):
   when not defined(cuda): # For cuda, OpenMP flags must be passeed
     {.passC: "-fopenmp".} # behind -Xcompiler -fopenmp
     {.passL: "-fopenmp".}
 
-  {. pragma: omp, header:"omp.h" .}
+  {.pragma: omp, header:"omp.h".}
 
   proc omp_set_num_threads*(x: cint) {.omp.}
   proc omp_get_num_threads*(): cint {.omp.}
@@ -84,7 +85,7 @@ template omp_parallel_reduce_blocks*[T](reduced: T, block_offset, block_size: un
         if size*weight >= OMP_FOR_THRESHOLD:
           let num_blocks = min(min(size, omp_get_max_threads()), OMP_MAX_REDUCE_BLOCKS)
           if num_blocks > 1:
-            {.pragma: align64, codegenDecl: "$# $# __attribute__((aligned(64)))".}
+            withMemoryOptimHints()
             var results{.align64.}: array[OMP_MAX_REDUCE_BLOCKS * maxItemsPerCacheLine, type(reduced)]
             let bsize = size div num_blocks
 

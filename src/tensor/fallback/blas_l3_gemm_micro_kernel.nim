@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import macros
+import  macros,
+        ../backend/memory_optimization_hints
 
 macro unroll_ukernel[MRNR, T](AB: array[MRNR, T],
                               a: ptr UncheckedArray[T], offA: int,
@@ -60,12 +61,11 @@ template gemm_micro_kernelT[T](
             incRowC, incColC: int): untyped =
 
   ## Template and use FORCE_ALIGN
-  {.pragma: align64, codegenDecl: "$# $# __attribute__((aligned(64)))".}
+  withMemoryOptimHints()
   var AB{.align64.}: array[MRNR, T]
   var voffA = offA
   var voffB = offB
 
-  {.pragma: restrict, codegenDecl: "$# __restrict__ $#".}
   var a {.restrict.}= assume_aligned(A.data, FORCE_ALIGN)
   var b {.restrict.}= assume_aligned(B.data, FORCE_ALIGN)
 

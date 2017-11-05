@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../backend/global_config,
+import  ../backend/[global_config, memory_optimization_hints],
         ../data_structure,
         ./p_checks
 
@@ -133,7 +133,8 @@ template stridedIteration*(strider: IterKind, t, iter_offset, iter_size: typed):
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
 
   # Get tensor data address with offset builtin
-  var data = t.dataArray
+  withMemoryOptimHints()
+  var data{.restrict.} = t.dataArray
 
   # Optimize for loops in contiguous cases
   if t.is_C_Contiguous:
@@ -149,8 +150,10 @@ template stridedCoordsIteration*(t, iter_offset, iter_size: typed): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides. (coords)
 
   # Get tensor data address with offset builtin
-  var data = t.dataArray
+  withMemoryOptimHints()
+  var data{.restrict.} = t.dataArray
   let rank = t.rank
+
   initStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
   for i in iter_offset..<(iter_offset+iter_size):
     yield (coord[0..<rank], data[iter_pos])
@@ -169,8 +172,9 @@ template dualStridedIteration*(strider: IterKind, t1, t2, iter_offset, iter_size
   let t2_contiguous = t2.is_C_Contiguous()
 
   # Get tensor data address with offset builtin
-  var t1data = t1.dataArray
-  var t2data = t2.dataArray
+  withMemoryOptimHints()
+  var t1data{.restrict.} = t1.dataArray
+  var t2data{.restrict.} = t2.dataArray
 
   # Optimize for loops in contiguous cases
   if t1_contiguous and t2_contiguous:
@@ -207,9 +211,10 @@ template tripleStridedIteration*(strider: IterKind, t1, t2, t3, iter_offset, ite
   let t3_contiguous = t3.is_C_Contiguous()
 
   # Get tensor data address with offset builtin
-  var t1data = t1.dataArray
-  var t2data = t2.dataArray
-  var t3data = t3.dataArray
+  withMemoryOptimHints()
+  var t1data{.restrict.} = t1.dataArray
+  var t2data{.restrict.} = t2.dataArray
+  var t3data{.restrict.} = t3.dataArray
 
   # Optimize for loops in contiguous cases
   # Note that not all cases are handled here, just some probable ones

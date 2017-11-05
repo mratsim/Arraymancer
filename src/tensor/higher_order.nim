@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import  ./backend/openmp,
+        ./backend/memory_optimization_hints,
         ./private/p_checks,
         ./data_structure, ./init_cpu, ./accessors,
         future
@@ -41,7 +42,9 @@ template apply3_inline*[T,U,V](dest: var Tensor[T], src1: Tensor[U], src2: Tenso
 
 template map_inline*[T](t: Tensor[T], op:untyped): untyped =
   var dest = newTensorUninit[T](t.shape)
-  var data = dest.dataArray
+  withMemoryOptimHints()
+  var data{.restrict.} = dest.dataArray
+
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for i, x {.inject.} in enumerate(t, block_offset, block_size):
       data[i] = op
@@ -52,7 +55,9 @@ template map2_inline*[T, U](t1: Tensor[T], t2: Tensor[U], op:untyped): untyped =
     check_elementwise(t1,t2)
 
   var dest = newTensorUninit[T](t1.shape)
-  var data = dest.dataArray
+  withMemoryOptimHints()
+  var data{.restrict.} = dest.dataArray
+
   omp_parallel_blocks(block_offset, block_size, t1.size):
     for i, x {.inject.}, y {.inject.} in enumerateZip(t1, t2, block_offset, block_size):
       data[i] = op
@@ -64,10 +69,13 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
     check_elementwise(t1,t3)
 
   var dest = newTensorUninit[T](t1.shape)
-  var data = dest.dataArray
+  withMemoryOptimHints()
+  var data{.restrict.} = dest.dataArray
+
   omp_parallel_blocks(block_offset, block_size, t1.size):
     for i, x {.inject.}, y {.inject.}, z {.inject.} in enumerateZip(t1, t2, t3, block_offset, block_size):
       data[i] = op
+
   dest.unsafeView()
 
 template reduce_inline*[T](t: Tensor[T], op: untyped): untyped =

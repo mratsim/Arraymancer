@@ -59,7 +59,7 @@ template newCudnn4DTensorDesc[T: SomeReal](t: CudaTensor[T]): cudnnTensorDescrip
   td
 
 template newCudnnFilterDesc[T: SomeReal](
-  rank: cint, in_feats, out_feats, kH, kW: int): cudnnFilterDescriptor_t =
+  tensorDims: cint, in_feats, out_feats, kH, kW: int): cudnnFilterDescriptor_t =
   # TODO: destroy descriptor automatically
   var fd: cudnnFilterDescriptor_t
 
@@ -73,82 +73,99 @@ template newCudnnFilterDesc[T: SomeReal](
     fd,
     typeToCudnnType[T](),
     CUDNN_TENSOR_NCHW, # TODO do not hardcode the format
-    rank,
+    tensorDims,
     addr filters[0]
   )
   fd
 
 
-proc conv2d*[T: SomeReal](input, weight, bias: CudaTensor[T],
-                padding: SizeHW = [0.cint,0],
-                stride: SizeHW = [1.cint,1]): CudaTensor[T] {.inline.} =
+proc conv2d*[T: SomeReal](input, filter, bias: CudaTensor[T],
+                padA: SizeHW = [0.cint,0],
+                filterStrideA: SizeHW = [1.cint,1]): CudaTensor[T] {.inline.} =
   ## Input:
   ##     - ``input`` 4D Tensor batch of images of the size [N,C_in,H_in,W_in]
-  ##     - ``weight`` 4D Tensor convolving kernel weights of the size [C_out,C_in,kH,kW]
+  ##     - ``filter`` 4D Tensor convolving kernel filters of the size [C_out,C_in,kH,kW]
   ##     - ``bias`` 3D Tensor bias of the size [C_out,1,1] or an empty tensor for no bias
 
   const convDims: cint = 2
-  const rank = 4
+  const tensorDims: cint = 4
 
-  var conv_W_cd: cudnnConvolutionDescriptor_t
+  var convDesc: cudnnConvolutionDescriptor_t
   echo "\ncudnnCreateConvolutionDescriptor"
-  check_CuDNN cudnnCreateConvolutionDescriptor(addr conv_W_cd)
+  check_CuDNN cudnnCreateConvolutionDescriptor(addr convDesc)
 
   echo "Kernel shape"
-  echo weight.shape
+  echo filter.shape
 
-  let conv_filter_desc = newCudnnFilterDesc[T](
-    rank,
-    weight.shape[1], # in_features (ex: 3 color channels)
-    weight.shape[0], # out_features
-    weight.shape[2]-1, # convolving kernel height
-    weight.shape[3]-1  # convolving kernel width
+  let filterDesc = newCudnnFilterDesc[T](
+    tensorDims,
+    filter.shape[1], # in_features (ex: 3 color channels)
+    filter.shape[0], # out_features
+    filter.shape[2], # convolving kernel height
+    filter.shape[3]  # convolving kernel width
     )
-  let conv_in_td = newCudnn4DTensorDesc input
+  let srcTensorDesc = newCudnn4DTensorDesc input
   echo input.shape
   echo input.strides
 
-  let dilation: SizeHW = [1.cint, 1]
+  let upscaleA: SizeHW = [1.cint, 1]
 
   mixin typeToCudnnType # The template needs mixin to work in an exported proc
 
   echo "\ncudnnSetConvolutionNdDescriptor"
   check_CuDNN cudnnSetConvolutionNdDescriptor(
-    conv_W_cd,
+    convDesc,
     convDims,
-    padding.toPtrCint,
-    stride.toPtrCint,
-    dilation.toPtrCint,
+    padA.toPtrCint,
+    filterStrideA.toPtrCint,
+    upscaleA.toPtrCint,
     CUDNN_CROSS_CORRELATION,
     typeToCudnnType[T]()
   )
 
-  var tensorOutputDim: array[rank, cint]
+  var tensorOutputDimA: array[tensorDims, cint]
 
   echo "\ncudnnGetConvolutionNdForwardOutputDim"
   check_CuDNN cudnnGetConvolutionNdForwardOutputDim(
-    conv_W_cd,
-    conv_in_td,
-    conv_filter_desc,
-    rank.cint,
-    addr tensorOutputDim[0]
+    convDesc,
+    srcTensorDesc,
+    filterDesc,
+    tensorDims,
+    addr tensorOutputDimA[0]
   )
 
   ## TODO replace by op in CuDNN dev guide:
   ## Each dimension of the (nbDims-2)-D images of the output tensor is computed as followed:
-  ##   outputDim = 1 + ( inputDim + 2*pad - (((filterDim-1)*dilation)+1) )/ convolutionStride;
+  ##   outputDim = 1 + ( inputDim + 2*pad - (((filterDim-1)*upscaleA)+1) )/ convolutionStride;
+
+  echo "Manual computation - outputDim = 1 + ( inputDim + 2*pad - (((filterDim-1)*upscaleA)+1) )/ convolutionStride"
+  echo "inputDim[2] - height: " & $input.shape[2]
+  echo "pad[0] - height: " & $padA[0]
+  echo "filterDimA[2] - height: " & $filter.shape[2]
+  echo "upscaleA[0] - height: " & $upscaleA[0]
+  echo "filterStrideA[0] - height: " & $filterStrideA[0]
+
+  echo "Manual Computation: " & $(
+    1 + (input.shape[2] + 2*padA[0] -
+          (
+            (
+              (filter.shape[2]-1) * upscaleA[0]
+            ) + 1
+          ) div filterStrideA[0]
+        )
+    )
 
   let
-    n = tensorOutputDim[0].int
-    c = tensorOutputDim[1].int
-    h = tensorOutputDim[2].int
-    w = tensorOutputDim[3].int
+    n = tensorOutputDimA[0].int
+    c = tensorOutputDimA[1].int
+    h = tensorOutputDimA[2].int
+    w = tensorOutputDimA[3].int
 
-  echo "Cimputed output dims: " & $ [n, c, h, w]
+  echo "Computed output dims: " & $ [n, c, h, w]
 
-  result = newCudaTensor[T]([n, c, h, w])
+  result = newCudaTensor[T]([n, c, h, w], rowMajor)
 
-  let conv_out_td = newCudnn4DTensorDesc result
+  let dstTensorDesc = newCudnn4DTensorDesc result
 
   var best_algo: cudnnConvolutionFwdAlgo_t
 
@@ -157,10 +174,10 @@ proc conv2d*[T: SomeReal](input, weight, bias: CudaTensor[T],
   echo "\ncudnnGetConvolutionForwardAlgorithm"
   check_CuDNN cudnnGetConvolutionForwardAlgorithm(
     defaultHandle_cudnn,
-    conv_in_td,
-    conv_filter_desc,
-    conv_W_cd,
-    conv_out_td,
+    srcTensorDesc,
+    filterDesc,
+    convDesc,
+    dstTensorDesc,
     CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
     0,
     addr best_algo
@@ -173,10 +190,10 @@ proc conv2d*[T: SomeReal](input, weight, bias: CudaTensor[T],
   echo "\ncudnnGetConvolutionForwardWorkspaceSize"
   check_CuDNN cudnnGetConvolutionForwardWorkspaceSize(
     defaultHandle_cudnn,
-    conv_in_td,
-    conv_filter_desc,
-    conv_W_cd,
-    conv_out_td,
+    srcTensorDesc,
+    filterDesc,
+    convDesc,
+    dstTensorDesc,
     best_algo,
     addr sizeInBytes
   )
@@ -195,16 +212,16 @@ proc conv2d*[T: SomeReal](input, weight, bias: CudaTensor[T],
   check_CuDNN cudnnConvolutionForward(
     defaultHandle_cudnn,
     addr alpha,
-    conv_in_td,
+    srcTensorDesc,
     input.get_data_ptr,
-    conv_filter_desc,
-    weight.get_data_ptr,
-    conv_W_cd,
+    filterDesc,
+    filter.get_data_ptr,
+    convDesc,
     best_algo,
     workspace,
     sizeInBytes,
     addr beta,
-    conv_out_td,
+    dstTensorDesc,
     result.get_data_ptr
   )
 

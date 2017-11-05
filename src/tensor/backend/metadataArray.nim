@@ -78,6 +78,9 @@ else:
   template `^^`(s, i: untyped): untyped =
     i
 
+  proc `^`*(x: int; a: DynamicStackArray): int {.inline.} =
+    a.len - x
+
 proc `[]`*[T](a: DynamicStackArray[T], idx: Index): T {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):

@@ -28,7 +28,7 @@ type
 proc initMetadataArray*(len: int): MetadataArray {.inline.} =
   result.len = len
 
-converter toMetadataArray*(s: varargs[int]): MetadataArray {.inline.} =
+proc toMetadataArray*(s: varargs[int]): MetadataArray {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert s.len <= MAXRANK
@@ -207,9 +207,6 @@ proc `==`*(a, s: DynamicStackArray): bool {.inline.} =
     if a[i] != s[i]:
       return false
   return true
-
-proc `^`*(x: int; a: DynamicStackArray): int {.inline.} =
-  a.len - x
 
 iterator zip*[T, U](a: DynamicStackArray[T], b: DynamicStackArray[U]): (T, T)=
 

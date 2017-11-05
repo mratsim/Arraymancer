@@ -26,7 +26,7 @@ import  ./private/p_checks,
 proc dot*[T: SomeReal](a, b: Tensor[T]): T {.noSideEffect.} =
   ## Vector to Vector dot (scalar) product
   when compileOption("boundChecks"): check_dot_prod(a,b)
-  return dot(a.shape[0], a.get_data_ptr, a.strides[0], b.get_data_ptr, b.strides[0])
+  return dot(a.shape[0], a.get_offset_ptr, a.strides[0], b.get_offset_ptr, b.strides[0])
 
 proc dot*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
   ## Vector to Vector dot (scalar) product

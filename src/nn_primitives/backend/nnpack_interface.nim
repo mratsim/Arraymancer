@@ -50,10 +50,10 @@ proc nnpack_conv2d*(input, weight, bias: Tensor[float32], padding, stride: Size2
     input_padding=nnp_padding(top: padding.height, bottom: padding.height,
                               left: padding.width, right: padding.width),
     kernel_size=nnp_size(height:weight.nchw_height, width: weight.nchw_width),
-    input=cast[ptr cfloat](input.get_data_ptr),
-    kernel=cast[ptr cfloat](weight.get_data_ptr),
-    bias=cast[ptr cfloat](bias_nonnil.get_data_ptr),
-    output=cast[ptr cfloat](result.get_data_ptr))
+    input=cast[ptr cfloat](input.get_offset_ptr),
+    kernel=cast[ptr cfloat](weight.get_offset_ptr),
+    bias=cast[ptr cfloat](bias_nonnil.get_offset_ptr),
+    output=cast[ptr cfloat](result.get_offset_ptr))
   assert status == nnp_status_success
 
 
@@ -88,9 +88,9 @@ proc nnpack_conv2d_gradient*[T](input, weight: Tensor[float32], padding, stride:
     input_size=nninput_size,
     input_padding=nnpadding,
     kernel_size=nnkernel_size,
-    grad_output=cast[ptr cfloat](grad_output.get_data_ptr),
-    kernel=cast[ptr cfloat](weight.get_data_ptr),
-    grad_input=cast[ptr cfloat](grad_input.get_data_ptr))
+    grad_output=cast[ptr cfloat](grad_output.get_offset_ptr),
+    kernel=cast[ptr cfloat](weight.get_offset_ptr),
+    grad_input=cast[ptr cfloat](grad_input.get_offset_ptr))
   assert status == nnp_status_success
 
   # Weight gradient
@@ -103,7 +103,7 @@ proc nnpack_conv2d_gradient*[T](input, weight: Tensor[float32], padding, stride:
     input_size=nninput_size,
     input_padding=nnpadding,
     kernel_size=nnkernel_size,
-    input=cast[ptr cfloat](input.get_data_ptr),
-    grad_output=cast[ptr cfloat](grad_output.get_data_ptr),
-    grad_kernel=cast[ptr cfloat](grad_weight.get_data_ptr))
+    input=cast[ptr cfloat](input.get_offset_ptr),
+    grad_output=cast[ptr cfloat](grad_output.get_offset_ptr),
+    grad_kernel=cast[ptr cfloat](grad_weight.get_offset_ptr))
   assert status == nnp_status_success

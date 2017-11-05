@@ -41,10 +41,10 @@ when defined(blis):
         BLIS_NO_CONJUGATE,
         M, N,
         unsafeAddr(alpha),
-        a.get_data_ptr, a.strides[0], a.strides[1],
-        x.get_data_ptr, x.strides[0],
+        a.get_offset_ptr, a.strides[0], a.strides[1],
+        x.get_offset_ptr, x.strides[0],
         unsafeAddr(beta),
-        y.get_data_ptr, y.strides[0],
+        y.get_offset_ptr, y.strides[0],
         )
 
 # Note the fallback for non-real "naive_gemv_fallback" is called directly
@@ -72,9 +72,9 @@ proc blasMV_y_eq_aAx_p_by*[T: SomeReal](
 
   gemv( cont_A_order, noTranspose,
         M, N,
-        alpha, a.get_data_ptr, lda,
-        x.get_data_ptr, x.strides[0],
-        beta, y.get_data_ptr, y.strides[0])
+        alpha, a.get_offset_ptr, lda,
+        x.get_offset_ptr, x.strides[0],
+        beta, y.get_offset_ptr, y.strides[0])
 
 
 # #################################################
@@ -94,10 +94,10 @@ when defined(blis):
     bli_gemm(BLIS_NO_TRANSPOSE, BLIS_NO_TRANSPOSE,
         M, N, K,
         unsafeAddr(alpha),
-        a.get_data_ptr, a.strides[0], a.strides[1],
-        b.get_data_ptr, b.strides[0], b.strides[1],
+        a.get_offset_ptr, a.strides[0], a.strides[1],
+        b.get_offset_ptr, b.strides[0], b.strides[1],
         unsafeAddr(beta),
-        c.get_data_ptr, c.strides[0], c.strides[1])
+        c.get_offset_ptr, c.strides[0], c.strides[1])
 
 proc fallbackMM_C_eq_aAB_p_bC*[T: SomeInteger](
   alpha: T, a, b: Tensor[T],
@@ -156,6 +156,6 @@ proc blasMM_C_eq_aAB_p_bC*[T: SomeReal](
   gemm( order_C,
         transpose_A, transpose_B,
         M, N, K,
-        alpha, a.get_data_ptr, lda,
-        b.get_data_ptr, ldb,
-        beta, c.get_data_ptr, ldc)
+        alpha, a.get_offset_ptr, lda,
+        b.get_offset_ptr, ldb,
+        beta, c.get_offset_ptr, ldc)

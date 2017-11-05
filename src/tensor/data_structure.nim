@@ -131,15 +131,27 @@ proc isContiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
   ## Check if the tensor is contiguous
   return t.is_C_contiguous or t.is_F_contiguous
 
-template get_data_ptr*[T](t: AnyTensor[T]): ptr T =
+proc get_data_ptr*[T](t: AnyTensor[T]): ptr T {.inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
-  ##     - A pointer to the start of its data
+  ##     - A pointer to the real start of its data (no offset)
   when t is Tensor:
-    unsafeAddr(t.data[t.offset])
+    unsafeAddr(t.data[0])
   elif t is CudaTensor:
-    unsafeAddr(t.data.data[t.offset])
+    unsafeAddr(t.data.data[0])
 
-proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.inline.} =
+proc get_offset_ptr*[T](t: Tensor[T]): ptr T {.inline.}=
+  ## Input:
+  ##     - A tensor
+  ## Returns:
+  ##     - A pointer to the offset start of its data
+  unsafeAddr(t.data[t.offset])
+
+proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.inline.}=
+  ## Input:
+  ##     - A tensor
+  ## Returns:
+  ##     - A pointer to the offset start of the data.
+  ##       Return value supports array indexing.
   cast[ptr UncheckedArray[T]](t.data[t.offset].unsafeAddr)

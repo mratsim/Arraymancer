@@ -161,10 +161,11 @@ proc conv2d*[T: SomeReal](input, filter, bias: CudaTensor[T],
     h = tensorOutputDimA[2].int
     w = tensorOutputDimA[3].int
 
-  echo "Computed output dims: " & $ [n, c, h, w]
+  echo "Computed output dims: " & $[n, c, h, w]
 
-  result = newCudaTensor[T]([n, c, h, w], rowMajor)
 
+  ## Result
+  result = newCudaTensor[T]([n, c, h, w], colMajor)
   let dstTensorDesc = newCudnn4DTensorDesc result
 
   var best_algo: cudnnConvolutionFwdAlgo_t
@@ -184,6 +185,7 @@ proc conv2d*[T: SomeReal](input, filter, bias: CudaTensor[T],
   )
 
   # TODO algo comparison with cudnnFindConvolutionForwardAlgorithm
+  echo "\nBest algo: " & $best_algo
 
   var sizeInBytes: csize
 
@@ -213,21 +215,21 @@ proc conv2d*[T: SomeReal](input, filter, bias: CudaTensor[T],
     defaultHandle_cudnn,
     addr alpha,
     srcTensorDesc,
-    input.get_data_ptr,
+    input.get_offset_ptr,
     filterDesc,
-    filter.get_data_ptr,
+    filter.get_offset_ptr,
     convDesc,
     best_algo,
     workspace,
     sizeInBytes,
     addr beta,
     dstTensorDesc,
-    result.get_data_ptr
+    result.get_offset_ptr
   )
 
   echo result
   echo bias
 
-  result .+= bias
+  result .+= bias.unsafeUnsqueeze(0)
 
   # TODO: destroy descriptors

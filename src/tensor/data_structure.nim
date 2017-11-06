@@ -141,12 +141,15 @@ proc get_data_ptr*[T](t: AnyTensor[T]): ptr T {.inline.}=
   elif t is CudaTensor:
     unsafeAddr(t.data.data[0])
 
-proc get_offset_ptr*[T](t: Tensor[T]): ptr T {.inline.}=
+proc get_offset_ptr*[T](t: AnyTensor[T]): ptr T {.inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the offset start of its data
-  unsafeAddr(t.data[t.offset])
+  when t is Tensor:
+    unsafeAddr(t.data[t.offset])
+  elif t is CudaTensor:
+    unsafeAddr(t.data.data[t.offset])
 
 proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.inline.}=
   ## Input:

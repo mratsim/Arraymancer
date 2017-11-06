@@ -17,6 +17,8 @@ import  ./backend/cudnn,
         ../tensor/backend/cuda,
         ../tensor/private/p_init_cuda # TODO: it might be worth it to export newCudaTensor
 
+import nimcuda/[cuda_runtime_api, nimcuda]
+
 type
   SizeHW* = array[2, cint]
     ## height
@@ -67,6 +69,8 @@ template newCudnnFilterDesc[T: SomeReal](
   check_CuDNN cudnnCreateFilterDescriptor addr fd
 
   var filters = [out_feats.cint, in_feats.cint, kH.cint, kW.cint]
+  echo "\nKernel chosen"
+  echo filters
 
   echo "\ncudnnSetFilterNdDescriptor"
   check_CuDNN cudnnSetFilterNdDescriptor(
@@ -78,10 +82,27 @@ template newCudnnFilterDesc[T: SomeReal](
   )
   fd
 
+proc addBias(dstTensorDesc: cudnnTensorDescriptor_t, bias: CudaTensor, result: var CudaTensor)=
+  let biasDesc = newCudnn4DTensorDesc bias.unsafeUnsqueeze(0)
+
+  var alpha:cint = 1
+  var beta:cint = 1
+
+  echo "\nBias: cudnnAddTensor"
+  check_CuDNN cudnnAddTensor(
+    defaultHandle_cudnn,
+    addr alpha,
+    biasDesc,
+    bias.get_data_ptr,
+    addr beta,
+    dstTensorDesc,
+    result.get_data_ptr
+  )
+
 
 proc conv2d*[T: SomeReal](input, filter, bias: CudaTensor[T],
                 padA: SizeHW = [0.cint,0],
-                filterStrideA: SizeHW = [1.cint,1]): CudaTensor[T] {.inline.} =
+                filterStrideA: SizeHW = [1.cint,1]): CudaTensor[T] =
   ## Input:
   ##     - ``input`` 4D Tensor batch of images of the size [N,C_in,H_in,W_in]
   ##     - ``filter`` 4D Tensor convolving kernel filters of the size [C_out,C_in,kH,kW]
@@ -165,7 +186,10 @@ proc conv2d*[T: SomeReal](input, filter, bias: CudaTensor[T],
 
 
   ## Result
-  result = newCudaTensor[T]([n, c, h, w], colMajor)
+  # result = newCudaTensor[T]([n, c, h, w], rowMajor)
+  result = input.clone
+  echo "input cloned result"
+  echo result
   let dstTensorDesc = newCudnn4DTensorDesc result
 
   var best_algo: cudnnConvolutionFwdAlgo_t
@@ -179,7 +203,8 @@ proc conv2d*[T: SomeReal](input, filter, bias: CudaTensor[T],
     filterDesc,
     convDesc,
     dstTensorDesc,
-    CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
+    # CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
+    CUDNN_CONVOLUTION_FWD_NO_WORKSPACE,
     0,
     addr best_algo
   )
@@ -200,36 +225,71 @@ proc conv2d*[T: SomeReal](input, filter, bias: CudaTensor[T],
     addr sizeInBytes
   )
 
+  echo "\nWorkspace size: " & $sizeInBytes & " bytes"
+
   var workspace: ptr T = nil
 
   if sizeInBytes != 0:
     workspace = addr newCudaSeq[T](sizeInBytes div sizeof(T)).data[0] # TODO: newCudaSeq will multiply by sizeof(T) anyway
 
-  var alpha = 1 # scaling factor
-  var beta = 0 # scaling factor
+  var alpha:cint = 1 # scaling factor
+  var beta:cint = 0 # scaling factor
 
   # TODO: use strides
 
-  echo "\nudnnConvolutionForward"
+  echo "\nCudnnConvolutionForward"
   check_CuDNN cudnnConvolutionForward(
     defaultHandle_cudnn,
     addr alpha,
     srcTensorDesc,
-    input.get_offset_ptr,
+    unsafeAddr input.data.data[0],
     filterDesc,
-    filter.get_offset_ptr,
+    unsafeAddr input.data.data[0],
     convDesc,
     best_algo,
     workspace,
     sizeInBytes,
     addr beta,
     dstTensorDesc,
-    result.get_offset_ptr
+    unsafeAddr result.data.data[0]
+  )
+
+
+  echo "\nSynchronization: " &  $cudaDeviceSynchronize()
+
+  echo "\nResult shape: " & $result.shape
+
+  # result .+= bias.unsafeUnsqueeze(0)
+  echo "\n Adding Bias"
+  addBias(dstTensorDesc, bias, result)
+
+  # TODO: destroy descriptors
+
+
+proc cudnnTestAdd*[T: SomeReal](a, b: CudaTensor[T]): CudaTensor[T] =
+  let aDesc = newCudnn4DTensorDesc a
+  result = b.clone()
+
+  echo "\necho result before adding"
+
+  let rDesc = newCudnn4DTensorDesc result
+
+  var alpha:int = 1
+  var beta:int = 1
+
+  echo "\nResult before\n"
+  echo result
+
+
+  echo "\nAfter cudnnAddTensor\n result + result"
+  check_CuDNN cudnnAddTensor(
+    defaultHandle_cudnn,
+    addr alpha,
+    aDesc,
+    a.get_data_ptr,
+    addr beta,
+    rDesc,
+    result.get_data_ptr
   )
 
   echo result
-  echo bias
-
-  result .+= bias.unsafeUnsqueeze(0)
-
-  # TODO: destroy descriptors

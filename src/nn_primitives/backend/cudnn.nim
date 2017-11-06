@@ -31,3 +31,4 @@ proc cudnnRelease() {.noconv.} =
     echo "CuDNN resources successfully released"
 
 addQuitProc(cudnnRelease)
+

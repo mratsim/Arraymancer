@@ -12,15 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Please compile with -d:cuda switch
-import ../src/arraymancer,
-        ./tensor/test_operators_blas_cuda,
-        ./tensor/test_accessors_slicer_cuda,
-        ./tensor/test_shapeshifting_cuda,
-        ./tensor/test_broadcasting_cuda
+# Nvidia CuDNN backend configuration
+# Note: Having CUDA installed does not mean CuDNN is installed
 
-# Please compile with -d:cudnn switch
-when not defined(cudnn):
-  echo "CuDNN tests skipped, please pass -d:cudnn flag if you want to enable cudnn tests after cuda tests."
-else:
-  import ./nn_primitives/test_nnp_convolution_cudnn
+import nimcuda/[nimcuda, cudnn]
+
+export nimcuda, cudnn
+
+
+var defaultHandle_cudnn*: cudnnHandle_t
+check cudnnCreate(addr defaultHandle_cudnn)
+
+proc cudnnRelease() {.noconv.} =
+  # Release CuDNN resources
+  check cudnnDestroy(defaultHandle_cudnn)
+
+  when defined(debug):
+    echo "CuDNN resources successfully released"
+
+addQuitProc(cudnnRelease)
+

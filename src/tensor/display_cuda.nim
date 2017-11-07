@@ -18,7 +18,7 @@ import  ./private/p_display,
 
 proc `$`*[T](t: CudaTensor[T]): string =
   ## Pretty-print a CudaTensor (when using ``echo`` for example)
-  let desc = "Tensor of shape " & $t.shape & " of type \"" & T.name & "\" on backend \"" & "Cpu" & "\""
+  let desc = t.type.name & " of shape " & $t.shape & " of type \"" & T.name & "\" on backend \"" & "Cuda" & "\""
 
   let cpu_t = t.cpu()
 

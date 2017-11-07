@@ -115,8 +115,9 @@ task test, "Run all tests - Default BLAS":
 task test_cpp, "Run all tests - Cpp codegen":
   test "tests_cpu", "cpp"
 
-task test_cuda, "Run all tests - Cuda backend with CUBLAS":
+task test_cuda, "Run all tests - Cuda backend with CUBLAS and CuDNN":
   switch("define","cuda")
+  switch("define","cudnn")
   cudaSwitches  # Unfortunately the "switch" line doesn't also trigger
                 # the "when defined(cuda)" part of this nimble file
                 # hence the need to call cudaSwitches explicitly

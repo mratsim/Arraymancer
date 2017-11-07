@@ -28,12 +28,23 @@ template asCudnnType*[T: SomeReal](typ: typedesc[T]): cudnnDataType_t =
     CUDNN_DATA_DOUBLE
 
 type
-  SizeHW* = array[2, cint]
+  SizeHW* = array[2, int] # Todo, unify with NNPACK Size2D
     ## height
     ## width
 
-template getPtr*(s: SizeHW): ptr cint =
-  unsafeAddr s[0]
+  ConvConfig*[N: static[int]] = object
+    pad*: array[N, cint]
+    strides*: array[N, cint]
+    dilation*: array[N, cint]
+
+proc initConv2DConfig*(padding, convStrides, dilation: SizeHW): ConvConfig[2] {.inline, noInit.}=
+  result.pad = [padding[0].cint, padding[1].cint]
+  result.strides = [convStrides[0].cint, convStrides[1].cint]
+  result.dilation = [dilation[0].cint, dilation[1].cint]
+
+
+template getPtr*[N: static[int]](convConfig: ConvConfig[N], field: untyped): ptr cint =
+  unsafeAddr convConfig.field[0]
 
 proc newCudnnConvKernelDesc*[T: SomeReal](
   convKernel: CudaTensor[T]): cudnnFilterDescriptor_t {.inline.}=
@@ -55,6 +66,7 @@ proc newCudnnConvKernelDesc*[T: SomeReal](
 
 proc newCudnn4DTensorDesc*[T: SomeReal](t: CudaTensor[T]): cudnnTensorDescriptor_t {.inline.}=
   # TODO: destroy descriptor automatically
+  # TODO: generalize with the NDTensor Desc
   check cudnnCreateTensorDescriptor addr result
 
   check cudnnSetTensor4dDescriptorEx(

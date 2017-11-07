@@ -21,8 +21,8 @@ import  ./backend/cudnn,
 import nimcuda/[cuda_runtime_api, nimcuda]
 
 proc conv2d*[T: SomeReal](input, convKernel, bias: CudaTensor[T],
-                padding: SizeHW = [0.cint,0],
-                convStrides: SizeHW = [1.cint,1]): CudaTensor[T] {.noInit.}=
+                padding: SizeHW = [0,0],
+                convStrides, dilation: SizeHW = [1,1]): CudaTensor[T] {.noInit.}=
   ## Input:
   ##     - ``input`` 4D Tensor batch of images of the size [N,C_in,H_in,W_in]
   ##     - ``convKernel`` 4D Tensor convolving kernel filters of the size [C_out,C_in,kH,kW]
@@ -33,8 +33,10 @@ proc conv2d*[T: SomeReal](input, convKernel, bias: CudaTensor[T],
   const convDims: cint = 2
   const rank: cint = 4
   let srcTensorDesc = newCudnn4DTensorDesc input # TODO: finalizer to destroy descriptor with GC
-  let dilation: SizeHW = [1.cint, 1]
   let convKernelDesc = newCudnnConvKernelDesc(convKernel) # TODO: finalizer to destroy descriptor with GC
+
+  # Conversion to cint + object living long enough so we can use pointers to it for CuDNN
+  let convConfig = initConv2DConfig(padding, convStrides, dilation)
 
   var convDesc: cudnnConvolutionDescriptor_t # TODO: finalizer to destroy descriptor with GC
   check cudnnCreateConvolutionDescriptor(addr convDesc)
@@ -42,9 +44,9 @@ proc conv2d*[T: SomeReal](input, convKernel, bias: CudaTensor[T],
   check cudnnSetConvolutionNdDescriptor(
     convDesc,
     convDims,
-    padding.getPtr,
-    convStrides.getPtr,
-    dilation.getPtr,
+    convConfig.getPtr(pad),
+    convConfig.getPtr(strides),
+    convConfig.getPtr(dilation),
     CUDNN_CROSS_CORRELATION,
     T.asCudnnType
   )

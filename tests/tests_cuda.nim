@@ -18,3 +18,9 @@ import ../src/arraymancer,
         ./tensor/test_accessors_slicer_cuda,
         ./tensor/test_shapeshifting_cuda,
         ./tensor/test_broadcasting_cuda
+
+# Please compile with -d:cudnn switch
+when not defined(cudnn):
+  echo "CuDNN tests skipped, please pass -d:cudnn flag if you want to enable cudnn tests after cuda tests."
+else:
+  import ./nn_primitives/test_nnp_convolution_cudnn

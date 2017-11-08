@@ -15,7 +15,7 @@
 import  ./backend/openmp,
         ./backend/memory_optimization_hints,
         ./private/p_checks,
-        ./data_structure, ./init_cpu, ./accessors,
+        ./data_structure, ./init_cpu, ./init_cpu_copy, ./accessors,
         future
 
 # Note: Due to C++ restrictions + Nim codegen, mutable iterators are not possible with the C++ backend.

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../ops_fusion/ops_fusion,
+import  ../math_ops_fusion/math_ops_fusion,
         ../tensor/tensor,
         ./private/p_nnp_checks,
         ./private/p_activation,

@@ -40,7 +40,7 @@ proc atAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.noInit,inline.} 
 
   # As contiguous is called to force a copy of the slice
   # otherwise the result would copy the whole parent tensor data
-  t.unsafeAtAxisIndex(axis, idx).asContiguous()
+  t.unsafeAtAxisIndex(axis, idx).clone()
 
 iterator items*[T](t: Tensor[T]): T {.inline,noSideEffect.} =
   ## Inline iterator on Tensor values

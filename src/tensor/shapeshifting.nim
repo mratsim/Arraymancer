@@ -53,15 +53,20 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
   ##
   ## By default tensor will be rowMajor.
   ##
-  ## By default nothing is done if the tensor is already contiguous (C Major or F major)
-  ## The "force" parameter can force re-ordering to a specific layout
+  ## The layout is kept if the tensor is already contiguous (C Major or F major)
+  ## The "force" parameter can force re-ordering to a specific layout.
+  ##
+  ## Result is always a fully packed tensor even if the input is a contiguous slice.
 
-  if t.isContiguous and not force:
-    return t
-  elif t.is_C_contiguous and layout == rowMajor:
-    return t
-  elif t.is_F_contiguous and layout == colMajor:
-    return t
+  let cCont = t.is_C_contiguous
+  let fCont = t.is_F_contiguous
+
+  if cCont and not force:
+    contiguousT(result, t, rowMajor)
+    return
+  elif fCont and not force:
+    contiguousT(result, t, colMajor)
+    return
   contiguousT(result, t, layout)
 
 proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noInit.} =
@@ -78,11 +83,14 @@ proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: boo
   ## By default nothing is done if the tensor is already contiguous (C Major or F major)
   ## The "force" parameter can force re-ordering to a specific layout
 
-  if t.isContiguous and not force:
+  let cCont = t.is_C_contiguous
+  let fCont = t.is_F_contiguous
+
+  if (cCont or fCont) and not force:
     return t.unsafeView
-  elif t.is_C_contiguous and layout == rowMajor:
+  elif cCont and layout == rowMajor:
     return t.unsafeView
-  elif t.is_F_contiguous and layout == colMajor:
+  elif fCont and layout == colMajor:
     return t.unsafeView
   contiguousT(result, t, layout)
 

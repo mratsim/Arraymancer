@@ -34,7 +34,7 @@ proc expm1*(x: float64): float64 {.importc: "expm1", header: "<math.h>".}
 #   ##
 #   ## Operation fusion leverage the Nim compiler and should not be called explicitly.
 #   ln1p x
-# 
+#
 # template rewriteLn1p*{ln(`+`(x,1))}(x: typed): type(x) =
 #   ## Fuse ``ln(x + 1)`` into a single operation.
 #   ##
@@ -43,5 +43,5 @@ proc expm1*(x: float64): float64 {.importc: "expm1", header: "<math.h>".}
 
 # Note: we don't create the FMA proc as detection of hardware support happens at GCC
 # compilation time. Furthermore, the fallback is slower than doing (x*y) + z
-# because the fallback do the intermediate computation at full precision.
+# because the fallback does the intermediate computation at full precision.
 # So, trust the compiler

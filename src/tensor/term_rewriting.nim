@@ -87,7 +87,7 @@ template toTensorReshapeT(oa: typed, shape: varargs[int]): untyped =
   var t: Tensor[type(data[0])]
   tensorCpu(seq_shape, t)
   shallowCopy(t.data, data)
-  return t
+  t
 
 proc toTensorReshape(oa: string, shape: varargs[int]): auto {.noInit,noSideEffect.}=
   ## Fuse toTensor and reshape in one operation.

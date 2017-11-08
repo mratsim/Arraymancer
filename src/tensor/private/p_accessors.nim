@@ -61,10 +61,9 @@ proc getIndex*[T](t: Tensor[T], idx: varargs[int]): int {.noSideEffect,inline.} 
   when compileOption("boundChecks"):
     t.check_index(idx)
 
-  var real_idx = t.offset
+  result = t.offset
   for i in 0..<idx.len:
-    real_idx += t.strides[i]*idx[i]
-  return real_idx
+    result += t.strides[i]*idx[i]
 
 proc getContiguousIndex*[T](t: Tensor[T], idx: int): int {.noSideEffect,inline.} =
   result = t.offset
@@ -78,12 +77,12 @@ proc getContiguousIndex*[T](t: Tensor[T], idx: int): int {.noSideEffect,inline.}
 proc atIndex*[T](t: Tensor[T], idx: varargs[int]): T {.noSideEffect,inline.} =
   ## Get the value at input coordinates
   ## This used to be `[]` before slicing was implemented
-  return t.data[t.getIndex(idx)]
+  result = t.data[t.getIndex(idx)]
 
 proc atIndex*[T](t: var Tensor[T], idx: varargs[int]): var T {.noSideEffect,inline.} =
   ## Get the value at input coordinates
   ## This allows inplace operators t[1,2] += 10 syntax
-  return t.data[t.getIndex(idx)]
+  result = t.data[t.getIndex(idx)]
 
 proc atIndexMut*[T](t: var Tensor[T], idx: varargs[int], val: T) {.noSideEffect,inline.} =
   ## Set the value at input coordinates

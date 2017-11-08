@@ -24,12 +24,12 @@ import  ./data_structure,
 proc `.+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
-  return tmp_a + tmp_b
+  result = tmp_a + tmp_b
 
 proc `.-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
-  return tmp_a - tmp_b
+  result = tmp_a - tmp_b
 
 proc `.*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Element-wise multiplication (Hadamard product).
@@ -37,21 +37,21 @@ proc `.*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## And broadcasted element-wise multiplication.
 
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
-  return map2_inline(tmp_a, tmp_b, x * y)
+  result = map2_inline(tmp_a, tmp_b, x * y)
 
 proc `./`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Tensor element-wise division for integer numbers.
   ##
   ## And broadcasted element-wise division.
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
-  return map2_inline(tmp_a, tmp_b, x div y)
+  result = map2_inline(tmp_a, tmp_b, x div y)
 
 proc `./`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Tensor element-wise division for real numbers.
   ##
   ## And broadcasted element-wise division.
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
-  return map2_inline(tmp_a, tmp_b, x / y )
+  result = map2_inline(tmp_a, tmp_b, x / y )
 
 # ##############################################
 # # Broadcasting in-place Tensor-Tensor
@@ -107,31 +107,31 @@ proc `./=`*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) =
 
 proc `.+`*[T: SomeNumber](val: T, t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Broadcasted addition for tensor + scalar.
-  return t.map_inline(x + val)
+  result = t.map_inline(x + val)
 
 proc `.+`*[T: SomeNumber](t: Tensor[T], val: T): Tensor[T] {.noInit.} =
   ## Broadcasted addition for scalar + tensor.
-  return t.map_inline(x + val)
+  result = t.map_inline(x + val)
 
 proc `.-`*[T: SomeNumber](val: T, t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Broadcasted substraction for tensor - scalar.
-  return t.map_inline(val - x)
+  result = t.map_inline(val - x)
 
 proc `.-`*[T: SomeNumber](t: Tensor[T], val: T): Tensor[T] {.noInit.} =
   ## Broadcasted substraction for scalar - tensor.
-  return t.map_inline(x - val)
+  result = t.map_inline(x - val)
 
 proc `./`*[T: SomeInteger](val: T, t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Broadcasted division of an integer by a tensor of integers.
-  return t.map_inline(val div x)
+  result = t.map_inline(val div x)
 
 proc `./`*[T: SomeReal](val: T, t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Broadcasted division of a float by a tensor of floats.
-  return t.map_inline(val / x)
+  result = t.map_inline(val / x)
 
 proc `.^`*[T: SomeReal](t: Tensor[T], exponent: T): Tensor[T] {.noInit.} =
   ## Compute element-wise exponentiation
-  return t.map_inline pow(x, exponent)
+  result = t.map_inline pow(x, exponent)
 
 # #####################################
 # # Broadcasting in-place Tensor-Scalar

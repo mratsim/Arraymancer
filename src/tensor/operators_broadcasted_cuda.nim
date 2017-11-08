@@ -33,12 +33,12 @@ cuda_binary_glue("cuda_Div", "DivOp", cuda_Div)
 proc `.+`*[T: SomeReal](a, b: CudaTensor[T]): CudaTensor[T] {.noInit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
-  return tmp_a + tmp_b
+  result = tmp_a + tmp_b
 
 proc `.-`*[T: SomeReal](a, b: CudaTensor[T]): CudaTensor[T] {.noInit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
-  return tmp_a - tmp_b
+  result = tmp_a - tmp_b
 
 
 proc `.*`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =

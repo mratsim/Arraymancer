@@ -13,8 +13,8 @@ Note: While Nim is compiled and does not offer an interactive REPL yet (like Jup
 - [Arraymancer - A n-dimensional tensor (ndarray) library.](#arraymancer---a-n-dimensional-tensor-ndarray-library)
   - [Why Arraymancer](#why-arraymancer)
     - [The Python community is struggling to bring Numpy up-to-speed](#the-python-community-is-struggling-to-bring-numpy-up-to-speed)
-    - [Researchers workflows is a fight against inefficiencies](#researchers-workflows-is-a-fight-against-inefficiencies)
-    - [Tools available in lab are not available in production:](#tools-available-in-lab-are-not-available-in-production)
+    - [A researcher workflow is a fight against inefficiencies](#a-researcher-workflow-is-a-fight-against-inefficiencies)
+    - [Tools available in labs are not available in production:](#tools-available-in-labs-are-not-available-in-production)
     - [Bridging the gap between deep learning research and production](#bridging-the-gap-between-deep-learning-research-and-production)
     - [So why Arraymancer ?](#so-why-arraymancer-)
   - [Future ambitions](#future-ambitions)
@@ -70,15 +70,15 @@ Why not use in a single language with all the blocks to build the most efficient
 
 OpenMP batteries included.
 
-### Researchers workflows is a fight against inefficiencies
+### A researcher workflow is a fight against inefficiencies
 
-Researchers often have the following workflow: Mathematica/Matlab/Python/R (prototyping) -> C/C++/Fortran (speed, memory)
+Researchers in a heavy scientific computing domain often have the following workflow: Mathematica/Matlab/Python/R (prototyping) -> C/C++/Fortran (speed, memory)
 
 Why not use in a language as productive as Python and as fast as C? Code once, and don't spend months redoing the same thing at a lower level.
 
-### Tools available in lab are not available in production:
-- Managing and deploying Python (2.7, 3.5, 3.6) and packages version in a robust manner requires devops-fu (virtualenv, docker, ...)
-- Python data science ecosystem does not run on embedded devices (Nvidia Tegra/drones) or mobile phones
+### Tools available in labs are not available in production:
+- Managing and deploying Python (2.7, 3.5, 3.6) and packages version in a robust manner requires devops-fu (virtualenv, Docker, ...)
+- Python data science ecosystem does not run on embedded devices (Nvidia Tegra/drones) or mobile phones, especially preprocessing dependencies.
 
 Nim is compiled, no need to worry about version conflicts and the whole toolchain being in need of fixing due to Python version updates.
 Furthermore, as long as your platform supports C, Arraymancer will run on it from Raspberry Pi to mobile phones and drones.

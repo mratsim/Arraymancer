@@ -9,11 +9,10 @@ let bsz = 32 #batch size
 let x_train_bool = randomTensor([bsz * 100, 2], 2).astype(bool)
 
 # Let's build or truth labels. We need to apply xor between the 2 columns of the tensors
-proc xor_alt[T](x,y: T): T =
-  ## xor is builtin and cannot be passed to map as is
+let y_bool = map2_inline(x_train_bool[_,0], x_train_bool[_,1]):
+  ## By convention: for each x in the first tensor and y in the second tensor
+  ## we do "x xor y"
   x xor y
-
-let y_bool = map2(x_train_bool[_,0], xor_alt, x_train_bool[_,1])
 
 
 # Convert to float and transpose so batch_size is last

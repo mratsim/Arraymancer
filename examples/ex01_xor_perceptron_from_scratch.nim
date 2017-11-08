@@ -50,13 +50,13 @@ echo x_train_bool[0..<32, _]
 # ...
 
 # Let's build or truth labels. We need to apply xor between the 2 columns of the tensors
-
-proc xor_alt[T](x,y: T): T =
-  ## xor is builtin and cannot be passed to map as is
+# We map or new xor function to matching elements of the subtensors
+let y_bool = map2_inline(x_train_bool[_,0], x_train_bool[_,1]):
+  ## By convention: for each x in the first tensor and y in the second tensor
+  ## we do "x xor y"
   x xor y
 
-# We map or new xor function to matching elements of the subtensors
-let y_bool = map2(x_train_bool[_,0], xor_alt, x_train_bool[_,1])
+
 echo y_bool[0..<32, _]
 # Tensor of shape 32x1 of type "bool" on backend "Cpu"
 #         true|
@@ -70,9 +70,9 @@ echo y_bool[0..<32, _]
 #         false|
 #         ...
 
-# Convert to float,
-# Important: To improve perf, Arraymancer expects batch size to be last
-# so we transpose
+# Convert to float.
+# Important: At the moment, Arraymancer expects batch size to be last
+# so we transpose. In the future Arraymancer will be flexible.
 let x_train = ctx.variable(x_train_bool.astype(float32).transpose)
 let y = y_bool.astype(float32).transpose
 
@@ -81,6 +81,8 @@ let y = y_bool.astype(float32).transpose
 
 # First hidden layer of 3 neurons, with 2 features in
 # We initialize with random weights between -1 and 1
+# (We initialize them between 0.0f and 2.0f and then minus 1.0f)
+# .- is the minus broadcasting operator
 let layer_3neurons = ctx.variable(
                       randomTensor(3, 2, 2.0f) .- 1.0f
                       )

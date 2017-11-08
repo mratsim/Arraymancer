@@ -1,15 +1,22 @@
 [![Join the chat at https://gitter.im/Arraymancer/Lobby](https://badges.gitter.im/Arraymancer/Lobby.svg)](https://gitter.im/Arraymancer/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Linux Build Status (Travis)](https://img.shields.io/travis/mratsim/Arraymancer/master.svg?label=Linux%20/%20macOS "Linux/macOS build status (Travis)")](https://travis-ci.org/mratsim/Arraymancer) [![Windows build status (Appveyor)](https://img.shields.io/appveyor/ci/nicolargo/glances/master.svg?label=Windows "Windows build status (Appveyor)")](https://ci.appveyor.com/project/mratsim/arraymancer) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![Stability](https://img.shields.io/badge/stability-experimental-orange.svg)
 
-# Arraymancer - A n-dimensional tensor (ndarray) library
+# Arraymancer - A n-dimensional tensor (ndarray) library.
 
-Arraymancer is a tensor (N-dimensional array) project. The main focus is providing a fast and ergonomic CPU and GPU ndarray library on which to build a numerical computing and in particular a deep learning ecosystem.
+Arraymancer is a tensor (N-dimensional array) project in Nim. The main focus is providing a fast and ergonomic CPU and GPU ndarray library on which to build a scientific computing and in particular a deep learning ecosystem.
 
-The library is inspired by Numpy and PyTorch.
+The library is inspired by Numpy and PyTorch. The library provides ergonomics very similar to Numpy, Julia and Matlab but is fully parallel and significantly faster than those libraries. It is also faster than C-based Torch.
+
+Note: While Nim is compiled and does not offer an interactive REPL yet (like Jupyter), it allows much faster prototyping than C++ due to extremely fast compilation times. Arraymancer compiles in about 5 seconds on my dual-core MacBook.
 
 <!-- TOC -->
 
-- [Arraymancer - A n-dimensional tensor (ndarray) library](#arraymancer---a-n-dimensional-tensor-ndarray-library)
+- [Arraymancer - A n-dimensional tensor (ndarray) library.](#arraymancer---a-n-dimensional-tensor-ndarray-library)
   - [Why Arraymancer](#why-arraymancer)
+    - [The Python community is struggling to bring Numpy up-to-speed](#the-python-community-is-struggling-to-bring-numpy-up-to-speed)
+    - [Researchers workflows is a fight against inefficiencies](#researchers-workflows-is-a-fight-against-inefficiencies)
+    - [Tools available in lab are not available in production:](#tools-available-in-lab-are-not-available-in-production)
+    - [Bridging the gap between deep learning research and production](#bridging-the-gap-between-deep-learning-research-and-production)
+    - [So why Arraymancer ?](#so-why-arraymancer-)
   - [Future ambitions](#future-ambitions)
   - [Support (Types, OS, Hardware)](#support-types-os-hardware)
   - [Limitations:](#limitations)
@@ -50,24 +57,57 @@ The library is inspired by Numpy and PyTorch.
 <!-- /TOC -->
 
 ## Why Arraymancer
+I've identified several issues I want to tackle with Arraymancer:
+
+### The Python community is struggling to bring Numpy up-to-speed
+- Numba JIT compiler
+- Dask delayed parallel computation graph
+- Cython to ease numerical computations in Python
+- Due to the GIL shared-memory parallelism (OpenMP) is not possible in pure Python
+- Use "vectorized operations" (i.e. don't use for loops in Python)
+
+Why not use in a single language with all the blocks to build the most efficient scientific computing library with Python ergonomics.
+
+OpenMP batteries included.
+
+### Researchers workflows is a fight against inefficiencies
+
+Researchers often have the following workflow: Mathematica/Matlab/Python/R (prototyping) -> C/C++/Fortran (speed, memory)
+
+Why not use in a language as productive as Python and as fast as C? Code once, and don't spend months redoing the same thing at a lower level.
+
+### Tools available in lab are not available in production:
+- Managing and deploying Python (2.7, 3.5, 3.6) and packages version in a robust manner requires devops-fu (virtualenv, docker, ...)
+- Python data science ecosystem does not run on embedded devices (Nvidia Tegra/drones) or mobile phones
+
+Nim is compiled, no need to worry about version conflicts and the whole toolchain being in need of fixing due to Python version updates.
+Furthermore, as long as your platform supports C, Arraymancer will run on it from Raspberry Pi to mobile phones and drones.
+
+Note: Arraymancer Cuda/Cudnn backend is shaping up and convolutional neural nets are just around the corner.
+
+### Bridging the gap between deep learning research and production
 The deep learning frameworks are currently in two camps:
 - Research: Theano, Tensorflow, Keras, Torch, PyTorch
 - Production: Caffe, Darknet, (Tensorflow)
 
 Putting a research model in production, on a drone or as a webservice for example, is difficult:
-- Managing Python versions and environment is hell
-- Python data science ecosystem does not run on embedded devices (Nvidia Tegra/drones) or mobile phones
-- Transforming a tuned research model (in Python) to a usable Caffe or Darknet model (in C) is almost impossible. PMML is supposed to be the "common" XML description of ML models but is not really supported by anyone.
+- Transforming a tuned research model (in Python) to a usable Caffe or Darknet model (in C) is not trivial. ~PMML is supposed to be the "common" XML description of ML models but is not really supported by anyone.~ 
 **Edit - Sept 7, 2017: Microsoft and Facebook are announcing [Open Neural Network Exchange](https://research.fb.com/facebook-and-microsoft-introduce-new-open-ecosystem-for-interchangeable-ai-frameworks/)**
-- Tensorflow is supposed to bridge the gap between research and production but its syntax and ergonomics are a pain to work with.
-- Deployed models are static, there is no interface to add a new observation/training sample to any framework. The end goal is to use a model as a webservice.
+
+Furthermore, Python preprocessing steps, unless using OpenCV, often needs a custom implementation (think text/speech preprocessing on phones).
+
+- Tensorflow is supposed to bridge the gap between research and production but its syntax and ergonomics are a pain to work with. It's the same issue as researchers, "Prototype in Keras, and when you need low-level --> Tensorflow".
+- Deployed models are static, there is no interface to add a new observation/training sample to any framework, the end goal being to use a model as a webservice.
+
+### So why Arraymancer ?
 
 All those pain points may seem like a huge undertaking however thanks to the Nim language, we can have Arraymancer:
 - Be as fast as C
 - Accelerated routines with Intel MKL/OpenBLAS or even NNPACK
-- Access to CUDA and generate custom CUDA kernels on the fly via metaprogramming.
+- Access to CUDA and CuDNN and generate custom CUDA kernels on the fly via metaprogramming.
 - A Python-like syntax with custom operators `a * b` for tensor multiplication instead of `a.dot(b)` (Numpy/Tensorflow) or `a.mm(b)` (Torch)
 - Numpy-like slicing ergonomics `t[0..4, 2..10|2]`
+- For everything that Nim doesn't have yet, you can use Nim bindings to C, C++, Objective-C or Javascript to bring it to Nim. Nim also has unofficial Python->Nim and Nim->Python wrappers.
 
 ## Future ambitions
 Because apparently to be successful you need a vision, I would like Arraymancer to be:

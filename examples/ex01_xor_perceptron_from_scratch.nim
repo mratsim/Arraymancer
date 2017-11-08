@@ -20,8 +20,6 @@ import ../src/arraymancer
 # Loss
 # loss = cross_entropy(sigmoid(classifier))
 
-
-
 # In terms of high level layers this becomes:
 # Input --> Linear(out_features = 3) --> relu --> Linear(out_features = 1) --> Sigmoid --> Cross-Entropy Loss
 
@@ -50,11 +48,7 @@ echo x_train_bool[0..<32, _]
 # ...
 
 # Let's build or truth labels. We need to apply xor between the 2 columns of the tensors
-# We map or new xor function to matching elements of the subtensors
-let y_bool = map2_inline(x_train_bool[_,0], x_train_bool[_,1]):
-  ## By convention: for each x in the first tensor and y in the second tensor
-  ## we do "x xor y"
-  x xor y
+let y_bool = x_train_bool[_,0] xor x_train_bool[_,1]
 
 
 echo y_bool[0..<32, _]
@@ -119,8 +113,8 @@ for epoch in 0..5:
 
     # Building the network
     let n1 = linear(x, layer_3neurons)
-    let n1_act = n1.relu
-    let n2 = linear(n1_act, classifier_layer)
+    let n1_relu = n1.relu
+    let n2 = linear(n1_relu, classifier_layer)
     let loss = sigmoid_cross_entropy(n2, target)
 
     echo "Epoch is:" & $epoch

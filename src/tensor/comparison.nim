@@ -12,7 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./data_structure, ./accessors
+import ./data_structure, ./accessors,
+        ./higher_order,
+        ./init_cpu,
+        ./shapeshifting
 
 proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
   ## Tensor comparison
@@ -23,3 +26,68 @@ proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
     ## Returns early if false
     if a != b: return false
   return true
+
+# TODO tests
+
+# ###############
+# broadcasted ops
+
+proc `.==`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
+  ## Tensor element-wise equality.
+  ##
+  ## And broadcasted element-wise equality.
+  ##
+  ## Returns:
+  ##   - A tensor of boolean
+  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  result = map2_inline(tmp_a, tmp_b, x == y)
+
+proc `.!=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
+  ## Tensor element-wise inequality.
+  ##
+  ## And broadcasted element-wise inequality.
+  ##
+  ## Returns:
+  ##   - A tensor of boolean
+  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  result = map2_inline(tmp_a, tmp_b, x != y)
+
+proc `.<=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
+  ## Tensor element-wise lesser or equal.
+  ##
+  ## And broadcasted element-wise lesser or equal.
+  ##
+  ## Returns:
+  ##   - A tensor of boolean
+  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  result = map2_inline(tmp_a, tmp_b, x <= y)
+
+proc `.<`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
+  ## Tensor element-wise lesser than.
+  ##
+  ## And broadcasted element-wise lesser than.
+  ##
+  ## Returns:
+  ##   - A tensor of boolean
+  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  result = map2_inline(tmp_a, tmp_b, x < y)
+
+proc `.>=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
+  ## Tensor element-wise greater or equal.
+  ##
+  ## And broadcasted element-wise greater or equal.
+  ##
+  ## Returns:
+  ##   - A tensor of boolean
+  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  result = map2_inline(tmp_a, tmp_b, x >= y)
+
+proc `.>`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
+  ## Tensor element-wise greater than.
+  ##
+  ## And broadcasted element-wise greater than.
+  ##
+  ## Returns:
+  ##   - A tensor of boolean
+  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  result = map2_inline(tmp_a, tmp_b, x > y)

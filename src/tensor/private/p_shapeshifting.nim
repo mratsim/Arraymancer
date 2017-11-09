@@ -100,6 +100,19 @@ proc exch_dim*(t: Tensor, dim1, dim2: int): Tensor {.noInit,noSideEffect.}=
   swap(result.strides[dim1], result.strides[dim2])
   swap(result.shape[dim1], result.shape[dim2])
 
+template permuteT*(result: var AnyTensor, dims: varargs[int]): untyped =
+  var perm = dims.toMetadataArray
+  for i, p in perm:
+    if p != i and p != -1:
+      var j = i
+      while true:
+        result = result.exch_dim(j, perm[j])
+        (perm[j], j) = (-1, perm[j])
+        if perm[j] == i:
+          break
+      perm[j] = -1
+
+
 template squeezeT*(t: var AnyTensor): untyped =
   var idx_real_dim = 0
 

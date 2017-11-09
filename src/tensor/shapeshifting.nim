@@ -279,18 +279,28 @@ proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
   ##     a.permute(0,2,1) # dim 0 stays at 0, dim 1 becomes dim 2 and dim 2 becomes dim 1
 
   # TODO: bounds check
-  var perm = dims.toMetadataArray
   result = t
-  for i, p in perm:
-    if p != i and p != -1:
-      var j = i
-      while true:
-        result = result.exch_dim(j, perm[j])
-        (perm[j], j) = (-1, perm[j])
-        if perm[j] == i:
-          break
-      perm[j] = -1
+  permuteT(result, dims)
 
+proc unsafePermute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
+  ## Permute dimensions of a tensors
+  ## Input:
+  ##   - a tensor
+  ##   - the new dimension order
+  ## Returns:
+  ##   - a tensor with re-order dimension
+  ## Usage:
+  ##  .. code:: nim
+  ##     a.permute(0,2,1) # dim 0 stays at 0, dim 1 becomes dim 2 and dim 2 becomes dim 1
+  ##
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
+  ##   A broadcasted tensor should not be modified and only used for computation.
+
+  # TODO: bounds check
+  result = t.unsafeView
+  permuteT(result, dims)
 
 proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit,noSideEffect.}=
   ## Concatenate tensors

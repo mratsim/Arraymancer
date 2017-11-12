@@ -26,3 +26,10 @@ export  nnp_activation,
 
 import private/p_nnp_types
 export Size2D
+
+
+when defined(cudnn):
+  import  ./backend/cudnn,
+          ./nnp_conv2d_cudnn
+
+  export nnp_conv2d_cudnn

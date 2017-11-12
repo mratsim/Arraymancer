@@ -45,6 +45,7 @@ template cudaSwitches() =
   # And wikipedia for GPU capabilities: https://en.wikipedia.org/wiki/CUDA
   switch("gcc.options.always", "-arch=sm_61 --x cu") # Interpret .c files as .cu
   switch("gcc.cpp.options.always", "-arch=sm_61 --x cu -Xcompiler -fpermissive") # Interpret .c files as .cu, gate fpermissive behind Xcompiler
+  switch("define", "cudnn")
 
 when defined(cuda):
   cudaSwitches

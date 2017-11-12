@@ -17,23 +17,24 @@ import ../../src/arraymancer
 import unittest
 
 suite "CUDNN: Convolution 2D":
-  let input = [
-    [1, 2, 0, 0],
-    [5, 3, 0, 4],
-    [0, 0, 0, 7],
-    [9, 3, 0, 0]].toTensor().reshape(1,1,4,4).astype(float32).cuda
-  let kernel = [
-    [1, 1, 1],
-    [1, 1, 0],
-    [1, 0, 0]].toTensor().reshape(1,1,3,3).astype(float32).cuda
-  let target = [
-    [1,  8,  5,  0],
-    [8, 11,  5,  4],
-    [8, 17, 10, 11],
-    [9, 12, 10,  7]].toTensor().reshape(1,1,4,4).astype(float32)
-  let bias = [0].toTensor().reshape(1,1,1).astype(float32).cuda
+  test "Conv2d Forward":
+    let input = [
+      [1, 2, 0, 0],
+      [5, 3, 0, 4],
+      [0, 0, 0, 7],
+      [9, 3, 0, 0]].toTensor().reshape(1,1,4,4).astype(float32).cuda
+    let kernel = [
+      [1, 1, 1],
+      [1, 1, 0],
+      [1, 0, 0]].toTensor().reshape(1,1,3,3).astype(float32).cuda
+    let target = [
+      [1,  8,  5,  0],
+      [8, 11,  5,  4],
+      [8, 17, 10, 11],
+      [9, 12, 10,  7]].toTensor().reshape(1,1,4,4).astype(float32)
+    let bias = [0].toTensor().reshape(1,1,1).astype(float32).cuda
 
-  # TODO: padding should accept a tuple (i.e. unify Size2D and SizeHW)
-  check: mean_absolute_error(
-    input.conv2d(kernel, bias, padding=[1,1]).cpu,
-    target) <= 1e-7'f32
+    # TODO: padding should accept a tuple (i.e. unify Size2D and SizeHW)
+    check: mean_absolute_error(
+      input.conv2d(kernel, bias, padding=[1,1]).cpu,
+      target) <= 1e-7'f32

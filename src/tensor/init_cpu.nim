@@ -111,7 +111,6 @@ proc toTensor*(s:string): auto {.noSideEffect.} =
   ## This proc handles string specifically as otherwise they are interpreted as a sequence of char
   toTensorCpu(s)
 
-# TODO add tests for randomTensor
 proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
   ##
@@ -163,8 +162,8 @@ proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit,noSideEffect
   tensorCpu(shape, result)
   result.data = newSeqWith(result.size, 1.T)
 
-proc ones_like*[T: SomeNumber](t: AnyTensor[T]): auto {.noInit,noSideEffect, inline.} =
-  ## Creates a new Tensor filled with 0 with the same shape as the input
+proc ones_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, inline.} =
+  ## Creates a new Tensor filled with 1 with the same shape as the input
   ## and filled with 1
   ## Input:
   ##      - Tensor

@@ -16,7 +16,9 @@ import  ../private/sequninit,
         ./private/p_init_cuda,
         ./backend/cuda,
         ./backend/cuda_global_state,
+        ./backend/metadataArray,
         ./data_structure,
+        ./init_cpu,
         nimcuda/[cuda_runtime_api, driver_types]
 
 proc unsafeView*[T](t: CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect.}=
@@ -115,7 +117,29 @@ proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect, noInit.}=
 
   let size = csize(t.data.len * sizeof(T))
 
-  check cudaMemCpy(result.get_data_ptr,
-                   t.get_data_ptr,
-                   size,
-                   cudaMemcpyDeviceToHost)
+  check cudaMemCpy( result.get_data_ptr,
+                    t.get_data_ptr,
+                    size,
+                    cudaMemcpyDeviceToHost)
+
+
+
+proc zeros_like*[T: SomeReal](t: CudaTensor[T]): CudaTensor[T] {.noInit, inline.} =
+  ## Creates a new CudaTensor filled with 0 with the same shape as the input
+  ## Input:
+  ##      - Shape of the CudaTensor
+  ##      - Type of its elements
+  ## Result:
+  ##      - A zero-ed CudaTensor of the same shape
+
+  # TODO use cudaMemset
+  result = zeros[T](t.shape).cuda
+
+proc ones_like*[T: SomeReal](t: CudaTensor[T]): CudaTensor[T] {.noInit, inline.} =
+  ## Creates a new CudaTensor filled with 1 with the same shape as the input
+  ## and filled with 1
+  ## Input:
+  ##      - A CudaTensor
+  ## Result:
+  ##      - A one-ed CudaTensor of the same shape
+  result = ones[T](t.shape).cuda

@@ -105,7 +105,7 @@ proc convOutDims*(input, kernel: CudaTensor, padding, convStrides, dilation: Siz
 
   result.len = 4
   result[0] = input.shape[0]
-  result[1] = kernel.shape[0 ]
+  result[1] = kernel.shape[0]
   result[2] = 1 + (iH + 2*pH - (((kH-1) * dH) + 1) div sH)
   result[3] = 1 + (iW + 2*pW - (((kW-1) * dW) + 1) div sW)
 
@@ -146,7 +146,7 @@ proc conv_algo_workspace*[T: SomeReal](
   )
 
   when defined(debug):
-    echo "\nCudnn conv2d - forward algorithm selected: " & $result.algo
+    echo "Cudnn conv2d - forward algorithm selected: " & $result.algo
 
   check cudnnGetConvolutionForwardWorkspaceSize(
     defaultHandle_cudnn,
@@ -159,7 +159,7 @@ proc conv_algo_workspace*[T: SomeReal](
   )
 
   when defined(debug):
-    echo "\nCudnn conv2D - workspace size: " & $result.sizeInBytes & " bytes"
+    echo "Cudnn conv2D - workspace size: " & $result.sizeInBytes & " bytes"
 
   if result.sizeInBytes != 0:
     new(result.workspace, deallocCuda)
@@ -195,7 +195,7 @@ proc conv_bwd_kernel_algo_workspace*[T: SomeReal](
   )
 
   when defined(debug):
-    echo "\nCudnn conv2d - backward filter algorithm selected: " & $result.algo
+    echo "Cudnn conv2d - backward filter algorithm selected: " & $result.algo
 
   check cudnnGetConvolutionBackwardFilterWorkspaceSize(
     defaultHandle_cudnn,
@@ -208,7 +208,7 @@ proc conv_bwd_kernel_algo_workspace*[T: SomeReal](
   )
 
   when defined(debug):
-    echo "\nCudnn conv2d - backward filter workspace size: " & $result.sizeInBytes & " bytes"
+    echo "Cudnn conv2d - backward filter workspace size: " & $result.sizeInBytes & " bytes"
 
   if result.sizeInBytes != 0:
     new(result.workspace, deallocCuda)
@@ -239,12 +239,12 @@ proc conv_bwd_data_algo_workspace*[T: SomeReal](
     convDesc,
     gradInputTensorDesc,
     CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
-    50000,
+    0,
     addr result.algo
   )
 
   when defined(debug):
-    echo "\nCudnn conv2d - backward data algorithm selected: " & $result.algo
+    echo "Cudnn conv2d - backward data algorithm selected: " & $result.algo
 
   check cudnnGetConvolutionBackwardDataWorkspaceSize(
     defaultHandle_cudnn,
@@ -257,7 +257,7 @@ proc conv_bwd_data_algo_workspace*[T: SomeReal](
   )
 
   when defined(debug):
-    echo "\nCudnn conv2d - backward data workspace size: " & $result.sizeInBytes & " bytes"
+    echo "Cudnn conv2d - backward data workspace size: " & $result.sizeInBytes & " bytes"
 
   if result.sizeInBytes != 0:
     new(result.workspace, deallocCuda)

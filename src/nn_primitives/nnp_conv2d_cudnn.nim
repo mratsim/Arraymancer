@@ -32,6 +32,25 @@ proc conv2d*[T: SomeReal](input, kernel, bias: CudaTensor[T],
 
   const convDims: cint = 2
   const rank: cint = 4
+
+  when defined(debug):
+    echo ""
+    echo "###############"
+    echo "Conv2D Forward"
+    echo "input:"
+    echo "  - shape:" & $input.shape
+    echo "  - strides:" & $input.strides
+    echo "kernel:"
+    echo "  - shape:" & $kernel.shape
+    echo "  - strides:" & $kernel.strides
+
+    echo ""
+    echo "padding: " & $padding
+    echo "strides: " & $convStrides
+    echo "dilation: " & $dilation
+
+
+
   let srcTensorDesc = newCudnn4DTensorDesc input # TODO: destructor
   let kernelDesc = newCudnnConvKernelDesc(kernel) # TODO: destructor
 
@@ -55,6 +74,12 @@ proc conv2d*[T: SomeReal](input, kernel, bias: CudaTensor[T],
   let result_shape = convOutDims(input, kernel, padding, convStrides, dilation)
   result = newCudaTensor[T](result_shape, rowMajor)
   let dstTensorDesc = newCudnn4DTensorDesc result
+
+  when defined(debug):
+    echo ""
+    echo "computed result:"
+    echo "  - shape:" & $result.shape
+    echo "  - strides:" & $result.strides
 
   # Getting the convolution algorithm, shared memory workspace and its size.
   let algo_workspace = conv_algo_workspace[T](srcTensorDesc, kernelDesc, convDesc, dstTensorDesc)
@@ -110,6 +135,31 @@ proc conv2d_backward*[T](input, kernel, bias: CudaTensor[T],
   const rank: cint = 4
 
 
+  when defined(debug):
+    echo ""
+    echo "###############"
+    echo "Conv2D backward"
+    echo "input:"
+    echo "  - shape:" & $input.shape
+    echo "  - strides:" & $input.strides
+    echo "grad_input:"
+    echo "  - shape:" & $grad_input.shape
+    echo "  - strides:" & $grad_input.strides
+    echo "kernel:"
+    echo "  - shape:" & $kernel.shape
+    echo "  - strides:" & $kernel.strides
+    echo "grad_kernel:"
+    echo "  - shape:" & $grad_kernel.shape
+    echo "  - strides:" & $grad_kernel.strides
+
+    echo "grad_output"
+    echo "  - shape:" & $grad_output.shape
+    echo "  - strides:" & $grad_output.strides
+
+    echo ""
+    echo "padding: " & $padding
+    echo "strides: " & $convStrides
+    echo "dilation: " & $dilation
 
   let # TODO: Automatic destructor
     srcTensorDesc = newCudnn4DTensorDesc input
@@ -138,31 +188,20 @@ proc conv2d_backward*[T](input, kernel, bias: CudaTensor[T],
   var alpha: T = 1
   var beta: T = 0
 
-  # Input: getting the backward conv algorithm, shared memory workspace and its size.
-  let gradInput_algo_workspace = conv_bwd_data_algo_workspace[T](
-                                srcTensorDesc,
-                                gradOutputTensorDesc,
-                                kernelDesc, # Note the kernel
-                                convDesc,
-                                gradInputTensorDesc
-                                )
+  # Bias gradient
+  if bias.rank > 0:
+    let gradBiasTensorDesc = newCudnn4DTensorDesc grad_bias.unsafeUnsqueeze(0)
+    check cudnnConvolutionBackwardBias(
+      defaultHandle_cudnn,
+      addr alpha,
+      gradOutputTensorDesc,
+      grad_output.data.data[],
+      addr beta,
+      gradBiasTensorDesc,
+      grad_bias.data.data[]
+    )
 
-  # Input gradient
-  check cudnnConvolutionBackwardData(
-    defaultHandle_cudnn,
-    addr alpha,
-    kernelDesc,
-    kernel.data.data[],
-    gradOutputTensorDesc,
-    grad_output.data.data[],
-    convDesc,
-    gradInput_algo_workspace.algo,
-    gradInput_algo_workspace.workspace[],
-    gradInput_algo_workspace.sizeInBytes,
-    addr beta,
-    gradInputTensorDesc,
-    grad_input.data.data[]
-  )
+    # TODO squeeze and divide by batch size
 
   # Kernel: getting the backward conv algorithm, shared memory workspace and its size.
   let kernel_algo_workspace = conv_bwd_kernel_algo_workspace[T](
@@ -172,6 +211,16 @@ proc conv2d_backward*[T](input, kernel, bias: CudaTensor[T],
                                 convDesc
                                 )
 
+  # The forward pass stuff works hummm
+  # let kernel_algo_workspace = conv_algo_workspace[T](
+  #                               srcTensorDesc,
+  #                               gradKernelDesc,
+  #                               convDesc,
+  #                               gradOutputTensorDesc
+  #                               )
+
+  when defined(debug):
+    echo "Launching conv2D backward for kernel"
 
   # Kernel gradient
   check cudnnConvolutionBackwardFilter(
@@ -190,15 +239,34 @@ proc conv2d_backward*[T](input, kernel, bias: CudaTensor[T],
     grad_kernel.data.data[]
   )
 
-  # Bias gradient
-  if bias.rank > 0:
-    let gradBiasTensorDesc = newCudnn4DTensorDesc grad_bias.unsafeUnsqueeze(0)
-    check cudnnConvolutionBackwardBias(
-      defaultHandle_cudnn,
-      addr alpha,
-      gradOutputTensorDesc,
-      grad_output.data.data[],
-      addr beta,
-      gradBiasTensorDesc,
-      grad_bias.data.data[]
-    )
+  when defined(debug):
+    echo "Finished conv2D backward for kernel"
+
+  # Input: getting the backward conv algorithm, shared memory workspace and its size.
+  let gradInput_algo_workspace = conv_bwd_data_algo_workspace[T](
+                                srcTensorDesc,
+                                gradOutputTensorDesc,
+                                kernelDesc, # Note the kernel
+                                convDesc,
+                                gradInputTensorDesc
+                                )
+
+  when defined(debug):
+    echo "Launching conv2D backward for input"
+
+  # Input gradient
+  check cudnnConvolutionBackwardData(
+    defaultHandle_cudnn,
+    addr alpha,
+    kernelDesc,
+    kernel.data.data[],
+    gradOutputTensorDesc,
+    grad_output.data.data[],
+    convDesc,
+    gradInput_algo_workspace.algo,
+    gradInput_algo_workspace.workspace[],
+    gradInput_algo_workspace.sizeInBytes,
+    addr beta,
+    gradInputTensorDesc,
+    grad_input.data.data[]
+  )

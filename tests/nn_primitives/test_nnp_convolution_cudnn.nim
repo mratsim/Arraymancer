@@ -14,7 +14,7 @@
 
 # Please compile with -d:cuda switch
 import ../../src/arraymancer
-import unittest
+import unittest, future
 
 suite "CUDNN: Convolution 2D":
   test "Conv2d Forward":
@@ -38,3 +38,41 @@ suite "CUDNN: Convolution 2D":
     check: mean_absolute_error(
       input.conv2d(kernel, bias, padding=[1,1]).cpu,
       target) <= 1e-7'f32
+
+  test "Conv2D Forward + Backward":
+
+    let
+      input = randomTensor([1,1,4,4], 1.0f).cuda
+      kernel = randomTensor([1,1,3,3], 1.0f).cuda
+      bias = randomTensor([1,1,1], 1.0f).cuda
+      padding = [1,1]
+      stride = [1,1]
+      dilation = [1, 1]
+
+    let output = conv2d(input, kernel, bias, padding, stride)
+
+    let # Check gradient with float64 and cpu convolution
+      dinput = input.cpu.astype(float)
+      dkernel = kernel.cpu.astype(float)
+      dbias = bias.cpu.astype(float)
+      dpad = (1, 1) # TODO unify cudnn sizeHW and cpu size2D
+      dstride = (1, 1)
+
+    let
+      target_grad_input = dinput.numerical_gradient(
+        x => conv2d(x, dkernel, dbias, dpad, dstride).sum())
+      target_grad_weight = dkernel.numerical_gradient(
+        w => dinput.conv2d(w, dbias, dpad, dstride).sum())
+      target_grad_bias = dbias.numerical_gradient(
+        b => dinput.conv2d(dkernel, b, dpad, dstride).sum())
+
+    var
+      grad_input = zeros_like input
+      grad_kernel = zeros_like kernel
+      grad_bias = zeros_like bias
+
+    let grad_output = ones_like(output)
+    echo grad_output
+
+    conv2d_backward(input, kernel, bias, padding, stride, dilation,
+                    grad_output, grad_input, grad_kernel, grad_bias)

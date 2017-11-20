@@ -105,7 +105,7 @@ proc convOutDims*(input, kernel: CudaTensor, padding, convStrides, dilation: Siz
 
   result.len = 4
   result[0] = input.shape[0]
-  result[1] = input.shape[1]
+  result[1] = kernel.shape[0 ]
   result[2] = 1 + (iH + 2*pH - (((kH-1) * dH) + 1) div sH)
   result[3] = 1 + (iW + 2*pW - (((kW-1) * dW) + 1) div sW)
 
@@ -126,15 +126,18 @@ type ConvAlgoSpace*[T] = object
 
 proc conv_algo_workspace*[T: SomeReal](
   srcTensorDesc: cudnnTensorDescriptor_t,
-  convKernelDesc: cudnnFilterDescriptor_t,
+  kernelDesc: cudnnFilterDescriptor_t,
   convDesc: cudnnConvolutionDescriptor_t,
   dstTensorDesc: cudnnTensorDescriptor_t
 ): ConvAlgoSpace[T] =
 
+  when defined(debug):
+    echo "\nCudnn conv2d - get forward algorithm"
+
   check cudnnGetConvolutionForwardAlgorithm(
     defaultHandle_cudnn,
     srcTensorDesc,
-    convKernelDesc,
+    kernelDesc,
     convDesc,
     dstTensorDesc,
     CUDNN_CONVOLUTION_FWD_PREFER_FASTEST,
@@ -143,12 +146,12 @@ proc conv_algo_workspace*[T: SomeReal](
   )
 
   when defined(debug):
-    echo "\nCudnn Algorithm selected: " & $best_algo
+    echo "\nCudnn conv2d - forward algorithm selected: " & $result.algo
 
   check cudnnGetConvolutionForwardWorkspaceSize(
     defaultHandle_cudnn,
     srcTensorDesc,
-    convKernelDesc,
+    kernelDesc,
     convDesc,
     dstTensorDesc,
     result.algo,
@@ -156,7 +159,105 @@ proc conv_algo_workspace*[T: SomeReal](
   )
 
   when defined(debug):
-    echo "\nCudnn convolution 2D - Workspace size: " & $sizeInBytes & " bytes"
+    echo "\nCudnn conv2D - workspace size: " & $result.sizeInBytes & " bytes"
+
+  if result.sizeInBytes != 0:
+    new(result.workspace, deallocCuda)
+    # cudaMalloc multiply by sizeof(T) so we must divide before hand
+    result.workspace[] = cudaMalloc[T](result.sizeInBytes div sizeof(T))
+
+
+
+type Conv_bwd_filter_AlgoSpace*[T] = object
+  algo*: cudnnConvolutionBwdFilterAlgo_t # TODO: create a destructor
+  workspace*: ref[ptr T]
+  sizeInBytes*: csize
+
+proc conv_bwd_kernel_algo_workspace*[T: SomeReal](
+  srcTensorDesc: cudnnTensorDescriptor_t,
+  gradOutputTensorDesc: cudnnTensorDescriptor_t, # gradOuput is the gradient of the output. Result will be the gradient of the input
+  gradKernelDesc: cudnnFilterDescriptor_t,
+  convDesc: cudnnConvolutionDescriptor_t
+): Conv_bwd_filter_AlgoSpace[T] =
+
+  when defined(debug):
+    echo "\nCudnn conv2d - get backward filter algorithm"
+
+  check cudnnGetConvolutionBackwardFilterAlgorithm(
+    defaultHandle_cudnn,
+    srcTensorDesc,
+    gradOutputTensorDesc,
+    convDesc,
+    gradKernelDesc,
+    CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST,
+    0,
+    addr result.algo
+  )
+
+  when defined(debug):
+    echo "\nCudnn conv2d - backward filter algorithm selected: " & $result.algo
+
+  check cudnnGetConvolutionBackwardFilterWorkspaceSize(
+    defaultHandle_cudnn,
+    srcTensorDesc,
+    gradOutputTensorDesc,
+    convDesc,
+    gradKernelDesc,
+    result.algo,
+    addr result.sizeInBytes
+  )
+
+  when defined(debug):
+    echo "\nCudnn conv2d - backward filter workspace size: " & $result.sizeInBytes & " bytes"
+
+  if result.sizeInBytes != 0:
+    new(result.workspace, deallocCuda)
+    # cudaMalloc multiply by sizeof(T) so we must divide before hand
+    result.workspace[] = cudaMalloc[T](result.sizeInBytes div sizeof(T))
+
+
+type Conv_bwd_data_AlgoSpace*[T] = object
+  algo*: cudnnConvolutionBwdDataAlgo_t # TODO: create a destructor
+  workspace*: ref[ptr T]
+  sizeInBytes*: csize
+
+proc conv_bwd_data_algo_workspace*[T: SomeReal](
+  srcTensorDesc: cudnnTensorDescriptor_t,
+  gradOutputTensorDesc: cudnnTensorDescriptor_t, # gradOuput is the gradient of the output. Result will be the gradient of the input
+  kernelDesc: cudnnFilterDescriptor_t,
+  convDesc: cudnnConvolutionDescriptor_t,
+  gradInputTensorDesc: cudnnTensorDescriptor_t # gradInput is what we want to compute in the backward pass
+): Conv_bwd_data_AlgoSpace[T] =
+
+  when defined(debug):
+    echo "\nCudnn conv2d - get backward data algorithm"
+
+  check cudnnGetConvolutionBackwardDataAlgorithm(
+    defaultHandle_cudnn,
+    kernelDesc,
+    gradOutputTensorDesc,
+    convDesc,
+    gradInputTensorDesc,
+    CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST,
+    50000,
+    addr result.algo
+  )
+
+  when defined(debug):
+    echo "\nCudnn conv2d - backward data algorithm selected: " & $result.algo
+
+  check cudnnGetConvolutionBackwardDataWorkspaceSize(
+    defaultHandle_cudnn,
+    kernelDesc,
+    gradOutputTensorDesc,
+    convDesc,
+    gradInputTensorDesc,
+    result.algo,
+    addr result.sizeInBytes
+  )
+
+  when defined(debug):
+    echo "\nCudnn conv2d - backward data workspace size: " & $result.sizeInBytes & " bytes"
 
   if result.sizeInBytes != 0:
     new(result.workspace, deallocCuda)

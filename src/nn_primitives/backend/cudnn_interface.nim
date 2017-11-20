@@ -168,7 +168,7 @@ proc conv_algo_workspace*[T: SomeReal](
 
 
 
-type Conv_bwd_filter_AlgoSpace*[T] = object
+type Conv_bwd_kernel_AlgoSpace*[T] = object
   algo*: cudnnConvolutionBwdFilterAlgo_t # TODO: create a destructor
   workspace*: ref[ptr T]
   sizeInBytes*: csize
@@ -178,10 +178,10 @@ proc conv_bwd_kernel_algo_workspace*[T: SomeReal](
   gradOutputTensorDesc: cudnnTensorDescriptor_t, # gradOuput is the gradient of the output. Result will be the gradient of the input
   gradKernelDesc: cudnnFilterDescriptor_t,
   convDesc: cudnnConvolutionDescriptor_t
-): Conv_bwd_filter_AlgoSpace[T] =
+): Conv_bwd_kernel_AlgoSpace[T] =
 
   when defined(debug):
-    echo "\nCudnn conv2d - get backward filter algorithm"
+    echo "\nCudnn conv2d - get backward kernel algorithm"
 
   check cudnnGetConvolutionBackwardFilterAlgorithm(
     defaultHandle_cudnn,
@@ -195,7 +195,7 @@ proc conv_bwd_kernel_algo_workspace*[T: SomeReal](
   )
 
   when defined(debug):
-    echo "Cudnn conv2d - backward filter algorithm selected: " & $result.algo
+    echo "Cudnn conv2d - backward kernel algorithm selected: " & $result.algo
 
   check cudnnGetConvolutionBackwardFilterWorkspaceSize(
     defaultHandle_cudnn,
@@ -208,7 +208,7 @@ proc conv_bwd_kernel_algo_workspace*[T: SomeReal](
   )
 
   when defined(debug):
-    echo "Cudnn conv2d - backward filter workspace size: " & $result.sizeInBytes & " bytes"
+    echo "Cudnn conv2d - backward kernel workspace size: " & $result.sizeInBytes & " bytes"
 
   if result.sizeInBytes != 0:
     new(result.workspace, deallocCuda)

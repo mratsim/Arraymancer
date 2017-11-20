@@ -72,7 +72,7 @@ proc conv2d*[T: SomeReal](input, kernel, bias: CudaTensor[T],
 
   # Setting up the result
   let result_shape = convOutDims(input, kernel, padding, convStrides, dilation)
-  result = newCudaTensor[T](result_shape, rowMajor)
+  result = newCudaTensor[T](result_shape)
   let dstTensorDesc = newCudnn4DTensorDesc result
 
   when defined(debug):
@@ -106,7 +106,7 @@ proc conv2d*[T: SomeReal](input, kernel, bias: CudaTensor[T],
 
   result .+= bias.unsafeUnsqueeze(0)
 
-proc conv2d_backward*[T](input, kernel, bias: CudaTensor[T],
+proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
                          padding: SizeHW = [0,0],
                          convStrides, dilation: SizeHW = [1,1],
                          grad_output: CudaTensor[T],
@@ -129,10 +129,17 @@ proc conv2d_backward*[T](input, kernel, bias: CudaTensor[T],
   ## Note:
   ##   ``grad_input``, ``grad_kernel`` and ``grad_bias`` will be overwritten. They must have the same shape
   ##    as the corresponding ``input``, ``kernel`` and ``bias``
+  ##
+  ## Limitation:
+  ##   This is restricted to float32 input for now. CuDNN segfaults with float64 for unknown reason
 
 
   const convDims: cint = 2
   const rank: cint = 4
+
+  # CuDNN requires grad_output to be C contiguous. (It is undocumented as of CuDNN v7)
+  # If grad_output is F contiguous it throws CUDNN_STATUS_NOT_SUPPORTED in the algo procs.
+  let gOutput = grad_output.unsafeContiguous(rowMajor, force = true)
 
 
   when defined(debug):
@@ -155,6 +162,9 @@ proc conv2d_backward*[T](input, kernel, bias: CudaTensor[T],
     echo "grad_output"
     echo "  - shape:" & $grad_output.shape
     echo "  - strides:" & $grad_output.strides
+    echo "gOutput contiguous"
+    echo "  - shape:" & $gOutput.shape
+    echo "  - strides:" & $gOutput.strides
 
     echo ""
     echo "padding: " & $padding
@@ -166,7 +176,7 @@ proc conv2d_backward*[T](input, kernel, bias: CudaTensor[T],
     kernelDesc = newCudnnConvKernelDesc(kernel)
     gradKernelDesc = newCudnnConvKernelDesc(grad_kernel)
     gradInputTensorDesc =  newCudnn4DTensorDesc grad_input
-    gradOutputTensorDesc =  newCudnn4DTensorDesc grad_output
+    gradOutputTensorDesc =  newCudnn4DTensorDesc gOutput
 
   # Conversion to cint + object living long enough so we can use pointers to it for CuDNN
   let convConfig = initConv2DConfig(padding, convStrides, dilation)
@@ -195,7 +205,7 @@ proc conv2d_backward*[T](input, kernel, bias: CudaTensor[T],
       defaultHandle_cudnn,
       addr alpha,
       gradOutputTensorDesc,
-      grad_output.data.data[],
+      gOutput.data.data[],
       addr beta,
       gradBiasTensorDesc,
       grad_bias.data.data[]
@@ -211,25 +221,18 @@ proc conv2d_backward*[T](input, kernel, bias: CudaTensor[T],
                                 convDesc
                                 )
 
-  # The forward pass stuff works hummm
-  # let kernel_algo_workspace = conv_algo_workspace[T](
-  #                               srcTensorDesc,
-  #                               gradKernelDesc,
-  #                               convDesc,
-  #                               gradOutputTensorDesc
-  #                               )
-
   when defined(debug):
     echo "Launching conv2D backward for kernel"
 
   # Kernel gradient
+  # Note: this segfaults with illegal storage access for float64
   check cudnnConvolutionBackwardFilter(
     defaultHandle_cudnn,
     addr alpha,
     srcTensorDesc,
     input.data.data[],
     gradOutputTensorDesc,
-    grad_output.data.data[],
+    gOutput.data.data[],
     convDesc,
     kernel_algo_workspace.algo,
     kernel_algo_workspace.workspace[],
@@ -255,13 +258,14 @@ proc conv2d_backward*[T](input, kernel, bias: CudaTensor[T],
     echo "Launching conv2D backward for input"
 
   # Input gradient
+  # Note: this segfaults with illegal storage access for float64
   check cudnnConvolutionBackwardData(
     defaultHandle_cudnn,
     addr alpha,
     kernelDesc,
     kernel.data.data[],
     gradOutputTensorDesc,
-    grad_output.data.data[],
+    gOutput.data.data[],
     convDesc,
     gradInput_algo_workspace.algo,
     gradInput_algo_workspace.workspace[],

@@ -41,27 +41,29 @@ suite "CUDNN: Convolution 2D":
 
   test "Conv2D Forward + Backward":
 
-    let
-      input = randomTensor([1,1,4,4], 1.0f).cuda
-      kernel = randomTensor([1,1,3,3], 1.0f).cuda
-      bias = randomTensor([1,1,1], 1.0f).cuda
+    let # Note: cudnn backward works only with float32, it segfauts with float64
+      input = randomTensor([10,3,4,5], 1'f32).cuda
+      kernel = randomTensor([16,3,3,3], 1'f32).cuda
+      bias = randomTensor([16,1,1], 1'f32).cuda
       padding = [1,1]
       stride = [1,1]
-      dilation = [1, 1]
+      dilation = [1,1]
 
     let output = conv2d(input, kernel, bias, padding, stride)
 
-    let # Check gradient with float64 and cpu convolution
-      dinput = input.cpu.astype(float)
-      dkernel = kernel.cpu.astype(float)
-      dbias = bias.cpu.astype(float)
+    let # Check gradient with cpu convolution.
+        # Note: codegen for numerical gradient float32 is not working properly
+        # FFT/Winograd in float vs double may be quite different
+      dinput = input.cpu.astype(float64)
+      dkernel = kernel.cpu.astype(float64)
+      dbias = bias.cpu.astype(float64)
       dpad = (1, 1) # TODO unify cudnn sizeHW and cpu size2D
       dstride = (1, 1)
 
     let
       target_grad_input = dinput.numerical_gradient(
         x => conv2d(x, dkernel, dbias, dpad, dstride).sum())
-      target_grad_weight = dkernel.numerical_gradient(
+      target_grad_kernel = dkernel.numerical_gradient(
         w => dinput.conv2d(w, dbias, dpad, dstride).sum())
       target_grad_bias = dbias.numerical_gradient(
         b => dinput.conv2d(dkernel, b, dpad, dstride).sum())
@@ -72,7 +74,26 @@ suite "CUDNN: Convolution 2D":
       grad_bias = zeros_like bias
 
     let grad_output = ones_like(output)
-    echo grad_output
 
     conv2d_backward(input, kernel, bias, padding, stride, dilation,
                     grad_output, grad_input, grad_kernel, grad_bias)
+
+    # There is a huge difference between CuDNN and im2col cpu results
+    # Ideally we would need a Cuda numerical_gradient
+    # In practice it is not relevant as we can use low precision (float16) without issue in deep learning
+
+    check: mean_relative_error(target_grad_bias.astype(float32), grad_bias.cpu) < 1e-6
+    check: mean_relative_error(target_grad_kernel.astype(float32), grad_kernel.cpu) < 0.2
+    check: mean_relative_error(target_grad_input.astype(float32), grad_input.cpu) < 0.2
+
+    # echo "output"
+    # echo output
+    # echo conv2d(dinput, dkernel, dbias, dpad, dstride)
+
+    # echo "grad_kernel"
+    # echo target_grad_kernel
+    # echo grad_kernel
+
+    # echo "grad_input"
+    # echo target_grad_input
+    # echo grad_input

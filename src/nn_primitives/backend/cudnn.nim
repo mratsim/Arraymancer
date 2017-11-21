@@ -45,6 +45,16 @@ template asCudnnType*[T: SomeReal](typ: typedesc[T]): cudnnDataType_t =
   elif T is float64:
     CUDNN_DATA_DOUBLE
 
+{.experimental.}
+proc `=destroy`(o: cudnnTensorDescriptor_t) =
+  check cudnnDestroyTensorDescriptor o
+
+proc `=destroy`(o: cudnnFilterDescriptor_t) =
+  check cudnnDestroyFilterDescriptor o
+
+proc `=destroy`(o: cudnnConvolutionDescriptor_t) =
+  check cudnnDestroyConvolutionDescriptor o
+
 # #####################################################################
 # Tensor descriptor
 

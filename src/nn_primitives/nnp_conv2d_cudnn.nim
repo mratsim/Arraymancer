@@ -22,7 +22,7 @@ import nimcuda/[cuda_runtime_api, nimcuda]
 
 proc conv2d*[T: SomeReal](input, kernel, bias: CudaTensor[T],
                 padding: SizeHW = [0,0],
-                convStrides, dilation: SizeHW = [1,1]): CudaTensor[T] {.noInit.}=
+                strides, dilation: SizeHW = [1,1]): CudaTensor[T] {.noInit.}=
   ## Input:
   ##     - ``input`` 4D Tensor batch of images of the size [N,C_in,H_in,W_in]
   ##     - ``kernel`` 4D Tensor convolving kernel filters of the size [C_out,C_in,kH,kW]
@@ -34,10 +34,10 @@ proc conv2d*[T: SomeReal](input, kernel, bias: CudaTensor[T],
 
   let srcTensorDesc = newCudnn4DTensorDesc    input # TODO: destructor
   let kernelDesc =    newCudnnConvKernelDesc  kernel # TODO: destructor
-  let convDesc = newConv2dDesc[T](padding, convStrides, dilation) # TODO: destructor
+  let convDesc = newConv2dDesc[T](padding, strides, dilation) # TODO: destructor
 
   # Setting up the result
-  let result_shape = convOutDims(input, kernel, padding, convStrides, dilation)
+  let result_shape = convOutDims(input, kernel, padding, strides, dilation)
   result = newCudaTensor[T](result_shape)
   let dstTensorDesc = newCudnn4DTensorDesc result
 
@@ -68,7 +68,7 @@ proc conv2d*[T: SomeReal](input, kernel, bias: CudaTensor[T],
 
 proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
                          padding: SizeHW = [0,0],
-                         convStrides, dilation: SizeHW = [1,1],
+                         strides, dilation: SizeHW = [1,1],
                          grad_output: CudaTensor[T],
                          grad_input, grad_kernel, grad_bias: var CudaTensor[T]) =
   ## Computes gradients of a 2D convolution. Intended to be used after
@@ -79,7 +79,7 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
   ##     - ``kernel`` 4D Tensor convolving kernel weights of the size [C_out,C_in,kH,kW]
   ##     - ``bias`` 3D Tensor bias of the size [C_out,1,1] or an empty tensor for no bias
   ##     - ``padding`` SizeHW tuple with height and width of the padding
-  ##     - ``convStrides`` SizeHW tuple with height and width of the convolution strides
+  ##     - ``strides`` SizeHW tuple with height and width of the convolution strides
   ##     - ``dilation`` SizeHW tuple with a rescaling factor of the convolution
   ##     - ``grad_output`` 4D tensor gradient of the next layer of the size [N,C_out,H_out,W_out]
   ##     - ``grad_input`` tensor where the gradient w.r.t input will be written
@@ -105,7 +105,7 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
     gradKernelDesc =       newCudnnConvKernelDesc grad_kernel
     gradInputTensorDesc =  newCudnn4DTensorDesc   grad_input
     gradOutputTensorDesc = newCudnn4DTensorDesc   gOutput
-    convDesc =             newConv2dDesc[T](padding, convStrides, dilation) # TODO: destructor
+    convDesc =             newConv2dDesc[T](padding, strides, dilation) # TODO: destructor
 
   # Scaling factors
   var alpha: T = 1

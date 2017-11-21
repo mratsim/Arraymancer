@@ -15,9 +15,12 @@
 # Nvidia CuDNN backend configuration
 # Note: Having CUDA installed does not mean CuDNN is installed
 
-import nimcuda/[nimcuda, cudnn]
+import  nimcuda/[nimcuda, cudnn],
+        ../../tensor/tensor
+export  nimcuda, cudnn
 
-export nimcuda, cudnn
+# #####################################################################
+# Initialization release
 
 
 var defaultHandle_cudnn*: cudnnHandle_t
@@ -32,3 +35,43 @@ proc cudnnRelease() {.noconv.} =
 
 addQuitProc(cudnnRelease)
 
+
+# #####################################################################
+# Types and destructors
+
+template asCudnnType*[T: SomeReal](typ: typedesc[T]): cudnnDataType_t =
+  when T is float32:
+    CUDNN_DATA_FLOAT
+  elif T is float64:
+    CUDNN_DATA_DOUBLE
+
+{.experimental.}
+proc `=destroy`(o: cudnnTensorDescriptor_t) =
+  check cudnnDestroyTensorDescriptor o
+
+proc `=destroy`(o: cudnnFilterDescriptor_t) =
+  check cudnnDestroyFilterDescriptor o
+
+proc `=destroy`(o: cudnnConvolutionDescriptor_t) =
+  check cudnnDestroyConvolutionDescriptor o
+
+# #####################################################################
+# Tensor descriptor
+
+proc newCudnn4DTensorDesc*[T: SomeReal](t: CudaTensor[T]): cudnnTensorDescriptor_t {.inline, noinit.}=
+  # TODO: destroy descriptor automatically
+  # TODO: generalize with the NDTensor Desc
+  check cudnnCreateTensorDescriptor addr result
+
+  check cudnnSetTensor4dDescriptorEx(
+    result,
+    T.asCudnnType,
+    t.shape[0].cint, # n
+    t.shape[1].cint, # c
+    t.shape[2].cint, # h
+    t.shape[3].cint, # w
+    t.strides[0].cint, # n
+    t.strides[1].cint, # c
+    t.strides[2].cint, # h
+    t.strides[3].cint, # w
+  )

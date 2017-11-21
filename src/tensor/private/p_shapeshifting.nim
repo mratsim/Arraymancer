@@ -92,21 +92,21 @@ template broadcast2T*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T
   result.b.offset = b.offset
 
 
-proc exch_dim*(t: Tensor, dim1, dim2: int): Tensor {.noInit,noSideEffect.}=
+proc exch_dim*[T](t: Tensor[T], dim1, dim2: int): Tensor[T] {.noInit,noSideEffect.}=
   if dim1 == dim2:
     return
 
-  result = t
+  result = t.unsafeView # copy or no-copy is managed in the caller of exch_dim or permuteT
   swap(result.strides[dim1], result.strides[dim2])
   swap(result.shape[dim1], result.shape[dim2])
 
-template permuteT*(result: var AnyTensor, dims: varargs[int]): untyped =
+template permuteT*[T](result: var Tensor[T], dims: varargs[int]): untyped =
   var perm = dims.toMetadataArray
   for i, p in perm:
     if p != i and p != -1:
       var j = i
       while true:
-        result = result.exch_dim(j, perm[j])
+        result = exch_dim(result, j, perm[j])
         (perm[j], j) = (-1, perm[j])
         if perm[j] == i:
           break

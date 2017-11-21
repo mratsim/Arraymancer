@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import  ./backend/cudnn,
-        ./backend/cudnn_interface,
+        ./backend/cudnn_conv_interface,
         ../tensor/tensor,
         ../tensor/backend/cuda,
         ../tensor/private/p_init_cuda # TODO: it might be worth it to export newCudaTensor
@@ -30,56 +30,16 @@ proc conv2d*[T: SomeReal](input, kernel, bias: CudaTensor[T],
 
   # TODO bias as an Optional type
 
-  const convDims: cint = 2
   const rank: cint = 4
 
-  when defined(debug):
-    echo ""
-    echo "###############"
-    echo "Conv2D Forward"
-    echo "input:"
-    echo "  - shape:" & $input.shape
-    echo "  - strides:" & $input.strides
-    echo "kernel:"
-    echo "  - shape:" & $kernel.shape
-    echo "  - strides:" & $kernel.strides
-
-    echo ""
-    echo "padding: " & $padding
-    echo "strides: " & $convStrides
-    echo "dilation: " & $dilation
-
-
-
-  let srcTensorDesc = newCudnn4DTensorDesc input # TODO: destructor
-  let kernelDesc = newCudnnConvKernelDesc(kernel) # TODO: destructor
-
-  # Conversion to cint + object living long enough so we can use pointers to it for CuDNN
-  let convConfig = initConv2DConfig(padding, convStrides, dilation)
-
-  var convDesc: cudnnConvolutionDescriptor_t # TODO: destructor
-  check cudnnCreateConvolutionDescriptor(addr convDesc)
-
-  check cudnnSetConvolutionNdDescriptor(
-    convDesc,
-    convDims,
-    convConfig.getPtr(pad),
-    convConfig.getPtr(strides),
-    convConfig.getPtr(dilation),
-    CUDNN_CROSS_CORRELATION,
-    T.asCudnnType
-  )
+  let srcTensorDesc = newCudnn4DTensorDesc    input # TODO: destructor
+  let kernelDesc =    newCudnnConvKernelDesc  kernel # TODO: destructor
+  let convDesc = newConv2dDesc[T](padding, convStrides, dilation) # TODO: destructor
 
   # Setting up the result
   let result_shape = convOutDims(input, kernel, padding, convStrides, dilation)
   result = newCudaTensor[T](result_shape)
   let dstTensorDesc = newCudnn4DTensorDesc result
-
-  when defined(debug):
-    echo ""
-    echo "computed result:"
-    echo "  - shape:" & $result.shape
-    echo "  - strides:" & $result.strides
 
   # Getting the convolution algorithm, shared memory workspace and its size.
   let algo_workspace = conv_algo_workspace[T](srcTensorDesc, kernelDesc, convDesc, dstTensorDesc)
@@ -133,66 +93,19 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
   ## Limitation:
   ##   This is restricted to float32 input for now. CuDNN segfaults with float64 for unknown reason
 
-
-  const convDims: cint = 2
   const rank: cint = 4
 
   # CuDNN requires grad_output to be C contiguous. (It is undocumented as of CuDNN v7)
   # If grad_output is F contiguous it throws CUDNN_STATUS_NOT_SUPPORTED in the algo procs.
   let gOutput = grad_output.unsafeContiguous(rowMajor, force = true)
 
-
-  when defined(debug):
-    echo ""
-    echo "###############"
-    echo "Conv2D backward"
-    echo "input:"
-    echo "  - shape:" & $input.shape
-    echo "  - strides:" & $input.strides
-    echo "grad_input:"
-    echo "  - shape:" & $grad_input.shape
-    echo "  - strides:" & $grad_input.strides
-    echo "kernel:"
-    echo "  - shape:" & $kernel.shape
-    echo "  - strides:" & $kernel.strides
-    echo "grad_kernel:"
-    echo "  - shape:" & $grad_kernel.shape
-    echo "  - strides:" & $grad_kernel.strides
-
-    echo "grad_output"
-    echo "  - shape:" & $grad_output.shape
-    echo "  - strides:" & $grad_output.strides
-    echo "gOutput contiguous"
-    echo "  - shape:" & $gOutput.shape
-    echo "  - strides:" & $gOutput.strides
-
-    echo ""
-    echo "padding: " & $padding
-    echo "strides: " & $convStrides
-    echo "dilation: " & $dilation
-
   let # TODO: Automatic destructor
-    srcTensorDesc = newCudnn4DTensorDesc input
-    kernelDesc = newCudnnConvKernelDesc(kernel)
-    gradKernelDesc = newCudnnConvKernelDesc(grad_kernel)
-    gradInputTensorDesc =  newCudnn4DTensorDesc grad_input
-    gradOutputTensorDesc =  newCudnn4DTensorDesc gOutput
-
-  # Conversion to cint + object living long enough so we can use pointers to it for CuDNN
-  let convConfig = initConv2DConfig(padding, convStrides, dilation)
-
-  var convDesc: cudnnConvolutionDescriptor_t # TODO: destructor
-  check cudnnCreateConvolutionDescriptor(addr convDesc)
-
-  check cudnnSetConvolutionNdDescriptor(
-    convDesc,
-    convDims,
-    convConfig.getPtr(pad),
-    convConfig.getPtr(strides),
-    convConfig.getPtr(dilation),
-    CUDNN_CROSS_CORRELATION,
-    T.asCudnnType
-  )
+    srcTensorDesc =        newCudnn4DTensorDesc   input
+    kernelDesc =           newCudnnConvKernelDesc kernel
+    gradKernelDesc =       newCudnnConvKernelDesc grad_kernel
+    gradInputTensorDesc =  newCudnn4DTensorDesc   grad_input
+    gradOutputTensorDesc = newCudnn4DTensorDesc   gOutput
+    convDesc =             newConv2dDesc[T](padding, convStrides, dilation) # TODO: destructor
 
   # Scaling factors
   var alpha: T = 1
@@ -211,7 +124,7 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
       grad_bias.data.data[]
     )
 
-    # TODO squeeze and divide by batch size
+    # TODO squeeze and divide by batch size?
 
   # Kernel: getting the backward conv algorithm, shared memory workspace and its size.
   let kernel_algo_workspace = conv_bwd_kernel_algo_workspace[T](

@@ -31,7 +31,7 @@ proc unsafeAtAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.noInit,inl
   when compileOption("boundChecks"):
     check_axis_index(t, axis, idx)
 
-  result = t.unsafeView()
+  system.`=`(result, t)
   result.shape[axis] = 1
   result.offset += result.strides[axis]*idx
 
@@ -63,21 +63,17 @@ iterator items*[T](t: Tensor[T], offset, size: int): T {.inline,noSideEffect.} =
 
 iterator mitems*[T](t: var Tensor[T]): var T {.inline,noSideEffect.} =
   ## Inline iterator on Tensor values (mutable, with offset)
-  ##
-  ## Note: due to C++ restrictions and Nim current codegen on mutable iterator,
-  ## it is not possible to use this iterator with the C++ backend
-  ## or at the same time as Cuda (that uses C++)
+
+  detach t
   stridedIteration(IterKind.Values, t, 0, t.size)
 
 iterator mitems*[T](t: var Tensor[T], offset, size: int): var T {.inline,noSideEffect.} =
   ## Inline iterator on Tensor values (mutable, with offset)
-  ##
-  ## Note: due to C++ restrictions and Nim current codegen on mutable iterator,
-  ## it is not possible to use this iterator with the C++ backend
-  ## or at the same time as Cuda (that uses C++)
+
   when compileOption("boundChecks"):
     check_contiguous_index(t, offset)
     check_contiguous_index(t, offset+size-1)
+  detach t
   stridedIteration(IterKind.Values, t, offset, size)
 
 iterator enumerate*[T](t: Tensor[T]): (int, T) {.inline.} =
@@ -91,23 +87,19 @@ iterator enumerate*[T](t: Tensor[T], offset, size: int): (int, T) {.inline,noSid
     check_contiguous_index(t, offset+size-1)
   stridedIteration(IterKind.Iter_Values, t, offset, size)
 
-iterator menumerate*[T](t: Tensor[T]): (int, var T) {.inline,noSideEffect.} =
+iterator menumerate*[T](t: var Tensor[T]): (int, var T) {.inline,noSideEffect.} =
   ## Enumerate Tensor values (mutable)
-  ##
-  ## Note: due to C++ restrictions and Nim current codegen on mutable iterator,
-  ## it is not possible to use this iterator with the C++ backend
-  ## or at the same time as Cuda (that uses C++)
+
+  detach t
   stridedIteration(IterKind.Iter_Values, t, 0, t.size)
 
-iterator menumerate*[T](t: Tensor[T], offset, size: int): (int, var T) {.inline,noSideEffect.} =
+iterator menumerate*[T](t: var Tensor[T], offset, size: int): (int, var T) {.inline,noSideEffect.} =
   ## Enumerate Tensor values (mutable, with offset)
-  ##
-  ## Note: due to C++ restrictions and Nim current codegen on mutable iterator,
-  ## it is not possible to use this iterator with the C++ backend
-  ## or at the same time as Cuda (that uses C++)
+
   when compileOption("boundChecks"):
     check_contiguous_index(t, offset)
     check_contiguous_index(t, offset+size-1)
+  detach t
   stridedIteration(IterKind.Iter_Values, t, offset, size)
 
 iterator pairs*[T](t: Tensor[T]): (seq[int], T) {.inline,noSideEffect.} =
@@ -131,10 +123,8 @@ iterator pairs*[T](t: Tensor[T]): (seq[int], T) {.inline,noSideEffect.} =
 
 iterator mpairs*[T](t:var  Tensor[T]): (seq[int], var T) {.inline,noSideEffect.} =
   ## Inline iterator on Tensor (coordinates, values) (mutable)
-  ##
-  ## Note: due to C++ restrictions and Nim current codegen on mutable iterator,
-  ## it is not possible to use this iterator with the C++ backend
-  ## or at the same time as Cuda (that uses C++)
+
+  detach t
   stridedCoordsIteration(t, 0, t.size)
 
 iterator zip*[T,U](t1: Tensor[T], t2: Tensor[U]): (T,U) {.inline,noSideEffect.} =
@@ -174,50 +164,42 @@ iterator zip*[T,U,V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], offset, size: 
 iterator mzip*[T,U](t1: var Tensor[T], t2: Tensor[U]): (var T, U) {.inline,noSideEffect.} =
   ## Iterates simultaneously on two tensors returning their elements in a tuple. (mutable)
   ## Note: only tensors of the same shape will be zipped together.
-  ##
-  ## Note: due to C++ restrictions and Nim current codegen on mutable iterator,
-  ## it is not possible to use this iterator with the C++ backend
-  ## or at the same time as Cuda (that uses C++)
+
   when compileOption("boundChecks"):
     check_size(t1, t2)
+  detach t1
   dualStridedIteration(IterKind.Values, t1, t2, 0, t1.size)
 
 iterator mzip*[T,U](t1: var Tensor[T], t2: Tensor[U], offset, size: int): (var T, U) {.inline,noSideEffect.} =
   ## Iterates simultaneously on two tensors returning their elements in a tuple. (mutable, with offset)
   ## Note: only tensors of the same shape will be zipped together.
-  ##
-  ## Note: due to C++ restrictions and Nim current codegen on mutable iterator,
-  ## it is not possible to use this iterator with the C++ backend
-  ## or at the same time as Cuda (that uses C++)
+
   when compileOption("boundChecks"):
     check_size(t1, t2)
     check_contiguous_index(t1, offset)
     check_contiguous_index(t1, offset+size-1)
+  detach t1
   dualStridedIteration(IterKind.Values, t1, t2, offset, size)
 
 iterator mzip*[T,U,V](t1: var Tensor[T], t2: Tensor[U], t3: Tensor[V]): (var T, U, V) {.inline,noSideEffect.} =
   ## Iterates simultaneously on two tensors returning their elements in a tuple. (mutable)
   ## Note: only tensors of the same shape will be zipped together.
-  ##
-  ## Note: due to C++ restrictions and Nim current codegen on mutable iterator,
-  ## it is not possible to use this iterator with the C++ backend
-  ## or at the same time as Cuda (that uses C++)
+
   when compileOption("boundChecks"):
     check_size(t1, t2)
+  detach t1
   tripleStridedIteration(IterKind.Values, t1, t2, t3, 0, t1.size)
 
 iterator mzip*[T,U,V](t1: var Tensor[T], t2: Tensor[U], t3: Tensor[V], offset, size: int): (var T, U, V) {.inline,noSideEffect.} =
   ## Iterates simultaneously on two tensors returning their elements in a tuple. (mutable, with offset)
   ## Note: only tensors of the same shape will be zipped together.
-  ##
-  ## Note: due to C++ restrictions and Nim current codegen on mutable iterator,
-  ## it is not possible to use this iterator with the C++ backend
-  ## or at the same time as Cuda (that uses C++)
+
   when compileOption("boundChecks"):
     check_size(t1, t2)
     check_size(t1, t3)
     check_contiguous_index(t1, offset)
     check_contiguous_index(t1, offset+size-1)
+  detach t1
   tripleStridedIteration(IterKind.Values, t1, t2, t3, offset, size)
 
 iterator enumerateZip*[T,U](t1: Tensor[T], t2: Tensor[U]): (int,T,U) {.inline,noSideEffect.} =
@@ -257,25 +239,21 @@ iterator enumerateZip*[T,U,V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], offse
 iterator menumerateZip*[T,U](t1: var Tensor[T], t2: Tensor[U]): (int, var T,U) {.inline,noSideEffect.} =
   ## Enumerate simultaneously on two tensors returning their elements in a tuple. (mutable)
   ## Note: only tensors of the same shape will be zipped together.
-  ##
-  ## Note: due to C++ restrictions and Nim current codegen on mutable iterator,
-  ## it is not possible to use this iterator with the C++ backend
-  ## or at the same time as Cuda (that uses C++)
+
   when compileOption("boundChecks"):
     check_size(t1, t2)
+  detach t1
   dualStridedIteration(IterKind.Iter_Values, t1, t2, 0, t1.size)
 
 iterator menumerateZip*[T,U](t1: var Tensor[T], t2: Tensor[U], offset, size: int): (int, var T,U) {.inline,noSideEffect.} =
   ## Enumerate simultaneously on two tensors returning their elements in a tuple. (mutable, with offset)
   ## Note: only tensors of the same shape will be zipped together.
-  ##
-  ## Note: due to C++ restrictions and Nim current codegen on mutable iterator,
-  ## it is not possible to use this iterator with the C++ backend
-  ## or at the same time as Cuda (that uses C++)
+
   when compileOption("boundChecks"):
     check_size(t1, t2)
     check_contiguous_index(t1, offset)
     check_contiguous_index(t1, offset+size-1)
+  detach t1
   dualStridedIteration(IterKind.Iter_Values, t1, t2, offset, size)
 
 template axisIterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyped =

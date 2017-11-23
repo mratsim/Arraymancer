@@ -38,7 +38,7 @@ type
     shape*: MetadataArray
     strides*: MetadataArray
     offset*: int
-    storage: CpuStorage[T]
+    storage*: CpuStorage[T]
 
   CudaTensor*[T: SomeReal] = object
     ## Tensor data structure stored on Nvidia GPU (Cuda)
@@ -79,10 +79,10 @@ proc dataFrom[T](t: var Tensor[T], s: seq[T]) {.inline, noSideEffect.}=
 
   decRef tmp_store
 
-proc detach[T](t: var Tensor[T]) {.inline, noSideEffect.}=
+proc detach*[T](t: var Tensor[T]) {.inline, noSideEffect.}=
   # Create a new storage copy if more than
   # one tensor alread refer to the storage.
-  if isUniqueRef:
+  if t.storage.isUniqueRef:
     return
 
   dataFrom(t, t.storage.Fdata)

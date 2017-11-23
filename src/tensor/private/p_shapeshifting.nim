@@ -29,7 +29,7 @@ proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray):
   result = newTensorUninit[T](new_shape)
   result.apply2_inline(t,y)
 
-template reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray): untyped =
+template reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor): untyped =
   when compileOption("boundChecks"):
     check_nocopyReshape t
     when not (new_shape is MetadataArray):
@@ -96,7 +96,7 @@ proc exch_dim*[T](t: Tensor[T], dim1, dim2: int): Tensor[T] {.noInit,noSideEffec
   if dim1 == dim2:
     return
 
-  result = t.unsafeView # copy or no-copy is managed in the caller of exch_dim or permuteT
+  system.`=`(result, t)
   swap(result.strides[dim1], result.strides[dim2])
   swap(result.shape[dim1], result.shape[dim2])
 

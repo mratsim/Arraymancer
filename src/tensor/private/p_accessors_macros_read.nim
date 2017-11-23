@@ -102,7 +102,7 @@ proc unsafeSlicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,n
   ##    As such a `var Tensor` is required
   ## WARNING: passing a non-var Tensor is unsafe
 
-  result = unsafeView(t)
+  system.`=`(result, t)
   slicerT(result, slices)
 
 
@@ -117,7 +117,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
   ##    As such a `var Tensor` is required
   ## WARNING: passing a non-var Tensor is unsafe
 
-  result = unsafeView(t)
+  system.`=`(result, t)
   let full_slices = slices & initSpanSlices(t.rank - slices.len)
   slicerT(result, full_slices)
 
@@ -133,7 +133,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
   ##    As such a `var Tensor` is required
   ## WARNING: passing a non-var Tensor is unsafe
 
-  result = unsafeView(t)
+  system.`=`(result, t)
   let full_slices = initSpanSlices(t.rank - slices.len) & slices
   slicerT(result, full_slices)
 
@@ -150,7 +150,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
   ##    As such a `var Tensor` is required
   ## WARNING: passing a non-var Tensor is unsafe
 
-  result = unsafeView(t)
+  system.`=`(result, t)
   let full_slices = concat(slices1,
                             initSpanSlices(t.rank - slices1.len - slices2.len) ,
                             slices2)
@@ -165,7 +165,7 @@ proc unsafeSlicer*[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.
   ##    As such a `var Tensor` is required
   ## WARNING: passing a non-var Tensor is unsafe
 
-  result = unsafeView(t)
+  system.`=`(result, t)
   slicerT(result, slices.toArrayOfSlices)
 
 
@@ -180,7 +180,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
   ##    As such a `var Tensor` is required
   ## WARNING: passing a non-var Tensor is unsafe
 
-  result = unsafeView(t)
+  system.`=`(result, t)
   let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
   slicerT(result, full_slices)
 
@@ -196,7 +196,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
   ##    As such a `var Tensor` is required
   ## WARNING: passing a non-var Tensor is unsafe
 
-  result = unsafeView(t)
+  system.`=`(result, t)
   let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
   slicerT(result, full_slices)
 
@@ -213,7 +213,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
   ##    As such a `var Tensor` is required
   ## WARNING: passing a non-var Tensor is unsafe
 
-  result = unsafeView(t)
+  system.`=`(result, t)
   let full_slices = concat(slices1.toArrayOfSlices,
                             initSpanSlices(t.rank - slices1.len - slices2.len) ,
                             slices2.toArrayOfSlices)

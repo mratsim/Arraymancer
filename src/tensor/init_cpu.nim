@@ -22,7 +22,7 @@ import  ../private/[functional, nested_containers, sequninit],
         random,
         math
 
-proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect,noInit,inline.}=
+proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect,noInit,inline, deprecated.}=
   ## Input:
   ##     - A tensor
   ## Returns:

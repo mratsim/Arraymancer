@@ -47,5 +47,5 @@ proc decRef*(store: CpuStorage){.inline.}=
 proc initRef*(store: CpuStorage){.inline.}=
   store.Frefcount = 1
 
-proc isUniqueRef*(store: CpuStorage){.inline.}=
+proc isUniqueRef*(store: CpuStorage): bool {.inline.}=
   store.Frefcount == 1

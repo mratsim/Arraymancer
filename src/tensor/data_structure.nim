@@ -88,12 +88,13 @@ proc detach[T](t: var Tensor[T]) {.inline, noSideEffect.}=
 
   dataFrom(t, t.storage.Fdata)
 
-# proc `=`*[T](dst: var Tensor[T]; src: Tensor[T]) {.inline, noSideEffect.}=
-#   # Assignment overload to track reference count.
-#   # Note: only `let`, `var` and assignment to a var triggers refcounting
-#   # result = expression or function parameter passing will not.
-#   incRef src.storage
-#   system.`=`(dst, src)
+proc `=`*[T](dst: var Tensor[T]; src: Tensor[T]) {.inline, noSideEffect.}=
+  # Assignment overload to track reference count.
+  # Note: only `let`, `var` and assignment to a var triggers refcounting
+  # result = expression or function parameter passing will not.
+  if not src.storage.isNil:
+    incRef src.storage
+  system.`=`(dst, src)
 
 ## Use --newruntime with Arraymancer
 # {.experimental.}

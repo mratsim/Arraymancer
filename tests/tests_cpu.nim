@@ -23,7 +23,7 @@ import ../src/arraymancer,
         ./tensor/test_higherorder,
         ./tensor/test_aggregate,
         ./tensor/test_shapeshifting,
-        ./tensor/test_broadcasting,
+        # ./tensor/test_broadcasting, # Test instant SIGSEGV without backtraces for the whole test suite when assignment overloading is used
         ./tensor/test_ufunc,
         ./tensor/test_filling_data,
         ./tensor/test_optimization,

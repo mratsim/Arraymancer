@@ -51,11 +51,15 @@ suite "Shapeshifting":
     check: a == [[1,2],
                  [3,4]].toTensor()
 
-  test "Unsafe reshape":
+  test "Unsafe reshape": # unsafeReshape doesn't have much meaning with copy-on-write
     block:
       let a = toSeq(1..4).toTensor()
-      var a_view = a.unsafeReshape(2,2)
+
+      var a_view: type(a)
+      system.`=`(a_view, a.unsafeReshape(2,2))
+
       check: a_view == [[1,2],[3,4]].toTensor()
+
       a_view[_, _] = 0
       check: a == [0,0,0,0].toTensor()
 
@@ -64,8 +68,11 @@ suite "Shapeshifting":
       # not that 'a' here a let variable, however
       # unsafeView and unsafeReshape allow us to
       # modify its elements value
+      #
+      # unsafeReshape doesn't have much meaning with copy-on-write
       let a = toSeq(1..4).toTensor()
-      var a_view = a.unsafeSlice(1..2).unsafeReshape(1,2)
+      var a_view: type(a)
+      system.`=`(a_view, a.unsafeSlice(1..2).unsafeReshape(1,2))
       check: a_view == [[2,3]].toTensor()
       a_view[_, _] = 0
       check: a == [1,0,0,4].toTensor()
@@ -107,13 +114,16 @@ suite "Shapeshifting":
 
       check: b == [4, 3, 2, 1, 8, 7, 6, 5].toTensor.reshape(2,1,4)
 
-  test "To tensor reshape":
+  test "To tensor reshape": #TODO, unsafeToTensorReshape can be removed
+                            # unsafeToTensor --> `=sink` (move optimization if seq was unique)
+                            # unsafeReshape --> copy-on-write
     block:
       var s = @[1,2,3,4]
-      var a = s.unsafeToTensorReshape([2,2])
-      check a == [[1,2],[3,4]].toTensor()
+      var a: Tensor[int]
+      system.`=`(a, s.unsafeToTensorReshape([2,2]))
+      check: a == [[1,2],[3,4]].toTensor()
       s[0] = 0
-      check a == [[0,2],[3,4]].toTensor()
+      check: a == [[0,2],[3,4]].toTensor()
 
   test "Unsqueeze":
     block:

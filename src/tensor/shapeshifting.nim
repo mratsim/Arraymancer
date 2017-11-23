@@ -32,10 +32,10 @@ proc transpose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
   t.shape.reversed(result.shape)
   t.strides.reversed(result.strides)
   result.offset = t.offset
-  result.data = t.data
+  result.storage = t.storage
 
 
-proc unsafeTranspose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
+proc unsafeTranspose*(t: Tensor): Tensor {.noInit,noSideEffect,inline,deprecated.} =
   ## Transpose a Tensor without copy.
   ##
   ## Warning ⚠:
@@ -46,7 +46,7 @@ proc unsafeTranspose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
   t.shape.reversed(result.shape)
   t.strides.reversed(result.strides)
   result.offset = t.offset
-  shallowCopy(result.data, t.data)
+  result.storage = t.storage
 
 proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noInit.} =
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
@@ -217,7 +217,7 @@ proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit,
   result.shape.copyFrom(shape)
   # result.strides # Unneeded, autoinitialized with 0
   result.offset = 0
-  result.data = newSeqWith(1, val)
+  result.dataFrom newSeqWith(1, val) # refcounted copy
 
 proc broadcast*[T: SomeNumber](val: T, shape: MetadataArray): Tensor[T] {.noInit,noSideEffect.} =
   ## Broadcast a number
@@ -237,7 +237,7 @@ proc broadcast*[T: SomeNumber](val: T, shape: MetadataArray): Tensor[T] {.noInit
   result.shape.copyFrom(shape)
   # result.strides # Unneeded, autoinitialized with 0
   result.offset = 0
-  result.data = newSeqWith(1, val)
+  result.dataFrom newSeqWith(1, val) # refcounted copy
 
 template bc*(t: (Tensor|SomeNumber), shape: varargs[int]): untyped =
   ## Alias for ``broadcast``
@@ -264,8 +264,9 @@ proc unsafeBroadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffec
 
   broadcast2T(a,b, result)
 
-  shallowCopy(result.a.data, a.data)
-  shallowCopy(result.b.data, b.data)
+  # shallow copy
+  result.a.storage = a.storage
+  result.b.storage = b.storage
 
 proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
   ## Permute dimensions of a tensors

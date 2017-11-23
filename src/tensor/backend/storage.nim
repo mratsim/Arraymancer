@@ -18,6 +18,8 @@ type
     ## Data is shared between multiple tensors as long as none modifies the data.
     ## If a mutation is needed, it is done in-place if the Tensor is the only one referring to this storage.
     ## Otherwise the mutator copies the data and refers to his own copy.
+    ##
+    ## Note: Do not use the exposed Fdata, this is only exposed for transition.
     Frefcount: int
     Fdata*: seq[T] # This should only be visible internally
 
@@ -45,7 +47,7 @@ proc decRef*(store: CpuStorage){.inline.}=
     dec store.Frefcount
 
 proc initRef*(store: CpuStorage){.inline.}=
-  store.Frefcount = 1
+  store.Frefcount = 0 # Start at 0, first assignation will bring that to 1
 
 proc isUniqueRef*(store: CpuStorage): bool {.inline.}=
-  store.Frefcount == 1
+  store.Frefcount <= 1 # Results from proc may have a refcount of 0 for a fresh storage.

@@ -62,7 +62,7 @@ type
 # Copy-on-write
 # #############
 
-proc dataFrom[T](t: var Tensor[T], s: seq[T]) {.inline, noSideEffect.}=
+proc dataFrom*[T](t: var Tensor[T], s: seq[T]) {.inline, noSideEffect.}=
   # Safely change the old storage to a new reference.
   # It relies on Nim garbage collector for cleanup when needup.
   #

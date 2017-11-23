@@ -73,7 +73,7 @@ proc dataFrom[T](t: var Tensor[T], s: seq[T]) {.inline, noSideEffect.}=
   new tmp_store
 
   initRef tmp_store
-  deepCopy(tmp_store.Fdata, s)
+  tmp_store.Fdata = s
 
   swap(t.storage, tmp_store)
 

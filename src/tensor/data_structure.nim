@@ -69,15 +69,16 @@ proc dataFrom[T](t: var Tensor[T], s: seq[T]) {.inline, noSideEffect.}=
   # Note: this only works without races if only the main thread can access this.
   # Also increment is only done on assignment, slices do not increment.
 
-  let old_store = t.storage
-  var fresh_store: CpuStorage[T]
-  new fresh_store
+  var tmp_store: CpuStorage[T]
+  new tmp_store
 
-  initRef fresh_store
-  deepCopy(fresh_store.Fdata, s)
+  initRef tmp_store
+  deepCopy(tmp_store.Fdata, s)
 
-  t.storage = fresh_store
-  decRef old_store
+  swap(t.storage, tmp_store)
+
+  if not tmp_store.isNil: # On new initialization t.storage was initially nil.
+    decRef tmp_store
 
 proc detach[T](t: var Tensor[T]) {.inline, noSideEffect.}=
   # Create a new storage copy if more than
@@ -87,18 +88,20 @@ proc detach[T](t: var Tensor[T]) {.inline, noSideEffect.}=
 
   dataFrom(t, t.storage.Fdata)
 
-proc `=`*[T](dst: var Tensor[T]; src: Tensor[T]) {.inline, noSideEffect.}=
-  # Assignment overload to track reference count.
-  # Note: only `let`, `var` and assignment to a var triggers refcounting
-  # result = expression or function parameter passing will not.
-  incRef src.storage
-  system.`=`(dst, src)
+# proc `=`*[T](dst: var Tensor[T]; src: Tensor[T]) {.inline, noSideEffect.}=
+#   # Assignment overload to track reference count.
+#   # Note: only `let`, `var` and assignment to a var triggers refcounting
+#   # result = expression or function parameter passing will not.
+#   incRef src.storage
+#   system.`=`(dst, src)
 
-{.experimental.}
-proc `=destroy`*[T](c: Tensor[T]) {.inline, noSideEffect.}=
-  # Automatically called on tensor destruction. It will decrease
-  # the reference count on the shared storage
-  decRef c.storage
+## Use --newruntime with Arraymancer
+# {.experimental.}
+# proc `=destroy`*[T](c: Tensor[T]) {.inline, noSideEffect.}=
+#   # Automatically called on tensor destruction. It will decrease
+#   # the reference count on the shared storage
+#   if not c.storage.isNil: # Some tensors may be uninitialized
+#     decRef c.storage
 
 # ###############
 # Field accessors

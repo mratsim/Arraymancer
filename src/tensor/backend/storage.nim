@@ -37,10 +37,12 @@ type
 
 
 proc incRef*(store: CpuStorage){.inline.}=
-  inc store.Frefcount
+  if not store.isNil: # If a tensor is in a wrapper like the autograd Variable it may not be initialized
+    inc store.Frefcount
 
 proc decRef*(store: CpuStorage){.inline.}=
-  dec store.Frefcount
+  if not store.isNil: # We may swap unitialized storage with initialized storage and destroy it after
+    dec store.Frefcount
 
 proc initRef*(store: CpuStorage){.inline.}=
   store.Frefcount = 1

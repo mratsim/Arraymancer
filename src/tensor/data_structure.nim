@@ -77,8 +77,7 @@ proc dataFrom[T](t: var Tensor[T], s: seq[T]) {.inline, noSideEffect.}=
 
   swap(t.storage, tmp_store)
 
-  if not tmp_store.isNil: # On new initialization t.storage was initially nil.
-    decRef tmp_store
+  decRef tmp_store
 
 proc detach[T](t: var Tensor[T]) {.inline, noSideEffect.}=
   # Create a new storage copy if more than
@@ -92,8 +91,7 @@ proc `=`*[T](dst: var Tensor[T]; src: Tensor[T]) {.inline, noSideEffect.}=
   # Assignment overload to track reference count.
   # Note: only `let`, `var` and assignment to a var triggers refcounting
   # result = expression or function parameter passing will not.
-  if not src.storage.isNil:
-    incRef src.storage
+  incRef src.storage
   system.`=`(dst, src)
 
 ## Use --newruntime with Arraymancer
@@ -101,8 +99,7 @@ proc `=`*[T](dst: var Tensor[T]; src: Tensor[T]) {.inline, noSideEffect.}=
 # proc `=destroy`*[T](c: Tensor[T]) {.inline, noSideEffect.}=
 #   # Automatically called on tensor destruction. It will decrease
 #   # the reference count on the shared storage
-#   if not c.storage.isNil: # Some tensors may be uninitialized
-#     decRef c.storage
+#   decRef c.storage
 
 # ###############
 # Field accessors

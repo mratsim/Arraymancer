@@ -17,19 +17,19 @@ import ../src/arraymancer,
         ./tensor/test_comparison,
         ./tensor/test_accessors,
         ./tensor/test_accessors_slicer,
-        # ./tensor/test_display, # Display of 3D tensors broken by copy on write
+        ./tensor/test_display,
         ./tensor/test_operators_blas,
         ./tensor/test_math_functions,
         ./tensor/test_higherorder,
         ./tensor/test_aggregate,
         ./tensor/test_shapeshifting,
-        # ./tensor/test_broadcasting, # Test instant SIGSEGV without backtraces for the whole test suite when assignment overloading is used
+        # ./tensor/test_broadcasting,
         ./tensor/test_ufunc,
         ./tensor/test_filling_data,
         ./tensor/test_optimization,
         ./tensor/test_bugtracker,
-        # ./nn_primitives/test_nnp_convolution, # Test fails and that failure SEGFAULTS as Nim tries to display it
-        ./nn_primitives/test_nnp_loss
-        # ./autograd/test_gate_blas, # There is an issue with a non-nil but inaccesigle CpuStorage
+        ./nn_primitives/test_nnp_convolution,
+        ./nn_primitives/test_nnp_loss,
+        # ./autograd/test_gate_blas
 
 import ./stability_tests/test_stability_openmp

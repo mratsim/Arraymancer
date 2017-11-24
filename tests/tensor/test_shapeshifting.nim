@@ -154,9 +154,8 @@ suite "Shapeshifting":
     check a.stack() == [[1,2,3],[4,5,6]].toTensor()
     check a.stack(1) == [[1,4],[2,5],[3,6]].toTensor()
 
-    # TODO: tests fails due to Copy on-write and failures lead to print, print lead to crash due to 3D display bug with copy-on-write
-    # let b = [[[1,2],[3,4]].toTensor(),[[4,5],[6,7]].toTensor()]
-    # check b.stack()  == [[[1,2],[3,4]],[[4,5],[6,7]]].toTensor()
-    # check b.stack(1) == [[[1,2],[4,5]],[[3,4],[6,7]]].toTensor()
-    # check b.stack(2) == [[[1,4],[2,5]],[[3,6],[4,7]]].toTensor()
+    let b = [[[1,2],[3,4]].toTensor(),[[4,5],[6,7]].toTensor()]
+    check b.stack()  == [[[1,2],[3,4]],[[4,5],[6,7]]].toTensor()
+    check b.stack(1) == [[[1,2],[4,5]],[[3,4],[6,7]]].toTensor()
+    check b.stack(2) == [[[1,4],[2,5]],[[3,6],[4,7]]].toTensor()
 

@@ -122,7 +122,7 @@ proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
 
   return t.reshape_with_copy(new_shape)
 
-proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
+proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit, deprecated.} =
   ## Reshape a tensor without copy.
   ##
   ## ⚠ Reshaping without copy is only possible on contiguous Tensors
@@ -131,10 +131,10 @@ proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
 
-  t.reshape_no_copy(new_shape)
-  shallowCopy(result.data, t.data)
+  t.reshape_no_copy(new_shape, result)
+  result.storage = t.storage
 
-proc unsafeReshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
+proc unsafeReshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit, deprecated.} =
   ## Reshape a tensor without copy.
   ##
   ## ⚠ Reshaping without copy is only possible on contiguous Tensors
@@ -143,8 +143,8 @@ proc unsafeReshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
 
-  t.reshape_no_copy(new_shape)
-  shallowCopy(result.data, t.data)
+  t.reshape_no_copy(new_shape, result)
+  result.storage = t.storage
 
 
 proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.}=

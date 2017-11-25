@@ -1,3 +1,19 @@
+Arraymancer v0.3.0
+==========================
+
+I am very excited to announce the second release of Arraymancer which includes numerous improvements and breaking changes:
+
+- **Very** Breaking
+  - Tensors uses reference semantics now: `let a = b` will share data by default and copies must be made explicitly.
+    - There is no need to use `unsafe` proc to avoid copies especially for slices.
+    - Unsafe procs are deprecated and will be removed leading to a smaller and simpler codebase and API/documentation.
+    - Tensors and CudaTensors now works the same way.
+    - Use `clone` to do copies.
+    - Arraymancer now works like Numpy and Julia, making it easier to port code.
+    - Unfortunately it makes it harder to debug unexpected data sharing.
+
+- Cuda:
+  - Support for convolution forward and backward
 
 
 Arraymancer v0.2.0 Sept. 24, 2017 "The Color of Magic"

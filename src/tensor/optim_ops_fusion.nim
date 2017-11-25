@@ -112,14 +112,19 @@ template rewriteToTensorReshape*{reshape(toTensor(oa, dummy_bugfix), shape)}(
   ## Operation fusion leverage the Nim compiler and should not be called explicitly.
   toTensorReshape(oa, shape, dummy_bugfix)
 
-proc unsafeToTensorReshape*[T](data: seq[T], shape: varargs[int]): Tensor[T] {.noSideEffect.} =
+proc unsafeToTensorReshape*[T](data: seq[T], shape: varargs[int]): Tensor[T] {.noSideEffect, deprecated.} =
+  ## Deprecated
+  ##
   ## Fuse unsafeToTensor and unsafeReshape in one operation
+  ##
+  ## With move semantics + reference semantics this is not needed.
+  # Note: once this is removed, CpuStorage can be changed to not expose Fdata.
 
   when compileOption("boundChecks"):
     check_nested_elements(shape.toMetadataArray, data.len)
 
   tensorCpu(shape, result)
-  shallowCopy(result.data, data)
+  shallowCopy(result.storage.Fdata, data)
 
 template rewriteUnsafeToTensorReshape*{unsafeReshape(unsafeToTensor(s), shape)}(
   s: seq,

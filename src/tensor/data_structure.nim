@@ -30,7 +30,11 @@ type
     ## Opaque data storage for Tensors
     ## Currently implemented as a seq with reference semantics (shallow copy on assignment).
     ## It may change in the future for a custom memory managed and 64 bit aligned solution.
-    Fdata: seq[T]
+    ##
+    ## Warning ⚠:
+    ##   Do not use Fdata directly, direct access will be removed in 0.4.0.
+    # `Fdata` will be transformed into an opaque type once `unsafeToTensorReshape` is removed.
+    Fdata*: seq[T]
 
   Tensor*[T] = object
     ## Tensor data structure stored on Cpu

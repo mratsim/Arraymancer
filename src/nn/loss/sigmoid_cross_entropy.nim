@@ -30,7 +30,7 @@ method forward*[TT](self: SigmoidCrossEntropyLoss[TT], a: Variable[TT], target: 
   result.tape = a.tape
 
   # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
-  result.value = [sigmoid_cross_entropy(a.value, target)].toTensor.unsafeView
+  result.value = [sigmoid_cross_entropy(a.value, target)].toTensor
 
   result.grad = zeros[getSubType(TT)](1)
 
@@ -44,7 +44,7 @@ proc sigmoid_cross_entropy*[TT](a: Variable[TT], target: TT): Variable[TT] =
   new gate
   gate.arity = 1
   gate.cache = a
-  gate.target = target.unsafeView
+  gate.target = target
 
   # Node
   var node: Node[TT]

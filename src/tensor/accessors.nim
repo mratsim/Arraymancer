@@ -31,7 +31,7 @@ proc unsafeAtAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.noInit,inl
   when compileOption("boundChecks"):
     check_axis_index(t, axis, idx)
 
-  result = t.unsafeView()
+  result = t
   result.shape[axis] = 1
   result.offset += result.strides[axis]*idx
 

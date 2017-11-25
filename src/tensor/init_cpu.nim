@@ -22,7 +22,9 @@ import  ../private/[functional, nested_containers, sequninit],
         random,
         math
 
-proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect,noInit,inline.}=
+proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect,noInit,inline, deprecated.}=
+  ## DEPRECATED: With the switch to reference semantics, ``unsafe`` is now the default.
+  ##
   ## Input:
   ##     - A tensor
   ## Returns:
@@ -31,10 +33,7 @@ proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect,noInit,inline.}=
   ## Warning ⚠
   ##   Both tensors shares the same memory. Data modification on one will be reflected on the other.
   ##   However modifying the shape, strides or offset will not affect the other.
-  result.shape = t.shape
-  result.strides = t.strides
-  result.offset = t.offset
-  shallowCopy(result.data, t.data)
+  result = t
 
 proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend

@@ -96,7 +96,7 @@ proc exch_dim*[T](t: Tensor[T], dim1, dim2: int): Tensor[T] {.noInit,noSideEffec
   if dim1 == dim2:
     return
 
-  result = t.unsafeView # copy or no-copy is managed in the caller of exch_dim or permuteT
+  result = t # copy or no-copy is managed in the caller of exch_dim or permuteT
   swap(result.strides[dim1], result.strides[dim2])
   swap(result.shape[dim1], result.shape[dim2])
 

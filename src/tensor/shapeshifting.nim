@@ -87,11 +87,11 @@ proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: boo
   let fCont = t.is_F_contiguous
 
   if (cCont or fCont) and not force:
-    return t.unsafeView
+    return t
   elif cCont and layout == rowMajor:
-    return t.unsafeView
+    return t
   elif fCont and layout == colMajor:
-    return t.unsafeView
+    return t
   contiguousT(result, t, layout)
 
 proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
@@ -182,7 +182,7 @@ proc unsafeBroadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
   ##   A broadcasted tensor should not be modified and only used for computation.
-  result = t.unsafeView
+  result = t
   result.broadcastT(shape)
 
 proc unsafeBroadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit,noSideEffect.}=
@@ -196,7 +196,7 @@ proc unsafeBroadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
   ##   A broadcasted tensor should not be modified and only used for computation.
-  result = t.unsafeView
+  result = t
   result.broadcastT(shape)
 
 proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.} =
@@ -299,7 +299,7 @@ proc unsafePermute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect
   ##   A broadcasted tensor should not be modified and only used for computation.
 
   # TODO: bounds check
-  result = t.unsafeView
+  result = t
   permuteT(result, dims)
 
 proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit,noSideEffect.}=
@@ -352,7 +352,7 @@ proc unsafeSqueeze*(t: Tensor): Tensor {.noInit,noSideEffect.}=
   ## Warning ⚠:
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
-  result = t.unsafeView
+  result = t
   result.squeezeT
 
 proc squeeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
@@ -375,7 +375,7 @@ proc unsafeSqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   ## Warning ⚠:
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
-  result = t.unsafeView
+  result = t
   result.squeezeT(axis)
 
 proc unsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
@@ -395,7 +395,7 @@ proc unsafeUnsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   ##   - a tensor with that new axis
   ## WARNING: result share storage with input
   ## This does not guarantee `let` variable immutability
-  result = t.unsafeView
+  result = t
   result.unsqueezeT(axis)
 
 proc stack*[T](tensors: varargs[Tensor[T]], axis: int = 0): Tensor[T] {.noInit.} =

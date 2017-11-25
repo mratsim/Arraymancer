@@ -26,24 +26,32 @@ type
     Cpu,
     Cuda
 
+  CpuStorage* {.shallow.} [T] = object
+    ## Opaque data storage for Tensors
+    ## Currently implemented as a seq with reference semantics (shallow copy on assignment).
+    ## It may change in the future for a custom memory managed and 64 bit aligned solution.
+    Fdata: seq[T]
+
   Tensor*[T] = object
     ## Tensor data structure stored on Cpu
     ##   - ``shape``: Dimensions of the tensor
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
     ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
-    ##   - ``data``: A sequence that holds the actual data
+    ##   - ``storage``: An opaque data storage for Tensors
     ## Fields are public so that external libraries can easily construct a Tensor.
+    ## You can use ``.data`` to access the opaque data storage.
     shape*: MetadataArray
     strides*: MetadataArray
     offset*: int
-    data*: seq[T] # Perf note: seq are always deep copied on "var" assignement.
+    storage*: CpuStorage[T]
 
-  CudaSeq* [T: SomeReal] = object
-    ## Seq-like structure on the Cuda backend.
+  CudaStorage* [T: SomeReal] = object
+    ## Opaque seq-like structure for storage on the Cuda backend.
     ##
     ## Nim garbage collector will automatically ask cuda to clear GPU memory if ``data`` becomes unused.
-    len*: int
-    data*: ref[ptr UncheckedArray[T]]
+    Flen: int
+    Fref_tracking: ref[ptr UncheckedArray[T]] # We keep ref tracking for the GC in a separate field to avoid double indirection.
+    Fdata: ptr UncheckedArray[T]
 
   CudaTensor*[T: SomeReal] = object
     ## Tensor data structure stored on Nvidia GPU (Cuda)
@@ -59,9 +67,32 @@ type
     shape*: MetadataArray
     strides*: MetadataArray
     offset*: int
-    data*: CudaSeq[T] # Memory on Cuda device will be automatically garbage-collected
+    storage*: CudaStorage[T]
 
   AnyTensor*[T] = Tensor[T] or CudaTensor[T]
+
+# ###############
+# Field accessors
+# ###############
+
+proc data*[T](t: Tensor[T]): seq[T] {.inline,noInit.} =
+  # Get tensor raw data
+  # This is intended for library writer
+  shallowCopy(result, t.storage.Fdata)
+
+proc data*[T](t: var Tensor[T]): var seq[T] {.inline,noInit.} =
+  # Get mutable tensor raw data
+  # This is intended for library writer
+  shallowCopy(result, t.storage.Fdata)
+
+proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.inline, noSideEffect.}=
+  # Set tensor raw data
+  # This is intended for library writer
+  t.storage.Fdata = s
+
+# ################
+# Tensors Metadata
+# ################
 
 template rank*(t: AnyTensor): int =
   ## Input:
@@ -131,22 +162,24 @@ proc isContiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
   ## Check if the tensor is contiguous
   return t.is_C_contiguous or t.is_F_contiguous
 
+# ##################
+# Raw pointer access
+# ##################
+
+
 proc get_data_ptr*[T](t: AnyTensor[T]): ptr T {.inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the real start of its data (no offset)
-  when t is Tensor:
-    unsafeAddr(t.data[0])
-  elif t is CudaTensor:
-    unsafeAddr(t.data.data[0])
+  unsafeAddr(t.storage.Fdata[0])
 
 proc get_offset_ptr*[T](t: Tensor[T]): ptr T {.inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the offset start of its data
-  unsafeAddr(t.data[t.offset])
+  unsafeAddr(t.storage.Fdata[t.offset])
 
 proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.inline.}=
   ## Input:
@@ -154,4 +187,4 @@ proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.inline.}=
   ## Returns:
   ##     - A pointer to the offset start of the data.
   ##       Return value supports array indexing.
-  cast[ptr UncheckedArray[T]](t.data[t.offset].unsafeAddr)
+  cast[ptr UncheckedArray[T]](t.storage.Fdata[t.offset].unsafeAddr)

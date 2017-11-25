@@ -32,10 +32,10 @@ proc transpose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
   t.shape.reversed(result.shape)
   t.strides.reversed(result.strides)
   result.offset = t.offset
-  result.data = t.data
+  result.storage = t.storage
 
 
-proc unsafeTranspose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
+proc unsafeTranspose*(t: Tensor): Tensor {.noInit,noSideEffect,inline,deprecated.} =
   ## Transpose a Tensor without copy.
   ##
   ## Warning ⚠:
@@ -46,7 +46,7 @@ proc unsafeTranspose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
   t.shape.reversed(result.shape)
   t.strides.reversed(result.strides)
   result.offset = t.offset
-  shallowCopy(result.data, t.data)
+  result.storage = t.storage
 
 proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noInit.} =
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
@@ -87,11 +87,11 @@ proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: boo
   let fCont = t.is_F_contiguous
 
   if (cCont or fCont) and not force:
-    return t.unsafeView
+    return t
   elif cCont and layout == rowMajor:
-    return t.unsafeView
+    return t
   elif fCont and layout == colMajor:
-    return t.unsafeView
+    return t
   contiguousT(result, t, layout)
 
 proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
@@ -131,8 +131,8 @@ proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
 
-  t.reshape_no_copy(new_shape)
-  shallowCopy(result.data, t.data)
+  t.reshape_no_copy(new_shape, result)
+  result.storage = t.storage
 
 proc unsafeReshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ## Reshape a tensor without copy.
@@ -143,8 +143,8 @@ proc unsafeReshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
 
-  t.reshape_no_copy(new_shape)
-  shallowCopy(result.data, t.data)
+  t.reshape_no_copy(new_shape, result)
+  result.storage = t.storage # Direct copy of storage does not increment refcount
 
 
 proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.}=
@@ -182,7 +182,7 @@ proc unsafeBroadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
   ##   A broadcasted tensor should not be modified and only used for computation.
-  result = t.unsafeView
+  system.`=`(result, t)
   result.broadcastT(shape)
 
 proc unsafeBroadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit,noSideEffect.}=
@@ -196,7 +196,7 @@ proc unsafeBroadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
   ##   A broadcasted tensor should not be modified and only used for computation.
-  result = t.unsafeView
+  system.`=`(result, t)
   result.broadcastT(shape)
 
 proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.} =
@@ -217,7 +217,7 @@ proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit,
   result.shape.copyFrom(shape)
   # result.strides # Unneeded, autoinitialized with 0
   result.offset = 0
-  result.data = newSeqWith(1, val)
+  result.dataFrom newSeqWith(1, val) # refcounted copy
 
 proc broadcast*[T: SomeNumber](val: T, shape: MetadataArray): Tensor[T] {.noInit,noSideEffect.} =
   ## Broadcast a number
@@ -237,7 +237,7 @@ proc broadcast*[T: SomeNumber](val: T, shape: MetadataArray): Tensor[T] {.noInit
   result.shape.copyFrom(shape)
   # result.strides # Unneeded, autoinitialized with 0
   result.offset = 0
-  result.data = newSeqWith(1, val)
+  result.dataFrom newSeqWith(1, val) # refcounted copy
 
 template bc*(t: (Tensor|SomeNumber), shape: varargs[int]): untyped =
   ## Alias for ``broadcast``
@@ -264,8 +264,9 @@ proc unsafeBroadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffec
 
   broadcast2T(a,b, result)
 
-  shallowCopy(result.a.data, a.data)
-  shallowCopy(result.b.data, b.data)
+  # shallow copy
+  result.a.storage = a.storage
+  result.b.storage = b.storage
 
 proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
   ## Permute dimensions of a tensors
@@ -299,7 +300,7 @@ proc unsafePermute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect
   ##   A broadcasted tensor should not be modified and only used for computation.
 
   # TODO: bounds check
-  result = t.unsafeView
+  system.`=`(result, t)
   permuteT(result, dims)
 
 proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit,noSideEffect.}=
@@ -352,7 +353,7 @@ proc unsafeSqueeze*(t: Tensor): Tensor {.noInit,noSideEffect.}=
   ## Warning ⚠:
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
-  result = t.unsafeView
+  system.`=`(result, t)
   result.squeezeT
 
 proc squeeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
@@ -375,7 +376,7 @@ proc unsafeSqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   ## Warning ⚠:
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
-  result = t.unsafeView
+  system.`=`(result, t)
   result.squeezeT(axis)
 
 proc unsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
@@ -395,7 +396,7 @@ proc unsafeUnsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   ##   - a tensor with that new axis
   ## WARNING: result share storage with input
   ## This does not guarantee `let` variable immutability
-  result = t.unsafeView
+  system.`=`(result, t)
   result.unsqueezeT(axis)
 
 proc stack*[T](tensors: varargs[Tensor[T]], axis: int = 0): Tensor[T] {.noInit.} =

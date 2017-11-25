@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../data_structure,
+import  ./storage,
         ./global_config,
         nimcuda/[nimcuda, cuda_runtime_api, driver_types]
 

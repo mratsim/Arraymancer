@@ -72,7 +72,7 @@ proc unsafeReshape*(t: CudaTensor, new_shape: varargs[int]): CudaTensor =
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
 
-  t.reshape_no_copy(new_shape)
+  t.reshape_no_copy(new_shape, result)
   result.data = t.data
 
 proc unsafeBroadcast*(t: CudaTensor, shape: varargs[int]): CudaTensor {.noSideEffect.}=

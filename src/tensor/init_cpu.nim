@@ -22,7 +22,7 @@ import  ../private/[functional, nested_containers, sequninit],
         random,
         math
 
-proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect,noInit,inline.}=
+proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect,noInit,inline, deprecated.}=
   ## Input:
   ##     - A tensor
   ## Returns:
@@ -103,6 +103,7 @@ proc unsafeToTensor*[T: SomeNumber](data: seq[T]): Tensor[T] {.noInit,noSideEffe
   ##      - A rank 1 tensor with the same size of the input
   ## WARNING: result share storage with input
   tensorCpu([data.len], result)
+  new result.storage
   shallowCopy(result.data, data)
 
 proc toTensor*(s:string): auto {.noSideEffect.} =

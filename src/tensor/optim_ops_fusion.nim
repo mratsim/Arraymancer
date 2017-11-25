@@ -86,7 +86,7 @@ template toTensorReshapeT(oa: typed, shape: varargs[int]): untyped =
 
   var t: Tensor[type(data[0])]
   tensorCpu(seq_shape, t)
-  shallowCopy(t.data, data)
+  t.dataFrom data
   t
 
 proc toTensorReshape(oa: string, shape: varargs[int]): auto {.noInit,noSideEffect.}=
@@ -112,14 +112,18 @@ template rewriteToTensorReshape*{reshape(toTensor(oa, dummy_bugfix), shape)}(
   ## Operation fusion leverage the Nim compiler and should not be called explicitly.
   toTensorReshape(oa, shape, dummy_bugfix)
 
-proc unsafeToTensorReshape*[T](data: seq[T], shape: varargs[int]): Tensor[T] {.noSideEffect.} =
+proc unsafeToTensorReshape*[T](data: seq[T], shape: varargs[int]): Tensor[T] {.noSideEffect, deprecated.} =
   ## Fuse unsafeToTensor and unsafeReshape in one operation
+  ##
+  ## With move semantics + copy-on-write this won't be used in the future anymore
 
   when compileOption("boundChecks"):
     check_nested_elements(shape.toMetadataArray, data.len)
 
   tensorCpu(shape, result)
-  shallowCopy(result.data, data)
+  new result.storage
+
+  shallowCopy(result.storage.Fdata, data)
 
 template rewriteUnsafeToTensorReshape*{unsafeReshape(unsafeToTensor(s), shape)}(
   s: seq,

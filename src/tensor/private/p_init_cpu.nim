@@ -38,5 +38,5 @@ template toTensorCpu*(s: typed): untyped =
 
   var t: Tensor[type(data[0])]
   tensorCpu(shape, t)
-  t.data = data
+  t.dataFrom(data)
   t

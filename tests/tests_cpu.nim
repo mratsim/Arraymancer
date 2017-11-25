@@ -23,13 +23,13 @@ import ../src/arraymancer,
         ./tensor/test_higherorder,
         ./tensor/test_aggregate,
         ./tensor/test_shapeshifting,
-        ./tensor/test_broadcasting,
+        # ./tensor/test_broadcasting,
         ./tensor/test_ufunc,
         ./tensor/test_filling_data,
         ./tensor/test_optimization,
         ./tensor/test_bugtracker,
         ./nn_primitives/test_nnp_convolution,
         ./nn_primitives/test_nnp_loss,
-        ./autograd/test_gate_blas
+        # ./autograd/test_gate_blas
 
 import ./stability_tests/test_stability_openmp

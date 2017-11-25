@@ -13,12 +13,13 @@
 # limitations under the License.
 
 import  ./backend/metadataArray,
+        ./backend/storage,
         nimblas
 
 export nimblas.OrderType
 
 type
-  Backend* = enum
+  Backend*{.deprecated.}= enum
     ## ``Backend`` for tensor computation and memory allocation.
     ##
     ##
@@ -31,19 +32,13 @@ type
     ##   - ``shape``: Dimensions of the tensor
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
     ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
-    ##   - ``data``: A sequence that holds the actual data
+    ##   - ``storage``: An "opaque" CpuStorage datatype that holds the actual data + a reference counter.
+    ##                  Data is accessible via the ".data" accessor.
     ## Fields are public so that external libraries can easily construct a Tensor.
     shape*: MetadataArray
     strides*: MetadataArray
     offset*: int
-    data*: seq[T] # Perf note: seq are always deep copied on "var" assignement.
-
-  CudaSeq* [T: SomeReal] = object
-    ## Seq-like structure on the Cuda backend.
-    ##
-    ## Nim garbage collector will automatically ask cuda to clear GPU memory if ``data`` becomes unused.
-    len*: int
-    data*: ref[ptr UncheckedArray[T]]
+    storage*: CpuStorage[T]
 
   CudaTensor*[T: SomeReal] = object
     ## Tensor data structure stored on Nvidia GPU (Cuda)
@@ -62,6 +57,68 @@ type
     data*: CudaSeq[T] # Memory on Cuda device will be automatically garbage-collected
 
   AnyTensor*[T] = Tensor[T] or CudaTensor[T]
+
+# #############
+# Copy-on-write
+# #############
+
+proc dataFrom*[T](t: var Tensor[T], s: seq[T]) {.inline, noSideEffect.}=
+  # Safely change the old storage to a new reference.
+  # It relies on Nim garbage collector for cleanup when needup.
+  #
+  # Note: this only works without races if only the main thread can access this.
+  # Also increment is only done on assignment, slices do not increment.
+
+  var tmp_store: CpuStorage[T]
+  new tmp_store
+
+  initRef tmp_store
+  tmp_store.Fdata = s
+
+  swap(t.storage, tmp_store)
+
+  decRef tmp_store
+
+proc detach*[T](t: var Tensor[T]) {.inline, noSideEffect.}=
+  # Create a new storage copy if more than
+  # one tensor alread refer to the storage.
+  if t.storage.isUniqueRef:
+    return
+
+  dataFrom(t, t.storage.Fdata)
+
+proc `=`*[T](dst: var Tensor[T]; src: Tensor[T]) {.inline, noSideEffect.}=
+  # Assignment overload to track reference count.
+  # Note: only `let`, `var` and assignment to a var triggers refcounting
+  # result = expression or function parameter passing will not.
+  incRef src.storage
+  system.`=`(dst, src)
+
+## Use --newruntime with Arraymancer
+# {.experimental.}
+# proc `=destroy`*[T](c: Tensor[T]) {.inline, noSideEffect.}=
+#   # Automatically called on tensor destruction. It will decrease
+#   # the reference count on the shared storage
+#   decRef c.storage
+
+# ###############
+# Field accessors
+# ###############
+
+proc data*[T](t: Tensor[T]): seq[T] {.inline,noInit.} =
+  # Get tensor raw data
+  # This is intended for library writer
+  shallowCopy(result, t.storage.Fdata)
+
+proc data*[T](t: var Tensor[T]): var seq[T] {.inline,noInit.} =
+  # Get mutable tensor raw data
+  # This is intended for library writer
+  shallowCopy(result, t.storage.Fdata)
+
+proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.inline, noSideEffect.}=
+  # Set tensor raw data
+  # This is intended for library writer
+  dataFrom[T](t, s)
 
 template rank*(t: AnyTensor): int =
   ## Input:
@@ -129,7 +186,7 @@ proc is_F_contiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
 
 proc isContiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
   ## Check if the tensor is contiguous
-  return t.is_C_contiguous or t.is_F_contiguous
+  t.is_C_contiguous or t.is_F_contiguous
 
 proc get_data_ptr*[T](t: AnyTensor[T]): ptr T {.inline.}=
   ## Input:
@@ -137,7 +194,7 @@ proc get_data_ptr*[T](t: AnyTensor[T]): ptr T {.inline.}=
   ## Returns:
   ##     - A pointer to the real start of its data (no offset)
   when t is Tensor:
-    unsafeAddr(t.data[0])
+    unsafeAddr(t.storage.Fdata[0])
   elif t is CudaTensor:
     unsafeAddr(t.data.data[0])
 
@@ -146,7 +203,7 @@ proc get_offset_ptr*[T](t: Tensor[T]): ptr T {.inline.}=
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the offset start of its data
-  unsafeAddr(t.data[t.offset])
+  unsafeAddr(t.storage.Fdata[t.offset])
 
 proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.inline.}=
   ## Input:
@@ -154,4 +211,4 @@ proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.inline.}=
   ## Returns:
   ##     - A pointer to the offset start of the data.
   ##       Return value supports array indexing.
-  cast[ptr UncheckedArray[T]](t.data[t.offset].unsafeAddr)
+  cast[ptr UncheckedArray[T]](t.storage.Fdata[t.offset].unsafeAddr)

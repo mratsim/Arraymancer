@@ -72,7 +72,7 @@ proc check_steps*(a,b, step:int) {.noSideEffect, inline.}=
                 start must be inferior to stop and inversely if your step is negative
                 start must be superior to stop.""")
 
-proc check_shape*(a, b: Tensor|openarray) {.noSideEffect, inline.}=
+proc check_shape*(a: Tensor; b: Tensor|openarray) {.noSideEffect, inline.}=
   ## Compare shape
 
   let b_shape = b.shape # There is a shape proc that converts openarray to MetadataArray

@@ -101,7 +101,7 @@ template reduce_axis_inline*[T](t: Tensor[T], reduction_axis: int, op: untyped):
   var reduced : type(t)
   let weight = t.size div t.shape[reduction_axis]
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[reduction_axis], weight, op) do:
-    x = t.atAxisIndex(reduction_axis, block_offset).clone
+    x = t.atAxisIndex(reduction_axis, block_offset).clone()
   do:
     for y {.inject.} in t.axis(reduction_axis, block_offset, block_size):
       op
@@ -111,7 +111,7 @@ template fold_axis_inline*[T](t: Tensor[T], result_type: typedesc, fold_axis: in
   var reduced : result_type
   let weight = t.size div t.shape[fold_axis]
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[fold_axis], weight, op_final) do:
-    let y {.inject.} = t.atAxisIndex(fold_axis, block_offset).clone
+    let y {.inject.} = t.atAxisIndex(fold_axis, block_offset)
     op_initial
   do:
     for y {.inject.} in t.axis(fold_axis, block_offset, block_size):

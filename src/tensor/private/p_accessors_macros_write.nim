@@ -180,7 +180,7 @@ proc slicerMut*[T](t: var Tensor[T],
 # #########################################################################
 # Dispatching logic
 
-macro inner_typed_dispatch_mut*(t: typed, args: varargs[typed], val: typed): untyped =
+macro slice_typed_dispatch_mut*(t: typed, args: varargs[typed], val: typed): untyped =
   ## Assign `val` to Tensor T at slice/position `args`
   if isAllInt(args):
     result = newCall(bindSym("atIndexMut"), t)
@@ -251,7 +251,7 @@ proc slicer_var[T](t: var AnyTensor[T],
                             slices1.toArrayOfSlices)
   slicerT(result, full_slices)
 
-macro inner_typed_dispatch_var*(t: typed, args: varargs[typed]): untyped =
+macro slice_typed_dispatch_var*(t: typed, args: varargs[typed]): untyped =
   ## Typed macro so that isAllInt has typed context and we can dispatch.
   ## If args are all int, we dispatch to atIndex and return T
   ## Else, all ints are converted to SteppedSlices and we return a Tensor.

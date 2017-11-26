@@ -35,4 +35,4 @@ macro unsafeSlice*[T](t: Tensor[T], args: varargs[untyped]): untyped {.deprecate
   let new_args = getAST(desugar(args))
 
   result = quote do:
-    unsafe_inner_typed_dispatch(`t`, `new_args`)
+    unsafe_slice_typed_dispatch(`t`, `new_args`)

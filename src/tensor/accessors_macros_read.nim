@@ -53,4 +53,4 @@ macro `[]`*[T](t: AnyTensor[T], args: varargs[untyped]): untyped =
   let new_args = getAST(desugar(args))
 
   result = quote do:
-    inner_typed_dispatch(`t`, `new_args`)
+    slice_typed_dispatch(`t`, `new_args`)

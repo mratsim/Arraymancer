@@ -222,7 +222,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
 # #########################################################################
 # Dispatching logic
 
-macro inner_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
+macro slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
   ## Typed macro so that isAllInt has typed context and we can dispatch.
   ## If args are all int, we dispatch to atIndex and return T
   ## Else, all ints are converted to SteppedSlices and we return a Tensor.
@@ -241,7 +241,7 @@ macro inner_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
       else:
         result.add(slice)
 
-macro unsafe_inner_typed_dispatch*(t: typed, args: varargs[typed]): untyped {.deprecated.}=
+macro unsafe_slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped {.deprecated.}=
   ## Typed macro so that isAllInt has typed context and we can dispatch.
   ## If args are all int, we dispatch to atIndex and return T
   ## Else, all ints are converted to SteppedSlices and we return a Tensor.

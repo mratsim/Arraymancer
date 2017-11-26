@@ -49,7 +49,7 @@ macro `[]=`*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
   let new_args = getAST(desugar(tmp))
 
   result = quote do:
-    inner_typed_dispatch_mut(`t`, `new_args`,`val`)
+    slice_typed_dispatch_mut(`t`, `new_args`,`val`)
 
 
 # # Linked to: https://github.com/mratsim/Arraymancer/issues/52
@@ -71,4 +71,4 @@ macro `[]=`*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
 #   let new_args = getAST(desugar(args))
 
 #   result = quote do:
-#     inner_typed_dispatch_var(`t`, `new_args`)
+#     slice_typed_dispatch_var(`t`, `new_args`)

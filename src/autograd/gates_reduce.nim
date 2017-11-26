@@ -34,7 +34,7 @@ method backward*[TT](self: MeanGate[TT], gradient: TT): SmallDiffs[TT] {.noInit,
   result[0] = gradient / getSubType(TT)(self.a_shape.product) # Conversion to subtype T, oh Higher kinded-types ...
 
   let z_shape = newSeqWith(self.a_shape.len, 1) # We create a shape of 1 dimension that we will expand with broadcast
-  result[0] = result[0].unsafeReshape(z_shape).unsafeBroadcast(self.a_shape)
+  result[0] = result[0].reshape(z_shape).broadcast(self.a_shape)
 
 proc mean*[TT](a: Variable[TT]): Variable[TT] =
   when compileOption("boundChecks"):

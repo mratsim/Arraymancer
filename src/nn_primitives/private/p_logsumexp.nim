@@ -49,9 +49,9 @@ proc streaming_max_sumexp*[T](t: Tensor[T], axis: int): Tensor[tuple[max:T, sume
 
   # Reexpand the tensor to be consistent with fold_axis/reduce_axis
   if axis == 0:
-    result = result.unsafeUnsqueeze(1)
+    result = result.unsqueeze(1)
   else:
-    result = result.unsafeUnsqueeze(0)
+    result = result.unsqueeze(0)
 
 
 

@@ -97,12 +97,12 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
   # ∑i(- ti * yi) is either -yi or 0 in the sparse case.
   # Since target holds coordinates: ∑i(- ti * yi) = - yi[ti]
   for i in 0||(input.shape[1]-1):
-    let lse = input.unsafeSlice(_,i).logsumexp
+    let lse = input[_,i].logsumexp
 
     when not declared(openmp):
-      result += lse - input.unsafeSlice(target.unsafeSlice(i), i)
+      result += lse - input[target[i], i]
     else:
-      let tmp = lse - input.unsafeSlice(target.unsafeSlice(i), i)
+      let tmp = lse - input[target[i], i]
       {.emit:"#pragma omp atomic".}
       {.emit:"`result` += `tmp`;".}
 
@@ -140,7 +140,7 @@ proc softmax_cross_entropy_backward*[T](
   elif gradient is Tensor:
     let grad = gradient.data[gradient.offset]
 
-  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
+  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).broadcast(cached_tensor.shape)
 
   result = map3_inline(cached_tensor, target, axis_max_sumexp):
       grad * (stable_softmax(x, z.max, z.sumexp) - y) / T(batch_size)
@@ -176,8 +176,8 @@ proc sparse_softmax_cross_entropy_backward*[T](
   for i, truth_idx in enumerate(target):
     result[truth_idx, i] = -1
 
-  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
-  # let axis_max_sumexp = cached_tensor.classic_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
+  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).broadcast(cached_tensor.shape)
+  # let axis_max_sumexp = cached_tensor.classic_max_sumexp(axis = 1).broadcast(cached_tensor.shape)
 
 
   apply3_inline(result, cached_tensor, axis_max_sumexp):

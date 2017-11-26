@@ -97,7 +97,7 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
 
   # CuDNN requires grad_output to be C contiguous. (It is undocumented as of CuDNN v7)
   # If grad_output is F contiguous it throws CUDNN_STATUS_NOT_SUPPORTED in the algo procs.
-  let gOutput = grad_output.unsafeContiguous(rowMajor, force = true)
+  let gOutput = grad_output.asContiguous(rowMajor, force = true)
 
   let # TODO: Automatic destructor
     srcTensorDesc =        newCudnn4DTensorDesc   input

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Deprecated on 2017-09-16 by https://github.com/mratsim/Arraymancer/commit/ee8163553b829e63efa258a82890b6e9df9ca60c#diff-8da4a33312bdbbaa6ddfc1706b9e41dd
+# First release with deprecated tag: 0.2.0
 
 import  ../data_structure,
         future

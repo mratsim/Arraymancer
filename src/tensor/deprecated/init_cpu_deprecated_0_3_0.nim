@@ -13,6 +13,9 @@
 # limitations under the License.
 
 
+# Deprecated on 2017-09-07 by https://github.com/mratsim/Arraymancer/commit/ea7508c0724a7df7559b68cf8c8470d9ee0d1588
+# First release with deprecated tag: 0.2.0
+
 import  ../private/p_init_cpu,
         ../data_structure,
         ../init_cpu,

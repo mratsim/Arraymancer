@@ -1,4 +1,4 @@
-# Copyright 2017 Mamy André-Ratsimbazafy
+# Copyright 2017 the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./data_structure,
-        ./shapeshifting
+import  ../private/p_accessors,
+        ../private/p_checks,
+        ../data_structure
 
-template at*[T](t: Tensor[T], args: varargs[untyped]): untyped =
-  ## Slice a Tensor and collapse singleton dimension.
-  ##
-  ## Input:
-  ##   - a Tensor
-  ##   - and:
-  ##     - specific coordinates (``varargs[int]``)
-  ##     - or a slice (cf. tutorial)
-  ## Returns:
-  ##   - a value or a view of the Tensor corresponding to the slice
-  ##     Singleton dimension are collapsed
-  ## Usage:
-  ##   See the ``[]`` macro
-  t[args].unsafeSqueeze
+
+proc unsafeAtAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.noInit,inline,deprecated.} =
+  ## Returns a sliced tensor in the given axis index (unsafe)
+  when compileOption("boundChecks"):
+    check_axis_index(t, axis, idx)
+
+  result = t
+  result.shape[axis] = 1
+  result.offset += result.strides[axis]*idx

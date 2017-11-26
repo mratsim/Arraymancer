@@ -23,12 +23,12 @@ import  ./data_structure,
 
 proc `.+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a + tmp_b
 
 proc `.-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a - tmp_b
 
 proc `.*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
@@ -36,21 +36,21 @@ proc `.*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ##
   ## And broadcasted element-wise multiplication.
 
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
   result = map2_inline(tmp_a, tmp_b, x * y)
 
 proc `./`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Tensor element-wise division for integer numbers.
   ##
   ## And broadcasted element-wise division.
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
   result = map2_inline(tmp_a, tmp_b, x div y)
 
 proc `./`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Tensor element-wise division for real numbers.
   ##
   ## And broadcasted element-wise division.
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
   result = map2_inline(tmp_a, tmp_b, x / y )
 
 # ##############################################

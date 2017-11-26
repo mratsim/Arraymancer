@@ -45,7 +45,7 @@ proc streaming_max_sumexp*[T](t: Tensor[T], axis: int): Tensor[tuple[max:T, sume
   result = newTensorUninit[tuple[max:T, sumexp: T]](t.shape[axis])
 
   for i in `||`(0, t.shape[axis]-1, "simd"):
-    result.data[i] = t.unsafeAtAxisIndex(axis, i).streaming_max_sumexp
+    result.data[i] = t.atAxisIndex(axis, i).streaming_max_sumexp
 
   # Reexpand the tensor to be consistent with fold_axis/reduce_axis
   if axis == 0:

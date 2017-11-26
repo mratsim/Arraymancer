@@ -26,21 +26,15 @@ proc atContiguousIndex*[T](t: var Tensor[T], idx: int): var T {.noSideEffect,inl
   ## i.e. as treat the tensor as flattened
   return t.data[t.getContiguousIndex(idx)]
 
-proc unsafeAtAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.noInit,inline,deprecated.} =
-  ## Returns a sliced tensor in the given axis index (unsafe)
+proc atAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.noInit,inline.} =
+  ## Returns a sliced tensor in the given axis index
+
   when compileOption("boundChecks"):
     check_axis_index(t, axis, idx)
 
   result = t
   result.shape[axis] = 1
   result.offset += result.strides[axis]*idx
-
-proc atAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.noInit,inline.} =
-  ## Returns a sliced tensor in the given axis index
-
-  # As contiguous is called to force a copy of the slice
-  # otherwise the result would copy the whole parent tensor data
-  t.unsafeAtAxisIndex(axis, idx).clone()
 
 iterator items*[T](t: Tensor[T]): T {.inline,noSideEffect.} =
   ## Inline iterator on Tensor values
@@ -285,8 +279,7 @@ template axisIterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyp
   ##   - A slice along the given axis at each iteration.
   ##
   ## Note: The slice dimension is not collapsed by default.
-  ## You can use ``unsafeSqueeze`` to collapse it without copy.
-  ## In this case ``unsafeSqueeze`` is safe.
+  ## You can use ``squeeze`` to collapse it.
   ##
   ## Usage:
   ##  .. code:: nim
@@ -296,7 +289,7 @@ template axisIterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyp
     check_axis_index(t, axis, iter_offset)
     check_axis_index(t, axis, iter_offset+iter_size-1)
 
-  var out_t = t.unsafeAtAxisIndex(axis, iter_offset)
+  var out_t = t.atAxisIndex(axis, iter_offset)
 
   for _ in 0..<iter_size:
     yield out_t
@@ -310,8 +303,7 @@ template dualAxisIterator[T, U](a: Tensor[T], b: Tensor[U], axis, iter_offset, i
   ##   - 2 slices along the given axis at each iteration.
   ##
   ## Note: The slice dimension is not collapsed by default.
-  ## You can use ``unsafeSqueeze`` to collapse it without copy.
-  ## In this case ``unsafeSqueeze`` is safe.
+  ## You can use ``squeeze`` to collapse it.
   ##
   ## Usage:
   ##  .. code:: nim
@@ -322,8 +314,8 @@ template dualAxisIterator[T, U](a: Tensor[T], b: Tensor[U], axis, iter_offset, i
     check_axis_index(b, axis, iter_offset+iter_size-1)
     assert a.shape[axis] == b.shape[axis] # TODO use a proper check
 
-  var out_a = a.unsafeAtAxisIndex(axis, iter_offset)
-  var out_b = b.unsafeAtAxisIndex(axis, iter_offset)
+  var out_a = a.atAxisIndex(axis, iter_offset)
+  var out_b = b.atAxisIndex(axis, iter_offset)
 
   for _ in 0..<iter_size:
     yield (out_a, out_b)

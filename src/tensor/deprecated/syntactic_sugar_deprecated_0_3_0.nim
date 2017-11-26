@@ -1,4 +1,4 @@
-# Copyright 2017 Mamy André-Ratsimbazafy
+# Copyright 2017 the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./data_structure,
-        ./shapeshifting
 
-template at*[T](t: Tensor[T], args: varargs[untyped]): untyped =
+template unsafeAt*[T](t: Tensor[T], args: varargs[untyped]): untyped {.deprecated.}=
+  ## DEPRECATED: use `at` instead.
+  ##
   ## Slice a Tensor and collapse singleton dimension.
   ##
+  ## Data is shared between input and output.
   ## Input:
   ##   - a Tensor
   ##   - and:
@@ -26,6 +27,9 @@ template at*[T](t: Tensor[T], args: varargs[untyped]): untyped =
   ## Returns:
   ##   - a value or a view of the Tensor corresponding to the slice
   ##     Singleton dimension are collapsed
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
   ## Usage:
   ##   See the ``[]`` macro
-  t[args].unsafeSqueeze
+  t.unsafeSlice(args).unsafeSqueeze

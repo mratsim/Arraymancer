@@ -47,12 +47,12 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
   let cCont = t.is_C_contiguous
   let fCont = t.is_F_contiguous
 
-  if cCont and not force:
-    contiguousT(result, t, rowMajor)
-    return
-  elif fCont and not force:
-    contiguousT(result, t, colMajor)
-    return
+  if (cCont or fCont) and not force:
+    return t
+  elif cCont and layout == rowMajor:
+    return t
+  elif fCont and layout == colMajor:
+    return t
   contiguousT(result, t, layout)
 
 proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =

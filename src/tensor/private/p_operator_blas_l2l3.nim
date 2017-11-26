@@ -61,7 +61,7 @@ proc blasMV_y_eq_aAx_p_by*[T: SomeReal](
     M = a.shape[0]
     N = a.shape[1] # = x.shape[0], x is considered as a column vector
 
-    cont_A = a.unsafeContiguous # if not contiguous, change to row Major
+    cont_A = a.asContiguous # if not contiguous, change to row Major
     cont_A_is_rowMajor = cont_A.is_C_contiguous
 
     cont_A_order =  if cont_A_is_rowMajor: rowMajor
@@ -129,9 +129,9 @@ proc blasMM_C_eq_aAB_p_bC*[T: SomeReal](
     K = a.shape[1] # b.shape[0]
     N = b.shape[1]
 
-    cont_a = a.unsafeContiguous
-    cont_b = b.unsafeContiguous
-    c = c.unsafeContiguous
+    cont_a = a.asContiguous
+    cont_b = b.asContiguous
+    c = c.asContiguous
 
     cont_A_is_rowMajor = cont_a.is_C_contiguous
     cont_B_is_rowMajor = cont_b.is_C_contiguous

@@ -62,7 +62,7 @@ proc `.+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
   ## Only the right hand side tensor can be broadcasted.
   # shape check done in apply2 proc
 
-  let tmp_b = b.unsafeBroadcast(a.shape)
+  let tmp_b = b.broadcast(a.shape)
   apply2_inline(a, tmp_b, x + y)
 
 proc `.-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
@@ -71,7 +71,7 @@ proc `.-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
   ## Only the right hand side tensor can be broadcasted.
   # shape check done in apply2 proc
 
-  let tmp_b = b.unsafeBroadcast(a.shape)
+  let tmp_b = b.broadcast(a.shape)
   apply2_inline(a, tmp_b, x - y)
 
 proc `.*=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
@@ -80,7 +80,7 @@ proc `.*=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
   ## Only the right hand side tensor can be broadcasted
   # shape check done in apply2 proc
 
-  let tmp_b = b.unsafeBroadcast(a.shape)
+  let tmp_b = b.broadcast(a.shape)
   apply2_inline(a, tmp_b, x * y)
 
 proc `./=`*[T: SomeInteger](a: var Tensor[T], b: Tensor[T]) =
@@ -89,7 +89,7 @@ proc `./=`*[T: SomeInteger](a: var Tensor[T], b: Tensor[T]) =
   ## Only the right hand side tensor can be broadcasted.
   # shape check done in apply2 proc
 
-  let tmp_b = b.unsafeBroadcast(a.shape)
+  let tmp_b = b.broadcast(a.shape)
   apply2_inline(a, tmp_b, x div y)
 
 proc `./=`*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) =
@@ -98,7 +98,7 @@ proc `./=`*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) =
   ## Only the right hand side tensor can be broadcasted.
   # shape check done in apply2 proc
 
-  let tmp_b = b.unsafeBroadcast(a.shape)
+  let tmp_b = b.broadcast(a.shape)
   apply2_inline(a, tmp_b, x / y)
 
 

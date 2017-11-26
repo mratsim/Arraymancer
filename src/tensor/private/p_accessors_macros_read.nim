@@ -100,7 +100,6 @@ proc slicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,noSideE
   ##    Offset and strides are changed to achieve the desired effect.
   ##    Warning: mutating the result will mutate the original
   ##    As such a `var Tensor` is required
-  ## WARNING: passing a non-var Tensor is unsafe
 
   result = t
   slicerT(result, slices)

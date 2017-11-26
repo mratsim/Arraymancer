@@ -28,11 +28,11 @@ proc transpose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
   ##
   ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
   ##
-  ## Data is copied as-is and not modified.
+  ## Data is not copied or modified, only metadata is modified.
   t.shape.reversed(result.shape)
   t.strides.reversed(result.strides)
   result.offset = t.offset
-  result.data = t.data
+  result.storage = t.storage
 
 proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noInit.} =
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
@@ -79,7 +79,7 @@ proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ##   - a tensor with the same data but reshaped.
 
   when compileOption("boundChecks"):
-    check_reshape(t, new_shape.toMetadataArray)
+    check_reshape(t, new_shape)
 
   return t.reshape_with_copy(new_shape)
 
@@ -260,5 +260,5 @@ proc stack*[T](tensors: varargs[Tensor[T]], axis: int = 0): Tensor[T] {.noInit.}
   ##   - an axis (dimension)
   ## Returns:
   ##   - a new stacked tensor along the new axis
-  proc stack_unsqueeze(t: Tensor[T]): Tensor[T] = t.unsafeUnsqueeze(axis)
+  proc stack_unsqueeze(t: Tensor[T]): Tensor[T] = t.unsqueeze(axis)
   tensors.map(stack_unsqueeze).concat(axis)

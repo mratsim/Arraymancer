@@ -28,4 +28,4 @@ template at*[T](t: Tensor[T], args: varargs[untyped]): untyped =
   ##     Singleton dimension are collapsed
   ## Usage:
   ##   See the ``[]`` macro
-  t[args].unsafeSqueeze
+  t[args].squeeze

@@ -13,6 +13,9 @@
 # limitations under the License.
 
 
+import  ../data_structure,
+        future
+
 proc fmap*[T, U](t: Tensor[T], f: T -> U): Tensor[U]
   {.deprecated, inline.}=
   ## DEPRECATED

@@ -94,7 +94,7 @@ proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect
   # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
   toTensorCpu(s)
 
-proc unsafeToTensor*[T: SomeNumber](data: seq[T]): Tensor[T] {.noInit,noSideEffect.} =
+proc unsafeToTensor*[T: SomeNumber](data: seq[T]): Tensor[T] {.noInit,noSideEffect, deprecated.} =
   ## Convert a seq to a Tensor, sharing the seq data
   ## Input:
   ##      - A seq with the tensor data

@@ -93,7 +93,7 @@ proc slicer[T](t: AnyTensor[T],
                             slices2.toArrayOfSlices)
   slicerT(result, full_slices)
 
-proc unsafeSlicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,noSideEffect.}=
+proc unsafeSlicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,noSideEffect, deprecated.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
@@ -108,7 +108,7 @@ proc unsafeSlicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,n
 
 proc unsafeSlicer*[T](t: AnyTensor[T],
                       slices: ArrayOfSlices,
-                      ellipsis: Ellipsis): AnyTensor[T] {.noInit,noSideEffect.}=
+                      ellipsis: Ellipsis): AnyTensor[T] {.noInit,noSideEffect, deprecated.}=
   ## Take a Tensor, SteppedSlices and Ellipsis
   ## Returns:
   ##    A view of the original Tensor
@@ -124,7 +124,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
 proc unsafeSlicer*[T](t: AnyTensor[T],
                       ellipsis: Ellipsis,
                       slices: ArrayOfSlices
-                      ): AnyTensor[T] {.noInit,noSideEffect.}=
+                      ): AnyTensor[T] {.noInit,noSideEffect, deprecated.}=
   ## Take a Tensor, Ellipsis and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
@@ -141,7 +141,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
                       slices1: ArrayOfSlices,
                       ellipsis: Ellipsis,
                       slices2: ArrayOfSlices
-                      ): AnyTensor[T] {.noInit,noSideEffect.}=
+                      ): AnyTensor[T] {.noInit,noSideEffect, deprecated.}=
   ## Take a Tensor, SteppedSlices, Ellipsis and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
@@ -156,7 +156,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
                             slices2)
   slicerT(result, full_slices)
 
-proc unsafeSlicer*[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noInit,noSideEffect.}=
+proc unsafeSlicer*[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noInit,noSideEffect, deprecated.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
@@ -171,7 +171,7 @@ proc unsafeSlicer*[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.
 
 proc unsafeSlicer*[T](t: AnyTensor[T],
                       slices: varargs[SteppedSlice],
-                      ellipsis: Ellipsis): AnyTensor[T] {.noInit,noSideEffect.}=
+                      ellipsis: Ellipsis): AnyTensor[T] {.noInit,noSideEffect, deprecated.}=
   ## Take a Tensor, SteppedSlices and Ellipsis
   ## Returns:
   ##    A view of the original Tensor
@@ -187,7 +187,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
 proc unsafeSlicer*[T](t: AnyTensor[T],
                       ellipsis: Ellipsis,
                       slices: varargs[SteppedSlice]
-                      ): AnyTensor[T] {.noInit,noSideEffect.}=
+                      ): AnyTensor[T] {.noInit,noSideEffect, deprecated.}=
   ## Take a Tensor, Ellipsis and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
@@ -204,7 +204,7 @@ proc unsafeSlicer*[T](t: AnyTensor[T],
                       slices1: varargs[SteppedSlice],
                       ellipsis: Ellipsis,
                       slices2: varargs[SteppedSlice]
-                      ): AnyTensor[T] {.noInit,noSideEffect.}=
+                      ): AnyTensor[T] {.noInit,noSideEffect, deprecated.}=
   ## Take a Tensor, SteppedSlices, Ellipsis and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
@@ -241,7 +241,7 @@ macro inner_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
       else:
         result.add(slice)
 
-macro unsafe_inner_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
+macro unsafe_inner_typed_dispatch*(t: typed, args: varargs[typed]): untyped {.deprecated.}=
   ## Typed macro so that isAllInt has typed context and we can dispatch.
   ## If args are all int, we dispatch to atIndex and return T
   ## Else, all ints are converted to SteppedSlices and we return a Tensor.

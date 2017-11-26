@@ -213,7 +213,7 @@ proc `==`*(a, s: DynamicStackArray): bool {.inline.} =
 
 iterator zip*[T, U](a: DynamicStackArray[T], b: DynamicStackArray[U]): (T, T)=
 
-  # unsafeReshape relies on zip stopping early
+  # reshape_no_copy relies on zip stopping early
   let len = min(a.len, b.len)
 
   for i in 0..<len:

@@ -21,7 +21,7 @@ import  ../private/sequninit,
         ./init_cpu,
         nimcuda/[cuda_runtime_api, driver_types]
 
-proc unsafeView*[T](t: CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect.}=
+proc unsafeView*[T](t: CudaTensor[T]): CudaTensor[T] {.inline,noSideEffect, deprecated.}=
   ## Input:
   ##     - A CudaTensor
   ## Returns:

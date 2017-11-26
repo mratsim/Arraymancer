@@ -35,7 +35,7 @@ proc transpose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
   result.data = t.data
 
 
-proc unsafeTranspose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
+proc unsafeTranspose*(t: Tensor): Tensor {.noInit,noSideEffect,inline, deprecated.} =
   ## Transpose a Tensor without copy.
   ##
   ## Warning ⚠:
@@ -69,7 +69,7 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
     return
   contiguousT(result, t, layout)
 
-proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noInit.} =
+proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noInit, deprecated.} =
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
   ##
   ## If the tensor is already contiguous it is returned without copy, underlying data is shared between the input and the output.
@@ -171,7 +171,7 @@ proc broadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit,noSid
   result = t
   result.broadcastT(shape)
 
-proc unsafeBroadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.}=
+proc unsafeBroadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSideEffect, deprecated.}=
   ## Explicitly broadcast a Tensor to the specified shape.
   ## The returned broadcasted Tensor share the underlying data with the input.
   ##
@@ -185,7 +185,7 @@ proc unsafeBroadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,
   result = t
   result.broadcastT(shape)
 
-proc unsafeBroadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit,noSideEffect.}=
+proc unsafeBroadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit,noSideEffect, deprecated.}=
   ## Explicitly broadcast a Tensor to the specified shape.
   ## The returned broadcasted Tensor share the underlying data with the input.
   ##
@@ -247,7 +247,7 @@ template bc*(t: (Tensor|SomeNumber), shape: MetadataArray): untyped =
   ## Alias for ``broadcast``
   t.broadcast(shape)
 
-proc unsafeBroadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect.}=
+proc unsafeBroadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect, deprecated.}=
   ## Broadcast 2 tensors so they have compatible shapes for element-wise computations.
   ##
   ## Tensors in the tuple can be accessed with output.a and output.b
@@ -282,7 +282,7 @@ proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
   result = t
   permuteT(result, dims)
 
-proc unsafePermute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
+proc unsafePermute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect, deprecated.}=
   ## Permute dimensions of a tensors
   ## Input:
   ##   - a tensor
@@ -343,7 +343,7 @@ proc squeeze*(t: AnyTensor): AnyTensor {.noInit,noSideEffect.}=
   result = t
   result.squeezeT
 
-proc unsafeSqueeze*(t: Tensor): Tensor {.noInit,noSideEffect.}=
+proc unsafeSqueeze*(t: Tensor): Tensor {.noInit,noSideEffect, deprecated.}=
   ## Squeeze tensors. For example a Tensor of shape [4,1,3] will become [4,3]
   ## Input:
   ##   - a tensor
@@ -365,7 +365,7 @@ proc squeeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   result = t
   result.squeezeT(axis)
 
-proc unsafeSqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
+proc unsafeSqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect, deprecated.}=
   ## Collapse the given axis, if the dimension is not 1; it does nothing
   ## Input:
   ##   - a tensor
@@ -389,7 +389,7 @@ proc unsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   result = t
   result.unsqueezeT(axis)
 
-proc unsafeUnsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
+proc unsafeUnsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect, deprecated.}=
   ## Insert a new axis just before the given axis, increasing the tensor
   ## dimension (rank) by 1
   ##   - a tensor with that new axis

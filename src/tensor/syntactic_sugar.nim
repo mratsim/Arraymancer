@@ -30,7 +30,7 @@ template at*[T](t: Tensor[T], args: varargs[untyped]): untyped =
   ##   See the ``[]`` macro
   t[args].unsafeSqueeze
 
-template unsafeAt*[T](t: Tensor[T], args: varargs[untyped]): untyped =
+template unsafeAt*[T](t: Tensor[T], args: varargs[untyped]): untyped {.deprecated.}=
   ## Slice a Tensor and collapse singleton dimension.
   ##
   ## Data is shared between input and output.

@@ -22,7 +22,7 @@ include ./private/incl_accessors_cuda,
         ./private/incl_higher_order_cuda,
         ./private/incl_kernels_cuda
 
-proc unsafeTranspose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
+proc unsafeTranspose*(t: CudaTensor): CudaTensor {.noSideEffect, deprecated.}=
   ## Transpose a Tensor.
   ##
   ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
@@ -39,7 +39,7 @@ proc unsafeTranspose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
 cuda_assign_glue("cuda_unsafeContiguous", "CopyOp", cuda_unsafeContiguous)
 
 proc unsafeContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, force: bool = false):
-  CudaTensor[T] {.noSideEffect.}=
+  CudaTensor[T] {.noSideEffect, deprecated.}=
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
   ##
   ## By default CudaTensor will be colMajor (contrary to a cpu tensor).
@@ -63,7 +63,7 @@ proc unsafeContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMaj
   cuda_assign_call(cuda_unsafeContiguous, result, t)
 
 
-proc unsafeReshape*(t: CudaTensor, new_shape: varargs[int]): CudaTensor =
+proc unsafeReshape*(t: CudaTensor, new_shape: varargs[int]): CudaTensor {.deprecated.}=
   ## Reshape a CudaTensor without copy.
   ##
   ## ⚠ Reshaping without copy is only possible on contiguous Tensors
@@ -75,7 +75,7 @@ proc unsafeReshape*(t: CudaTensor, new_shape: varargs[int]): CudaTensor =
   t.reshape_no_copy(new_shape)
   result.data = t.data
 
-proc unsafeBroadcast*(t: CudaTensor, shape: varargs[int]): CudaTensor {.noSideEffect.}=
+proc unsafeBroadcast*(t: CudaTensor, shape: varargs[int]): CudaTensor {.noSideEffect, deprecated.}=
   ## Explicitly broadcast a CudaTensor to the specified shape.
   ## The returned broadcasted CudaTensor share the underlying data with the input.
   ##
@@ -89,7 +89,7 @@ proc unsafeBroadcast*(t: CudaTensor, shape: varargs[int]): CudaTensor {.noSideEf
   result = t
   result.broadcastT(shape)
 
-proc unsafeBroadcast*(t: CudaTensor, shape: MetadataArray): CudaTensor {.noSideEffect.}=
+proc unsafeBroadcast*(t: CudaTensor, shape: MetadataArray): CudaTensor {.noSideEffect, deprecated.}=
   ## Explicitly broadcast a CudaTensor to the specified shape.
   ## The returned broadcasted CudaTensor share the underlying data with the input.
   ##
@@ -103,7 +103,7 @@ proc unsafeBroadcast*(t: CudaTensor, shape: MetadataArray): CudaTensor {.noSideE
   result = t
   result.broadcastT(shape)
 
-proc unsafeBroadcast2*[T](a, b: CudaTensor[T]): tuple[a, b: CudaTensor[T]] {.noSideEffect.}=
+proc unsafeBroadcast2*[T](a, b: CudaTensor[T]): tuple[a, b: CudaTensor[T]] {.noSideEffect, deprecated.}=
   ## Broadcast 2 tensors so they have compatible shapes for element-wise computations.
   ##
   ## Tensors in the tuple can be accessed with output.a and output.b
@@ -123,7 +123,7 @@ proc unsafeBroadcast2*[T](a, b: CudaTensor[T]): tuple[a, b: CudaTensor[T]] {.noS
   result.a.data = a.data
   result.b.data = b.data
 
-proc unsafeSqueeze*(t: CudaTensor, axis: int): CudaTensor {.noSideEffect.}=
+proc unsafeSqueeze*(t: CudaTensor, axis: int): CudaTensor {.noSideEffect, deprecated.}=
   ## Collapse the given axis, if the dimension is not 1; it does nothing
   ## Input:
   ##   - a CudaTensor
@@ -136,7 +136,7 @@ proc unsafeSqueeze*(t: CudaTensor, axis: int): CudaTensor {.noSideEffect.}=
   result = t
   result.squeezeT(axis)
 
-proc unsafeUnsqueeze*(t: CudaTensor, axis: int): CudaTensor {.noSideEffect.}=
+proc unsafeUnsqueeze*(t: CudaTensor, axis: int): CudaTensor {.noSideEffect, deprecated.}=
   ## Insert a new axis just before the given axis, increasing the CudaTensor
   ## dimension (rank) by 1
   ##   - a tensor with that new axis

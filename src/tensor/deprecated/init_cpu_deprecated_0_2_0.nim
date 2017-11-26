@@ -13,6 +13,11 @@
 # limitations under the License.
 
 
+import  ../private/p_init_cpu,
+        ../data_structure,
+        ../init_cpu,
+        sequtils
+
 proc newTensor*(shape: openarray[int], T: typedesc): Tensor[T] {.noSideEffect, inline, deprecated.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../../src/arraymancer
 import unittest, math
 
 
@@ -177,7 +177,7 @@ suite "Slice mutations":
       check false
 
   test "Setting a slice to a single value":
-    var t_van = t_van_immut
+    var t_van = t_van_immut.clone
     let test =  @[@[1,  1,   1,   1,    1],
             @[2,  4,   8, 999,  999],
             @[3,  9,  27, 999,  999],
@@ -189,7 +189,7 @@ suite "Slice mutations":
     check: t_van == t_test
 
   test "Setting a slice to an array/seq of values":
-    var t_van = t_van_immut
+    var t_van = t_van_immut.clone
     let test =  @[@[111,  222,   1,   1,    1],
             @[333,  444,   8,  16,   32],
             @[  3,    9,  27,  81,  243],
@@ -201,7 +201,7 @@ suite "Slice mutations":
     check: t_van == t_test
 
   test "Setting a slice from a different Tensor":
-    var t_van = t_van_immut
+    var t_van = t_van_immut.clone
     let test =  @[@[1,  1,     1,   1,   1],
             @[2,  4,     8,  16,  32],
             @[3,  9,    27,  81, 243],
@@ -212,17 +212,19 @@ suite "Slice mutations":
     t_van[^2..^1,2..4] = t_van_immut[^1..^2|-1, 4..2|-1]
     check: t_van == t_test
 
-  test "Setting a slice from a view of the same Tensor":
-    var t_van = t_van_immut
-    let test =  @[@[1,  1,     1,   1,   1],
-            @[2,  4,     8,  16,  32],
-            @[3,  9,    27,  81, 243],
-            @[4, 16,  3125, 625, 125],
-            @[5, 25,  1024, 256, 64]]
+  # Deprecated with reference semantics
+  #
+  # test "Setting a slice from a view of the same Tensor":
+  #   var t_van = t_van_immut.clone
+  #   let test =  @[@[1,  1,     1,   1,   1],
+  #           @[2,  4,     8,  16,  32],
+  #           @[3,  9,    27,  81, 243],
+  #           @[4, 16,  3125, 625, 125],
+  #           @[5, 25,  1024, 256, 64]]
 
-    let t_test = test.toTensor(Cpu)
-    t_van[^2..^1,2..4] = t_van[^1..^2|-1, 4..2|-1]
-    check: t_van == t_test
+  #   let t_test = test.toTensor(Cpu)
+  #   t_van[^2..^1,2..4] = t_van[^1..^2|-1, 4..2|-1]
+  #   check: t_van == t_test
   
   test "Bounds checking":
     var t_van = t_van_immut

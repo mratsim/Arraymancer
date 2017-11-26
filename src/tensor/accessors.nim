@@ -26,7 +26,7 @@ proc atContiguousIndex*[T](t: var Tensor[T], idx: int): var T {.noSideEffect,inl
   ## i.e. as treat the tensor as flattened
   return t.data[t.getContiguousIndex(idx)]
 
-proc unsafeAtAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.noInit,inline.} =
+proc unsafeAtAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.noInit,inline,deprecated.} =
   ## Returns a sliced tensor in the given axis index (unsafe)
   when compileOption("boundChecks"):
     check_axis_index(t, axis, idx)

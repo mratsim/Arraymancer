@@ -55,7 +55,7 @@ macro `[]`*[T](t: AnyTensor[T], args: varargs[untyped]): untyped =
   result = quote do:
     inner_typed_dispatch(`t`, `new_args`)
 
-macro unsafeSlice*[T](t: Tensor[T], args: varargs[untyped]): untyped =
+macro unsafeSlice*[T](t: Tensor[T], args: varargs[untyped]): untyped {.deprecated.}=
   ## Slice a Tensor
   ## Input:
   ##   - a Tensor

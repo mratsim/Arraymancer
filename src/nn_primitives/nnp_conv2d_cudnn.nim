@@ -64,7 +64,7 @@ proc conv2d*[T: SomeReal](input, kernel, bias: CudaTensor[T],
     result.data.data[]
   )
 
-  result .+= bias.unsafeUnsqueeze(0)
+  result .+= bias.unsqueeze(0)
 
 proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
                          padding: SizeHW = [0,0],
@@ -113,7 +113,7 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
 
   # Bias gradient
   if bias.rank > 0:
-    let gradBiasTensorDesc = newCudnn4DTensorDesc grad_bias.unsafeUnsqueeze(0)
+    let gradBiasTensorDesc = newCudnn4DTensorDesc grad_bias.unsqueeze(0)
     check cudnnConvolutionBackwardBias(
       defaultHandle_cudnn,
       addr alpha,

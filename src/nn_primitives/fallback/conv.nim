@@ -98,12 +98,12 @@ proc im2colgemm_conv2d*[T](input, kernel, bias: Tensor[T],
   var output: Tensor[T]
 
   for i in 0..<batch_size:
-    im2col(input.atAxisIndex(0, i).unsafeSqueeze(0), kernel_size, padding, stride, input_col)
+    im2col(input.atAxisIndex(0, i).squeeze(0), kernel_size, padding, stride, input_col)
     output = result.atAxisIndex(0, i).unsafeReshape(kernel_col.shape[0], input_col.shape[1])
     gemm(kernel_col, input_col, output)
 
   if bias.rank > 0:
-    result .+= bias.unsafeUnsqueeze(0)
+    result .+= bias.unsqueeze(0)
 
 proc im2colgemm_conv2d_gradient*[T](input, kernel: Tensor[T],
                          padding: Size2D = (0,0),
@@ -133,8 +133,8 @@ proc im2colgemm_conv2d_gradient*[T](input, kernel: Tensor[T],
   for i in 0..<batch_size:
     let
       grad_output_col = grad_output.atAxisIndex(0, i).unsafeReshape(output_channels, output_flatten_size)
-      grad_input_col = kernel_col.unsafeTranspose() * grad_output_col
+      grad_input_col = kernel_col.transpose() * grad_output_col
 
-    im2col(input.atAxisIndex(0, i).unsafeSqueeze(0), kernel_size, padding, stride, input_col)
-    grad_input[i, _, _, _] = col2im(grad_input_col, input.nchw_channels, input.nchw_height, input.nchw_width, kernel_size, padding, stride).unsafeUnsqueeze(0)
-    grad_weight += (grad_output_col * input_col.unsafeTranspose()).unsafeReshape(grad_weight.shape)
+    im2col(input.atAxisIndex(0, i).squeeze(0), kernel_size, padding, stride, input_col)
+    grad_input[i, _, _, _] = col2im(grad_input_col, input.nchw_channels, input.nchw_height, input.nchw_width, kernel_size, padding, stride).unsqueeze(0)
+    grad_weight += (grad_output_col * input_col.transpose()).unsafeReshape(grad_weight.shape)

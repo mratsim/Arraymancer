@@ -240,22 +240,3 @@ macro slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
         result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
       else:
         result.add(slice)
-
-macro unsafe_slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped {.deprecated.}=
-  ## Typed macro so that isAllInt has typed context and we can dispatch.
-  ## If args are all int, we dispatch to atIndex and return T
-  ## Else, all ints are converted to SteppedSlices and we return a Tensor.
-  ## Note, normal slices and `_` were already converted in the `[]` macro
-  ## TODO in total we do 3 passes over the list of arguments :/. It is done only at compile time though
-  if isAllInt(args):
-    result = newCall(bindSym("atIndex"), t)
-    for slice in args:
-      result.add(slice)
-  else:
-    result = newCall(bindSym("unsafeSlicer"), t)
-    for slice in args:
-      if isInt(slice):
-        ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
-        result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
-      else:
-        result.add(slice)

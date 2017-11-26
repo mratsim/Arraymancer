@@ -18,6 +18,7 @@ import  ../private/p_accessors_macros_desugar,
         ../data_structure,
         macros
 
+
 macro unsafeSlice*[T](t: Tensor[T], args: varargs[untyped]): untyped {.deprecated.}=
   ## Slice a Tensor
   ## Input:
@@ -35,4 +36,4 @@ macro unsafeSlice*[T](t: Tensor[T], args: varargs[untyped]): untyped {.deprecate
   let new_args = getAST(desugar(args))
 
   result = quote do:
-    unsafe_slice_typed_dispatch(`t`, `new_args`)
+    slice_typed_dispatch(`t`, `new_args`)

@@ -91,7 +91,7 @@ proc im2colgemm_conv2d*[T](input, kernel, bias: Tensor[T],
     output_height = (input.nchw_height + (2*padding.height) - kernel.nchw_height) div stride.height + 1
     output_width = (input.nchw_width + (2*padding.width) - kernel.nchw_width) div stride.width + 1
     channels_col = input.nchw_channels * kernel.nchw_height * kernel.nchw_width
-    kernel_col = kernel.unsafeReshape(output_channels, channels_col)
+    kernel_col = kernel.reshape(output_channels, channels_col)
 
   result = newTensorUninit[T](batch_size, output_channels, output_height, output_width)
   var input_col = newTensorUninit[T](channels_col, output_height * output_width)
@@ -119,7 +119,7 @@ proc im2colgemm_conv2d_gradient*[T](input, kernel: Tensor[T],
     output_width = (input.nchw_width + (2*padding.width) - kernel.nchw_width) div stride.width + 1
     output_flatten_size = output_height*output_width
     channels_col = input.nchw_channels * kernel_size.height * kernel_size.width
-    kernel_col = kernel.unsafeReshape(output_channels, input.nchw_channels*kernel.nchw_height*kernel.nchw_width)
+    kernel_col = kernel.reshape(output_channels, input.nchw_channels*kernel.nchw_height*kernel.nchw_width)
 
   # Check if grad output shape looks correct
   assert grad_output.nchw_width == output_width and grad_output.nchw_height == output_height
@@ -132,9 +132,9 @@ proc im2colgemm_conv2d_gradient*[T](input, kernel: Tensor[T],
 
   for i in 0..<batch_size:
     let
-      grad_output_col = grad_output.atAxisIndex(0, i).unsafeReshape(output_channels, output_flatten_size)
+      grad_output_col = grad_output.atAxisIndex(0, i).reshape(output_channels, output_flatten_size)
       grad_input_col = kernel_col.transpose() * grad_output_col
 
     im2col(input.atAxisIndex(0, i).squeeze(0), kernel_size, padding, stride, input_col)
     grad_input[i, _, _, _] = col2im(grad_input_col, input.nchw_channels, input.nchw_height, input.nchw_width, kernel_size, padding, stride).unsqueeze(0)
-    grad_weight += (grad_output_col * input_col.transpose()).unsafeReshape(grad_weight.shape)
+    grad_weight += (grad_output_col * input_col.transpose()).reshape(grad_weight.shape)

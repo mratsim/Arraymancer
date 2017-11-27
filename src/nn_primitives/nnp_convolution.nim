@@ -91,7 +91,7 @@ proc conv2d_backward*[T](input, weight, bias: Tensor[T],
   # Bias gradient
   if bias.rank > 0: # TODO make bias truly optional and not just a tensor of rank 0
     # TODO: sum over many axes
-    grad_bias = grad_output.sum(3).sum(2).sum(0).unsafeReshape(bias.shape)
+    grad_bias = grad_output.sum(3).sum(2).sum(0).reshape(bias.shape)
 
   case algorithm:
     of NNPackAuto:

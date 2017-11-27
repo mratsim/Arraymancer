@@ -67,7 +67,7 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
   when compileOption("boundChecks"):
     check_reshape(t, new_shape.toMetadataArray)
 
-  return t.reshape_with_copy(new_shape)
+  reshape_with_copy(t, new_shape, result)
 
 proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ## Reshape a tensor
@@ -81,7 +81,7 @@ proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   when compileOption("boundChecks"):
     check_reshape(t, new_shape)
 
-  return t.reshape_with_copy(new_shape)
+  reshape_with_copy(t, new_shape, result)
 
 proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.

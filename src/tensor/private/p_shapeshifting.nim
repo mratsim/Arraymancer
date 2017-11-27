@@ -24,12 +24,12 @@ template contiguousT*[T](result, t: Tensor[T], layout: OrderType): untyped=
     let t_transposed = t.transpose()
     result = t_transposed.map_inline(x)
 
-proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray): Tensor[T] {.noInit,inline.}=
+template reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray, result: var Tensor[T]) =
   # Can't call "tensorCpu" template here for some reason
   result = newTensorUninit[T](new_shape)
   result.apply2_inline(t,y)
 
-template reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor): untyped =
+template reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
   when compileOption("boundChecks"):
     check_nocopyReshape t
     when not (new_shape is MetadataArray):

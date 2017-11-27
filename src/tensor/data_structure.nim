@@ -33,6 +33,7 @@ type
     ##
     ## Warning ⚠:
     ##   Do not use Fdata directly, direct access will be removed in 0.4.0.
+
     # `Fdata` will be transformed into an opaque type once `unsafeToTensorReshape` is removed.
     Fdata*: seq[T]
 
@@ -54,13 +55,16 @@ type
     offset*: int
     storage*: CpuStorage[T]
 
-  CudaStorage* [T: SomeReal] = object
+type
+  CudaStorage*[T: SomeReal] = object
     ## Opaque seq-like structure for storage on the Cuda backend.
     ##
-    ## Nim garbage collector will automatically ask cuda to clear GPU memory if ``data`` becomes unused.
-    Flen: int
-    Fref_tracking: ref[ptr UncheckedArray[T]] # We keep ref tracking for the GC in a separate field to avoid double indirection.
-    Fdata: ptr UncheckedArray[T]
+    ## Nim garbage collector will automatically ask cuda to clear GPU memory if data becomes unused.
+    ##
+    # TODO: Forward declaring this and making this completely private prevent assignment in newCudaStorage from working
+    Flen*: int
+    Fdata*: ptr UncheckedArray[T]
+    Fref_tracking*: ref[ptr UncheckedArray[T]] # We keep ref tracking for the GC in a separate field to avoid double indirection.
 
   CudaTensor*[T: SomeReal] = object
     ## Tensor data structure stored on Nvidia GPU (Cuda)
@@ -183,7 +187,7 @@ proc get_data_ptr*[T](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
   ##     - A pointer to the real start of its data (no offset)
   unsafeAddr(t.storage.Fdata[0])
 
-proc get_offset_ptr*[T](t: Tensor[T]): ptr T {.noSideEffect, inline.}=
+proc get_offset_ptr*[T](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:

@@ -34,6 +34,6 @@ suite "Testing specific issues from bug tracker":
 
     # https://github.com/mratsim/Arraymancer/issues/61
     proc foo[T](t: Tensor[T], x: int): Tensor[T] =
-      t.unsafeSlice(x, _, _).unsafeReshape([t.shape[1], t.shape[2]])
+      t[x, _, _].reshape(t.shape[1], t.shape[2])
 
     discard zeros[int]([2,2,2]).foo(1)

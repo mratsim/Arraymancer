@@ -219,7 +219,7 @@ suite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
 
   test "Addition-Substraction - slices":
     let a = @[@[1.0,2,3],@[4.0,5,6], @[7.0,8,9]].toTensor().cuda
-    let a_t = a.unsafeTranspose()
+    let a_t = a.transpose()
 
     check: (a[0..1, 0..1] + a_t[0..1, 0..1]).cpu == [[2.0, 6], [6.0, 10]].toTensor()
     check: (a[1..2, 1..2] - a_t[1..2, 1..2]).cpu == [[0.0, -2], [2.0, 0]].toTensor()

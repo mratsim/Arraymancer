@@ -52,16 +52,16 @@ proc conv2d*[T: SomeReal](input, kernel, bias: CudaTensor[T],
     defaultHandle_cudnn,
     addr alpha,
     srcTensorDesc,
-    input.data.data[],
+    input.get_offset_ptr,
     kernelDesc,
-    kernel.data.data[],
+    kernel.get_offset_ptr,
     convDesc,
     algo_workspace.algo,
     algo_workspace.workspace[],
     algo_workspace.sizeInBytes,
     addr beta,
     dstTensorDesc,
-    result.data.data[]
+    result.get_offset_ptr
   )
 
   result .+= bias.unsqueeze(0)
@@ -118,10 +118,10 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
       defaultHandle_cudnn,
       addr alpha,
       gradOutputTensorDesc,
-      gOutput.data.data[],
+      gOutput.get_offset_ptr,
       addr beta,
       gradBiasTensorDesc,
-      grad_bias.data.data[]
+      grad_bias.get_offset_ptr
     )
 
     # TODO squeeze and divide by batch size?
@@ -143,16 +143,16 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
     defaultHandle_cudnn,
     addr alpha,
     srcTensorDesc,
-    input.data.data[],
+    input.get_offset_ptr,
     gradOutputTensorDesc,
-    gOutput.data.data[],
+    gOutput.get_offset_ptr,
     convDesc,
     kernel_algo_workspace.algo,
     kernel_algo_workspace.workspace[],
     kernel_algo_workspace.sizeInBytes,
     addr beta,
     gradKernelDesc,
-    grad_kernel.data.data[]
+    grad_kernel.get_offset_ptr
   )
 
   when defined(debug):
@@ -176,14 +176,14 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
     defaultHandle_cudnn,
     addr alpha,
     kernelDesc,
-    kernel.data.data[],
+    kernel.get_offset_ptr,
     gradOutputTensorDesc,
-    gOutput.data.data[],
+    gOutput.get_offset_ptr,
     convDesc,
     gradInput_algo_workspace.algo,
     gradInput_algo_workspace.workspace[],
     gradInput_algo_workspace.sizeInBytes,
     addr beta,
     gradInputTensorDesc,
-    grad_input.data.data[]
+    grad_input.get_offset_ptr
   )

@@ -21,6 +21,11 @@ type DynamicStackArray*[T] = object
     data*: array[MAXRANK, T]
     len*: int
 
+# On x86-64, a cache line can contain 8 int64. Hence for best performance
+# MetadataArray should be an array of 7 elements + 1 int for length
+
+# TODO ensure cache line alignment: pending https://github.com/nim-lang/Nim/issues/5315
+
 type
   MetadataArray* = DynamicStackArray[int]
     ## Custom stack allocated array that holds tensors metadata

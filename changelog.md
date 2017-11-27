@@ -16,6 +16,10 @@ Note:
     - Arraymancer now works like Numpy and Julia, making it easier to port code.
     - Unfortunately it makes it harder to debug unexpected data sharing.
 
+- Breaking ?
+  - The max number of dimensions supported has been reduced from 8 to 7 to reduce cache misses.
+    Note, in deep learning the max number of dimensions needed is 6 for 3D videos: [batch, time, color/feature channels, Depth, Height, Width]
+
 - Deprecated
   - Version 0.3.1 with the ALL deprecated proc removed will be released in a week. Due to issue https://github.com/nim-lang/Nim/issues/6436,
     even using non-deprecated proc like `zeros`, `ones`, `newTensor` you will get a deprecated warning.

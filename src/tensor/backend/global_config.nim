@@ -16,10 +16,10 @@
 
 
 # This configures the maximum number of dimensions supported by Arraymancer
-# It should improve performance on Cuda and for iterator by storing temporary shape/strides
-# that will be used extensively in the loop on the stack.
-# For now this is only partly implemented and only on Cuda temporary shape/strides arrays.
-const MAXRANK* = 8 # 8 because it's a nice number, more is possible upon request.
+# On x86-64, a cache line can contain 8 int64. Hence for best performance
+# MetadataArray should be an array of 7 elements + 1 int for length
+# In deep learning the max rank needed is 6 for 3D videos: [batch, time, color/feature channels, Depth, Height, Width]
+const MAXRANK* = 7
 
 
 const CUDA_HOF_TPB*: cint = 32 * 32 # TODO, benchmark and move that to cuda global config

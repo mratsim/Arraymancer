@@ -63,11 +63,7 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
   ##   - a new shape. Number of elements must be the same
   ## Returns:
   ##   - a tensor with the same data but reshaped.
-
-  when compileOption("boundChecks"):
-    check_reshape(t, new_shape.toMetadataArray)
-
-  reshape_with_copy(t, new_shape, result)
+  reshapeT(t, new_shape, result)
 
 proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ## Reshape a tensor
@@ -77,11 +73,7 @@ proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ##   - a new shape. Number of elements must be the same
   ## Returns:
   ##   - a tensor with the same data but reshaped.
-
-  when compileOption("boundChecks"):
-    check_reshape(t, new_shape)
-
-  reshape_with_copy(t, new_shape, result)
+  reshapeT(t, new_shape, result)
 
 proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.

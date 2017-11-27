@@ -90,10 +90,6 @@ proc check_reshape*(t: AnyTensor, new_shape:MetadataArray) {.noSideEffect, inlin
                                     $new_shape.product &
                                     ") reshaped tensor must be the same")
 
-proc check_nocopyReshape*(t: AnyTensor) {.noSideEffect, inline.}=
-  if unlikely(not t.isContiguous):
-    raise newException(ValueError, "The tensor must be contiguous for reshape without copy")
-
 proc check_concat*(t1, t2: Tensor, axis: int) {.noSideEffect,inline.}=
   let check1 = t1.shape[0..<axis] == t2.shape[0..<axis]
   let check2 = t2.shape[axis+1..t1.shape.high] == t2.shape[axis+1..t2.shape.high]

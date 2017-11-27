@@ -97,9 +97,10 @@ proc im2colgemm_conv2d*[T](input, kernel, bias: Tensor[T],
   var input_col = newTensorUninit[T](channels_col, output_height * output_width)
   var output: Tensor[T]
 
-  for i in 0..<batch_size:
+  for i in 0..<batch_size: #TODO: batch matmul
     im2col(input.atAxisIndex(0, i).squeeze(0), kernel_size, padding, stride, input_col)
-    output = result.atAxisIndex(0, i).unsafeReshape(kernel_col.shape[0], input_col.shape[1])
+    # The following must be done without copy: GEMM will directly write in the result tensor
+    output = result.atAxisIndex(0, i).reshape(kernel_col.shape[0], input_col.shape[1])
     gemm(kernel_col, input_col, output)
 
   if bias.rank > 0:

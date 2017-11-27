@@ -25,20 +25,27 @@ template contiguousT*[T](result, t: Tensor[T], layout: OrderType): untyped=
     result = t_transposed.map_inline(x)
 
 template reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray, result: var Tensor[T]) =
-  # Can't call "tensorCpu" template here for some reason
   result = newTensorUninit[T](new_shape)
   result.apply2_inline(t,y)
 
 template reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
-  when compileOption("boundChecks"):
-    check_nocopyReshape t
-    when not (new_shape is MetadataArray):
-      check_reshape(t, new_shape.toMetadataArray)
-    else:
-      check_reshape(t, new_shape)
   result.shape.copyFrom(new_shape)
   shape_to_strides(result.shape, rowMajor, result.strides)
   result.offset = t.offset
+
+template reshapeT*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
+  when compileOption("boundChecks"):
+    when new_shape is MetadataArray:
+      check_reshape(t, new_shape)
+    else:
+      check_reshape(t, new_shape.toMetadataArray)
+
+  if t.isContiguous:
+    reshape_no_copy(t, new_shape, result)
+    result.storage = t.storage
+    return
+
+  reshape_with_copy(t, new_shape, result)
 
 template broadcastT*(t: var AnyTensor, shape: varargs[int]|MetadataArray) =
   when compileOption("boundChecks"):

@@ -9,7 +9,7 @@ let bsz = 32 #batch size
 let x_train_bool = randomTensor([bsz * 100, 2], 2).astype(bool)
 
 # Let's build or truth labels. We need to apply xor between the 2 columns of the tensors
-let y_bool = x_train_bool[_,0] xor x_train_bool[_,1]                         # TODO - "move" (auto-unsafeSlice)
+let y_bool = x_train_bool[_,0] xor x_train_bool[_,1]
 
 # Convert to float and transpose so batch_size is last
 let x_train = ctx.variable(x_train_bool.astype(float32).transpose)
@@ -38,8 +38,8 @@ for epoch in 0..10000:
 
     # offset in the Tensor (Remember, batch size is last)
     let offset = batch_id * 32
-    let x = x_train[_, offset ..< offset + 32]                              # TODO - "move" (auto-unsafeSlice)
-    let target = y[_, offset ..< offset + 32]                               # TODO - "move" (auto-unsafeSlice)
+    let x = x_train[_, offset ..< offset + 32]
+    let target = y[_, offset ..< offset + 32]
 
     # Building the network
     let n1 = linear(x, layer_3neurons)

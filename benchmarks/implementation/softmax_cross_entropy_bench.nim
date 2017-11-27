@@ -46,13 +46,13 @@ proc streaming_max_sumexp[T](t: Tensor[T], axis: int): Tensor[tuple[max:T, sumex
   result = newTensorUninit[tuple[max:T, sumexp: T]](t.shape[axis])
 
   for i in `||`(0, t.shape[axis]-1, "simd"):
-    result.data[i] = t.unsafeAtAxisIndex(axis, i).streaming_max_sumexp
+    result.data[i] = t.atAxisIndex(axis, i).streaming_max_sumexp
 
   # Reexpand the tensor to be consistent with fold_axis/reduce_axis
   if axis == 0:
-    result = result.unsafeUnsqueeze(1)
+    result = result.unsqueeze(1)
   else:
-    result = result.unsafeUnsqueeze(0)
+    result = result.unsqueeze(0)
 
 proc classic_max_sumexp[T](t: Tensor[T], axis: int): Tensor[tuple[max:T, sumexp: T]] {.noInit.}=
   # Only 2D tensor are supported for now. (i.e. no 3D Softmax)
@@ -61,13 +61,13 @@ proc classic_max_sumexp[T](t: Tensor[T], axis: int): Tensor[tuple[max:T, sumexp:
   result = newTensorUninit[tuple[max:T, sumexp: T]](t.shape[axis])
 
   for i in `||`(0, t.shape[axis]-1, "simd"):
-    result.data[i] = t.unsafeAtAxisIndex(axis, i).classic_max_sumexp
+    result.data[i] = t.atAxisIndex(axis, i).classic_max_sumexp
 
   # Reexpand the tensor to be consistent with fold_axis/reduce_axis
   if axis == 0:
-    result = result.unsafeUnsqueeze(1)
+    result = result.unsqueeze(1)
   else:
-    result = result.unsafeUnsqueeze(0)
+    result = result.unsqueeze(0)
 
 
 proc streaming_logsumexp[T: SomeReal](t: Tensor[T]): T =
@@ -127,11 +127,11 @@ proc softmax_cross_entropy2[T](input, target: Tensor[T]): T =
 ####### Sparse
 proc sparse_softmax_cross_entropy1[T](input: Tensor[T], target: Tensor[int]): T =
   for i in 0||(input.shape[1]-1):
-    let lse = input.unsafeSlice(_,i).streaming_log_sumexp
+    let lse = input[_,i].streaming_log_sumexp
     when not declared(openmp):
-      result += lse - input.unsafeSlice(target.unsafeSlice(i), i)
+      result += lse - input[target[i], i]
     else:
-      let tmp = lse - input.unsafeSlice(target.unsafeSlice(i), i)
+      let tmp = lse - input[target[i], i]
       {.emit:"#pragma omp atomic".}
       {.emit:"`result` += `tmp`;".}
   result /= T(input.shape[1])
@@ -177,11 +177,11 @@ proc softmax_cross_entropy_backward1[T](
   result = zeros_like(cached_tensor)
 
   for i in 0||(batch_size-1): # Can't use OpenMP - SIGSEGV Illegal Address
-    let (max, sumexp) = cached_tensor.unsafeSlice(_,i).streaming_max_sumexp
+    let (max, sumexp) = cached_tensor[_,i].streaming_max_sumexp
 
-    var res_slice = result.unsafeSlice(_, i)
+    var res_slice = result[_, i]
 
-    apply3_inline(res_slice, cached_tensor.unsafeSlice(_,i), target.unsafeSlice(_,i)):
+    apply3_inline(res_slice, cached_tensor[_,i], target[_,i]):
       grad * (stable_softmax(y, max, sumexp) - z) / T(batch_size)
 
 proc sparse_softmax_cross_entropy_backward1[T](
@@ -203,11 +203,11 @@ proc sparse_softmax_cross_entropy_backward1[T](
     result[truth_idx, i] = -1
 
   for i in 0||(batch_size-1):
-    let (max, sumexp) = cached_tensor.unsafeSlice(_,i).streaming_max_sumexp
+    let (max, sumexp) = cached_tensor[_,i].streaming_max_sumexp
 
-    var res_slice = result.unsafeSlice(_, i)
+    var res_slice = result[_,i]
 
-    apply2_inline(res_slice, cached_tensor.unsafeSlice(_,i)):
+    apply2_inline(res_slice, cached_tensor[_,i]):
       grad * (stable_softmax(y, max, sumexp) + x) / T(batch_size)
 
 ############ New optimized
@@ -223,8 +223,8 @@ proc softmax_cross_entropy_backward2[T](
   elif gradient is Tensor:
     let grad = gradient.data[gradient.offset]
 
-  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
-  # let axis_max_sumexp = cached_tensor.classic_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
+  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).broadcast(cached_tensor.shape)
+  # let axis_max_sumexp = cached_tensor.classic_max_sumexp(axis = 1).broadcast(cached_tensor.shape)
 
   result = map3_inline(cached_tensor, target, axis_max_sumexp):
       grad * (stable_softmax(x, z.max, z.sumexp) - y) / T(batch_size)
@@ -246,8 +246,8 @@ proc sparse_softmax_cross_entropy_backward2[T](
   for i, truth_idx in enumerate(target):
     result[truth_idx, i] = -1
 
-  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
-  # let axis_max_sumexp = cached_tensor.classic_max_sumexp(axis = 1).unsafeBroadcast(cached_tensor.shape)
+  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).broadcast(cached_tensor.shape)
+  # let axis_max_sumexp = cached_tensor.classic_max_sumexp(axis = 1).broadcast(cached_tensor.shape)
 
 
   apply3_inline(result, cached_tensor, axis_max_sumexp):

@@ -5,8 +5,8 @@ import ../src/arraymancer
 
 proc matgen(n: int): auto =
     let tmp = 1.0 / (n*n).float64
-    let j_idx = [toSeq(0..<n)].toTensor().astype(float64).unsafeBroadcast([n,n])
-    let i_idx = j_idx.unsafeTranspose
+    let j_idx = [toSeq(0..<n)].toTensor().astype(float64).broadcast([n,n])
+    let i_idx = j_idx.transpose
     result = map2_inline(i_idx, j_idx):
         (x - y) * (x + y) * tmp
 

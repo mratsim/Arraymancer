@@ -17,34 +17,43 @@ import unittest, future, sequtils
 
 suite "Shapeshifting":
   test "Contiguous conversion":
-    let a = [7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0].toTensor.reshape([3,6])
+    block:
+      let a = [7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0].toTensor.reshape([3,6])
 
-    # Tensor of shape 3x6 of type "int" on backend "Cpu"
-    # |7      4       3       1       8       6|
-    # |8      1       6       2       6       6|
-    # |2      0       4       3       2       0|
+      # Tensor of shape 3x6 of type "int" on backend "Cpu"
+      # |7      4       3       1       8       6|
+      # |8      1       6       2       6       6|
+      # |2      0       4       3       2       0|
 
-    let b = a.asContiguous()
-    check: b.toRawSeq == @[7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0]
+      let b = a.asContiguous()
+      check: b.toRawSeq == @[7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0]
 
-    # a is already contiguous, even if wrong layout.
-    # Nothing should be done
-    let c = a.asContiguous(colMajor)
-    check: c.toRawSeq == @[7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0]
+      # a is already contiguous, even if wrong layout.
+      # Nothing should be done
+      let c = a.asContiguous(colMajor)
+      check: c.toRawSeq == @[7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0]
 
-    # force parameter has been used.
-    # Layout will change even if a was contiguous
-    let d = a.asContiguous(colMajor, force = true)
-    check: d.toRawSeq == @[7, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
+      # force parameter has been used.
+      # Layout will change even if a was contiguous
+      let d = a.asContiguous(colMajor, force = true)
+      check: d.toRawSeq == @[7, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
 
 
-    # Now test with a non contiguous tensor
-    let u = a[_,0..1]
-    check: u.toRawSeq == @[7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0]
-    check: u == [7,4,8,1,2,0].toTensor.reshape([3,2])
+      # Now test with a non contiguous tensor
+      let u = a[_,0..1]
+      check: u.toRawSeq == @[7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0]
+      check: u == [7,4,8,1,2,0].toTensor.reshape([3,2])
 
-    check: u.asContiguous.toRawSeq == @[7,4,8,1,2,0]
-    check: u.asContiguous(colMajor).toRawSeq == @[7,8,2,4,1,0]
+      check: u.asContiguous.toRawSeq == @[7,4,8,1,2,0]
+      check: u.asContiguous(colMajor).toRawSeq == @[7,8,2,4,1,0]
+
+    block: # Check Fortran order on 3d+ tensors
+      let a = randomTensor([3, 1, 4, 4], 100) # [batch_size, color channel, height, width]
+      check: a.strides == [16, 16, 4, 1]
+      let b = a.asContiguous(colMajor, force = true)
+      check: b.strides == [1, 3, 3, 12]
+
+      check: a == b
 
   test "Reshape":
     let a = toSeq(1..4).toTensor().reshape(2,2)

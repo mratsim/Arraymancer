@@ -12,17 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../backend/metadataArray,
-        ../data_structure, ../init_cpu, ../higher_order,
+import  ../../private/sequninit,
+        ../backend/metadataArray,
+        ../data_structure, ../higher_order,
+        ./p_init_cpu,
         ./p_checks,
         nimblas
 
-template contiguousT*[T](result, t: Tensor[T], layout: OrderType): untyped=
+template contiguousT*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]): untyped=
   if layout == rowMajor:
     result = t.map_inline(x)
-  else:
-    let t_transposed = t.transpose()
-    result = t_transposed.map_inline(x)
+  else: # colMajor
+    tensorCpu(t.shape, result, layout)
+    result.data = newSeqUninit[T](result.size)
+    apply2_inline(result, t):
+      y
 
 template reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray, result: var Tensor[T]) =
   result = newTensorUninit[T](new_shape)

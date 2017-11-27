@@ -53,7 +53,7 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
     return t
   elif fCont and layout == colMajor:
     return t
-  contiguousT(result, t, layout)
+  contiguousT(t, layout, result)
 
 proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
   ## Reshape a tensor

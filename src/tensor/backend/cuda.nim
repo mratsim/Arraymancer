@@ -32,13 +32,12 @@ proc deallocCuda*[T](p: ref[ptr T]) {.noSideEffect.}=
 
 
 # ##############################################################
-# # Base CudaSeq type
-# # End goal is for it to have value semantics like Nim seq
+# # Base CudaStorage type
 
-proc newCudaSeq*[T: SomeReal](length: int): CudaSeq[T] {.noSideEffect.}=
-  result.len = length
-  new(result.data, deallocCuda)
-  result.data[] = cast[ptr UncheckedArray[T]](cudaMalloc[T](result.len))
+proc newCudaStorage*[T: SomeReal](length: int): CudaStorage[T] {.noSideEffect.}=
+  result.Flen = length
+  new(result.Fref_tracking, deallocCuda)
+  result.Fdata = cast[ptr UncheckedArray[T]](cudaMalloc[T](result.Flen))
 
 # #########################################################
 # # Sending tensor layout to Cuda Kernel
@@ -66,7 +65,7 @@ proc newCudaSeq*[T: SomeReal](length: int): CudaSeq[T] {.noSideEffect.}=
 
 type
   # CudaLayoutArray = array[MAXRANK, cint]
-  # This will replace the current ref[ptr T] for shape and strides in the future
+  # This will replace the current ref[ptr T] for shape and strides in the future with Uinified Memory
   ## Using arrays instead of seq avoids having to indicate __restrict__ everywhere to indicate no-aliasing
   ## We also prefer stack allocated array sice the data will be used at every single loop iteration to compute elements position.
   ## Ultimately it avoids worrying about deallocation too

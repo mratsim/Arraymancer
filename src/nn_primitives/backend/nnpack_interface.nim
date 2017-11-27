@@ -26,8 +26,8 @@ proc nnpack_conv2d*(input, weight, bias: Tensor[float32], padding, stride: Size2
     output_width = (2*padding.width + input.nchw_width) - (weight.nchw_width - 1)
 
   # Make sure the data is contiguous before passing to nnpack
-  let input = input.unsafeContiguous()
-  let weight = weight.unsafeContiguous()
+  let input = input.asContiguous()
+  let weight = weight.asContiguous()
   var bias_nonnil: Tensor[float32] # TODO make bias truly optional and not just a tensor of rank 0
 
 
@@ -36,7 +36,7 @@ proc nnpack_conv2d*(input, weight, bias: Tensor[float32], padding, stride: Size2
     # Temporary bias filled with zeros just to pass to nnpack
     bias_nonnil = zeros[float32](output_channels)
   else:
-    bias_nonnil = bias.unsafeContiguous()
+    bias_nonnil = bias.asContiguous()
 
   # Prepare tensor that the result will be stored on
   result = newTensorUninit[float32](input.shape[0], output_channels, output_height, output_width)

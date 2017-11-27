@@ -269,9 +269,9 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     #  [-56, -2]]   *   [-91]]
     # http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%2253%22,%22-70%22],[%22-56%22,%22-2%22]]&matrix2=[[%2269%22],[%2281%22]]&operator=*
 
-    let b2 = b.unsafeSlice(4..2|-2, 3..1|-2)
+    let b2 = b[4..2|-2, 3..1|-2]
 
-    let u2 = u.unsafeSlice(2..0|-2)
+    let u2 = u[2..0|-2]
 
     check: b2*u2 == [10027, -3682].toTensor()
 
@@ -282,7 +282,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
 
 
-    let b3 = b.unsafeSlice(2..3, 3..1|-2)
+    let b3 = b[2..3, 3..1|-2]
 
     check: b3*u2 == [-3682, -4783].toTensor
 

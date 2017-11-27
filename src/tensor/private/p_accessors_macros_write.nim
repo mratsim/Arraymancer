@@ -28,7 +28,7 @@ import  ../../private/[nested_containers, ast_utils],
 # Setting a single value
 
 template slicerMutT_val[T](t: var Tensor[T], slices: ArrayOfSlices, val: T): untyped =
-  var sliced = t.unsafeSlicer(slices)
+  var sliced = t.slicer(slices)
   for old_val in sliced.mitems:
     old_val = val
 
@@ -77,7 +77,7 @@ proc slicerMut*[T](t: var Tensor[T],
 
 template slicerMutT_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) =
   ## Assign value from openarrays
-  var sliced = t.unsafeSlicer(slices)
+  var sliced = t.slicer(slices)
   when compileOption("boundChecks"):
     check_shape(sliced, oa)
 
@@ -135,7 +135,7 @@ proc slicerMut*[T](t: var Tensor[T],
 
 template slicerMutT_T[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T]) =
   ## Assign the value to the whole slice
-  var sliced = t.unsafeSlicer(slices)
+  var sliced = t.slicer(slices)
 
   when compileOption("boundChecks"):
     check_shape(sliced, t2)
@@ -180,7 +180,7 @@ proc slicerMut*[T](t: var Tensor[T],
 # #########################################################################
 # Dispatching logic
 
-macro inner_typed_dispatch_mut*(t: typed, args: varargs[typed], val: typed): untyped =
+macro slice_typed_dispatch_mut*(t: typed, args: varargs[typed], val: typed): untyped =
   ## Assign `val` to Tensor T at slice/position `args`
   if isAllInt(args):
     result = newCall(bindSym("atIndexMut"), t)
@@ -251,7 +251,7 @@ proc slicer_var[T](t: var AnyTensor[T],
                             slices1.toArrayOfSlices)
   slicerT(result, full_slices)
 
-macro inner_typed_dispatch_var*(t: typed, args: varargs[typed]): untyped =
+macro slice_typed_dispatch_var*(t: typed, args: varargs[typed]): untyped =
   ## Typed macro so that isAllInt has typed context and we can dispatch.
   ## If args are all int, we dispatch to atIndex and return T
   ## Else, all ints are converted to SteppedSlices and we return a Tensor.

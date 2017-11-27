@@ -39,7 +39,7 @@ proc `.==`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##
   ## Returns:
   ##   - A tensor of boolean
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
   result = map2_inline(tmp_a, tmp_b, x == y)
 
 proc `.!=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
@@ -49,7 +49,7 @@ proc `.!=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##
   ## Returns:
   ##   - A tensor of boolean
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
   result = map2_inline(tmp_a, tmp_b, x != y)
 
 proc `.<=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
@@ -59,7 +59,7 @@ proc `.<=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##
   ## Returns:
   ##   - A tensor of boolean
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
   result = map2_inline(tmp_a, tmp_b, x <= y)
 
 proc `.<`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
@@ -69,7 +69,7 @@ proc `.<`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##
   ## Returns:
   ##   - A tensor of boolean
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
   result = map2_inline(tmp_a, tmp_b, x < y)
 
 proc `.>=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
@@ -79,7 +79,7 @@ proc `.>=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##
   ## Returns:
   ##   - A tensor of boolean
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
   result = map2_inline(tmp_a, tmp_b, x >= y)
 
 proc `.>`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
@@ -89,5 +89,5 @@ proc `.>`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##
   ## Returns:
   ##   - A tensor of boolean
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
   result = map2_inline(tmp_a, tmp_b, x > y)

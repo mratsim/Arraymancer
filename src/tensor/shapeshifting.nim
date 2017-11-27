@@ -17,7 +17,7 @@ import  ./backend/metadataArray,
         ./private/p_checks,
         ./private/p_accessors_macros_write,
         ./data_structure, ./init_cpu, ./higher_order,
-        nimblas, sequtils
+        sequtils
 
 # NOTE: Procs that accepts shape are duplicated to accept both varargs and MetadataArray
 # until either https://github.com/nim-lang/Nim/issues/6528 or https://github.com/nim-lang/Nim/issues/6529
@@ -28,25 +28,11 @@ proc transpose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
   ##
   ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
   ##
-  ## Data is copied as-is and not modified.
+  ## Data is not copied or modified, only metadata is modified.
   t.shape.reversed(result.shape)
   t.strides.reversed(result.strides)
   result.offset = t.offset
-  result.data = t.data
-
-
-proc unsafeTranspose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
-  ## Transpose a Tensor without copy.
-  ##
-  ## Warning ⚠:
-  ##   This is a no-copy operation, data is shared with the input.
-  ##   This proc does not guarantee that a ``let`` value is immutable.
-  ##
-  ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
-  t.shape.reversed(result.shape)
-  t.strides.reversed(result.strides)
-  result.offset = t.offset
-  shallowCopy(result.data, t.data)
+  result.storage = t.storage
 
 proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noInit.} =
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
@@ -61,37 +47,12 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
   let cCont = t.is_C_contiguous
   let fCont = t.is_F_contiguous
 
-  if cCont and not force:
-    contiguousT(result, t, rowMajor)
-    return
-  elif fCont and not force:
-    contiguousT(result, t, colMajor)
-    return
-  contiguousT(result, t, layout)
-
-proc unsafeContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noInit.} =
-  ## Transform a tensor with general striding to a Tensor with contiguous layout.
-  ##
-  ## If the tensor is already contiguous it is returned without copy, underlying data is shared between the input and the output.
-  ##
-  ## Warning ⚠:
-  ##   This may be a no-copy operation with result data shared with the input.
-  ##   This proc does not guarantee that a ``let`` value is immutable.
-  ##
-  ## By default tensor will be rowMajor.
-  ##
-  ## By default nothing is done if the tensor is already contiguous (C Major or F major)
-  ## The "force" parameter can force re-ordering to a specific layout
-
-  let cCont = t.is_C_contiguous
-  let fCont = t.is_F_contiguous
-
   if (cCont or fCont) and not force:
-    return t.unsafeView
+    return t
   elif cCont and layout == rowMajor:
-    return t.unsafeView
+    return t
   elif fCont and layout == colMajor:
-    return t.unsafeView
+    return t
   contiguousT(result, t, layout)
 
 proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
@@ -102,11 +63,7 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
   ##   - a new shape. Number of elements must be the same
   ## Returns:
   ##   - a tensor with the same data but reshaped.
-
-  when compileOption("boundChecks"):
-    check_reshape(t, new_shape.toMetadataArray)
-
-  return t.reshape_with_copy(new_shape)
+  reshapeT(t, new_shape, result)
 
 proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ## Reshape a tensor
@@ -116,36 +73,7 @@ proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ##   - a new shape. Number of elements must be the same
   ## Returns:
   ##   - a tensor with the same data but reshaped.
-
-  when compileOption("boundChecks"):
-    check_reshape(t, new_shape.toMetadataArray)
-
-  return t.reshape_with_copy(new_shape)
-
-proc unsafeReshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
-  ## Reshape a tensor without copy.
-  ##
-  ## ⚠ Reshaping without copy is only possible on contiguous Tensors
-  ##
-  ## Warning ⚠:
-  ##   This is a no-copy operation, data is shared with the input.
-  ##   This proc does not guarantee that a ``let`` value is immutable.
-
-  t.reshape_no_copy(new_shape)
-  shallowCopy(result.data, t.data)
-
-proc unsafeReshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
-  ## Reshape a tensor without copy.
-  ##
-  ## ⚠ Reshaping without copy is only possible on contiguous Tensors
-  ##
-  ## Warning ⚠:
-  ##   This is a no-copy operation, data is shared with the input.
-  ##   This proc does not guarantee that a ``let`` value is immutable.
-
-  t.reshape_no_copy(new_shape)
-  shallowCopy(result.data, t.data)
-
+  reshapeT(t, new_shape, result)
 
 proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.
@@ -169,34 +97,6 @@ proc broadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit,noSid
   ##   A broadcasted tensor should not be modified and only used for computation.
 
   result = t
-  result.broadcastT(shape)
-
-proc unsafeBroadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.}=
-  ## Explicitly broadcast a Tensor to the specified shape.
-  ## The returned broadcasted Tensor share the underlying data with the input.
-  ##
-  ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
-  ## values along that dimension.
-  ##
-  ## Warning ⚠:
-  ##   This is a no-copy operation, data is shared with the input.
-  ##   This proc does not guarantee that a ``let`` value is immutable.
-  ##   A broadcasted tensor should not be modified and only used for computation.
-  result = t.unsafeView
-  result.broadcastT(shape)
-
-proc unsafeBroadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit,noSideEffect.}=
-  ## Explicitly broadcast a Tensor to the specified shape.
-  ## The returned broadcasted Tensor share the underlying data with the input.
-  ##
-  ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
-  ## values along that dimension.
-  ##
-  ## Warning ⚠:
-  ##   This is a no-copy operation, data is shared with the input.
-  ##   This proc does not guarantee that a ``let`` value is immutable.
-  ##   A broadcasted tensor should not be modified and only used for computation.
-  result = t.unsafeView
   result.broadcastT(shape)
 
 proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.} =
@@ -247,7 +147,7 @@ template bc*(t: (Tensor|SomeNumber), shape: MetadataArray): untyped =
   ## Alias for ``broadcast``
   t.broadcast(shape)
 
-proc unsafeBroadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect.}=
+proc broadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect, noInit.}=
   ## Broadcast 2 tensors so they have compatible shapes for element-wise computations.
   ##
   ## Tensors in the tuple can be accessed with output.a and output.b
@@ -264,8 +164,9 @@ proc unsafeBroadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffec
 
   broadcast2T(a,b, result)
 
-  shallowCopy(result.a.data, a.data)
-  shallowCopy(result.b.data, b.data)
+  result.a.storage = a.storage
+  result.b.storage = b.storage
+
 
 proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
   ## Permute dimensions of a tensors
@@ -280,26 +181,6 @@ proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
 
   # TODO: bounds check
   result = t
-  permuteT(result, dims)
-
-proc unsafePermute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
-  ## Permute dimensions of a tensors
-  ## Input:
-  ##   - a tensor
-  ##   - the new dimension order
-  ## Returns:
-  ##   - a tensor with re-order dimension
-  ## Usage:
-  ##  .. code:: nim
-  ##     a.permute(0,2,1) # dim 0 stays at 0, dim 1 becomes dim 2 and dim 2 becomes dim 1
-  ##
-  ## Warning ⚠:
-  ##   This is a no-copy operation, data is shared with the input.
-  ##   This proc does not guarantee that a ``let`` value is immutable.
-  ##   A broadcasted tensor should not be modified and only used for computation.
-
-  # TODO: bounds check
-  result = t.unsafeView
   permuteT(result, dims)
 
 proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit,noSideEffect.}=
@@ -343,18 +224,6 @@ proc squeeze*(t: AnyTensor): AnyTensor {.noInit,noSideEffect.}=
   result = t
   result.squeezeT
 
-proc unsafeSqueeze*(t: Tensor): Tensor {.noInit,noSideEffect.}=
-  ## Squeeze tensors. For example a Tensor of shape [4,1,3] will become [4,3]
-  ## Input:
-  ##   - a tensor
-  ## Returns:
-  ##   - a tensor with singleton dimensions collapsed that share the same underlying storage
-  ## Warning ⚠:
-  ##   This is a no-copy operation, data is shared with the input.
-  ##   This proc does not guarantee that a ``let`` value is immutable.
-  result = t.unsafeView
-  result.squeezeT
-
 proc squeeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   ## Collapse the given axis, if the dimension is not 1, it does nothing.
   ## Input:
@@ -363,19 +232,6 @@ proc squeeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   ## Returns:
   ##   - a tensor with that axis collapsed, if it was a singleton dimension
   result = t
-  result.squeezeT(axis)
-
-proc unsafeSqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
-  ## Collapse the given axis, if the dimension is not 1; it does nothing
-  ## Input:
-  ##   - a tensor
-  ##   - an axis (dimension)
-  ## Returns:
-  ##   - a tensor with singleton dimensions collapsed
-  ## Warning ⚠:
-  ##   This is a no-copy operation, data is shared with the input.
-  ##   This proc does not guarantee that a ``let`` value is immutable.
-  result = t.unsafeView
   result.squeezeT(axis)
 
 proc unsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
@@ -389,15 +245,6 @@ proc unsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   result = t
   result.unsqueezeT(axis)
 
-proc unsafeUnsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
-  ## Insert a new axis just before the given axis, increasing the tensor
-  ## dimension (rank) by 1
-  ##   - a tensor with that new axis
-  ## WARNING: result share storage with input
-  ## This does not guarantee `let` variable immutability
-  result = t.unsafeView
-  result.unsqueezeT(axis)
-
 proc stack*[T](tensors: varargs[Tensor[T]], axis: int = 0): Tensor[T] {.noInit.} =
   ## Join a sequence of tensors along a new axis into a new tensor.
   ## Input:
@@ -405,5 +252,5 @@ proc stack*[T](tensors: varargs[Tensor[T]], axis: int = 0): Tensor[T] {.noInit.}
   ##   - an axis (dimension)
   ## Returns:
   ##   - a new stacked tensor along the new axis
-  proc stack_unsqueeze(t: Tensor[T]): Tensor[T] = t.unsafeUnsqueeze(axis)
+  proc stack_unsqueeze(t: Tensor[T]): Tensor[T] = t.unsqueeze(axis)
   tensors.map(stack_unsqueeze).concat(axis)

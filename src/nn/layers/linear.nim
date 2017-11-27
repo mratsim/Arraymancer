@@ -33,8 +33,8 @@ method forward*[TT](self: LinearGate[TT], a: Variable[TT]): Variable[TT] {.inlin
   result.grad = zeros_like(result.value)
 
 method backward*[TT](self: LinearGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
-  result[0] = self.W.value.unsafeTranspose * gradient # grad w.r.t. x
-  result[1] = gradient * self.x.value.unsafeTranspose # grad w.r.t. weight
+  result[0] = self.W.value.transpose * gradient # grad w.r.t. x
+  result[1] = gradient * self.x.value.transpose # grad w.r.t. weight
 
   if not self.b.isNil:
     result[2] = sum(gradient, axis=0) # grad w.r.t. bias

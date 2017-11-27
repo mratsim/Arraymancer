@@ -1,4 +1,4 @@
-# Copyright 2017 Mamy André-Ratsimbazafy
+# Copyright 2017 the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./data_structure,
-        ./shapeshifting
 
-template at*[T](t: Tensor[T], args: varargs[untyped]): untyped =
-  ## Slice a Tensor and collapse singleton dimension.
-  ##
+import  ../private/p_accessors_macros_desugar,
+        ../private/p_accessors_macros_read,
+        ../data_structure,
+        macros
+
+
+macro unsafeSlice*[T](t: Tensor[T], args: varargs[untyped]): untyped {.deprecated.}=
+  ## Slice a Tensor
   ## Input:
   ##   - a Tensor
   ##   - and:
@@ -25,7 +28,12 @@ template at*[T](t: Tensor[T], args: varargs[untyped]): untyped =
   ##     - or a slice (cf. tutorial)
   ## Returns:
   ##   - a value or a view of the Tensor corresponding to the slice
-  ##     Singleton dimension are collapsed
+  ## Warning ⚠:
+  ##   This is a no-copy operation, data is shared with the input.
+  ##   This proc does not guarantee that a ``let`` value is immutable.
   ## Usage:
   ##   See the ``[]`` macro
-  t[args].squeeze
+  let new_args = getAST(desugar(args))
+
+  result = quote do:
+    slice_typed_dispatch(`t`, `new_args`)

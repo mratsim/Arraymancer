@@ -180,7 +180,7 @@ suite "Slice mutations":
       check false
 
   test "Setting a slice to a single value":
-    var t_van = t_van_immut
+    var t_van = t_van_immut.clone
     let test =  @[@[1,  1,   1,   1,    1],
             @[2,  4,   8, 999,  999],
             @[3,  9,  27, 999,  999],
@@ -192,7 +192,7 @@ suite "Slice mutations":
     check: t_van == t_test
 
   test "Setting a slice to an array/seq of values":
-    var t_van = t_van_immut
+    var t_van = t_van_immut.clone
     let test =  @[@[111,  222,   1,   1,    1],
             @[333,  444,   8,  16,   32],
             @[  3,    9,  27,  81,  243],
@@ -204,7 +204,7 @@ suite "Slice mutations":
     check: t_van == t_test
 
   test "Setting a slice from a different Tensor":
-    var t_van = t_van_immut
+    var t_van = t_van_immut.clone
     let test =  @[@[1,  1,     1,   1,   1],
             @[2,  4,     8,  16,  32],
             @[3,  9,    27,  81, 243],
@@ -215,21 +215,22 @@ suite "Slice mutations":
     t_van[^2..^1,2..4] = t_van_immut[^1..^2|-1, 4..2|-1]
     check: t_van == t_test
 
-  test "Setting a slice from a view of the same Tensor":
-    var t_van = t_van_immut
-    let test =  @[@[1,  1,     1,   1,   1],
-            @[2,  4,     8,  16,  32],
-            @[3,  9,    27,  81, 243],
-            @[4, 16,  3125, 625, 125],
-            @[5, 25,  1024, 256, 64]]
+  ### Not supported anymore with ref semantics, an explicit copy must be made.
+  # test "Setting a slice from a view of the same Tensor":
+  #   var t_van = t_van_immut.clone
+  #   let test =  @[@[1,  1,     1,   1,   1],
+  #           @[2,  4,     8,  16,  32],
+  #           @[3,  9,    27,  81, 243],
+  #           @[4, 16,  3125, 625, 125],
+  #           @[5, 25,  1024, 256, 64]]
 
-    let t_test = test.toTensor()
-    t_van[^2..^1,2..4] = t_van[^1..^2|-1, 4..2|-1]
-    check: t_van == t_test
-  
+  #   let t_test = test.toTensor()
+  #   t_van[^2..^1,2..4] = t_van[^1..^2|-1, 4..2|-1]
+  #   check: t_van == t_test
+
   when compileOption("boundChecks") and not defined(openmp):
     test "Bounds checking":
-      var t_van = t_van_immut
+      var t_van = t_van_immut.clone
       expect(IndexError):
         t_van[0..1,0..1] = [111, 222, 333, 444, 555]
       expect(IndexError):

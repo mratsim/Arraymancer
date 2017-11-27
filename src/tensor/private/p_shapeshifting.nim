@@ -21,24 +21,31 @@ template contiguousT*[T](result, t: Tensor[T], layout: OrderType): untyped=
   if layout == rowMajor:
     result = t.map_inline(x)
   else:
-    let t_transposed = t.unsafeTranspose()
+    let t_transposed = t.transpose()
     result = t_transposed.map_inline(x)
 
-proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray): Tensor[T] {.noInit,inline.}=
-  # Can't call "tensorCpu" template here for some reason
+template reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray, result: var Tensor[T]) =
   result = newTensorUninit[T](new_shape)
   result.apply2_inline(t,y)
 
-template reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray): untyped =
-  when compileOption("boundChecks"):
-    check_nocopyReshape t
-    when not (new_shape is MetadataArray):
-      check_reshape(t, new_shape.toMetadataArray)
-    else:
-      check_reshape(t, new_shape)
+template reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
   result.shape.copyFrom(new_shape)
   shape_to_strides(result.shape, rowMajor, result.strides)
   result.offset = t.offset
+
+template reshapeT*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
+  when compileOption("boundChecks"):
+    when new_shape is MetadataArray:
+      check_reshape(t, new_shape)
+    else:
+      check_reshape(t, new_shape.toMetadataArray)
+
+  if t.isContiguous:
+    reshape_no_copy(t, new_shape, result)
+    result.storage = t.storage
+    return
+
+  reshape_with_copy(t, new_shape, result)
 
 template broadcastT*(t: var AnyTensor, shape: varargs[int]|MetadataArray) =
   when compileOption("boundChecks"):
@@ -96,7 +103,7 @@ proc exch_dim*[T](t: Tensor[T], dim1, dim2: int): Tensor[T] {.noInit,noSideEffec
   if dim1 == dim2:
     return
 
-  result = t.unsafeView # copy or no-copy is managed in the caller of exch_dim or permuteT
+  result = t # copy or no-copy is managed in the caller of exch_dim or permuteT
   swap(result.strides[dim1], result.strides[dim2])
   swap(result.shape[dim1], result.shape[dim2])
 

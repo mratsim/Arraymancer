@@ -48,7 +48,7 @@ template map_inline*[T](t: Tensor[T], op:untyped): untyped =
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for i, x {.inject.} in enumerate(t, block_offset, block_size):
       data[i] = op
-  dest.unsafeView()
+  dest
 
 template map2_inline*[T, U](t1: Tensor[T], t2: Tensor[U], op:untyped): untyped =
   when compileOption("boundChecks"):
@@ -61,7 +61,7 @@ template map2_inline*[T, U](t1: Tensor[T], t2: Tensor[U], op:untyped): untyped =
   omp_parallel_blocks(block_offset, block_size, t1.size):
     for i, x {.inject.}, y {.inject.} in enumerateZip(t1, t2, block_offset, block_size):
       data[i] = op
-  dest.unsafeView()
+  dest
 
 template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:untyped): untyped =
   when compileOption("boundChecks"):
@@ -76,7 +76,7 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
     for i, x {.inject.}, y {.inject.}, z {.inject.} in enumerateZip(t1, t2, t3, block_offset, block_size):
       data[i] = op
 
-  dest.unsafeView()
+  dest
 
 template reduce_inline*[T](t: Tensor[T], op: untyped): untyped =
   var reduced : T
@@ -101,17 +101,17 @@ template reduce_axis_inline*[T](t: Tensor[T], reduction_axis: int, op: untyped):
   var reduced : type(t)
   let weight = t.size div t.shape[reduction_axis]
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[reduction_axis], weight, op) do:
-    x = t.atAxisIndex(reduction_axis, block_offset).unsafeView()
+    x = t.atAxisIndex(reduction_axis, block_offset).clone()
   do:
     for y {.inject.} in t.axis(reduction_axis, block_offset, block_size):
       op
-  reduced.unsafeView()
+  reduced
 
 template fold_axis_inline*[T](t: Tensor[T], result_type: typedesc, fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
   var reduced : result_type
   let weight = t.size div t.shape[fold_axis]
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[fold_axis], weight, op_final) do:
-    let y {.inject.} = t.atAxisIndex(fold_axis, block_offset).unsafeView()
+    let y {.inject.} = t.atAxisIndex(fold_axis, block_offset)
     op_initial
   do:
     for y {.inject.} in t.axis(fold_axis, block_offset, block_size):
@@ -119,7 +119,7 @@ template fold_axis_inline*[T](t: Tensor[T], result_type: typedesc, fold_axis: in
 
   # If the result is a Tensor, return without copy
   when reduced is AnyTensor:
-    reduced.unsafeView()
+    reduced
   else:
     reduced
 

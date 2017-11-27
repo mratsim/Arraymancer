@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../../src/arraymancer
 import math, unittest
 
 suite "Universal functions":
@@ -52,7 +52,7 @@ suite "Universal functions":
     let td = d.toTensor(Cpu)
     let te = e.toTensor(Cpu)
 
-    when compiles (td == te): check: false
+    when compiles(td == te): check: false
 
     check: td.fmap(stringify) == te
     check: td.fmap(stringify)[0,1] == "4"

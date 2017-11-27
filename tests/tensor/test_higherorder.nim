@@ -33,11 +33,11 @@ suite "Testing higher-order functions":
     var t = toSeq(0..11).toTensor().reshape([4,3])
     let t2 = toSeq(1..12).toTensor().reshape([4,3])
 
-    var tmp1 = t
+    var tmp1 = t.clone
     tmp1.apply(x => x+1) # out of place
     check: tmp1 == t2
 
-    var tmp2 = t[_,2]
+    var tmp2 = t[_,2].clone
 
     proc plus_one[T](x: var T) = x += 1
     tmp2.apply(plus_one) # in-place

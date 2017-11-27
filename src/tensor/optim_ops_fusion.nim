@@ -1,4 +1,4 @@
-# Copyright 2017 Mamy André-Ratsimbazafy
+# Copyright 2017 the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -112,19 +112,3 @@ template rewriteToTensorReshape*{reshape(toTensor(oa, dummy_bugfix), shape)}(
   ## Operation fusion leverage the Nim compiler and should not be called explicitly.
   toTensorReshape(oa, shape, dummy_bugfix)
 
-proc unsafeToTensorReshape*[T](data: seq[T], shape: varargs[int]): Tensor[T] {.noSideEffect.} =
-  ## Fuse unsafeToTensor and unsafeReshape in one operation
-
-  when compileOption("boundChecks"):
-    check_nested_elements(shape.toMetadataArray, data.len)
-
-  tensorCpu(shape, result)
-  shallowCopy(result.data, data)
-
-template rewriteUnsafeToTensorReshape*{unsafeReshape(unsafeToTensor(s), shape)}(
-  s: seq,
-  shape: varargs[int]): auto =
-  ## Fuse ``sequence.unsafeToTensor().unsafeReshape(new_shape)`` into a single operation.
-  ##
-  ## Operation fusion leverage the Nim compiler and should not be called explicitly.
-  unsafeToTensorReshape(s, shape, dummy_bugfix)

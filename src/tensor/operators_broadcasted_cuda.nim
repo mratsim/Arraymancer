@@ -32,12 +32,12 @@ cuda_binary_glue("cuda_Div", "DivOp", cuda_Div)
 
 proc `.+`*[T: SomeReal](a, b: CudaTensor[T]): CudaTensor[T] {.noInit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a + tmp_b
 
 proc `.-`*[T: SomeReal](a, b: CudaTensor[T]): CudaTensor[T] {.noInit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a - tmp_b
 
 
@@ -46,7 +46,7 @@ proc `.*`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   ##
   ## And broadcasted element-wise multiplication.
 
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
 
   result = newCudaTensor[T](tmp_a.shape)
   cuda_binary_call(cuda_Mul, result, tmp_a, tmp_b)
@@ -54,7 +54,7 @@ proc `.*`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
 proc `./`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   ## CudaTensor substraction
 
-  let (tmp_a, tmp_b) = unsafeBroadcast2(a, b)
+  let (tmp_a, tmp_b) = broadcast2(a, b)
 
   result = newCudaTensor[T](tmp_a.shape)
   cuda_binary_call(cuda_Div, result, tmp_a, tmp_b)
@@ -71,7 +71,7 @@ proc `.+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Only the right hand side tensor can be broadcasted.
   # shape check done in apply2 proc
 
-  let tmp_b = b.unsafeBroadcast(a.shape)
+  let tmp_b = b.broadcast(a.shape)
   a += tmp_b
 
 proc `.-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
@@ -80,7 +80,7 @@ proc `.-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Only the right hand side tensor can be broadcasted.
   # shape check done in apply2 proc
 
-  let tmp_b = b.unsafeBroadcast(a.shape)
+  let tmp_b = b.broadcast(a.shape)
   a -= tmp_b
 
 proc `.*=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
@@ -89,7 +89,7 @@ proc `.*=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Only the right hand side tensor can be broadcasted
   # shape check done in apply2 proc
 
-  let tmp_b = b.unsafeBroadcast(a.shape)
+  let tmp_b = b.broadcast(a.shape)
   cuda_assign_call(cuda_mMulOp, a, tmp_b)
 
 proc `./=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
@@ -98,7 +98,7 @@ proc `./=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Only the right hand side tensor can be broadcasted.
   # shape check done in apply2 proc
 
-  let tmp_b = b.unsafeBroadcast(a.shape)
+  let tmp_b = b.broadcast(a.shape)
   cuda_assign_call(cuda_mDivOp, a, tmp_b)
 
 # ##############################################

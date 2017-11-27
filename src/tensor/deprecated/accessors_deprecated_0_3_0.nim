@@ -12,18 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../tensor/tensor,
-       ./ag_data_structure
+import  ../private/p_accessors,
+        ../private/p_checks,
+        ../data_structure
 
-template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
-  var result: type(v)
-  new result
 
-  result.tape = v.tape
-  result.ancestor = v.ancestor
-  result.value = v.value[args]
-  result.grad = v.grad[args]
+proc unsafeAtAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.noInit,inline,deprecated.} =
+  ## Returns a sliced tensor in the given axis index (unsafe)
+  when compileOption("boundChecks"):
+    check_axis_index(t, axis, idx)
 
-  result
-
-  # TODO: tests for slicing correspondance
+  result = t
+  result.shape[axis] = 1
+  result.offset += result.strides[axis]*idx

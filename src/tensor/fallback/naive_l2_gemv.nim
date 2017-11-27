@@ -47,12 +47,12 @@ proc naive_gemv_fallback*[T: SomeInteger](
 
   # Naive implementation: split the matrices along vertical axis
 
-  let cont_A = A.unsafeContiguous(rowMajor, force=true)
+  let cont_A = A.asContiguous(rowMajor, force=true)
   # if A is C_contiguous (row-major) slices along the row are also contiguous
-  # so we can use unsafeReshape and avoid allocation inside the for loop
+  # so we can use reshape and avoid allocation inside the for loop
   let colA = cont_A.shape[1]
 
   var i: int = 0
   for ai in cont_A.axis(0):
-    y[i] += alpha * dot(ai.unsafeReshape(colA), x)
+    y[i] += alpha * dot(ai.reshape(colA), x)
     i += 1

@@ -87,7 +87,7 @@ proc `*=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
   # We multiply all elements of the CudaTensor regardless of shape/strides
   # So this operation can be applied to tensors of all ranks.
   # Hence we use the whole allocated length and a stride of 1
-  cublas_scal(t.data.len, a, t.get_data_ptr, 1)
+  cublas_scal(t.storage.Flen, a, t.get_data_ptr, 1)
 
 proc `*`*[T:SomeReal](a: T, t: CudaTensor[T]): CudaTensor[T] {.noInit, inline.}=
   ## CudaTensor multiplication by a scalar

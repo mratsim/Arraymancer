@@ -16,6 +16,13 @@
 # init procs will not offer the backend parameter anymore.
 # Full rationale in the Design_Document on Github.
 
+# Deprecated on 2017-09-07 by https://github.com/mratsim/Arraymancer/commit/58f2aff4fbd670d03d5b9c64cbd0e5467d24037b#diff-687a8a0e558961410c916e5cfe045d97
+# First release with deprecated tag: 0.2.0
+
+import  ../private/p_init_cpu,
+        ../data_structure,
+        ../init_cpu
+
 proc newTensor*(shape: openarray[int], T: typedesc, backend: static[Backend]): auto {.noSideEffect, deprecated.} =
   ## DEPRECATED - The backend: static[Backend] argument has been deprecated for easier maintenance.
   ##

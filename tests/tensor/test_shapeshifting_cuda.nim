@@ -27,17 +27,17 @@ suite "CUDA: Shapeshifting":
     # |8      1       6       2       6       6|
     # |2      0       4       3       2       0|
 
-    let b = a.unsafeContiguous()
+    let b = a.asContiguous()
     check: b.cpu.toRawSeq == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
 
     # a is already contiguous, even if wrong layout.
     # Nothing should be done
-    let c = a.unsafeContiguous(colMajor)
+    let c = a.asContiguous(colMajor)
     check: c.cpu.toRawSeq == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
 
     # force parameter has been used.
     # Layout will change even if a was contiguous
-    let d = a.unsafeContiguous(colMajor, force = true)
+    let d = a.asContiguous(colMajor, force = true)
     check: d.cpu.toRawSeq == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
 
 
@@ -46,12 +46,12 @@ suite "CUDA: Shapeshifting":
     check: u.cpu.toRawSeq == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
     check: u.cpu == [7.0,4,8,1,2,0].toTensor.reshape([3,2])
 
-    check: u.unsafeContiguous(rowMajor, force=true).cpu.toRawSeq == @[7.0,4,8,1,2,0]
+    check: u.asContiguous(rowMajor, force=true).cpu.toRawSeq == @[7.0,4,8,1,2,0]
 
   test "Unsafe reshape":
     block:
       let a = toSeq(1..4).toTensor().astype(float).cuda
-      var a_view = a.unsafeReshape(2,2)
+      var a_view = a.reshape(2,2)
       check: a_view.cpu == [[1.0,2],[3.0,4]].toTensor()
 
       # TODO
@@ -61,10 +61,10 @@ suite "CUDA: Shapeshifting":
     # on slices
     block:
       # not that 'a' here a let variable, however
-      # unsafeView and unsafeReshape allow us to
+      # unsafeView and reshape allow us to
       # modify its elements value
       let a = toSeq(1..4).toTensor().astype(float).cuda
-      var a_view = a[1..2].unsafeReshape(1,2) # a[1..2] == a.unsafeSlice(1..2) for CudaTensors
+      var a_view = a[1..2].reshape(1,2)
       check: a_view.cpu == [[2.0,3]].toTensor()
 
       # TODO: pending slice assignation

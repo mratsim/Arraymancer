@@ -72,7 +72,7 @@ proc check_steps*(a,b, step:int) {.noSideEffect, inline.}=
                 start must be inferior to stop and inversely if your step is negative
                 start must be superior to stop.""")
 
-proc check_shape*(a, b: Tensor|openarray) {.noSideEffect, inline.}=
+proc check_shape*(a: Tensor; b: Tensor|openarray) {.noSideEffect, inline.}=
   ## Compare shape
 
   let b_shape = b.shape # There is a shape proc that converts openarray to MetadataArray
@@ -89,10 +89,6 @@ proc check_reshape*(t: AnyTensor, new_shape:MetadataArray) {.noSideEffect, inlin
                                     ") and the new (" &
                                     $new_shape.product &
                                     ") reshaped tensor must be the same")
-
-proc check_nocopyReshape*(t: AnyTensor) {.noSideEffect, inline.}=
-  if unlikely(not t.isContiguous):
-    raise newException(ValueError, "The tensor must be contiguous for reshape without copy")
 
 proc check_concat*(t1, t2: Tensor, axis: int) {.noSideEffect,inline.}=
   let check1 = t1.shape[0..<axis] == t2.shape[0..<axis]

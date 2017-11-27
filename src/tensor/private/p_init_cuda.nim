@@ -25,7 +25,7 @@ template tensorCuda[T: SomeReal](
   result.shape.copyFrom(shape)
   shape_to_strides(result.shape, layout, result.strides)
   result.offset = 0
-  result.data = newCudaSeq[T](result.size)
+  result.storage = newCudaStorage[T](result.size)
 
 proc newCudaTensor*[T: SomeReal](
   shape: varargs[int],

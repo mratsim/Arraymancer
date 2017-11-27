@@ -43,7 +43,7 @@ template slicerT*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSlice
     result.strides[i] *= slice.step
     result.shape[i] = abs((b-a) div slice.step) + 1
 
-proc slicer[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.noInit,noSideEffect.}=
+proc slicer*[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -52,7 +52,7 @@ proc slicer[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.n
   result = t
   slicerT(result, slices.toArrayOfSlices)
 
-proc slicer[T](t: AnyTensor[T],
+proc slicer*[T](t: AnyTensor[T],
                 slices: varargs[SteppedSlice],
                 ellipsis: Ellipsis): AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor, SteppedSlices and Ellipsis
@@ -64,7 +64,7 @@ proc slicer[T](t: AnyTensor[T],
   let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
   slicerT(result, full_slices)
 
-proc slicer[T](t: AnyTensor[T],
+proc slicer*[T](t: AnyTensor[T],
                 ellipsis: Ellipsis,
                 slices: varargs[SteppedSlice]
                 ): AnyTensor[T] {.noInit,noSideEffect.}=
@@ -77,7 +77,7 @@ proc slicer[T](t: AnyTensor[T],
   let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
   slicerT(result, full_slices)
 
-proc slicer[T](t: AnyTensor[T],
+proc slicer*[T](t: AnyTensor[T],
                 slices1: varargs[SteppedSlice],
                 ellipsis: Ellipsis,
                 slices2: varargs[SteppedSlice]
@@ -93,136 +93,21 @@ proc slicer[T](t: AnyTensor[T],
                             slices2.toArrayOfSlices)
   slicerT(result, full_slices)
 
-proc unsafeSlicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,noSideEffect.}=
+proc slicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor
   ##    Offset and strides are changed to achieve the desired effect.
   ##    Warning: mutating the result will mutate the original
   ##    As such a `var Tensor` is required
-  ## WARNING: passing a non-var Tensor is unsafe
 
-  result = unsafeView(t)
+  result = t
   slicerT(result, slices)
-
-
-proc unsafeSlicer*[T](t: AnyTensor[T],
-                      slices: ArrayOfSlices,
-                      ellipsis: Ellipsis): AnyTensor[T] {.noInit,noSideEffect.}=
-  ## Take a Tensor, SteppedSlices and Ellipsis
-  ## Returns:
-  ##    A view of the original Tensor
-  ##    Offset and strides are changed to achieve the desired effect.
-  ##    Warning: mutating the result will mutate the original
-  ##    As such a `var Tensor` is required
-  ## WARNING: passing a non-var Tensor is unsafe
-
-  result = unsafeView(t)
-  let full_slices = slices & initSpanSlices(t.rank - slices.len)
-  slicerT(result, full_slices)
-
-proc unsafeSlicer*[T](t: AnyTensor[T],
-                      ellipsis: Ellipsis,
-                      slices: ArrayOfSlices
-                      ): AnyTensor[T] {.noInit,noSideEffect.}=
-  ## Take a Tensor, Ellipsis and SteppedSlices
-  ## Returns:
-  ##    A view of the original Tensor
-  ##    Offset and strides are changed to achieve the desired effect.
-  ##    Warning: mutating the result will mutate the original
-  ##    As such a `var Tensor` is required
-  ## WARNING: passing a non-var Tensor is unsafe
-
-  result = unsafeView(t)
-  let full_slices = initSpanSlices(t.rank - slices.len) & slices
-  slicerT(result, full_slices)
-
-proc unsafeSlicer*[T](t: AnyTensor[T],
-                      slices1: ArrayOfSlices,
-                      ellipsis: Ellipsis,
-                      slices2: ArrayOfSlices
-                      ): AnyTensor[T] {.noInit,noSideEffect.}=
-  ## Take a Tensor, SteppedSlices, Ellipsis and SteppedSlices
-  ## Returns:
-  ##    A view of the original Tensor
-  ##    Offset and strides are changed to achieve the desired effect.
-  ##    Warning: mutating the result will mutate the original
-  ##    As such a `var Tensor` is required
-  ## WARNING: passing a non-var Tensor is unsafe
-
-  result = unsafeView(t)
-  let full_slices = concat(slices1,
-                            initSpanSlices(t.rank - slices1.len - slices2.len) ,
-                            slices2)
-  slicerT(result, full_slices)
-
-proc unsafeSlicer*[T](t: Tensor[T], slices: varargs[SteppedSlice]): Tensor[T] {.noInit,noSideEffect.}=
-  ## Take a Tensor and SteppedSlices
-  ## Returns:
-  ##    A view of the original Tensor
-  ##    Offset and strides are changed to achieve the desired effect.
-  ##    Warning: mutating the result will mutate the original
-  ##    As such a `var Tensor` is required
-  ## WARNING: passing a non-var Tensor is unsafe
-
-  result = unsafeView(t)
-  slicerT(result, slices.toArrayOfSlices)
-
-
-proc unsafeSlicer*[T](t: AnyTensor[T],
-                      slices: varargs[SteppedSlice],
-                      ellipsis: Ellipsis): AnyTensor[T] {.noInit,noSideEffect.}=
-  ## Take a Tensor, SteppedSlices and Ellipsis
-  ## Returns:
-  ##    A view of the original Tensor
-  ##    Offset and strides are changed to achieve the desired effect.
-  ##    Warning: mutating the result will mutate the original
-  ##    As such a `var Tensor` is required
-  ## WARNING: passing a non-var Tensor is unsafe
-
-  result = unsafeView(t)
-  let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
-  slicerT(result, full_slices)
-
-proc unsafeSlicer*[T](t: AnyTensor[T],
-                      ellipsis: Ellipsis,
-                      slices: varargs[SteppedSlice]
-                      ): AnyTensor[T] {.noInit,noSideEffect.}=
-  ## Take a Tensor, Ellipsis and SteppedSlices
-  ## Returns:
-  ##    A view of the original Tensor
-  ##    Offset and strides are changed to achieve the desired effect.
-  ##    Warning: mutating the result will mutate the original
-  ##    As such a `var Tensor` is required
-  ## WARNING: passing a non-var Tensor is unsafe
-
-  result = unsafeView(t)
-  let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
-  slicerT(result, full_slices)
-
-proc unsafeSlicer*[T](t: AnyTensor[T],
-                      slices1: varargs[SteppedSlice],
-                      ellipsis: Ellipsis,
-                      slices2: varargs[SteppedSlice]
-                      ): AnyTensor[T] {.noInit,noSideEffect.}=
-  ## Take a Tensor, SteppedSlices, Ellipsis and SteppedSlices
-  ## Returns:
-  ##    A view of the original Tensor
-  ##    Offset and strides are changed to achieve the desired effect.
-  ##    Warning: mutating the result will mutate the original
-  ##    As such a `var Tensor` is required
-  ## WARNING: passing a non-var Tensor is unsafe
-
-  result = unsafeView(t)
-  let full_slices = concat(slices1.toArrayOfSlices,
-                            initSpanSlices(t.rank - slices1.len - slices2.len) ,
-                            slices2.toArrayOfSlices)
-  slicerT(result, full_slices)
 
 # #########################################################################
 # Dispatching logic
 
-macro inner_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
+macro slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
   ## Typed macro so that isAllInt has typed context and we can dispatch.
   ## If args are all int, we dispatch to atIndex and return T
   ## Else, all ints are converted to SteppedSlices and we return a Tensor.
@@ -234,25 +119,6 @@ macro inner_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
       result.add(slice)
   else:
     result = newCall(bindSym("slicer"), t)
-    for slice in args:
-      if isInt(slice):
-        ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
-        result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
-      else:
-        result.add(slice)
-
-macro unsafe_inner_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
-  ## Typed macro so that isAllInt has typed context and we can dispatch.
-  ## If args are all int, we dispatch to atIndex and return T
-  ## Else, all ints are converted to SteppedSlices and we return a Tensor.
-  ## Note, normal slices and `_` were already converted in the `[]` macro
-  ## TODO in total we do 3 passes over the list of arguments :/. It is done only at compile time though
-  if isAllInt(args):
-    result = newCall(bindSym("atIndex"), t)
-    for slice in args:
-      result.add(slice)
-  else:
-    result = newCall(bindSym("unsafeSlicer"), t)
     for slice in args:
       if isInt(slice):
         ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]

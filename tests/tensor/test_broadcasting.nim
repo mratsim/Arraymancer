@@ -189,7 +189,7 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
 
     block: # Float Exponentiation
       var a = [1.0, 10, 20, 30].toTensor().reshape(4,1)
-      var b = a
+      var b = a.clone
 
       a .^= 2.0
       check: a  == [[1.0],

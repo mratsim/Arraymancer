@@ -26,42 +26,86 @@ type
     Cpu,
     Cuda
 
+  CpuStorage* {.shallow.} [T] = object
+    ## Opaque data storage for Tensors
+    ## Currently implemented as a seq with reference semantics (shallow copy on assignment).
+    ## It may change in the future for a custom memory managed and 64 bit aligned solution.
+    ##
+    ## Warning ⚠:
+    ##   Do not use Fdata directly, direct access will be removed in 0.4.0.
+
+    # `Fdata` will be transformed into an opaque type once `unsafeToTensorReshape` is removed.
+    Fdata*: seq[T]
+
   Tensor*[T] = object
     ## Tensor data structure stored on Cpu
     ##   - ``shape``: Dimensions of the tensor
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
-    ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
-    ##   - ``data``: A sequence that holds the actual data
+    ##   - ``offset``: Offset to get the first item of the tensor. Note: offset can be negative, in particular for slices.
+    ##   - ``storage``: An opaque data storage for the tensor
     ## Fields are public so that external libraries can easily construct a Tensor.
+    ## You can use ``.data`` to access the opaque data storage.
+    ##
+    ## Warning ⚠:
+    ##   Assignment ```var a = b``` does not copy the data. Data modification on one tensor will be reflected on the other.
+    ##   However modification on metadata (shape, strides or offset) will not affect the other tensor.
+    ##   Explicit copies can be made with ``clone``: ```var a = b.clone```
     shape*: MetadataArray
     strides*: MetadataArray
     offset*: int
-    data*: seq[T] # Perf note: seq are always deep copied on "var" assignement.
+    storage*: CpuStorage[T]
 
-  CudaSeq* [T: SomeReal] = object
-    ## Seq-like structure on the Cuda backend.
+type
+  CudaStorage*[T: SomeReal] = object
+    ## Opaque seq-like structure for storage on the Cuda backend.
     ##
-    ## Nim garbage collector will automatically ask cuda to clear GPU memory if ``data`` becomes unused.
-    len*: int
-    data*: ref[ptr UncheckedArray[T]]
+    ## Nim garbage collector will automatically ask cuda to clear GPU memory if data becomes unused.
+    ##
+    # TODO: Forward declaring this and making this completely private prevent assignment in newCudaStorage from working
+    Flen*: int
+    Fdata*: ptr UncheckedArray[T]
+    Fref_tracking*: ref[ptr UncheckedArray[T]] # We keep ref tracking for the GC in a separate field to avoid double indirection.
 
   CudaTensor*[T: SomeReal] = object
     ## Tensor data structure stored on Nvidia GPU (Cuda)
-    ##   - ``shape``: Dimensions of the tensor
+    ##   - ``shape``: Dimensions of the CudaTensor
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
-    ##   - ``offset``: Offset to get the first item of the Tensor. Note: offset can be negative, in particular for slices.
-    ##   - ``data``: A cuda seq-like object that points to the data location
-    ## Note: currently ``=`` assignement for CudaTensor does not copy. Both CudaTensors will share a view of the same data location.
-    ## Modifying the data in one will modify the data in the other.
+    ##   - ``offset``: Offset to get the first item of the CudaTensor. Note: offset can be negative, in particular for slices.
+    ##   - ``storage``: An opaque data storage for the CudaTensor
     ##
-    ## In the future CudaTensor will leverage Nim compiler to automatically
-    ## copy if a memory location would be used more than once in a mutable manner.
+    ## Warning ⚠:
+    ##   Assignment ```var a = b``` does not copy the data. Data modification on one CudaTensor will be reflected on the other.
+    ##   However modification on metadata (shape, strides or offset) will not affect the other tensor.
+    ##   Explicit copies can be made with ``clone``: ```var a = b.clone```
     shape*: MetadataArray
     strides*: MetadataArray
     offset*: int
-    data*: CudaSeq[T] # Memory on Cuda device will be automatically garbage-collected
+    storage*: CudaStorage[T]
 
   AnyTensor*[T] = Tensor[T] or CudaTensor[T]
+
+# ###############
+# Field accessors
+# ###############
+
+proc data*[T](t: Tensor[T]): seq[T] {.inline, noSideEffect, noInit.} =
+  # Get tensor raw data
+  # This is intended for library writer
+  shallowCopy(result, t.storage.Fdata)
+
+proc data*[T](t: var Tensor[T]): var seq[T] {.inline, noSideEffect, noInit.} =
+  # Get mutable tensor raw data
+  # This is intended for library writer
+  shallowCopy(result, t.storage.Fdata)
+
+proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.inline, noSideEffect.}=
+  # Set tensor raw data
+  # This is intended for library writer
+  t.storage.Fdata = s
+
+# ################
+# Tensor Metadata
+# ################
 
 template rank*(t: AnyTensor): int =
   ## Input:
@@ -105,7 +149,7 @@ proc shape_to_strides*(shape: MetadataArray, layout: OrderType = rowMajor, resul
     accum *= shape[i]
   return
 
-proc is_C_contiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
+proc is_C_contiguous*(t: AnyTensor): bool {.noSideEffect, inline.}=
   ## Check if the tensor follows C convention / is row major
   var z = 1
   for i in countdown(t.shape.high,0):
@@ -116,7 +160,7 @@ proc is_C_contiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
     z *= t.shape[i]
   return true
 
-proc is_F_contiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
+proc is_F_contiguous*(t: AnyTensor): bool {.noSideEffect, inline.}=
   ## Check if the tensor follows Fortran convention / is column major
   var z = 1
   for i in 0..<t.shape.len:
@@ -127,31 +171,33 @@ proc is_F_contiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
     z *= t.shape[i]
   return true
 
-proc isContiguous*(t: AnyTensor): bool {.noSideEffect,inline.}=
+proc isContiguous*(t: AnyTensor): bool {.noSideEffect, inline.}=
   ## Check if the tensor is contiguous
   return t.is_C_contiguous or t.is_F_contiguous
 
-proc get_data_ptr*[T](t: AnyTensor[T]): ptr T {.inline.}=
+# ##################
+# Raw pointer access
+# ##################
+
+
+proc get_data_ptr*[T](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the real start of its data (no offset)
-  when t is Tensor:
-    unsafeAddr(t.data[0])
-  elif t is CudaTensor:
-    unsafeAddr(t.data.data[0])
+  unsafeAddr(t.storage.Fdata[0])
 
-proc get_offset_ptr*[T](t: Tensor[T]): ptr T {.inline.}=
+proc get_offset_ptr*[T](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the offset start of its data
-  unsafeAddr(t.data[t.offset])
+  unsafeAddr(t.storage.Fdata[t.offset])
 
-proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.inline.}=
+proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the offset start of the data.
   ##       Return value supports array indexing.
-  cast[ptr UncheckedArray[T]](t.data[t.offset].unsafeAddr)
+  cast[ptr UncheckedArray[T]](t.storage.Fdata[t.offset].unsafeAddr)

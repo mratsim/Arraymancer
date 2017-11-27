@@ -89,7 +89,7 @@ const `...`* = Ellipsis()
 
 type ArrayOfSlices* = DynamicStackArray[SteppedSlice]
 
-converter toArrayOfSlices*(s: varargs[SteppedSlice]): ArrayOfSlices {.inline.} =
+proc toArrayOfSlices*(s: varargs[SteppedSlice]): ArrayOfSlices {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert s.len <= MAXRANK

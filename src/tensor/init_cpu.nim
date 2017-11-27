@@ -22,20 +22,6 @@ import  ../private/[functional, nested_containers, sequninit],
         random,
         math
 
-proc unsafeView*[T](t: Tensor[T]): Tensor[T] {.noSideEffect,noInit,inline.}=
-  ## Input:
-  ##     - A tensor
-  ## Returns:
-  ##     - A shallow copy. Both tensors share the same memory location.
-  ##
-  ## Warning ⚠
-  ##   Both tensors shares the same memory. Data modification on one will be reflected on the other.
-  ##   However modifying the shape, strides or offset will not affect the other.
-  result.shape = t.shape
-  result.strides = t.strides
-  result.offset = t.offset
-  shallowCopy(result.data, t.data)
-
 proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
@@ -94,16 +80,6 @@ proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect
   ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
   # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
   toTensorCpu(s)
-
-proc unsafeToTensor*[T: SomeNumber](data: seq[T]): Tensor[T] {.noInit,noSideEffect.} =
-  ## Convert a seq to a Tensor, sharing the seq data
-  ## Input:
-  ##      - A seq with the tensor data
-  ## Result:
-  ##      - A rank 1 tensor with the same size of the input
-  ## WARNING: result share storage with input
-  tensorCpu([data.len], result)
-  shallowCopy(result.data, data)
 
 proc toTensor*(s:string): auto {.noSideEffect.} =
   ## Convert a string to a Tensor

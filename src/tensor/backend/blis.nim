@@ -15,8 +15,7 @@
 when defined(blis):
   static: echo "--USING BLIS--"
   include ./blis_api
-  let blis_status = bli_init()
-  echo "Blis initialization status: " & $blis_status
+  echo "Blis initialization status: " & $bli_init()
 
   proc quit_blis() {.noconv.}=
     when defined(debug):
@@ -24,10 +23,4 @@ when defined(blis):
     else:
       discard bli_finalize()
   addQuitProc(quit_blis)
-
-# else:
-#   static: echo "Consider adding BLIS from \"https://github.com/flame/blis\" " &
-#           "and compile Arraymancer with \"-d:blis\" " &
-#           "for operations on array slices without copy. " &
-#           "OSX users can install it through Homebrew."
 

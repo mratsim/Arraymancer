@@ -15,10 +15,7 @@
 import  ./backend/cudnn,
         ./backend/cudnn_conv_interface,
         ../tensor/tensor,
-        ../tensor/backend/cuda,
         ../tensor/private/p_init_cuda # TODO: it might be worth it to export newCudaTensor
-
-import nimcuda/[cuda_runtime_api, nimcuda]
 
 proc conv2d*[T: SomeReal](input, kernel, bias: CudaTensor[T],
                 padding: SizeHW = [0,0],

@@ -1,4 +1,4 @@
-# Copyright 2017 Mamy André-Ratsimbazafy
+# Copyright 2017 the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,32 +16,8 @@ import  ../private/sequninit,
         ./private/p_init_cuda,
         ./backend/cuda,
         ./backend/cuda_global_state,
-        ./backend/metadataArray,
         ./data_structure,
-        ./init_cpu,
-        nimcuda/[cuda_runtime_api, driver_types]
-
-proc clone*[T](t: CudaTensor[T]): CudaTensor[T] {.noInit.}=
-  ## Clone (deep copy) a CudaTensor.
-  ## Copy will not share its data with the original.
-  ##
-  ## Tensor is copied as is. For example it will not be made contiguous.
-  ## Use `asContiguous` for this case
-
-  # Note: due to modifying the cudaStream0 global var for async memcopy
-  # proc cannot be tagged noSideEffect
-
-  result.shape = t.shape
-  result.strides = t.strides
-  result.offset = t.offset
-  result.storage = newCudaStorage[T](t.storage.Flen)
-  let size = t.storage.Flen * sizeof(T)
-
-  check cudaMemCpyAsync(result.get_data_ptr,
-                        t.get_data_ptr,
-                        size,
-                        cudaMemcpyDeviceToDevice,
-                        cudaStream0) # cudaStream0 is a cudaStream_t global var
+        ./init_cpu
 
 proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] {.noInit.}=
   ## Convert a tensor on Cpu to a tensor on a Cuda device.

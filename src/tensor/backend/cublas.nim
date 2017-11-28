@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import nimcuda/[nimcuda, cublas_v2, cublas_api]
-export nimcuda, cublas_v2, cublas_api
+import  nimcuda/[cublas_v2, cublas_api],
+        ./cuda_global_state,
+        ./cuda
 
-import ./cuda_global_state
+
+export cuda, cublas_v2, cublas_api
 
 # #####################################################
 # Redefinition of imported CUDA proc with standard name

@@ -15,9 +15,10 @@
 # Nvidia CuDNN backend configuration
 # Note: Having CUDA installed does not mean CuDNN is installed
 
-import  nimcuda/[nimcuda, cudnn],
-        ../../tensor/tensor
-export  nimcuda, cudnn
+import  nimcuda/cudnn,
+        ../../tensor/tensor,
+        ../../tensor/backend/cuda
+export  cudnn, cuda
 
 # #####################################################################
 # CuDNN initialization & release

@@ -16,7 +16,7 @@ import  ../data_structure,
         ./global_config,
         nimcuda/[nimcuda, cuda_runtime_api, driver_types]
 
-export nimcuda.check
+export nimcuda, cuda_runtime_api, driver_types
 
 # Data structures to ease interfacing with Cuda and kernels
 

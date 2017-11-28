@@ -12,22 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./backend/cuda_global_state,
-        ./backend/cuda,
-        ./backend/cublas,
-        # ./backend/cublas_helper_proc,
-        ./init_cuda,
-        ./init_cuda_copy,
-        ./display_cuda,
-        ./operators_blas_l1_cuda,
-        ./operators_blas_l2l3_cuda,
-        ./operators_broadcasted_cuda,
-        ./shapeshifting_cuda
+import  ./private/p_init_cuda,
+        ./private/p_kernels_interface_cuda,
+        ./data_structure
 
-export  init_cuda,
-        init_cuda_copy,
-        display_cuda,
-        operators_blas_l1_cuda,
-        operators_blas_l2l3_cuda,
-        operators_broadcasted_cuda,
-        shapeshifting_cuda
+include ./private/incl_accessors_cuda,
+        ./private/incl_higher_order_cuda,
+        ./private/incl_kernels_cuda
+
+
+cuda_assign_glue("cuda_clone", "CopyOp", cuda_clone)
+
+proc clone*[T](t: CudaTensor[T]): CudaTensor[T] {.noInit, noSideEffect.}=
+  ## Clone (deep copy) a CudaTensor.
+  ## Copy will not share its data with the original.
+
+  result = newCudaTensor[T](t.shape, colMajor) # TODO: change to rowMajor
+
+  cuda_assign_call(cuda_clone, result, t)

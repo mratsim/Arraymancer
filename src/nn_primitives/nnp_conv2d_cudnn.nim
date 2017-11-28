@@ -49,7 +49,7 @@ proc conv2d*[T: SomeReal](input, kernel, bias: CudaTensor[T],
   var beta: T = 0
 
   check cudnnConvolutionForward(
-    defaultHandle_cudnn,
+    cudnnHandle0,
     addr alpha,
     srcTensorDesc,
     input.get_offset_ptr,
@@ -115,7 +115,7 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
   if bias.rank > 0:
     let gradBiasTensorDesc = newCudnn4DTensorDesc grad_bias.unsqueeze(0)
     check cudnnConvolutionBackwardBias(
-      defaultHandle_cudnn,
+      cudnnHandle0,
       addr alpha,
       gradOutputTensorDesc,
       gOutput.get_offset_ptr,
@@ -140,7 +140,7 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
   # Kernel gradient
   # Note: this segfaults with illegal storage access for float64
   check cudnnConvolutionBackwardFilter(
-    defaultHandle_cudnn,
+    cudnnHandle0,
     addr alpha,
     srcTensorDesc,
     input.get_offset_ptr,
@@ -173,7 +173,7 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
   # Input gradient
   # Note: this segfaults with illegal storage access for float64
   check cudnnConvolutionBackwardData(
-    defaultHandle_cudnn,
+    cudnnHandle0,
     addr alpha,
     kernelDesc,
     kernel.get_offset_ptr,

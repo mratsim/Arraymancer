@@ -142,7 +142,7 @@ proc conv_algo_workspace*[T: SomeReal](
     echo "\nCudnn conv2d - get forward algorithm"
 
   check cudnnGetConvolutionForwardAlgorithm(
-    defaultHandle_cudnn,
+    cudnnHandle0,
     srcTensorDesc,
     kernelDesc,
     convDesc,
@@ -156,7 +156,7 @@ proc conv_algo_workspace*[T: SomeReal](
     echo "Cudnn conv2d - forward algorithm selected: " & $result.algo
 
   check cudnnGetConvolutionForwardWorkspaceSize(
-    defaultHandle_cudnn,
+    cudnnHandle0,
     srcTensorDesc,
     kernelDesc,
     convDesc,
@@ -187,7 +187,7 @@ proc conv_bwd_kernel_algo_workspace*[T: SomeReal](
     echo "\nCudnn conv2d - get backward kernel algorithm"
 
   check cudnnGetConvolutionBackwardFilterAlgorithm(
-    defaultHandle_cudnn,
+    cudnnHandle0,
     srcTensorDesc,
     gradOutputTensorDesc,
     convDesc,
@@ -201,7 +201,7 @@ proc conv_bwd_kernel_algo_workspace*[T: SomeReal](
     echo "Cudnn conv2d - backward kernel algorithm selected: " & $result.algo
 
   check cudnnGetConvolutionBackwardFilterWorkspaceSize(
-    defaultHandle_cudnn,
+    cudnnHandle0,
     srcTensorDesc,
     gradOutputTensorDesc,
     convDesc,
@@ -233,7 +233,7 @@ proc conv_bwd_data_algo_workspace*[T: SomeReal](
     echo "\nCudnn conv2d - get backward data algorithm"
 
   check cudnnGetConvolutionBackwardDataAlgorithm(
-    defaultHandle_cudnn,
+    cudnnHandle0,
     kernelDesc,
     gradOutputTensorDesc,
     convDesc,
@@ -247,7 +247,7 @@ proc conv_bwd_data_algo_workspace*[T: SomeReal](
     echo "Cudnn conv2d - backward data algorithm selected: " & $result.algo
 
   check cudnnGetConvolutionBackwardDataWorkspaceSize(
-    defaultHandle_cudnn,
+    cudnnHandle0,
     kernelDesc,
     gradOutputTensorDesc,
     convDesc,

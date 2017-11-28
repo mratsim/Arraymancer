@@ -28,7 +28,7 @@ proc clone*[T](t: CudaTensor[T]): CudaTensor[T] {.noInit.}=
   ## Tensor is copied as is. For example it will not be made contiguous.
   ## Use `asContiguous` for this case
 
-  # Note: due to modifying the defaultStream global var for async memcopy
+  # Note: due to modifying the cudaStream0 global var for async memcopy
   # proc cannot be tagged noSideEffect
 
   result.shape = t.shape
@@ -41,11 +41,11 @@ proc clone*[T](t: CudaTensor[T]): CudaTensor[T] {.noInit.}=
                         t.get_data_ptr,
                         size,
                         cudaMemcpyDeviceToDevice,
-                        defaultStream) # defaultStream is a cudaStream_t global var
+                        cudaStream0) # cudaStream0 is a cudaStream_t global var
 
 proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] {.noInit.}=
   ## Convert a tensor on Cpu to a tensor on a Cuda device.
-  # Note: due to modifying the defaultStream global var for async copy
+  # Note: due to modifying the cudaStream0 global var for async copy
   # proc cannot be tagged noSideEffect
 
   result = newCudaTensor[T](t.shape)
@@ -61,7 +61,7 @@ proc cuda*[T:SomeReal](t: Tensor[T]): CudaTensor[T] {.noInit.}=
                         contig_t.get_data_ptr,
                         size,
                         cudaMemcpyHostToDevice,
-                        defaultStream) # defaultStream is a cudaStream_t global var
+                        cudaStream0) # cudaStream0 is a cudaStream_t global var
 
 proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect, noInit.}=
   ## Convert a tensor on a Cuda device to a tensor on Cpu.

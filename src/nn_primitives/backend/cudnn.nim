@@ -20,21 +20,16 @@ import  nimcuda/[nimcuda, cudnn],
 export  nimcuda, cudnn
 
 # #####################################################################
-# Initialization release
+# CuDNN initialization & release
 
+proc initCudnnHandle(): cudnnHandle_t =
+  check cudnnCreate(addr result)
 
-var defaultHandle_cudnn*: cudnnHandle_t
-check cudnnCreate(addr defaultHandle_cudnn)
+{.experimental.}
+proc `=destroy`(c: cudnnHandle_t) =
+  check cudnnDestroy(c)
 
-proc cudnnRelease() {.noconv.} =
-  # Release CuDNN resources
-  check cudnnDestroy(defaultHandle_cudnn)
-
-  when defined(debug):
-    echo "CuDNN resources successfully released"
-
-addQuitProc(cudnnRelease)
-
+let cudnnHandle0* = initCudnnHandle()
 
 # #####################################################################
 # Types and destructors

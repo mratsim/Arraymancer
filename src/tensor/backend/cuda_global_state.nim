@@ -17,23 +17,21 @@ import nimcuda/[nimcuda, cuda_runtime_api, cublas_v2, cublas_api]
 # ###################################################
 # Global Cuda and CuBLAS state
 
-# CuBLAS stream for parallel async processing on GPU
-# Computations/Memcpy on different streams are done in simultaneously
-# Streams are also necessary for async Cuda procs like cudaMemcpyAsync
-var defaultStream*: cudaStream_t
-check cudaStreamCreate(addr defaultStream)
+proc initCudaStream(): cudaStream_t =
+  ## CuBLAS stream for parallel async processing on GPU
+  ## Computations/Memcpy on different streams are done in simultaneously
+  ## Streams are also necessary for async Cuda procs like cudaMemcpyAsync
+  check cudaStreamCreate(addr result)
 
-# CuBLAS handle
-# Note: it prevents {.noSideEffect.} in all CuBLAS proc :/
-var defaultHandle*: cublasHandle_t
-check cublasCreate(addr defaultHandle)
+proc initCublasHandle(): cublasHandle_t =
+  check cublasCreate(addr result)
 
-proc cudaRelease() {.noconv.}=
-  # Release all cuda resources
-  check cublasDestroy(defaultHandle)
-  check cudaStreamDestroy(defaultStream)
+{.experimental.}
+proc `=destroy`(c: cublasHandle_t) =
+  check cublasDestroy(c)
 
-  when defined(debug):
-    echo "CUDA and CuBLAS resources successfully released"
+proc `=destroy`(c: cudaStream_t) =
+  check cudaStreamDestroy(c)
 
-addQuitProc(cudaRelease)
+let cudaStream0* = initCudaStream()
+let cublasHandle0*  = initCublasHandle()

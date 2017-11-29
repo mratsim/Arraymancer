@@ -12,16 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Please compile with -d:cuda switch
-import ../src/arraymancer,
-        ./tensor/test_init_cuda,
-        ./tensor/test_operators_blas_cuda,
-        ./tensor/test_accessors_slicer_cuda,
-        ./tensor/test_shapeshifting_cuda,
-        ./tensor/test_broadcasting_cuda
+import ../../src/arraymancer
+import unittest
 
-# Please compile with -d:cudnn switch
-when not defined(cudnn):
-  echo "CuDNN tests skipped, please pass -d:cudnn flag if you want to enable cudnn tests after cuda tests."
-else:
-  import ./nn_primitives/test_nnp_convolution_cudnn
+
+suite "Cuda init":
+  test "Clone function":
+    let a = [ 7, 4, 3, 1, 8, 6,
+              8, 1, 6, 2, 6, 6,
+              2, 0, 4, 3, 2, 0].toTensor.reshape([3,6]).astype(float).cuda
+
+    # Tensor of shape 3x6 of type "int" on backend "Cpu"
+    # |7      4       3       1       8       6|
+    # |8      1       6       2       6       6|
+    # |2      0       4       3       2       0|
+
+    let b = a[2..0|-2, 2..0|-2].clone
+
+    check: b.cpu == [ [4.0, 2.0],
+                      [3.0, 7.0]].toTensor

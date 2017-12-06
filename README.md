@@ -133,7 +133,7 @@ EXPERIMENTAL: Arraymancer may summon Ragnarok and cause the heat death of the Un
 
 Nim is available in some Linux repositories and on Homebrew for macOS.
 
-I however recommend installing Nim in your user profile via [``choosenim``](https://github.com/dom96/choosenim). Once choosenim installed Nim, you can `nimble arraymancer` which will pull arraymancer and all its dependencies.
+I however recommend installing Nim in your user profile via [``choosenim``](https://github.com/dom96/choosenim). Once choosenim installed Nim, you can `nimble install arraymancer` which will pull arraymancer and all its dependencies.
 
 ## Full documentation
 

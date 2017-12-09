@@ -37,7 +37,9 @@ matrix:
 
   allow_failures:
     # Ignore failures when building against the devel Nim branch
+    # Also ignore OSX, due to very long build time and Homebrew/curl SSLRead errors
     - env: CHANNEL=devel
+    - os: osx
   fast_finish: true
 
 addons:

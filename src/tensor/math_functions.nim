@@ -99,16 +99,16 @@ proc mean_absolute_error*[T](y_true, y: Tensor[T]): T =
   result = map2_inline(y_true, y, absolute_error(x,y)).mean()
 
 proc squared_error*[T](y_true, y: T): T {.inline.} =
-  ## Squared error for a single value, |y_true - y|^2
+  ## Squared error for a single value, |y_true - y| ^2
   result = square(y_true - y)
 
 proc squared_error*[T](y_true, y: Tensor[T]): Tensor[T] {.noInit.} =
-  ## Element-wise squared error for a tensor, |y_true - y|^2
+  ## Element-wise squared error for a tensor, |y_true - y| ^2
   result = map2_inline(y_true, y, squared_error(x,y))
 
 proc mean_squared_error*[T](y_true, y: Tensor[T]): T =
   ## Also known as MSE or L2 loss, mean squared error between elements:
-  ## sum(|y_true - y|^2)/m
+  ## sum(|y_true - y| ^2)/m
   ## where m is the number of elements
   result = squared_error(y_true, y).mean()
 

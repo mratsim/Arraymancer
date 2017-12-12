@@ -1,3 +1,4 @@
 nimcache/
 bin/
+docs/build/
 .DS_Store

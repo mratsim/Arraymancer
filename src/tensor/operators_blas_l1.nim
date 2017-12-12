@@ -14,7 +14,7 @@
 
 import  ./private/p_checks,
         ./data_structure,
-        ./accessors, ./higher_order,
+        ./accessors, ./higher_order_applymap,
         nimblas
 
 # ####################################################################

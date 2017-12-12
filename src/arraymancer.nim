@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-when defined(doc):
-  include ../docs/autogen_nim_API
-
 import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros, random
 
 # Copyright 2017 the Arraymancer contributors

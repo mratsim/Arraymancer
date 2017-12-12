@@ -16,7 +16,7 @@ import  ../backend/metadataArray,
         ../private/p_shapeshifting,
         ../private/p_checks,
         ../private/p_accessors_macros_write,
-        ../data_structure, ../init_cpu, ../higher_order
+        ../data_structure, ../init_cpu, ../higher_order_applymap
 
 
 proc unsafeTranspose*(t: Tensor): Tensor {.noInit,noSideEffect,inline, deprecated.} =

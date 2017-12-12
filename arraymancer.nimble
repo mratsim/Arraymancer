@@ -167,4 +167,9 @@ task test_release, "Run all tests - Release mode":
 
 task gen_doc, "Generate Arraymancer documentation":
   switch("define", "doc")
-  exec "nim doc2 src/arraymancer"
+
+  # TODO, something more robust that only check nim files (and not .DS_Store ...)
+  for filePath in listFiles("src/tensor"):
+    let modName = filePath[11..^5] # Removing src/tensor/ (11 chars) and .nim (4 chars) # TODO: something more robust
+    if modName[^4..^1] != "cuda": # Cuda doc is broken https://github.com/nim-lang/Nim/issues/6910
+      exec r"nim doc -o:docs/build/tensor." & modName & ".html " & filePath

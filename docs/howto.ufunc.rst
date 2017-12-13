@@ -1,5 +1,6 @@
-Universal functions
-~~~~~~~~~~~~~~~~~~~
+==============================
+Spellbook: How to create an universal function?
+==============================
 
 Functions that applies to a single element can work on a whole tensor
 similar to Numpy’s universal functions.

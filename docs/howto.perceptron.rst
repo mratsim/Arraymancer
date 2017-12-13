@@ -1,3 +1,7 @@
+==============================
+Spellbook: How to do a multilayer perceptron
+==============================
+
 .. code:: nim
 
     import ../src/arraymancer

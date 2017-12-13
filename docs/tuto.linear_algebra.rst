@@ -1,5 +1,6 @@
-Matrix and vector operations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+==============================
+Tutorial: Matrix and vectors operations
+==============================
 
 The following linear algebra operations are supported for tensors of
 rank 1 (vectors) and 2 (matrices):

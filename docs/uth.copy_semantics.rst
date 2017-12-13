@@ -1,3 +1,7 @@
+==============================
+Under the hood: Copy semantics
+==============================
+
 Safe vs unsafe: copy vs view
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

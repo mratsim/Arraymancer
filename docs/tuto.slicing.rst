@@ -1,5 +1,6 @@
-Slicing
-~~~~~~~
+==============================
+Tutorial: Slicing
+==============================
 
 Arraymancer supports the following slicing syntax. It allows for
 selecting dimension subsets, whole dimension, stepping (one out of 2

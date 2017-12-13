@@ -1,3 +1,7 @@
+===========
+Arraymancer
+===========
+
 Arraymancer - A n-dimensional tensor (ndarray) library.
 =======================================================
 

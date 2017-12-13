@@ -1,5 +1,6 @@
-Broadcasting
-~~~~~~~~~~~~
+==============================
+Tutorial: Broadcasting
+==============================
 
 Arraymancer supports explicit broadcasting with ``broadcast`` and its
 alias ``bc``. And supports implicit broadcasting with operations

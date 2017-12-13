@@ -1,5 +1,7 @@
-Higher-order functions (Map, Reduce, Fold)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+==============================
+Tutorial: Higher-order functions (Map, Reduce, Fold)
+==============================
+
 
 Arraymancer supports efficient higher-order functions on the whole
 tensor or on an axis. #### ``map``, ``apply``, ``map2``, ``apply2``

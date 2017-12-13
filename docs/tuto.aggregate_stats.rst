@@ -1,5 +1,6 @@
-Aggregate and Statistics
-~~~~~~~~~~~~~~~~~~~~~~~~
+==============================
+Tutorial: Aggregate and statistics
+==============================
 
 ``sum`` and ``mean`` functions are available to compute the sum and mean
 of a tensor. ``sum`` and ``mean`` can also be computed along an axis

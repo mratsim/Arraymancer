@@ -1,12 +1,10 @@
 Arraymancer v0.3.0
 ==========================
 
-I am very excited to announce the second release of Arraymancer which includes numerous improvements and breaking changes.
-WARNING: Deprecated proc will be removed in a new release in a week due to deprecated spam.
+I am very excited to announce the third release of Arraymancer which includes numerous improvements and (unfortunately!) breaking changes.
+Warning  ⚠: Deprecated ALL procs will be removed next release due to deprecated spam and to reduce maintenance burden.
 
-Note:
-- zeros, ones, newTensor
-
+Changes:
 - **Very** Breaking
   - Tensors uses reference semantics now: `let a = b` will share data by default and copies must be made explicitly.
     - There is no need to use `unsafe` proc to avoid copies especially for slices.
@@ -20,15 +18,53 @@ Note:
   - The max number of dimensions supported has been reduced from 8 to 7 to reduce cache misses.
     Note, in deep learning the max number of dimensions needed is 6 for 3D videos: [batch, time, color/feature channels, Depth, Height, Width]
 
+- Documentation
+  - Documentation has been completely revamped and is available here: https://mratsim.github.io/Arraymancer/
+
+- Huge performance improvements
+  - Use non-initialized seq
+  - shape and strides are now stored on the stack
+  - optimization via inlining all higher-order functions
+    - `apply_inline`, `map_inline`, `fold_inline` and `reduce_inline` templates are available.
+  - all higher order functions are parallelized through OpenMP
+  - integer matrix multiplication uses SIMD, loop unrolling, restrict and 64-bit alignment
+  - prevent false sharing/cache contention in OpenMP reduction
+  - remove temporary copies in several proc
+  - runtime checks/exception are now behind `unlikely`
+  - `A*B + C` and `C+=A*B` are automatically fused in one operation
+  - do not initialized result tensors
+
+- Neural network:
+  - Added `linear`, `sigmoid_cross_entropy`, `softmax_cross_entropy` layers
+  - Added Convolution layer
+
+- Shapeshifting:
+  - Added `unsqueeze` and `stack`
+
+- Math:
+  - Added `min`, `max`, `abs`, `reciprocal`, `negate` and in-place `mnegate` and `mreciprocal`
+
+- Statistics:
+  - Added variance and standard deviation
+
+- Broadcasting
+  - Added `.^` (broadcasted exponentiation)
+
+- Cuda:
+  - Support for convolution primitives: forward and backward
+  - Broadcasting ported to Cuda
+
+- Examples
+  - Added perceptron learning `xor` function example
+
+- Precision
+  - Arraymancer uses `ln1p` (`ln(1 + x)`) and `exp1m` procs (`exp(1 - x)`) where appropriate to avoid catastrophic cancellation
+
 - Deprecated
   - Version 0.3.1 with the ALL deprecated proc removed will be released in a week. Due to issue https://github.com/nim-lang/Nim/issues/6436,
     even using non-deprecated proc like `zeros`, `ones`, `newTensor` you will get a deprecated warning.
   - `newTensor`, `zeros`, `ones` arguments have been changed from `zeros([5, 5], int)` to `zeros[int]([5, 5])`
   - All `unsafe` proc are now default and deprecated.
-
-
-- Cuda:
-  - Support for convolution forward and backward
 
 
 Arraymancer v0.2.0 Sept. 24, 2017 "The Color of Magic"

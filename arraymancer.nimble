@@ -1,5 +1,5 @@
 ### Package
-version       = "0.2.90"
+version       = "0.3.0"
 author        = "Mamy André-Ratsimbazafy"
 description   = "A n-dimensional tensor (ndarray) library"
 license       = "Apache License 2.0"

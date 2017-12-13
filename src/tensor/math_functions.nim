@@ -14,7 +14,7 @@
 
 import  ./data_structure,
         ./init_cpu,
-        ./higher_order,
+        ./higher_order_applymap,
         ./ufunc
 
 # Non-operator math functions

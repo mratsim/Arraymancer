@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import  ./data_structure,
-        ./higher_order,
+        ./higher_order_applymap,
         future, math
 
 proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noInit.} =

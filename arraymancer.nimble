@@ -167,4 +167,45 @@ task test_release, "Run all tests - Release mode":
 
 task gen_doc, "Generate Arraymancer documentation":
   switch("define", "doc")
-  exec "nim doc2 src/arraymancer"
+
+  # TODO: Industrialize: something more robust that only check nim files (and not .DS_Store ...)
+  for filePath in listFiles("src/tensor/"):
+    let modName = filePath[11..^5] # Removing src/tensor/ (11 chars) and .nim (4 chars) # TODO: something more robust
+    if modName[^4..^1] != "cuda": # Cuda doc is broken https://github.com/nim-lang/Nim/issues/6910
+      exec r"nim doc -o:docs/build/tensor." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/nn_primitives/"):
+    let modName = filePath[18..^5] # Removing src/nn_primitives/ (18 chars) and .nim (4 chars) # TODO: something more robust
+    if modName[^5..^1] != "cudnn": # Cuda doc is broken https://github.com/nim-lang/Nim/issues/6910
+      exec r"nim doc -o:docs/build/nnp." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/autograd/"):
+    let modName = filePath[13..^5] # Removing src/autograd/ (13 chars) and .nim (4 chars) # TODO: something more robust
+    exec r"nim doc -o:docs/build/ag." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/nn/"):
+    let modName = filePath[7..^5] # Removing src/nn_primitives/ (18 chars) and .nim (4 chars) # TODO: something more robust
+    exec r"nim doc -o:docs/build/nn." & modName & ".html " & filePath
+
+  # TODO auto check subdir
+  for filePath in listFiles("src/nn/activation/"):
+    let modName = filePath[18..^5]
+    exec r"nim doc -o:docs/build/nn_activation." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/nn/layers/"):
+    let modName = filePath[14..^5]
+    exec r"nim doc -o:docs/build/nn_layers." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/nn/loss/"):
+    let modName = filePath[12..^5]
+    exec r"nim doc -o:docs/build/nn_loss." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/nn/optimizers/"):
+    let modName = filePath[18..^5]
+    exec r"nim doc -o:docs/build/nn_optimizers." & modName & ".html " & filePath
+
+  # Process the rst
+  for filePath in listFiles("docs/"):
+    if filePath[^4..^1] == ".rst":
+      let modName = filePath[5..^5]
+      exec r"nim rst2html -o:docs/build/" & modName & ".html " & filePath

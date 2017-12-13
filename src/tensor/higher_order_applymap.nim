@@ -1,4 +1,4 @@
-# Copyright 2017 Mamy André-Ratsimbazafy
+# Copyright 2017 the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,12 +15,8 @@
 import  ./backend/openmp,
         ./backend/memory_optimization_hints,
         ./private/p_checks,
-        ./data_structure, ./init_cpu, ./init_cpu_copy, ./accessors,
+        ./data_structure, ./init_cpu, ./accessors,
         future
-
-# Note: Due to C++ restrictions + Nim codegen, mutable iterators are not possible with the C++ backend.
-# Cuda and C++ need a specific code path (with no performance implication since what was done in the iterator
-# is no done in the higher order function/template context)
 
 # ####################################################################
 # Mapping over tensors
@@ -78,50 +74,6 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
 
   dest
 
-template reduce_inline*[T](t: Tensor[T], op: untyped): untyped =
-  var reduced : T
-  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.size, 1, op) do:
-    x = t.atContiguousIndex(block_offset)
-  do:
-    for y {.inject.} in t.items(block_offset, block_size):
-      op
-  reduced
-
-template fold_inline*[T](t: Tensor[T], op_initial, op_middle, op_final: untyped): untyped =
-  var reduced : T
-  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.size, 1, op_final) do:
-    let y {.inject.} = t.atContiguousIndex(block_offset)
-    op_initial
-  do:
-    for y {.inject.} in t.items(block_offset, block_size):
-      op_middle
-  reduced
-
-template reduce_axis_inline*[T](t: Tensor[T], reduction_axis: int, op: untyped): untyped =
-  var reduced : type(t)
-  let weight = t.size div t.shape[reduction_axis]
-  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[reduction_axis], weight, op) do:
-    x = t.atAxisIndex(reduction_axis, block_offset).clone()
-  do:
-    for y {.inject.} in t.axis(reduction_axis, block_offset, block_size):
-      op
-  reduced
-
-template fold_axis_inline*[T](t: Tensor[T], result_type: typedesc, fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
-  var reduced : result_type
-  let weight = t.size div t.shape[fold_axis]
-  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[fold_axis], weight, op_final) do:
-    let y {.inject.} = t.atAxisIndex(fold_axis, block_offset)
-    op_initial
-  do:
-    for y {.inject.} in t.axis(fold_axis, block_offset, block_size):
-      op_middle
-
-  # If the result is a Tensor, return without copy
-  when reduced is AnyTensor:
-    reduced
-  else:
-    reduced
 
 proc map*[T; U: not (ref|string|seq)](t: Tensor[T], f: T -> U): Tensor[U] {.noInit.} =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
@@ -273,83 +225,3 @@ proc apply2*[T, U](a: var Tensor[T],
   omp_parallel_blocks(block_offset, block_size, a.size):
     for x, y in mzip(a, b, block_offset, block_size):
       f(x, y)
-
-# ####################################################################
-# Folds and reductions over a single Tensor
-
-# Note: You can't pass builtins like `+` or `+=` due to Nim limitations
-# https://github.com/nim-lang/Nim/issues/2172
-
-proc fold*[U, T](t: Tensor[U],
-                start_val: T,
-                f:(T, U) -> T,
-                ): T =
-  ## Chain result = f(result, element) over all elements of the Tensor
-  ## Input:
-  ##     - A tensor to aggregate on
-  ##     - The starting value
-  ##     - The aggregation function. It is applied this way: new_aggregate = f(old_aggregate, current_value)
-  ## Result:
-  ##     - An aggregate of the function called on the starting value and all elements of the tensor
-  ## Usage:
-  ##  .. code:: nim
-  ##     a.fold(100,max) ## This compare 100 with the first tensor value and returns 100
-  ##                     ## In the end, we will get the highest value in the Tensor or 100
-  ##                     ## whichever is bigger.
-
-  result = start_val
-  for val in t:
-    result = f(result, val)
-
-proc fold*[U, T](t: Tensor[U],
-                start_val: Tensor[T],
-                f: (Tensor[T], Tensor[U])-> Tensor[T],
-                axis: int
-                ): Tensor[T] =
-  ## Chain result = f(result, element) over all elements of the Tensor
-  ## Input:
-  ##     - A tensor to aggregate on
-  ##     - The starting value
-  ##     - The aggregation function. It is applied this way: new_aggregate = f(old_aggregate, current_value)
-  ##     - The axis to aggregate on
-  ## Result:
-  ##     - An Tensor with the aggregate of the function called on the starting value and all slices along the selected axis
-
-  result = start_val
-  for val in t.axis(axis):
-    result = f(result, val)
-
-proc reduce*[T](t: Tensor[T],
-                f: (T, T) -> T
-                ): T =
-  ## Chain result = f(result, element) over all elements of the Tensor.
-  ##
-  ## The starting value is the first element of the Tensor.
-  ## Input:
-  ##     - A tensor to aggregate on
-  ##     - The aggregation function. It is applied this way: new_aggregate = f(old_aggregate, current_value)
-  ## Result:
-  ##     - An aggregate of the function called all elements of the tensor
-  ## Usage:
-  ##  .. code:: nim
-  ##     a.reduce(max) ## This returns the maximum value in the Tensor.
-
-  t.reduce_inline():
-    shallowCopy(x, f(x,y))
-
-proc reduce*[T](t: Tensor[T],
-                f: (Tensor[T], Tensor[T])-> Tensor[T],
-                axis: int
-                ): Tensor[T] {.noInit.} =
-  ## Chain result = f(result, element) over all elements of the Tensor.
-  ##
-  ## The starting value is the first element of the Tensor.
-  ## Input:
-  ##     - A tensor to aggregate on
-  ##     - The aggregation function. It is applied this way: new_aggregate = f(old_aggregate, current_value)
-  ##     - An axis to aggregate on
-  ## Result:
-  ##     - A tensor aggregate of the function called all elements of the tensor
-
-  t.reduce_axis_inline(axis):
-    shallowCopy(x, f(x,y))

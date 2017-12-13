@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ./data_structure, ./accessors,
-        ./higher_order,
+        ./higher_order_applymap,
         ./init_cpu,
         ./shapeshifting
 

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import  ./data_structure,
-        ./higher_order
+        ./higher_order_applymap
 
 # Unfortunately higher_order depends on init_cpu and "clone" depends on higher_order, so we need an extra file
 # to deal with circular dependencies

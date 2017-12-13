@@ -14,9 +14,7 @@
 
 import  ./private/p_init_cuda,
         ./private/p_kernels_interface_cuda,
-        ./private/p_checks,
         ./data_structure,
-        ./higher_order,
         ./shapeshifting_cuda,
         ./operators_blas_l1_cuda
 

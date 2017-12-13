@@ -8,58 +8,10 @@ The library is inspired by Numpy and PyTorch. The library provides ergonomics ve
 
 Note: While Nim is compiled and does not offer an interactive REPL yet (like Jupyter), it allows much faster prototyping than C++ due to extremely fast compilation times. Arraymancer compiles in about 5 seconds on my dual-core MacBook.
 
-<!-- TOC -->
-
-- [Arraymancer - A n-dimensional tensor (ndarray) library.](#arraymancer---a-n-dimensional-tensor-ndarray-library)
-  - [Why Arraymancer](#why-arraymancer)
-    - [The Python community is struggling to bring Numpy up-to-speed](#the-python-community-is-struggling-to-bring-numpy-up-to-speed)
-    - [A researcher workflow is a fight against inefficiencies](#a-researcher-workflow-is-a-fight-against-inefficiencies)
-    - [Tools available in labs are not available in production:](#tools-available-in-labs-are-not-available-in-production)
-    - [Bridging the gap between deep learning research and production](#bridging-the-gap-between-deep-learning-research-and-production)
-    - [So why Arraymancer ?](#so-why-arraymancer-)
-  - [Future ambitions](#future-ambitions)
-  - [Support (Types, OS, Hardware)](#support-types-os-hardware)
-  - [Limitations:](#limitations)
-  - [Installation:](#installation)
-  - [Full documentation](#full-documentation)
-  - [Features](#features)
-    - [Speed](#speed)
-      - [Parallelism](#parallelism)
-      - [Parallel loop fusion - YOLO (You Only Loop Once)](#parallel-loop-fusion---yolo-you-only-loop-once)
-      - [Memory allocation](#memory-allocation)
-      - [Micro benchmark: Int64 matrix multiplication](#micro-benchmark-int64-matrix-multiplication)
-      - [Logistic regression](#logistic-regression)
-      - [DNN - 3 hidden layers](#dnn---3-hidden-layers)
-    - [Safe vs unsafe: copy vs view](#safe-vs-unsafe-copy-vs-view)
-    - [Tensors on CPU and on Cuda](#tensors-on-cpu-and-on-cuda)
-    - [Tensor properties](#tensor-properties)
-    - [Tensor creation](#tensor-creation)
-    - [Accessing and modifying a value](#accessing-and-modifying-a-value)
-    - [Copying](#copying)
-    - [Slicing](#slicing)
-    - [Slice mutations](#slice-mutations)
-    - [Shapeshifting](#shapeshifting)
-      - [Transposing](#transposing)
-      - [Reshaping](#reshaping)
-      - [Permuting - Reordering dimension](#permuting---reordering-dimension)
-      - [Concatenation](#concatenation)
-    - [Universal functions](#universal-functions)
-    - [Type conversion](#type-conversion)
-    - [Matrix and vector operations](#matrix-and-vector-operations)
-    - [Broadcasting](#broadcasting)
-    - [Iterators](#iterators)
-    - [Higher-order functions (Map, Reduce, Fold)](#higher-order-functions-map-reduce-fold)
-      - [`map`, `apply`, `map2`, `apply2`](#map-apply-map2-apply2)
-      - [`reduce` on the whole Tensor or along an axis](#reduce-on-the-whole-tensor-or-along-an-axis)
-      - [`fold` on the whole Tensor or along an axis](#fold-on-the-whole-tensor-or-along-an-axis)
-    - [Aggregate and Statistics](#aggregate-and-statistics)
-
-<!-- /TOC -->
-
-## Why Arraymancer
-I've identified several issues I want to tackle with Arraymancer:
+## 4 reasons why Arraymancer
 
 ### The Python community is struggling to bring Numpy up-to-speed
+
 - Numba JIT compiler
 - Dask delayed parallel computation graph
 - Cython to ease numerical computations in Python
@@ -80,19 +32,10 @@ Why not use in a language as productive as Python and as fast as C? Code once, a
 - Managing and deploying Python (2.7, 3.5, 3.6) and packages version in a robust manner requires devops-fu (virtualenv, Docker, ...)
 - Python data science ecosystem does not run on embedded devices (Nvidia Tegra/drones) or mobile phones, especially preprocessing dependencies.
 
-Nim is compiled, no need to worry about version conflicts and the whole toolchain being in need of fixing due to Python version updates.
-Furthermore, as long as your platform supports C, Arraymancer will run on it from Raspberry Pi to mobile phones and drones.
-
-Note: Arraymancer Cuda/Cudnn backend is shaping up and convolutional neural nets are just around the corner.
-
 ### Bridging the gap between deep learning research and production
 The deep learning frameworks are currently in two camps:
 - Research: Theano, Tensorflow, Keras, Torch, PyTorch
 - Production: Caffe, Darknet, (Tensorflow)
-
-Putting a research model in production, on a drone or as a webservice for example, is difficult:
-- Transforming a tuned research model (in Python) to a usable Caffe or Darknet model (in C) is not trivial. ~PMML is supposed to be the "common" XML description of ML models but is not really supported by anyone.~ 
-**Edit - Sept 7, 2017: Microsoft and Facebook are announcing [Open Neural Network Exchange](https://research.fb.com/facebook-and-microsoft-introduce-new-open-ecosystem-for-interchangeable-ai-frameworks/)**
 
 Furthermore, Python preprocessing steps, unless using OpenCV, often needs a custom implementation (think text/speech preprocessing on phones).
 
@@ -114,20 +57,7 @@ Because apparently to be successful you need a vision, I would like Arraymancer 
 - The go-to tool for Deep Learning video processing. I.e. `vid = load_video("./cats/youtube_cat_video.mkv")`
 - Target javascript, WebAssembly, Apple Metal, ARM devices, AMD Rocm, OpenCL, you name it.
 - Target cryptominers FPGAs because they drove the price of GPUs for honest deep-learners too high.
-
-## Support (Types, OS, Hardware)
-Arraymancer's tensors supports arbitrary types (floats, strings, objects ...).
-
-Arraymancer run anywhere you can compile C code. Linux, MacOS are supported, Windows should work too as Appveyor (Continuous Integration for Windows) never flash red.
-Optionally you can compile Arraymancer with Cuda support.
-
-Note: Arraymancer Tensors and CudaTensors are tensors in the machine learning sense (multidimensional array) not in the mathematical sense (describe transformation laws)
-
-## Limitations:
-
-EXPERIMENTAL: Arraymancer may summon Ragnarok and cause the heat death of the Universe.
-
-1. Display of 5-dimensional or more tensors is not implemented. (To be honest Christopher Nolan had the same issue in Interstellar)
+- The base of a Starcraft II AI bot.
 
 ## Installation:
 
@@ -141,90 +71,136 @@ Detailed API is available on Arraymancer official [documentation](https://mratsi
 
 ## Features
 
-For now Arraymancer is still at the ndarray stage, however a [vision package](https://github.com/edubart/arraymancer-vision) and a [deep learning demo](https://github.com/edubart/arraymancer-demos) are available with logistic regression and perceptron from scratch.
+For now Arraymancer is mostly at the ndarray stage, a [vision package](https://github.com/edubart/arraymancer-vision) and a [deep learning demo](https://github.com/edubart/arraymancer-demos) are available with logistic regression and perceptron from scratch.
 
 You can also check the [detailed example](https://github.com/mratsim/Arraymancer/blob/master/examples/ex01_xor_perceptron_from_scratch.nim) or [benchmark](https://github.com/mratsim/Arraymancer/blob/master/benchmarks/ex01_xor.nim) perceptron for a preview of Arraymancer deep learning usage.
 
+Available autograd and neural networks features are detailed in the technical reference part of the [documentation](https://mratsim.github.io/Arraymancer/).
+
+### Arraymancer in action
+
+Arraymancer tutorial is available [here](https://mratsim.github.io/Arraymancer/tuto.first_steps.html).
+
+Here is a preview of Arraymancer syntax.
+
+#### Tensor creation and slicing
+```Nim
+import math, arraymancer, future
+
+const
+    x = @[1, 2, 3, 4, 5]
+    y = @[1, 2, 3, 4, 5]
+
+var
+    vandermonde: seq[seq[int]]
+    row: seq[int]
+
+vandermonde = newSeq[seq[int]]()
+
+for i, xx in x:
+    row = newSeq[int]()
+    vandermonde.add(row)
+    for j, yy in y:
+        vandermonde[i].add(xx^yy)
+
+let foo = vandermonde.toTensor()
+
+echo foo
+
+# Tensor of shape 5x5 of type "int" on backend "Cpu"
+# |1      1       1       1       1|
+# |2      4       8       16      32|
+# |3      9       27      81      243|
+# |4      16      64      256     1024|
+# |5      25      125     625     3125|
+
+echo foo[1..2, 3..4] # slice
+
+# Tensor of shape 2x2 of type "int" on backend "Cpu"
+# |16     32|
+# |81     243|
+```
+
+#### Reshaping and concatenation
+```Nim
+import ../arraymancer, sequtils
+
+
+let a = toSeq(1..4).toTensor(Cpu).reshape(2,2)
+
+let b = toSeq(5..8).toTensor(Cpu).reshape(2,2)
+
+let c = toSeq(11..16).toTensor(Cpu)
+let c0 = c.reshape(3,2)
+let c1 = c.reshape(2,3)
+
+echo concat(a,b,c0, axis = 0)
+# Tensor of shape 7x2 of type "int" on backend "Cpu"
+# |1      2|
+# |3      4|
+# |5      6|
+# |7      8|
+# |11     12|
+# |13     14|
+# |15     16|
+
+echo concat(a,b,c1, axis = 1)
+# Tensor of shape 2x7 of type "int" on backend "Cpu"
+# |1      2       5       6       11      12      13|
+# |3      4       7       8       14      15      16|
+```
+
+#### Broadcasting
+
+Image from Scipy
+
+![](https://scipy.github.io/old-wiki/pages/image004de9e.gif)
+
+```Nim
+let j = [0, 10, 20, 30].toTensor(Cpu).reshape(4,1)
+let k = [0, 1, 2].toTensor(Cpu).reshape(1,3)
+
+echo j .+ k
+# Tensor of shape 4x3 of type "int" on backend "Cpu"
+# |0      1       2|
+# |10     11      12|
+# |20     21      22|
+# |30     31      32|
+```
+
+### Tensors on CPU and on Cuda
+Tensors and CudaTensors do not have the same features implemented yet.
+Also Cuda Tensors can only be float32 or float64 while Cpu Tensor can be integers, string, boolean or any custom object.
+
+Here is a comparative table, not that this feature set is developing very rapidly.
+
+| Action | Tensor | CudaTensor |
+| ------ | ------ | ---------- |
+| Accessing tensor properties |[x]|[x]|
+| Tensor creation |[x]| by converting a cpu Tensor|
+| Accessing or modifying a single value |[x]|[]|
+| Iterating on a Tensor |[x]|[]|
+| Slicing a Tensor |[x]|[x]|
+| Slice mutation `a[1,_] = 10` |[x]|[]|
+| Comparison `==`|[x]| Coming soon|
+| Element-wise basic operations|[x]|[x]|
+| Universal functions |[x]|[x]|
+| Automatically broadcasted operations |[x]| Coming soon|
+| Matrix-Matrix and Matrix-Vector multiplication|[x]|[x] Note that sliced CudaTensors must explicitly be made contiguous for the moment|
+| Displaying a tensor |[x]|[x]|
+| Higher-order functions (map, apply, reduce, fold)|[x]| Apply, but only internally|
+| Transposing | [x] | [x] |
+| Converting to contiguous | [x] | [x] |
+| Reshaping |[x] | [] |
+| Explicit broadcast | [x] | Coming soon |
+| Permuting dimensions | [x]| Coming soon |
+| Concatenating tensors along existing dimension | [x]|[]|
+| Squeezing singleton dimension |[x]| Coming soon|
+| Slicing + squeezing |[x] | Coming soon |
+
 ### Speed
 
-#### Parallelism
-
-Most operations in Arraymancer are parallelized through OpenMP including linear algebra functions, universal functions, `map`, `reduce` and `fold` based operations.
-
-#### Parallel loop fusion - YOLO (You Only Loop Once)
-
-Arraymancer provides several constructs for the YOLO™ paradigm (You Only Loop Once).
-
-A naïve logistic sigmoid implementation in Numpy would be:
-```Python
-import math
-
-def sigmoid(x):
-  return 1 / (1 + math.exp(-x))
-```
-
-With Numpy broadcasting, all those operations would be done on whole tensors using Numpy C implementation, pretty efficient?
-
-Actually no, this would create lots of temporary and loops across the data:
-- ``temp1 = -x``
-- ``temp2 = math.exp(temp1)``
-- ``temp3 = 1 + temp2``
-- ``temp4 = 1 / temp3``
-
-So you suddenly get a o(n^4) algorithm.
-
-Arraymancer can do the same using the explicit broadcast operator `./` and `.+`. (To avoid name conflict we change the logistic sigmoid name)
-```Nim
-import arraymancer
-
-def customSigmoid[T: SomeReal](t: Tensor[T]): Tensor[T] =
-  result = 1 ./ (1 .+ exp(-t))
-```
-
-Well, unfortunately, the only thing we gain here is parallelism but we still have 4 loops over the data implicitly. Another way would be to use the loop fusion template ``map_inline``:
-
-```Nim
-import arraymancer
-
-def customSigmoid2[T: SomeReal](t: Tensor[T]): Tensor[T] =
-  result = map_inline(t):
-    1 / (1 + exp(-x))
-```
-
-Now in a single loop over ``t``, Arraymancer will do ``1 / (1 + exp(-x))`` for each x found.
-``x`` is a shorthand for the elements of the first tensor argument.
-
-Here is another example with 3 tensors and element-wise fused multiply-add ``C += A .* B``:
-
-```Nim
-import arraymancer
-
-def fusedMultiplyAdd[T: SomeNumber](c: var Tensor[T], a, b: Tensor[T]) =
-  ## Implements C += A .* B, .* is the element-wise multiply
-  apply3_inline(c, a, b):
-    x += y * z
-```
-
-Since the tensor were given in order (c, a, b):
-- x corresponds to elements of c
-- y to a
-- z to b
-
-Today Arraymancer offers ``map_inline``, ``map2_inline``, ``apply_inline``, ``apply2_inline`` and ``apply3_inline``.
-
-Those are also parallelized using OpenMP. In the future, this will be generalized to N inputs.
-
-Similarly, ``reduce_inline`` and ``fold_inline`` are offered for parallel, custom, fused reductions operations.
-
-#### Memory allocation
-
-For most operations in machine linear, memory and cache is the bottleneck, for example taking the log of a Tensor can use at most 20% of your theoretical max CPU speed (in GFLOPS) while matrix multiplication can use 70%-90%+ for the best implementations (MKL, OpenBLAS).
-
-In the log case, the processor gives a result faster than it can load data into its cache. In the matrix multiplication case, each element of a matrix can be reused several times before loading data again.
-
-Arraymancer strives hard to limit memory allocation with the `inline` version of `map`, `apply`, `reduce`, `fold` (`map_inline`, `apply_inline`, `reduce_inline`, `fold_inline`) mentionned above that avoids intermediate results.
-
-Furthermore while Arraymancer uses copy on assignment by default, most procedures have an `unsafe` equivalent that provides no-copy operations like `reshape` and `unsafeReshape`. Warning ⚠: Memory is shared in that case, modifying one of these tensors will modify the other.
+Arraymancer is fast, how it achieves its speed under the hood is detailed [here](https://mratsim.github.io/Arraymancer/uth.speed.html).
 
 #### Micro benchmark: Int64 matrix multiplication
 
@@ -301,576 +277,3 @@ Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz, gcc 7.2.0, MKL 2017.17.0.4.4, OpenBLAS
 
 In the future, Arraymancer will leverage Nim compiler to automatically fuse operations
 like `alpha A*B + beta C` or a combination of element-wise operations. This is already done to fuse `toTensor` and `reshape`.
-
-### Safe vs unsafe: copy vs view
-Compared to most frameworks, Arraymancer choose to be safe by default but allows `unsafe` operations to optimize for speed and memory. The tensor resulting from `unsafe` operations (no-copy operations) share the underlying storage with the input tensor (also called views or shallow copies). This is often a surprise for beginners.
-
-In the future Arraymancer will leverage Nim compiler to automatically detect when an original is not used and modified anymore to automatically replace it by the `unsafe` equivalent.
-
-For CudaTensors, operations are unsafe by default (including assignmnt with `=`) while waiting for further Nim optimizations for manually managed memory. CudaTensors can be copied safely with `.clone`
-
-
-### Tensors on CPU and on Cuda
-Tensors and CudaTensors do not have the same features implemented yet.
-Also Cuda Tensors can only be float32 or float64 while Cpu Tensor can be integers, string, boolean or any custom object.
-
-Here is a comparative table, not that this feature set is developing very rapidly.
-
-| Action | Tensor | CudaTensor |
-| ------ | ------ | ---------- |
-| Accessing tensor properties |[x]|[x]|
-| Tensor creation |[x]| by converting a cpu Tensor|
-| Accessing or modifying a single value |[x]|[]|
-| Iterating on a Tensor |[x]|[]|
-| Slicing a Tensor |[x]|[x]|
-| Slice mutation `a[1,_] = 10` |[x]|[]|
-| Comparison `==`|[x]| Coming soon|
-| Element-wise basic operations|[x]|[x]|
-| Universal functions |[x]|[x]|
-| Automatically broadcasted operations |[x]| Coming soon|
-| Matrix-Matrix and Matrix-Vector multiplication|[x]|[x] Note that sliced CudaTensors must explicitly be made contiguous for the moment|
-| Displaying a tensor |[x]|[x]|
-| Higher-order functions (map, apply, reduce, fold)|[x]| Apply, but only internally|
-| Transposing | [x] | [x] |
-| Converting to contiguous | [x] | [x] |
-| Reshaping |[x] | [] |
-| Explicit broadcast | [x] | Coming soon |
-| Permuting dimensions | [x]| Coming soon |
-| Concatenating tensors along existing dimension | [x]|[]|
-| Squeezing singleton dimension |[x]| Coming soon|
-| Slicing + squeezing |[x] | Coming soon |
-
-
-### Tensor properties
-Tensors have the following properties:
-- `rank`:
-    - 0 for scalar (unfortunately cannot be stored)
-    - 1 for vector
-    - 2 for matrices
-    - N for N-dimension array
-- `shape`: a sequence of the tensor dimensions along each axis.
-
-Next properties are technical and there for completeness
-- `strides`: a sequence of numbers of steps to get the next item along a dimension.
-- `offset`: the first element of the tensor
-
-```Nim
-import arraymancer
-
-let d = [[1, 2, 3], [4, 5, 6]].toTensor()
-
-echo d
-# Tensor of shape 2x3 of type "int" on backend "Cpu"
-# |1      2       3|
-# |4      5       6|
-
-echo d.rank # 2
-echo d.shape # @[2, 3]
-echo d.strides # @[3, 1] => Next row is 3 elements away in memory while next column is 1 element away.
-echo d.offset # 0
-
-```
-
-### Tensor creation
-
-The canonical way to initialize a tensor is by converting a seq of seq of ... or an array of array of ... into a tensor using `toTensor`.
-
-`toTensor` supports deep nested sequences and arrays, even sequence of arrays of sequences.
-
-```Nim
-import arraymancer
-
-let c = [
-          [
-            [1,2,3],
-            [4,5,6]
-          ],
-          [
-            [11,22,33],
-            [44,55,66]
-          ],
-          [
-            [111,222,333],
-            [444,555,666]
-          ],
-          [
-            [1111,2222,3333],
-            [4444,5555,6666]
-          ]
-        ].toTensor()
-echo c
-
-# Tensor of shape 4x2x3 of type "int" on backend "Cpu"
-#  |      1       2       3 |     11      22      33 |    111     222     333 |   1111    2222    3333|
-#  |      4       5       6 |     44      55      66 |    444     555     666 |   4444    5555    6666|
-```
-
-`newTensor` procedure can be used to initialize a tensor of a specific shape with a default value. (0 for numbers, false for bool ...)
-
-`zeros` and `ones` procedures create a new tensor filled with 0 and 1 respectively.
-
-`zeros_like` and `ones_like` take an input tensor and output a tensor of the same shape but filled with 0 and 1 respectively.
-
-```Nim
-let e = newTensor([2, 3], bool)
-# Tensor of shape 2x3 of type "bool" on backend "Cpu"
-# |false  false   false|
-# |false  false   false|
-
-let f = zeros([4, 3], float)
-# Tensor of shape 4x3 of type "float" on backend "Cpu"
-# |0.0    0.0     0.0|
-# |0.0    0.0     0.0|
-# |0.0    0.0     0.0|
-# |0.0    0.0     0.0|
-
-let g = ones([4, 3], float)
-# Tensor of shape 4x3 of type "float" on backend "Cpu"
-# |1.0    1.0     1.0|
-# |1.0    1.0     1.0|
-# |1.0    1.0     1.0|
-# |1.0    1.0     1.0|
-
-let tmp = [[1,2],[3,4]].toTensor()
-let h = tmp.zeros_like
-# Tensor of shape 2x2 of type "int" on backend "Cpu"
-# |0      0|
-# |0      0|
-
-let i = tmp.ones_like
-# Tensor of shape 2x2 of type "int" on backend "Cpu"
-# |1      1|
-# |1      1|
-```
-
-### Accessing and modifying a value
-
-Tensors value can be retrieved or set with array brackets.
-
-```Nim
-var a = toSeq(1..24).toTensor().reshape(2,3,4)
-
-echo a
-# Tensor of shape 2x3x4 of type "int" on backend "Cpu"
-#  |      1       2       3       4 |     13      14      15      16|
-#  |      5       6       7       8 |     17      18      19      20|
-#  |      9       10      11      12 |    21      22      23      24|
-
-echo a[1, 1, 1]
-# 18
-
-a[1, 1, 1] = 999
-echo a
-# Tensor of shape 2x3x4 of type "int" on backend "Cpu"
-#  |      1       2       3       4 |     13      14      15      16|
-#  |      5       6       7       8 |     17      999     19      20|
-#  |      9       10      11      12 |    21      22      23      24|
-```
-
-### Copying
-
-Tensor copy is deep by default (all the data is copied). In the majority of cases Nim compiler will detect and avoid useless copies.
-
-`unsafeView` can be used on a Tensor to enforce shallow copying (data is shared between the 2 variables). Most shape manipulation proc also have an `unsafe` version.
-
-### Slicing
-
-Arraymancer supports the following slicing syntax. It allows for selecting dimension subsets, whole dimension, stepping (one out of 2 rows), reversing dimensions, counting from the end.
-
-```Nim
-import math, arraymancer, future
-
-const
-    x = @[1, 2, 3, 4, 5]
-    y = @[1, 2, 3, 4, 5]
-
-var
-    vandermonde: seq[seq[int]]
-    row: seq[int]
-
-vandermonde = newSeq[seq[int]]()
-
-for i, xx in x:
-    row = newSeq[int]()
-    vandermonde.add(row)
-    for j, yy in y:
-        vandermonde[i].add(xx^yy)
-
-let foo = vandermonde.toTensor()
-
-echo foo
-
-# Tensor of shape 5x5 of type "int" on backend "Cpu"
-# |1      1       1       1       1|
-# |2      4       8       16      32|
-# |3      9       27      81      243|
-# |4      16      64      256     1024|
-# |5      25      125     625     3125|
-
-echo foo[1..2, 3..4] # slice
-
-# Tensor of shape 2x2 of type "int" on backend "Cpu"
-# |16     32|
-# |81     243|
-
-echo foo[3.._, _] # Span slice
-
-# Tensor of shape 2x5 of type "int" on backend "Cpu"
-# |4      16      64      256     1024|
-# |5      25      125     625     3125|
-
-echo foo[_..^3, _] # Slice until (inclusive, consistent with Nim)
-
-# Tensor of shape 3x5 of type "int" on backend "Cpu"
-# |1      1       1       1       1|
-# |2      4       8       16      32|
-# |3      9       27      81      243|
-
-echo foo[_.._|2, _] # Step
-
-# Tensor of shape 3x5 of type "int" on backend "Cpu"
-# |1      1       1       1       1|
-# |3      9       27      81      243|
-# |5      25      125     625     3125|
-
-echo foo[^1..0|-1, _] # Reverse step
-
-# Tensor of shape 5x5 of type "int" on backend "Cpu"
-# |5      25      125     625     3125|
-# |4      16      64      256     1024|
-# |3      9       27      81      243|
-# |2      4       8       16      32|
-# |1      1       1       1       1|
-```
-
-### Slice mutations
-
-Slices can also be mutated with a single value, a nested seq or array, a tensor or tensor slice.
-
-```Nim
-import math, arraymancer, future
-
-const
-    x = @[1, 2, 3, 4, 5]
-    y = @[1, 2, 3, 4, 5]
-
-var
-    vandermonde: seq[seq[int]]
-    row: seq[int]
-
-vandermonde = newSeq[seq[int]]()
-
-for i, xx in x:
-    row = newSeq[int]()
-    vandermonde.add(row)
-    for j, yy in y:
-        vandermonde[i].add(xx^yy)
-
-var foo = vandermonde.toTensor()
-
-echo foo
-
-# Tensor of shape 5x5 of type "int" on backend "Cpu"
-# |1      1       1       1       1|
-# |2      4       8       16      32|
-# |3      9       27      81      243|
-# |4      16      64      256     1024|
-# |5      25      125     625     3125|
-
-# Mutation with a single value
-foo[1..2, 3..4] = 999
-
-echo foo
-# Tensor of shape 5x5 of type "int" on backend "Cpu"
-# |1      1       1       1       1|
-# |2      4       8       999     999|
-# |3      9       27      999     999|
-# |4      16      64      256     1024|
-# |5      25      125     625     3125|
-
-# Mutation with nested array or nested seq
-foo[0..1,0..1] = [[111, 222], [333, 444]]
-
-echo foo
-# Tensor of shape 5x5 of type "int" on backend "Cpu"
-# |111    222     1       1       1|
-# |333    444     8       999     999|
-# |3      9       27      999     999|
-# |4      16      64      256     1024|
-# |5      25      125     625     3125|
-
-# Mutation with a tensor or tensor slice.
-foo[^2..^1,2..4] = foo[^1..^2|-1, 4..2|-1]
-
-echo foo
-# Tensor of shape 5x5 of type "int" on backend "Cpu"
-# |111    222     1       1       1|
-# |333    444     8       999     999|
-# |3      9       27      999     999|
-# |4      16      3125    625     125|
-# |5      25      1024    256     64|
-```
-
-### Shapeshifting
-
-#### Transposing
-The `transpose` function will reverse the dimensions of a tensor.
-
-#### Reshaping
-The `reshape` function will change the shape of a tensor. The number of elements in the new and old shape must be the same.
-
-For example:
-```Nim
-let a = toSeq(1..24).toTensor().reshape(2,3,4)
-
-# Tensor of shape 2x3x4 of type "int" on backend "Cpu"
-#  |      1       2       3       4 |     13      14      15      16|
-#  |      5       6       7       8 |     17      18      19      20|
-#  |      9       10      11      12 |    21      22      23      24|
-```
-
-
-#### Permuting - Reordering dimension
-The `permute` proc can be used to reorder dimensions.
-Input is a tensor and the new dimension order
-
-```Nim
-let a = toSeq(1..24).toTensor(Cpu).reshape(2,3,4)
-echo a
-
-# Tensor of shape 2x3x4 of type "int" on backend "Cpu"
-#  |      1       2       3       4 |     13      14      15      16|
-#  |      5       6       7       8 |     17      18      19      20|
-#  |      9       10      11      12 |    21      22      23      24|
-
-echo a.permute(0,2,1) # dim 0 stays at 0, dim 1 becomes dim 2 and dim 2 becomes dim 1
-
-# Tensor of shape 2x4x3 of type "int" on backend "Cpu"
-#  |      1       5       9 |     13      17      21|
-#  |      2       6       10 |    14      18      22|
-#  |      3       7       11 |    15      19      23|
-#  |      4       8       12 |    16      20      24|
-```
-
-#### Concatenation
-Tensors can be concatenated along an axis with the `concat` proc.
-```Nim
-import ../arraymancer, sequtils
-
-
-let a = toSeq(1..4).toTensor(Cpu).reshape(2,2)
-
-let b = toSeq(5..8).toTensor(Cpu).reshape(2,2)
-
-let c = toSeq(11..16).toTensor(Cpu)
-let c0 = c.reshape(3,2)
-let c1 = c.reshape(2,3)
-
-echo concat(a,b,c0, axis = 0)
-# Tensor of shape 7x2 of type "int" on backend "Cpu"
-# |1      2|
-# |3      4|
-# |5      6|
-# |7      8|
-# |11     12|
-# |13     14|
-# |15     16|
-
-echo concat(a,b,c1, axis = 1)
-# Tensor of shape 2x7 of type "int" on backend "Cpu"
-# |1      2       5       6       11      12      13|
-# |3      4       7       8       14      15      16|
-
-```
-
-### Universal functions
-
-Functions that applies to a single element can work on a whole tensor similar to Numpy's universal functions.
-
-3 functions exist: `makeUniversal`, `makeUniversalLocal` and `map`.
-
-`makeUniversal` create a a function that applies to each element of a tensor from any unary function. Most functions from the `math` module have been generalized to tensors with `makeUniversal(sin)`.
-Furthermore those universal functions are exported and available for import.
-
-`makeUniversalLocal` does not export the universal functions.
-
-`map` is more generic and map any function to all element of a tensor. `map` works even if the function changes the type of the tensor's elements.
-
-```Nim
-echo foo.map(x => x.isPowerOfTwo) # map a function (`=>` comes from the future module )
-
-# Tensor of shape 5x5 of type "bool" on backend "Cpu"
-# |true   true    true    true    true|
-# |true   true    true    true    true|
-# |false  false   false   false   false|
-# |true   true    true    true    true|
-# |false  false   false   false   false|
-
-let foo_float = foo.map(x => x.float)
-echo ln foo_float # universal function (convert first to float for ln)
-
-# Tensor of shape 5x5 of type "float" on backend "Cpu"
-# |0.0    0.0     0.0     0.0     0.0|
-# |0.6931471805599453     1.386294361119891       2.079441541679836       2.772588722239781       3.465735902799727|
-# |1.09861228866811       2.19722457733622        3.295836866004329       4.394449154672439       5.493061443340548|
-# |1.386294361119891      2.772588722239781       4.158883083359671       5.545177444479562       6.931471805599453|
-# |1.6094379124341        3.218875824868201       4.828313737302302       6.437751649736401       8.047189562170502|
-```
-
-### Type conversion
-
-A type conversion fonction `astype` is provided for convenience
-```Nim
-let foo_float = foo.astype(float)
-```
-
-### Matrix and vector operations
-
-The following linear algebra operations are supported for tensors of rank 1 (vectors) and 2 (matrices):
-
-- dot product (Vector to Vector) using `dot`
-- addition and substraction (any rank) using `+` and `-`
-- in-place addition and substraction (any-rank) using `+=` and `-=`
-- multiplication or division by a scalar using `*` and `/`
-- matrix-matrix multiplication using `*`
-- matrix-vector multiplication using `*`
-- element-wise multiplication (Hadamard product) using `.*`
-
-Note: Matrix operations for floats are accelerated using BLAS (Intel MKL, OpenBLAS, Apple Accelerate ...). Unfortunately there is no acceleration routine for integers. Integer matrix-matrix and matrix-vector multiplications are implemented via semi-optimized routines, see the [benchmarks section.](#micro-benchmark-int64-matrix-multiplication)
-
-```Nim
-echo foo_float * foo_float # Accelerated Matrix-Matrix multiplication (needs float)
-# Tensor of shape 5x5 of type "float" on backend "Cpu"
-# |15.0    55.0    225.0    979.0     4425.0|
-# |258.0   1146.0  5274.0   24810.0   118458.0|
-# |1641.0  7653.0  36363.0  174945.0  849171.0|
-# |6372.0  30340.0 146244.0 710980.0  3478212.0|
-# |18555.0 89355.0 434205.0 2123655.0 10436805.0|
-```
-
-### Broadcasting
-Arraymancer supports explicit broadcasting with `broadcast` and its alias `bc`.
-And supports implicit broadcasting with operations beginning with a dot:
-
-Image from Scipy
-
-![](https://scipy.github.io/old-wiki/pages/image004de9e.gif)
-
-```Nim
-let j = [0, 10, 20, 30].toTensor(Cpu).reshape(4,1)
-let k = [0, 1, 2].toTensor(Cpu).reshape(1,3)
-
-echo j .+ k
-# Tensor of shape 4x3 of type "int" on backend "Cpu"
-# |0      1       2|
-# |10     11      12|
-# |20     21      22|
-# |30     31      32|
-```
-
-- `.+`,`.- `,
-- `.*`: broadcasted element-wise matrix multiplication also called Hadamard product)
-- `./`: broadcasted element-wise division or integer-division
-- `.+=`, `.-=`, `.*=`, `./= `: in-place versions. Only the right operand is broadcastable.
-
-### Iterators
-
-Tensors can be iterated in the proper order. Arraymancer provides:
-
-- `items` and `pairs`. `pairs` returns the coordinates of the tensor.
-
-```Nim
-import ../arraymancer, sequtils
-
-let a = toSeq(1..24).toTensor(Cpu).reshape(2,3,4)
-# Tensor of shape 2x3x4 of type "int" on backend "Cpu"
-#  |      1       2       3       4 |     13      14      15      16|
-#  |      5       6       7       8 |     17      18      19      20|
-#  |      9       10      11      12 |    21      22      23      24|
-
-for v in a:
-  echo v
-
-for coord, v in a:
-  echo coord
-  echo v
-# @[0, 0, 0]
-# 1
-# @[0, 0, 1]
-# 2
-# @[0, 0, 2]
-# 3
-# @[0, 0, 3]
-# 4
-# @[0, 1, 0]
-# 5
-# @[0, 1, 1]
-# 6
-# @[0, 1, 2]
-# 7
-# @[0, 1, 3]
-# 8
-# @[0, 2, 0]
-# 9
-# ...
-```
-
-For convenience a `values` closure iterator is available for iterator chaining. `values` is equivalent to `items`.
-
-A `mitems` iterator is available to directly mutate elements while iterating.
-An `axis` iterator is available to iterate along an axis.
-
-### Higher-order functions (Map, Reduce, Fold)
-Arraymancer supports efficient higher-order functions on the whole tensor or on an axis.
-#### `map`, `apply`, `map2`, `apply2`
-```Nim
-a.map(x => x+1)
-```
-or
-```Nim
-proc plusone[T](x: T): T =
-  x + 1
-a.map(plusone) # Map the function plusone
-```
-Note: for basic operation, you can use implicit broadcasting instead `a .+ 1`
-
-`apply` is the same as `map` but in-place.
-
-`map2` and `apply2` takes 2 input tensors and respectively, return a new one or modify the first in-place.
-```Nim
-proc `**`[T](x, y: T): T = # We create a new power `**` function that works on 2 scalars
-  pow(x, y)
-a.map2(`**`, b)
-# Or
-map2(a, `**`, b)
-```
-#### `reduce` on the whole Tensor or along an axis
-`reduce` apply a function like `+` or `max` on the whole Tensor[T] returning a single value T.
-
-For example:
-- Reducing with `+` returns the sum of all elements of teh Tensor.
-- Reducing with `max` returns the biggest element of the Tensor
-
-`reduce` can be applied along an axis, for example the sum along the rows of a Tensor.
-
-#### `fold` on the whole Tensor or along an axis
-`fold` is a generalization of `reduce`. Its starting value is not the first element of the Tensor.
-
-It can do anything that reduce can, but also has other tricks because it is not constrained by the Tensor type or starting value.
-
-For example:
-- Reducing with `was_a_odd_and_what_about_b` and a starting value of `true` returns `true` if all elements are odd or `false` otherwise
-
-Just in case
-```Nim
-proc was_a_odd_and_what_about_b[T: SomeInteger](a: bool, b: T): bool =
-  return a and (b mod 2 == 1) # a is the result of previous computations, b is the new integer to check.
-```
-
-
-### Aggregate and Statistics
-
-`sum` and `mean` functions are available to compute the sum and mean of a tensor.
-`sum` and `mean` can also be computed along an axis with the `axis` argument.
-
-Generic aggregates on the whole tensor or along an axis can be computed with `agg` and `agg_inplace` functions.

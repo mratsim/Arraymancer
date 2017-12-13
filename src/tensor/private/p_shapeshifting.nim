@@ -14,7 +14,7 @@
 
 import  ../../private/sequninit,
         ../backend/metadataArray,
-        ../data_structure, ../higher_order,
+        ../data_structure, ../higher_order_applymap,
         ./p_init_cpu,
         ./p_checks,
         nimblas

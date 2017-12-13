@@ -77,117 +77,6 @@ You can also check the [detailed example](https://github.com/mratsim/Arraymancer
 
 Available autograd and neural networks features are detailed in the technical reference part of the [documentation](https://mratsim.github.io/Arraymancer/).
 
-### Speed
-
-Arraymancer is fast, how it achieves its speed under the hood is detailed [here](https://mratsim.github.io/Arraymancer/uth.speed.html).
-
-#### Micro benchmark: Int64 matrix multiplication
-
-Integers seem to be the abandoned children of ndarrays and tensors libraries. Everyone is optimising the hell of floating points. Not so with Arraymancer:
-
-```
-Archlinux, E3-1230v5 (Skylake quad-core 3.4 GHz, turbo 3.8)
-Input 1500x1500 random large int64 matrix
-Arraymancer 0.2.90 (master branch 2017-10-10)
-```
-
-| Language | Speed | Memory |
-|---|---|---|
-| Nim 0.17.3 (devel) + OpenMP | **0.36s** | 55.5 MB |
-| Julia v0.6.0 | 3.11s | 207.6 MB |
-| Python 3.6.2 + Numpy 1.12 compiled from source | 8.03s | 58.9 MB |
-
-```
-MacOS + i5-5257U (Broadwell dual-core mobile 2.7GHz, turbo 3.1)
-Input 1500x1500 random large int64 matrix
-Arraymancer 0.2.90 (master branch 2017-10-31)
-
-no OpenMP compilation: nim c -d:native -d:release --out:bin/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
-with OpenMP: nim c -d:openmp --cc:gcc --gcc.exe:"/usr/local/bin/gcc-6" --gcc.linkerexe:"/usr/local/bin/gcc-6"  -d:native -d:release --out:bin/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
-```
-
-| Language | Speed | Memory |
-|---|---|---|
-| Nim 0.18.0 (devel) - GCC 6 + OpenMP | **0.95s** | 71.9 MB |
-| Nim 0.18.0 (devel) - Apple Clang 9 - no OpenMP | **1.73s** | 71.7 MB |
-| Julia v0.6.0 | 4.49s | 185.2 MB |
-| Python 3.5.2 + Numpy 1.12 | 9.49s | 55.8 MB |
-
-Benchmark setup is in the `./benchmarks` folder and similar to (stolen from) [Kostya's](https://github.com/kostya/benchmarks#matmul). Note: Arraymancer float matmul is as fast as `Julia Native Thread`.
-
-#### Logistic regression
-On the [demo benchmark](https://github.com/edubart/arraymancer-demos), Arraymancer is faster than Torch in v0.2.90.
-
-CPU
-
-| Framework | Backend | Forward+Backward Pass Time  |
-|---|---|---|
-| Arraymancer v0.2.90| OpenMP + MKL | **0.458ms**  |
-| Torch7 | MKL | 0.686ms  |
-| Numpy | MKL | 0.723ms  |
-
-GPU
-
-| Framework | Backend | Forward+Backward Pass Time  |
-|---|---|---|
-| Arraymancer v0.2.90| Cuda | WIP  |
-| Torch7 | Cuda | 0.286ms  |
-
-#### DNN - 3 hidden layers
-
-CPU
-
-| Framework | Backend | Forward+Backward Pass Time  |
-|---|---|---|
-| Arraymancer v0.2.90| OpenMP + MKL | **2.907ms**  |
-| PyTorch | MKL | 6.797ms  |
-
-GPU
-
-| Framework | Backend | Forward+Backward Pass Time  |
-|---|---|---|
-| Arraymancer v0.2.90| Cuda | WIP |
-| PyTorch | Cuda | 4.765ms  |
-
-
-```
-Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz, gcc 7.2.0, MKL 2017.17.0.4.4, OpenBLAS 0.2.20, Cuda 8.0.61, Geforce GTX 1080 Ti, Nim 0.18.0
-```
-
-In the future, Arraymancer will leverage Nim compiler to automatically fuse operations
-like `alpha A*B + beta C` or a combination of element-wise operations. This is already done to fuse `toTensor` and `reshape`.
-
-### Tensors on CPU and on Cuda
-Tensors and CudaTensors do not have the same features implemented yet.
-Also Cuda Tensors can only be float32 or float64 while Cpu Tensor can be integers, string, boolean or any custom object.
-
-Here is a comparative table, not that this feature set is developing very rapidly.
-
-| Action | Tensor | CudaTensor |
-| ------ | ------ | ---------- |
-| Accessing tensor properties |[x]|[x]|
-| Tensor creation |[x]| by converting a cpu Tensor|
-| Accessing or modifying a single value |[x]|[]|
-| Iterating on a Tensor |[x]|[]|
-| Slicing a Tensor |[x]|[x]|
-| Slice mutation `a[1,_] = 10` |[x]|[]|
-| Comparison `==`|[x]| Coming soon|
-| Element-wise basic operations|[x]|[x]|
-| Universal functions |[x]|[x]|
-| Automatically broadcasted operations |[x]| Coming soon|
-| Matrix-Matrix and Matrix-Vector multiplication|[x]|[x] Note that sliced CudaTensors must explicitly be made contiguous for the moment|
-| Displaying a tensor |[x]|[x]|
-| Higher-order functions (map, apply, reduce, fold)|[x]| Apply, but only internally|
-| Transposing | [x] | [x] |
-| Converting to contiguous | [x] | [x] |
-| Reshaping |[x] | [] |
-| Explicit broadcast | [x] | Coming soon |
-| Permuting dimensions | [x]| Coming soon |
-| Concatenating tensors along existing dimension | [x]|[]|
-| Squeezing singleton dimension |[x]| Coming soon|
-| Slicing + squeezing |[x] | Coming soon |
-
-
 ### Arraymancer in action
 
 Arraymancer tutorial is available [here](https://mratsim.github.io/Arraymancer/tuto.first_steps.html).
@@ -278,3 +167,113 @@ echo j .+ k
 # |20     21      22|
 # |30     31      32|
 ```
+
+### Tensors on CPU and on Cuda
+Tensors and CudaTensors do not have the same features implemented yet.
+Also Cuda Tensors can only be float32 or float64 while Cpu Tensor can be integers, string, boolean or any custom object.
+
+Here is a comparative table, not that this feature set is developing very rapidly.
+
+| Action | Tensor | CudaTensor |
+| ------ | ------ | ---------- |
+| Accessing tensor properties |[x]|[x]|
+| Tensor creation |[x]| by converting a cpu Tensor|
+| Accessing or modifying a single value |[x]|[]|
+| Iterating on a Tensor |[x]|[]|
+| Slicing a Tensor |[x]|[x]|
+| Slice mutation `a[1,_] = 10` |[x]|[]|
+| Comparison `==`|[x]| Coming soon|
+| Element-wise basic operations|[x]|[x]|
+| Universal functions |[x]|[x]|
+| Automatically broadcasted operations |[x]| Coming soon|
+| Matrix-Matrix and Matrix-Vector multiplication|[x]|[x] Note that sliced CudaTensors must explicitly be made contiguous for the moment|
+| Displaying a tensor |[x]|[x]|
+| Higher-order functions (map, apply, reduce, fold)|[x]| Apply, but only internally|
+| Transposing | [x] | [x] |
+| Converting to contiguous | [x] | [x] |
+| Reshaping |[x] | [] |
+| Explicit broadcast | [x] | Coming soon |
+| Permuting dimensions | [x]| Coming soon |
+| Concatenating tensors along existing dimension | [x]|[]|
+| Squeezing singleton dimension |[x]| Coming soon|
+| Slicing + squeezing |[x] | Coming soon |
+
+### Speed
+
+Arraymancer is fast, how it achieves its speed under the hood is detailed [here](https://mratsim.github.io/Arraymancer/uth.speed.html).
+
+#### Micro benchmark: Int64 matrix multiplication
+
+Integers seem to be the abandoned children of ndarrays and tensors libraries. Everyone is optimising the hell of floating points. Not so with Arraymancer:
+
+```
+Archlinux, E3-1230v5 (Skylake quad-core 3.4 GHz, turbo 3.8)
+Input 1500x1500 random large int64 matrix
+Arraymancer 0.2.90 (master branch 2017-10-10)
+```
+
+| Language | Speed | Memory |
+|---|---|---|
+| Nim 0.17.3 (devel) + OpenMP | **0.36s** | 55.5 MB |
+| Julia v0.6.0 | 3.11s | 207.6 MB |
+| Python 3.6.2 + Numpy 1.12 compiled from source | 8.03s | 58.9 MB |
+
+```
+MacOS + i5-5257U (Broadwell dual-core mobile 2.7GHz, turbo 3.1)
+Input 1500x1500 random large int64 matrix
+Arraymancer 0.2.90 (master branch 2017-10-31)
+
+no OpenMP compilation: nim c -d:native -d:release --out:bin/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
+with OpenMP: nim c -d:openmp --cc:gcc --gcc.exe:"/usr/local/bin/gcc-6" --gcc.linkerexe:"/usr/local/bin/gcc-6"  -d:native -d:release --out:bin/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
+```
+
+| Language | Speed | Memory |
+|---|---|---|
+| Nim 0.18.0 (devel) - GCC 6 + OpenMP | **0.95s** | 71.9 MB |
+| Nim 0.18.0 (devel) - Apple Clang 9 - no OpenMP | **1.73s** | 71.7 MB |
+| Julia v0.6.0 | 4.49s | 185.2 MB |
+| Python 3.5.2 + Numpy 1.12 | 9.49s | 55.8 MB |
+
+Benchmark setup is in the `./benchmarks` folder and similar to (stolen from) [Kostya's](https://github.com/kostya/benchmarks#matmul). Note: Arraymancer float matmul is as fast as `Julia Native Thread`.
+
+#### Logistic regression
+On the [demo benchmark](https://github.com/edubart/arraymancer-demos), Arraymancer is faster than Torch in v0.2.90.
+
+CPU
+
+| Framework | Backend | Forward+Backward Pass Time  |
+|---|---|---|
+| Arraymancer v0.2.90| OpenMP + MKL | **0.458ms**  |
+| Torch7 | MKL | 0.686ms  |
+| Numpy | MKL | 0.723ms  |
+
+GPU
+
+| Framework | Backend | Forward+Backward Pass Time  |
+|---|---|---|
+| Arraymancer v0.2.90| Cuda | WIP  |
+| Torch7 | Cuda | 0.286ms  |
+
+#### DNN - 3 hidden layers
+
+CPU
+
+| Framework | Backend | Forward+Backward Pass Time  |
+|---|---|---|
+| Arraymancer v0.2.90| OpenMP + MKL | **2.907ms**  |
+| PyTorch | MKL | 6.797ms  |
+
+GPU
+
+| Framework | Backend | Forward+Backward Pass Time  |
+|---|---|---|
+| Arraymancer v0.2.90| Cuda | WIP |
+| PyTorch | Cuda | 4.765ms  |
+
+
+```
+Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz, gcc 7.2.0, MKL 2017.17.0.4.4, OpenBLAS 0.2.20, Cuda 8.0.61, Geforce GTX 1080 Ti, Nim 0.18.0
+```
+
+In the future, Arraymancer will leverage Nim compiler to automatically fuse operations
+like `alpha A*B + beta C` or a combination of element-wise operations. This is already done to fuse `toTensor` and `reshape`.

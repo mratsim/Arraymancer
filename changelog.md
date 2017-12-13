@@ -1,7 +1,7 @@
-Arraymancer v0.3.0
-==========================
+Arraymancer v0.3.0 Dec. 14 2017 "Wizard's First Rule"
+=====================================================
 
-I am very excited to announce the third release of Arraymancer which includes numerous improvements and (unfortunately!) breaking changes.
+I am very excited to announce the third release of Arraymancer which includes numerous improvements, features and (unfortunately!) breaking changes.
 Warning  ⚠: Deprecated ALL procs will be removed next release due to deprecated spam and to reduce maintenance burden.
 
 Changes:
@@ -14,7 +14,7 @@ Changes:
     - Arraymancer now works like Numpy and Julia, making it easier to port code.
     - Unfortunately it makes it harder to debug unexpected data sharing.
 
-- Breaking ?
+- Breaking (?)
   - The max number of dimensions supported has been reduced from 8 to 7 to reduce cache misses.
     Note, in deep learning the max number of dimensions needed is 6 for 3D videos: [batch, time, color/feature channels, Depth, Height, Width]
 
@@ -68,7 +68,7 @@ Changes:
 
 
 Arraymancer v0.2.0 Sept. 24, 2017 "The Color of Magic"
-===========================================
+======================================================
 
 I am very excited to announce the second release of Arraymancer which includes numerous improvements `blablabla` ...
 
@@ -105,8 +105,8 @@ I probably would have struggled a lot more without the guidance of Andrea's code
 Minor revisions v0.1.1 to v0.1.3
 ================================
 
-Arraymancer v0.1.0. July 12, 2017 "Magician Apprentice"
-===========================================
+Arraymancer v0.1.0 July 12, 2017 "Magician Apprentice"
+=======================================================
 
 First public release.
 

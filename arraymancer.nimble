@@ -187,7 +187,7 @@ task gen_doc, "Generate Arraymancer documentation":
     let modName = filePath[7..^5] # Removing src/nn_primitives/ (18 chars) and .nim (4 chars) # TODO: something more robust
     exec r"nim doc -o:docs/build/nn." & modName & ".html " & filePath
 
-  # Todo auto check subdir
+  # TODO auto check subdir
   for filePath in listFiles("src/nn/activation/"):
     let modName = filePath[18..^5]
     exec r"nim doc -o:docs/build/nn_activation." & modName & ".html " & filePath
@@ -203,3 +203,9 @@ task gen_doc, "Generate Arraymancer documentation":
   for filePath in listFiles("src/nn/optimizers/"):
     let modName = filePath[18..^5]
     exec r"nim doc -o:docs/build/nn_optimizers." & modName & ".html " & filePath
+
+  # Process the rst
+  for filePath in listFiles("docs/"):
+    if filePath[^4..^1] == ".rst":
+      let modName = filePath[5..^5]
+      exec r"nim rst2html -o:docs/build/" & modName & ".html " & filePath

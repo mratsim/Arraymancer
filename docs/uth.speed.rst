@@ -1,3 +1,105 @@
+Speed
+~~~~~
+
+Parallelism
+^^^^^^^^^^^
+
+Most operations in Arraymancer are parallelized through OpenMP including
+linear algebra functions, universal functions, ``map``, ``reduce`` and
+``fold`` based operations.
+
+Parallel loop fusion - YOLO (You Only Loop Once)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Arraymancer provides several constructs for the YOLO™ paradigm (You Only
+Loop Once).
+
+A naïve logistic sigmoid implementation in Numpy would be:
+
+.. code:: python
+
+    import math
+
+    def sigmoid(x):
+      return 1 / (1 + math.exp(-x))
+
+With Numpy broadcasting, all those operations would be done on whole
+tensors using Numpy C implementation, pretty efficient?
+
+Actually no, this would create lots of temporary and loops across the
+data: - ``temp1 = -x`` - ``temp2 = math.exp(temp1)`` -
+``temp3 = 1 + temp2`` - ``temp4 = 1 / temp3``
+
+So you suddenly get a o(n^4) algorithm.
+
+Arraymancer can do the same using the explicit broadcast operator ``./``
+and ``.+``. (To avoid name conflict we change the logistic sigmoid name)
+
+.. code:: nim
+
+    import arraymancer
+
+    def customSigmoid[T: SomeReal](t: Tensor[T]): Tensor[T] =
+      result = 1 ./ (1 .+ exp(-t))
+
+Well, unfortunately, the only thing we gain here is parallelism but we
+still have 4 loops over the data implicitly. Another way would be to use
+the loop fusion template ``map_inline``:
+
+.. code:: nim
+
+    import arraymancer
+
+    def customSigmoid2[T: SomeReal](t: Tensor[T]): Tensor[T] =
+      result = map_inline(t):
+        1 / (1 + exp(-x))
+
+Now in a single loop over ``t``, Arraymancer will do
+``1 / (1 + exp(-x))`` for each x found. ``x`` is a shorthand for the
+elements of the first tensor argument.
+
+Here is another example with 3 tensors and element-wise fused
+multiply-add ``C += A .* B``:
+
+.. code:: nim
+
+    import arraymancer
+
+    def fusedMultiplyAdd[T: SomeNumber](c: var Tensor[T], a, b: Tensor[T]) =
+      ## Implements C += A .* B, .* is the element-wise multiply
+      apply3_inline(c, a, b):
+        x += y * z
+
+Since the tensor were given in order (c, a, b): - x corresponds to
+elements of c - y to a - z to b
+
+Today Arraymancer offers ``map_inline``, ``map2_inline``,
+``apply_inline``, ``apply2_inline`` and ``apply3_inline``.
+
+Those are also parallelized using OpenMP. In the future, this will be
+generalized to N inputs.
+
+Similarly, ``reduce_inline`` and ``fold_inline`` are offered for
+parallel, custom, fused reductions operations.
+
+Memory allocation
+^^^^^^^^^^^^^^^^^
+
+For most operations in machine learning, memory and cache is the
+bottleneck, for example taking the log of a Tensor can use at most 20%
+of your theoretical max CPU speed (in GFLOPS) while matrix
+multiplication can use 70%-90%+ for the best implementations (MKL,
+OpenBLAS).
+
+In the log case, the processor gives a result faster than it can load
+data into its cache. In the matrix multiplication case, each element of
+a matrix can be reused several times before loading data again.
+
+Arraymancer strives hard to limit memory allocation with the ``inline``
+version of ``map``, ``apply``, ``reduce``, ``fold`` (``map_inline``,
+``apply_inline``, ``reduce_inline``, ``fold_inline``) mentioned above
+that avoids intermediate results.
+
 Micro benchmark: Int64 matrix multiplication
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

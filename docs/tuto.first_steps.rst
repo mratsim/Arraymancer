@@ -137,9 +137,13 @@ Tensors value can be retrieved or set with array brackets.
 Copying
 ~~~~~~~
 
-Tensor copy is deep by default (all the data is copied). In the majority
-of cases Nim compiler will detect and avoid useless copies.
+Warning ⚠: When you do the following, both tensors ``a`` and ``b`` will share data.
+Full copy must be explicitly requested via the ``clone`` function.
 
-``unsafeView`` can be used on a Tensor to enforce shallow copying (data
-is shared between the 2 variables). Most shape manipulation proc also
-have an ``unsafe`` version.
+.. code:: nim
+    let a = toSeq(1..24).toTensor().reshape(2,3,4)
+    var b = a
+
+Here modifying ``b`` WILL modify ``a``.
+This behaviour is the same as Numpy and Julia,
+reasons can be found in the following `under the hood article<https://mratsim.github.io/Arraymancer/uth.copy_semantics.html>`_.

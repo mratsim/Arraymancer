@@ -23,8 +23,6 @@ seconds on my dual-core MacBook.
 Why Arraymancer
 ---------------
 
-I’ve identified several issues I want to tackle with Arraymancer:
-
 The Python community is struggling to bring Numpy up-to-speed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -74,14 +72,6 @@ The deep learning frameworks are currently in two camps: - Research:
 Theano, Tensorflow, Keras, Torch, PyTorch - Production: Caffe, Darknet,
 (Tensorflow)
 
-Putting a research model in production, on a drone or as a webservice
-for example, is difficult: - Transforming a tuned research model (in
-Python) to a usable Caffe or Darknet model (in C) is not trivial. ~PMML
-is supposed to be the “common” XML description of ML models but is not
-really supported by anyone.~  **Edit - Sept 7, 2017: Microsoft and
-Facebook are announcing `Open Neural Network
-Exchange <https://research.fb.com/facebook-and-microsoft-introduce-new-open-ecosystem-for-interchangeable-ai-frameworks/>`__**
-
 Furthermore, Python preprocessing steps, unless using OpenCV, often
 needs a custom implementation (think text/speech preprocessing on
 phones).
@@ -101,22 +91,28 @@ All those pain points may seem like a huge undertaking however thanks to
 the Nim language, we can have Arraymancer: - Be as fast as C -
 Accelerated routines with Intel MKL/OpenBLAS or even NNPACK - Access to
 CUDA and CuDNN and generate custom CUDA kernels on the fly via
-metaprogramming. - A Python-like syntax with custom operators ``a * b``
-for tensor multiplication instead of ``a.dot(b)`` (Numpy/Tensorflow) or
-``a.mm(b)`` (Torch) - Numpy-like slicing ergonomics ``t[0..4, 2..10|2]``
-- For everything that Nim doesn’t have yet, you can use Nim bindings to
-C, C++, Objective-C or Javascript to bring it to Nim. Nim also has
-unofficial Python->Nim and Nim->Python wrappers.
+metaprogramming.
+
+  - A Python-like syntax with custom operators ``a * b``
+   for tensor multiplication instead of ``a.dot(b)`` (Numpy/Tensorflow) or
+   ``a.mm(b)`` (Torch) - Numpy-like slicing ergonomics ``t[0..4, 2..10|2]``
+  - For everything that Nim doesn’t have yet, you can use Nim bindings to
+   C, C++, Objective-C or Javascript to bring it to Nim. Nim also has
+   unofficial Python->Nim and Nim->Python wrappers.
 
 Future ambitions
 ----------------
 
 Because apparently to be successful you need a vision, I would like
-Arraymancer to be: - The go-to tool for Deep Learning video processing.
-I.e. ``vid = load_video("./cats/youtube_cat_video.mkv")`` - Target
-javascript, WebAssembly, Apple Metal, ARM devices, AMD Rocm, OpenCL, you
-name it. - Target cryptominers FPGAs because they drove the price of
-GPUs for honest deep-learners too high.
+Arraymancer to be:
+
+- The go-to tool for Deep Learning video processing.
+  I.e. ``vid = load_video("./cats/youtube_cat_video.mkv")``
+- Target javascript, WebAssembly, Apple Metal, ARM devices, AMD Rocm, OpenCL, you
+  name it.
+- Target cryptominers FPGAs because they drove the price of
+  GPUs for honest deep-learners too high.
+- The base of a Starcraft II AI bot.
 
 Support (Types, OS, Hardware)
 -----------------------------

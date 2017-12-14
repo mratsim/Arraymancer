@@ -1,5 +1,5 @@
 ### Package
-version       = "0.3.0"
+version       = "0.3.90"
 author        = "Mamy André-Ratsimbazafy"
 description   = "A n-dimensional tensor (ndarray) library"
 license       = "Apache License 2.0"
@@ -124,8 +124,8 @@ task test_cuda, "Run all tests - Cuda backend with CUBLAS and CuDNN":
                 # hence the need to call cudaSwitches explicitly
   test "tests_cuda", "cpp"
 
-task test_deprecated, "Run all tests on deprecated static[Backend] procs":
-  test "tests_cpu_deprecated"
+# task test_deprecated, "Run all tests on deprecated procs":
+#  test "tests_cpu_deprecated"
 
 task test_openblas, "Run all tests - OpenBLAS":
   switch("define","blas=openblas")

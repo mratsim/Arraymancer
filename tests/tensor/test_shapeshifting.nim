@@ -116,14 +116,6 @@ suite "Shapeshifting":
 
       check: b == [4, 3, 2, 1, 8, 7, 6, 5].toTensor.reshape(2,1,4)
 
-  test "To tensor reshape":
-    block:
-      var s = @[1,2,3,4]
-      var a = s.unsafeToTensorReshape([2,2])
-      check a == [[1,2],[3,4]].toTensor()
-      s[0] = 0
-      check a == [[0,2],[3,4]].toTensor()
-
   test "Unsqueeze":
     block:
       let a = toSeq(1..12).toTensor().reshape(3,4)

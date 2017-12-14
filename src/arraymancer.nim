@@ -31,6 +31,7 @@ import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros,
 import  ./tensor/tensor,
         ./nn_primitives/nn_primitives,
         ./autograd/autograd,
-        ./nn/nn
+        ./nn/nn,
+        ./datasets/mnist
 
-export tensor, nn_primitives, autograd, nn
+export tensor, nn_primitives, autograd, nn, mnist

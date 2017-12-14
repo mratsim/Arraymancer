@@ -30,7 +30,7 @@ proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, 
   ## Result:
   ##      - A Tensor of the proper shape with NO initialization
   ## Warning ⚠
-  ##   Tensor data is uninitialized an contains garbage.
+  ##   Tensor data is uninitialized and contains garbage.
   tensorCpu(shape, result)
   result.data = newSeqUninit[T](result.size)
 
@@ -42,7 +42,7 @@ proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noSideEffect,noInit,
   ## Result:
   ##      - A Tensor of the proper shape with NO initialization
   ## Warning ⚠
-  ##   Tensor data is uninitialized an contains garbage.
+  ##   Tensor data is uninitialized and contains garbage.
   tensorCpu(shape, result)
   result.data = newSeqUninit[T](result.size)
 

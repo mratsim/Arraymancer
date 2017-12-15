@@ -57,6 +57,19 @@ proc readInt32BE(fs: FileStream): int32 =
   bigEndian32(addr result, addr little_endian)
 
 proc read_mnist_images*(imgsPath: string): Tensor[uint8] {.noInit.}=
+  ## Load MNIST images into a Tensor[uint8]
+  ## Input:
+  ##   - A path to a MNIST images file
+  ##
+  ## Returns:
+  ##   - A tensor of images with shape (N, H, W)
+  ##     - N, number of images
+  ##     - H, height
+  ##     - W, width
+  ##
+  ## MNIST data can be downloaded here: http://yann.lecun.com/exdb/mnist/
+  ## It must be uncompressed before use. Download and decompression will be automated in the future.
+  # Compressed reader pending https://github.com/nim-lang/zip/pull/20
   if not existsFile(imgsPath):
     raise newException(IOError, "MNIST images file \"" & imgsPath & "\" does not exist")
 
@@ -73,8 +86,20 @@ proc read_mnist_images*(imgsPath: string): Tensor[uint8] {.noInit.}=
   result = newTensorUninit[uint8](n_imgs, n_rows, n_cols)
   discard fs.readData(result.get_data_ptr, result.size)
 
-
 proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noInit.}=
+  ## Load MNIST labels into a Tensor[uint8]
+  ## Input:
+  ##   - A path to a MNIST labels file
+  ##
+  ## Returns:
+  ##   - A tensor of images with shape (N, H, W)
+  ##     - N, number of images
+  ##     - H, height
+  ##     - W, width
+  ##
+  ## MNIST data can be downloaded here: http://yann.lecun.com/exdb/mnist/
+  ## It must be uncompressed before use.  Download and decompression will be automated in the future.
+  # Compressed reader pending https://github.com/nim-lang/zip/pull/20
   if not existsFile(labelsPath):
     raise newException(IOError, "MNIST labels file \"" & labelsPath & "\" does not exist")
 

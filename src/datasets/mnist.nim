@@ -52,8 +52,8 @@
 import  streams, endians, os,
         ../tensor/tensor
 
-proc readInt32BE(fs: FileStream): int32 =
-  var little_endian = fs.readInt32
+proc readInt32BE(stream: FileStream): int32 =
+  var little_endian = stream.readInt32
   bigEndian32(addr result, addr little_endian)
 
 proc read_mnist_images*(imgsPath: string): Tensor[uint8] {.noInit.}=
@@ -73,18 +73,18 @@ proc read_mnist_images*(imgsPath: string): Tensor[uint8] {.noInit.}=
   if not existsFile(imgsPath):
     raise newException(IOError, "MNIST images file \"" & imgsPath & "\" does not exist")
 
-  var fs = newFileStream(imgsPath, mode = fmRead)
+  let stream = newFileStream(imgsPath, mode = fmRead)
 
-  let magic_number = fs.readInt32BE
+  let magic_number = stream.readInt32BE
   assert magic_number == 2051'i32, "This file is not a MNIST images file, did you forget to decompress it?"
 
   let
-    n_imgs = fs.readInt32BE.int
-    n_rows = fs.readInt32BE.int
-    n_cols = fs.readInt32BE.int
+    n_imgs = stream.readInt32BE.int
+    n_rows = stream.readInt32BE.int
+    n_cols = stream.readInt32BE.int
 
   result = newTensorUninit[uint8](n_imgs, n_rows, n_cols)
-  discard fs.readData(result.get_data_ptr, result.size)
+  discard stream.readData(result.get_data_ptr, result.size)
 
 proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noInit.}=
   ## Load MNIST labels into a Tensor[uint8]
@@ -103,13 +103,13 @@ proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noInit.}=
   if not existsFile(labelsPath):
     raise newException(IOError, "MNIST labels file \"" & labelsPath & "\" does not exist")
 
-  var fs = newFileStream(labelsPath, mode = fmRead)
+  let stream = newFileStream(labelsPath, mode = fmRead)
 
-  let magic_number = fs.readInt32BE
+  let magic_number = stream.readInt32BE
   assert magic_number == 2049'i32, "This file is not a MNIST labels file, did you forget to decompress it?"
 
   let
-    n_labels = fs.readInt32BE.int
+    n_labels = stream.readInt32BE.int
 
   result = newTensorUninit[uint8](n_labels)
-  discard fs.readData(result.get_data_ptr, result.size)
+  discard stream.readData(result.get_data_ptr, result.size)

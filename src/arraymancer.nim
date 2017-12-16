@@ -33,11 +33,13 @@ import  ./tensor/tensor,
         ./autograd/autograd,
         ./nn/nn,
         ./datasets/mnist,
-        ./io/io_csv
+        ./io/io_csv,
+        ./ml/ml
 
 export  tensor,
         nn_primitives,
         autograd,
         nn,
         mnist,
-        io_csv
+        io_csv,
+        ml

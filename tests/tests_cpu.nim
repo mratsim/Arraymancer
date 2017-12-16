@@ -14,7 +14,7 @@
 
 import ../src/arraymancer,
         ./tensor/test_init,
-        ./tensor/test_comparison,
+        ./tensor/test_operators_comparison,
         ./tensor/test_accessors,
         ./tensor/test_accessors_slicer,
         ./tensor/test_display,
@@ -30,6 +30,7 @@ import ../src/arraymancer,
         ./tensor/test_bugtracker,
         ./nn_primitives/test_nnp_convolution,
         ./nn_primitives/test_nnp_loss,
-        ./autograd/test_gate_blas
+        ./autograd/test_gate_blas,
+        ./ml/test_metrics
 
 import ./stability_tests/test_stability_openmp

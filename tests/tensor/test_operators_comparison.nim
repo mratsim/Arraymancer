@@ -45,6 +45,14 @@ suite "Testing tensor comparison":
 
     let test = @[@[4, 8, 16], @[9, 27, 81], @[16, 64, 256]]
     let t_test = test.toTensor()
-    
+
     check: t_van[1..^2,1..3] == t_test
     check: t_van[1..3,1..3] == t_test
+
+  test "Testing element-wise comparison":
+    let
+      a = [0, 2, 1, 3].toTensor
+      b = [0, 1, 2, 3].toTensor
+
+    check: (a .== b) == [true, false, false, true].toTensor
+    check: (a .> b)  == [false, true, false, false].toTensor

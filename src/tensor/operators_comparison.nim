@@ -32,6 +32,13 @@ proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
 # ###############
 # broadcasted ops
 
+template gen_broadcasted_comparison(op: untyped): untyped =
+  let (tmp_a, tmp_b) = broadcast2(a, b)
+  result = newTensorUninit[bool](tmp_a.shape)
+  apply3_inline(result, tmp_a, tmp_b):
+    op(y, z)
+
+
 proc `.==`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ## Tensor element-wise equality.
   ##
@@ -39,8 +46,8 @@ proc `.==`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##
   ## Returns:
   ##   - A tensor of boolean
-  let (tmp_a, tmp_b) = broadcast2(a, b)
-  result = map2_inline(tmp_a, tmp_b, x == y)
+  gen_broadcasted_comparison(`==`)
+
 
 proc `.!=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ## Tensor element-wise inequality.
@@ -49,8 +56,7 @@ proc `.!=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##
   ## Returns:
   ##   - A tensor of boolean
-  let (tmp_a, tmp_b) = broadcast2(a, b)
-  result = map2_inline(tmp_a, tmp_b, x != y)
+  gen_broadcasted_comparison(`!=`)
 
 proc `.<=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ## Tensor element-wise lesser or equal.
@@ -59,8 +65,7 @@ proc `.<=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##
   ## Returns:
   ##   - A tensor of boolean
-  let (tmp_a, tmp_b) = broadcast2(a, b)
-  result = map2_inline(tmp_a, tmp_b, x <= y)
+  gen_broadcasted_comparison(`<=`)
 
 proc `.<`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ## Tensor element-wise lesser than.
@@ -69,8 +74,7 @@ proc `.<`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##
   ## Returns:
   ##   - A tensor of boolean
-  let (tmp_a, tmp_b) = broadcast2(a, b)
-  result = map2_inline(tmp_a, tmp_b, x < y)
+  gen_broadcasted_comparison(`<`)
 
 proc `.>=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ## Tensor element-wise greater or equal.
@@ -79,8 +83,7 @@ proc `.>=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##
   ## Returns:
   ##   - A tensor of boolean
-  let (tmp_a, tmp_b) = broadcast2(a, b)
-  result = map2_inline(tmp_a, tmp_b, x >= y)
+  gen_broadcasted_comparison(`>=`)
 
 proc `.>`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ## Tensor element-wise greater than.
@@ -89,5 +92,4 @@ proc `.>`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##
   ## Returns:
   ##   - A tensor of boolean
-  let (tmp_a, tmp_b) = broadcast2(a, b)
-  result = map2_inline(tmp_a, tmp_b, x > y)
+  gen_broadcasted_comparison(`>`)

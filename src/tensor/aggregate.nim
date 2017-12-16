@@ -43,10 +43,14 @@ proc product*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.}=
 
 proc mean*[T: SomeInteger](t: Tensor[T]): T {.inline.}=
   ## Compute the mean of all elements
+  ##
+  ## Warning ⚠: Since input is integer, output will also be integer (using integer division)
   t.sum div t.size.T
 
 proc mean*[T: SomeInteger](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
   ## Compute the mean along an axis
+  ##
+  ## Warning ⚠: Since input is integer, output will also be integer (using integer division)
   t.sum(axis) div t.shape[axis].T
 
 proc mean*[T: SomeReal](t: Tensor[T]): T {.inline.}=

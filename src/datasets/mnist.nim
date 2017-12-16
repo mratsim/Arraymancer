@@ -76,7 +76,7 @@ proc read_mnist_images*(imgsPath: string): Tensor[uint8] {.noInit.}=
   let stream = newFileStream(imgsPath, mode = fmRead)
 
   let magic_number = stream.readInt32BE
-  assert magic_number == 2051'i32, "This file is not a MNIST images file, did you forget to decompress it?"
+  doAssert magic_number == 2051'i32, "This file is not a MNIST images file, did you forget to decompress it?"
 
   let
     n_imgs = stream.readInt32BE.int
@@ -106,7 +106,7 @@ proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noInit.}=
   let stream = newFileStream(labelsPath, mode = fmRead)
 
   let magic_number = stream.readInt32BE
-  assert magic_number == 2049'i32, "This file is not a MNIST labels file, did you forget to decompress it?"
+  doAssert magic_number == 2049'i32, "This file is not a MNIST labels file, did you forget to decompress it?"
 
   let
     n_labels = stream.readInt32BE.int

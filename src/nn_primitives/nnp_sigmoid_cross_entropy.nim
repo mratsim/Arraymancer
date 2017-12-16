@@ -29,7 +29,7 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T =
   ## Returns:
   ##   - Apply a sigmoid activation and returns the cross-entropy loss.
   ## Shape:
-  ##   - Both the cache and target shape should be [features, batchsize] i.e. number of samples as last dimension
+  ##   - Both the cache and target shape should be [batch_size, features] i.e. number of samples as first dimension
   # TODO: add a `batch_axis` parameter
 
   # TODO: term rewriting macro for auto fusion
@@ -37,7 +37,8 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T =
   when compileOption("boundChecks"):
     check_input_target(input, target)
 
-  # input.shape[1] is the batch size
+  let batch_size = input.shape[0]
+
   # ln1p(x) does ln(1 + x) but avoids catastrophic cancellation if x << 1.
 
   # result = 0.T
@@ -50,7 +51,7 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T =
       -y * x +  max(x,0) + ln1p(exp(-abs(x))) # This leverage the logsumexp trick to improve numerical stability
 
   # Normalize by batch_size
-  result /= T(input.shape[1])
+  result /= T(batch_size)
 
 proc sigmoid_cross_entropy_backward*[T](
         gradient: Tensor[T] or T,
@@ -63,10 +64,10 @@ proc sigmoid_cross_entropy_backward*[T](
   ##   - A cache tensor that contains data from before the forward pass
   ##   - The target values
   ## Shape:
-  ##   - Both the cache and target shape should be [features, batchsize] i.e. number of samples as last dimension
+  ##   - Both the cache and target shape should be [batch_size, features] i.e. number of samples as first dimension
   # TODO: add a `batch_axis` parameter
 
-  let batch_size = cached_tensor.shape[^1]
+  let batch_size = cached_tensor.shape[0]
 
   # Deal with scalar and tensor gradient
   when gradient is T:

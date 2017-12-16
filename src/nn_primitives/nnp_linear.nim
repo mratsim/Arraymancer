@@ -15,35 +15,50 @@
 import  ../tensor/tensor,
         math
 
-# Sigmoid cross-entropy function that works directly on Tensors
-# and provide control without autograd
-
 # Linear forward and backward
-# TODO: layout version to accept both:
-# - batch_first, NCHW (5D: NTCHW or NDCHW)
-# - batch_last, CHWN (5D: CHWNT or CHWND) tensors.
-proc linear*[T](x: var Tensor[T], weight: Tensor[T], bias: Tensor[T]) {.inline.} =
-  x = weight * x
-  x .+= bias
 
-proc linear*[T](x: var Tensor[T], weight: Tensor[T]) {.inline.} =
-  x = weight * x
+proc linear*[T](input, weight: Tensor[T], bias: Tensor[T], output: var Tensor[T]) {.inline.} =
+  # Linear (Dense) forward primitive with bias
+  #   - input tensor shape [batch_size, in_features]
+  #   - weight tensor shape [out_features, in_features]
+  #   - bias tensor shape [batch_size, out_features]
+  # Output does not need to be initialized to 0 or the proper shape, data will be overwritten
+  # Output is: Y = x * W.transpose + b
+  output = input * weight.transpose
+  output .+= bias
+
+proc linear*[T](input, weight: Tensor[T], output: var Tensor[T]) {.inline.} =
+  # Linear (Dense) forward primitive with bias
+  #   - input tensor shape [batch_size, in_features]
+  #   - weight tensor shape [out_features, in_features]
+  # Output does not need to be initialized to 0 or the proper shape, data will be overwritten
+  # Output is: Y = x * W.transpose
+  output = input * weight.transpose
 
 proc linear_backward*[T](
-        gradient: Tensor[T],
-        cached_tensor,
-        weight, bias: Tensor[T],
-        dW, db: var Tensor[T]): Tensor[T] {.inline.} =
-  result = weight.transpose * gradient
-  gemm(gradient, cached_tensor.transpose, dW)
+        input,
+        weight,
+        bias,
+        gradOutput: Tensor[T],
+        gradInput,
+        gradWeight,
+        gradBias: var Tensor[T]) {.inline.} =
+  # Linear (Dense) backward primitive with bias
+  # Tensors are expected in a batch first shape [batch_size, n_features]
+  # var Tensors do not need to be initialized to 0 or the proper shape, data will be overwritten
+  gradInput = gradOutput * weight
+  gradWeight = gradOutput.transpose * input
 
-  db = sum(gradient, axis=0) # https://mlxai.github.io/2017/01/10/a-modular-approach-to-implementing-fully-connected-neural-networks.html
+  gradBias = sum(gradOutput, axis=0) # https://mlxai.github.io/2017/01/10/a-modular-approach-to-implementing-fully-connected-neural-networks.html
 
 proc linear_backward*[T](
-        gradient: Tensor[T],
-        cached_tensor,
-        weight: Tensor[T],
-        dW: var Tensor[T]): Tensor[T] {.inline.} =
-  result = weight.transpose * gradient
-  gemm(gradient, cached_tensor.transpose, dW)
+        input,
+        weight,
+        gradOutput: Tensor[T],
+        gradInput,
+        gradWeight: var Tensor[T]) {.inline.} =
+  # Linear (Dense) backward primitive without bias
+  # Tensors are expected in a batch first shape [batch_size, n_features]
+  gradInput = gradOutput * weight
+  gradWeight = gradOutput.transpose * input
 

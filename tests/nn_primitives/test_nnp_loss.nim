@@ -15,7 +15,7 @@
 import ../../src/arraymancer, unittest
 
 
-suite "Loss functions":
+suite "[NN primitives] Loss functions":
   proc `~=`[T: SomeReal](a, b: T): bool =
     let eps = 2e-5.T
     result = abs(a - b) <= eps
@@ -25,9 +25,9 @@ suite "Loss functions":
     block: # Simple test, no batch
       # https://www.pyimagesearch.com/2016/09/12/softmax-classifiers-explained/
 
-      # Reminder, for now batch_size is the innermost index
-      let predicted = [-3.44, 1.16, -0.81, 3.91].toTensor.reshape(4,1)
-      let truth = [0'f64, 0, 0, 1].toTensor.reshape(4,1)
+      # Creating tensor of shape [batchsize, features]
+      let predicted = [-3.44, 1.16, -0.81, 3.91].toTensor.reshape(1,4)
+      let truth = [0'f64, 0, 0, 1].toTensor.reshape(1,4)
 
       let sce_loss = softmax_cross_entropy(predicted, truth)
       check: sce_loss ~= 0.0709
@@ -64,15 +64,15 @@ suite "Loss functions":
       # Create a sparse label tensor of shape: [batch_size]
       let sparse_labels = randomTensor(batch_size, nb_classes)
 
-      # Create the corresponding dense label tensor of shape [nb_classes, batch_size]
-      var labels = zeros[float64](nb_classes, batch_size)
+      # Create the corresponding dense label tensor of shape [batch_size, nb_classes]
+      var labels = zeros[float64](batch_size, nb_classes)
 
       # Fill in the non-zeros values
       for sample_id, nonzero_idx in enumerate(sparse_labels):
-        labels[nonzero_idx, sample_id] = 1
+        labels[sample_id, nonzero_idx] = 1
 
       # Create a random tensor with predictions:
-      let pred = randomTensor(nb_classes, batch_size, -1.0..1.0)
+      let pred = randomTensor(batch_size, nb_classes, -1.0..1.0)
 
       let sce_loss = softmax_cross_entropy(pred, labels)
       let sparse_sce_loss = sparse_softmax_cross_entropy(pred, sparse_labels)

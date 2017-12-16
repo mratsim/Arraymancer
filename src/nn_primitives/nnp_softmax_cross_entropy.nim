@@ -25,8 +25,8 @@ proc softmax_cross_entropy*[T](input, target: Tensor[T]): T =
   ## Softmax function + Cross-Entropy loss fused in one layer.
   ##
   ## Input:
-  ##   - A Tensor of shape [predicted_labels_probabilities, batchsize]
-  ##   - The target values of shape [truth_labels_probability, batchsize]
+  ##   - A Tensor of shape [batch_size, predicted_labels_probabilities]
+  ##   - The target values of shape [batchsize, truth_labels_probability]
   ## Returns:
   ##   - Apply a softmax activation and returns the cross-entropy loss.
   ##
@@ -49,11 +49,11 @@ proc softmax_cross_entropy*[T](input, target: Tensor[T]): T =
   when compileOption("boundChecks"):
     check_input_target(input, target)
 
-  let batch_size = input.shape[1]
+  let batch_size = input.shape[0]
   # See at the bottom of the file for explanation/proof
   result = frobenius_inner_prod(input, target)
 
-  let sum_logsumexp = fold_axis_inline(input, T, fold_axis=1) do:
+  let sum_logsumexp = fold_axis_inline(input, T, fold_axis=0) do:
     x = y.logsumexp
   do:
     x += y.logsumexp
@@ -66,7 +66,7 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
   ## Softmax function + Cross-Entropy loss fused in one layer.
   ##
   ## Input:
-  ##   - A Tensor of shape [predicted_labels_probabilities, batchsize]
+  ##   - A Tensor of shape [batchsize, predicted_labels_probabilities]
   ##   - The target values of shape [batchsize] containing the truth label id
   ## Returns:
   ##   - Apply a softmax activation and returns the cross-entropy loss.
@@ -88,7 +88,7 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
 
   # TODO: term rewriting macro for auto fusion
 
-  let batch_size = input.shape[1]
+  let batch_size = input.shape[0]
 
   # TODO proper check
   assert batch_size == target.shape[0]
@@ -96,13 +96,13 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
   # See at the bottom of the file for explanation/proof
   # ∑i(- ti * yi) is either -yi or 0 in the sparse case.
   # Since target holds coordinates: ∑i(- ti * yi) = - yi[ti]
-  for i in 0||(input.shape[1]-1):
-    let lse = input[_,i].logsumexp
+  for i in 0||(input.shape[0]-1):
+    let lse = input[i,_].logsumexp
 
     when not declared(openmp):
-      result += lse - input[target[i], i]
+      result += lse - input[i, target[i]]
     else:
-      let tmp = lse - input[target[i], i]
+      let tmp = lse - input[i, target[i]]
       {.emit:"#pragma omp atomic".}
       {.emit:"`result` += `tmp`;".}
 
@@ -129,10 +129,10 @@ proc softmax_cross_entropy_backward*[T](
   ##   - A cache tensor that contains data from before the forward pass
   ##   - The target values
   ## Shape:
-  ##   - Both the cache and target shape should be [features, batchsize] i.e. number of samples as last dimension
+  ##   - Both the cache and target shape should be [batchsize, features] i.e. number of samples as first dimension
   # TODO: add a `batch_axis` parameter
 
-  let batch_size = cached_tensor.shape[1]
+  let batch_size = cached_tensor.shape[0]
 
   # Deal with scalar and tensor gradient
   when gradient is T:
@@ -140,7 +140,7 @@ proc softmax_cross_entropy_backward*[T](
   elif gradient is Tensor:
     let grad = gradient.data[gradient.offset]
 
-  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).broadcast(cached_tensor.shape)
+  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 0).broadcast(cached_tensor.shape)
 
   result = map3_inline(cached_tensor, target, axis_max_sumexp):
       grad * (stable_softmax(x, z.max, z.sumexp) - y) / T(batch_size)
@@ -167,18 +167,16 @@ proc sparse_softmax_cross_entropy_backward*[T](
   elif gradient is Tensor:
     let grad = gradient.data[gradient.offset]
 
-  let batch_size = cached_tensor.shape[1]
+  let batch_size = cached_tensor.shape[0]
 
   result = zeros_like(cached_tensor)
   # With sparse target grad * (softmax - y) becomes:
   #   - "grad * (softmax - 1)" for the truth labels
   #   - "grad * softmax for the wrong labels
   for i, truth_idx in enumerate(target):
-    result[truth_idx, i] = -1
+    result[i, truth_idx] = -1
 
-  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 1).broadcast(cached_tensor.shape)
-  # let axis_max_sumexp = cached_tensor.classic_max_sumexp(axis = 1).broadcast(cached_tensor.shape)
-
+  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 0).broadcast(cached_tensor.shape)
 
   apply3_inline(result, cached_tensor, axis_max_sumexp):
       grad * (stable_softmax(y, z.max, z.sumexp) + x) / T(batch_size)

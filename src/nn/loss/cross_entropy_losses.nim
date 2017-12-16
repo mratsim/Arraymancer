@@ -27,7 +27,7 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
     # target, from Loss
 
   method forward*[TT](self: LossType[TT], a: Variable[TT], target: TT): Variable[TT] {.inline, locks:0.}=
-    # We expect a in shape [features, batch_size]
+    # We expect a in shape [batch_size, features]
 
     new result
     result.tape = a.tape
@@ -74,7 +74,7 @@ type SparseSoftmaxCrossEntropyLoss* {.final.} [TT] = ref object of SparseLoss[TT
   # target, from Loss
 
 method forward*[TT](self: SparseSoftmaxCrossEntropyLoss[TT], a: Variable[TT], target: Tensor[int]): Variable[TT] {.inline, locks:0.}=
-  # We expect a in shape [features, batch_size]
+  # We expect a in shape [batch_size, features]
 
   new result
   result.tape = a.tape

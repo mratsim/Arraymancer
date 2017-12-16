@@ -65,3 +65,47 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
 
 gen_cross_entropy_loss SigmoidCrossEntropyLoss, sigmoid_cross_entropy, sigmoid_cross_entropy_backward
 gen_cross_entropy_loss SoftmaxCrossEntropyLoss, softmax_cross_entropy, softmax_cross_entropy_backward
+
+
+
+type SparseSoftmaxCrossEntropyLoss* {.final.} [TT] = ref object of SparseLoss[TT]
+  cache: Variable[TT]
+  # arity, from Gate
+  # target, from Loss
+
+method forward*[TT](self: SparseSoftmaxCrossEntropyLoss[TT], a: Variable[TT], target: Tensor[int]): Variable[TT] {.inline, locks:0.}=
+  # We expect a in shape [features, batch_size]
+
+  new result
+  result.tape = a.tape
+
+  # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
+  result.value = [sparse_softmax_crossentropy(a.value, target)].toTensor
+
+  result.grad = zeros[getSubType(TT)](1)
+
+
+method backward*[TT](self: SparseSoftmaxCrossEntropyLoss[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  result[0] = sparse_softmax_crossentropy_backward(gradient, self.cache.value, self.target)
+
+proc forward_proc*[TT](a: Variable[TT], target: TT): Variable[TT] =
+  # Gate
+  var gate: SparseSoftmaxCrossEntropyLoss[TT]
+  new gate
+  gate.arity = 1
+  gate.cache = a
+  gate.target = target
+
+  # Node
+  var node: Node[TT]
+  new node
+
+  node.gate = gate
+  node.parents[0] = a
+
+  a.tape.push(node)
+
+  # Resulting var
+  result = gate.forward(a, target)
+  result.ancestor = node
+  node.child = result

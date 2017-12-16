@@ -21,7 +21,17 @@ proc read_csv*[T: SomeNumber|bool|string](
        skip_header = false,
        separator = ',',
        quote = '\"'
-       ): Tensor[T] {.noInit.}=
+       ): Tensor[T] {.noInit.} =
+  ## Load a csv into a Tensor. All values must be of the same type.
+  ##
+  ## If there is a header row, it can be skipped.
+  ##
+  ## Input:
+  ##   - csvPath: a path to the csvfile
+  ##   - skip_header: should read_csv skip the first row
+  ##   - separator: a char, default ','
+  ##   - quote: a char, default '\"' (single and double quotes must be escaped).
+  ##     Separators inside quoted strings are ignored, for example: `"foo", "bar, baz"` corresponds to 2 columns not 3.
 
   var parser: proc(x:string): T
   when T is SomeSignedInt:
@@ -63,6 +73,8 @@ proc read_csv*[T: SomeNumber|bool|string](
   # Finalizing
   let num_rows= if skip_header: csv.processedRows - 2
                 else: csv.processedRows - 1
+
+  csv.close
 
   result = newTensorUninit[T](num_rows, num_cols)
   shallowCopy(result.storage.Fdata, csvdata)

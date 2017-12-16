@@ -273,18 +273,6 @@ iterator menumerateZip*[T,U](t1: var Tensor[T], t2: Tensor[U], offset, size: int
   dualStridedIteration(IterKind.Iter_Values, t1, t2, offset, size)
 
 template axisIterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyped =
-  ## Inline iterator over an axis.
-  ##
-  ## Returns:
-  ##   - A slice along the given axis at each iteration.
-  ##
-  ## Note: The slice dimension is not collapsed by default.
-  ## You can use ``squeeze`` to collapse it.
-  ##
-  ## Usage:
-  ##  .. code:: nim
-  ##     for subtensor in t.axis(1):
-  ##       # do stuff
   when compileOption("boundChecks"):
     check_axis_index(t, axis, iter_offset)
     check_axis_index(t, axis, iter_offset+iter_size-1)
@@ -297,18 +285,6 @@ template axisIterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyp
 
 
 template dualAxisIterator[T, U](a: Tensor[T], b: Tensor[U], axis, iter_offset, iter_size: int): untyped =
-  ## Inline iterator over 2 tensors over an axis.
-  ##
-  ## Returns:
-  ##   - 2 slices along the given axis at each iteration.
-  ##
-  ## Note: The slice dimension is not collapsed by default.
-  ## You can use ``squeeze`` to collapse it.
-  ##
-  ## Usage:
-  ##  .. code:: nim
-  ##     for subtensor in axis(a, b, 1):
-  ##       # do stuff
   when compileOption("boundChecks"):
     check_axis_index(a, axis, iter_offset)
     check_axis_index(b, axis, iter_offset+iter_size-1)
@@ -323,10 +299,60 @@ template dualAxisIterator[T, U](a: Tensor[T], b: Tensor[U], axis, iter_offset, i
     out_b.offset += b.strides[axis]
 
 iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] {.inline.}=
+  ## Inline iterator over an axis.
+  ##
+  ## Returns:
+  ##   - A slice along the given axis at each iteration.
+  ##
+  ## Note: The slice dimension is not collapsed by default.
+  ## You can use ``squeeze`` to collapse it.
+  ##
+  ## Usage:
+  ##  .. code:: nim
+  ##     for subtensor in t.axis(1):
+  ##       # do stuff
   axisIterator(t, axis, 0, t.shape[axis])
 
 iterator axis*[T](t: Tensor[T], axis, offset, size: int): Tensor[T] {.inline.}=
   axisIterator(t, axis, offset, size)
 
 iterator zipAxis*[T, U](a: Tensor[T], b: Tensor[U], axis: int): tuple[a: Tensor[T], b: Tensor[U]] {.inline.}=
+  ## Inline iterator over 2 tensors over an axis.
+  ##
+  ## Returns:
+  ##   - 2 slices along the given axis at each iteration.
+  ##
+  ## Note: The slice dimension is not collapsed by default.
+  ## You can use ``squeeze`` to collapse it.
+  ##
+  ## Usage:
+  ##  .. code:: nim
+  ##     for subtensor in axis(a, b, 1):
+  ##       # do stuff
   dualAxisIterator(a, b, axis, 0, a.shape[axis])
+
+template enumerateAxisIterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyped =
+  var out_t = t.atAxisIndex(axis, iter_offset)
+
+  for i in 0..<iter_size:
+    yield (i + iter_offset, out_t)
+    out_t.offset += t.strides[axis]
+
+iterator enumerateAxis*[T](t: Tensor[T], axis: int): (int, Tensor[T]) {.inline.}=
+  ## Inline iterator over an axis.
+  ##
+  ## Returns a tuple:
+  ##   - The index along the axis
+  ##   - A slice along the given axis at each iteration.
+  ##
+  ## Note: The slice dimension is not collapsed by default.
+  ## You can use ``squeeze`` to collapse it.
+  ##
+  ## Usage:
+  ##  .. code:: nim
+  ##     for subtensor in t.axis(1):
+  ##       # do stuff
+  enumerateAxisIterator(t, axis, 0, t.shape[axis])
+
+iterator enumerateAxis*[T](t: Tensor[T], axis, offset, size: int): (int, Tensor[T]) {.inline.}=
+  enumerateAxisIterator(t, axis, offset, size)

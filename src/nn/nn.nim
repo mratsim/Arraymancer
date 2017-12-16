@@ -16,9 +16,9 @@ import  ./activation/sigmoid,
         ./activation/relu,
         ./layers/linear,
         ./layers/conv2D,
-        ./loss/sigmoid_cross_entropy,
+        ./loss/cross_entropy_losses,
         ./optimizers/optimizers
 
 export sigmoid, relu
-export linear, conv2D, sigmoid_cross_entropy
+export linear, conv2D, cross_entropy_losses
 export optimizers

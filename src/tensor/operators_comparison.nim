@@ -34,9 +34,8 @@ proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
 
 template gen_broadcasted_comparison(op: untyped): untyped =
   let (tmp_a, tmp_b) = broadcast2(a, b)
-  result = newTensorUninit[bool](tmp_a.shape)
-  apply3_inline(result, tmp_a, tmp_b):
-    op(y, z)
+  result = map2_inline(tmp_a, tmp_b):
+    op(x, y)
 
 
 proc `.==`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =

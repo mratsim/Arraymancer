@@ -175,11 +175,12 @@ proc argmax*[T](t: Tensor[T], axis: int): Tensor[int] {.noInit.} =
   ##                             [1],
   ##                             [1]].toTensor
 
-  let accum = t.fold_enumerateAxis_inline(Tensor[tuple[idx: int, val: T]], axis) do:
+  type elemType = tuple[idx: int, val: T]
+
+  let accum = t.fold_enumerateAxis_inline(Tensor[elemType], axis) do:
     # Initialize the first element
-    x = newTensorUninit[tuple[idx: int, val: T]](y.shape)
-    apply2_inline(x, y): # parent y from fold
-      (0, y)             # nested y from apply2
+    x = map_inline(y): # x from fold
+      (0, x)           # x from map
   do:
     # Core computation
     cmp_idx_max(x, i, y) # i is injected from fold_enumerate
@@ -188,6 +189,5 @@ proc argmax*[T](t: Tensor[T], axis: int): Tensor[int] {.noInit.} =
     cmp_idx_max(x, y)
 
   # Now extract only the idx
-  result = newTensorUninit[int](accum.shape)
-  apply2_inline(result, accum):
-    y.idx
+  result = map_inline(accum):
+    x.idx

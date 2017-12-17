@@ -16,8 +16,10 @@ import  ../../tensor/backend/memory_optimization_hints,
         ../../tensor/tensor,
         ../private/p_nnp_types
 
-proc im2col[T]( input: Tensor[T], kernel_size: Size2D,
-                padding: Size2D = (0,0), stride: Size2D = (1,1), result: var Tensor[T])  =
+proc im2col*[T]( input: Tensor[T], kernel_size: Size2D,
+                padding: Size2D = (0,0), stride: Size2D = (1,1),
+                padding_value: T = 0,
+                result: var Tensor[T])  =
   ## Convert blocks of an image into columns, useful for preprocessing
   ## an image before convolutions
   let
@@ -47,7 +49,7 @@ proc im2col[T]( input: Tensor[T], kernel_size: Size2D,
         offset_col = h * width_col
       for w in 0..<width_col:
         let col = w_offset + (w * stride.width)
-        var v = 0.T
+        var v = padding_value
         if row >= 0 and col >= 0 and row < height and col < width:
           let iidx = (c_offset * flatten_size) + row * width + col
           v = idata[iidx]
@@ -98,7 +100,7 @@ proc im2colgemm_conv2d*[T](input, kernel, bias: Tensor[T],
   var output: Tensor[T]
 
   for i in 0..<batch_size: #TODO: batch matmul
-    im2col(input.atAxisIndex(0, i).squeeze(0), kernel_size, padding, stride, input_col)
+    im2col(input.atAxisIndex(0, i).squeeze(0), kernel_size, padding, stride, 0, input_col)
     # The following must be done without copy: GEMM will directly write in the result tensor
     output = result.atAxisIndex(0, i).reshape(kernel_col.shape[0], input_col.shape[1])
     gemm(kernel_col, input_col, output)
@@ -136,6 +138,6 @@ proc im2colgemm_conv2d_gradient*[T](input, kernel: Tensor[T],
       grad_output_col = grad_output.atAxisIndex(0, i).reshape(output_channels, output_flatten_size)
       grad_input_col = kernel_col.transpose() * grad_output_col
 
-    im2col(input.atAxisIndex(0, i).squeeze(0), kernel_size, padding, stride, input_col)
+    im2col(input.atAxisIndex(0, i).squeeze(0), kernel_size, padding, stride, 0, input_col)
     grad_input[i, _, _, _] = col2im(grad_input_col, input.nchw_channels, input.nchw_height, input.nchw_width, kernel_size, padding, stride).unsqueeze(0)
     grad_weight += (grad_output_col * input_col.transpose()).reshape(grad_weight.shape)

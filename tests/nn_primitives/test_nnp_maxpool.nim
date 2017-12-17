@@ -12,26 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./nnp_activation,
-        ./nnp_convolution,
-        ./nnp_linear,
-        ./nnp_sigmoid_cross_entropy,
-        ./nnp_softmax_cross_entropy,
-        ./nnp_maxpooling
 
-export  nnp_activation,
-        nnp_convolution,
-        nnp_linear,
-        nnp_sigmoid_cross_entropy,
-        nnp_softmax_cross_entropy,
-        nnp_maxpooling
+import ../../src/arraymancer
+import unittest
 
-import private/p_nnp_types
-export Size2D
+suite "[NN Primitives] Maxpool":
+  test "Maxpool2D forward":
+    let a =  [[1, 1, 2, 4],
+              [5, 6, 7, 8],
+              [3, 2, 1, 0],
+              [1, 2, 3, 4]].toTensor.reshape(1,1,4,4)
 
+    var
+      argmax: Tensor[int]
+      maxpool: type(a)
 
-when defined(cudnn):
-  import  ./backend/cudnn,
-          ./nnp_conv2d_cudnn
+    maxpool2d(a, (2,2), (0,0), (2,2), argmax, maxpool)
 
-  export nnp_conv2d_cudnn
+    check: maxpool == [6, 8, 3, 4].toTensor.reshape(1, 1, 2, 2)

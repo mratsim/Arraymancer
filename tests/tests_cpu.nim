@@ -30,6 +30,7 @@ import ../src/arraymancer,
         ./tensor/test_bugtracker,
         ./nn_primitives/test_nnp_convolution,
         ./nn_primitives/test_nnp_loss,
+        ./nn_primitives/test_nnp_maxpool,
         ./autograd/test_gate_blas,
         ./ml/test_metrics
 

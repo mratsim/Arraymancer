@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./data_structure,
+import  ./private/p_aggregate,
+        ./data_structure,
         ./init_cpu,
         ./higher_order_applymap,
         ./higher_order_foldreduce,
-        ./operators_blas_l1,
         ./math_functions,
         math
 
@@ -127,55 +127,27 @@ proc std*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.} =
   ## The normalization is by the (n-1), like in the formal definition
   sqrt(t.variance(axis))
 
-
-proc cmp_idx_max[T](accum: var Tensor[tuple[idx: int, val: T]],
-                    next_idx: int,
-                    next: Tensor[T]) =
-  ## Compare a tensor containing accumulated (idx_of_maxval, max_value)
-  ## and another tensor at a specified index
-  ## Store the max value and its corresponding index in the accumulator
-  ##
-  ##
-  ## Necessary for argmax, core computation step
-  apply2_inline(accum, next):
-    if x.val < y:
-      (next_idx, y)
-    else:
-      x
-
-proc cmp_idx_max[T](accum: var Tensor[tuple[idx: int, val: T]],
-                    next: Tensor[tuple[idx: int, val: T]]) =
-  ## Compare two tensors containing accumulated (idx_of_maxval, max_value)
-  ## Store the max value and its corresponding index in the first accumulator
-  ##
-  ## Necessary for argmax, merge partial folds step
-  apply2_inline(accum, next):
-    if x.val < y.val:
-      y
-    else:
-      x
-
-proc argmax*[T](t: Tensor[T], axis: int): Tensor[int] {.noInit.} =
-  ## Returns the index of the maximum along an axis
+proc argmax*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes: Tensor[T]] {.noInit.} =
+  ## Returns (indices, maxes) along an axis
   ##
   ## Input:
   ##   - A tensor
   ##   - An axis (int)
   ##
   ## Returns:
-  ##   - A tensor of index of the maximums along this axis
+  ##   - A tuple of tensors (indices, maxes) along this axis
   ##
   ## Example:
   ##   .. code:: nim
   ##     let a = [[0, 4, 7],
   ##              [1, 9, 5],
   ##              [3, 4, 1]].toTensor
-  ##     assert argmax(a, 0) == [[2, 1, 0]].toTensor
-  ##     assert argmax(a, 1) == [[2],
-  ##                             [1],
-  ##                             [1]].toTensor
+  ##     assert argmax(a, 0).indices == [[2, 1, 0]].toTensor
+  ##     assert argmax(a, 1).indices == [[2],
+  ##                                     [1],
+  ##                                     [1]].toTensor
 
-  type elemType = tuple[idx: int, val: T]
+  type elemType = tuple[idx: int, max: T]
 
   let accum = t.fold_enumerateAxis_inline(Tensor[elemType], axis) do:
     # Initialize the first element
@@ -188,6 +160,6 @@ proc argmax*[T](t: Tensor[T], axis: int): Tensor[int] {.noInit.} =
     # Merge partial folds
     cmp_idx_max(x, y)
 
-  # Now extract only the idx
-  result = map_inline(accum):
-    x.idx
+  # Now convert the tensor of tuples to a tuple of tensors
+  result = unzip_idx_max(accum):
+    (x.idx, x.max)

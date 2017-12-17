@@ -100,7 +100,7 @@ suite "[Core] Testing aggregation functions":
     let a =  [[0, 4, 7],
               [1, 9, 5],
               [3, 4, 1]].toTensor
-    check: argmax(a, 0) == [[2, 1, 0]].toTensor
-    check: argmax(a, 1) == [[2],
-                            [1],
-                            [1]].toTensor
+    check: argmax(a, 0).indices == [[2, 1, 0]].toTensor
+    check: argmax(a, 1).indices == [[2],
+                                    [1],
+                                    [1]].toTensor

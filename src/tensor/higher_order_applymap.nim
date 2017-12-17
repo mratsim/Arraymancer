@@ -38,11 +38,11 @@ template apply3_inline*[T,U,V](dest: var Tensor[T], src1: Tensor[U], src2: Tenso
 
 template map_inline*[T](t: Tensor[T], op:untyped): untyped =
 
-  type outType = type(
+  type outType = type((
     block:
       var x{.inject.}: type(items(t));
       op
-  )
+  ))
 
   var dest = newTensorUninit[outType](t.shape)
   withMemoryOptimHints()
@@ -57,12 +57,12 @@ template map2_inline*[T, U](t1: Tensor[T], t2: Tensor[U], op:untyped): untyped =
   when compileOption("boundChecks"):
     check_elementwise(t1,t2)
 
-  type outType = type(
+  type outType = type((
     block:
       var x{.inject.}: type(items(t1));
       var y{.inject.}: type(items(t2));
       op
-  )
+  ))
 
   var dest = newTensorUninit[outType](t1.shape)
   withMemoryOptimHints()
@@ -78,13 +78,13 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
     check_elementwise(t1,t2)
     check_elementwise(t1,t3)
 
-  type outType = type(
+  type outType = type((
     block:
       var x{.inject.}: type(items(t1));
       var y{.inject.}: type(items(t2));
       var z{.inject.}: type(items(t3));
       op
-  )
+  ))
 
   var dest = newTensorUninit[outType](t1.shape)
   withMemoryOptimHints()

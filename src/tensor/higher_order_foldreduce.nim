@@ -56,6 +56,17 @@ template fold_axis_inline*[T](t: Tensor[T], result_type: typedesc, fold_axis: in
       op_middle
   reduced
 
+template fold_enumerateAxis_inline*[T](t: Tensor[T], result_type: typedesc, fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
+  var reduced : result_type
+  let weight = t.size div t.shape[fold_axis]
+  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[fold_axis], weight, op_final) do:
+    let y {.inject.} = t.atAxisIndex(fold_axis, block_offset)
+    op_initial
+  do:
+    for i {.inject.}, y {.inject.} in t.enumerateAxis(fold_axis, block_offset, block_size):
+      op_middle
+  reduced
+
 # ####################################################################
 # Folds and reductions over a single Tensor
 

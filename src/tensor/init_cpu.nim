@@ -70,6 +70,19 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noSideEffect,
   tensorCpu(shape, result)
   result.data = newSeqWith(result.size, value)
 
+proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noSideEffect,noInit, inline.} =
+  ## Creates a new Tensor filled with the given value
+  ## Input:
+  ##      - Shape of the Tensor
+  ##      - Type of its elements
+  ##      - Value to initialize its elements
+  ## Result:
+  ##      - A Tensor of the proper shape initialized with
+  ##        the given value
+  # Todo: use a template that can accept proc or value. See the code for newSeqWith: https://github.com/nim-lang/Nim/blob/master/lib/pure/collections/sequtils.nim#L650-L665
+  tensorCpu(shape, result)
+  result.data = newSeqWith(result.size, value)
+
 proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect.} =
   ## Convert an openarray to a Tensor
   ## Input:

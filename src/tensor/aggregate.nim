@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import  ./data_structure,
+        ./init_cpu,
+        ./higher_order_applymap,
         ./higher_order_foldreduce,
         ./operators_blas_l1,
         ./math_functions,
@@ -124,3 +126,51 @@ proc std*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.} =
   ## Compute the standard deviation of all elements
   ## The normalization is by the (n-1), like in the formal definition
   sqrt(t.variance(axis))
+
+
+proc cmp_idx_max[T](accum: var Tensor[tuple[idx: int, val: T]],
+                    next_idx: int,
+                    next: Tensor[T]) =
+  ## Compare a tensor containing accumulated (idx_of_maxval, max_value)
+  ## and another tensor at a specified index
+  ## Store the max value and its corresponding index in the accumulator
+  ##
+  ##
+  ## Necessary for argmax, core computation step
+  apply2_inline(accum, next):
+    if x.val < y:
+      (next_idx, y)
+    else:
+      x
+
+proc cmp_idx_max[T](accum: var Tensor[tuple[idx: int, val: T]],
+                    next: Tensor[tuple[idx: int, val: T]]) =
+  ## Compare two tensors containing accumulated (idx_of_maxval, max_value)
+  ## Store the max value and its corresponding index in the first accumulator
+  ##
+  ## Necessary for argmax, merge partial folds step
+  apply2_inline(accum, next):
+    if x.val < y.val:
+      y
+    else:
+      x
+
+proc argmax*[T](t: Tensor[T], axis: int): Tensor[int] {.noInit.} =
+  ## Returns the index of the maximum along an axis
+
+  let accum = t.fold_enumerateAxis_inline(Tensor[tuple[idx: int, val: T]], axis) do:
+    # Initialize the first element
+    x = newTensorUninit[tuple[idx: int, val: T]](y.shape)
+    apply2_inline(x, y): # parent y from fold
+      (0, y)             # nested y from apply2
+  do:
+    # Core computation
+    cmp_idx_max(x, i, y)
+  do:
+    # Merge partial folds
+    cmp_idx_max(x, y)
+
+  # Now extract only the idx
+  result = newTensorUninit[int](accum.shape)
+  apply2_inline(result, accum):
+    y.idx

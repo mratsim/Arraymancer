@@ -15,7 +15,7 @@
 import ../../src/arraymancer
 import unittest, math
 
-suite "Testing aggregation functions":
+suite "[Core] Testing aggregation functions":
   let t = [[0, 1, 2],
           [3, 4, 5],
           [6, 7, 8],
@@ -95,3 +95,12 @@ suite "Testing aggregation functions":
       b.std(1) -
       [[3.109126351029605],[3.304037933599835]].toTensor()
     ).abs().sum() < 1e-8
+
+  test "Argmax":
+    let a =  [[0, 4, 7],
+              [1, 9, 5],
+              [3, 4, 1]].toTensor
+    check: argmax(a, 0) == [[2, 1, 0]].toTensor
+    check: argmax(a, 1) == [[2],
+                            [1],
+                            [1]].toTensor

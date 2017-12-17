@@ -157,6 +157,23 @@ proc cmp_idx_max[T](accum: var Tensor[tuple[idx: int, val: T]],
 
 proc argmax*[T](t: Tensor[T], axis: int): Tensor[int] {.noInit.} =
   ## Returns the index of the maximum along an axis
+  ##
+  ## Input:
+  ##   - A tensor
+  ##   - An axis (int)
+  ##
+  ## Returns:
+  ##   - A tensor of index of the maximums along this axis
+  ##
+  ## Example:
+  ##   .. code:: nim
+  ##     let a = [[0, 4, 7],
+  ##              [1, 9, 5],
+  ##              [3, 4, 1]].toTensor
+  ##     assert argmax(a, 0) == [[2, 1, 0]].toTensor
+  ##     assert argmax(a, 1) == [[2],
+  ##                             [1],
+  ##                             [1]].toTensor
 
   let accum = t.fold_enumerateAxis_inline(Tensor[tuple[idx: int, val: T]], axis) do:
     # Initialize the first element
@@ -165,7 +182,7 @@ proc argmax*[T](t: Tensor[T], axis: int): Tensor[int] {.noInit.} =
       (0, y)             # nested y from apply2
   do:
     # Core computation
-    cmp_idx_max(x, i, y)
+    cmp_idx_max(x, i, y) # i is injected from fold_enumerate
   do:
     # Merge partial folds
     cmp_idx_max(x, y)

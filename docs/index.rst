@@ -158,28 +158,28 @@ integers, string, boolean or any custom object.
 Here is a comparative table, not that this feature set is developing
 very rapidly.
 
-------------------------------------------------- --------- ---------------------------------------------------------------
- Action                                           Tensor    CudaTensor
-------------------------------------------------- --------- ---------------------------------------------------------------
- Accessing tensor properties                      [x]       [x]
- Tensor creation                                  [x]       by converting a cpu Tensor
- Accessing or modifying a single value            [x]       []
- Iterating on a Tensor                            [x]       []
- Slicing a Tensor                                 [x]       [x]
- Slice mutation ``a[1,_] = 10``                   [x]       []
- Comparison ``==``                                [x]       Coming soon
- Element-wise basic operations                    [x]       [x]
- Universal functions                              [x]       [x]
- Automatically broadcasted operations             [x]       Coming soon
- Matrix-Matrix and Matrix vector multiplication   [x]       [x] Note: sliced CudaTensors must explicitly be made contiguous
- Displaying a tensor                              [x]       [x]
- Higher-order functions (map, apply, reduce, fold)[x]       Apply, but only for internal use
- Transposing                                      [x]       [x]
- Converting to contiguous                         [x]       [x]
- Reshaping                                        [x]       []
- Explicit broadcast                               [x]       Coming soon
- Permuting dimensions                             [x]       Coming soon
- Concatenating along existing dimensions          [x]       []
- Squeezing singleton dimensions                   [x]       Coming soon
- Slicing + squeezing in one operation             [x]       Coming soon
-------------------------------------------------- --------- ---------------------------------------------------------------
+-------------------------------------------------- --------- ---------------------------------------------------------------
+ Action                                            Tensor    CudaTensor
+-------------------------------------------------- --------- ---------------------------------------------------------------
+ Accessing tensor properties                       [x]       [x]
+ Tensor creation                                   [x]       by converting a cpu Tensor
+ Accessing or modifying a single value             [x]       []
+ Iterating on a Tensor                             [x]       []
+ Slicing a Tensor                                  [x]       [x]
+ Slice mutation ``a[1,_] = 10``                    [x]       []
+ Comparison ``==``                                 [x]       Coming soon
+ Element-wise basic operations                     [x]       [x]
+ Universal functions                               [x]       [x]
+ Automatically broadcasted operations              [x]       Coming soon
+ Matrix-Matrix and Matrix vector multiplication    [x]       [x] Note: sliced CudaTensors must explicitly be made contiguous
+ Displaying a tensor                               [x]       [x]
+ Higher-order functions (map, apply, reduce, fold) [x]       Apply, but only for internal use
+ Transposing                                       [x]       [x]
+ Converting to contiguous                          [x]       [x]
+ Reshaping                                         [x]       []
+ Explicit broadcast                                [x]       Coming soon
+ Permuting dimensions                              [x]       Coming soon
+ Concatenating along existing dimensions           [x]       []
+ Squeezing singleton dimensions                    [x]       Coming soon
+ Slicing + squeezing in one operation              [x]       Coming soon
+-------------------------------------------------- --------- ---------------------------------------------------------------

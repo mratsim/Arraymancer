@@ -49,7 +49,7 @@ suite "Testing tensor comparison":
     check: t_van[1..^2,1..3] == t_test
     check: t_van[1..3,1..3] == t_test
 
-  test "Testing element-wise comparison":
+  test "Testing element-wise/broadcasted comparison":
     let
       a = [0, 2, 1, 3].toTensor
       b = [0, 1, 2, 3].toTensor

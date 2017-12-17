@@ -115,7 +115,7 @@ proc frobenius_inner_prod*[T](a,b: Tensor[T]): T =
 proc softmax_cross_entropy2[T](input, target: Tensor[T]): T =
   result = frobenius_inner_prod(input, target)
 
-  let sum_logsumexp = fold_axis_inline(input, T, 1) do:
+  let sum_logsumexp = fold_axis_inline(input, T, fold_axis=1) do:
     x = y.streaming_log_sumexp
   do:
     x += y.streaming_log_sumexp

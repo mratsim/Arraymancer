@@ -17,7 +17,7 @@ import  ./backend/openmp,
         future
 
 template reduce_inline*[T](t: Tensor[T], op: untyped): untyped =
-  var reduced : T
+  var reduced: T
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.size, 1, op) do:
     x = t.atContiguousIndex(block_offset)
   do:
@@ -26,7 +26,7 @@ template reduce_inline*[T](t: Tensor[T], op: untyped): untyped =
   reduced
 
 template fold_inline*[T](t: Tensor[T], op_initial, op_middle, op_final: untyped): untyped =
-  var reduced : T
+  var reduced: T
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.size, 1, op_final) do:
     let y {.inject.} = t.atContiguousIndex(block_offset)
     op_initial
@@ -36,7 +36,7 @@ template fold_inline*[T](t: Tensor[T], op_initial, op_middle, op_final: untyped)
   reduced
 
 template reduce_axis_inline*[T](t: Tensor[T], reduction_axis: int, op: untyped): untyped =
-  var reduced : type(t)
+  var reduced: type(t)
   let weight = t.size div t.shape[reduction_axis]
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[reduction_axis], weight, op) do:
     x = t.atAxisIndex(reduction_axis, block_offset).clone()
@@ -45,8 +45,8 @@ template reduce_axis_inline*[T](t: Tensor[T], reduction_axis: int, op: untyped):
       op
   reduced
 
-template fold_axis_inline*[T](t: Tensor[T], result_type: typedesc, fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
-  var reduced : result_type
+template fold_axis_inline*[T](t: Tensor[T], accumType: typedesc, fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
+  var reduced: accumType
   let weight = t.size div t.shape[fold_axis]
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[fold_axis], weight, op_final) do:
     let y {.inject.} = t.atAxisIndex(fold_axis, block_offset)

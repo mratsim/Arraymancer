@@ -15,7 +15,7 @@
 import ../../src/arraymancer
 import unittest, math, future, sequtils
 
-suite "Testing higher-order functions":
+suite "[Core] Testing higher-order functions":
   let t = [[0, 1, 2],
           [3, 4, 5],
           [6, 7, 8],
@@ -73,3 +73,15 @@ suite "Testing higher-order functions":
     let initval = [1,0,1,0].toTensor.reshape([4,1])
 
     check: t.fold(initval, `+`, axis = 1) == col_sum_plus_1010
+
+
+suite "[Core] Testing higher-order templates":
+  test "Map templates can have an automatically inferred return type different from input types":
+
+    let a = [10, 2, 4, 12].toTensor
+    let b = [4, 4, 4, 4].toTensor
+
+    let isMultiple = map2_inline(a, b):
+      x mod y == 0
+
+    check: isMultiple == [false, false, true, true].toTensor

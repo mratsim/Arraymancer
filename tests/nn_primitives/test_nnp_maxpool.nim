@@ -33,7 +33,7 @@ suite "[NN Primitives] Maxpool":
 
     # Create closure first
     proc mpool(t: Tensor[float]): float =
-      maxpool2d(t, (2,2), (0,0), (2,2)).maxpool.sum()
+      maxpool2d(t, (2,2), (0,0), (2,2)).maxpooled.sum()
 
     let expected_grad = a.astype(float) .* numerical_gradient(a.astype(float), mpool)
     let grad = maxpool2d_backward(a.shape, max_indices, pooled).astype(float)

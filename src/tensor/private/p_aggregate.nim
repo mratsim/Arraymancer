@@ -52,9 +52,9 @@ template unzip_idx_max*[T](t: Tensor[tuple[idx: int, max: T]], op:untyped): unty
   var dest = (indices: newTensorUninit[int](t.shape),
               maxes:   newTensorUninit[T](t.shape))
   withMemoryOptimHints()
-  var
-    data1{.restrict.} = dest.indices.dataArray
-    data2{.restrict.} = dest.maxes.dataArray
+  let
+    data1{.restrict.} = dest.indices.dataArray # Warning ⚠: data pointed to will be mutated
+    data2{.restrict.} = dest.maxes.dataArray # Warning ⚠: data pointed to will be mutated
 
   omp_parallel_blocks(block_offset, block_size, dest.indices.size):
     for i, x {.inject.} in enumerate(t, block_offset, block_size):

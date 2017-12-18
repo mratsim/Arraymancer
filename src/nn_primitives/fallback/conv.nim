@@ -35,8 +35,8 @@ proc im2col*[T]( input: Tensor[T], kernel_size: Size2D,
   assert result.shape == [channels_col, flatten_size_col]
 
   withMemoryOptimHints()
-  var odata{.restrict.} = result.dataArray
-  var idata{.restrict.} = input.dataArray
+  let odata{.restrict.} = result.dataArray # Warning ⚠: data pointed to will be mutated
+  let idata{.restrict.} = input.dataArray
   for c in `||`(0, channels_col-1, "simd"):
     let
       w_offset = (c mod kernel_size.width) - padding.width

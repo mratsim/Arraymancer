@@ -46,7 +46,7 @@ template map_inline*[T](t: Tensor[T], op:untyped): untyped =
 
   var dest = newTensorUninit[outType](t.shape)
   withMemoryOptimHints()
-  var data{.restrict.} = dest.dataArray
+  let data{.restrict.} = dest.dataArray # Warning ⚠: data pointed to will be mutated
 
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for i, x {.inject.} in enumerate(t, block_offset, block_size):
@@ -66,7 +66,7 @@ template map2_inline*[T, U](t1: Tensor[T], t2: Tensor[U], op:untyped): untyped =
 
   var dest = newTensorUninit[outType](t1.shape)
   withMemoryOptimHints()
-  var data{.restrict.} = dest.dataArray
+  let data{.restrict.} = dest.dataArray # Warning ⚠: data pointed to will be mutated
 
   omp_parallel_blocks(block_offset, block_size, t1.size):
     for i, x {.inject.}, y {.inject.} in enumerateZip(t1, t2, block_offset, block_size):
@@ -88,7 +88,7 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
 
   var dest = newTensorUninit[outType](t1.shape)
   withMemoryOptimHints()
-  var data{.restrict.} = dest.dataArray
+  let data{.restrict.} = dest.dataArray # Warning ⚠: data pointed to will be mutated
 
   omp_parallel_blocks(block_offset, block_size, t1.size):
     for i, x {.inject.}, y {.inject.}, z {.inject.} in enumerateZip(t1, t2, t3, block_offset, block_size):

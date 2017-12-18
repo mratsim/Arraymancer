@@ -135,7 +135,7 @@ template stridedIteration*(strider: IterKind, t, iter_offset, iter_size: typed):
 
   # Get tensor data address with offset builtin
   withMemoryOptimHints()
-  var data{.restrict.} = t.dataArray
+  let data{.restrict.} = t.dataArray # Warning ⚠: data pointed may be mutated
 
   # Optimize for loops in contiguous cases
   if t.is_C_Contiguous:
@@ -152,7 +152,7 @@ template stridedCoordsIteration*(t, iter_offset, iter_size: typed): untyped =
 
   # Get tensor data address with offset builtin
   withMemoryOptimHints()
-  var data{.restrict.} = t.dataArray
+  let data{.restrict.} = t.dataArray # Warning ⚠: data pointed may be mutated
   let rank = t.rank
 
   initStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
@@ -174,8 +174,8 @@ template dualStridedIteration*(strider: IterKind, t1, t2, iter_offset, iter_size
 
   # Get tensor data address with offset builtin
   withMemoryOptimHints()
-  var t1data{.restrict.} = t1.dataArray
-  var t2data{.restrict.} = t2.dataArray
+  let t1data{.restrict.} = t1.dataArray # Warning ⚠: data pointed may be mutated
+  let t2data{.restrict.} = t2.dataArray
 
   # Optimize for loops in contiguous cases
   if t1_contiguous and t2_contiguous:
@@ -213,9 +213,9 @@ template tripleStridedIteration*(strider: IterKind, t1, t2, t3, iter_offset, ite
 
   # Get tensor data address with offset builtin
   withMemoryOptimHints()
-  var t1data{.restrict.} = t1.dataArray
-  var t2data{.restrict.} = t2.dataArray
-  var t3data{.restrict.} = t3.dataArray
+  let t1data{.restrict.} = t1.dataArray # Warning ⚠: data pointed may be mutated
+  let t2data{.restrict.} = t2.dataArray
+  let t3data{.restrict.} = t3.dataArray
 
   # Optimize for loops in contiguous cases
   # Note that not all cases are handled here, just some probable ones

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import  ../tensor/backend/memory_optimization_hints,
+        ../tensor/backend/openmp,
         ../tensor/tensor,
         ./private/p_nnp_types,
         ./fallback/conv
@@ -43,8 +44,8 @@ proc maxpool2d*[T](input: Tensor[T],
 
   withMemoryOptimHints()
   let idata {.restrict.} = input.dataArray
-  var idx_data {.restrict.} = result.max_indices.dataArray
-  var max_data {.restrict.} = result.maxpool.dataArray
+  let idx_data {.restrict.} = result.max_indices.dataArray # Warning ⚠: data pointed to will be mutated
+  let max_data {.restrict.} = result.maxpool.dataArray # Warning ⚠: data pointed to will be mutated
 
   for n in `||`(0, N-1, "simd"):
     for c in 0 ..< C:
@@ -66,3 +67,20 @@ proc maxpool2d*[T](input: Tensor[T],
           let oidx = w + outW * (h + outH * (c + n * C))
           max_data[oidx] = max
           idx_data[oidx] = argmax
+
+proc maxpool2d_backward*[T](
+  cached_input_shape: openarray[int]|MetadataArray,
+  cached_max_indices: Tensor[int],
+  gradOutput: Tensor[T]
+  ): Tensor[T] {.noInit.}=
+
+  assert gradOutput.size == cached_max_indices.size
+
+  result = zeros[T](cached_input_shape) # gradInput
+
+  let rdata = result.dataArray # Warning ⚠: data pointed to will be mutated
+  let godata = gradOutput.dataArray
+  let cmidata = cached_max_indices.dataArray
+
+  omp_parallel_countup(i, gradOutput.size - 1):
+    rdata[cmidata[i]] = godata[i]

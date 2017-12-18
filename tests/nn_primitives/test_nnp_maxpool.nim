@@ -17,13 +17,25 @@ import ../../src/arraymancer
 import unittest
 
 suite "[NN Primitives] Maxpool":
+  let a =  [[1, 1, 2, 4],
+            [5, 6, 7, 8],
+            [3, 2, 1, 0],
+            [1, 2, 3, 4]].toTensor.reshape(1,1,4,4)
+
+  let (max_indices, pooled) = maxpool2d(a, (2,2), (0,0), (2,2))
+
   test "Maxpool2D forward":
-    let a =  [[1, 1, 2, 4],
-              [5, 6, 7, 8],
-              [3, 2, 1, 0],
-              [1, 2, 3, 4]].toTensor.reshape(1,1,4,4)
 
-    let (max_indices, maxpool) = maxpool2d(a, (2,2), (0,0), (2,2))
-
-    check: maxpool == [6, 8, 3, 4].toTensor.reshape(1, 1, 2, 2)
+    check: pooled == [6, 8, 3, 4].toTensor.reshape(1, 1, 2, 2)
     check: max_indices == [5, 7, 8, 15].toTensor
+
+  test "Maxpool2D backward":
+
+    # Create closure first
+    proc mpool(t: Tensor[float]): float =
+      maxpool2d(t, (2,2), (0,0), (2,2)).maxpool.sum()
+
+    let expected_grad = a.astype(float) .* numerical_gradient(a.astype(float), mpool)
+    let grad = maxpool2d_backward(a.shape, max_indices, pooled).astype(float)
+
+    check: mean_relative_error(expected_grad, grad) < 1e-6

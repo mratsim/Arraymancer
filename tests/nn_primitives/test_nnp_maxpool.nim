@@ -23,10 +23,6 @@ suite "[NN Primitives] Maxpool":
               [3, 2, 1, 0],
               [1, 2, 3, 4]].toTensor.reshape(1,1,4,4)
 
-    var
-      argmax: Tensor[int]
-      maxpool: type(a)
-
-    maxpool2d(a, (2,2), (0,0), (2,2), argmax, maxpool)
+    let (max_indices, maxpool) = maxpool2d(a, (2,2), (0,0), (2,2))
 
     check: maxpool == [6, 8, 3, 4].toTensor.reshape(1, 1, 2, 2)

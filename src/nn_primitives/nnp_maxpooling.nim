@@ -12,20 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../tensor/tensor,
+import  ../tensor/backend/memory_optimization_hints,
+        ../tensor/tensor,
         ./private/p_nnp_types,
         ./fallback/conv
 
 proc maxpool2d*[T](input: Tensor[T],
                 kernel: Size2D,
                 padding: Size2D = (0,0),
-                stride: Size2D = (1,1),
-                argmax: var Tensor[int],
-                result: var Tensor[T]
-                ) =
+                stride: Size2D = (1,1)
+                ): tuple[max_indices: Tensor[int], maxpool: Tensor[T]] =
   ## MaxPool 2D forward pass
 
-  assert input.rank == 4
+  assert input.rank == 4 and input.is_C_contiguous
 
   let
     N = input.shape[0]
@@ -39,13 +38,30 @@ proc maxpool2d*[T](input: Tensor[T],
     outH = (H + (2 * padding.height) - kH) div stride.height + 1
     outW = (W + (2 * padding.width ) - kW) div stride.width  + 1
 
-    channels_col = C * kH * kW
-    flatten_size_col = outH * outW
+  result.max_indices = newTensoruninit[int](N, C, outH, outW)
+  result.maxpool     = newTensoruninit[ T ](N, C, outH, outW)
 
-  var x_cols = newTensorUninit[T](channels_col, flatten_size_col)
-  let x_split = input.reshape(N * C, 1, H, W)
+  withMemoryOptimHints()
+  let idata {.restrict.} = input.dataArray
+  var idx_data {.restrict.} = result.max_indices.dataArray
+  var max_data {.restrict.} = result.maxpool.dataArray
 
-  im2col(x_split, (kH, kW), padding, stride, -Inf.T, x_cols) # TODO: replace by low(T) when 0.18 for https://github.com/nim-lang/Nim/commit/badba83d38371726bafba5870d5fb927eb453e41
-
-  (argmax, result) = x_cols.argmax(axis = 0)
-  result = result.reshape(outH, outW, N, C).permute(2, 3, 0, 1)
+  for n in `||`(0, N-1, "simd"):
+    for c in 0 ..< C:
+      for h in 0 .. outH:
+        for w in 0 .. outW:
+          let oidx = w + outW * (h + outH * (c + n * C))
+          var max = -Inf.T
+          var argmax = -Inf.int
+          for ph in 0 ..< kH:
+            let row = h * stride.height + ph - padding.height
+            for pw in 0 ..< kW:
+              let col = w * stride.width + pw - padding.width
+              if row >= 0 and col >= 0 and row < H and col < W:
+                let iidx = col + W * (row + H * (c + n * C))
+                let val = idata[iidx]
+                if val > max:
+                  max = val
+                  argmax = iidx
+          max_data[oidx] = max
+          idx_data[oidx] = argmax

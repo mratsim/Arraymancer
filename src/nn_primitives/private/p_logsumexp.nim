@@ -28,7 +28,7 @@ import  ../../tensor/tensor,
 # (see project_root/benchmark_implementation)
 
 proc streaming_max_sumexp*[T](t: Tensor[T]): tuple[max:T, sumexp: T] {.noSideEffect, inline.}=
-  result.max = -Inf.T   # will store the streaming max of the tensor
+  result.max = -Inf.T   # will store the streaming max of the tensor  # TODO: replace by low(T) when 0.18 for https://github.com/nim-lang/Nim/commit/badba83d38371726bafba5870d5fb927eb453e41
   result.sumexp = 0.T   # will store the streaming sum of exp of the tensor
 
   for x in t:

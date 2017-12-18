@@ -48,20 +48,21 @@ proc maxpool2d*[T](input: Tensor[T],
 
   for n in `||`(0, N-1, "simd"):
     for c in 0 ..< C:
-      for h in 0 .. outH:
-        for w in 0 .. outW:
-          let oidx = w + outW * (h + outH * (c + n * C))
+      for h in 0 ..< outH:
+        for w in 0 ..< outW:
           var max = -Inf.T
           var argmax = -Inf.int
           for ph in 0 ..< kH:
             let row = h * stride.height + ph - padding.height
-            for pw in 0 ..< kW:
-              let col = w * stride.width + pw - padding.width
-              if row >= 0 and col >= 0 and row < H and col < W:
-                let iidx = col + W * (row + H * (c + n * C))
-                let val = idata[iidx]
-                if val > max:
-                  max = val
-                  argmax = iidx
+            if 0 <= row and row < H:
+              for pw in 0 ..< kW:
+                let col = w * stride.width + pw - padding.width
+                if 0 <= col and col < W:
+                  let iidx = col + W * (row + H * (c + n * C))
+                  let val = idata[iidx]
+                  if val > max:
+                    max = val
+                    argmax = iidx
+          let oidx = w + outW * (h + outH * (c + n * C))
           max_data[oidx] = max
           idx_data[oidx] = argmax

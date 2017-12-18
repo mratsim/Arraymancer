@@ -21,7 +21,7 @@ proc maxpool2d*[T](input: Tensor[T],
                 kernel: Size2D,
                 padding: Size2D = (0,0),
                 stride: Size2D = (1,1)
-                ): tuple[max_indices: Tensor[int], maxpool: Tensor[T]] =
+                ): tuple[max_indices: Tensor[int], maxpool: Tensor[T]] {.noinit.}=
   ## MaxPool 2D forward pass
 
   assert input.rank == 4 and input.is_C_contiguous
@@ -38,7 +38,7 @@ proc maxpool2d*[T](input: Tensor[T],
     outH = (H + (2 * padding.height) - kH) div stride.height + 1
     outW = (W + (2 * padding.width ) - kW) div stride.width  + 1
 
-  result.max_indices = newTensoruninit[int](N, C, outH, outW)
+  result.max_indices = newTensoruninit[int](N * C * outH * outW)
   result.maxpool     = newTensoruninit[ T ](N, C, outH, outW)
 
   withMemoryOptimHints()

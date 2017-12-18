@@ -26,3 +26,4 @@ suite "[NN Primitives] Maxpool":
     let (max_indices, maxpool) = maxpool2d(a, (2,2), (0,0), (2,2))
 
     check: maxpool == [6, 8, 3, 4].toTensor.reshape(1, 1, 2, 2)
+    check: max_indices == [5, 7, 8, 15].toTensor

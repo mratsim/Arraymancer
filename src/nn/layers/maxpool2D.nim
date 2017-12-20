@@ -27,7 +27,7 @@ method forward*[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[TT] {.in
   new result
 
   result.tape = a.tape
-  (self.cached_max_indices, result.value) = maxpool2d(a,
+  (self.cached_max_indices, result.value) = maxpool2d(a.value,
                                                       self.kernel,
                                                       self.padding,
                                                       self.stride)
@@ -59,14 +59,14 @@ proc maxpool2d*[TT](input: Variable[TT],
   ##  - Experimental, there is no tests yet for this layer
 
   when compileOption("boundChecks"):
-    if unlikely(input.value.rank != 4 or weight.value.rank != 4):
+    if unlikely(input.value.rank != 4):
       raise newException(ValueError, "Only 4d tensors are accepted for input and weight")
 
   # Gate
   var gate: MaxPool2DGate[TT]
   new gate
   gate.arity = 1
-  gate.cached_input_shape = input.shape
+  gate.cached_input_shape = input.value.shape
   gate.kernel = kernel
   gate.padding = padding
   gate.stride = stride

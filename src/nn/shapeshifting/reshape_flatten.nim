@@ -18,7 +18,7 @@ import  ../../tensor/tensor,
 
 type ReshapeGate* [TT] = ref object of Gate[TT]
   cached_input_shape: MetadataArray
-  cached_output_shape: varargs[int]|MetadataArray
+  cached_output_shape: MetadataArray
 
 method forward*[TT](self: ReshapeGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
@@ -29,12 +29,12 @@ method forward*[TT](self: ReshapeGate[TT], a: Variable[TT]): Variable[TT] {.inli
 method backward*[TT](self: ReshapeGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = gradient.reshape(self.cached_input_shape)
 
-template reshapeT[TT](a: Variable[TT], shape: varargs[int]|MetadataArray): Variable[TT] =
+proc reshapeT[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
   # Gate
   var gate: ReshapeGate[TT]
   new gate
   gate.arity = 1
-  gate.cached_input_shape = a.shape
+  gate.cached_input_shape = a.value.shape
   gate.cached_output_shape = shape
 
   # Node
@@ -56,7 +56,8 @@ proc reshape*[TT](a: Variable[TT], shape: varargs[int]): Variable[TT] =
   ## Input:
   ##   - A variable
   ##   - A shape
-  reshapeT(a, shape)
+  reshapeT(a, shape.toMetadataArray)
+
 
 proc reshape*[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
   ## Input:
@@ -67,4 +68,4 @@ proc reshape*[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
 proc flatten*[TT](a: Variable[TT]): Variable[TT] =
   ## Input:
   ##   - A variable
-  reshapeT(a, 1)
+  reshapeT(a, [1].toMetadataArray)

@@ -70,9 +70,9 @@ proc conv2d*[TT]( input, weight: Variable[TT],
     if unlikely(input.value.rank != 4 or weight.value.rank != 4):
       raise newException(ValueError, "Only 4d tensors are accepted for input and weight")
 
-    check_ctx(x, weight)
+    check_ctx(input, weight)
     if not bias.isNil:
-      check_ctx(x, bias)
+      check_ctx(input, bias)
 
     # weight has shape: Out_features * In_features
     # bias must have shape: Out_features * 1

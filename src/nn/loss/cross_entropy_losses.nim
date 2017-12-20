@@ -88,7 +88,7 @@ method forward*[TT](self: SparseSoftmaxCrossEntropyLoss[TT], a: Variable[TT], ta
 method backward*[TT](self: SparseSoftmaxCrossEntropyLoss[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = sparse_softmax_crossentropy_backward(gradient, self.cache.value, self.target)
 
-proc forward_proc*[TT](a: Variable[TT], target: TT): Variable[TT] =
+proc sparse_softmax_crossentropy*[TT](a: Variable[TT], target: Tensor[int]): Variable[TT] =
   # Gate
   var gate: SparseSoftmaxCrossEntropyLoss[TT]
   new gate

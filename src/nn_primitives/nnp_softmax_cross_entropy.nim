@@ -140,10 +140,15 @@ proc softmax_cross_entropy_backward*[T](
   elif gradient is Tensor:
     let grad = gradient.data[gradient.offset]
 
-  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 0).broadcast(cached_tensor.shape)
+  result = zeros_like(cached_tensor)
 
-  result = map3_inline(cached_tensor, target, axis_max_sumexp):
-      grad * (stable_softmax(x, z.max, z.sumexp) - y) / T(batch_size)
+  for i in 0||(batch_size-1):
+    let (max, sumexp) = cached_tensor[i,_].streaming_max_sumexp
+
+    var res_slice = result[i,_]
+
+    apply3_inline(res_slice, cached_tensor[i,_], target[i,_]):
+      grad * (stable_softmax(y, max, sumexp) - z) / T(batch_size)
 
 
 proc sparse_softmax_cross_entropy_backward*[T](
@@ -176,10 +181,13 @@ proc sparse_softmax_cross_entropy_backward*[T](
   for i, truth_idx in enumerate(target):
     result[i, truth_idx] = -1
 
-  let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 0).broadcast(cached_tensor.shape)
+  for i in 0||(batch_size-1):
+    let (max, sumexp) = cached_tensor[i, _].streaming_max_sumexp
 
-  apply3_inline(result, cached_tensor, axis_max_sumexp):
-      grad * (stable_softmax(y, z.max, z.sumexp) + x) / T(batch_size)
+    var res_slice = result[i, _]
+
+    apply2_inline(res_slice, cached_tensor[i, _]):
+      grad * (stable_softmax(y, max, sumexp) + x) / T(batch_size)
 
 
 # ################################################

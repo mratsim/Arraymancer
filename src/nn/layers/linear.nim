@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/ast_utils,
-        ../../tensor/tensor,
+import  ../../tensor/tensor,
         ../../nn_primitives/nn_primitives,
         ../../autograd/autograd,
         ./layer

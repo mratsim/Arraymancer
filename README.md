@@ -77,6 +77,8 @@ You can also check the [detailed example](https://github.com/mratsim/Arraymancer
 
 Available autograd and neural networks features are detailed in the technical reference part of the [documentation](https://mratsim.github.io/Arraymancer/).
 
+Warning: The autograd and neural networks high-level interface should see little changes (additional optional parameters like requires_grad), however the neural net primitives WILL be changed.
+
 ### Arraymancer in action
 
 Arraymancer tutorial is available [here](https://mratsim.github.io/Arraymancer/tuto.first_steps.html).

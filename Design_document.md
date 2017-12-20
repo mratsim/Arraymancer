@@ -2,6 +2,8 @@
 
 This is a notepad to track ideas, challenges, future work and open issues/limitations of Arraymancer.
 
+OUTDATED: Info is stalled, the design document will be moved to Arraymancer "Under the hood" documentation.
+
 <!-- TOC -->
 
 - [Design document](#design-document)

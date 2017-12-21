@@ -14,8 +14,7 @@
 
 import  ../../tensor/tensor,
         ../../autograd/autograd,
-        ../../nn_primitives/nn_primitives,
-        ./layer
+        ../../nn_primitives/nn_primitives
 
 
 type MaxPool2DGate* {.final.} [TT] = ref object of Gate[TT]

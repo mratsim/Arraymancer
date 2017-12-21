@@ -54,6 +54,9 @@ proc streaming_max_sumexp*[T](t: Tensor[T], axis: int): Tensor[tuple[max:T, sume
     result = result.unsqueeze(0)
 
 
+proc stable_softmax*[T](x, max, sumexp: T): T {.noSideEffect, inline.}=
+  # Numerically stable streaming softmax helper
+  result = exp(x - max) / sumexp
 
 proc logsumexp*[T: SomeReal](t: Tensor[T]): T =
   # Advantage:

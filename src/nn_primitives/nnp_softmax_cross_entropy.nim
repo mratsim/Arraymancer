@@ -114,10 +114,6 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
 # TODO: optimize, slice assignment is probably very slow cf benchmark of sparse_softmax_crossentropy1
 # Note: bench rowMajor/colMajor to do
 
-proc stable_softmax[T](x, max, sumexp: T): T {.noSideEffect, inline.}=
-  # Numerically stable streaming softmax helper
-  result = exp(x - max) / sumexp
-
 proc softmax_cross_entropy_backward*[T](
         gradient: Tensor[T] or T,
         cached_tensor: Tensor[T],

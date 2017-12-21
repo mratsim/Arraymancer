@@ -16,7 +16,7 @@ import  ./activation/sigmoid,
         ./activation/relu,
         ./layers/linear,
         ./layers/conv2D,
-        ./layers/maxpool2d,
+        ./layers/maxpool2D,
         ./loss/cross_entropy_losses,
         ./optimizers/optimizers,
         ./shapeshifting/reshape_flatten

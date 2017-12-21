@@ -89,6 +89,6 @@ for epoch in 0..5:
     optim.update()
 
   echo "\nEpoch #" & $epoch & " done. Testing accuracy"
-  let y_pred = X_test.model.value.softmax.argmax(axis = 1).indices
+  let y_pred = X_test.model.value.softmax.argmax(axis = 1).indices.squeeze
   echo accuracy_score(y_test, y_pred)
   echo "\n"

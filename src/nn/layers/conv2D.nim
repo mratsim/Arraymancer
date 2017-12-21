@@ -86,6 +86,8 @@ proc conv2d*[TT]( input, weight: Variable[TT],
   gate.cached_input = input
   gate.weight = weight
   gate.bias = bias
+  gate.padding = padding
+  gate.stride = stride
 
   # Node
   var node: Node[TT]

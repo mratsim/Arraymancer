@@ -34,6 +34,8 @@ method forward*[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.inlin
                         self.padding,
                         self.stride
                         )
+  result.grad = zeros_like(result.value)
+
 
 method backward*[TT](self: Conv2DGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   conv2d_backward(

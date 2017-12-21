@@ -25,6 +25,7 @@ method forward*[TT](self: ReshapeGate[TT], a: Variable[TT]): Variable[TT] {.inli
 
   result.tape = a.tape
   result.value = a.value.reshape(self.cached_output_shape)
+  result.grad = zeros_like(result.value)
 
 method backward*[TT](self: ReshapeGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = gradient.reshape(self.cached_input_shape)

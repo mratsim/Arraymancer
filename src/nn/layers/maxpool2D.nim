@@ -31,6 +31,8 @@ method forward*[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[TT] {.in
                                                       self.kernel,
                                                       self.padding,
                                                       self.stride)
+  result.grad = zeros_like(result.value)
+
 
 method backward*[TT](self: MaxPool2DGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = maxpool2d_backward(

@@ -36,8 +36,8 @@ suite "Autograd of basic operations":
 
     let ctx = newContext Tensor[float32]
 
-    let w_ag = ctx.variable(W)
-    let x_ag = ctx.variable(X)
+    let w_ag = ctx.variable(W, requires_grad = true)
+    let x_ag = ctx.variable(X, requires_grad = true)
 
     let C = w_ag * x_ag
 

@@ -63,6 +63,7 @@ type
     context*: ContextPtr[TT]
     value*: TT
     grad*: TT
+    requires_grad*: bool
     # TODO make the grad initialization optional to optimize memory use
 
   Gate*[TT] = ref object {.inheritable.}
@@ -102,7 +103,7 @@ proc newContext*(TT: typedesc): Context[TT] {.noSideEffect.} =
   new result
   result.nodes = newSeq[Node[TT]]()
 
-proc variable*[TT](ctx: Context[TT], value: TT): Variable[TT] {.noSideEffect.} =
+proc variable*[TT](ctx: Context[TT], value: TT, requires_grad = false): Variable[TT] {.noSideEffect.} =
   ## Wrap a variable to the context
   ## T is a Tensor[T, CudaTensor[T] or scalar T
   # TODO make the grad initialization optional to optimize memory use
@@ -110,6 +111,7 @@ proc variable*[TT](ctx: Context[TT], value: TT): Variable[TT] {.noSideEffect.} =
   result.context = ctx.weakRef
   result.value = value
   result.grad = value.zeros_like
+  result.requires_grad = requires_grad
 
 proc weakRef*[TT](v: Variable[TT]): VariablePtr[TT] {.inline.} =
   ## Get a weak/untraced reference to a Variable
@@ -150,6 +152,11 @@ template no_grad_mode*(ctx: Context, body: untyped): untyped =
 
   ctx.no_grad = prev_state
 
+proc is_grad_needed*(v: Variable): bool {.noSideEffect, inline.} =
+  ## Depending on the input variable and its context no_grad_mode,
+  ## returns true if gradient computation is needed and false otherwise
+  v.requires_grad and not v.context.no_grad
+
 proc check_ctx*(a, b: Variable) {.noSideEffect, inline.} =
   if unlikely(a.context != b.context):
     raise newException(ValueError, "You cannot combine variable from different contexts")
@@ -157,6 +164,9 @@ proc check_ctx*(a, b: Variable) {.noSideEffect, inline.} =
 proc backprop*[TT](v: Variable[TT]) =
   ## Differentiate the chain of operations w.r.t to this variable.
   ## Context will be reset
+
+  if unlikely(not v.requires_grad):
+    raise newException(ValueError, "Operations leading to this variable were not fully traced.\nDid you forget to set a `requires_grad` or to disable the context `no_grad_mode`?")
 
   # We initialize the Variable we want to backpropagate on with a Tensor of ones.
   # TODO, restrict to scalar backprop?
@@ -178,4 +188,5 @@ proc backprop*[TT](v: Variable[TT]) =
     let diffs = curNode.gate.backward(curVar.grad)
 
     for i in 0 ..< curNode.gate.nb_grads:
-      curNode.parents[i].grad += diffs[i]
+      if curNode.parents[i].requires_grad:
+        curNode.parents[i].grad += diffs[i]

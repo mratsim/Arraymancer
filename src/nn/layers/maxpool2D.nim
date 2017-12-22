@@ -30,8 +30,6 @@ method forward*[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[TT] {.in
                                                       self.kernel,
                                                       self.padding,
                                                       self.stride)
-  result.grad = zeros_like(result.value)
-
 
 method backward*[TT](self: MaxPool2DGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = maxpool2d_backward(
@@ -67,7 +65,6 @@ proc maxpool2d*[TT](input: Variable[TT],
   var gate: MaxPool2DGate[TT]
   new gate
   gate.nb_grads = 1
-  gate.cached_input_shape = input.value.shape
   gate.kernel = kernel
   gate.padding = padding
   gate.stride = stride
@@ -84,3 +81,10 @@ proc maxpool2d*[TT](input: Variable[TT],
   # Resulting var
   result = gate.forward(input)
   node.payload = result
+
+  # Caching for backprop
+  if input.is_grad_needed:
+    result.grad = zeros_like(result.value)
+    result.requires_grad = true
+
+    gate.cached_input_shape = input.value.shape

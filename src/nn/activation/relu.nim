@@ -24,7 +24,6 @@ method forward*[TT](self: ReluActivation[TT], a: Variable[TT]): Variable[TT] {.i
 
   result.context = a.context
   result.value = relu a.value
-  result.grad = zeros_like(result.value)
 
 method backward*[TT](self: ReluActivation[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = gradient.relu_backward(self.cache)
@@ -52,4 +51,8 @@ proc relu*[TT](a: Variable[TT]): Variable[TT] =
   node.payload = result
 
   # Caching for backprop
-  gate.cache = result.value
+  if a.is_grad_needed:
+    result.grad = zeros_like(result.value)
+    result.requires_grad = true
+
+    gate.cache = result.value

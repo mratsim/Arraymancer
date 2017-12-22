@@ -24,7 +24,6 @@ method forward*[TT](self: SigmoidActivation[TT], a: Variable[TT]): Variable[TT] 
 
   result.context = a.context
   result.value = sigmoid a.value
-  result.grad = zeros_like(result.value)
 
 method backward*[TT](self: SigmoidActivation[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = gradient.sigmoid_backward(self.cache)
@@ -52,4 +51,8 @@ proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
   node.payload = result
 
   # Caching for backprop
-  gate.cache = result.value
+  if a.is_grad_needed:
+    result.grad = zeros_like(result.value)
+    result.requires_grad = true
+
+    gate.cache = result.value

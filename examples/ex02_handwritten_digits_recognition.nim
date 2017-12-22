@@ -8,11 +8,9 @@ import ../src/arraymancer, random
 #
 # Note:
 # In the future, model, weights and optimizer definition will be streamlined.
-# Also, currently this only works on Nim 0.17.2
-# until I debug the new Nim allocator introduced in November 2017 in devel branch.
 
 # Make the results reproducible by initializing a random seed
-randomize(1337)
+randomize(42)
 
 let
   ctx = newContext Tensor[float32] # Autograd/neural network graph
@@ -30,7 +28,7 @@ let
   # Labels are uint8, we must convert them to int
   y_train = read_mnist_labels("bin/train-labels.idx1-ubyte").astype(int)
 
-  # Idem for testing data
+  # Idem for testing data (10000 images)
   x_test = read_mnist_images("bin/t10k-images.idx3-ubyte").astype(float32) / 255'f32
   X_test = ctx.variable x_test.unsqueeze(1)
   y_test = read_mnist_labels("bin/t10k-labels.idx1-ubyte").astype(int)
@@ -90,7 +88,7 @@ let optim = newSGD[float32](
 )
 
 # Learning loop
-for epoch in 0..5:
+for epoch in 0 ..< 5:
   for batch_id in 0 ..< X_train.value.shape[0] div n: # some at the end may be missing, oh well ...
     # minibatch offset in the Tensor
     let offset = batch_id * n
@@ -101,9 +99,11 @@ for epoch in 0..5:
     let clf = x.model
     let loss = clf.sparse_softmax_cross_entropy(target)
 
-    echo "Epoch is:" & $epoch
-    echo "Batch id:" & $batch_id
-    echo "Loss is:" & $loss.value.data[0]
+    if batch_id mod 200 == 0:
+      # Print status every 200 batches
+      echo "Epoch is:" & $epoch
+      echo "Batch id:" & $batch_id
+      echo "Loss is:" & $loss.value.data[0]
 
     # Compute the gradient (i.e. contribution of each parameter to the loss)
     loss.backprop()
@@ -111,8 +111,16 @@ for epoch in 0..5:
     # Correct the weights now that we have the gradient information
     optim.update()
 
-  ctx.no_grad_mode: # For validation we don't need to compute any gradient.
+  # Validation (checking the accuracy of our model)
+  ctx.no_grad_mode: # We don't need to compute any gradient.
     echo "\nEpoch #" & $epoch & " done. Testing accuracy"
-    let y_pred = X_test.model.value.softmax.argmax(axis = 1).indices.squeeze
-    echo accuracy_score(y_test, y_pred)
+
+    # To avoid using too much memory we will compute accuracy in 10 batches of 1000 images
+    # instead of loading 10 000 images at once
+    var score = 0.0
+    for i in 0 ..< 10:
+      let y_pred = X_test[i ..< i+1000, _].model.value.softmax.argmax(axis = 1).indices.squeeze
+      score += accuracy_score(y_test[i ..< i+1000, _], y_pred)
+    score /= 10
+    echo "Accuracy: " & $(score * 100) & "%"
     echo "\n"

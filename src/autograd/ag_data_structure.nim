@@ -24,8 +24,8 @@ type
     # Each operations should set its arity (number of input)
     # Additional fields like weights, cache for bprop should be added too.
 
-  Parents*[TT] = array[MAX_ARITY, Variable[TT]]
-  SmallDiffs*[TT] = array[MAX_ARITY, TT]  #TODO: how not to export that
+  Parents*[TT] = array[MAX_ARITY, VariablePtr[TT]] # Children have a weak (non-GC) reference to their parents operands
+  SmallDiffs*[TT] = array[MAX_ARITY, TT]           #TODO: how not to export that
 
   Node*[TT] = ref object
     # Store an operator/layer + its parent
@@ -40,8 +40,12 @@ type
   ## Considerations
   ## A variable can be used in 2 different computations, in that case both gate will point to it
 
-  Variable*[TT] = ref object
+  Variable*[TT] = ref VariableObj[TT]
     ## Wrapper for values
+  VariablePtr*[TT] = ptr VariableObj[TT]
+    ## Weak reference to a VariableObj
+
+  VariableObj[TT] = object
     tape*: Context[TT] #TODO: how not to export that
     value*: TT # TT should be a Tensor[T] or CudaTensor[T] or a scalar
     grad*: TT # gradient wrt to the last back propagation done
@@ -71,6 +75,12 @@ proc variable*[TT](ctx: Context[TT], value: TT): Variable[TT] {.inline, noSideEf
   ## T is a Tensour[T, CudaTensor[T] or scalar T
   # TODO make the grad initialization optional to optimize memory use
   return Variable[TT](tape: ctx, value: value, grad: value.zeros_like)
+
+proc weakRef*[TT](v: Variable[TT]): VariablePtr[TT] {.inline.} =
+  ## Get a weak/untraced reference to a Variable
+  ## This is intended for library writer and Neural Network graphs
+  ## to avoid strong cyclic references between parent operations/Variables and child.
+  cast[VariablePtr[TT]](v)
 
 proc len[TT](ctx: Context[TT]): int {.inline.}=
   ## Returns the number of operations applied in the context

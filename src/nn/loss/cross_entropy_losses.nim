@@ -54,7 +54,7 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
     new node
 
     node.gate = gate
-    node.parents[0] = a
+    node.parents[0] = a.weakRef
 
     a.tape.push(node)
 
@@ -100,7 +100,7 @@ proc sparse_softmax_crossentropy*[TT](a: Variable[TT], target: Tensor[int]): Var
   new node
 
   node.gate = gate
-  node.parents[0] = a
+  node.parents[0] = a.weakRef
 
   a.tape.push(node)
 

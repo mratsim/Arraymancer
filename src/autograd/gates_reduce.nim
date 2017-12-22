@@ -51,7 +51,7 @@ proc mean*[TT](a: Variable[TT]): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents[0] = a
+  node.parents[0] = a.weakRef
 
   a.tape.push(node)
 

@@ -77,7 +77,7 @@ proc maxpool2d*[TT](input: Variable[TT],
   new node
 
   node.gate = gate
-  node.parents[0] = input
+  node.parents[0] = input.weakRef
 
   input.tape.push(node)
 

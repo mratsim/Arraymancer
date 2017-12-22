@@ -96,10 +96,10 @@ proc conv2d*[TT]( input, weight: Variable[TT],
   new node
 
   node.gate = gate
-  node.parents[0] = input
-  node.parents[1] = weight
+  node.parents[0] = input.weakRef
+  node.parents[1] = weight.weakRef
   if not bias.isNil:
-    node.parents[2] = bias
+    node.parents[2] = bias.weakRef
 
   input.tape.push(node)
 

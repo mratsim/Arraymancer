@@ -183,10 +183,10 @@ proc backprop*[TT](v: Variable[TT]) =
 
   while v.context.len > 0:
     let curNode = v.context.pop
-    let curVar = curnode.payload
+    let curGate = curNode.gate
+    let diffs = curGate.backward(curnode.payload.grad)
 
-    let diffs = curNode.gate.backward(curVar.grad)
-
-    for i in 0 ..< curNode.gate.nb_grads:
-      if curNode.parents[i].requires_grad:
-        curNode.parents[i].grad += diffs[i]
+    for i in 0 ..< curGate.nb_grads:
+      let parent_i = curNode.parents[i]
+      if parent_i.requires_grad:
+        parent_i.grad += diffs[i]

@@ -35,7 +35,7 @@ type
   Variable*[TT] = ref VariableObj[TT]
     ## A variable is a wrapper for Tensors that tracks operations applied to it.
     ## It consists of:
-    ##    - A record of operations ``context``
+    ##    - A weak reference to a record of operations ``context``
     ##    - The tensor being tracked ``value``
     ##    - The gradient of the tensor ``grad``
     ##
@@ -116,22 +116,22 @@ proc weakRef*[TT](ctx: Context[TT]): ContextPtr[TT] {.inline.} =
   ## to avoid strong cyclic references.
   cast[ContextPtr[TT]](ctx)
 
-proc len[TT](ctx: ContextPtr[TT]): int {.inline.}=
+proc len[TT](ctx: ContextPtr[TT]): int {.noSideEffect, inline.}=
   ## Returns the number of operations applied in the context
   ctx.nodes.len()
 
-proc push*[TT](ctx: ContextPtr[TT], node: Node[TT]) {.inline.}= #TODO: how not to export that
+proc push*[TT](ctx: ContextPtr[TT], node: Node[TT]) {.noSideEffect, inline.}=
   ## Append a new operation to the context
   ctx.nodes.add(node)
 
-proc peek[TT](ctx: ContextPtr[TT]): Node[TT] {.inline.}=
+proc peek[TT](ctx: ContextPtr[TT]): Node[TT] {.noSideEffect, inline.}=
   ctx.nodes[ctx.len - 1]
 
-proc pop[TT](ctx: ContextPtr[TT]): Node[TT] {.inline.}=
+proc pop[TT](ctx: ContextPtr[TT]): Node[TT] {.noSideEffect, inline.}=
   ctx.nodes.pop
 
 proc check_ctx*(a, b: Variable) {.noSideEffect, inline.} =
-  if unlikely(a.context != b.context): # Compare pointer address directly
+  if unlikely(a.context != b.context):
     raise newException(ValueError, "You cannot combine variable from different contexts")
 
 proc backprop*[TT](v: Variable[TT]) =

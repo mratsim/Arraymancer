@@ -105,5 +105,4 @@ proc conv2d*[TT]( input, weight: Variable[TT],
 
   # Resulting var
   result = gate.forward(input)
-  result.ancestor = node
   node.child = result

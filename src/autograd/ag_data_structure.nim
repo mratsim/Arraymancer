@@ -39,12 +39,10 @@ type
 
   ## Considerations
   ## A variable can be used in 2 different computations, in that case both gate will point to it
-  ## It can only have one ancestor
 
   Variable*[TT] = ref object
     ## Wrapper for values
     tape*: Context[TT] #TODO: how not to export that
-    ancestor*: Node[TT] # Absence of ancestor will be represented by the nil value. TODO: Option type with no overhead: https://forum.nim-lang.org/t/3082
     value*: TT # TT should be a Tensor[T] or CudaTensor[T] or a scalar
     grad*: TT # gradient wrt to the last back propagation done
     # TODO make the grad initialization optional to optimize memory use
@@ -72,22 +70,21 @@ proc variable*[TT](ctx: Context[TT], value: TT): Variable[TT] {.inline, noSideEf
   ## Wrap a variable to the context
   ## T is a Tensour[T, CudaTensor[T] or scalar T
   # TODO make the grad initialization optional to optimize memory use
-  return Variable[TT](tape: ctx, ancestor: nil, value: value, grad: value.zeros_like)
+  return Variable[TT](tape: ctx, value: value, grad: value.zeros_like)
 
-template len[TT](t: Context[TT]): int =
+proc len[TT](ctx: Context[TT]): int {.inline.}=
   ## Returns the number of operations applied in the context
-  t.nodes.len()
+  ctx.nodes.len()
 
-template push*[TT](t: Context[TT], node: Node[TT]) = #TODO: how not to export that
+proc push*[TT](ctx: Context[TT], node: Node[TT]) {.inline.}= #TODO: how not to export that
   ## Append a new operation to the context
-  t.nodes.add(node) #Appending in Nim is add not push
+  ctx.nodes.add(node) #Appending in Nim is add not push
 
-template value*[TT](v: Variable[TT]): TT  =
-  ## Unwrap the value from its context
-  v.value
+proc peek[TT](ctx: Context[TT]): Node[TT] {.inline.}=
+  ctx.nodes[ctx.len - 1]
 
 proc check_ctx*(a, b: Variable) {.noSideEffect, inline.} =
-  if unlikely(a.tape[].unsafeAddr != b.tape[].unsafeAddr): # compare pointer adress directly (avoid deep comparison)
+  if unlikely(a.tape != b.tape): # Compare pointer address directly
     raise newException(ValueError, "You cannot combine variable from different contexts")
 
 proc backprop*[TT](v: Variable[TT]) =
@@ -99,7 +96,7 @@ proc backprop*[TT](v: Variable[TT]) =
   v.grad = v.value.ones_like
 
   # We pop the context until we find the gate that produced our Variable
-  while v.tape.len > 0 and v.tape.nodes[^1] != v.ancestor:
+  while v.tape.len > 0 and v.tape.peek.child != v:
     discard v.tape.nodes.pop
 
   # Now, until the context is been all backpropagated through we update

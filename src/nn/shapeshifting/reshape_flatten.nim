@@ -49,7 +49,6 @@ proc reshapeT[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a)
-  result.ancestor = node
   node.child = result
 
 

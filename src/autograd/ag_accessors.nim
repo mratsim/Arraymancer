@@ -20,7 +20,6 @@ template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
   new result
 
   result.tape = v.tape
-  result.ancestor = v.ancestor
   result.value = v.value[args]
   result.grad = v.grad[args]
 

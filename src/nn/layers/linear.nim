@@ -109,5 +109,4 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
 
   # Resulting var
   result = gate.forward(input)
-  result.ancestor = node
   node.child = result

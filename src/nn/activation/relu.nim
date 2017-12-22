@@ -49,7 +49,6 @@ proc relu*[TT](a: Variable[TT]): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a)
-  result.ancestor = node
   node.child = result
 
   # Caching for backprop

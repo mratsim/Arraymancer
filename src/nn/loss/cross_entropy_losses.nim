@@ -60,7 +60,6 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
 
     # Resulting var
     result = gate.forward(a, target)
-    result.ancestor = node
     node.child = result
 
 gen_cross_entropy_loss SigmoidCrossEntropyLoss, sigmoid_cross_entropy, sigmoid_cross_entropy_backward
@@ -107,5 +106,4 @@ proc sparse_softmax_crossentropy*[TT](a: Variable[TT], target: Tensor[int]): Var
 
   # Resulting var
   result = gate.forward(a, target)
-  result.ancestor = node
   node.child = result

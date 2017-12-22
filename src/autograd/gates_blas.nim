@@ -55,5 +55,4 @@ proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a, b)
-  result.ancestor = node
   node.child = result

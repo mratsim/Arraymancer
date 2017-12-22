@@ -22,7 +22,7 @@ type SigmoidActivation* {.final.} [TT] = ref object of Gate[TT]
 method forward*[TT](self: SigmoidActivation[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
-  result.tape = a.tape
+  result.context = a.context
   result.value = sigmoid a.value
   result.grad = zeros_like(result.value)
 
@@ -36,21 +36,20 @@ proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
   # Gate
   var gate: SigmoidActivation[TT]
   new gate
-  gate.arity = 1
+  gate.nb_grads = 1
 
   # Node
   var node: Node[TT]
   new node
 
   node.gate = gate
-  node.parents[0] = a
+  node.parents[0] = a.weakRef
 
-  a.tape.push(node)
+  a.context.push(node)
 
   # Resulting var
   result = gate.forward(a)
-  result.ancestor = node
-  node.child = result
+  node.payload = result
 
   # Caching for backprop
   gate.cache = result.value

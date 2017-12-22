@@ -24,7 +24,7 @@ type MeanGate* {.final.} [TT] = ref object of Gate[TT]
 method forward*[TT](self: MeanGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
-  result.tape = a.tape
+  result.context = a.context
   result.value = [a.value.mean].toTensor
 
   result.grad = zeros[getSubType(TT)](1)
@@ -43,7 +43,7 @@ proc mean*[TT](a: Variable[TT]): Variable[TT] =
   # Gate
   var gate: MeanGate[TT]
   new gate
-  gate.arity = 1
+  gate.nb_grads = 1
   gate.a_shape = a.value.shape # TODO use ref to avoid copy
 
   # Node
@@ -51,11 +51,10 @@ proc mean*[TT](a: Variable[TT]): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents[0] = a
+  node.parents[0] = a.weakRef
 
-  a.tape.push(node)
+  a.context.push(node)
 
   # Resulting var
   result = gate.forward(a)
-  result.ancestor = node
-  node.child = result
+  node.payload = result

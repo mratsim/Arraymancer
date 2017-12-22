@@ -25,7 +25,7 @@ type AddGate* {.final.} [TT] = ref object of Gate[TT]
 method forward*[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
-  result.tape = a.tape
+  result.context = a.context
   result.value = a.value + b.value
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
@@ -40,7 +40,7 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   # Gate
   var gate: AddGate[TT]
   new gate
-  gate.arity = 2
+  gate.nb_grads = 2
   gate.ab_shape = a.value.shape # Shape equality will be checked in the forward proc
 
   # Node
@@ -48,14 +48,13 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents[0] = a
-  node.parents[1] = b
+  node.parents[0] = a.weakRef
+  node.parents[1] = b.weakRef
 
-  a.tape.push(node)
+  a.context.push(node)
 
   # Resulting var
   result = gate.forward(a, b)
-  result.ancestor = node
-  node.child = result
+  node.payload = result
 
 

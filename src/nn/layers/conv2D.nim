@@ -27,7 +27,7 @@ type Conv2DGate* {.final.} [TT] = ref object of Gate[TT]
 method forward*[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
-  result.tape = a.tape
+  result.context = a.context
   result.value = conv2D(self.cached_input.value,
                         self.weight.value,
                         self.bias.value, # Todo, case when there is no bias
@@ -84,7 +84,7 @@ proc conv2d*[TT]( input, weight: Variable[TT],
   # Gate
   var gate: Conv2DGate[TT]
   new gate
-  gate.arity = if bias.isNil: 2 else: 3
+  gate.nb_grads = if bias.isNil: 2 else: 3
   gate.cached_input = input
   gate.weight = weight
   gate.bias = bias
@@ -96,14 +96,13 @@ proc conv2d*[TT]( input, weight: Variable[TT],
   new node
 
   node.gate = gate
-  node.parents[0] = input
-  node.parents[1] = weight
+  node.parents[0] = input.weakRef
+  node.parents[1] = weight.weakRef
   if not bias.isNil:
-    node.parents[2] = bias
+    node.parents[2] = bias.weakRef
 
-  input.tape.push(node)
+  input.context.push(node)
 
   # Resulting var
   result = gate.forward(input)
-  result.ancestor = node
-  node.child = result
+  node.payload = result

@@ -15,7 +15,7 @@
 import  ../../autograd/autograd
 
 type Layer*[TT] = ref object of Gate[TT]
-  ## Inherits from Gate (arity field)
+  ## Inherits from Gate (nb_grads field)
   ## Add required fields for gradient descent
   weight*: TT
   bias*: TT

@@ -19,7 +19,7 @@ import  ../private/[ast_utils, functional],
 
 type MeanGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
-  a_shape: MetadataArray
+  cached_input_shape: MetadataArray
 
 method forward*[TT](self: MeanGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
@@ -27,14 +27,15 @@ method forward*[TT](self: MeanGate[TT], a: Variable[TT]): Variable[TT] {.inline,
   result.context = a.context
   result.value = [a.value.mean].toTensor
 
-  result.grad = zeros[getSubType(TT)](1)
-
+  if a.is_grad_needed:
+    result.grad = zeros[getSubType(TT)](1)
+    result.requires_grad = true
 
 method backward*[TT](self: MeanGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
-  result[0] = gradient / getSubType(TT)(self.a_shape.product) # Conversion to subtype T, oh Higher kinded-types ...
+  result[0] = gradient / getSubType(TT)(self.cached_input_shape.product) # Conversion to subtype T, oh Higher kinded-types ...
 
-  let z_shape = newSeqWith(self.a_shape.len, 1) # We create a shape of 1 dimension that we will expand with broadcast
-  result[0] = result[0].reshape(z_shape).broadcast(self.a_shape)
+  let z_shape = newSeqWith(self.cached_input_shape.len, 1) # We create a shape of 1 dimension that we will expand with broadcast
+  result[0] = result[0].reshape(z_shape).broadcast(self.cached_input_shape)
 
 proc mean*[TT](a: Variable[TT]): Variable[TT] =
   when compileOption("boundChecks"):
@@ -44,7 +45,6 @@ proc mean*[TT](a: Variable[TT]): Variable[TT] =
   var gate: MeanGate[TT]
   new gate
   gate.nb_grads = 1
-  gate.a_shape = a.value.shape # TODO use ref to avoid copy
 
   # Node
   var node: Node[TT]
@@ -58,3 +58,10 @@ proc mean*[TT](a: Variable[TT]): Variable[TT] =
   # Resulting var
   result = gate.forward(a)
   node.payload = result
+
+  # Caching for backprop
+  if a.is_grad_needed:
+    result.grad = zeros_like(result.value)
+    result.requires_grad = true
+
+    gate.cached_input_shape = a.value.shape

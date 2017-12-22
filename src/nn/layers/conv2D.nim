@@ -34,8 +34,6 @@ method forward*[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.inlin
                         self.padding,
                         self.stride
                         )
-  result.grad = zeros_like(result.value)
-
 
 method backward*[TT](self: Conv2DGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   conv2d_backward(
@@ -106,3 +104,8 @@ proc conv2d*[TT]( input, weight: Variable[TT],
   # Resulting var
   result = gate.forward(input)
   node.payload = result
+
+  # Caching for backprop:
+  if input.is_grad_needed or weight.is_grad_needed or (not bias.isNil and bias.is_grad_needed):
+    result.grad = zeros_like(result.value)
+    result.requires_grad = true

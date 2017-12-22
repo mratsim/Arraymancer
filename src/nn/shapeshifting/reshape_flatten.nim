@@ -25,7 +25,6 @@ method forward*[TT](self: ReshapeGate[TT], a: Variable[TT]): Variable[TT] {.inli
 
   result.context = a.context
   result.value = a.value.reshape(self.cached_output_shape)
-  result.grad = zeros_like(result.value)
 
 method backward*[TT](self: ReshapeGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = gradient.reshape(self.cached_input_shape)
@@ -35,7 +34,6 @@ proc reshapeT[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
   var gate: ReshapeGate[TT]
   new gate
   gate.nb_grads = 1
-  gate.cached_input_shape = a.value.shape
   gate.cached_output_shape = shape
 
   # Node
@@ -50,6 +48,13 @@ proc reshapeT[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
   # Resulting var
   result = gate.forward(a)
   node.payload = result
+
+  # Caching for backprop
+  if a.is_grad_needed:
+    result.grad = zeros_like(result.value)
+    result.requires_grad = true
+
+    gate.cached_input_shape = a.value.shape
 
 
 proc reshape*[TT](a: Variable[TT], shape: varargs[int]): Variable[TT] =

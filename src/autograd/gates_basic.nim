@@ -27,7 +27,6 @@ method forward*[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inlin
 
   result.context = a.context
   result.value = a.value + b.value
-  result.grad = zeros[getSubType(TT)](result.value.shape)
 
 method backward*[TT](self: AddGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = gradient
@@ -41,7 +40,6 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   var gate: AddGate[TT]
   new gate
   gate.nb_grads = 2
-  gate.ab_shape = a.value.shape # Shape equality will be checked in the forward proc
 
   # Node
   var node: Node[TT]
@@ -57,4 +55,9 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   result = gate.forward(a, b)
   node.payload = result
 
+  # Caching for backprop
+  if a.is_grad_needed or b.is_grad_needed:
+    result.grad = zeros[getSubType(TT)](result.value.shape)
+    result.requires_grad = true
 
+    gate.ab_shape = a.value.shape # Shape equality is checked in a + b in forward method

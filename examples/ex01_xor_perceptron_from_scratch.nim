@@ -24,13 +24,15 @@ let y = y_bool.astype(float32)
 # First hidden layer of 3 neurons, shape [3 out_features, 2 in_features]
 # We initialize with random weights between -1 and 1
 let layer_3neurons = ctx.variable(
-                      randomTensor(3, 2, 2.0f) .- 1.0f
+                      randomTensor(3, 2, 2.0f) .- 1.0f,
+                      requires_grad = true
                       )
 
 # Classifier layer with 1 neuron per feature. (In our case only one neuron overall)
 # We initialize with random weights between -1 and 1
 let classifier_layer = ctx.variable(
-                  randomTensor(1, 3, 2.0f) .- 1.0f
+                  randomTensor(1, 3, 2.0f) .- 1.0f,
+                  requires_grad = true
                   )
 
 # Stochastic Gradient Descent

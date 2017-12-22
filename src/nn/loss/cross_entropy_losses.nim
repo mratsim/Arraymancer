@@ -35,7 +35,9 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
     # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
     result.value = [forward_proc(a.value, target)].toTensor
 
-    result.grad = zeros[getSubType(TT)](1)
+    if a.is_grad_needed:
+      result.grad = zeros[getSubType(TT)](1)
+      result.requires_grad = true
 
 
   method backward*[TT](self: LossType[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
@@ -81,9 +83,6 @@ method forward*[TT](self: SparseSoftmaxCrossEntropyLoss[TT], a: Variable[TT], ta
   # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
   result.value = [sparse_softmax_crossentropy(a.value, target)].toTensor
 
-  result.grad = zeros[getSubType(TT)](1)
-
-
 method backward*[TT](self: SparseSoftmaxCrossEntropyLoss[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = sparse_softmax_crossentropy_backward(gradient, self.cache.value, self.target)
 
@@ -92,8 +91,6 @@ proc sparse_softmax_crossentropy*[TT](a: Variable[TT], target: Tensor[int]): Var
   var gate: SparseSoftmaxCrossEntropyLoss[TT]
   new gate
   gate.nb_grads = 1
-  gate.cache = a
-  gate.target = target
 
   # Node
   var node: Node[TT]
@@ -107,3 +104,11 @@ proc sparse_softmax_crossentropy*[TT](a: Variable[TT], target: Tensor[int]): Var
   # Resulting var
   result = gate.forward(a, target)
   node.payload = result
+
+  # Caching for backprop
+  if a.is_grad_needed:
+    result.grad = zeros[getSubType(TT)](1)
+    result.requires_grad = true
+
+    gate.cache = a
+    gate.target = target

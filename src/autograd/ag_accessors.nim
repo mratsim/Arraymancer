@@ -16,13 +16,15 @@ import ../tensor/tensor,
        ./ag_data_structure
 
 template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
+  # TODO: backprop support
   var result: type(v)
   new result
 
   result.context = v.context
   result.value = v.value[args]
   result.grad = v.grad[args]
+  result.requires_grad = v.requires_grad
 
   result
 
-  # TODO: tests for slicing correspondance
+  # TODO: tests for slicing correspondence

@@ -35,19 +35,39 @@ let
   X_test = ctx.variable x_test.unsqueeze(1)
   y_test = read_mnist_labels("bin/t10k-labels.idx1-ubyte").astype(int)
 
-# Config
+# Config (API is not finished)
 let
   # We randomly initialize all weights and bias between [-0.5, 0.5]
+  # In the future requires_grad will be automatically set for neural network layers
 
-  cv1_w = ctx.variable randomTensor[float32](20, 1, 5, 5, 1'f32) .- 0.5'f32  # Weight of 1st convolution
-  cv1_b = ctx.variable randomTensor[float32](20, 1, 1, 1'f32) .- 0.5'f32     # Bias of 1st convolution
+  cv1_w = ctx.variable(
+    randomTensor[float32](20, 1, 5, 5, 1'f32) .- 0.5'f32,    # Weight of 1st convolution
+    requires_grad = true
+    )
+  cv1_b = ctx.variable(
+    randomTensor[float32](20, 1, 1, 1'f32) .- 0.5'f32,       # Bias of 1st convolution
+    requires_grad = true
+    )
 
-  cv2_w = ctx.variable randomTensor[float32](50, 20, 5, 5, 1'f32) .- 0.5'f32 # Weight of 2nd convolution
-  cv2_b = ctx.variable randomTensor[float32](50, 1, 1, 1'f32) .- 0.5'f32     # Bias of 2nd convolution
+  cv2_w = ctx.variable(
+    randomTensor[float32](50, 20, 5, 5, 1'f32) .- 0.5'f32,   # Weight of 2nd convolution
+    requires_grad = true
+    )
 
-  fc3 = ctx.variable randomTensor[float32](500, 800, 1'f32) .- 0.5'f32       # Fully connected: 800 in, 500 out
+  cv2_b = ctx.variable(
+    randomTensor[float32](50, 1, 1, 1'f32) .- 0.5'f32,       # Bias of 2nd convolution
+    requires_grad = true
+    )
 
-  classifier = ctx.variable randomTensor[float32](10, 500, 1'f32) .- 0.5'f32 # Fully connected: 500 in, 10 classes out
+  fc3 = ctx.variable(
+    randomTensor[float32](500, 800, 1'f32) .- 0.5'f32,       # Fully connected: 800 in, 500 ou
+    requires_grad = true
+    )
+
+  classifier = ctx.variable(
+    randomTensor[float32](10, 500, 1'f32) .- 0.5'f32,        # Fully connected: 500 in, 10 classes out
+    requires_grad = true
+    )
 
 proc model[TT](x: Variable[TT]): Variable[TT] =
   # The formula of the output size of convolutions and maxpools is:
@@ -91,7 +111,8 @@ for epoch in 0..5:
     # Correct the weights now that we have the gradient information
     optim.update()
 
-  echo "\nEpoch #" & $epoch & " done. Testing accuracy"
-  let y_pred = X_test.model.value.softmax.argmax(axis = 1).indices.squeeze
-  echo accuracy_score(y_test, y_pred)
-  echo "\n"
+  ctx.no_grad_mode: # For validation we don't need to compute any gradient.
+    echo "\nEpoch #" & $epoch & " done. Testing accuracy"
+    let y_pred = X_test.model.value.softmax.argmax(axis = 1).indices.squeeze
+    echo accuracy_score(y_test, y_pred)
+    echo "\n"

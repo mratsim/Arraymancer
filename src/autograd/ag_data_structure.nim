@@ -19,9 +19,15 @@ const MAX_NB_GRADS = 3 # Max number of gradients output of autograd operations
 type
   Context*[TT] = ref ContextObj[TT]
     ## An autograd context is a record of operations or layers.
-    ## Note: backpropagation empties the list of operations.
+    ## It holds the following fields:
+    ##   - ``nodes``: This records the list of operations(``Node``) applied in the context
+    ##   - ``no_grad``: This disable tracing the list of operations altogether.
+    ##     This is useful to save memory when you don't need the gradient
+    ##     (for validation or prediction for example)
     ##
     ## A context is also called a tape or a Wengert list.
+    ##
+    ## Note: backpropagation empties the list of operations.
 
   ContextPtr[TT] = ptr ContextObj[TT]
     ## A ``ContextPtr`` is a weak reference to a ``ContextObj``.
@@ -31,6 +37,7 @@ type
 
   ContextObj[TT] = object
     nodes: seq[Node[TT]]
+    no_grad: bool
 
   Variable*[TT] = ref VariableObj[TT]
     ## A variable is a wrapper for Tensors that tracks operations applied to it.
@@ -56,6 +63,7 @@ type
     context*: ContextPtr[TT]
     value*: TT
     grad*: TT
+    requires_grad*: bool
     # TODO make the grad initialization optional to optimize memory use
 
   Gate*[TT] = ref object {.inheritable.}
@@ -95,7 +103,7 @@ proc newContext*(TT: typedesc): Context[TT] {.noSideEffect.} =
   new result
   result.nodes = newSeq[Node[TT]]()
 
-proc variable*[TT](ctx: Context[TT], value: TT): Variable[TT] {.noSideEffect.} =
+proc variable*[TT](ctx: Context[TT], value: TT, requires_grad = false): Variable[TT] {.noSideEffect.} =
   ## Wrap a variable to the context
   ## T is a Tensor[T, CudaTensor[T] or scalar T
   # TODO make the grad initialization optional to optimize memory use
@@ -103,6 +111,7 @@ proc variable*[TT](ctx: Context[TT], value: TT): Variable[TT] {.noSideEffect.} =
   result.context = ctx.weakRef
   result.value = value
   result.grad = value.zeros_like
+  result.requires_grad = requires_grad
 
 proc weakRef*[TT](v: Variable[TT]): VariablePtr[TT] {.inline.} =
   ## Get a weak/untraced reference to a Variable
@@ -122,13 +131,31 @@ proc len[TT](ctx: ContextPtr[TT]): int {.noSideEffect, inline.}=
 
 proc push*[TT](ctx: ContextPtr[TT], node: Node[TT]) {.noSideEffect, inline.}=
   ## Append a new operation to the context
-  ctx.nodes.add(node)
+  if not ctx.no_grad:
+    ctx.nodes.add(node)
 
 proc peek[TT](ctx: ContextPtr[TT]): Node[TT] {.noSideEffect, inline.}=
   ctx.nodes[ctx.len - 1]
 
 proc pop[TT](ctx: ContextPtr[TT]): Node[TT] {.noSideEffect, inline.}=
   ctx.nodes.pop
+
+template no_grad_mode*(ctx: Context, body: untyped): untyped =
+  ## Within this block, the context will not track the operations applied
+  ## to each Variable.
+  ##
+  ## This should be used for validation or prediction to optimize memory.
+  let prev_state = ctx.no_grad
+  ctx.no_grad = true
+
+  body
+
+  ctx.no_grad = prev_state
+
+proc is_grad_needed*(v: Variable): bool {.noSideEffect, inline.} =
+  ## Depending on the input variable and its context no_grad_mode,
+  ## returns true if gradient computation is needed and false otherwise
+  v.requires_grad and not v.context.no_grad
 
 proc check_ctx*(a, b: Variable) {.noSideEffect, inline.} =
   if unlikely(a.context != b.context):
@@ -137,6 +164,9 @@ proc check_ctx*(a, b: Variable) {.noSideEffect, inline.} =
 proc backprop*[TT](v: Variable[TT]) =
   ## Differentiate the chain of operations w.r.t to this variable.
   ## Context will be reset
+
+  if unlikely(not v.requires_grad):
+    raise newException(ValueError, "Operations leading to this variable were not fully traced.\nDid you forget to set a `requires_grad` or to disable the context `no_grad_mode`?")
 
   # We initialize the Variable we want to backpropagate on with a Tensor of ones.
   # TODO, restrict to scalar backprop?
@@ -153,9 +183,10 @@ proc backprop*[TT](v: Variable[TT]) =
 
   while v.context.len > 0:
     let curNode = v.context.pop
-    let curVar = curnode.payload
+    let curGate = curNode.gate
+    let diffs = curGate.backward(curnode.payload.grad)
 
-    let diffs = curNode.gate.backward(curVar.grad)
-
-    for i in 0 ..< curNode.gate.nb_grads:
-      curNode.parents[i].grad += diffs[i]
+    for i in 0 ..< curGate.nb_grads:
+      let parent_i = curNode.parents[i]
+      if parent_i.requires_grad:
+        parent_i.grad += diffs[i]

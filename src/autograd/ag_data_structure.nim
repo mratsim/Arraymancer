@@ -74,7 +74,7 @@ type
     parents*: Parents[TT]
     payload*: Variable[TT]
 
-  Parents*[TT] = array[MAX_NB_GRADS, VariablePtr[TT]]
+  Parents[TT] = array[MAX_NB_GRADS, VariablePtr[TT]]
   SmallDiffs*[TT] = array[MAX_NB_GRADS, TT]
 
 # Somehow if you declare forward before backward, you get invalid declaration order

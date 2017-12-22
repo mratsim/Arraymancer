@@ -19,9 +19,15 @@ const MAX_NB_GRADS = 3 # Max number of gradients output of autograd operations
 type
   Context*[TT] = ref ContextObj[TT]
     ## An autograd context is a record of operations or layers.
-    ## Note: backpropagation empties the list of operations.
+    ## It holds the following fields:
+    ##   - ``nodes``: This records the list of operations(``Node``) applied in the context
+    ##   - ``no_grad``: This disable tracing the list of operations altogether.
+    ##     This is useful to save memory when you don't need the gradient
+    ##     (for validation or prediction for example)
     ##
     ## A context is also called a tape or a Wengert list.
+    ##
+    ## Note: backpropagation empties the list of operations.
 
   ContextPtr[TT] = ptr ContextObj[TT]
     ## A ``ContextPtr`` is a weak reference to a ``ContextObj``.
@@ -31,6 +37,7 @@ type
 
   ContextObj[TT] = object
     nodes: seq[Node[TT]]
+    no_grad: bool
 
   Variable*[TT] = ref VariableObj[TT]
     ## A variable is a wrapper for Tensors that tracks operations applied to it.
@@ -122,13 +129,26 @@ proc len[TT](ctx: ContextPtr[TT]): int {.noSideEffect, inline.}=
 
 proc push*[TT](ctx: ContextPtr[TT], node: Node[TT]) {.noSideEffect, inline.}=
   ## Append a new operation to the context
-  ctx.nodes.add(node)
+  if not ctx.no_grad:
+    ctx.nodes.add(node)
 
 proc peek[TT](ctx: ContextPtr[TT]): Node[TT] {.noSideEffect, inline.}=
   ctx.nodes[ctx.len - 1]
 
 proc pop[TT](ctx: ContextPtr[TT]): Node[TT] {.noSideEffect, inline.}=
   ctx.nodes.pop
+
+template no_grad_mode*(ctx: Context, body: untyped): untyped =
+  ## Within this block, the context will not track the operations applied
+  ## to each Variable.
+  ##
+  ## This should be used for validation or prediction to optimize memory.
+  let prev_state = ctx.no_grad
+  ctx.no_grad = true
+
+  body
+
+  ctx.no_grad = prev_state
 
 proc check_ctx*(a, b: Variable) {.noSideEffect, inline.} =
   if unlikely(a.context != b.context):

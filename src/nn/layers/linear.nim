@@ -38,24 +38,14 @@ method backward*[TT](self: LinearGate[TT], gradOutput: TT): SmallDiffs[TT] {.noI
   # result[1] grad w.r.t. weight
   # result[2] grad w.r.t. bias
 
-  if self.bias.isNil:
-    linear_backward(
-      self.input.value,
-      self.weight.value,
-      gradOutput,
-      result[0],
-      result[1]
-    )
-  else:
-    linear_backward(
-      self.input.value,
-      self.weight.value,
-      self.bias.value,
-      gradOutput,
-      result[0],
-      result[1],
-      result[2]
-    )
+  if self.input.requires_grad:
+    result[0] = gradOutput * self.weight.value
+
+  if self.weight.requires_grad:
+    result[1] = gradOutput.transpose * self.input.value
+
+  if not self.bias.isNil and self.bias.requires_grad:
+    result[0] = sum(gradOutput, axis = 0)
 
 proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variable[TT] =
   ## Input:

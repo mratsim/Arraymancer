@@ -1,4 +1,4 @@
-import ../src/arraymancer
+import ../src/arraymancer, random
 
 # This is an early minimum viable example of handwritten digits recognition.
 # It uses convolutional neural networks to achieve high accuracy.
@@ -10,6 +10,9 @@ import ../src/arraymancer
 # In the future, model, weights and optimizer definition will be streamlined.
 # Also, currently this only works on Nim 0.17.2
 # until I debug the new Nim allocator introduced in November 2017 in devel branch.
+
+# Make the results reproducible by initializing a random seed
+randomize(1337)
 
 let
   ctx = newContext Tensor[float32] # Autograd/neural network graph

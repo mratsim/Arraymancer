@@ -32,7 +32,7 @@ proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, 
   ## Warning ⚠
   ##   Tensor data is uninitialized and contains garbage.
   tensorCpu(shape, result)
-  result.data = newSeqUninit[T](result.size)
+  result.storage.Fdata = newSeqUninit[T](result.size)
 
 proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
@@ -44,7 +44,7 @@ proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noSideEffect,noInit,
   ## Warning ⚠
   ##   Tensor data is uninitialized and contains garbage.
   tensorCpu(shape, result)
-  result.data = newSeqUninit[T](result.size)
+  result.storage.Fdata = newSeqUninit[T](result.size)
 
 proc newTensor*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
@@ -55,7 +55,7 @@ proc newTensor*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline
   ##      - A Tensor of the proper shape initialized with
   ##        the default type value (0 for numeric types) on Cpu backend
   tensorCpu(shape, result)
-  result.data = newSeq[T](result.size)
+  result.storage.Fdata = newSeq[T](result.size)
 
 proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor filled with the given value
@@ -68,7 +68,7 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noSideEffect,
   ##        the given value
   # Todo: use a template that can accept proc or value. See the code for newSeqWith: https://github.com/nim-lang/Nim/blob/master/lib/pure/collections/sequtils.nim#L650-L665
   tensorCpu(shape, result)
-  result.data = newSeqWith(result.size, value)
+  result.storage.Fdata = newSeqWith(result.size, value)
 
 proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor filled with the given value
@@ -81,7 +81,7 @@ proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noSideEffect
   ##        the given value
   # Todo: use a template that can accept proc or value. See the code for newSeqWith: https://github.com/nim-lang/Nim/blob/master/lib/pure/collections/sequtils.nim#L650-L665
   tensorCpu(shape, result)
-  result.data = newSeqWith(result.size, value)
+  result.storage.Fdata = newSeqWith(result.size, value)
 
 proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect.} =
   ## Convert an openarray to a Tensor
@@ -109,7 +109,7 @@ proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect
   ## Result:
   ##      - A zero-ed Tensor of the input shape on backend Cpu
   tensorCpu(shape, result)
-  result.data = newSeq[T](result.size)
+  result.storage.Fdata = newSeq[T](result.size)
 
 proc zeros*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
@@ -120,7 +120,7 @@ proc zeros*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit,noSideEffec
   ## Result:
   ##      - A zero-ed Tensor of the input shape on backend Cpu
   tensorCpu(shape, result)
-  result.data = newSeq[T](result.size)
+  result.storage.Fdata = newSeq[T](result.size)
 
 proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
@@ -129,7 +129,7 @@ proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, 
   ##      - Type of its elements
   ## Result:
   ##      - A zero-ed Tensor of the same shape
-  return zeros[T](t.shape)
+  result = zeros[T](t.shape)
 
 proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect,inline.} =
   ## Creates a new Tensor filled with 1
@@ -139,7 +139,7 @@ proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect,
   ## Result:
   ##      - A one-ed Tensor of the same shape
   tensorCpu(shape, result)
-  result.data = newSeqWith(result.size, 1.T)
+  result.storage.Fdata = newSeqWith(result.size, 1.T)
 
 proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit,noSideEffect,inline.} =
   ## Creates a new Tensor filled with 1
@@ -162,7 +162,7 @@ proc ones_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, i
 
 template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typed): untyped =
   tensorCpu(shape, t)
-  t.data = newSeqWith(t.size, T(random(max_or_range))) # Due to automatic converter (float32 -> float64), we must force T #68
+  result.storage.Fdata = newSeqWith(t.size, T(random(max_or_range))) # Due to automatic converter (float32 -> float64), we must force T #68
 
 proc randomTensor*[T:SomeReal](shape: varargs[int], max: T): Tensor[T] {.noInit.} =
   ## Creates a new float Tensor filled with values between 0 and max.
@@ -226,4 +226,4 @@ proc randomNormalTensor*[T:SomeReal](shape: varargs[int], mean:T = 0, std:T = 1)
   ## Result:
   ##      - A tensor of the input shape filled with random values in the normal distribution
   tensorCpu(shape, result)
-  result.data = newSeqWith(result.size, T(randomNormal(mean.float, std.float)))
+  result.storage.Fdata = newSeqWith(result.size, T(randomNormal(mean.float, std.float)))

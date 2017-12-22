@@ -31,7 +31,7 @@ method forward*[TT](self: LinearGate[TT], input: Variable[TT]): Variable[TT] {.i
   else:
     linear(input.value, self.weight.value, self.bias.value, result.value)
 
-  result.tape = input.tape
+  result.context = input.context
   result.grad = zeros_like(result.value)
 
 method backward*[TT](self: LinearGate[TT], gradOutput: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
@@ -105,7 +105,7 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
   if not bias.isNil:
     node.parents[2] = bias.weakRef
 
-  input.tape.push(node)
+  input.context.push(node)
 
   # Resulting var
   result = gate.forward(input)

@@ -19,7 +19,7 @@ template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
   var result: type(v)
   new result
 
-  result.tape = v.tape
+  result.context = v.context
   result.value = v.value[args]
   result.grad = v.grad[args]
 

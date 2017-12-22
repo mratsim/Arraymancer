@@ -30,7 +30,7 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
     # We expect a in shape [batch_size, features]
 
     new result
-    result.tape = a.tape
+    result.context = a.context
 
     # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
     result.value = [forward_proc(a.value, target)].toTensor
@@ -56,7 +56,7 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
     node.gate = gate
     node.parents[0] = a.weakRef
 
-    a.tape.push(node)
+    a.context.push(node)
 
     # Resulting var
     result = gate.forward(a, target)
@@ -76,7 +76,7 @@ method forward*[TT](self: SparseSoftmaxCrossEntropyLoss[TT], a: Variable[TT], ta
   # We expect a in shape [batch_size, features]
 
   new result
-  result.tape = a.tape
+  result.context = a.context
 
   # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
   result.value = [sparse_softmax_crossentropy(a.value, target)].toTensor
@@ -102,7 +102,7 @@ proc sparse_softmax_crossentropy*[TT](a: Variable[TT], target: Tensor[int]): Var
   node.gate = gate
   node.parents[0] = a.weakRef
 
-  a.tape.push(node)
+  a.context.push(node)
 
   # Resulting var
   result = gate.forward(a, target)

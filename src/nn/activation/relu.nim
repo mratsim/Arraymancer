@@ -22,7 +22,7 @@ type ReluActivation* {.final.} [TT] = ref object of Gate[TT]
 method forward*[TT](self: ReluActivation[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
-  result.tape = a.tape
+  result.context = a.context
   result.value = relu a.value
   result.grad = zeros_like(result.value)
 
@@ -45,7 +45,7 @@ proc relu*[TT](a: Variable[TT]): Variable[TT] =
   node.gate = gate
   node.parents[0] = a.weakRef
 
-  a.tape.push(node)
+  a.context.push(node)
 
   # Resulting var
   result = gate.forward(a)

@@ -24,7 +24,7 @@ type MatMulGate* {.final.} [TT] = ref object of Gate[TT]
 method forward*[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
-  result.tape = a.tape
+  result.context = a.context
   result.value = a.value * b.value
   result.grad = zeros[getSubType(TT)](result.value.shape)
 
@@ -51,7 +51,7 @@ proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
   node.parents[0] = a.weakRef
   node.parents[1] = b.weakRef
 
-  a.tape.push(node)
+  a.context.push(node)
 
   # Resulting var
   result = gate.forward(a, b)

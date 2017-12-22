@@ -23,7 +23,7 @@ type ReshapeGate* [TT] = ref object of Gate[TT]
 method forward*[TT](self: ReshapeGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
-  result.tape = a.tape
+  result.context = a.context
   result.value = a.value.reshape(self.cached_output_shape)
   result.grad = zeros_like(result.value)
 
@@ -45,7 +45,7 @@ proc reshapeT[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
   node.gate = gate
   node.parents[0] = a.weakRef
 
-  a.tape.push(node)
+  a.context.push(node)
 
   # Resulting var
   result = gate.forward(a)

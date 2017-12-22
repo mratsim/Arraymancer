@@ -25,7 +25,7 @@ type MaxPool2DGate* {.final.} [TT] = ref object of Gate[TT]
 method forward*[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
 
-  result.tape = a.tape
+  result.context = a.context
   (self.cached_max_indices, result.value) = maxpool2d(a.value,
                                                       self.kernel,
                                                       self.padding,
@@ -79,7 +79,7 @@ proc maxpool2d*[TT](input: Variable[TT],
   node.gate = gate
   node.parents[0] = input.weakRef
 
-  input.tape.push(node)
+  input.context.push(node)
 
   # Resulting var
   result = gate.forward(input)

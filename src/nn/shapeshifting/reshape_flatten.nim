@@ -34,7 +34,7 @@ proc reshapeT[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
   # Gate
   var gate: ReshapeGate[TT]
   new gate
-  gate.arity = 1
+  gate.nb_grads = 1
   gate.cached_input_shape = a.value.shape
   gate.cached_output_shape = shape
 
@@ -49,7 +49,7 @@ proc reshapeT[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a)
-  node.child = result
+  node.payload = result
 
 
 proc reshape*[TT](a: Variable[TT], shape: varargs[int]): Variable[TT] =

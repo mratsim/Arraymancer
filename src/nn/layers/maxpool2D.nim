@@ -66,7 +66,7 @@ proc maxpool2d*[TT](input: Variable[TT],
   # Gate
   var gate: MaxPool2DGate[TT]
   new gate
-  gate.arity = 1
+  gate.nb_grads = 1
   gate.cached_input_shape = input.value.shape
   gate.kernel = kernel
   gate.padding = padding
@@ -83,4 +83,4 @@ proc maxpool2d*[TT](input: Variable[TT],
 
   # Resulting var
   result = gate.forward(input)
-  node.child = result
+  node.payload = result

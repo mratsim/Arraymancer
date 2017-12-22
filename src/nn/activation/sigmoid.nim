@@ -36,7 +36,7 @@ proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
   # Gate
   var gate: SigmoidActivation[TT]
   new gate
-  gate.arity = 1
+  gate.nb_grads = 1
 
   # Node
   var node: Node[TT]
@@ -49,7 +49,7 @@ proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a)
-  node.child = result
+  node.payload = result
 
   # Caching for backprop
   gate.cache = result.value

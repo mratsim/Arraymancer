@@ -14,43 +14,58 @@
 
 import typetraits
 
-const MAX_ARITY = 3 # Max arity/number of input of autograd operations
+const MAX_NB_GRADS = 3 # Max number of gradients output of autograd operations
 
 type
-  Gate*[TT] = ref object {.inheritable.}
-    arity*: int
-    # Base operator or layer
-    # Inherit from it and add a forward and backward method.
-    # Each operations should set its arity (number of input)
-    # Additional fields like weights, cache for bprop should be added too.
-
-  Parents*[TT] = array[MAX_ARITY, VariablePtr[TT]] # Children have a weak (non-GC) reference to their parents operands
-  SmallDiffs*[TT] = array[MAX_ARITY, TT]           #TODO: how not to export that
-
-  Node*[TT] = ref object
-    # Store an operator/layer + its parent
-    gate*: Gate[TT] #TODO: how not to export that
-    parents*: Parents[TT] #TODO: how not to export that
-    child*: Variable[TT] # Todo: avoid reference to child and add {.acyclic.}
-
   Context*[TT] = ref object
-    ## Tape / Wengert list. Contains the list of applied operations or layers
+    ## An autograd context is a record of operations or layers.
+    ## Note: backpropagation empties the list of operations.
+    ##
+    ## A context is also called a tape or a Wengert list.
     nodes: seq[Node[TT]]
 
-  ## Considerations
-  ## A variable can be used in 2 different computations, in that case both gate will point to it
-
   Variable*[TT] = ref VariableObj[TT]
-    ## Wrapper for values
+    ## A variable is a wrapper for Tensors that tracks operations applied to it.
+    ## It consists of:
+    ##    - An autograd context ``tape``
+    ##    - The tensor being tracked ``value``
+    ##    - The gradient of the tensor ``grad``
   VariablePtr*[TT] = ptr VariableObj[TT]
-    ## Weak reference to a VariableObj
+    ## A ``VariablePtr`` is almost the same as a ``Variable``
+    ## except that it is not traced by the garbage collector.
+    ##
+    ## It is an optimization to break from the following cyclic reference:
+    ## parent --(ref)--> child
+    ## child  --(ref)--> parent
+    ## A naive (but fast) garbage collector cannot delete child because parent refers to it
+    ## nor can it delete parent because child refers to it.
 
-  VariableObj[TT] = object
-    tape*: Context[TT] #TODO: how not to export that
-    value*: TT # TT should be a Tensor[T] or CudaTensor[T] or a scalar
-    grad*: TT # gradient wrt to the last back propagation done
+
+  VariableObj {.acyclic.} [TT] = object {.acyclic.}
+    tape*: Context[TT]
+    value*: TT
+    grad*: TT
     # TODO make the grad initialization optional to optimize memory use
 
+
+  Gate*[TT] = ref object {.inheritable.}
+    nb_grads*: int
+    ## Base operator or layer. You can describe your custom operations or layers
+    ## by inheriting from Gate and add a forward and optionally a backward method.
+    ## Each operations should set the number of gradients produced during backpropagation.
+    ## Additional fields specific to the operations like weights or inputs cache should be added too.
+
+  Node*[TT] = ref object {.acyclic.}
+    ## A node consist of:
+    ##   - The description of the operator or layer (``gate``)
+    ##   - A weak reference to the ``parents`` VariableObj
+    ##   - The actual value of the node (``payload``)
+    gate*: Gate[TT]
+    parents*: Parents[TT]
+    payload*: Variable[TT]
+
+  Parents*[TT] = array[MAX_NB_GRADS, VariablePtr[TT]]
+  SmallDiffs*[TT] = array[MAX_NB_GRADS, TT]
 
 # Somehow if you declare forward before backward, you get invalid declaration order
 # https://github.com/nim-lang/Nim/issues/5325
@@ -79,7 +94,7 @@ proc variable*[TT](ctx: Context[TT], value: TT): Variable[TT] {.inline, noSideEf
 proc weakRef*[TT](v: Variable[TT]): VariablePtr[TT] {.inline.} =
   ## Get a weak/untraced reference to a Variable
   ## This is intended for library writer and Neural Network graphs
-  ## to avoid strong cyclic references between parent operations/Variables and child.
+  ## to avoid strong cyclic references between parent operations/Variables and node.payload.
   cast[VariablePtr[TT]](v)
 
 proc len[TT](ctx: Context[TT]): int {.inline.}=
@@ -106,7 +121,7 @@ proc backprop*[TT](v: Variable[TT]) =
   v.grad = v.value.ones_like
 
   # We pop the context until we find the gate that produced our Variable
-  while v.tape.len > 0 and v.tape.peek.child != v:
+  while v.tape.len > 0 and v.tape.peek.payload != v:
     discard v.tape.nodes.pop
 
   # Now, until the context is been all backpropagated through we update
@@ -116,9 +131,9 @@ proc backprop*[TT](v: Variable[TT]) =
 
   while v.tape.len > 0:
     let curNode = v.tape.nodes.pop
-    let curVar = curNode.child
+    let curVar = curnode.payload
 
     let diffs = curNode.gate.backward(curVar.grad)
 
-    for i in 0 ..< curNode.gate.arity:
+    for i in 0 ..< curNode.gate.nb_grads:
       curNode.parents[i].grad += diffs[i]

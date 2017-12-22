@@ -40,7 +40,7 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   # Gate
   var gate: AddGate[TT]
   new gate
-  gate.arity = 2
+  gate.nb_grads = 2
   gate.ab_shape = a.value.shape # Shape equality will be checked in the forward proc
 
   # Node
@@ -55,6 +55,6 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a, b)
-  node.child = result
+  node.payload = result
 
 

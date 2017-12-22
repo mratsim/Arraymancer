@@ -39,7 +39,7 @@ proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
   # Gate
   var gate: MatMulGate[TT]
   new gate
-  gate.arity = 2
+  gate.nb_grads = 2
   gate.a = a # TODO use ref to avoid copy
   gate.b = b
 
@@ -55,4 +55,4 @@ proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a, b)
-  node.child = result
+  node.payload = result

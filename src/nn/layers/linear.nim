@@ -90,7 +90,7 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
   # Gate
   var gate: LinearGate[TT]
   new gate
-  gate.arity = if bias.isNil: 2 else: 3
+  gate.nb_grads = if bias.isNil: 2 else: 3
   gate.input = input
   gate.weight = weight
   gate.bias = bias
@@ -109,4 +109,4 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
 
   # Resulting var
   result = gate.forward(input)
-  node.child = result
+  node.payload = result

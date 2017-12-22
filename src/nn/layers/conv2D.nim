@@ -84,7 +84,7 @@ proc conv2d*[TT]( input, weight: Variable[TT],
   # Gate
   var gate: Conv2DGate[TT]
   new gate
-  gate.arity = if bias.isNil: 2 else: 3
+  gate.nb_grads = if bias.isNil: 2 else: 3
   gate.cached_input = input
   gate.weight = weight
   gate.bias = bias
@@ -105,4 +105,4 @@ proc conv2d*[TT]( input, weight: Variable[TT],
 
   # Resulting var
   result = gate.forward(input)
-  node.child = result
+  node.payload = result

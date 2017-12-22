@@ -43,7 +43,7 @@ proc mean*[TT](a: Variable[TT]): Variable[TT] =
   # Gate
   var gate: MeanGate[TT]
   new gate
-  gate.arity = 1
+  gate.nb_grads = 1
   gate.a_shape = a.value.shape # TODO use ref to avoid copy
 
   # Node
@@ -57,4 +57,4 @@ proc mean*[TT](a: Variable[TT]): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a)
-  node.child = result
+  node.payload = result

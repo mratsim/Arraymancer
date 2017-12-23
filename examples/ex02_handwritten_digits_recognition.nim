@@ -129,3 +129,77 @@ for epoch in 0 ..< 5:
     echo "Accuracy: " & $(score * 100) & "%"
     echo "Loss:     " & $loss
     echo "\n"
+
+
+############# Output ############
+
+# Epoch is: 0
+# Batch id: 0
+# Loss is:  132.9124755859375
+# Epoch is: 0
+# Batch id: 200
+# Loss is:  2.301989078521729
+# Epoch is: 0
+# Batch id: 400
+# Loss is:  1.155071973800659
+# Epoch is: 0
+# Batch id: 600
+# Loss is:  1.043337464332581
+# Epoch is: 0
+# Batch id: 800
+# Loss is:  0.58299720287323
+# Epoch is: 0
+# Batch id: 1000
+# Loss is:  0.5417937040328979
+# Epoch is: 0
+# Batch id: 1200
+# Loss is:  0.6955615282058716
+# Epoch is: 0
+# Batch id: 1400
+# Loss is:  0.4742314517498016
+# Epoch is: 0
+# Batch id: 1600
+# Loss is:  0.3307125866413116
+# Epoch is: 0
+# Batch id: 1800
+# Loss is:  0.6455222368240356
+
+# Epoch #0 done. Testing accuracy
+# Accuracy: 83.24999999999999%
+# Loss:     0.5828457295894622
+
+
+# Epoch is: 1
+# Batch id: 0
+# Loss is:  0.5344035029411316
+# Epoch is: 1
+# Batch id: 200
+# Loss is:  0.4455387890338898
+# Epoch is: 1
+# Batch id: 400
+# Loss is:  0.1642555445432663
+# Epoch is: 1
+# Batch id: 600
+# Loss is:  0.5191419124603271
+# Epoch is: 1
+# Batch id: 800
+# Loss is:  0.2091695368289948
+# Epoch is: 1
+# Batch id: 1000
+# Loss is:  0.2661008834838867
+# Epoch is: 1
+# Batch id: 1200
+# Loss is:  0.405451238155365
+# Epoch is: 1
+# Batch id: 1400
+# Loss is:  0.1397259384393692
+# Epoch is: 1
+# Batch id: 1600
+# Loss is:  0.526863694190979
+# Epoch is: 1
+# Batch id: 1800
+# Loss is:  0.5916416645050049
+
+# Epoch #1 done. Testing accuracy
+# Accuracy: 88.49000000000001%
+# Loss:     0.3582650691270828

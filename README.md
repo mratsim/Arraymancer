@@ -89,7 +89,9 @@ Because apparently to be successful you need a vision, I would like Arraymancer 
 
 Nim is available in some Linux repositories and on Homebrew for macOS.
 
-I however recommend installing Nim in your user profile via [``choosenim``](https://github.com/dom96/choosenim). Once choosenim installed Nim, you can `nimble install arraymancer` which will pull arraymancer and all its dependencies.
+I however recommend installing Nim in your user profile via [``choosenim``](https://github.com/dom96/choosenim). Once choosenim installed Nim, you can `nimble install arraymancer` which will pull the latest arraymancer release and all its dependencies.
+
+To install Arraymancer development version you can use `nimble install arraymancer@#head`.
 
 ## Full documentation
 
@@ -102,8 +104,6 @@ For now Arraymancer is mostly at the ndarray stage, a [vision package](https://g
 You can also check the [detailed example](https://github.com/mratsim/Arraymancer/blob/master/examples/ex01_xor_perceptron_from_scratch.nim) or [benchmark](https://github.com/mratsim/Arraymancer/blob/master/benchmarks/ex01_xor.nim) perceptron for a preview of Arraymancer deep learning usage.
 
 Available autograd and neural networks features are detailed in the technical reference part of the [documentation](https://mratsim.github.io/Arraymancer/).
-
-Warning: The autograd and neural networks high-level interface should see little changes (additional optional parameters like requires_grad), however the neural net primitives WILL be changed.
 
 ### Arraymancer as a Numpy alternative
 
@@ -198,7 +198,7 @@ echo j .+ k
 
 ### Arraymancer as a Deep Learning library
 
-Note: The interface is still in ironed out.
+Note: The interface is still being ironed out.
 
 #### Handwritten digit recognition with Arraymancer
 From [example 2](https://github.com/mratsim/Arraymancer/blob/master/examples/ex02_handwritten_digits_recognition.nim).

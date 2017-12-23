@@ -39,31 +39,31 @@ let
   # In the future requires_grad will be automatically set for neural network layers
 
   cv1_w = ctx.variable(
-    randomTensor[float32](20, 1, 5, 5, 1'f32) .- 0.5'f32,    # Weight of 1st convolution
+    randomTensor(20, 1, 5, 5, 1'f32) .- 0.5'f32,    # Weight of 1st convolution
     requires_grad = true
     )
   cv1_b = ctx.variable(
-    randomTensor[float32](20, 1, 1, 1'f32) .- 0.5'f32,       # Bias of 1st convolution
+    randomTensor(20, 1, 1, 1'f32) .- 0.5'f32,       # Bias of 1st convolution
     requires_grad = true
     )
 
   cv2_w = ctx.variable(
-    randomTensor[float32](50, 20, 5, 5, 1'f32) .- 0.5'f32,   # Weight of 2nd convolution
+    randomTensor(50, 20, 5, 5, 1'f32) .- 0.5'f32,   # Weight of 2nd convolution
     requires_grad = true
     )
 
   cv2_b = ctx.variable(
-    randomTensor[float32](50, 1, 1, 1'f32) .- 0.5'f32,       # Bias of 2nd convolution
+    randomTensor(50, 1, 1, 1'f32) .- 0.5'f32,       # Bias of 2nd convolution
     requires_grad = true
     )
 
   fc3 = ctx.variable(
-    randomTensor[float32](500, 800, 1'f32) .- 0.5'f32,       # Fully connected: 800 in, 500 ou
+    randomTensor(500, 800, 1'f32) .- 0.5'f32,       # Fully connected: 800 in, 500 ou
     requires_grad = true
     )
 
   classifier = ctx.variable(
-    randomTensor[float32](10, 500, 1'f32) .- 0.5'f32,        # Fully connected: 500 in, 10 classes out
+    randomTensor(10, 500, 1'f32) .- 0.5'f32,        # Fully connected: 500 in, 10 classes out
     requires_grad = true
     )
 
@@ -101,9 +101,9 @@ for epoch in 0 ..< 5:
 
     if batch_id mod 200 == 0:
       # Print status every 200 batches
-      echo "Epoch is:" & $epoch
-      echo "Batch id:" & $batch_id
-      echo "Loss is:" & $loss.value.data[0]
+      echo "Epoch is: " & $epoch
+      echo "Batch id: " & $batch_id
+      echo "Loss is:  " & $loss.value.data[0]
 
     # Compute the gradient (i.e. contribution of each parameter to the loss)
     loss.backprop()
@@ -111,16 +111,21 @@ for epoch in 0 ..< 5:
     # Correct the weights now that we have the gradient information
     optim.update()
 
-  # Validation (checking the accuracy of our model)
-  ctx.no_grad_mode: # We don't need to compute any gradient.
+  # Validation (checking the accuracy/generalization of our model on unseen data)
+  ctx.no_grad_mode:
     echo "\nEpoch #" & $epoch & " done. Testing accuracy"
 
     # To avoid using too much memory we will compute accuracy in 10 batches of 1000 images
     # instead of loading 10 000 images at once
     var score = 0.0
+    var loss = 0.0
     for i in 0 ..< 10:
       let y_pred = X_test[i ..< i+1000, _].model.value.softmax.argmax(axis = 1).indices.squeeze
       score += accuracy_score(y_test[i ..< i+1000, _], y_pred)
+
+      loss += X_test[i ..< i+1000, _].model.sparse_softmax_cross_entropy(y_test[i ..< i+1000, _]).value.data[0]
     score /= 10
+    loss /= 10
     echo "Accuracy: " & $(score * 100) & "%"
+    echo "Loss:     " & $loss
     echo "\n"

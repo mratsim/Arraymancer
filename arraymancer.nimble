@@ -5,7 +5,7 @@ description   = "A n-dimensional tensor (ndarray) library"
 license       = "Apache License 2.0"
 
 ### Dependencies
-requires "nim >= 0.17.2", "nimblas >= 0.1.3", "nimcuda >= 0.1.4"
+requires "nim >= 0.17.2", "nimblas >= 0.1.3", "nimcuda >= 0.1.4", "nimcl >= 0.1.1"
 
 ## Install files
 srcDir = "src"
@@ -123,6 +123,10 @@ task test_cuda, "Run all tests - Cuda backend with CUBLAS and CuDNN":
                 # the "when defined(cuda)" part of this nimble file
                 # hence the need to call cudaSwitches explicitly
   test "tests_cuda", "cpp"
+
+task test_opencl, "Run all OpenCL backend tests":
+  switch("define", "opencl")
+  test "tests_opencl"
 
 # task test_deprecated, "Run all tests on deprecated procs":
 #  test "tests_cpu_deprecated"

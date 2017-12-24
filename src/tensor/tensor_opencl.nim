@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./tests_cpu,
-        ./tests_cuda,
-        ./tests_opencl
+import  ./backend/opencl_backend,
+        ./init_opencl
+
+export  init_opencl

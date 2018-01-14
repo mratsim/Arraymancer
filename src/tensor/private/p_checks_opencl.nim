@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./backend/opencl_backend,
-        ./init_opencl,
-        ./operators_blas_l1_opencl
-
-export  init_opencl,
-        operators_blas_l1_opencl
+proc check_elementwise*[T,U](a:ClTensor[T], b:ClTensor[U])  {.noSideEffect, inline.}=
+  ## Check if element-wise operations can be applied to 2 Tensors
+  if unlikely(a.shape != b.shape):
+    raise newException(ValueError, "Both Tensors should have the same shape.\n Left-hand side has shape " &
+                                   $a.shape & " while right-hand side has shape " & $b.shape)

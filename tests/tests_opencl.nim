@@ -13,4 +13,5 @@
 # limitations under the License.
 
 # Please compile with -d:cuda switch
-import  ./tensor/test_init_opencl
+import  ./tensor/test_init_opencl,
+        ./tensor/test_operators_blas_opencl

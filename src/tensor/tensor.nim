@@ -71,3 +71,7 @@ export  metadataArray,
 when defined(cuda):
   import ./tensor_cuda
   export tensor_cuda
+
+when defined(opencl):
+  import ./tensor_opencl
+  export tensor_opencl

@@ -18,14 +18,6 @@ import  ./backend/metadataArray,
 export nimblas.OrderType
 
 type
-  Backend* = enum
-    ## ``Backend`` for tensor computation and memory allocation.
-    ##
-    ##
-    ## Only deprecated procs from v0.1.3 uses this for the moment.
-    Cpu,
-    Cuda
-
   CpuStorage* {.shallow.} [T] = object
     ## Opaque data storage for Tensors
     ## Currently implemented as a seq with reference semantics (shallow copy on assignment).
@@ -55,7 +47,6 @@ type
     offset*: int
     storage*: CpuStorage[T]
 
-type
   CudaStorage*[T: SomeReal] = object
     ## Opaque seq-like structure for storage on the Cuda backend.
     ##
@@ -82,7 +73,29 @@ type
     offset*: int
     storage*: CudaStorage[T]
 
-  AnyTensor*[T] = Tensor[T] or CudaTensor[T]
+  ClStorage*[T: SomeReal] = object
+    ## Opaque seq-like structure for storage on the OpenCL backend.
+    Flen*: int
+    Fdata*: ptr UncheckedArray[T]
+    Fref_tracking*: ref[ptr UncheckedArray[T]] # We keep ref tracking for the GC in a separate field to avoid double indirection.
+
+  ClTensor*[T: SomeReal] = object
+    ## Tensor data structure stored on OpenCL (CPU, GPU, FPGAs or other accelerators)
+    ##   - ``shape``: Dimensions of the CudaTensor
+    ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
+    ##   - ``offset``: Offset to get the first item of the CudaTensor. Note: offset can be negative, in particular for slices.
+    ##   - ``storage``: An opaque data storage for the CudaTensor
+    ##
+    ## Warning ⚠:
+    ##   Assignment ```var a = b``` does not copy the data. Data modification on one CudaTensor will be reflected on the other.
+    ##   However modification on metadata (shape, strides or offset) will not affect the other tensor.
+    ##   Explicit copies can be made with ``clone``: ```var a = b.clone```
+    shape*: MetadataArray
+    strides*: MetadataArray
+    offset*: int
+    storage*: ClStorage[T]
+
+  AnyTensor*[T] = Tensor[T] or CudaTensor[T] or ClTensor[T]
 
 # ###############
 # Field accessors

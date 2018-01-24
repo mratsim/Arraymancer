@@ -33,3 +33,20 @@ suite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":
     # Check size mismatch
     expect(ValueError):
       discard a + b.cpu[0..1, 0..1].opencl
+
+  test "Matrix and vector substraction":
+    let u = @[1'f32, 3, -5].toTensor.opencl
+    let v = @[1'f32, 1, 1].toTensor.opencl
+
+    check: (u - v).cpu == @[0'f32, 2, -6].toTensor()
+
+    let a = @[7.0, 4.0, 3.0, 1.0, 8.0, 6.0, 8.0, 1.0, 6.0, 2.0].toTensor.reshape([5,2]).opencl
+    let b = @[6.0, 6.0, 2.0, 0.0, 4.0, 3.0, 2.0, 0.0, 0.0, 3.0].toTensor.reshape([5,2]).opencl
+
+    let amb = @[1.0, -2.0, 1.0, 1.0, 4.0, 3.0, 6.0, 1.0, 6.0, -1.0].toTensor.reshape([5,2])
+
+    check: (a - b).cpu == amb
+
+    # Check size mismatch
+    expect(ValueError):
+      discard a + b.cpu[0..1, 0..1].opencl

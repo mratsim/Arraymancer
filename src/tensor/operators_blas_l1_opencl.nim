@@ -60,3 +60,5 @@ template genClInfixOp(T: typedesc, ctype: string, procName: untyped, cName: stri
 
 genClInfixOp(float32, "float", `+`, "clAdd", "+")
 genClInfixOp(float64, "double", `+`, "clAdd", "+")
+genClInfixOp(float32, "float", `-`, "clSub", "-")
+genClInfixOp(float64, "double", `-`, "clSub", "-")

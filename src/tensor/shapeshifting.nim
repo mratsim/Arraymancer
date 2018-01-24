@@ -53,7 +53,7 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
     return t
   elif fCont and layout == colMajor:
     return t
-  contiguousT(t, layout, result)
+  contiguousImpl(t, layout, result)
 
 proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
   ## Reshape a tensor
@@ -63,7 +63,7 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
   ##   - a new shape. Number of elements must be the same
   ## Returns:
   ##   - a tensor with the same data but reshaped.
-  reshapeT(t, new_shape, result)
+  reshapeImpl(t, new_shape, result)
 
 proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ## Reshape a tensor
@@ -73,7 +73,7 @@ proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ##   - a new shape. Number of elements must be the same
   ## Returns:
   ##   - a tensor with the same data but reshaped.
-  reshapeT(t, new_shape, result)
+  reshapeImpl(t, new_shape, result)
 
 proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.
@@ -85,7 +85,7 @@ proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSide
   ##   A broadcasted tensor should not be modified and only used for computation.
 
   result = t
-  result.broadcastT(shape)
+  result.broadcastImpl(shape)
 
 proc broadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit,noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.
@@ -97,7 +97,7 @@ proc broadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit,noSid
   ##   A broadcasted tensor should not be modified and only used for computation.
 
   result = t
-  result.broadcastT(shape)
+  result.broadcastImpl(shape)
 
 proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.} =
   ## Broadcast a number
@@ -162,7 +162,7 @@ proc broadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect, noI
   ##   This proc does not guarantee that a ``let`` value is immutable.
   ##   A broadcasted tensor should not be modified and only used for computation.
 
-  broadcast2T(a,b, result)
+  broadcast2Impl(a,b, result)
 
   result.a.storage = a.storage
   result.b.storage = b.storage
@@ -181,7 +181,7 @@ proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
 
   # TODO: bounds check
   result = t
-  permuteT(result, dims)
+  permuteImpl(result, dims)
 
 proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit,noSideEffect.}=
   ## Concatenate tensors
@@ -222,7 +222,7 @@ proc squeeze*(t: AnyTensor): AnyTensor {.noInit,noSideEffect.}=
   ## Returns:
   ##   - a tensor with singleton dimensions collapsed
   result = t
-  result.squeezeT
+  result.squeezeImpl
 
 proc squeeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   ## Collapse the given axis, if the dimension is not 1, it does nothing.
@@ -232,7 +232,7 @@ proc squeeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   ## Returns:
   ##   - a tensor with that axis collapsed, if it was a singleton dimension
   result = t
-  result.squeezeT(axis)
+  result.squeezeImpl(axis)
 
 proc unsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   ## Insert a new axis just before the given axis, increasing the tensor
@@ -243,7 +243,7 @@ proc unsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   ## Returns:
   ##   - a tensor with that new axis
   result = t
-  result.unsqueezeT(axis)
+  result.unsqueezeImpl(axis)
 
 proc stack*[T](tensors: varargs[Tensor[T]], axis: int = 0): Tensor[T] {.noInit.} =
   ## Join a sequence of tensors along a new axis into a new tensor.

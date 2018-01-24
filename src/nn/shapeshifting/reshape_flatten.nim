@@ -29,7 +29,7 @@ method forward*[TT](self: ReshapeGate[TT], a: Variable[TT]): Variable[TT] {.inli
 method backward*[TT](self: ReshapeGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
   result[0] = gradient.reshape(self.cached_input_shape)
 
-proc reshapeT[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
+proc reshapeImpl[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
   # Gate
   var gate: ReshapeGate[TT]
   new gate
@@ -61,16 +61,16 @@ proc reshape*[TT](a: Variable[TT], shape: varargs[int]): Variable[TT] =
   ## Input:
   ##   - A variable
   ##   - A shape
-  reshapeT(a, shape.toMetadataArray)
+  reshapeImpl(a, shape.toMetadataArray)
 
 
 proc reshape*[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
   ## Input:
   ##   - A variable
   ##   - A shape
-  reshapeT(a, shape)
+  reshapeImpl(a, shape)
 
 proc flatten*[TT](a: Variable[TT]): Variable[TT] =
   ## Input:
   ##   - A variable
-  reshapeT(a, [a.value.shape[0], a.value.size div a.value.shape[0]].toMetadataArray)
+  reshapeImpl(a, [a.value.shape[0], a.value.size div a.value.shape[0]].toMetadataArray)

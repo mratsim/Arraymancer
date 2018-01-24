@@ -19,7 +19,7 @@ import  ../../private/sequninit,
         ./p_checks,
         nimblas
 
-template contiguousT*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]): untyped=
+template contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]): untyped=
   if layout == rowMajor:
     result = t.map_inline(x)
   else: # colMajor
@@ -37,7 +37,7 @@ template reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, r
   shape_to_strides(result.shape, rowMajor, result.strides)
   result.offset = t.offset
 
-template reshapeT*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
+template reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
   when compileOption("boundChecks"):
     when new_shape is MetadataArray:
       check_reshape(t, new_shape)
@@ -51,7 +51,7 @@ template reshapeT*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: 
 
   reshape_with_copy(t, new_shape, result)
 
-template broadcastT*(t: var AnyTensor, shape: varargs[int]|MetadataArray) =
+template broadcastImpl*(t: var AnyTensor, shape: varargs[int]|MetadataArray) =
   when compileOption("boundChecks"):
     assert t.rank == shape.len
 
@@ -63,7 +63,7 @@ template broadcastT*(t: var AnyTensor, shape: varargs[int]|MetadataArray) =
     elif t.shape[i] != shape[i]:
       raise newException(ValueError, "The broadcasted size of the tensor must match existing size for non-singleton dimension")
 
-template broadcast2T*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T]]) =
+template broadcast2Impl*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T]]) =
   let rank = max(a.rank, b.rank)
 
   var shapeA, stridesA, shapeB, stridesB = initMetadataArray(rank) # initialized with 0
@@ -107,11 +107,11 @@ proc exch_dim*[T](t: Tensor[T], dim1, dim2: int): Tensor[T] {.noInit,noSideEffec
   if dim1 == dim2:
     return
 
-  result = t # copy or no-copy is managed in the caller of exch_dim or permuteT
+  result = t # copy or no-copy is managed in the caller of exch_dim or permuteImpl
   swap(result.strides[dim1], result.strides[dim2])
   swap(result.shape[dim1], result.shape[dim2])
 
-template permuteT*[T](result: var Tensor[T], dims: varargs[int]): untyped =
+template permuteImpl*[T](result: var Tensor[T], dims: varargs[int]): untyped =
   var perm = dims.toMetadataArray
   for i, p in perm:
     if p != i and p != -1:
@@ -124,7 +124,7 @@ template permuteT*[T](result: var Tensor[T], dims: varargs[int]): untyped =
       perm[j] = -1
 
 
-template squeezeT*(t: var AnyTensor): untyped =
+template squeezeImpl*(t: var AnyTensor): untyped =
   var idx_real_dim = 0
 
   for i in 0..<t.rank:
@@ -137,7 +137,7 @@ template squeezeT*(t: var AnyTensor): untyped =
   t.shape = t.shape[0..<idx_real_dim]
   t.strides = t.strides[0..<idx_real_dim]
 
-template squeezeT*(t: var AnyTensor, axis: int): untyped =
+template squeezeImpl*(t: var AnyTensor, axis: int): untyped =
   when compileOption("boundChecks"):
     check_squeezeAxis(t, axis)
 
@@ -145,7 +145,7 @@ template squeezeT*(t: var AnyTensor, axis: int): untyped =
     t.shape.delete(axis)
     t.strides.delete(axis)
 
-template unsqueezeT*(t: var AnyTensor, axis: int): untyped =
+template unsqueezeImpl*(t: var AnyTensor, axis: int): untyped =
   when compileOption("boundChecks"):
     check_unsqueezeAxis(t, axis)
 

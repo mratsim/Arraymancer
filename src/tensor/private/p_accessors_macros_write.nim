@@ -208,7 +208,7 @@ proc slicer_var[T](t: var AnyTensor[T], slices: varargs[SteppedSlice]): var AnyT
   ##    Offset and strides are changed to achieve the desired effect.
 
   result = t
-  slicerT(result, slices)
+  slicerImpl(result, slices)
 
 proc slicer_var[T](t: var AnyTensor[T],
                 slices: varargs[SteppedSlice],
@@ -220,7 +220,7 @@ proc slicer_var[T](t: var AnyTensor[T],
 
   result = t
   let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
-  slicerT(result, full_slices)
+  slicerImpl(result, full_slices)
 
 proc slicer_var[T](t: var AnyTensor[T],
                 ellipsis: Ellipsis,
@@ -233,7 +233,7 @@ proc slicer_var[T](t: var AnyTensor[T],
 
   result = t
   let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
-  slicerT(result, full_slices)
+  slicerImpl(result, full_slices)
 
 proc slicer_var[T](t: var AnyTensor[T],
                 slices1: varargs[SteppedSlice],
@@ -249,7 +249,7 @@ proc slicer_var[T](t: var AnyTensor[T],
   let full_slices = concat(slices1.toArrayOfSlices,
                             initSpanSlices(t.rank - slices1.len - slices2.len),
                             slices1.toArrayOfSlices)
-  slicerT(result, full_slices)
+  slicerImpl(result, full_slices)
 
 macro slice_typed_dispatch_var*(t: typed, args: varargs[typed]): untyped =
   ## Typed macro so that isAllInt has typed context and we can dispatch.

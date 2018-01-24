@@ -75,7 +75,7 @@ proc broadcast*(t: CudaTensor, shape: varargs[int]): CudaTensor {.noSideEffect.}
   ##   This proc does not guarantee that a ``let`` value is immutable.
   ##   A broadcasted tensor should not be modified and only used for computation.
   result = t
-  result.broadcastT(shape)
+  result.broadcastImpl(shape)
 
 proc broadcast*(t: CudaTensor, shape: MetadataArray): CudaTensor {.noSideEffect.}=
   ## Explicitly broadcast a CudaTensor to the specified shape.
@@ -89,7 +89,7 @@ proc broadcast*(t: CudaTensor, shape: MetadataArray): CudaTensor {.noSideEffect.
   ##   This proc does not guarantee that a ``let`` value is immutable.
   ##   A broadcasted tensor should not be modified and only used for computation.
   result = t
-  result.broadcastT(shape)
+  result.broadcastImpl(shape)
 
 proc broadcast2*[T](a, b: CudaTensor[T]): tuple[a, b: CudaTensor[T]] {.noSideEffect.}=
   ## Broadcast 2 tensors so they have compatible shapes for element-wise computations.
@@ -106,7 +106,7 @@ proc broadcast2*[T](a, b: CudaTensor[T]): tuple[a, b: CudaTensor[T]] {.noSideEff
   ##   This proc does not guarantee that a ``let`` value is immutable.
   ##   A broadcasted tensor should not be modified and only used for computation.
 
-  broadcast2T(a,b, result)
+  broadcast2Impl(a,b, result)
 
   result.a.storage = a.storage
   result.b.storage = b.storage
@@ -122,7 +122,7 @@ proc squeeze*(t: CudaTensor, axis: int): CudaTensor {.noSideEffect.}=
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
   result = t
-  result.squeezeT(axis)
+  result.squeezeImpl(axis)
 
 proc unsqueeze*(t: CudaTensor, axis: int): CudaTensor {.noSideEffect.}=
   ## Insert a new axis just before the given axis, increasing the CudaTensor
@@ -132,4 +132,4 @@ proc unsqueeze*(t: CudaTensor, axis: int): CudaTensor {.noSideEffect.}=
   ##   This is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
   result = t
-  result.unsqueezeT(axis)
+  result.unsqueezeImpl(axis)

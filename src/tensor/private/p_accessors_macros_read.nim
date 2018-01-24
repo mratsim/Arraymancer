@@ -21,7 +21,7 @@ import  ../../private/ast_utils,
         ./p_checks, ./p_accessors, ./p_accessors_macros_desugar,
         sequtils, macros
 
-template slicerT*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSlices): untyped=
+template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSlices): untyped=
   ## Slicing routine
 
   for i, slice in slices:
@@ -50,7 +50,7 @@ proc slicer*[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.
   ##    Offset and strides are changed to achieve the desired effect.
 
   result = t
-  slicerT(result, slices.toArrayOfSlices)
+  slicerImpl(result, slices.toArrayOfSlices)
 
 proc slicer*[T](t: AnyTensor[T],
                 slices: varargs[SteppedSlice],
@@ -62,7 +62,7 @@ proc slicer*[T](t: AnyTensor[T],
 
   result = t
   let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
-  slicerT(result, full_slices)
+  slicerImpl(result, full_slices)
 
 proc slicer*[T](t: AnyTensor[T],
                 ellipsis: Ellipsis,
@@ -75,7 +75,7 @@ proc slicer*[T](t: AnyTensor[T],
 
   result = t
   let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
-  slicerT(result, full_slices)
+  slicerImpl(result, full_slices)
 
 proc slicer*[T](t: AnyTensor[T],
                 slices1: varargs[SteppedSlice],
@@ -91,7 +91,7 @@ proc slicer*[T](t: AnyTensor[T],
   let full_slices = concat(slices1.toArrayOfSlices,
                             initSpanSlices(t.rank - slices1.len - slices2.len),
                             slices2.toArrayOfSlices)
-  slicerT(result, full_slices)
+  slicerImpl(result, full_slices)
 
 proc slicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor and SteppedSlices
@@ -102,7 +102,7 @@ proc slicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,noSideE
   ##    As such a `var Tensor` is required
 
   result = t
-  slicerT(result, slices)
+  slicerImpl(result, slices)
 
 # #########################################################################
 # Dispatching logic

@@ -12,6 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./tests_cpu,
-        ./tests_cuda,
-        ./tests_opencl
+import ../../src/arraymancer
+import unittest
+
+
+suite "OpenCL init":
+
+  let a =  [[1.0, 2, 3, 4],
+            [5.0, 6, 7, 8]].toTensor
+  let a_cl = a.opencl
+
+  test ".opencl and .cpu conversion":
+    check: a == a_cl.cpu
+
+  test "zeros_like and ones_like":
+
+    let z_cl = zeros_like(a_cl)
+    check: z_cl.cpu == [[0.0, 0, 0, 0],
+                        [0.0, 0, 0, 0]].toTensor
+
+    let o_cl = ones_like(a_cl)
+    check: o_cl.cpu == [[1.0, 1, 1, 1],
+                        [1.0, 1, 1, 1]].toTensor

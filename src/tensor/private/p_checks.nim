@@ -16,7 +16,7 @@ import  ../../private/[functional, nested_containers],
         ../backend/metadataArray,
         ../data_structure
 
-include ./p_checks_cuda
+include ./p_checks_cuda, ./p_checks_opencl
 
 proc check_nested_elements*(shape: MetadataArray, len: int) {.noSideEffect, inline.}=
   ## Compare the detected shape from flatten with the real length of the data

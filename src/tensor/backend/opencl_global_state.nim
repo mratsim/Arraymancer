@@ -12,6 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./tests_cpu,
-        ./tests_cuda,
-        ./tests_opencl
+import nimcl, opencl
+
+# ###################################################
+# Global Cuda and CuBLAS state
+
+{.experimental.}
+
+type clResource = PCommandQueue | PKernel | PProgram | PMem | PContext
+
+proc `=destroy`*(clres: clResource) =
+  release clres
+
+# TODO detect and use accelerators (FPGAs) or GPU by default
+# And allow switching OpenCL device.
+let (clDevice0*, clContext0*, clQueue0*) = singleDeviceDefaults()
+

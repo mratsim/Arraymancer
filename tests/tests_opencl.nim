@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./tests_cpu,
-        ./tests_cuda,
-        ./tests_opencl
+# Please compile with -d:cuda switch
+import  ./tensor/test_init_opencl,
+        ./tensor/test_operators_blas_opencl

@@ -25,8 +25,15 @@ import  ./backend/opencl_backend,
 # Nvidia automatically caches OpenCL JIT compilation.
 # For maximum performance you might need a similar scheme for your platform.
 
-template genAdd(T: typedesc, ctype: string): untyped =
-  proc `+`*(a,b: ClTensor[T]): ClTensor[T] {.noInit.}=
+template genClInfixOp(T: typedesc, ctype: string, procName: untyped, cName: string, cInfixOp: string): untyped =
+  ## Generates an OpenCL kernel for an elementwise binary infix operation (like +, *, /, -)
+  ## Input:
+  ##   - The Nim type of the elements of the input tensors
+  ##   - The equivalent C type
+  ##   - The Nim identifier of the resulting proc
+  ##   - The C kernel name (this only helps debugging the C code)
+  ##   - The C operation (+, -, *, /)
+  proc procName*(a,b: ClTensor[T]): ClTensor[T] {.noInit.}=
     ## ClTensor addition
 
     when compileOption("boundChecks"):
@@ -35,21 +42,21 @@ template genAdd(T: typedesc, ctype: string): untyped =
     result = newClTensor[T](a.shape)
 
     let
-      ocl_addKernel = gen_ocl_apply3("AddKernel", ctype, "+")
-      program = clContext0.createAndBuild(ocl_addKernel, clDevice0)
-      opencl_add = program.createKernel("AddKernel")
+      clKernel = gen_cl_apply3(cName, ctype, cInfixOp)
+      program = clContext0.createAndBuild(clKernel, clDevice0)
+      clProc = program.createKernel(cName)
 
       dst = layoutOnDevice result
       src_a = layoutOnDevice a
       src_b = layoutOnDevice b
 
-    opencl_add.args(dst.rank, dst.len,
-                        dst.shape[], dst.strides[], dst.offset, dst.data.toClpointer,
-                        src_a.shape[], src_a.strides[], src_a.offset, src_a.data.toClpointer,
-                        src_b.shape[], src_b.strides[], src_b.offset, src_b.data.toClpointer
-                        )
+    clProc.args(dst.rank, dst.len,
+                dst.shape[], dst.strides[], dst.offset, dst.data.toClpointer,
+                src_a.shape[], src_a.strides[], src_a.offset, src_a.data.toClpointer,
+                src_b.shape[], src_b.strides[], src_b.offset, src_b.data.toClpointer
+                )
 
-    clQueue0.run(opencl_add, result.size)
+    clQueue0.run(clProc, result.size)
 
-genAdd(float32, "float")
-genAdd(float64, "double")
+genClInfixOp(float32, "float", `+`, "clAdd", "+")
+genClInfixOp(float64, "double", `+`, "clAdd", "+")

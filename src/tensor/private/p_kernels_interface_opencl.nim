@@ -36,7 +36,7 @@ template opencl_getIndexOfElementID: string =
   }
   """
 
-template gen_ocl_apply3*(kern_name, ctype, op: string): string =
+template gen_cl_apply3*(kern_name, ctype, op: string): string =
 
   opencl_getIndexOfElementID() & """
   __kernel

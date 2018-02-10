@@ -96,13 +96,13 @@ template cuda_mkl_openmp() =
 ## Testing tasks
 
 proc test(name: string, lang: string = "c") =
-  if not dirExists "bin":
-    mkDir "bin"
+  if not dirExists "build":
+    mkDir "build"
   if not dirExists "nimcache":
     mkDir "nimcache"
   --run
   --nimcache: "nimcache"
-  switch("out", ("./bin/" & name))
+  switch("out", ("./build/" & name))
   setCommand lang, "tests/" & name & ".nim"
 
 task all_tests, "Run all tests - Intel MKL + OpenMP + Cuda + march=native + release":

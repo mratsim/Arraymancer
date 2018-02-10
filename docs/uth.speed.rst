@@ -129,8 +129,8 @@ with Arraymancer:
     Input 1500x1500 random large int64 matrix
     Arraymancer 0.2.90 (master branch 2017-10-31)
 
-    no OpenMP compilation: nim c -d:native -d:release --out:bin/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
-    with OpenMP: nim c -d:openmp --cc:gcc --gcc.exe:"/usr/local/bin/gcc-6" --gcc.linkerexe:"/usr/local/bin/gcc-6"  -d:native -d:release --out:bin/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
+    no OpenMP compilation: nim c -d:native -d:release --out:build/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
+    with OpenMP: nim c -d:openmp --cc:gcc --gcc.exe:"/usr/local/bin/gcc-6" --gcc.linkerexe:"/usr/local/bin/gcc-6"  -d:native -d:release --out:build/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
 
 ------------------------------------------------ ------------ ------------
  Language                                         Speed        Memory

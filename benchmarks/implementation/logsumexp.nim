@@ -144,7 +144,7 @@ when isMainModule:
 ## - "False sharing"
 
 # Compilation flags
-# nim c -d:native -d:release --out:bin/logsumexp --nimcache:./nimcache benchmarks/implementation/logsumexp.nim
+# nim c -d:native -d:release --out:build/logsumexp --nimcache:./nimcache benchmarks/implementation/logsumexp.nim
 
 # MEASURE with epochTime
 
@@ -167,7 +167,7 @@ when isMainModule:
 ## This is imprecise but needed for OpenMP (otherwise we get nb Cpu used x epochTime)
 
 # Compilation flags NO OPENMP
-# nim c -d:native -d:release --out:bin/logsumexp --nimcache:./nimcache benchmarks/implementation/logsumexp.nim
+# nim c -d:native -d:release --out:build/logsumexp --nimcache:./nimcache benchmarks/implementation/logsumexp.nim
 
 # ## 1000 logsumexp with batch 256 x 1000 labels tensors (~ImageNet)
 #  1000 elements - logsumexp: 1.869992971420288
@@ -183,7 +183,7 @@ when isMainModule:
 #  Dummy value: 7180.666015625
 
 # Compilation flags WITH OPENMP
-# nim c d:openmp -d:native -d:release --out:bin/logsumexp --nimcache:./nimcache benchmarks/implementation/logsumexp.nim
+# nim c d:openmp -d:native -d:release --out:build/logsumexp --nimcache:./nimcache benchmarks/implementation/logsumexp.nim
 
 # ## 1000 logsumexp with batch 256 x 1000 labels tensors (~ImageNet)
 #  1000 elements - logsumexp: 1.074860095977783

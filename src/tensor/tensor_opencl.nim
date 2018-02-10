@@ -14,7 +14,9 @@
 
 import  ./backend/opencl_backend,
         ./init_opencl,
-        ./operators_blas_l1_opencl
+        ./operators_blas_l1_opencl,
+        ./operators_broadcasted_opencl
 
 export  init_opencl,
-        operators_blas_l1_opencl
+        operators_blas_l1_opencl,
+        operators_broadcasted_opencl

@@ -19,45 +19,6 @@ import  ./backend/opencl_backend,
         ./private/p_checks,
         ./data_structure
 
-# Kernels are created just-in-time and incur some overhead
-# unfortunately doing otherwise would require
-# prebuilding binaries for each AMD, Nvidia, Intel, Qualcomm, ... OpenCL SDK and drivers
-# Nvidia automatically caches OpenCL JIT compilation.
-# For maximum performance you might need a similar scheme for your platform.
-
-template genClInfixOp(T: typedesc, ctype: string, procName: untyped, cName: string, cInfixOp: string): untyped =
-  ## Generates an OpenCL kernel for an elementwise binary infix operation (like +, *, /, -)
-  ## Input:
-  ##   - The Nim type of the elements of the input tensors
-  ##   - The equivalent C type
-  ##   - The Nim identifier of the resulting proc
-  ##   - The C kernel name (this only helps debugging the C code)
-  ##   - The C operation (+, -, *, /)
-  proc procName*(a,b: ClTensor[T]): ClTensor[T] {.noInit.}=
-    ## ClTensor addition
-
-    when compileOption("boundChecks"):
-      check_elementwise(a,b)
-
-    result = newClTensor[T](a.shape)
-
-    let
-      clKernel = gen_cl_apply3(cName, ctype, cInfixOp)
-      program = clContext0.createAndBuild(clKernel, clDevice0)
-      clProc = program.createKernel(cName)
-
-      dst = layoutOnDevice result
-      src_a = layoutOnDevice a
-      src_b = layoutOnDevice b
-
-    clProc.args(dst.rank, dst.len,
-                dst.shape[], dst.strides[], dst.offset, dst.data.toClpointer,
-                src_a.shape[], src_a.strides[], src_a.offset, src_a.data.toClpointer,
-                src_b.shape[], src_b.strides[], src_b.offset, src_b.data.toClpointer
-                )
-
-    clQueue0.run(clProc, result.size)
-
 genClInfixOp(float32, "float", `+`, "clAdd", "+")
 genClInfixOp(float64, "double", `+`, "clAdd", "+")
 genClInfixOp(float32, "float", `-`, "clSub", "-")

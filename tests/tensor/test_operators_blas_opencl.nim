@@ -50,3 +50,9 @@ suite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":
     # Check size mismatch
     expect(ValueError):
       discard a + b.cpu[0..1, 0..1].opencl
+
+  test "Scalar/dot product":
+    let u = @[float32 1, 3, -5].toTensor().opencl()
+    let v = @[float32 4, -2, -1].toTensor().opencl()
+
+    check: dot(u,v) == 3.0'f32

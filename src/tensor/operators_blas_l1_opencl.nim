@@ -13,7 +13,12 @@
 # limitations under the License.
 
 
-import  ./backend/opencl_backend,
+import  ./backend/opencl_backend except check
+import  clblast
+# TODO error checking in Nim opencl is broken
+# See https://github.com/nim-lang/opencl/pull/3
+
+import  ./backend/metadataArray,
         ./private/p_kernels_interface_opencl,
         ./private/p_init_opencl,
         ./private/p_checks,
@@ -23,3 +28,30 @@ genClInfixOp(float32, "float", `+`, "clAdd", "+")
 genClInfixOp(float64, "double", `+`, "clAdd", "+")
 genClInfixOp(float32, "float", `-`, "clSub", "-")
 genClInfixOp(float64, "double", `-`, "clSub", "-")
+
+
+proc dot*(a, b: ClTensor[float32]): float32 =
+  ## Vector to Vector dot (scalar) product
+  when compileOption("boundChecks"):
+    check_dot_prod(a,b)
+
+  var clResult = newClStorage[float32](1)
+
+  check clblastSdot(a.size, clResult.toClpointer, 0,
+        a.toClpointer, a.offset, a.strides[0],
+        b.toClpointer, b.offset, b.strides[0],
+        unsafeAddr clQueue0, nil)
+
+  # TODO error checking in Nim opencl is broken
+  # See https://github.com/nim-lang/opencl/pull/3
+  let err2 = enqueueReadBuffer(
+    clQueue0,
+    clResult.toClpointer,
+    CL_true, # Blocking copy, we don't want computation to continue while copy is still pending
+    0,
+    sizeof(result),
+    result.addr.toClpointer,
+    0, nil, nil
+  )
+
+  assert err2 == TClResult.SUCCESS

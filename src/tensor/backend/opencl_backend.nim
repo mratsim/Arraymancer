@@ -16,15 +16,21 @@ import  ../data_structure,
         ./opencl_global_state,
         ./global_config,
         ./metadataArray,
-        nimcl, opencl, macros
+        nimcl, opencl, clblast, macros
 
-export nimcl, opencl, opencl_global_state
+export nimcl, opencl, opencl_global_state, clblast
 
 
 # Data structures to ease interfacing with OpenCL and kernels
 
-proc toClpointer*[T](p: ptr T|ptr UncheckedArray[T]): PMem {.noSideEffect.}=
+proc toClpointer*[T](p: ptr T|ptr UncheckedArray[T]): PMem {.noSideEffect, inline.}=
   cast[PMem](p)
+
+proc toClpointer*[T](p: ClStorage[T]): PMem {.noSideEffect, inline.}=
+  cast[PMem](p.Fdata)
+
+proc toClpointer*[T](p: ClTensor[T]): PMem {.noSideEffect, inline.}=
+  cast[PMem](p.storage.Fdata)
 
 proc clMalloc*[T](size: Natural): ptr UncheckedArray[T] {.inline.}=
   ## Internal proc.

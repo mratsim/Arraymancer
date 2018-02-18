@@ -11,7 +11,7 @@ Tensors can be iterated in the proper order. Arraymancer provides:
 
     import ../arraymancer, sequtils
 
-    let a = toSeq(1..24).toTensor(Cpu).reshape(2,3,4)
+    let a = toSeq(1..24).toTensor.reshape(2,3,4)
     # Tensor of shape 2x3x4 of type "int" on backend "Cpu"
     #  |      1       2       3       4 |     13      14      15      16|
     #  |      5       6       7       8 |     17      18      19      20|

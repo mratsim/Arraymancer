@@ -36,7 +36,7 @@ tensor and the new dimension order
 
 .. code:: nim
 
-    let a = toSeq(1..24).toTensor(Cpu).reshape(2,3,4)
+    let a = toSeq(1..24).toTensor.reshape(2,3,4)
     echo a
 
     # Tensor of shape 2x3x4 of type "int" on backend "Cpu"
@@ -62,11 +62,11 @@ Tensors can be concatenated along an axis with the ``concat`` proc.
     import ../arraymancer, sequtils
 
 
-    let a = toSeq(1..4).toTensor(Cpu).reshape(2,2)
+    let a = toSeq(1..4).toTensor.reshape(2,2)
 
-    let b = toSeq(5..8).toTensor(Cpu).reshape(2,2)
+    let b = toSeq(5..8).toTensor.reshape(2,2)
 
-    let c = toSeq(11..16).toTensor(Cpu)
+    let c = toSeq(11..16).toTensor
     let c0 = c.reshape(3,2)
     let c1 = c.reshape(2,3)
 

@@ -8,8 +8,8 @@ beginning with a dot:
 
 .. code:: nim
 
-    let j = [0, 10, 20, 30].toTensor(Cpu).reshape(4,1)
-    let k = [0, 1, 2].toTensor(Cpu).reshape(1,3)
+    let j = [0, 10, 20, 30].toTensor.reshape(4,1)
+    let k = [0, 1, 2].toTensor.reshape(1,3)
 
     echo j .+ k
     # Tensor of shape 4x3 of type "int" on backend "Cpu"

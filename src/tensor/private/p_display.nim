@@ -61,9 +61,9 @@ proc bounds_display(t: Tensor,
 # 45 46  47  48| 57 58 59 60 | 69 70 71 72
 
 # Test with
-# let a = toSeq(1..24).toTensor(Cpu).reshape(2,3,4)
+# let a = toSeq(1..24).toTensor.reshape(2,3,4)
 # echo a
-# let b = toSeq(1..72).toTensor(Cpu).reshape(2,3,3,4)
+# let b = toSeq(1..72).toTensor.reshape(2,3,3,4)
 # echo b
 
 proc disp2d*(t: Tensor): string {.noSideEffect.} =

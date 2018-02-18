@@ -510,7 +510,7 @@
 ##
 ## .. code:: nim
 ##
-##     let a = toSeq(1..24).toTensor(Cpu).reshape(2,3,4)
+##     let a = toSeq(1..24).toTensor.reshape(2,3,4)
 ##     echo a
 ##
 ##     # Tensor of shape 2x3x4 of type "int" on backend "Cpu"
@@ -536,11 +536,11 @@
 ##     import ../arraymancer, sequtils
 ##
 ##
-##     let a = toSeq(1..4).toTensor(Cpu).reshape(2,2)
+##     let a = toSeq(1..4).toTensor.reshape(2,2)
 ##
-##     let b = toSeq(5..8).toTensor(Cpu).reshape(2,2)
+##     let b = toSeq(5..8).toTensor.reshape(2,2)
 ##
-##     let c = toSeq(11..16).toTensor(Cpu)
+##     let c = toSeq(11..16).toTensor
 ##     let c0 = c.reshape(3,2)
 ##     let c1 = c.reshape(2,3)
 ##
@@ -650,8 +650,8 @@
 ##
 ## .. code:: nim
 ##
-##     let j = [0, 10, 20, 30].toTensor(Cpu).reshape(4,1)
-##     let k = [0, 1, 2].toTensor(Cpu).reshape(1,3)
+##     let j = [0, 10, 20, 30].toTensor.reshape(4,1)
+##     let k = [0, 1, 2].toTensor.reshape(1,3)
 ##
 ##     echo j .+ k
 ##     # Tensor of shape 4x3 of type "int" on backend "Cpu"
@@ -679,7 +679,7 @@
 ##
 ##     import ../arraymancer, sequtils
 ##
-##     let a = toSeq(1..24).toTensor(Cpu).reshape(2,3,4)
+##     let a = toSeq(1..24).toTensor.reshape(2,3,4)
 ##     # Tensor of shape 2x3x4 of type "int" on backend "Cpu"
 ##     #  |      1       2       3       4 |     13      14      15      16|
 ##     #  |      5       6       7       8 |     17      18      19      20|

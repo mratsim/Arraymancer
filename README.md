@@ -2,16 +2,113 @@
 
 # Arraymancer - A n-dimensional tensor (ndarray) library.
 
-Arraymancer is a tensor (N-dimensional array) project in Nim. The main focus is providing a fast and ergonomic CPU and GPU ndarray library on which to build a scientific computing and in particular a deep learning ecosystem.
+Arraymancer is a tensor (N-dimensional array) project in Nim. The main focus is providing a fast and ergonomic CPU, Cuda and OpenCL ndarray library on which to build a scientific computing and in particular a deep learning ecosystem.
 
 The library is inspired by Numpy and PyTorch. The library provides ergonomics very similar to Numpy, Julia and Matlab but is fully parallel and significantly faster than those libraries. It is also faster than C-based Torch.
 
 Note: While Nim is compiled and does not offer an interactive REPL yet (like Jupyter), it allows much faster prototyping than C++ due to extremely fast compilation times. Arraymancer compiles in about 5 seconds on my dual-core MacBook.
 
+## Show me some code
+
+Arraymancer tutorial is available [here](https://mratsim.github.io/Arraymancer/tuto.first_steps.html).
+
+Here is a preview of Arraymancer syntax.
+
+### Tensor creation and slicing
+```Nim
+import math, arraymancer, future
+
+const
+    x = @[1, 2, 3, 4, 5]
+    y = @[1, 2, 3, 4, 5]
+
+var
+    vandermonde: seq[seq[int]]
+    row: seq[int]
+
+vandermonde = newSeq[seq[int]]()
+
+for i, xx in x:
+    row = newSeq[int]()
+    vandermonde.add(row)
+    for j, yy in y:
+        vandermonde[i].add(xx^yy)
+
+let foo = vandermonde.toTensor()
+
+echo foo
+
+# Tensor of shape 5x5 of type "int" on backend "Cpu"
+# |1      1       1       1       1|
+# |2      4       8       16      32|
+# |3      9       27      81      243|
+# |4      16      64      256     1024|
+# |5      25      125     625     3125|
+
+echo foo[1..2, 3..4] # slice
+
+# Tensor of shape 2x2 of type "int" on backend "Cpu"
+# |16     32|
+# |81     243|
+```
+
+### Reshaping and concatenation
+```Nim
+import arraymancer, sequtils
+
+
+let a = toSeq(1..4).toTensor.reshape(2,2)
+
+let b = toSeq(5..8).toTensor.reshape(2,2)
+
+let c = toSeq(11..16).toTensor
+let c0 = c.reshape(3,2)
+let c1 = c.reshape(2,3)
+
+echo concat(a,b,c0, axis = 0)
+# Tensor of shape 7x2 of type "int" on backend "Cpu"
+# |1      2|
+# |3      4|
+# |5      6|
+# |7      8|
+# |11     12|
+# |13     14|
+# |15     16|
+
+echo concat(a,b,c1, axis = 1)
+# Tensor of shape 2x7 of type "int" on backend "Cpu"
+# |1      2       5       6       11      12      13|
+# |3      4       7       8       14      15      16|
+```
+
+### Broadcasting
+
+Image from Scipy
+
+![](https://scipy.github.io/old-wiki/pages/image004de9e.gif)
+
+```Nim
+import arraymancer
+
+let j = [0, 10, 20, 30].toTensor.reshape(4,1)
+let k = [0, 1, 2].toTensor.reshape(1,3)
+
+echo j .+ k
+# Tensor of shape 4x3 of type "int" on backend "Cpu"
+# |0      1       2|
+# |10     11      12|
+# |20     21      22|
+# |30     31      32|
+```
+
 ## Table of Contents
 <!-- TOC -->
 
 - [Arraymancer - A n-dimensional tensor (ndarray) library.](#arraymancer---a-n-dimensional-tensor-ndarray-library)
+  - [Show me some code](#show-me-some-code)
+    - [Tensor creation and slicing](#tensor-creation-and-slicing)
+    - [Reshaping and concatenation](#reshaping-and-concatenation)
+    - [Broadcasting](#broadcasting)
   - [Table of Contents](#table-of-contents)
   - [3 reasons why Arraymancer](#3-reasons-why-arraymancer)
     - [The Python community is struggling to bring Numpy up-to-speed](#the-python-community-is-struggling-to-bring-numpy-up-to-speed)
@@ -22,10 +119,6 @@ Note: While Nim is compiled and does not offer an interactive REPL yet (like Jup
   - [Installation](#installation)
   - [Full documentation](#full-documentation)
   - [Features](#features)
-    - [Arraymancer as a Numpy alternative](#arraymancer-as-a-numpy-alternative)
-      - [Tensor creation and slicing](#tensor-creation-and-slicing)
-      - [Reshaping and concatenation](#reshaping-and-concatenation)
-      - [Broadcasting](#broadcasting)
     - [Arraymancer as a Deep Learning library](#arraymancer-as-a-deep-learning-library)
       - [Handwritten digit recognition with Arraymancer](#handwritten-digit-recognition-with-arraymancer)
     - [Tensors on CPU and on Cuda](#tensors-on-cpu-and-on-cuda)
@@ -105,106 +198,15 @@ You can also check the [detailed example](https://github.com/mratsim/Arraymancer
 
 Available autograd and neural networks features are detailed in the technical reference part of the [documentation](https://mratsim.github.io/Arraymancer/).
 
-### Arraymancer as a Numpy alternative
-
-Arraymancer tutorial is available [here](https://mratsim.github.io/Arraymancer/tuto.first_steps.html).
-
-Here is a preview of Arraymancer syntax.
-
-#### Tensor creation and slicing
-```Nim
-import math, arraymancer, future
-
-const
-    x = @[1, 2, 3, 4, 5]
-    y = @[1, 2, 3, 4, 5]
-
-var
-    vandermonde: seq[seq[int]]
-    row: seq[int]
-
-vandermonde = newSeq[seq[int]]()
-
-for i, xx in x:
-    row = newSeq[int]()
-    vandermonde.add(row)
-    for j, yy in y:
-        vandermonde[i].add(xx^yy)
-
-let foo = vandermonde.toTensor()
-
-echo foo
-
-# Tensor of shape 5x5 of type "int" on backend "Cpu"
-# |1      1       1       1       1|
-# |2      4       8       16      32|
-# |3      9       27      81      243|
-# |4      16      64      256     1024|
-# |5      25      125     625     3125|
-
-echo foo[1..2, 3..4] # slice
-
-# Tensor of shape 2x2 of type "int" on backend "Cpu"
-# |16     32|
-# |81     243|
-```
-
-#### Reshaping and concatenation
-```Nim
-import ../arraymancer, sequtils
-
-
-let a = toSeq(1..4).toTensor(Cpu).reshape(2,2)
-
-let b = toSeq(5..8).toTensor(Cpu).reshape(2,2)
-
-let c = toSeq(11..16).toTensor(Cpu)
-let c0 = c.reshape(3,2)
-let c1 = c.reshape(2,3)
-
-echo concat(a,b,c0, axis = 0)
-# Tensor of shape 7x2 of type "int" on backend "Cpu"
-# |1      2|
-# |3      4|
-# |5      6|
-# |7      8|
-# |11     12|
-# |13     14|
-# |15     16|
-
-echo concat(a,b,c1, axis = 1)
-# Tensor of shape 2x7 of type "int" on backend "Cpu"
-# |1      2       5       6       11      12      13|
-# |3      4       7       8       14      15      16|
-```
-
-#### Broadcasting
-
-Image from Scipy
-
-![](https://scipy.github.io/old-wiki/pages/image004de9e.gif)
-
-```Nim
-let j = [0, 10, 20, 30].toTensor(Cpu).reshape(4,1)
-let k = [0, 1, 2].toTensor(Cpu).reshape(1,3)
-
-echo j .+ k
-# Tensor of shape 4x3 of type "int" on backend "Cpu"
-# |0      1       2|
-# |10     11      12|
-# |20     21      22|
-# |30     31      32|
-```
-
 ### Arraymancer as a Deep Learning library
 
-Note: The interface is still being ironed out.
+Note: The final interface is still **work in progress.**
 
 #### Handwritten digit recognition with Arraymancer
 From [example 2](https://github.com/mratsim/Arraymancer/blob/master/examples/ex02_handwritten_digits_recognition.nim).
 
 ```Nim
-import ../src/arraymancer, random
+import src/arraymancer, random
 
 # This is an early minimum viable example of handwritten digits recognition.
 # It uses convolutional neural networks to achieve high accuracy.

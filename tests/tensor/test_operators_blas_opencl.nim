@@ -17,6 +17,15 @@ import ../../src/arraymancer
 import unittest
 
 suite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":
+  test "GEMV - General Matrix to Vector Multiplication":
+    ## TODO: test with slices
+    ## TODO: support and test non-contiguous tensors
+
+    let d = @[@[1.0'f32,-1,2],@[0.0'f32,-3,1]].toTensor().opencl()
+    let e = @[2.0'f32, 1, 0].toTensor().opencl()
+
+    check: (d * e).cpu ==  [1.0'f32, -3].toTensor()
+
   test "Matrix and vector addition":
     let u = @[1'f32, 3, -5].toTensor.opencl
     let v = @[1'f32, 1, 1].toTensor.opencl

@@ -29,29 +29,32 @@ genClInfixOp(float64, "double", `+`, "clAdd", "+")
 genClInfixOp(float32, "float", `-`, "clSub", "-")
 genClInfixOp(float64, "double", `-`, "clSub", "-")
 
+template dotImpl(T: typedesc, clblast_proc: untyped): untyped =
+  proc dot*(a, b: ClTensor[T]): T =
+    ## Vector to Vector dot (scalar) product
+    when compileOption("boundChecks"):
+      check_dot_prod(a,b)
 
-proc dot*(a, b: ClTensor[float32]): float32 =
-  ## Vector to Vector dot (scalar) product
-  when compileOption("boundChecks"):
-    check_dot_prod(a,b)
+    var clResult = newClStorage[T](1)
 
-  var clResult = newClStorage[float32](1)
+    check clblast_proc(a.size, clResult.toClpointer, 0,
+          a.toClpointer, a.offset, a.strides[0],
+          b.toClpointer, b.offset, b.strides[0],
+          unsafeAddr clQueue0, nil)
 
-  check clblastSdot(a.size, clResult.toClpointer, 0,
-        a.toClpointer, a.offset, a.strides[0],
-        b.toClpointer, b.offset, b.strides[0],
-        unsafeAddr clQueue0, nil)
+    # TODO error checking in Nim opencl is broken
+    # See https://github.com/nim-lang/opencl/pull/3
+    let err2 = enqueueReadBuffer(
+      clQueue0,
+      clResult.toClpointer,
+      CL_true, # Blocking copy, we don't want computation to continue while copy is still pending
+      0,
+      sizeof(result),
+      result.addr.toClpointer,
+      0, nil, nil
+    )
 
-  # TODO error checking in Nim opencl is broken
-  # See https://github.com/nim-lang/opencl/pull/3
-  let err2 = enqueueReadBuffer(
-    clQueue0,
-    clResult.toClpointer,
-    CL_true, # Blocking copy, we don't want computation to continue while copy is still pending
-    0,
-    sizeof(result),
-    result.addr.toClpointer,
-    0, nil, nil
-  )
+    assert err2 == TClResult.SUCCESS
 
-  assert err2 == TClResult.SUCCESS
+dotImpl(float32, clblastSdot)
+dotImpl(float64, clblastDdot)

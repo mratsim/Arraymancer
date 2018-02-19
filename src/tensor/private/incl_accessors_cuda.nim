@@ -44,6 +44,7 @@
 #     result += dimIdx * t.strides[k]
 
 # Note we don't bound-checks the CUDA implementation
+# TODO: use ldiv/lldiv to compute div and mod at the same time
 {.emit:["""
   static inline __device__ int cuda_getIndexOfElementID(
     const int rank,

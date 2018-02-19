@@ -24,10 +24,8 @@ import  ./backend/metadataArray,
         ./private/p_checks,
         ./data_structure
 
-genClInfixOp(float32, "float", `+`, "clAdd", "+")
-genClInfixOp(float64, "double", `+`, "clAdd", "+")
-genClInfixOp(float32, "float", `-`, "clSub", "-")
-genClInfixOp(float64, "double", `-`, "clSub", "-")
+# ####################################################################
+# BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
 
 template dotImpl(T: typedesc, clblast_proc: untyped): untyped =
   proc dot*(a, b: ClTensor[T]): T =
@@ -58,3 +56,14 @@ template dotImpl(T: typedesc, clblast_proc: untyped): untyped =
 
 dotImpl(float32, clblastSdot)
 dotImpl(float64, clblastDdot)
+
+
+genClInfixOp(float32, "float", `+`, "clAdd", "+")
+genClInfixOp(float64, "double", `+`, "clAdd", "+")
+genClInfixOp(float32, "float", `-`, "clSub", "-")
+genClInfixOp(float64, "double", `-`, "clSub", "-")
+
+genClInPlaceOp(float32, "float", `+=`, "clAdd", "+=")
+genClInPlaceOp(float64, "double", `+=`, "clAdd", "+=")
+genClInPlaceOp(float32, "float", `-=`, "clSub", "-=")
+genClInPlaceOp(float64, "double", `-=`, "clSub", "-=")

@@ -120,34 +120,3 @@ proc layoutOnDevice*[T:SomeReal](t: ClTensor[T]): ClTensorLayout[T] =
     addr tmp_strides[0],
     0, nil, nil
   )
-
-
-# #########################################################
-# # Variadic number of args, to remove after https://github.com/unicredit/nimcl/pull/1
-
-#### Taken from nimcl
-template setArg(kernel: PKernel, item: PMem, index: int) =
-  var x = item
-  check setKernelArg(kernel, index.uint32, sizeof(Pmem), addr x)
-
-template setArg[A](kernel: PKernel, item: var A, index: int) =
-  check setKernelArg(kernel, index.uint32, sizeof(A), addr item)
-
-template setArg[A](kernel: PKernel, item: LocalBuffer[A], index: int) =
-  check setKernelArg(kernel, index.uint32, int(item) * sizeof(A), nil)
-
-template setArg(kernel: PKernel, item: SomeInteger, index: int) =
-  var x = item
-  check setKernelArg(kernel, index.uint32, sizeof(type(item)), addr x)
-####
-
-macro args*(kernel: Pkernel, args: varargs[untyped]): untyped =
-
-  result = newStmtList()
-
-  var i = 0 # no pairs for macro for loop
-  for arg in items(args):
-    let s = quote do:
-      `kernel`.setArg(`arg`, `i`)
-    result.add(s)
-    inc i

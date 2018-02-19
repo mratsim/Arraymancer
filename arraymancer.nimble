@@ -5,7 +5,7 @@ description   = "A n-dimensional tensor (ndarray) library"
 license       = "Apache License 2.0"
 
 ### Dependencies
-requires "nim >= 0.17.2", "nimblas >= 0.1.3", "nimcuda >= 0.1.4", "nimcl >= 0.1.1", "clblast"
+requires "nim >= 0.17.2", "nimblas >= 0.1.3", "nimcuda >= 0.1.4", "nimcl >= 0.1.2", "clblast"
 
 ## Install files
 srcDir = "src"

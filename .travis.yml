@@ -46,7 +46,7 @@ before_install:
   - if [[ "$BACKEND" == "OpenCL" ]]; then
       bash ci/opencl_amd_sdk.sh;
 
-      curl https://launchpad.net/~cnugteren/+archive/ubuntu/clblast/+files/libclblast_1.3.0-1ubuntu2_amd64.deb -Ssf > libclblast.deb;
+      wget https://launchpad.net/~cnugteren/+archive/ubuntu/clblast/+files/libclblast_1.3.0-1ubuntu2_amd64.deb -O libclblast.deb;
       sudo dpkg -i libclblast.deb;
       sudo apt-get -f install;
     fi

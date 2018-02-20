@@ -46,12 +46,9 @@ before_install:
   - if [[ "$BACKEND" == "OpenCL" ]]; then
       bash ci/opencl_amd_sdk.sh;
 
-      echo "deb http://ppa.launchpad.net/cnugteren/clblast/ubuntu xenial main" | sudo tee -a /etc/apt/sources.list
-      echo "deb-src http://ppa.launchpad.net/cnugteren/clblast/ubuntu xenial main" | sudo tee -a /etc/apt/sources.list
-      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1F9D5FBEF38CB4E0
-
-      sudo apt-get update;
-      sudo apt-get install clblast;
+      curl https://launchpad.net/~cnugteren/+archive/ubuntu/clblast/+files/libclblast_1.3.0-1ubuntu2_amd64.deb -Ssf > libclblast.deb;
+      sudo dpkg -i libclblast.deb;
+      sudo apt-get -f install;
     fi
 
 install:

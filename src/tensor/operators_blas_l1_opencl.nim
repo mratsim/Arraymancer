@@ -27,7 +27,7 @@ import  ./backend/metadataArray,
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
 
-template dotImpl(T: typedesc, clblast_proc: untyped): untyped =
+template dotImpl(T: typedesc[SomeReal], clblast_proc: untyped): untyped =
   proc dot*(a, b: ClTensor[T]): T =
     ## Vector to Vector dot (scalar) product
     when compileOption("boundChecks"):

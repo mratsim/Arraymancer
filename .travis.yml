@@ -44,18 +44,8 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install brewsci/science/blis; fi
   - if [[ "$BACKEND" == "OpenCL" ]]; then
-      bash ci/amd_sdk.sh;
-      tar -xjf AMD-SDK.tar.bz2;
-      AMDAPPSDK=${HOME}/AMDAPPSDK;
-      export OPENCL_VENDOR_PATH=${AMDAPPSDK}/etc/OpenCL/vendors;
-      mkdir -p ${OPENCL_VENDOR_PATH};
-      sh AMD-APP-SDK*.sh --tar -xf -C ${AMDAPPSDK};
-      echo libamdocl64.so > ${OPENCL_VENDOR_PATH}/amdocl64.icd;
-      export LD_LIBRARY_PATH=${AMDAPPSDK}/lib/x86_64:${LD_LIBRARY_PATH};
-      chmod +x ${AMDAPPSDK}/bin/x86_64/clinfo;
-      ${AMDAPPSDK}/bin/x86_64/clinfo;
-
-      sudo add-apt-repository ppa:cnugteren/clblast;
+      bash ci/opencl_amd_sdk.sh;
+      sudo add-apt-repository ppa:cnugteren/clblast -y;
       sudo apt-get update;
       sudo apt-get install clblast;
     fi

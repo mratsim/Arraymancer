@@ -12,28 +12,19 @@ matrix:
       compiler: gcc
 
     - os: linux
+      env: CHANNEL=stable BACKEND=OpenCL
+      compiler: gcc
+
+    - os: linux
       env: CHANNEL=devel
       compiler: gcc
 
-    # For faster testing we don't test clang on linux, only on macOS
-    # - os: linux
-    #   env: CHANNEL=stable
-    #   compiler: clang
-    #
-    # - os: linux
-    #   env: CHANNEL=devel
-    #   compiler: clang
-
     # On OSX we only test against clang (gcc is mapped to clang by default)
     # Note: for OpenMP, Homebrew will build flame/blis with GCC-5
+    # As BLIS is in OSX homebrew, this is an opportunity to test it as well
     - os: osx
       env: CHANNEL=stable BLIS=true
       compiler: clang
-
-    # For faster testing, we only test BLIS = true
-    # - os: osx
-    #   env: CHANNEL=stable BLIS=false
-    #   compiler: clang
 
   allow_failures:
     # Ignore failures when building against the devel Nim branch
@@ -52,6 +43,22 @@ before_install:
   # On MacOS flame/blis can be tested as it is an homebrew package
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install brewsci/science/blis; fi
+  - if [[ "$BACKEND" == "OpenCL" ]]; then
+      bash ci/amd_sdk.sh;
+      tar -xjf AMD-SDK.tar.bz2;
+      AMDAPPSDK=${HOME}/AMDAPPSDK;
+      export OPENCL_VENDOR_PATH=${AMDAPPSDK}/etc/OpenCL/vendors;
+      mkdir -p ${OPENCL_VENDOR_PATH};
+      sh AMD-APP-SDK*.sh --tar -xf -C ${AMDAPPSDK};
+      echo libamdocl64.so > ${OPENCL_VENDOR_PATH}/amdocl64.icd;
+      export LD_LIBRARY_PATH=${AMDAPPSDK}/lib/x86_64:${LD_LIBRARY_PATH};
+      chmod +x ${AMDAPPSDK}/bin/x86_64/clinfo;
+      ${AMDAPPSDK}/bin/x86_64/clinfo;
+
+      sudo add-apt-repository ppa:cnugteren/clblast;
+      sudo apt-get update;
+      sudo apt-get install clblast;
+    fi
 
 install:
   - export CHOOSENIM_NO_ANALYTICS=1
@@ -63,7 +70,11 @@ install:
 
 script:
     - nimble refresh
-    - nimble test
+    - if [[ "$BACKEND" == "OpenCL" ]]; then
+        nimble test_opencl;
+      else
+        nimble test;
+      fi
 
 branches:
   except:

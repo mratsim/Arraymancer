@@ -17,27 +17,18 @@ import ../../src/arraymancer
 import unittest
 
 suite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":
-  test "GEMV - General Matrix to Vector Multiplication - float32":
+  test "GEMV - General Matrix to Vector Multiplication":
     ## TODO: test with slices
     ## TODO: support and test non-contiguous tensors
 
-    let d = [[float32 1,-1,2], [float32 0.0,-3,1]].toTensor().opencl()
-    let e = [float32 2, 1, 0].toTensor().opencl()
+    let d = @[@[1.0'f32,-1,2],@[0.0'f32,-3,1]].toTensor().opencl()
+    let e = @[2.0'f32, 1, 0].toTensor().opencl()
 
-    check: (d * e).cpu ==  [float32 1, -3].toTensor()
-
-  test "GEMV - General Matrix to Vector Multiplication - float64":
-    ## TODO: test with slices
-    ## TODO: support and test non-contiguous tensors
-
-    let d = [[float64 1,-1,2], [float64 0.0,-3,1]].toTensor().opencl()
-    let e = [float64 2, 1, 0].toTensor().opencl()
-
-    check: (d * e).cpu ==  [float64 1, -3].toTensor()
+    check: (d * e).cpu ==  [1.0'f32, -3].toTensor()
 
   test "Matrix and vector addition":
-    let u = @[float32 1, 3, -5].toTensor.opencl
-    let v = @[float32 1, 1, 1].toTensor.opencl
+    let u = @[1'f32, 3, -5].toTensor.opencl
+    let v = @[1'f32, 1, 1].toTensor.opencl
 
     check: (u + v).cpu == @[2'f32, 4, -4].toTensor()
 
@@ -53,10 +44,10 @@ suite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":
       discard a + b.cpu[0..1, 0..1].opencl
 
   test "Matrix and vector substraction":
-    let u = @[float32 1, 3, -5].toTensor.opencl
-    let v = @[float32 1, 1, 1].toTensor.opencl
+    let u = @[1'f32, 3, -5].toTensor.opencl
+    let v = @[1'f32, 1, 1].toTensor.opencl
 
-    check: (u - v).cpu == @[float32 0, 2, -6].toTensor()
+    check: (u - v).cpu == @[0'f32, 2, -6].toTensor()
 
     let a = @[7.0, 4.0, 3.0, 1.0, 8.0, 6.0, 8.0, 1.0, 6.0, 2.0].toTensor.reshape([5,2]).opencl
     let b = @[6.0, 6.0, 2.0, 0.0, 4.0, 3.0, 2.0, 0.0, 0.0, 3.0].toTensor.reshape([5,2]).opencl
@@ -77,8 +68,8 @@ suite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":
 
 
   test "Matrix and Vector in-place addition":
-    var u = @[float64 1, 3, -5].toTensor().opencl()
-    let v = @[float64 4, -2, -1].toTensor().opencl()
+    var u = @[1'f64, 3, -5].toTensor().opencl()
+    let v = @[4'f64, -2, -1].toTensor().opencl()
 
     u += v
 
@@ -116,8 +107,8 @@ suite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":
       z += t2.cpu[0..1,0..1].opencl
 
   test "Matrix and Vector in-place substraction":
-    var u = @[float32 1, 3, -5].toTensor.opencl
-    let v = @[float32 1, 1, 1].toTensor.opencl
+    var u = @[1'f32, 3, -5].toTensor.opencl
+    let v = @[1'f32, 1, 1].toTensor.opencl
 
     u -= v
 
@@ -142,8 +133,8 @@ suite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":
       a += b.cpu[0..1,0..1].opencl
 
   test "Matrix and vector addition":
-    let u = @[float32 1, 3, -5].toTensor.opencl
-    let v = @[float32 1, 1, 1].toTensor.opencl
+    let u = @[1'f32, 3, -5].toTensor.opencl
+    let v = @[1'f32, 1, 1].toTensor.opencl
 
     check: (u + v).cpu == @[2'f32, 4, -4].toTensor()
 
@@ -159,8 +150,8 @@ suite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":
       discard a + b.cpu[0..1, 0..1].opencl
 
   test "Matrix and vector substraction":
-    let u = @[float32 1, 3, -5].toTensor.opencl
-    let v = @[float32 1, 1, 1].toTensor.opencl
+    let u = @[1'f32, 3, -5].toTensor.opencl
+    let v = @[1'f32, 1, 1].toTensor.opencl
 
     check: (u - v).cpu == @[0'f32, 2, -6].toTensor()
 

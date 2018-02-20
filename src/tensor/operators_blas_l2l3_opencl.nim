@@ -7,37 +7,36 @@ import  ./data_structure,
         ./private/[p_init_opencl, p_checks]
 
 
-template l1l2_blas_Impl(T: typedesc[SomeReal], clblast_gemv_proc: untyped): untyped =
-  proc openCL_MV_y_eq_aAx_p_by(
-    alpha: T, a, x: ClTensor[T],
-    beta: T, y: var ClTensor[T]) =
-    # Matrix-Vector: y = alpha A matvecmul x + beta y
 
-    # TODO: remove this contiguous layout constraint
-    if not a.isContiguous:
-      raise newException(ValueError, "NotImplemented: for now both tensors should be contiguous")
+proc openCL_MV_y_eq_aAx_p_by(
+  alpha: float32, a, x: ClTensor[float32],
+  beta: float32, y: var ClTensor[float32]) =
+  # Matrix-Vector: y = alpha A matvecmul x + beta y
 
-    let
-      a_is_rowMajor = a.is_C_contiguous
-      layout =  if a_is_rowMajor: CLBlastLayoutRowMajor
-                else: CLBlastLayoutColMajor
-      lda = if a_is_rowMajor: a.strides[0]
-            else: a.strides[1]
+  # TODO: remove this contiguous layout constraint
+  if not a.isContiguous:
+    raise newException(ValueError, "NotImplemented: for now both tensors should be contiguous")
 
-    check clblast_gemv_proc(layout, CLBlastTransposeNo, a.shape[0], a.shape[1],
-                alpha,
-                a.toClPointer, a.offset, lda,
-                x.toClpointer, x.offset, x.strides[0],
-                beta,
-                y.toClpointer, y.offset, y.strides[0],
-                unsafeAddr clQueue0, nil)
+  let
+    a_is_rowMajor = a.is_C_contiguous
+    layout =  if a_is_rowMajor: CLBlastLayoutRowMajor
+              else: CLBlastLayoutColMajor
+    lda = if a_is_rowMajor: a.strides[0]
+          else: a.strides[1]
 
-l1l2_blas_Impl(float32, clblastSgemv)
-l1l2_blas_Impl(float64, clblastDgemv)
+  check clblastSgemv(layout, CLBlastTransposeNo, a.shape[0], a.shape[1],
+              alpha,
+              a.toClPointer, a.offset, lda,
+              x.toClpointer, x.offset, x.strides[0],
+              beta,
+              y.toClpointer, y.offset, y.strides[0],
+              unsafeAddr clQueue0, nil)
+
 
 proc `*`*[T: SomeReal](a, b: ClTensor[T]): ClTensor[T] =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector) on CUDA
 
+  assert T is float32, "Only float32 is supported at the moment"
   assert b.rank == 1, "Only Matrix-Vector product is supported at the moment"
 
   if a.rank == 2 and b.rank == 1:

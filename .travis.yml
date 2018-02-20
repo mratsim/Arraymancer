@@ -48,7 +48,7 @@ before_install:
 
       echo "deb http://ppa.launchpad.net/cnugteren/clblast/ubuntu xenial main" | sudo tee -a /etc/apt/sources.list
       echo "deb-src http://ppa.launchpad.net/cnugteren/clblast/ubuntu xenial main" | sudo tee -a /etc/apt/sources.list
-      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 48647B32AE252498951E6BD11F9D5FBEF38CB4E0
+      sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1F9D5FBEF38CB4E0
 
       sudo apt-get update;
       sudo apt-get install clblast;

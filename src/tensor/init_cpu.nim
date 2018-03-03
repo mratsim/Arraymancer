@@ -58,7 +58,7 @@ proc newTensor*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline
   tensorCpu(shape, result)
   result.storage.Fdata = newSeq[T](result.size)
 
-proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit.} =
+proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit, noSideEffect.} =
   ## Creates a new Tensor filled with the given value
   ## Input:
   ##      - Shape of the Tensor
@@ -71,10 +71,11 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit.} =
   tensorCpu(shape, result)
   result.storage.Fdata = newSeqUninit[T](result.size)
 
-  omp_parallel_countup(i, result.size):
-    result.storage.Fdata[i] = value
+  for tval in result.storage.Fdata.mitems:
+    {.unroll.}
+    tval = value
 
-proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit.} =
+proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit, noSideEffect.} =
   ## Creates a new Tensor filled with the given value
   ## Input:
   ##      - Shape of the Tensor
@@ -87,8 +88,9 @@ proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit.} =
   tensorCpu(shape, result)
   result.storage.Fdata = newSeqUninit[T](result.size)
 
-  omp_parallel_countup(i, result.size):
-    result.storage.Fdata[i] = value
+  for tval in result.storage.Fdata.mitems:
+    {.unroll.}
+    tval = value
 
 proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect.} =
   ## Convert an openarray to a Tensor
@@ -138,7 +140,7 @@ proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, 
   ##      - A zero-ed Tensor of the same shape
   result = zeros[T](t.shape)
 
-proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit, inline.} =
+proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -147,7 +149,7 @@ proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit, inline.} =
   ##      - A one-ed Tensor of the same shape
   newTensorWith[T](shape, 1.T)
 
-proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit, inline.} =
+proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -156,7 +158,7 @@ proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit, inline.} =
   ##      - A one-ed Tensor of the same shape
   newTensorWith[T](shape, 1.T)
 
-proc ones_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit, inline.} =
+proc ones_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1 with the same shape as the input
   ## and filled with 1
   ## Input:

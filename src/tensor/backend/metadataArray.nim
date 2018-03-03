@@ -68,23 +68,11 @@ proc low*(a: DynamicStackArray): int {.inline.} =
 proc high*(a: DynamicStackArray): int {.inline.} =
   a.len-1
 
-
-when NimVersion >= "0.17.3":
-  # Need to deal with BackwardsIndex and multi-type slice introduced by:
-  # https://github.com/nim-lang/Nim/commit/d52a1061b35bbd2abfbd062b08023d986dbafb3c
-
-  type Index = SomeSignedInt or BackwardsIndex
-  template `^^`(s, i: untyped): untyped =
-    when i is BackwardsIndex:
-      s.len - int(i)
-    else: int(i)
-else:
-  type Index = SomeSignedInt
-  template `^^`(s, i: untyped): untyped =
-    i
-
-  proc `^`*(x: SomeSignedInt; a: DynamicStackArray): int {.inline.} =
-    a.len - x
+type Index = SomeSignedInt or BackwardsIndex
+template `^^`(s: DynamicStackArray, i: Index): int =
+  when i is BackwardsIndex:
+    s.len - int(i)
+  else: int(i)
 
 proc `[]`*[T](a: DynamicStackArray[T], idx: Index): T {.inline.} =
   # boundsChecks automatically done for array indexing

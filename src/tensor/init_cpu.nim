@@ -13,14 +13,15 @@
 # limitations under the License.
 
 import  ../private/[functional, nested_containers, sequninit],
-        ./backend/metadataArray,
+        ./backend/[metadataArray, openmp],
         ./private/p_checks,
         ./private/p_init_cpu,
         ./data_structure,
         nimblas,
         sequtils,
         random,
-        math
+        math,
+        algorithm
 
 proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
@@ -57,7 +58,7 @@ proc newTensor*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline
   tensorCpu(shape, result)
   result.storage.Fdata = newSeq[T](result.size)
 
-proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noSideEffect,noInit, inline.} =
+proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit, noSideEffect.} =
   ## Creates a new Tensor filled with the given value
   ## Input:
   ##      - Shape of the Tensor
@@ -68,9 +69,13 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noSideEffect,
   ##        the given value
   # Todo: use a template that can accept proc or value. See the code for newSeqWith: https://github.com/nim-lang/Nim/blob/master/lib/pure/collections/sequtils.nim#L650-L665
   tensorCpu(shape, result)
-  result.storage.Fdata = newSeqWith(result.size, value)
+  result.storage.Fdata = newSeqUninit[T](result.size)
 
-proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noSideEffect,noInit, inline.} =
+  for tval in result.storage.Fdata.mitems:
+    {.unroll.}
+    tval = value
+
+proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit, noSideEffect.} =
   ## Creates a new Tensor filled with the given value
   ## Input:
   ##      - Shape of the Tensor
@@ -81,7 +86,11 @@ proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noSideEffect
   ##        the given value
   # Todo: use a template that can accept proc or value. See the code for newSeqWith: https://github.com/nim-lang/Nim/blob/master/lib/pure/collections/sequtils.nim#L650-L665
   tensorCpu(shape, result)
-  result.storage.Fdata = newSeqWith(result.size, value)
+  result.storage.Fdata = newSeqUninit[T](result.size)
+
+  for tval in result.storage.Fdata.mitems:
+    {.unroll.}
+    tval = value
 
 proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect.} =
   ## Convert an openarray to a Tensor
@@ -131,27 +140,25 @@ proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, 
   ##      - A zero-ed Tensor of the same shape
   result = zeros[T](t.shape)
 
-proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect,inline.} =
+proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
   ##      - Type of its elements
   ## Result:
   ##      - A one-ed Tensor of the same shape
-  tensorCpu(shape, result)
-  result.storage.Fdata = newSeqWith(result.size, 1.T)
+  newTensorWith[T](shape, 1.T)
 
-proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit,noSideEffect,inline.} =
+proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
   ##      - Type of its elements
   ## Result:
   ##      - A one-ed Tensor of the same shape
-  tensorCpu(shape, result)
-  result.data = newSeqWith(result.size, 1.T)
+  newTensorWith[T](shape, 1.T)
 
-proc ones_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, inline.} =
+proc ones_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1 with the same shape as the input
   ## and filled with 1
   ## Input:

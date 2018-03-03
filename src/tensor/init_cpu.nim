@@ -13,15 +13,14 @@
 # limitations under the License.
 
 import  ../private/[functional, nested_containers, sequninit],
-        ./backend/[metadataArray, openmp],
+        ./backend/[metadataArray],
         ./private/p_checks,
         ./private/p_init_cpu,
         ./data_structure,
         nimblas,
         sequtils,
         random,
-        math,
-        algorithm
+        math
 
 proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend

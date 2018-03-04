@@ -27,14 +27,14 @@ import  ../../private/[nested_containers, ast_utils],
 # #########################################################################
 # Setting a single value
 
-template slicerMutT_val[T](t: var Tensor[T], slices: ArrayOfSlices, val: T): untyped =
+template slicerMutImpl_val[T](t: var Tensor[T], slices: ArrayOfSlices, val: T): untyped =
   var sliced = t.slicer(slices)
   for old_val in sliced.mitems:
     old_val = val
 
 proc slicerMut*[T](t: var Tensor[T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
   ## Assign the value to the whole slice
-  slicerMutT_val(t, slices.toArrayOfSlices, val)
+  slicerMutImpl_val(t, slices.toArrayOfSlices, val)
 
 proc slicerMut*[T](t: var Tensor[T],
                 slices: varargs[SteppedSlice],
@@ -45,7 +45,7 @@ proc slicerMut*[T](t: var Tensor[T],
   # TODO: tests
 
   let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
-  slicerMutT_val(t, full_slices, val)
+  slicerMutImpl_val(t, full_slices, val)
 
 proc slicerMut*[T](t: var Tensor[T],
                 ellipsis: Ellipsis,
@@ -56,7 +56,7 @@ proc slicerMut*[T](t: var Tensor[T],
   # TODO: tests
 
   let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
-  slicerMutT_val(t, full_slices, val)
+  slicerMutImpl_val(t, full_slices, val)
 
 proc slicerMut*[T](t: var Tensor[T],
                 slices1: varargs[SteppedSlice],
@@ -70,12 +70,12 @@ proc slicerMut*[T](t: var Tensor[T],
   let full_slices = concat(slices1,
                             initSpanSlices(t.rank - slices1.len - slices2.len),
                             slices2)
-  slicerMutT_val(t, full_slices, val)
+  slicerMutImpl_val(t, full_slices, val)
 
 # ###########################################################################
 # Assign value from an openarray of the same shape
 
-template slicerMutT_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) =
+template slicerMutImpl_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) =
   ## Assign value from openarrays
   var sliced = t.slicer(slices)
   when compileOption("boundChecks"):
@@ -94,7 +94,7 @@ template slicerMutT_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: o
 proc slicerMut*[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) {.noSideEffect.}=
   ## Assign value from openarrays
   ## The openarray must have the same shape as the slice
-  slicerMutT_oa(t, slices, oa)
+  slicerMutImpl_oa(t, slices, oa)
 
 proc slicerMut*[T](t: var Tensor[T],
                   slices: varargs[SteppedSlice],
@@ -104,7 +104,7 @@ proc slicerMut*[T](t: var Tensor[T],
   ## The openarray must have the same shape as the slice
   # TODO: tests
   let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
-  slicerMutT_oa(t, slices, oa)
+  slicerMutImpl_oa(t, slices, oa)
 
 proc slicerMut*[T](t: var Tensor[T],
                   ellipsis: Ellipsis,
@@ -114,7 +114,7 @@ proc slicerMut*[T](t: var Tensor[T],
   ## The openarray must have the same shape as the slice
   # TODO: tests
   let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
-  slicerMutT_oa(t, slices, oa)
+  slicerMutImpl_oa(t, slices, oa)
 
 
 proc slicerMut*[T](t: var Tensor[T],
@@ -128,54 +128,54 @@ proc slicerMut*[T](t: var Tensor[T],
   let full_slices = concat(slices1,
                             initSpanSlices(t.rank - slices1.len - slices2.len),
                             slices2)
-  slicerMutT_oa(t, full_slices, val)
+  slicerMutImpl_oa(t, full_slices, val)
 
 # #########################################################################
 # Setting from a Tensor
 
-template slicerMutT_T[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T]) =
+template slicerMutImpl_T[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T]) =
   ## Assign the value to the whole slice
   var sliced = t.slicer(slices)
 
   when compileOption("boundChecks"):
     check_shape(sliced, t2)
 
-  for x, val in mzip(sliced, t2):
-    x = val
+  apply2_inline(sliced, t2):
+    y
 
-proc slicerMut*[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T]) {.noSideEffect.}=
+proc slicerMut*[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T])=
   ## Assign the value to the whole slice
-  slicerMutT_T(t, slices, t2)
+  slicerMutImpl_T(t, slices, t2)
 
 proc slicerMut*[T](t: var Tensor[T],
                   slices: varargs[SteppedSlice],
                   ellipsis: Ellipsis,
-                  t2: Tensor[T]) {.noSideEffect.}=
+                  t2: Tensor[T]) =
   ## Assign the value to the whole slice
   # TODO: tests
   let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
-  slicerMutT_T(t, slices, t2)
+  slicerMutImpl_T(t, slices, t2)
 
 proc slicerMut*[T](t: var Tensor[T],
                   ellipsis: Ellipsis,
                   slices: varargs[SteppedSlice],
-                  t2: Tensor[T]) {.noSideEffect.}=
+                  t2: Tensor[T]) =
   ## Assign the value to the whole slice
   # TODO: tests
   let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
-  slicerMutT_T(t, slices, t2)
+  slicerMutImpl_T(t, slices, t2)
 
 proc slicerMut*[T](t: var Tensor[T],
                   slices1: varargs[SteppedSlice],
                   ellipsis: Ellipsis,
                   slices2: varargs[SteppedSlice],
-                  t2: Tensor[T]) {.noSideEffect.}=
+                  t2: Tensor[T]) =
   ## Assign the value to the whole slice
   # TODO: tests
   let full_slices = concat(slices1,
                             initSpanSlices(t.rank - slices1.len - slices2.len),
                             slices2)
-  slicerMutT_T(t, slices, t2)
+  slicerMutImpl_T(t, slices, t2)
 
 # #########################################################################
 # Dispatching logic

@@ -117,7 +117,7 @@ proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit,
   result.shape.copyFrom(shape)
   # result.strides # Unneeded, autoinitialized with 0
   result.offset = 0
-  result.data = newSeqWith(1, val)
+  result.data = @[val]
 
 proc broadcast*[T: SomeNumber](val: T, shape: MetadataArray): Tensor[T] {.noInit,noSideEffect.} =
   ## Broadcast a number
@@ -137,7 +137,7 @@ proc broadcast*[T: SomeNumber](val: T, shape: MetadataArray): Tensor[T] {.noInit
   result.shape.copyFrom(shape)
   # result.strides # Unneeded, autoinitialized with 0
   result.offset = 0
-  result.data = newSeqWith(1, val)
+  result.data = @[val]
 
 template bc*(t: (Tensor|SomeNumber), shape: varargs[int]): untyped =
   ## Alias for ``broadcast``
@@ -183,7 +183,7 @@ proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
   result = t
   permuteImpl(result, dims)
 
-proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit,noSideEffect.}=
+proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit.}=
   ## Concatenate tensors
   ## Input:
   ##   - Tensors

@@ -20,7 +20,7 @@ import  ../../private/sequninit,
         ./p_checks,
         nimblas
 
-proc contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]) {.noSideEffect.}=
+proc contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]) =
   if layout == rowMajor:
     result = t.map_inline(x)
   else: # colMajor
@@ -29,7 +29,7 @@ proc contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]) 
     apply2_inline(result, t):
       y
 
-proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray, result: var Tensor[T]) {.noSideEffect.}=
+proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray, result: var Tensor[T]) =
   result = newTensorUninit[T](new_shape)
   result.apply2_inline(t,y)
 
@@ -38,7 +38,7 @@ proc reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, resul
   shape_to_strides(result.shape, rowMajor, result.strides)
   result.offset = t.offset
 
-proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) {.noSideEffect.}=
+proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
   when compileOption("boundChecks"):
     when new_shape is MetadataArray:
       check_reshape(t, new_shape)

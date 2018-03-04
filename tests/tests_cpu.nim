@@ -34,4 +34,5 @@ import ../src/arraymancer,
         ./autograd/test_gate_blas,
         ./ml/test_metrics
 
-import ./stability_tests/test_stability_openmp
+import  ./stability_tests/test_stability_openmp,
+        ./end_to_end/examples

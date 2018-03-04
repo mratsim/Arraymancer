@@ -19,15 +19,15 @@ import  ../../private/nested_containers,
         nimblas,
         sequtils
 
-template tensorCpu*[T](out_shape: varargs[int], t: Tensor[T], layout: OrderType = rowMajor): untyped =
-  t.shape.copyFrom(out_shape)
-  shape_to_strides(t.shape, layout, t.strides)
-  t.offset = 0
+proc tensorCpu*[T](out_shape: varargs[int], result: var Tensor[T], layout: OrderType = rowMajor) {.inline, noSideEffect.} =
+  result.shape.copyFrom(out_shape)
+  shape_to_strides(result.shape, layout, result.strides)
+  result.offset = 0
 
-template tensorCpu*[T](out_shape: MetadataArray, t: Tensor[T], layout: OrderType = rowMajor): untyped =
-  t.shape.copyFrom(out_shape)
-  shape_to_strides(t.shape, layout, t.strides)
-  t.offset = 0
+proc tensorCpu*[T](out_shape: MetadataArray, result: var Tensor[T], layout: OrderType = rowMajor) {.inline, noSideEffect.} =
+  result.shape.copyFrom(out_shape)
+  shape_to_strides(result.shape, layout, result.strides)
+  result.offset = 0
 
 template toTensorCpu*(s: typed): untyped =
   let shape = s.shape

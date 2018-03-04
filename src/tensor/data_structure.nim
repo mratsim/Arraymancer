@@ -120,7 +120,7 @@ proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.inline, noSideEffect.}=
 # Tensor Metadata
 # ################
 
-template rank*(t: AnyTensor): int =
+proc rank*(t: AnyTensor): int {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:

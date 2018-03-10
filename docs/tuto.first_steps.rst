@@ -79,19 +79,19 @@ tensor of the same shape but filled with 0 and 1 respectively.
 
 .. code:: nim
 
-    let e = newTensor([2, 3], bool)
+    let e = newTensor[bool]([2, 3])
     # Tensor of shape 2x3 of type "bool" on backend "Cpu"
     # |false  false   false|
     # |false  false   false|
 
-    let f = zeros([4, 3], float)
+    let f = zeros[float]([4, 3])
     # Tensor of shape 4x3 of type "float" on backend "Cpu"
     # |0.0    0.0     0.0|
     # |0.0    0.0     0.0|
     # |0.0    0.0     0.0|
     # |0.0    0.0     0.0|
 
-    let g = ones([4, 3], float)
+    let g = ones[float]([4, 3])
     # Tensor of shape 4x3 of type "float" on backend "Cpu"
     # |1.0    1.0     1.0|
     # |1.0    1.0     1.0|

@@ -4,7 +4,10 @@ Tutorial: Higher-order functions (Map, Reduce, Fold)
 
 
 Arraymancer supports efficient higher-order functions on the whole
-tensor or on an axis. #### ``map``, ``apply``, ``map2``, ``apply2``
+tensor or on an axis.
+
+``map``, ``apply``, ``map2``, ``apply2``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: nim
 
@@ -41,7 +44,7 @@ new one or modify the first in-place.
 returning a single value T.
 
 For example: - Reducing with ``+`` returns the sum of all elements of
-teh Tensor. - Reducing with ``max`` returns the biggest element of the
+the Tensor. - Reducing with ``max`` returns the biggest element of the
 Tensor
 
 ``reduce`` can be applied along an axis, for example the sum along the

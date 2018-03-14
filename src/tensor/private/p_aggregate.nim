@@ -49,14 +49,16 @@ proc cmp_idx_max*[T](accum: var Tensor[tuple[idx: int, max: T]],
 template unzip_idx_max*[T](t: Tensor[tuple[idx: int, max: T]], op:untyped): untyped =
   # Type signature pending https://github.com/nim-lang/Nim/issues/4061
 
-  var dest = (indices: newTensorUninit[int](t.shape),
-              maxes:   newTensorUninit[T](t.shape))
+  let z = t # ensure that if t is the result of a function it is not called multiple times
+
+  var dest = (indices: newTensorUninit[int](z.shape),
+              maxes:   newTensorUninit[T](z.shape))
   withMemoryOptimHints()
   let
     data1{.restrict.} = dest.indices.dataArray # Warning ⚠: data pointed to will be mutated
     data2{.restrict.} = dest.maxes.dataArray # Warning ⚠: data pointed to will be mutated
 
   omp_parallel_blocks(block_offset, block_size, dest.indices.size):
-    for i, x {.inject.} in enumerate(t, block_offset, block_size):
+    for i, x {.inject.} in enumerate(z, block_offset, block_size):
       (data1[i], data2[i]) = op
   dest

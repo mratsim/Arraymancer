@@ -16,14 +16,23 @@ import ../tensor/tensor,
        ./ag_data_structure
 
 template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
+  ## Slice the tensor contained by the dynamic graph Variable
+  ## Input:
+  ##   - a Variable
+  ## Output:
+  ##   - a sliced Variable
+
+  # Ensure that v is only called once even if it's a function with side-effects
+  let z = v
+
   # TODO: backprop support
-  var result: type(v)
+  var result: type(z)
   new result
 
-  result.context = v.context
-  result.value = v.value[args]
-  result.grad = v.grad[args]
-  result.requires_grad = v.requires_grad
+  result.context = z.context
+  result.value = z.value[args]
+  result.grad = z.grad[args]
+  result.requires_grad = z.requires_grad
 
   result
 

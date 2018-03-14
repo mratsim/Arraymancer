@@ -22,79 +22,96 @@ import  ./backend/openmp,
 # Mapping over tensors
 
 template apply_inline*(t: var Tensor, op: untyped): untyped =
+  # TODO, if t is a result of a function
+  # how to ensure that it is not called twice
   omp_parallel_blocks(block_offset, block_size, t.size):
     for x {.inject.} in t.mitems(block_offset, block_size):
       x = op
 
 template apply2_inline*[T,U](dest: var Tensor[T], src: Tensor[U], op: untyped): untyped =
+  # TODO, if dest is a result of a function
+  # how to ensure that it is not called twice
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for x {.inject.}, y {.inject.} in mzip(dest, src, block_offset, block_size):
       x = op
 
 template apply3_inline*[T,U,V](dest: var Tensor[T], src1: Tensor[U], src2: Tensor[V], op: untyped): untyped =
+  # TODO, if dest is a result of a function
+  # how to ensure that it is not called twice
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for x {.inject.}, y {.inject.}, z {.inject.} in mzip(dest, src1, src2, block_offset, block_size):
       x = op
 
 template map_inline*[T](t: Tensor[T], op:untyped): untyped =
 
+  let z = t # ensure that if t is the result of a function it is not called multiple times
+
   type outType = type((
     block:
-      var x{.inject.}: type(items(t));
+      var x{.inject.}: type(items(z));
       op
   ))
 
-  var dest = newTensorUninit[outType](t.shape)
+  var dest = newTensorUninit[outType](z.shape)
   withMemoryOptimHints()
   let data{.restrict.} = dest.dataArray # Warning ⚠: data pointed to will be mutated
 
   omp_parallel_blocks(block_offset, block_size, dest.size):
-    for i, x {.inject.} in enumerate(t, block_offset, block_size):
+    for i, x {.inject.} in enumerate(z, block_offset, block_size):
       data[i] = op
   dest
 
 template map2_inline*[T, U](t1: Tensor[T], t2: Tensor[U], op:untyped): untyped =
+
+  let
+    z1 = t1 # ensure that if t1 is the result of a function it is not called multiple times
+    z2 = t2
+
   when compileOption("boundChecks"):
-    check_elementwise(t1,t2)
+    check_elementwise(z1,z2)
 
   type outType = type((
     block:
-      var x{.inject.}: type(items(t1));
-      var y{.inject.}: type(items(t2));
+      var x{.inject.}: type(items(z1));
+      var y{.inject.}: type(items(z2));
       op
   ))
 
-  var dest = newTensorUninit[outType](t1.shape)
+  var dest = newTensorUninit[outType](z1.shape)
   withMemoryOptimHints()
   let data{.restrict.} = dest.dataArray # Warning ⚠: data pointed to will be mutated
 
-  omp_parallel_blocks(block_offset, block_size, t1.size):
-    for i, x {.inject.}, y {.inject.} in enumerateZip(t1, t2, block_offset, block_size):
+  omp_parallel_blocks(block_offset, block_size, z1.size):
+    for i, x {.inject.}, y {.inject.} in enumerateZip(z1, z2, block_offset, block_size):
       data[i] = op
   dest
 
 template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:untyped): untyped =
+  let
+    z1 = t1 # ensure that if t1 is the result of a function it is not called multiple times
+    z2 = t2
+    z3 = z3
+
   when compileOption("boundChecks"):
-    check_elementwise(t1,t2)
-    check_elementwise(t1,t3)
+    check_elementwise(z1,z2)
+    check_elementwise(z1,z3)
 
   type outType = type((
     block:
-      var x{.inject.}: type(items(t1));
-      var y{.inject.}: type(items(t2));
-      var z{.inject.}: type(items(t3));
+      var x{.inject.}: type(items(z1));
+      var y{.inject.}: type(items(z2));
+      var z{.inject.}: type(items(z3));
       op
   ))
 
-  var dest = newTensorUninit[outType](t1.shape)
+  var dest = newTensorUninit[outType](z1.shape)
   withMemoryOptimHints()
   let data{.restrict.} = dest.dataArray # Warning ⚠: data pointed to will be mutated
 
-  omp_parallel_blocks(block_offset, block_size, t1.size):
-    for i, x {.inject.}, y {.inject.}, z {.inject.} in enumerateZip(t1, t2, t3, block_offset, block_size):
+  omp_parallel_blocks(block_offset, block_size, z1.size):
+    for i, x {.inject.}, y {.inject.}, z {.inject.} in enumerateZip(z1, z2, z3, block_offset, block_size):
       data[i] = op
   dest
-
 
 proc map*[T; U: not (ref|string|seq)](t: Tensor[T], f: T -> U): Tensor[U] {.noInit.} =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.

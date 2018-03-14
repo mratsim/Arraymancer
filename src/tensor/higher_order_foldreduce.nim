@@ -17,53 +17,58 @@ import  ./backend/openmp,
         future
 
 template reduce_inline*[T](t: Tensor[T], op: untyped): untyped =
+  let z = t # ensure that if t is the result of a function it is not called multiple times
   var reduced: T
-  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.size, 1, op) do:
-    x = t.atContiguousIndex(block_offset)
+  omp_parallel_reduce_blocks(reduced, block_offset, block_size, z.size, 1, op) do:
+    x = z.atContiguousIndex(block_offset)
   do:
-    for y {.inject.} in t.items(block_offset, block_size):
+    for y {.inject.} in z.items(block_offset, block_size):
       op
   reduced
 
 template fold_inline*[T](t: Tensor[T], op_initial, op_middle, op_final: untyped): untyped =
+  let z = t # ensure that if t is the result of a function it is not called multiple times
   var reduced: T
-  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.size, 1, op_final) do:
-    let y {.inject.} = t.atContiguousIndex(block_offset)
+  omp_parallel_reduce_blocks(reduced, block_offset, block_size, z.size, 1, op_final) do:
+    let y {.inject.} = z.atContiguousIndex(block_offset)
     op_initial
   do:
-    for y {.inject.} in t.items(block_offset, block_size):
+    for y {.inject.} in z.items(block_offset, block_size):
       op_middle
   reduced
 
 template reduce_axis_inline*[T](t: Tensor[T], reduction_axis: int, op: untyped): untyped =
-  var reduced: type(t)
-  let weight = t.size div t.shape[reduction_axis]
-  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[reduction_axis], weight, op) do:
-    x = t.atAxisIndex(reduction_axis, block_offset).clone()
+  let z = t # ensure that if t is the result of a function it is not called multiple times
+  var reduced: type(z)
+  let weight = z.size div z.shape[reduction_axis]
+  omp_parallel_reduce_blocks(reduced, block_offset, block_size, z.shape[reduction_axis], weight, op) do:
+    x = z.atAxisIndex(reduction_axis, block_offset).clone()
   do:
-    for y {.inject.} in t.axis(reduction_axis, block_offset, block_size):
+    for y {.inject.} in z.axis(reduction_axis, block_offset, block_size):
       op
   reduced
 
 template fold_axis_inline*[T](t: Tensor[T], accumType: typedesc, fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
+  let z = t # ensure that if t is the result of a function it is not called multiple times
   var reduced: accumType
-  let weight = t.size div t.shape[fold_axis]
-  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[fold_axis], weight, op_final) do:
-    let y {.inject.} = t.atAxisIndex(fold_axis, block_offset)
+  let weight = z.size div z.shape[fold_axis]
+  omp_parallel_reduce_blocks(reduced, block_offset, block_size, z.shape[fold_axis], weight, op_final) do:
+    let y {.inject.} = z.atAxisIndex(fold_axis, block_offset)
     op_initial
   do:
-    for y {.inject.} in t.axis(fold_axis, block_offset, block_size):
+    for y {.inject.} in z.axis(fold_axis, block_offset, block_size):
       op_middle
   reduced
 
 template fold_enumerateAxis_inline*[T](t: Tensor[T], result_type: typedesc, fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
+  let z = t # ensure that if t is the result of a function it is not called multiple times
   var reduced : result_type
-  let weight = t.size div t.shape[fold_axis]
-  omp_parallel_reduce_blocks(reduced, block_offset, block_size, t.shape[fold_axis], weight, op_final) do:
-    let y {.inject.} = t.atAxisIndex(fold_axis, block_offset)
+  let weight = z.size div z.shape[fold_axis]
+  omp_parallel_reduce_blocks(reduced, block_offset, block_size, z.shape[fold_axis], weight, op_final) do:
+    let y {.inject.} = z.atAxisIndex(fold_axis, block_offset)
     op_initial
   do:
-    for i {.inject.}, y {.inject.} in t.enumerateAxis(fold_axis, block_offset, block_size):
+    for i {.inject.}, y {.inject.} in z.enumerateAxis(fold_axis, block_offset, block_size):
       op_middle
   reduced
 

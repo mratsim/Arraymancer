@@ -36,34 +36,36 @@ else:
 const OMP_FOR_ANNOTATION = "simd if(ompsize > " & $OMP_FOR_THRESHOLD & ")"
 
 template omp_parallel_countup*(i: untyped, size: Natural, body: untyped): untyped =
-  let ompsize = size
+  let ompsize = size # ensure that if size is computed it is only called once
   for i in `||`(0, ompsize, OMP_FOR_ANNOTATION):
     body
 
 template omp_parallel_forup*(i: untyped, start, size: Natural, body: untyped): untyped =
-  let ompsize = size
+  let ompsize = size # ensure that if size is computed it is only called once
   for i in `||`(start, ompsize, OMP_FOR_ANNOTATION):
     body
 
 template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, body: untyped): untyped =
-  if likely(size > 0):
+  let ompsize = size # ensure that if size is computed it is only called once
+
+  if likely(ompsize > 0):
     block ompblocks:
       when defined(openmp):
-        if size >= OMP_FOR_THRESHOLD:
-          let num_blocks = min(omp_get_max_threads(), size)
+        if ompsize >= OMP_FOR_THRESHOLD:
+          let num_blocks = min(omp_get_max_threads(), ompsize)
           if num_blocks > 1:
-            let bsize = size div num_blocks
+            let bsize = ompsize div num_blocks
             for block_index in `||`(0, num_blocks-1, "simd"):
               # block_offset and block_size are injected into the calling proc
               let block_offset = bsize*block_index
-              let block_size = if block_index < num_blocks-1: bsize else: size - block_offset
+              let block_size = if block_index < num_blocks-1: bsize else: ompsize - block_offset
               block:
                 body
             break ompblocks
 
       # block_offset and block_size are injected into the calling proc
       let block_offset = 0
-      let block_size = size
+      let block_size = ompsize
       block:
         body
 
@@ -78,23 +80,24 @@ template omp_parallel_reduce_blocks*[T](reduced: T, block_offset, block_size: un
   # TODO compile time evaluation depending of sizeof(T)
   # Pending https://github.com/nim-lang/Nim/pull/5664
   const maxItemsPerCacheLine = 16
+  let ompsize = size # ensure that if size is computed it is only called once
 
-  if likely(size > 0):
+  if likely(ompsize > 0):
     block ompblocks:
       when defined(openmp):
-        if size*weight >= OMP_FOR_THRESHOLD:
-          let num_blocks = min(min(size, omp_get_max_threads()), OMP_MAX_REDUCE_BLOCKS)
+        if ompsize * weight >= OMP_FOR_THRESHOLD:
+          let num_blocks = min(min(ompsize, omp_get_max_threads()), OMP_MAX_REDUCE_BLOCKS)
           if num_blocks > 1:
             withMemoryOptimHints()
             var results{.align64, noInit.}: array[OMP_MAX_REDUCE_BLOCKS * maxItemsPerCacheLine, type(reduced)]
-            let bsize = size div num_blocks
+            let bsize = ompsize div num_blocks
 
             if bsize > 1:
               # Initialize first elements
               for block_index in 0..<num_blocks:
                 # block_offset and block_size are injected into the calling proc
                 let block_offset = bsize*block_index
-                let block_size = if block_index < num_blocks-1: bsize else: size - block_offset
+                let block_size = if block_index < num_blocks-1: bsize else: ompsize - block_offset
 
                 # Inject x using a template to able to mutate it
                 template x(): untyped =
@@ -107,7 +110,7 @@ template omp_parallel_reduce_blocks*[T](reduced: T, block_offset, block_size: un
               for block_index in `||`(0, num_blocks-1, "simd"):
                 # block_offset and block_size are injected into the calling proc
                 var block_offset = bsize*block_index
-                let block_size = (if block_index < num_blocks-1: bsize else: size - block_offset) - 1
+                let block_size = (if block_index < num_blocks-1: bsize else: ompsize - block_offset) - 1
                 block_offset += 1
 
                 # Inject x using a template to able to mutate it
@@ -144,7 +147,7 @@ template omp_parallel_reduce_blocks*[T](reduced: T, block_offset, block_size: un
 
         # Offset to reduce rest of elements
         block_offset = 1
-        let block_size = size-1
+        let block_size = ompsize-1
 
         if block_size > 0:
           # Inject x using a template to able to mutate it

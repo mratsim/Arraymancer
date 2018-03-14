@@ -27,7 +27,9 @@ template withMemoryOptimHints*() =
     {.pragma: align64.}
     {.pragma: restrict.}
 
-when not defined(js):
+const withBuiltins = defined(gcc) or defined(clang)
+
+when withBuiltins:
   proc builtin_assume_aligned[T](data: ptr T, n: csize): ptr T {.importc: "__builtin_assume_aligned",noDecl.}
 
 when defined(cpp):
@@ -35,9 +37,9 @@ when defined(cpp):
     {.importcpp: "static_cast<'0>(@)".}
 
 template assume_aligned*[T](data: ptr T, n: csize): ptr T =
-  when defined(cpp): # builtin_assume_aligned returns void pointers, this does not compile in C++, they must all be typed
+  when defined(cpp) and withBuiltins: # builtin_assume_aligned returns void pointers, this does not compile in C++, they must all be typed
     static_cast builtin_assume_aligned(data, n)
-  elif defined(js):
-    data
-  else:
+  elif withBuiltins:
     builtin_assume_aligned(data, n)
+  else:
+    data

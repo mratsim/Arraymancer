@@ -15,11 +15,12 @@
 import  ../../private/sequninit,
         ../backend/metadataArray,
         ../data_structure, ../higher_order_applymap,
+        ../init_cpu,
         ./p_init_cpu,
         ./p_checks,
         nimblas
 
-template contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]): untyped=
+proc contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]) =
   if layout == rowMajor:
     result = t.map_inline(x)
   else: # colMajor
@@ -28,16 +29,16 @@ template contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[
     apply2_inline(result, t):
       y
 
-template reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray, result: var Tensor[T]) =
+proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray, result: var Tensor[T]) =
   result = newTensorUninit[T](new_shape)
   result.apply2_inline(t,y)
 
-template reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
+proc reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) {.noSideEffect.}=
   result.shape.copyFrom(new_shape)
   shape_to_strides(result.shape, rowMajor, result.strides)
   result.offset = t.offset
 
-template reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
+proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
   when compileOption("boundChecks"):
     when new_shape is MetadataArray:
       check_reshape(t, new_shape)
@@ -51,7 +52,7 @@ template reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, resul
 
   reshape_with_copy(t, new_shape, result)
 
-template broadcastImpl*(t: var AnyTensor, shape: varargs[int]|MetadataArray) =
+proc broadcastImpl*(t: var AnyTensor, shape: varargs[int]|MetadataArray) {.noSideEffect.}=
   when compileOption("boundChecks"):
     assert t.rank == shape.len
 
@@ -63,7 +64,7 @@ template broadcastImpl*(t: var AnyTensor, shape: varargs[int]|MetadataArray) =
     elif t.shape[i] != shape[i]:
       raise newException(ValueError, "The broadcasted size of the tensor must match existing size for non-singleton dimension")
 
-template broadcast2Impl*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T]]) =
+proc broadcast2Impl*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T]]) {.noSideEffect.}=
   let rank = max(a.rank, b.rank)
 
   var shapeA, stridesA, shapeB, stridesB = initMetadataArray(rank) # initialized with 0
@@ -111,7 +112,7 @@ proc exch_dim*[T](t: Tensor[T], dim1, dim2: int): Tensor[T] {.noInit,noSideEffec
   swap(result.strides[dim1], result.strides[dim2])
   swap(result.shape[dim1], result.shape[dim2])
 
-template permuteImpl*[T](result: var Tensor[T], dims: varargs[int]): untyped =
+proc permuteImpl*[T](result: var Tensor[T], dims: varargs[int]) {.noSideEffect.} =
   var perm = dims.toMetadataArray
   for i, p in perm:
     if p != i and p != -1:
@@ -124,7 +125,7 @@ template permuteImpl*[T](result: var Tensor[T], dims: varargs[int]): untyped =
       perm[j] = -1
 
 
-template squeezeImpl*(t: var AnyTensor): untyped =
+proc squeezeImpl*(t: var AnyTensor) {.noSideEffect.} =
   var idx_real_dim = 0
 
   for i in 0..<t.rank:
@@ -137,7 +138,7 @@ template squeezeImpl*(t: var AnyTensor): untyped =
   t.shape = t.shape[0..<idx_real_dim]
   t.strides = t.strides[0..<idx_real_dim]
 
-template squeezeImpl*(t: var AnyTensor, axis: int): untyped =
+proc squeezeImpl*(t: var AnyTensor, axis: int) {.noSideEffect.} =
   when compileOption("boundChecks"):
     check_squeezeAxis(t, axis)
 
@@ -145,7 +146,7 @@ template squeezeImpl*(t: var AnyTensor, axis: int): untyped =
     t.shape.delete(axis)
     t.strides.delete(axis)
 
-template unsqueezeImpl*(t: var AnyTensor, axis: int): untyped =
+proc unsqueezeImpl*(t: var AnyTensor, axis: int) {.noSideEffect.} =
   when compileOption("boundChecks"):
     check_unsqueezeAxis(t, axis)
 

@@ -77,7 +77,7 @@ template rewriteTensor_MultiplyAdd_inplace*{C += `*`(A,B)}[T](
 #################################################
 ## initialization
 
-template toTensorReshapeT(oa: typed, shape: varargs[int]): untyped = 
+template toTensorReshapeImpl(oa: typed, shape: varargs[int]): untyped =
   let data = toSeq(flatIter(oa))
   let seq_shape = shape.toMetadataArray
 
@@ -94,14 +94,14 @@ proc toTensorReshape(oa: string, shape: varargs[int]): auto {.noInit,noSideEffec
   ##
   ## Deal specifically with strings/seq[char]
 
-  toTensorReshapeT(oa, shape)
+  toTensorReshapeImpl(oa, shape)
 
 proc toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto {.noInit,noSideEffect.}=
   ## Fuse toTensor and reshape in one operation
   ##
   # Dummy_bugfix param is necessary due to: https://github.com/nim-lang/Nim/issues/6343
   # TODO: remove 'dummy_bugfix'
-  toTensorReshapeT(oa, shape)
+  toTensorReshapeImpl(oa, shape)
 
 template rewriteToTensorReshape*{reshape(toTensor(oa, dummy_bugfix), shape)}(
   oa: openarray,

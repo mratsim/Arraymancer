@@ -20,17 +20,19 @@ proc eulerSolve(Ts: var Tensor[float]) =
     Ts[t+1, 1..^2] = Ts[t, 1..^2] + dt * f(Ts[t, _])
     Ts[t+1, ^1] = Ts[t+1, ^2]
 
+proc main() =
+  var
+    Ts = startingTemp * ones[float](timeSteps, spaceSteps)
+
+  for j in 0 ..< timeSteps:
+    Ts[j, 0] = startingTemp - oscillations * sin(2.0 * PI * j.float / timeSteps)
+
+  Ts.eulerSolve()
+
 let start = cpuTime()
-
-var
-  Ts = startingTemp * ones[float](timeSteps, spaceSteps)
-
-for j in 0 ..< timeSteps:
-  Ts[j, 0] = startingTemp - oscillations * sin(2.0 * PI * j.float / timeSteps)
-
-Ts.eulerSolve()
-
+main()
 let stop = cpuTime()
+
 let elapsed = stop - start
 echo &"Arraymancer Euler solve - time taken: {elapsed} seconds"
 

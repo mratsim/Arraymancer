@@ -26,6 +26,8 @@ proc eulerSolve(Ts: var array[timeSteps, array[spaceSteps, float]]) =
 
 let start = cpuTime()
 
+# TODO replace by a main proc
+# once https://github.com/nim-lang/Nim/issues/7349 is solved
 var Ts: array[timeSteps, array[spaceSteps, float]]
 
 for t in 0 ..< timeSteps:
@@ -36,6 +38,7 @@ for t in 0 ..< timeSteps:
 Ts.eulerSolve()
 
 let stop = cpuTime()
+
 let elapsed = stop - start
 echo &"Arraymancer Euler solve - time taken: {elapsed} seconds"
 

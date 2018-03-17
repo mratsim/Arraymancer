@@ -59,6 +59,16 @@ proc clone2*[T](t: Tensor[T]): Tensor[T] {.noInit.}=
 proc clone_deepCopy[T](t:Tensor[T]): Tensor[T] {.noInit, inline.}=
   deepCopy(result, t)
 
+proc simple_iter[T](t:Tensor[T]): Tensor[T] {.noInit, inline.}=
+  result = newTensorUninit[T](t.shape)
+  for val in result.mitems:
+    val = 1.T
+
+proc simple_clone[T](t:Tensor[T]): Tensor[T] {.noInit, inline.}=
+  result = newTensorUninit[T](t.shape)
+  for dst, src in mzip(result, t):
+    dst = src
+
 var start = cpuTime()
 warmup()
 var stop = cpuTime()
@@ -88,6 +98,16 @@ proc main()=
   echo "Cloning with deepCopy: " & $(stop - start) & " seconds for tensor of shape: " & $dc.shape
 
   start = cpuTime()
+  let si = a.simple_iter()
+  stop = cpuTime()
+  echo "Simple iteration: " & $(stop - start) & " seconds for tensor of shape: " & $si.shape
+
+  start = cpuTime()
+  let sc = a.simple_clone()
+  stop = cpuTime()
+  echo "Simple clone: " & $(stop - start) & " seconds for tensor of shape: " & $sc.shape
+
+  start = cpuTime()
   let d = b + c
   stop = cpuTime()
   echo "Summing: " & $(stop - start) & " seconds for tensor of shape: " & $d.shape
@@ -104,12 +124,14 @@ main()
 ##############
 # On i5-5257U (Broadwell mobile dual core)
 
-# 369
-# Warmup: 0.40981s
-# Ones: 2.422835 seconds for tensor of shape: [50000, 10000]
-# Cloning impl 1 (enumerate): 6.464892000000001 seconds for tensor of shape: [50000, 10000]
-# Cloning impl 2 (mzip): 8.214280999999998 seconds for tensor of shape: [50000, 10000]
-# Cloning with deepCopy: 15.701433 seconds for tensor of shape: [50000, 10000]
-# Summing: 14.395039 seconds for tensor of shape: [50000, 10000]
-# Reducing: 5.275849000000001 seconds for tensor of shape: [50000, 10000]
+# Warmup: 0.426093s
+# Ones: 2.92065 seconds for tensor of shape: [50000, 10000]
+# Cloning impl 1 (enumerate): 8.120993 seconds for tensor of shape: [50000, 10000]
+# Cloning impl 2 (mzip): 8.308195 seconds for tensor of shape: [50000, 10000]
+# Cloning with deepCopy: 16.055578 seconds for tensor of shape: [50000, 10000]
+# Simple iteration: 3.729559000000002 seconds for tensor of shape: [50000, 10000]
+# Simple clone: 8.490787999999995 seconds for tensor of shape: [50000, 10000]
+# Summing: 14.659691 seconds for tensor of shape: [50000, 10000]
+# Reducing: 5.58793 seconds for tensor of shape: [50000, 10000]
 # Reduce mean result: 2.0
+# xtime.rb: 86.96s, 3767.0Mb

@@ -10,10 +10,11 @@ const
   alpha = 2.0
   startingTemp = 30.0
   oscillations = 20.0
+  a_dz2 = alpha / dz^2
+
 
 proc f(T: Tensor[float]): Tensor[float] =
-  let d2T_dz2 = (T[_, 0..^3] - 2.0 * T[_, 1..^2] + T[_, 2..^1]) / dz^2
-  return alpha * d2T_dz2
+  a_dz2 * (T[_, 0..^3] - 2.0 * T[_, 1..^2] + T[_, 2..^1])
 
 proc eulerSolve(Ts: var Tensor[float]) =
   for t in 0 ..< timeSteps-1:
@@ -21,8 +22,7 @@ proc eulerSolve(Ts: var Tensor[float]) =
     Ts[t+1, ^1] = Ts[t+1, ^2]
 
 proc main() =
-  var
-    Ts = startingTemp * ones[float](timeSteps, spaceSteps)
+  var Ts = newTensorWith[float]([timeSteps, spaceSteps], startingTemp)
 
   for j in 0 ..< timeSteps:
     Ts[j, 0] = startingTemp - oscillations * sin(2.0 * PI * j.float / timeSteps)
@@ -37,6 +37,6 @@ let elapsed = stop - start
 echo &"Arraymancer Euler solve - time taken: {elapsed} seconds"
 
 
-# Measurement on i5-5257U (Dual core mobile Broadwell 2.7Ghz)
-# Arraymancer Euler solve - time taken: %20.569555 seconds
-# 23.32s, 3090.0Mb (as measured by xtime.rb)
+# Measurement on i7-970 (Hexa core 3.2GHz)
+# Arraymancer Euler solve - time taken: 5.857952 seconds
+# 6.01s, 3882.8Mb 

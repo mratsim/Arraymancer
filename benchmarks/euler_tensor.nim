@@ -39,4 +39,4 @@ echo &"Arraymancer Euler solve - time taken: {elapsed} seconds"
 
 # Measurement on i7-970 (Hexa core 3.2GHz)
 # Arraymancer Euler solve - time taken: 5.857952 seconds
-# 6.01s, 3882.8Mb 
+# 6.01s, 3882.8Mb

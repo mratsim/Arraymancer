@@ -30,10 +30,14 @@ let start = cpuTime()
 # once https://github.com/nim-lang/Nim/issues/7349 is solved
 var Ts: array[timeSteps, array[spaceSteps, float]]
 
+
+# initializing with starting temp * ones
+let pTs = cast[ptr UncheckedArray[float]](addr Ts[0][0])
+for i in 0 ..< timeSteps * spaceSteps:
+  pTs[i] = startingTemp
+
 for t in 0 ..< timeSteps:
   Ts[t][0] = startingTemp - oscillations * sin(2.0 * PI * t.float / timeSteps)
-  for s in 1 ..< spaceSteps:
-    Ts[t][s] = startingTemp
 
 Ts.eulerSolve()
 

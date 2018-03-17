@@ -22,6 +22,7 @@ proc eulerSolve(Ts: var Tensor[float]) =
 
 proc main() =
   var
+    # Ts = newTensorWith[float]([timeSteps, spaceSteps], startingTemp) # This cut to 10 sec
     Ts = startingTemp * ones[float](timeSteps, spaceSteps)
 
   for j in 0 ..< timeSteps:

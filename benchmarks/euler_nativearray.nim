@@ -45,6 +45,6 @@ let stop = cpuTime()
 let elapsed = stop - start
 echo &"Native array Euler solve - time taken: {elapsed} seconds"
 
-# Measurement on i7-970 (Hexa core 3.2Ghz)
+# Measurement on i7-970 (Hexa core 3.2GHz)
 # Native array Euler solve - time taken: 2.732873 seconds
 # 2.87s, 3816.5Mb

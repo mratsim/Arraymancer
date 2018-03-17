@@ -37,6 +37,6 @@ stop = time.time()
 print("Numpy Euler solve - time taken: {} seconds".format(stop - start))
 
 
-# Measurement on i7-970 (Hexa core 3.2Ghz)
+# Measurement on i7-970 (Hexa core 3.2GHz)
 # Numpy Euler solve - time taken: 5.477107048034668 seconds
 # 5.83s, 3841.9Mb

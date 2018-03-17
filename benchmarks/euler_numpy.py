@@ -1,4 +1,5 @@
-import numpy as np, time
+import numpy as np
+import time
 
 
 dz = 0.01
@@ -10,10 +11,11 @@ dt = 0.12 / time_steps
 alpha = 2
 starting_temp = 30
 oscillations = 20
+a_dz2 = alpha / dz**2
+
 
 def f(T):
-    d2T_dz2 = (T[:-2] - 2 * T[1:-1] + T[2:]) / dz**2
-    return alpha * d2T_dz2
+    return a_dz2 * (T[:-2] - 2 * T[1:-1] + T[2:])
 
 
 def euler_solve(Ts):
@@ -35,6 +37,6 @@ stop = time.time()
 print("Numpy Euler solve - time taken: {} seconds".format(stop - start))
 
 
-# Measurement on i5-5257U (Dual core mobile Broadwell 2.7Ghz)
-# Numpy Euler solve - time taken: 5.850845098495483 seconds
-# 6.28s, 3836.5Mb (as measured by xtime.rb)
+# Measurement on i7-970 (Hexa core 3.2Ghz)
+# Numpy Euler solve - time taken: 5.477107048034668 seconds
+# 5.83s, 3841.9Mb

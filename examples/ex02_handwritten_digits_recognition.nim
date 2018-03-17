@@ -120,10 +120,10 @@ for epoch in 0 ..< 5:
     var score = 0.0
     var loss = 0.0
     for i in 0 ..< 10:
-      let y_pred = X_test[i ..< i+1000, _].model.value.softmax.argmax(axis = 1).indices.squeeze
-      score += accuracy_score(y_test[i ..< i+1000, _], y_pred)
+      let y_pred = X_test[i*1000 ..< (i+1)*1000, _].model.value.softmax.argmax(axis = 1).indices.squeeze
+      score += accuracy_score(y_test[i*1000 ..< (i+1)*1000], y_pred)
 
-      loss += X_test[i ..< i+1000, _].model.sparse_softmax_cross_entropy(y_test[i ..< i+1000, _]).value.data[0]
+      loss += X_test[i*1000 ..< (i+1)*1000, _].model.sparse_softmax_cross_entropy(y_test[i*1000 ..< (i+1)*1000]).value.data[0]
     score /= 10
     loss /= 10
     echo "Accuracy: " & $(score * 100) & "%"

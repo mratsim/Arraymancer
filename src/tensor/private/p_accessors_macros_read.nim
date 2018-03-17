@@ -19,7 +19,7 @@ import  ../../private/ast_utils,
         ../data_structure, ../init_cpu, ../accessors_macros_syntax,
         ../backend/metadataArray,
         ./p_checks, ./p_accessors, ./p_accessors_macros_desugar,
-        sequtils, macros, strformat
+        sequtils, macros
 
 template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSlices): untyped =
   ## Slicing routine
@@ -28,7 +28,7 @@ template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSl
     if unlikely(slices.len > result.rank):
       raise newException(
         IndexError,
-        &"Rank of slice expression ({slices.len}) is larger than the tensor rank ({result.rank})."
+        "Rank of slice expression (" & $slices.len & ") is larger than the tensor rank (" & $result.rank & ")."
       )
 
   for i, slice in slices:

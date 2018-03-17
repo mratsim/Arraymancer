@@ -13,6 +13,7 @@ environment:
   matrix:
     - MINGW_ARCHIVE: x86_64-4.9.2-release-win32-seh-rt_v4-rev4.7z
       MINGW_DIR: mingw64
+      # We need to hardcode a mirror otherwise the download fails
       MINGW_URL: https://ayera.dl.sourceforge.net/project/mingw-w64/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/4.9.2/threads-win32/seh/x86_64-4.9.2-release-win32-seh-rt_v4-rev4.7z
       NIM_ARCHIVE: nim-0.18.0_x64.zip
       NIM_DIR: nim-0.18.0

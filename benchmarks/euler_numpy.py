@@ -1,4 +1,6 @@
-import numpy as np, time, sys
+import sys
+import time
+import numpy as np
 
 
 dz = 0.01
@@ -10,10 +12,11 @@ dt = 0.12 / time_steps
 alpha = 2
 starting_temp = 30
 oscillations = 20
+a_dz2 = alpha / dz**2
+
 
 def f(T):
-    d2T_dz2 = (T[:-2] - 2 * T[1:-1] + T[2:]) / dz**2
-    return alpha * d2T_dz2
+    return a_dz2 * (T[:-2] - 2 * T[1:-1] + T[2:])
 
 
 def euler_solve(Ts):

@@ -12,7 +12,6 @@ const
   a_dz2 = alpha / dz^2
 
 
-let start = cpuTime()
 var ke: array[spaceSteps-2, float]
 
 
@@ -29,21 +28,23 @@ proc eulerSolve(Ts: var seq[array[spaceSteps, float]]) =
     Ts[t+1][spaceSteps-1] = Ts[t+1][spaceSteps-2]
 
 
-# TODO replace by a main proc
-# once https://github.com/nim-lang/Nim/issues/7349 is solved
-var Ts = newSeq[array[spaceSteps, float]](timeSteps)
+proc main() =
+  var Ts = newSeq[array[spaceSteps, float]](timeSteps)
 
-for t in 0 ..< timeSteps:
-  Ts[t][0] = startingTemp - oscillations * sin(2.0 * PI * t.float / timeSteps)
-  for s in 1 ..< spaceSteps:
-    Ts[t][s] = startingTemp
+  for t in 0 ..< timeSteps:
+    Ts[t][0] = startingTemp - oscillations * sin(2.0 * PI * t.float / timeSteps)
+    for s in 1 ..< spaceSteps:
+      Ts[t][s] = startingTemp
 
-Ts.eulerSolve()
+  Ts.eulerSolve()
 
+let start = cpuTime()
+main()
 let stop = cpuTime()
 
 let elapsed = stop - start
 echo &"Native array Euler solve - time taken: {elapsed} seconds"
+
 
 # Measurement on i7-970 (Hexa core 3.2GHz)
 # Native array Euler solve - time taken: 2.732873 seconds

@@ -71,7 +71,7 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit, noSid
   result.storage.Fdata = newSeqUninit[T](result.size)
 
   for tval in result.storage.Fdata.mitems:
-    {.unroll.}
+    {.unroll: 8.}
     tval = value
 
 proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit, noSideEffect.} =
@@ -88,7 +88,7 @@ proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit, noSi
   result.storage.Fdata = newSeqUninit[T](result.size)
 
   for tval in result.storage.Fdata.mitems:
-    {.unroll.}
+    {.unroll: 8.}
     tval = value
 
 proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect.} =

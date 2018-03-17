@@ -17,6 +17,12 @@ proc warmup() =
     foo = foo mod 789
   echo foo
 
+proc getTime(): float =
+  when not defined(openmp):
+    cpuTime() # This is the most accurate
+  else:
+    epochTime() # cpuTime count the sum of time on each CPU when multithreading.
+
 template map_implv1*[T](t: Tensor[T], op:untyped): untyped =
 
   let z = t # ensure that if t is the result of a function it is not called multiple times
@@ -59,12 +65,12 @@ proc clone2*[T](t: Tensor[T]): Tensor[T] {.noInit.}=
 proc clone_deepCopy[T](t:Tensor[T]): Tensor[T] {.noInit, inline.}=
   deepCopy(result, t)
 
-proc simple_iter[T](t:Tensor[T]): Tensor[T] {.noInit, inline.}=
+proc simple_iter[T](t:Tensor[T]): Tensor[T] {.noInit.}=
   result = newTensorUninit[T](t.shape)
   for val in result.mitems:
     val = 1.T
 
-proc simple_clone[T](t:Tensor[T]): Tensor[T] {.noInit, inline.}=
+proc simple_clone[T](t:Tensor[T]): Tensor[T] {.noInit.}=
   result = newTensorUninit[T](t.shape)
   for dst, src in mzip(result, t):
     dst = src
@@ -76,45 +82,45 @@ echo "Warmup: " & $(stop - start) & "s"
 
 proc main()=
 
-  start = cpuTime()
+  start = getTime()
   let a = ones[float](timeSteps, spaceSteps)
-  stop = cpuTime()
+  stop = getTime()
   echo "Ones: " & $(stop - start) & " seconds for tensor of shape: " & $a.shape
 
 
-  start = cpuTime()
+  start = getTime()
   let b = a.clone1()
-  stop = cpuTime()
+  stop = getTime()
   echo "Cloning impl 1 (enumerate): " & $(stop - start) & " seconds for tensor of shape: " & $b.shape
 
-  start = cpuTime()
+  start = getTime()
   let c = a.clone2()
-  stop = cpuTime()
+  stop = getTime()
   echo "Cloning impl 2 (mzip): " & $(stop - start) & " seconds for tensor of shape: " & $c.shape
 
-  start = cpuTime()
+  start = getTime()
   let dc = a.clone_deepCopy()
-  stop = cpuTime()
+  stop = getTime()
   echo "Cloning with deepCopy: " & $(stop - start) & " seconds for tensor of shape: " & $dc.shape
 
-  start = cpuTime()
+  start = getTime()
   let si = a.simple_iter()
-  stop = cpuTime()
+  stop = getTime()
   echo "Simple iteration: " & $(stop - start) & " seconds for tensor of shape: " & $si.shape
 
-  start = cpuTime()
+  start = getTime()
   let sc = a.simple_clone()
-  stop = cpuTime()
+  stop = getTime()
   echo "Simple clone: " & $(stop - start) & " seconds for tensor of shape: " & $sc.shape
 
-  start = cpuTime()
+  start = getTime()
   let d = b + c
-  stop = cpuTime()
+  stop = getTime()
   echo "Summing: " & $(stop - start) & " seconds for tensor of shape: " & $d.shape
 
-  start = cpuTime()
+  start = getTime()
   let m = d.mean
-  stop = cpuTime()
+  stop = getTime()
   echo "Reducing: " & $(stop - start) & " seconds for tensor of shape: " & $d.shape
   echo "Reduce mean result: " & $m
 
@@ -135,3 +141,18 @@ main()
 # Reducing: 5.58793 seconds for tensor of shape: [50000, 10000]
 # Reduce mean result: 2.0
 # xtime.rb: 86.96s, 3767.0Mb
+
+# OpenMP
+
+# 369
+# Warmup: 0.401529s
+# Ones: 2.770177125930786 seconds for tensor of shape: [50000, 10000]
+# Cloning impl 1 (enumerate): 5.454313993453979 seconds for tensor of shape: [50000, 10000]
+# Cloning impl 2 (mzip): 5.626652002334595 seconds for tensor of shape: [50000, 10000]
+# Cloning with deepCopy: 16.12829494476318 seconds for tensor of shape: [50000, 10000]
+# Simple iteration: 4.012426137924194 seconds for tensor of shape: [50000, 10000]
+# Simple clone: 9.845687866210938 seconds for tensor of shape: [50000, 10000]
+# Summing: 13.06557416915894 seconds for tensor of shape: [50000, 10000]
+# Reducing: 4.439347982406616 seconds for tensor of shape: [50000, 10000]
+# Reduce mean result: 2.0
+# 63.79s, 3886.6Mb

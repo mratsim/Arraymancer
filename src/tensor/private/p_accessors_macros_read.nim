@@ -28,7 +28,7 @@ template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSl
     if unlikely(slices.len > result.rank):
       raise newException(
         IndexError,
-        &"Rank of slice expression ({slices.len}) is larger then the tensor rank ({result.rank})."
+        &"Rank of slice expression ({slices.len}) is larger than the tensor rank ({result.rank})."
       )
 
   for i, slice in slices:

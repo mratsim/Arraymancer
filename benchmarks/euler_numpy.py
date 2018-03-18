@@ -3,13 +3,13 @@ import time
 import numpy as np
 
 
-dz = 0.01
-z = 100
+dz = 0.1
+z = 1000
 space_steps = int(z / dz)
-
-time_steps = 50000
-dt = 0.12 / time_steps
-alpha = 2
+time_steps = 50_000
+total_time = 1_000_000
+dt = total_time / time_steps
+alpha = 2e-4
 starting_temp = 30
 oscillations = 20
 a_dz2 = alpha / dz**2
@@ -23,20 +23,21 @@ def euler_solve(Ts):
     for t in range(time_steps-1):
         Ts[t+1, 1:-1] = Ts[t, 1:-1] + dt * f(Ts[t])
         Ts[t+1, -1] = Ts[t+1, -2]
-    return Ts
+
 
 start = time.time()
-
-ts = np.linspace(0, 0.12, time_steps)
 
 start_iterspeed = time.time()
 Ts = starting_temp * np.ones((time_steps, space_steps), dtype=np.float64)
 stop_iterspeed = time.time()
 
-Ts[:, 0] = starting_temp - oscillations * np.sin(2 * np.pi * ts / 12)
+ts = np.linspace(0, time_steps, time_steps)
+Ts[:, 0] = starting_temp - oscillations * np.sin(2 * np.pi * ts)
 
-euler = euler_solve(Ts)
-
+euler_solve(Ts)
+print(Ts[45_000, 10])
+print(Ts[45_000, 100])
+print(Ts[45_000, 500])
 stop = time.time()
 
 print(sys.version)

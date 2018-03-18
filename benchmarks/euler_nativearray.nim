@@ -1,12 +1,13 @@
 import math, times, strformat
 
 const
-  dz = 0.01
-  z = 100
+  dz = 0.1
+  z = 1000
   spaceSteps = int(z / dz)
-  timeSteps = 50000
-  dt = 0.12 / timeSteps
-  alpha = 2.0
+  timeSteps = 50_000
+  totalTime = 1_000_000
+  dt = totalTime / timeSteps
+  alpha = 2e-4
   startingTemp = 30.0
   oscillations = 20.0
   a_dz2 = alpha / dz^2
@@ -37,6 +38,9 @@ proc main() =
       Ts[t][s] = startingTemp
 
   Ts.eulerSolve()
+  echo Ts[45_000][10]
+  echo Ts[45_000][100]
+  echo Ts[45_000][500]
 
 let start = cpuTime()
 main()
@@ -44,6 +48,7 @@ let stop = cpuTime()
 
 let elapsed = stop - start
 echo &"Native array Euler solve - time taken: {elapsed} seconds"
+
 
 
 # Measurement on i7-970 (Hexa core 3.2GHz)

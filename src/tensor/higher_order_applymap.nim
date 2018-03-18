@@ -90,7 +90,7 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
   let
     z1 = t1 # ensure that if t1 is the result of a function it is not called multiple times
     z2 = t2
-    z3 = z3
+    z3 = t3
 
   when compileOption("boundChecks"):
     check_elementwise(z1,z2)

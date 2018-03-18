@@ -10,7 +10,7 @@ suite "End-to-End: Examples compile and run":
     let ctx = newContext Tensor[float32]
 
     let bsz = 32
-    let x_train_bool = randomTensor([bsz * 10, 2], 2).astype(bool)
+    let x_train_bool = randomTensor([bsz * 10, 2], 1).astype(bool)
     let y_bool = x_train_bool[_,0] xor x_train_bool[_,1]
 
     let x_train = ctx.variable(x_train_bool.astype(float32))

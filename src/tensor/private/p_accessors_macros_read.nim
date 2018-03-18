@@ -21,8 +21,15 @@ import  ../../private/ast_utils,
         ./p_checks, ./p_accessors, ./p_accessors_macros_desugar,
         sequtils, macros
 
-template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSlices): untyped=
+template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSlices): untyped =
   ## Slicing routine
+
+  when compileOption("boundChecks"):
+    if unlikely(slices.len > result.rank):
+      raise newException(
+        IndexError,
+        "Rank of slice expression (" & $slices.len & ") is larger than the tensor rank (" & $result.rank & ")."
+      )
 
   for i, slice in slices:
     # Check if we start from the end
@@ -33,7 +40,7 @@ template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSl
             else: slice.b
 
     # Bounds checking
-    when compileOption("boundChecks"): check_steps(a,b, slice.step)
+    when compileOption("boundChecks"): check_steps(a, b, slice.step)
     ## TODO bounds-check the offset or leave the default?
     ## The default only checks when we retrieve the value
 

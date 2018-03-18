@@ -180,7 +180,7 @@ proc randomTensor*[T:SomeReal](shape: varargs[int], max: T): Tensor[T] {.noInit.
   ##      - a tensor backend
   ## Result:
   ##      - A tensor of the input shape filled with random value between 0 and max input value
-  randomTensorCpu(result, shape, max)
+  randomTensorCpu(result, shape, max-1)
 
 proc randomTensor*(shape: varargs[int], max: int): Tensor[int] {.noInit.} =
   ## Creates a new int Tensor filled with values between 0 and max-1.
@@ -192,7 +192,7 @@ proc randomTensor*(shape: varargs[int], max: int): Tensor[int] {.noInit.} =
   ##      - a tensor backend
   ## Result:
   ##      - A tensor of the input shape filled with random value between 0 and max input value (excluded)
-  randomTensorCpu(result, shape, max)
+  randomTensorCpu(result, shape, max-1)
 
 proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] {.noInit.} =
   ## Creates a new int Tensor filled with values in the Slice range.

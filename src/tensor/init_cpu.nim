@@ -71,7 +71,7 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit, noSid
   result.storage.Fdata = newSeqUninit[T](result.size)
 
   for tval in result.storage.Fdata.mitems:
-    {.unroll.}
+    {.unroll: 8.}
     tval = value
 
 proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit, noSideEffect.} =
@@ -88,7 +88,7 @@ proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit, noSi
   result.storage.Fdata = newSeqUninit[T](result.size)
 
   for tval in result.storage.Fdata.mitems:
-    {.unroll.}
+    {.unroll: 8.}
     tval = value
 
 proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect.} =
@@ -168,7 +168,7 @@ proc ones_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit, inline, noSide
 
 template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typed): untyped =
   tensorCpu(shape, t)
-  result.storage.Fdata = newSeqWith(t.size, T(random(max_or_range))) # Due to automatic converter (float32 -> float64), we must force T #68
+  result.storage.Fdata = newSeqWith(t.size, T(rand(max_or_range))) # Due to automatic converter (float32 -> float64), we must force T #68
 
 proc randomTensor*[T:SomeReal](shape: varargs[int], max: T): Tensor[T] {.noInit.} =
   ## Creates a new float Tensor filled with values between 0 and max.
@@ -212,8 +212,8 @@ proc randomNormal(mean = 0.0, std = 1.0): float =
   var valid {.global.} = false
   var x {.global.}, y {.global.}, rho {.global.}: float
   if not valid:
-    x = random(1.0)
-    y = random(1.0)
+    x = rand(1.0)
+    y = rand(1.0)
     rho = sqrt(-2.0 * ln(1.0 - y))
     valid = true
     return rho*cos(2.0*PI*x)*std+mean

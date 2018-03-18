@@ -19,20 +19,27 @@ const
   a_dz2 = alpha / dz^2
 
 
-proc f(T: Tensor[float]): Tensor[float] =
-  a_dz2 * (T[_, 0..^3] - 2.0 * T[_, 1..^2] + T[_, 2..^1])
+proc f(T: Tensor[float]): Tensor[float] {.noInit.}=
+  map3_inline(T[_, 0..^3], T[_, 1..^2], T[_, 2..^1]):
+    a_dz2 * (x - 2.0 * y + z)
 
 proc eulerSolve(Ts: var Tensor[float]) =
   for t in 0 ..< timeSteps-1:
-    Ts[t+1, 1..^2] = Ts[t, 1..^2] + dt * f(Ts[t, _])
-    Ts[t+1, ^1] = Ts[t+1, ^2]
+    var slice1 = Ts[t+1, 1..^2]
+    apply3_inline(slice1, Ts[t, 1..^2], f(Ts[t, _])):
+      y + dt * z
+
+    var slice2 = Ts[t+1, ^1]
+    apply2_inline(slice2, Ts[t+1, ^2]):
+      y
+
 
 proc main() =
   var Ts = newTensorWith[float]([timeSteps, spaceSteps], startingTemp)
 
-
-  for j in 0 ..< timeSteps:
-    Ts[j, 0] = startingTemp - oscillations * sin(2.0 * PI * j.float / timeSteps)
+  var slice = Ts[_,0]
+  apply_inline(slice):
+    startingTemp - oscillations * sin(2.0 * PI * x.float / timeSteps)
 
   Ts.eulerSolve()
 
@@ -49,11 +56,15 @@ echo &"Arraymancer Euler solve - time taken: {elapsed} seconds"
 # Arraymancer Euler solve - time taken: 8.375565 seconds
 # xtime.rb - 10.22s, 3854.9Mb
 
-# OpenMP (yes it slows things done, probably false sharing)
-# Arraymancer Euler solve - time taken: 9.488133999999999 seconds
-# xtime.rb - 27.86s, 3114.4Mb (multithreading counting woes?)
+# OpenMP slows things by a lot, probably due to false sharing with the non-contiguous slices.
 
 # Measurement on i7-970 (Hexa core 3.2GHz)
 # Arraymancer Euler solve - time taken: 5.857952 seconds
 # 6.01s, 3882.8Mb
 
+###################################
+# Optimized version with no temporaries
+
+# Single-threaded i5-5257U (Dual core mobile Broadwell 2.7Ghz)
+# Arraymancer Euler solve - time taken: 6.646692 seconds
+# 7.47s, 3037.2Mb

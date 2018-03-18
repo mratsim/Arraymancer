@@ -56,3 +56,13 @@ print("Numpy Euler solve - time taken: {} seconds".format(stop - start))
 # Numpy iteration speed - time taken: 2.673659086227417 seconds
 # Numpy Euler solve - time taken: 6.034733057022095 seconds
 # 6.49s, 3836.5Mb
+
+
+# Measurement on i7-970 (Hexa core 3.2GHz)
+# Python 3.6
+# 42.0046266041
+# 34.8379557903
+# 29.8974105039
+# Numpy iteration speed - time taken: 1.1823573112487793 seconds
+# Numpy Euler solve - time taken: 4.745648145675659 seconds
+# 4.96s, 3842.0Mb

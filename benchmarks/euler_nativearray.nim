@@ -34,8 +34,9 @@ proc main() =
 
   for t in 0 ..< timeSteps:
     Ts[t][0] = startingTemp - oscillations * sin(2.0 * PI * t.float / timeSteps)
-    for s in 1 ..< spaceSteps:
-      Ts[t][s] = startingTemp
+
+  for s in 1 ..< spaceSteps:
+    Ts[0][s] = startingTemp
 
   Ts.eulerSolve()
   echo Ts[45_000][10]
@@ -50,7 +51,9 @@ let elapsed = stop - start
 echo &"Native array Euler solve - time taken: {elapsed} seconds"
 
 
-
 # Measurement on i7-970 (Hexa core 3.2GHz)
-# Native array Euler solve - time taken: 2.732873 seconds
-# 2.87s, 3816.5Mb
+# 42.0060796609176
+# 34.83783780774945
+# 29.89741051712985
+# Native array Euler solve - time taken: 1.59722 seconds
+# 1.61s, 3816.6Mb

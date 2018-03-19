@@ -260,7 +260,7 @@ let batch_size = 200
 let nb_classes = 100000
 
 # Create a sparse label tensor of shape: [batch_size]
-let sparse_labels = randomTensor(batch_size, nb_classes-1)
+let sparse_labels = randomTensor(batch_size, nb_classes)
 
 # Create the corresponding dense label tensor of shape [nb_classes, batch_size]
 var labels = zeros[float64](nb_classes, batch_size)

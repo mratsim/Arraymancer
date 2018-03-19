@@ -8,12 +8,13 @@ proc getTime(): float =
     epochTime() # cpuTime count the sum of time on each CPU when multithreading.
 
 const
-  dz = 0.01
-  z = 100
+  dz = 0.1
+  z = 1000
   spaceSteps = int(z / dz)
-  timeSteps = 50000
-  dt = 0.12 / timeSteps
-  alpha = 2.0
+  timeSteps = 50_000
+  totalTime = 1_000_000
+  dt = totalTime / timeSteps
+  alpha = 2e-4
   startingTemp = 30.0
   oscillations = 20.0
   a_dz2 = alpha / dz^2
@@ -37,11 +38,13 @@ proc eulerSolve(Ts: var Tensor[float]) =
 proc main() =
   var Ts = newTensorWith[float]([timeSteps, spaceSteps], startingTemp)
 
-  var slice = Ts[_,0]
-  apply_inline(slice):
-    startingTemp - oscillations * sin(2.0 * PI * x.float / timeSteps)
+  for j in 0 ..< timeSteps:
+    Ts[j, 0] = startingTemp - oscillations * sin(2.0 * PI * j.float / timeSteps)
 
   Ts.eulerSolve()
+  echo Ts[45_000, 10]
+  echo Ts[45_000, 100]
+  echo Ts[45_000, 500]
 
 let start = getTime()
 main()
@@ -59,8 +62,11 @@ echo &"Arraymancer Euler solve - time taken: {elapsed} seconds"
 # OpenMP slows things by a lot, probably due to false sharing with the non-contiguous slices.
 
 # Measurement on i7-970 (Hexa core 3.2GHz)
-# Arraymancer Euler solve - time taken: 5.857952 seconds
-# 6.01s, 3882.8Mb
+# 42.0060796609176
+# 34.83783780774945
+# 29.89741051712985
+# Arraymancer Euler solve - time taken: 5.060707 seconds
+# 5.08s, 3882.8Mb
 
 ###################################
 # Optimized version with no temporaries
@@ -68,3 +74,10 @@ echo &"Arraymancer Euler solve - time taken: {elapsed} seconds"
 # Single-threaded i5-5257U (Dual core mobile Broadwell 2.7Ghz)
 # Arraymancer Euler solve - time taken: 6.646692 seconds
 # 7.47s, 3037.2Mb
+
+# Measurement on i7-970 (Hexa core 3.2GHz)
+# 42.0060796609176
+# 34.83783780774945
+# 29.89741051712985
+# Arraymancer Euler solve - time taken: 2.085845 seconds
+# 2.10s, 3882.8Mb

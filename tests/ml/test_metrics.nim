@@ -22,3 +22,21 @@ suite "[ML] Metrics":
       y_true = [0, 1, 2, 3].toTensor
 
     check: accuracy_score(y_true, y_pred) == 0.5
+
+  test "Mean absolute error":
+    var y_true = [0.9, 0.2, 0.1, 0.4, 0.9].toTensor()
+    var y =      [1.0, 0.0, 0.0, 1.0, 1.0].toTensor()
+    check: absolute_error(y_true, y).sum() == 1.1
+    check: mean_absolute_error(y_true, y) == (1.1 / 5.0)
+
+  test "Relative error":
+    var y_true = [0.0,  0.0, -1.0, 1e-8, 1e-8].toTensor()
+    var y =      [0.0, -1.0,  0.0, 0.0,  1e-7].toTensor()
+    check: relative_error(y_true, y) == [0.0, 1.0, 1.0, 1.0, 0.9].toTensor()
+    check: mean_relative_error(y_true, y) == 0.78
+
+  test "Mean squared error":
+    var y_true = [0.9, 0.2, 0.1, 0.4, 0.9].toTensor()
+    var y =      [1.0, 0.0, 0.0, 1.0, 1.0].toTensor()
+    check: squared_error(y_true, y).sum() == 0.43
+    check: mean_squared_error(y_true, y) == (0.43 / 5.0)

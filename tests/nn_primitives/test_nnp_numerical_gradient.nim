@@ -12,8 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./metrics/accuracy_score,
-        ./metrics/common_error_functions
+import ../../src/arraymancer
+import unittest
 
-export  accuracy_score,
-        common_error_functions
+suite "Test the numerical gradient proc":
+  test "Numerical gradient":
+    proc f(x: float): float = x*x + x + 1.0
+    check: relative_error(numerical_gradient(2.0, f), 5.0) < 1e-8
+
+    proc g(t: Tensor[float]): float =
+      let x = t[0]
+      let y = t[1]
+      x*x + y*y + x*y + x + y + 1.0
+    let input = [2.0, 3.0].toTensor()
+    let grad = [8.0, 9.0].toTensor()
+    check: mean_relative_error(numerical_gradient(input, g), grad) < 1e-8

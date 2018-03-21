@@ -28,6 +28,8 @@ import  ../../private/[nested_containers, ast_utils],
 # Setting a single value
 
 template slicerMutImpl_val[T](t: var Tensor[T], slices: ArrayOfSlices, val: T): untyped =
+  mixin _
+
   var sliced = t.slicer(slices)
   for old_val in sliced.mitems:
     old_val = val
@@ -77,6 +79,8 @@ proc slicerMut*[T](t: var Tensor[T],
 
 template slicerMutImpl_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) =
   ## Assign value from openarrays
+  mixin _
+
   var sliced = t.slicer(slices)
   when compileOption("boundChecks"):
     check_shape(sliced, oa)
@@ -135,6 +139,8 @@ proc slicerMut*[T](t: var Tensor[T],
 
 template slicerMutImpl_T[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T]) =
   ## Assign the value to the whole slice
+  mixin _
+
   var sliced = t.slicer(slices)
 
   when compileOption("boundChecks"):

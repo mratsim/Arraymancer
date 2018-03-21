@@ -18,7 +18,7 @@ import  ../accessors_macros_syntax,
 
 # span is equivalent to `:` in Python. It returns the whole axis range.
 # Tensor[_, 3] will be replaced by Tensor[span, 3]
-const span* = SteppedSlice(b: 1, step: 1, b_from_end: true)
+const Span = SteppedSlice(b: 1, step: 1, b_from_end: true)
 
 
 # #########################################################################
@@ -38,19 +38,19 @@ macro desugar*(args: untyped): typed =
     ###### Traverse top tree nodes and one-hot-encode the different conditions
 
     # Node is "_"
-    let nnk_joker = nnk == ident("_")
+    let nnk_joker = eqIdent(nnk, "_")
 
     # Node is of the form "* .. *"
     let nnk0_inf_dotdot = (
       nnk.kind == nnkInfix and
-      nnk[0] == ident("..")
+      eqIdent(nnk[0], "..")
     )
 
     # Node is of the form "* ..< *" or "* ..^ *"
     let nnk0_inf_dotdot_alt = (
       nnk.kind == nnkInfix and (
-        nnk[0] == ident("..<") or
-        nnk[0] == ident("..^")
+        eqIdent(nnk[0], "..<") or
+        eqident(nnk[0], "..^")
       )
     )
 
@@ -63,34 +63,34 @@ macro desugar*(args: untyped): typed =
     # Node is of the form "^ *"
     let nnk0_pre_hat = (
       nnk.kind == nnkPrefix and
-      nnk[0] == ident("^")
+      eqIdent(nnk[0], "^")
     )
 
     # Node is of the form "_ `op` *"
     let nnk1_joker = (
       nnk.kind == nnkInfix and
-      nnk[1] == ident("_")
+      eqIdent(nnk[1], "_")
     )
 
     # Node is of the form "_ `op` *"
     let nnk10_hat = (
       nnk.kind == nnkInfix and
       nnk[1].kind == nnkPrefix and
-      nnk[1][0] == ident("^")
+      eqident(nnk[1][0], "^")
     )
 
     # Node is of the form "* `op` _"
     let nnk2_joker = (
       nnk.kind == nnkInfix and
-      nnk[2] == ident("_")
+      eqident(nnk[2], "_")
     )
 
     # Node is of the form "* `op` * | *" or "* `op` * |+ *"
     let nnk20_bar_pos = (
       nnk.kind == nnkInfix and
       nnk[2].kind == nnkInfix and (
-        nnk[2][0] == ident("|") or
-        nnk[2][0] == ident("|+")
+        eqident(nnk[2][0], "|") or
+        eqIdent(nnk[2][0], "|+")
       )
     )
 
@@ -98,7 +98,7 @@ macro desugar*(args: untyped): typed =
     let nnk20_bar_min = (
       nnk.kind == nnkInfix and
       nnk[2].kind == nnkInfix and
-      nnk[2][0] == ident("|-")
+      eqIdent(nnk[2][0], "|-")
     )
 
     # Node is of the form "* `op` * | *" or "* `op` * |+ *" or "* `op` * |- *"
@@ -108,16 +108,16 @@ macro desugar*(args: untyped): typed =
     let nnk21_joker = (
       nnk.kind == nnkInfix and
       nnk[2].kind == nnkInfix and
-      nnk[2][1] == ident("_")
+      eqIdent(nnk[2][1], "_")
     )
 
     ###### Core desugaring logic
     if nnk_joker:
-      ## [_, 3] into [span, 3]
-      r.add(bindSym("span"))
+      ## [_, 3] into [Span, 3]
+      r.add(bindSym("Span"))
     elif nnk0_inf_dotdot and nnk1_joker and nnk2_joker:
-      ## [_.._, 3] into [span, 3]
-      r.add(bindSym("span"))
+      ## [_.._, 3] into [Span, 3]
+      r.add(bindSym("Span"))
     elif nnk0_inf_dotdot and nnk1_joker and nnk20_bar_all and nnk21_joker:
       ## [_.._|2, 3] into [0..^1|2, 3]
       ## [_.._|+2, 3] into [0..^1|2, 3]

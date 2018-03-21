@@ -17,7 +17,7 @@ import unittest
 
 
 suite "Testing specific issues from bug tracker":
-  test "Span slicing inside dynamic type procs fails to compile":
+  test "#43: Span slicing inside dynamic type procs fails to compile":
     # https://github.com/mratsim/Arraymancer/issues/43
     proc boo[T](): T {.used.}=
       var a = zeros[int]([2,2])
@@ -32,8 +32,16 @@ suite "Testing specific issues from bug tracker":
     let (a, _, c) = (1, @[2,3],"hello")
     {.pop.}
 
-    # https://github.com/mratsim/Arraymancer/issues/61
-    proc foo[T](t: Tensor[T], x: int): Tensor[T] =
-      t[x, _, _].reshape(t.shape[1], t.shape[2])
+  test "#61 Unable to use operator `_` in this example":
+    block:
+      # https://github.com/mratsim/Arraymancer/issues/61
+      proc foo[T](t: Tensor[T], x: int): Tensor[T] =
+        t[x, _, _].reshape(t.shape[1], t.shape[2])
 
-    discard zeros[int]([2,2,2]).foo(1)
+      discard zeros[int]([2,2,2]).foo(1)
+    block:
+      let t = zeros[int](2,2,2,2,2,2)
+      proc foo[T](t: Tensor[T]): Tensor[T] =
+        discard t[0..1|1, 0..<2|1, 0..^1|1, ^1..0|-1, _, 1] # doesnt work
+
+      discard t.foo()

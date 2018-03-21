@@ -32,11 +32,17 @@ method forward*[TT](self: MSELoss[TT], input: Variable[TT], target: TT): Variabl
   result.value = [mean_squared_error(input.value, target)].toTensor
 
 method backward*[TT](self: MSELoss[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
-  let norm = 2 / gradient.size
-  result[0] = map2_inline(cache.value, gradient):
+
+  # Gradient is a tensor of shape 1
+  assert gradient.shape == [1]
+  let grad = gradient.data[gradient.offset]
+
+  let norm = grad * 2'f32 / gradient.size.float32 # TODO divide by total number of elements or by batch size? https://github.com/pytorch/pytorch/issues/3322
+                                                  # See also Stanford course: http://theory.stanford.edu/~tim/s15/l/l15.pdf
+  result[0] = map2_inline(self.cache.value, self.target):
     norm * (x - y)
 
-proc mean_squared_error*[TT](input: Variable[TT], target: Tensor[TT]): Variable[TT] =
+proc mse_loss*[TT](input: Variable[TT], target: TT): Variable[TT] =
   ## Mean square error loss function.
   ## Input:
   ##   - An input variable of predicted values of shape [batch_size, features]

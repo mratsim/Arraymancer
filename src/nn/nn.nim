@@ -18,10 +18,11 @@ import  ./activation/sigmoid,
         ./layers/conv2D,
         ./layers/maxpool2D,
         ./loss/cross_entropy_losses,
+        ./loss/mean_square_error_loss,
         ./optimizers/optimizers,
         ./shapeshifting/reshape_flatten
 
 export sigmoid, relu
-export linear, conv2D, maxpool2d, cross_entropy_losses
+export linear, conv2D, maxpool2d, cross_entropy_losses, mean_square_error_loss
 export optimizers
 export reshape_flatten

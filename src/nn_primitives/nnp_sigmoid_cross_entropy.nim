@@ -132,7 +132,7 @@ proc sigmoid_cross_entropy_backward*[T](
 # On a single sample:
 # dSCE/dxi = d/dxi (-ti' * xi + ln(1 + e^xi))
 #          = -ti' + e^xi * 1/(1 + e^xi))
-#          = -ti' * sigmoid(xi)
+#          = -ti' + sigmoid(xi)
 #
 # For a vector of samples
 # dSCE/dx = 1/n ∑i( sigmoid(xi) - ti' )

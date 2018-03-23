@@ -116,7 +116,7 @@ proc to_csv*[T](
   file.write("value\n")
 
   # sort dimensions by their strides (required for 'increment indices' below)
-  var strideOrder =
+  var stride_order =
     toSeq(0 ..< tensor.rank).map(proc(i: int): (int, int) = (tensor.strides[i], i))
                             .sorted(system.cmp)
                             .map(proc(t: (int, int)): int = t[1])
@@ -139,7 +139,7 @@ proc to_csv*[T](
     var j = 0
     while j < tensor.rank:
       # determine the index to increment depending on stride order
-      let index_to_increment = strideOrder[j]
+      let index_to_increment = stride_order[j]
       indices[index_to_increment] += 1
       # check if index hits the shape and propagate increment
       if indices[index_to_increment] == tensor.shape[index_to_increment]:

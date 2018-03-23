@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest
+import unittest, ospaths
 
 let expected_output_1d = """dimension_1,value
 0,1
@@ -50,7 +50,7 @@ let expected_output_semicolon = """dimension_1;dimension_2;value
 1;1;4.0
 """
 
-let test_file_path = "/tmp/arraymancer_test.csv"
+let test_file_path = getTempDir() / "arraymancer_test.csv"
 
 suite "io_csv":
 

@@ -5,7 +5,7 @@ description   = "A n-dimensional tensor (ndarray) library"
 license       = "Apache License 2.0"
 
 ### Dependencies
-requires "nim >= 0.18.0", "nimblas >= 0.1.3", "nimcuda >= 0.1.4", "nimcl >= 0.1.2", "clblast"
+requires "nim >= 0.18.0", "nimblas >= 0.1.3", "nimlapack >= 0.1.1", "nimcuda >= 0.1.4", "nimcl >= 0.1.2", "clblast"
 
 ## Install files
 srcDir = "src"
@@ -54,6 +54,7 @@ template mkl_threadedSwitches() =
   switch("define","openmp")
   switch("stackTrace","off")
   switch("define","blas=mkl_intel_lp64")
+  switch("define","lapack=mkl_intel_lp64")
   switch("clibdir", "/opt/intel/mkl/lib/intel64")
   switch("passl", "/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a")
   switch("passl", "-lmkl_core")
@@ -63,6 +64,7 @@ template mkl_threadedSwitches() =
 
 template mkl_singleSwitches() =
   switch("define","blas=mkl_intel_lp64")
+  switch("define","lapack=mkl_intel_lp64")
   switch("clibdir", "/opt/intel/mkl/lib/intel64")
   switch("passl", "/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a")
   switch("passl", "-lmkl_core")
@@ -133,6 +135,7 @@ task test_opencl, "Run all OpenCL backend tests":
 
 task test_openblas, "Run all tests - OpenBLAS":
   switch("define","blas=openblas")
+  switch("define","lapack=openblas")
   when defined(macosx):
     ## Should work but somehow Nim doesn't find libopenblas.dylib on MacOS
     switch("clibdir", "/usr/local/opt/openblas/lib")

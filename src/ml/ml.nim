@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./metrics/accuracy_score
+import  ./metrics/accuracy_score,
+        ./metrics/common_error_functions
 
-export accuracy_score
+export  accuracy_score,
+        common_error_functions

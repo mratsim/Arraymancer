@@ -26,7 +26,7 @@ method update*[T](self: Optimizer[T]) {.base.} =
   # Forward for loss layers
   raise newException(ValueError, "update method is not implemented for " & $self.type.name)
 
-proc zeroGrads*(o: Optimizer) =
+proc zeroGrads*[T](o: Optimizer[T]) =
   # Reset the gradients of the optimized params
   for v in o.params:
     v.grad = v.value.zeros_like

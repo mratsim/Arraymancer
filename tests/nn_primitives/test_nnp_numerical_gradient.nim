@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./data_structure,
-        ./higher_order_applymap,
-        ./private/p_shapeshifting
+import ../../src/arraymancer
+import unittest
 
-# Unfortunately higher_order depends on init_cpu and "clone" depends on higher_order, so we need an extra file
-# to deal with circular dependencies
+suite "Test the numerical gradient proc":
+  test "Numerical gradient":
+    proc f(x: float): float = x*x + x + 1.0
+    check: relative_error(numerical_gradient(2.0, f), 5.0) < 1e-8
 
-proc clone*[T](t: Tensor[T], layout: OrderType = rowMajor): Tensor[T] {.noInit.}=
-  ## Input:
-  ##     - A tensor
-  ## Returns:
-  ##     - A full copy. The copy is recreated as a contiguous tensor.
-  ##       If the input was a slice, unused values are discarded.
-  contiguousImpl(t, layout, result)
+    proc g(t: Tensor[float]): float =
+      let x = t[0]
+      let y = t[1]
+      x*x + y*y + x*y + x + y + 1.0
+    let input = [2.0, 3.0].toTensor()
+    let grad = [8.0, 9.0].toTensor()
+    check: mean_relative_error(numerical_gradient(input, g), grad) < 1e-8

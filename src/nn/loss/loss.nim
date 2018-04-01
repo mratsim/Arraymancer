@@ -18,7 +18,6 @@ import  ../../tensor/tensor,
 
 
 type Loss* [TT] = ref object of Gate[TT]
-  batch_size*: seq[int]
   target*: TT
 
 
@@ -28,7 +27,6 @@ method forward*[TT](self: Loss[TT], a: Variable[TT], target: TT): Variable[TT] {
 
 
 type SparseLoss* [TT] = ref object of Gate[TT]
-  batch_size*: seq[int]
   target*: Tensor[int]
 
 

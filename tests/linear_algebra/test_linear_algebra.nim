@@ -27,10 +27,10 @@ suite "Linear algebra":
         expected_sv = [ 4.10003045f,  1.09075677].toTensor
 
       check:
-        mean_relative_error(solution, expected_sol) < epsilon(float32)
-        mean_relative_error(residuals, expected_residuals) < epsilon(float32)
+        mean_relative_error(solution, expected_sol) < 1e-6
+        mean_relative_error(residuals, expected_residuals) < 1e-6
         matrix_rank == expected_matrix_rank
-        mean_relative_error(singular_values, expected_sv) < epsilon(float32)
+        mean_relative_error(singular_values, expected_sv) < 1e-6
 
     block: # Example from Eigen
            # https://eigen.tuxfamily.org/dox/group__LeastSquares.html

@@ -34,7 +34,8 @@ import  ./tensor/tensor,
         ./nn/nn,
         ./datasets/mnist,
         ./io/io_csv,
-        ./ml/ml
+        ./ml/ml,
+        ./linear_algebra/linear_algebra
 
 export  tensor,
         nn_primitives,
@@ -42,4 +43,5 @@ export  tensor,
         nn,
         mnist,
         io_csv,
-        ml
+        ml,
+        linear_algebra

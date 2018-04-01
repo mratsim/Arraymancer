@@ -82,15 +82,25 @@ proc least_square_solver*(a, b: Tensor[float32]):
   if is1d:
     result.least_square_sol = b[0 ..< n]
     if rank == n and m > n:
-      result.residuals = (b[n .. _]).reduce_axis_inline(0):
-        x += y .^ 2f
+      result.residuals = (b[n .. _]).fold_axis_inline(Tensor[float32], fold_axis = 0):
+        x = y .^ 2f # initial value
+      do:
+        x += y .^ 2f # core loop
+      do:
+        x += y # values were stored in a temporary array of size == nb of cores
+               # to avoid multithreading issues and must be reduced one last time
+
   else:
     result.least_square_sol = b[0 ..< n, _]
     if rank == n and m > n:
       debugecho b
-      result.residuals = (b[n .. _, _]).reduce_axis_inline(0):
-        x += y .^ 2f
-
+      result.residuals = (b[n .. _, _]).fold_axis_inline(Tensor[float32], fold_axis = 0):
+        x = y .^ 2f # initial value
+      do:
+        x += y .^ 2f # core loop
+      do:
+        x += y # values were stored in a temporary array of size == nb of cores
+               # to avoid multithreading issues and must be reduced one last time
 
 when isMainModule:
 

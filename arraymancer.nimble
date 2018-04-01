@@ -112,7 +112,11 @@ task all_tests, "Run all tests - Intel MKL + OpenMP + Cuda + march=native + rele
   cuda_mkl_openmp
   test "full_test_suite", "cpp"
 
-task test, "Run all tests - Default BLAS":
+task test, "Run all tests - Default BLAS & Lapack":
+  test "tests_cpu"
+
+task test_no_lapack, "Run all tests - Default BLAS without lapack":
+  switch("define", "no_lapack")
   test "tests_cpu"
 
 task test_cpp, "Run all tests - Cpp codegen":

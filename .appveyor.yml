@@ -29,17 +29,13 @@ install:
   - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%CD%\tools_tmp\%MINGW_DIR%\bin;%PATH%
   - ps: nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}"
   - ps: cp OpenBLAS.0.2.14.1/lib/native/bin/x64/libopenblas.dll blas.dll
-  - ps: Start-FileDownload http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win64/liblapack.dll
-  - ps: cp liblapack.dll lapack.dll
-  - mkdir build
-  - ps: cp lapack.dll build/lapack.dll
-  - ps: cp liblapack.dll build/liblapack.dll
-  - SET PATH=%PATH%;%CD%;%CD%\build
+  # - ps: Start-FileDownload http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win64/liblapack.dll lapack.dll # This does not work, why?
+  - SET PATH=%PATH%;%CD%
 
 build_script:
   - nimble.exe refresh
 
 test_script:
-  - nimble.exe test
+  - nimble.exe test_no_lapack
 
 deploy: off

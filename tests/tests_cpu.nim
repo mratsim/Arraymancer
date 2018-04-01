@@ -32,8 +32,10 @@ import ../src/arraymancer,
         ./nn_primitives/test_nnp_loss,
         ./nn_primitives/test_nnp_maxpool,
         ./autograd/test_gate_blas,
-        ./ml/test_metrics,
-        ./linear_algebra/test_linear_algebra
+        ./ml/test_metrics
+
+when not defined(no_lapack):
+  import ./linear_algebra/test_linear_algebra
 
 import  ./stability_tests/test_stability_openmp,
         ./end_to_end/examples

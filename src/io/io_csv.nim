@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-import  os, parsecsv, streams, strutils,
+import  os, parsecsv, streams, strutils, sequtils, algorithm,
         ../tensor/tensor
 
 proc read_csv*[T: SomeNumber|bool|string](
@@ -78,3 +78,75 @@ proc read_csv*[T: SomeNumber|bool|string](
 
   result = newTensorUninit[T](num_rows, num_cols)
   shallowCopy(result.storage.Fdata, csvdata)
+
+
+proc to_csv*[T](
+    tensor: Tensor[T],
+    csvPath: string,
+    separator = ',',
+    ) =
+  ## Stores a tensor in a csv file. Can handle tensors of arbitrary dimension
+  ## by using a schema (= csv columns) of
+  ##
+  ## dimension_1, dimension_2, ..., dimension_(tensor.rank), value
+  ##
+  ## where the 'dimension_i' columns contain indices, and the actual tensor
+  ## values are stored in the 'value' column.
+  ##
+  ## For example the tensor ``@[@[1, 2, 3], @[4, 5, 6]].toTensor()`` is stored as:
+  ##
+  ## dimension_1,dimension_2,value
+  ## 0,0,1
+  ## 0,1,2
+  ## 0,2,3
+  ## 1,0,4
+  ## 1,1,5
+  ## 1,2,6
+  ##
+  ## Input:
+  ##   - tensor: the tensor to store
+  ##   - csvPath: output path of the csvfile
+  ##   - separator: a char, default ','
+
+  let file = open(csvPath, fmWrite)
+
+  # write header
+  for i in 1 .. tensor.rank:
+    file.write("dimension_" & $i & separator)
+  file.write("value\n")
+
+  # sort dimensions by their strides (required for 'increment indices' below)
+  var stride_order =
+    toSeq(0 ..< tensor.rank).map(proc(i: int): (int, int) = (tensor.strides[i], i))
+                            .sorted(system.cmp)
+                            .map(proc(t: (int, int)): int = t[1])
+
+  var indices = newSeq[int](tensor.rank)
+
+  for i in 0 ..< tensor.size():
+    # determine contiguous index
+    var index = tensor.offset
+    for dim in 0 ..< tensor.rank:
+      index += tensor.strides[dim] * indices[dim]
+    let value = tensor.atContiguousIndex(index)
+
+    # write indices + values to file
+    for i in 0 ..< tensor.rank:
+      file.write($indices[i] & separator)
+    file.write($value & "\n")
+
+    # increment indices
+    var j = 0
+    while j < tensor.rank:
+      # determine the index to increment depending on stride order
+      let index_to_increment = stride_order[j]
+      indices[index_to_increment] += 1
+      # check if index hits the shape and propagate increment
+      if indices[index_to_increment] == tensor.shape[index_to_increment]:
+        indices[index_to_increment] = 0
+        j += 1
+      else:
+        break
+
+  file.close()
+

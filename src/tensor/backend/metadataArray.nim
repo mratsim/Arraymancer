@@ -226,3 +226,7 @@ proc concat*[T](dsas: varargs[DynamicStackArray[T]]): DynamicStackArray[T] =
     for val in dsa:
       result[i] = val
       inc(i)
+
+proc max*[T](a: DynamicStackArray[T]): T {.noSideEffect, inline.} =
+  for val in a:
+    result = max(result, val)

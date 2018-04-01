@@ -43,3 +43,7 @@ export  tensor,
         mnist,
         io_csv,
         ml
+
+when not defined(no_lapack):
+  import ./linear_algebra/linear_algebra
+  export linear_algebra

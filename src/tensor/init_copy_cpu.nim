@@ -13,15 +13,16 @@
 # limitations under the License.
 
 import  ./data_structure,
-        ./higher_order_applymap
+        ./higher_order_applymap,
+        ./private/p_shapeshifting
 
 # Unfortunately higher_order depends on init_cpu and "clone" depends on higher_order, so we need an extra file
 # to deal with circular dependencies
 
-proc clone*[T](t: Tensor[T]): Tensor[T] {.noInit.}=
+proc clone*[T](t: Tensor[T], layout: OrderType = rowMajor): Tensor[T] {.noInit.}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A full copy. The copy is recreated as a contiguous tensor.
   ##       If the input was a slice, unused values are discarded.
-  result = t.map_inline(x)
+  contiguousImpl(t, layout, result)

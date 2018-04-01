@@ -35,6 +35,6 @@ build_script:
   - nimble.exe refresh
 
 test_script:
-  - nimble.exe test
+  - nimble.exe test_openblas
 
 deploy: off

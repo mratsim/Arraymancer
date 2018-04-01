@@ -64,7 +64,7 @@ install:
 
 script:
     - nimble refresh
-    - nimble test_openblas
+    - nimble test
 
 branches:
   except:

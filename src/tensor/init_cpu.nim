@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/[functional, nested_containers, sequninit],
+import  ../private/[functional, nested_containers],
         ./backend/[metadataArray],
         ./private/p_checks,
         ./private/p_init_cpu,
@@ -32,7 +32,7 @@ proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, 
   ## Warning ⚠
   ##   Tensor data is uninitialized and contains garbage.
   tensorCpu(shape, result)
-  result.storage.Fdata = newSeqUninit[T](result.size)
+  result.storage.Fdata = newSeqUninitialized[T](result.size)
 
 proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
@@ -44,7 +44,7 @@ proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noSideEffect,noInit,
   ## Warning ⚠
   ##   Tensor data is uninitialized and contains garbage.
   tensorCpu(shape, result)
-  result.storage.Fdata = newSeqUninit[T](result.size)
+  result.storage.Fdata = newSeqUninitialized[T](result.size)
 
 proc newTensor*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
@@ -68,7 +68,7 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit, noSid
   ##        the given value
   # Todo: use a template that can accept proc or value. See the code for newSeqWith: https://github.com/nim-lang/Nim/blob/master/lib/pure/collections/sequtils.nim#L650-L665
   tensorCpu(shape, result)
-  result.storage.Fdata = newSeqUninit[T](result.size)
+  result.storage.Fdata = newSeqUninitialized[T](result.size)
 
   for tval in result.storage.Fdata.mitems:
     {.unroll: 8.}
@@ -85,7 +85,7 @@ proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit, noSi
   ##        the given value
   # Todo: use a template that can accept proc or value. See the code for newSeqWith: https://github.com/nim-lang/Nim/blob/master/lib/pure/collections/sequtils.nim#L650-L665
   tensorCpu(shape, result)
-  result.storage.Fdata = newSeqUninit[T](result.size)
+  result.storage.Fdata = newSeqUninitialized[T](result.size)
 
   for tval in result.storage.Fdata.mitems:
     {.unroll: 8.}

@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../backend/metadataArray,
+import  ../backend/metadataArray,
         ../data_structure, ../higher_order_applymap,
         ../init_cpu,
         ./p_init_cpu,
@@ -25,7 +24,7 @@ proc contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]) 
     result = t.map_inline(x)
   else: # colMajor
     tensorCpu(t.shape, result, layout)
-    result.data = newSeqUninit[T](result.size)
+    result.data = newSeqUninitialized[T](result.size)
     apply2_inline(result, t):
       y
 

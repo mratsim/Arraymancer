@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/sequninit,
-        ./private/p_init_opencl,
+import  ./private/p_init_opencl,
         ./backend/opencl_backend,
         ./data_structure,
         ./init_cpu
@@ -49,7 +48,7 @@ proc cpu*[T:SomeReal](t: ClTensor[T]): Tensor[T] {.noInit.}=
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset
-  result.data = newSeqUninit[T](t.storage.Flen) # We copy over all the memory allocated (without prior asContiguous)
+  result.data = newSeqUninitialized[T](t.storage.Flen) # We copy over all the memory allocated (without prior asContiguous)
 
   let size = t.storage.Flen * sizeof(T)
 

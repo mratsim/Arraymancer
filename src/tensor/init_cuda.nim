@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./private/p_init_cuda,
+import  ../private/sequninit,
+        ./private/p_init_cuda,
         ./backend/cuda,
         ./backend/cuda_global_state,
         ./data_structure,
@@ -46,7 +47,7 @@ proc cpu*[T:SomeReal](t: CudaTensor[T]): Tensor[T] {.noSideEffect, noInit.}=
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset
-  result.data = newSeqUninitialized[T](t.storage.Flen) # We copy over all the memory allocated
+  result.data = newSeqUninit[T](t.storage.Flen) # We copy over all the memory allocated
 
   let size = csize(t.storage.Flen * sizeof(T))
 

@@ -14,10 +14,7 @@
 
 import  ../../tensor/tensor,
         ../../nn_primitives/nn_primitives,
-        ../../autograd/autograd,
-        ./layer
-
-
+        ../../autograd/autograd
 
 type LinearGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: use fused AddMatMul gate: C <- alpha AB + beta C

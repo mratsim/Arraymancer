@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/tensor/tensor
+import ../tensor/tensor
 
 proc numerical_gradient*[T](input: T, f: (proc(x: T): T), h: T = 1e-5.T): T {.inline.} =
   ## Compute numerical gradient for any function w.r.t. to an input value,

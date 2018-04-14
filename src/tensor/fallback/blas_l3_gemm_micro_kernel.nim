@@ -26,29 +26,8 @@ macro unroll_ukernel[MRNR, T](AB: array[MRNR, T],
   result = newNimNode(nnkStmtList)
   for j in 0..NR-1:
     for i in 0..MR-1:
-      result.add(
-        newTree(
-          nnkInfix,
-            ident("+="),
-            newTree(
-              nnkBracketExpr,
-              AB,newLit(i + j*MR)
-              ),
-          newTree(
-            nnkInfix,
-              ident("*"),
-              newTree(
-                nnkBracketExpr,
-                a, newTree(nnkInfix, ident("+"), newLit(i), offA)
-              ),
-              newTree(
-                nnkBracketExpr,
-                b, newTree(nnkInfix, ident("+"), newLit(j), offB)
-              ),
-          )
-        )
-      )
-
+      result.add quote do:
+        `AB`[`i`+`j`*`MR`] += `a`[`i`+`offA`] * `b`[`j`+`offB`]
 
 template gemm_micro_kernelT[T](
             kc: int,

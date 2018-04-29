@@ -46,9 +46,9 @@ method backward*[TT](self: LinearGate[TT], gradOutput: TT): SmallDiffs[TT] {.noI
 
 proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variable[TT] =
   ## Input:
-  ##   - A x Variable of shape [in_features, batch_size]
+  ##   - A x Variable of shape [batch_size, in_features]
   ##   - A weight Variable of shape [out_features, in_features]
-  ##   - Optionally a bias Variable of shape [out_features, 1]
+  ##   - Optionally a bias Variable of shape [out_features]
   ##
   ## Return:
   ##   - Weight * x + bias

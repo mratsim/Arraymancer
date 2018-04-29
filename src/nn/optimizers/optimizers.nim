@@ -22,7 +22,7 @@ type
     params*: seq[Variable[Tensor[T]]] # Todo: we can't specify a collection of generic types like AnyTensor currently
     lr*: T # Learning rate. Gradient update are scaled by the learning rate
 
-  SGD*{.final.}[T] = ref object of Optimizer[T]
+  SGD*{.final.}[T] = object of Optimizer[T]
 
 proc zeroGrads*[T](o: Optimizer[T]) =
   # Reset the gradients of the optimized params

@@ -21,7 +21,7 @@ type
     params*: seq[Variable[TT]]
     lr*: float32 # Learning rate.
 
-  Optimizer = Sgd
+  Optimizer[TT] = Sgd[TT]
 
 proc zeroGrads*(o: Optimizer) =
   # Reset the gradients of the optimized params

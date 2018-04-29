@@ -5,7 +5,7 @@
 import
   macros,
   dsl_core, dsl_types,
-  ../nn/nn
+  ../autograd/autograd, ../nn/nn, ../tensor/tensor
 
 export
   network,
@@ -24,7 +24,8 @@ proc flatten*(s: openarray[int]): int {.inline.}=
   for val in s:
     result *= val
 
-func optimizer*[M; U: SomeReal](model: M, optimizer: typedesc[Optimizer[U]], learning_rate: U): Optimizer[U] =
+func optimizer*[M](model: M, learning_rate: SomeReal): Sgd[Tensor[SomeReal]] =
+
   result.params = @[]
   result.lr = learning_rate
 

@@ -13,26 +13,25 @@
 # limitations under the License.
 
 import  ../../tensor/[tensor, higher_order_applymap],
-        ../../autograd/autograd,
-        typetraits
+        ../../autograd/autograd
 
 type
-  Optimizer*[T] = object of RootObj
-    # Base class for optimizer
-    params*: seq[Variable[Tensor[T]]] # Todo: we can't specify a collection of generic types like AnyTensor currently
-    lr*: T # Learning rate. Gradient update are scaled by the learning rate
+  Sgd*[TT] = object
+    ## Stochastic gradient descent
+    params*: seq[Variable[TT]]
+    lr*: float32 # Learning rate.
 
-  SGD*{.final.}[T] = object of Optimizer[T]
+  Optimizer*[TT] = Sgd[TT] # typeclass for SGD, RMSProp, Adam ...
 
-proc zeroGrads*[T](o: Optimizer[T]) =
+proc zeroGrads*(o: Optimizer) =
   # Reset the gradients of the optimized params
   for v in o.params:
     v.grad = v.value.zeros_like
 
-proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[T] {.deprecated: "Use the optimizer macro instead".}=
-  SGD[T](params: @params, lr: learning_rate)
+proc newSGD*[TT](params: varargs[Variable[TT]], learning_rate: SomeReal): SGD[TT] {.deprecated: "Use the optimizer macro instead".}=
+  SGD[TT](params: @params, lr: learning_rate)
 
-proc update*[T](self: SGD[T]) =
+proc update*(self: Sgd) =
   # Update the params with formula Value -= lr * gradient
   # Note: SGD expects gradient to be scaled by batchsize (done by default in Arraymancer)
   for v in self.params:

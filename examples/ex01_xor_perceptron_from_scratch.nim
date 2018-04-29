@@ -19,26 +19,20 @@ let x_train = ctx.variable(x_train_bool.astype(float32))
 let y = y_bool.astype(float32)
 
 # We will build the following network:
-# Input --> Linear(out_features = 3) --> relu --> Linear(out_features = 1) --> Sigmoid --> Cross-Entropy Loss
+# Input --> Linear(out_features = 3) --> relu --> Linear(out_features = 1)
 
-# First hidden layer of 3 neurons, shape [3 out_features, 2 in_features]
-# We initialize with random weights between -1 and 1
-let layer_3neurons = ctx.variable(
-                      randomTensor(3, 2, 2.0f) .- 1.0f,
-                      requires_grad = true
-                      )
+network ctx, XorNet:
+  layers:
+    x:          Input([2])
+    hidden:     Linear(2, 3)
+    classifier: Linear(3, 1)
+  forward x:
+    x.hidden.relu.classifier
 
-# Classifier layer with 1 neuron per feature. (In our case only one neuron overall)
-# We initialize with random weights between -1 and 1
-let classifier_layer = ctx.variable(
-                  randomTensor(1, 3, 2.0f) .- 1.0f,
-                  requires_grad = true
-                  )
+let model = ctx.init(XorNet)
 
 # Stochastic Gradient Descent
-let optim = newSGD[float32](
-  layer_3neurons, classifier_layer, 0.01f # 0.01 is the learning rate
-)
+let optim = model.optimizer(learning_rate = 0.01'f32)
 
 # Learning loop
 for epoch in 0..5:
@@ -49,10 +43,11 @@ for epoch in 0..5:
     let x = x_train[offset ..< offset + 32, _]
     let target = y[offset ..< offset + 32, _]
 
-    # Building the network
-    let n1 = relu linear(x, layer_3neurons)
-    let n2 = linear(n1, classifier_layer)
-    let loss = sigmoid_cross_entropy(n2, target)
+    # Running input through the network
+    let output = model.forward(x)
+
+    # Computing the loss
+    let loss = sigmoid_cross_entropy(output, target)
 
     echo "Epoch is:" & $epoch
     echo "Batch id:" & $batch_id

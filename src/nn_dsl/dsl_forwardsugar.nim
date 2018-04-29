@@ -34,7 +34,7 @@ proc shortcutLinear(self: Neuromancer, field_name: NimNode, topo: LayerTopology)
 
   let shortcut = quote do:
     template `field_name`(x: Variable): Variable =
-      x.conv2d(self.`field_name`.weight, self.`field_name`.bias)
+      x.linear(self.`field_name`.weight, self.`field_name`.bias)
 
   self.forward_templates.add shortcut
 

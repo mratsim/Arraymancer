@@ -169,6 +169,3 @@ macro network*(ctx: Context, model_name: untyped, config: untyped): untyped =
   result.add vm.type_section
   result.add vm.init_proc
   result.add vm.forward_proc
-
-
-

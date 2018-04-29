@@ -6,8 +6,6 @@ import ../src/arraymancer, random
 # Data files (MNIST) can be downloaded here http://yann.lecun.com/exdb/mnist/
 # and must be decompressed in "./build/" (or change the path "build/..." below)
 #
-# Note:
-# In the future, model, weights and optimizer definition will be streamlined.
 
 # Make the results reproducible by initializing a random seed
 randomize(42)
@@ -33,59 +31,23 @@ let
   X_test = ctx.variable x_test.unsqueeze(1)
   y_test = read_mnist_labels("build/t10k-labels.idx1-ubyte").astype(int)
 
-# Config (API is not finished)
-let
-  # We randomly initialize all weights and bias between [-0.5, 0.5]
-  # In the future requires_grad will be automatically set for neural network layers
+# Configuration of the neural network
+network ctx, DemoNet:
+  layers:
+    x:          Input([1, 28, 28])
+    cv1:        Conv2D(x.out_shape, 20, 5, 5)
+    mp1:        MaxPool2D(cv1.out_shape, (2,2), (0,0), (2,2))
+    cv2:        Conv2D(mp1.out_shape, 50, 5, 5)
+    mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
+    hidden:     Linear(mp2.out_shape.flatten, 500)
+    classifier: Linear(500, 10)
+  forward x:
+    x.cv1.relu.mp1.cv2.relu.mp2.flatten.hidden.classifier
 
-  cv1_w = ctx.variable(
-    randomTensor(20, 1, 5, 5, 1'f32) .- 0.5'f32,    # Weight of 1st convolution
-    requires_grad = true
-    )
-  cv1_b = ctx.variable(
-    randomTensor(20, 1, 1, 1'f32) .- 0.5'f32,       # Bias of 1st convolution
-    requires_grad = true
-    )
-
-  cv2_w = ctx.variable(
-    randomTensor(50, 20, 5, 5, 1'f32) .- 0.5'f32,   # Weight of 2nd convolution
-    requires_grad = true
-    )
-
-  cv2_b = ctx.variable(
-    randomTensor(50, 1, 1, 1'f32) .- 0.5'f32,       # Bias of 2nd convolution
-    requires_grad = true
-    )
-
-  fc3 = ctx.variable(
-    randomTensor(500, 800, 1'f32) .- 0.5'f32,       # Fully connected: 800 in, 500 ou
-    requires_grad = true
-    )
-
-  classifier = ctx.variable(
-    randomTensor(10, 500, 1'f32) .- 0.5'f32,        # Fully connected: 500 in, 10 classes out
-    requires_grad = true
-    )
-
-proc model[TT](x: Variable[TT]): Variable[TT] =
-  # The formula of the output size of convolutions and maxpools is:
-  #   H_out = (H_in + (2*padding.height) - kernel.height) / stride.height + 1
-  #   W_out = (W_in + (2*padding.width) - kernel.width) / stride.width + 1
-
-  let cv1 = x.conv2d(cv1_w, cv1_b).relu()      # Conv1: [N, 1, 28, 28] --> [N, 20, 24, 24]     (kernel: 5, padding: 0, strides: 1)
-  let mp1 = cv1.maxpool2D((2,2), (0,0), (2,2)) # Maxpool1: [N, 20, 24, 24] --> [N, 20, 12, 12] (kernel: 2, padding: 0, strides: 2)
-  let cv2 = mp1.conv2d(cv2_w, cv2_b).relu()    # Conv2: [N, 20, 12, 12] --> [N, 50, 8, 8]      (kernel: 5, padding: 0, strides: 1)
-  let mp2 = cv2.maxpool2D((2,2), (0,0), (2,2)) # Maxpool1: [N, 50, 8, 8] --> [N, 50, 4, 4]     (kernel: 2, padding: 0, strides: 2)
-
-  let f = mp2.flatten                          # [N, 50, 4, 4] -> [N, 800]
-  let hidden = f.linear(fc3).relu              # [N, 800]      -> [N, 500]
-
-  result = hidden.linear(classifier)           # [N, 500]      -> [N, 10]
+let model = ctx.init(DemoNet)
 
 # Stochastic Gradient Descent (API will change)
-let optim = newSGD[float32](
-  cv1_w, cv1_b, cv2_w, cv2_b, fc3, classifier, 0.01f # 0.01 is the learning rate
-)
+let optim = model.optimizerSGD(learning_rate = 0.01'f32)
 
 # Learning loop
 for epoch in 0 ..< 5:
@@ -96,7 +58,7 @@ for epoch in 0 ..< 5:
     let target = y_train[offset ..< offset + n]
 
     # Running through the network and computing loss
-    let clf = x.model
+    let clf = model.forward(x)
     let loss = clf.sparse_softmax_cross_entropy(target)
 
     if batch_id mod 200 == 0:
@@ -120,10 +82,10 @@ for epoch in 0 ..< 5:
     var score = 0.0
     var loss = 0.0
     for i in 0 ..< 10:
-      let y_pred = X_test[i*1000 ..< (i+1)*1000, _].model.value.softmax.argmax(axis = 1).indices.squeeze
+      let y_pred = model.forward(X_test[i*1000 ..< (i+1)*1000, _]).value.softmax.argmax(axis = 1).indices.squeeze
       score += accuracy_score(y_test[i*1000 ..< (i+1)*1000], y_pred)
 
-      loss += X_test[i*1000 ..< (i+1)*1000, _].model.sparse_softmax_cross_entropy(y_test[i*1000 ..< (i+1)*1000]).value.data[0]
+      loss += model.forward(X_test[i*1000 ..< (i+1)*1000, _]).sparse_softmax_cross_entropy(y_test[i*1000 ..< (i+1)*1000]).value.data[0]
     score /= 10
     loss /= 10
     echo "Accuracy: " & $(score * 100) & "%"

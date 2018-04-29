@@ -13,30 +13,25 @@
 # limitations under the License.
 
 import  ../../tensor/[tensor, higher_order_applymap],
-        ../../autograd/autograd,
-        typetraits
+        ../../autograd/autograd
 
 type
-  Optimizer*[T] = ref object {.inheritable.}
-    # Base class for optimizer
-    params*: seq[Variable[Tensor[T]]] # Todo: we can't specify a collection of generic types like AnyTensor currently
-    lr*: T # Learning rate. Gradient update are scaled by the learning rate
+  Sgd*[TT] = object
+    ## Stochastic gradient descent
+    params*: seq[Variable[TT]]
+    lr*: float32 # Learning rate.
 
-method update*[T](self: Optimizer[T]) {.base.} =
-  # Forward for loss layers
-  raise newException(ValueError, "update method is not implemented for " & $self.type.name)
+  Optimizer[TT] = Sgd[TT]
 
-proc zeroGrads*[T](o: Optimizer[T]) =
+proc zeroGrads*(o: Optimizer) =
   # Reset the gradients of the optimized params
   for v in o.params:
     v.grad = v.value.zeros_like
 
-type SGD*{.final.}[T] = ref object of Optimizer[T]
+proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[Tensor[T]] {.deprecated: "Use the optimizer macro instead".}=
+  SGD[Tensor[T]](params: @params, lr: learning_rate)
 
-proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[T] =
-  SGD[T](params: @params, lr: learning_rate)
-
-method update*[T](self: SGD[T]) =
+proc update*(self: Sgd) =
   # Update the params with formula Value -= lr * gradient
   # Note: SGD expects gradient to be scaled by batchsize (done by default in Arraymancer)
   for v in self.params:
@@ -44,3 +39,17 @@ method update*[T](self: SGD[T]) =
     apply2_inline(v.value, v.grad):
       x - self.lr * y
     v.grad = v.value.zeros_like
+
+func optimizerSGD*[M](model: M, learning_rate: SomeReal): Sgd[Tensor[SomeReal]] =
+  ## Create a SGD optimizer that will update the model weight
+
+  # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeReal): ...
+  # Pending https://github.com/nim-lang/Nim/issues/7734 and https://github.com/nim-lang/Nim/issues/7733
+
+  result.params = @[]
+  result.lr = learning_rate
+
+  for layer in fields(model):
+  # when layer is TrainableLayer: # TODO: This is broken and generates two method declarations with the same name.
+    result.params.add layer.weight
+    result.params.add layer.bias

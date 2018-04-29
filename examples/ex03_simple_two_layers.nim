@@ -23,33 +23,28 @@ let
   y = randomTensor[float32](N, D_out, 1'f32)
 
 # ##################################################################
-# Define the model. API will be significantly improved in the future
+# Define the model.
+
+network ctx, TwoLayersNet:
+  layers:
+    fc1: Linear(D_in, H)
+    fc2: Linear(H, D_out)
+  forward x:
+    x.fc1.relu.fc2
+
 let
-  # We randomly initialize all weights and bias between [-0.5, 0.5]
-  fc1_w = ctx.variable(randomTensor(H, D_in, 1'f32) .- 0.5'f32, requires_grad = true)
-    # Fully connected 1: D_in -> hidden
-
-  fc2_w = ctx.variable(randomTensor(D_out, H, 1'f32) .- 0.5'f32, requires_grad = true)
-    # Fully connected 2: hidden -> D_out
-
-proc model[TT](x: Variable[TT]): Variable[TT] =
-  x
-    .linear(fc1_w)
-    .relu
-    .linear(fc2_w)
+  model = ctx.init(TwoLayersNet)
+  optim = model.optimizerSGD(learning_rate = 1e-4'f32)
 
 # ##################################################################
 # Training
 
-let optim = newSGD[float32](fc1_w, fc2_w, 1e-4'f32)
-
 for t in 0 ..< 500:
   let
-    y_pred = model(x)
+    y_pred = model.forward(x)
     loss = mse_loss(y_pred, y)
 
   echo &"Epoch {t}: loss {loss.value[0]}"
 
-  optim.zeroGrads()
   loss.backprop()
   optim.update()

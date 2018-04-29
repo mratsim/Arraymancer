@@ -21,7 +21,7 @@ proc linear*[T](input, weight: Tensor[T], bias: Tensor[T], output: var Tensor[T]
   # Linear (Dense) forward primitive with bias
   #   - input tensor shape [batch_size, in_features]
   #   - weight tensor shape [out_features, in_features]
-  #   - bias tensor shape [batch_size, out_features]
+  #   - bias tensor shape [1, out_features]
   # Output does not need to be initialized to 0 or the proper shape, data will be overwritten
   # Output is: Y = x * W.transpose + b
 

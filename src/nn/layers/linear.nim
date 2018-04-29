@@ -48,7 +48,7 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
   ## Input:
   ##   - A x Variable of shape [batch_size, in_features]
   ##   - A weight Variable of shape [out_features, in_features]
-  ##   - Optionally a bias Variable of shape [out_features]
+  ##   - Optionally a bias Variable of shape [1, out_features]
   ##
   ## Return:
   ##   - Weight * x + bias

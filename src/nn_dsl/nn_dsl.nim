@@ -11,28 +11,12 @@ export
   LinearLayer
 
 proc flatten*(s: openarray[int]): int {.inline.}=
+  ## Flatten a tensor shape (i.e. returns the product)
+  ## A tensor of shape [1, 2, 3] will have a shape [1*2*3]
+  ## when flattened
+  # TODO: make that work only at compile-time on a custom TopoShape type
+  #       to avoid conflicts with other libraries.
   assert s.len != 0
   result = 1
   for val in s:
     result *= val
-
-when isMainModule:
-
-  import ../tensor/tensor, ../nn/nn, ../autograd/autograd
-
-  var ctx: Context[Tensor[float32]]
-
-  network ctx, FooNet:
-    layers:
-      x:   Input([1, 28, 28])                            # Real shape [N, 1, 28, 28]
-      cv1: Conv2D(x.out_shape, 20, 5, 5)                 # Output shape [N, 20, 24, 24] (kernel 5x5, padding 0, stride 1)
-      mp1: MaxPool2D(cv1.out_shape, (2,2), (0,0), (2,2)) # Output shape [N, 20, 12, 12] (kernel 2X2, padding 0, stride 2)
-      classifier:
-        Linear(mp1.out_shape.flatten, 10)                # Output shape [N, 10]
-    forward x:
-      x.cv1.relu.mp1.flatten.classifier
-
-
-  let a = init(ctx, FooNet)
-
-  echo a

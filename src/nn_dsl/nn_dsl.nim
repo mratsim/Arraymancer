@@ -4,8 +4,7 @@
 
 import
   macros,
-  dsl_core, dsl_types,
-  ../autograd/autograd, ../nn/nn, ../tensor/tensor
+  dsl_core, dsl_types
 
 export
   network,
@@ -23,14 +22,3 @@ proc flatten*(s: openarray[int]): int {.inline.}=
   result = 1
   for val in s:
     result *= val
-
-func optimizer*[M](model: M, learning_rate: SomeReal): Sgd[Tensor[SomeReal]] =
-
-  result.params = @[]
-  result.lr = learning_rate
-
-  for layer in fields(model):
-    when layer is TrainableLayer:
-      result.params.add layer.weight
-      result.params.add layer.bias
-

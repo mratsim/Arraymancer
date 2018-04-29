@@ -21,7 +21,7 @@ type
     params*: seq[Variable[TT]]
     lr*: float32 # Learning rate.
 
-  Optimizer*[TT] = Sgd[TT] # typeclass for SGD, RMSProp, Adam ...
+  Optimizer = Sgd
 
 proc zeroGrads*(o: Optimizer) =
   # Reset the gradients of the optimized params
@@ -39,3 +39,16 @@ proc update*(self: Sgd) =
     apply2_inline(v.value, v.grad):
       x - self.lr * y
     v.grad = v.value.zeros_like
+
+func optimizeSGD*[M](model: M, learning_rate: SomeReal): Sgd[Tensor[SomeReal]] =
+  ## Create a SGD optimizer that will update the model weight
+
+  # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeReal): ...
+
+  result.params = @[]
+  result.lr = learning_rate
+
+  for layer in fields(model):
+  # when layer is TrainableLayer: # TODO: This is broken and generates two method declarations with the same name.
+    result.params.add layer.weight
+    result.params.add layer.bias

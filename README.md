@@ -177,7 +177,7 @@ for t in 0 ..< 500:
   - [Features](#features)
     - [Arraymancer as a Deep Learning library](#arraymancer-as-a-deep-learning-library)
       - [Handwritten digit recognition with Arraymancer](#handwritten-digit-recognition-with-arraymancer)
-    - [Tensors on CPU and on Cuda](#tensors-on-cpu-and-on-cuda)
+    - [Tensors on CPU, on Cuda and OpenCL](#tensors-on-cpu-on-cuda-and-opencl)
     - [Speed](#speed)
       - [Micro benchmark: Int64 matrix multiplication](#micro-benchmark-int64-matrix-multiplication)
       - [Logistic regression](#logistic-regression)
@@ -296,7 +296,7 @@ network ctx, DemoNet:
     hidden:     Linear(mp2.out_shape.flatten, 500)
     classifier: Linear(500, 10)
   forward x:
-    x.cv1.relu.mp1.cv2.relu.mp2.flatten.hidden.classifier
+    x.cv1.relu.mp1.cv2.relu.mp2.flatten.hidden.relu.classifier
 
 let model = ctx.init(DemoNet)
 let optim = model.optimizerSGD(learning_rate = 0.01'f32)
@@ -343,82 +343,82 @@ for epoch in 0 ..< 5:
 
 ############# Output ############
 
-# Epoch is: 0
+Epoch is: 0
 # Batch id: 0
-# Loss is:  132.9124755859375
+# Loss is:  194.3991851806641
 # Epoch is: 0
 # Batch id: 200
-# Loss is:  2.301989078521729
+# Loss is:  2.60599946975708
 # Epoch is: 0
 # Batch id: 400
-# Loss is:  1.155071973800659
+# Loss is:  1.708131313323975
 # Epoch is: 0
 # Batch id: 600
-# Loss is:  1.043337464332581
+# Loss is:  1.061241149902344
 # Epoch is: 0
 # Batch id: 800
-# Loss is:  0.58299720287323
+# Loss is:  0.8607467412948608
 # Epoch is: 0
 # Batch id: 1000
-# Loss is:  0.5417937040328979
+# Loss is:  0.9292868375778198
 # Epoch is: 0
 # Batch id: 1200
-# Loss is:  0.6955615282058716
+# Loss is:  0.6178927421569824
 # Epoch is: 0
 # Batch id: 1400
-# Loss is:  0.4742314517498016
+# Loss is:  0.4008050560951233
 # Epoch is: 0
 # Batch id: 1600
-# Loss is:  0.3307125866413116
+# Loss is:  0.2450754344463348
 # Epoch is: 0
 # Batch id: 1800
-# Loss is:  0.6455222368240356
+# Loss is:  0.3787734508514404
 
 # Epoch #0 done. Testing accuracy
-# Accuracy: 83.24999999999999%
-# Loss:     0.5828457295894622
+# Accuracy: 84.24999999999999%
+# Loss:     0.4853884726762772
 
 
 # Epoch is: 1
 # Batch id: 0
-# Loss is:  0.5344035029411316
+# Loss is:  0.8319419622421265
 # Epoch is: 1
 # Batch id: 200
-# Loss is:  0.4455387890338898
+# Loss is:  0.3116425573825836
 # Epoch is: 1
 # Batch id: 400
-# Loss is:  0.1642555445432663
+# Loss is:  0.232885867357254
 # Epoch is: 1
 # Batch id: 600
-# Loss is:  0.5191419124603271
+# Loss is:  0.3877259492874146
 # Epoch is: 1
 # Batch id: 800
-# Loss is:  0.2091695368289948
+# Loss is:  0.3621436357498169
 # Epoch is: 1
 # Batch id: 1000
-# Loss is:  0.2661008834838867
+# Loss is:  0.5054937601089478
 # Epoch is: 1
 # Batch id: 1200
-# Loss is:  0.405451238155365
+# Loss is:  0.4431287050247192
 # Epoch is: 1
 # Batch id: 1400
-# Loss is:  0.1397259384393692
+# Loss is:  0.2153264284133911
 # Epoch is: 1
 # Batch id: 1600
-# Loss is:  0.526863694190979
+# Loss is:  0.1401071697473526
 # Epoch is: 1
 # Batch id: 1800
-# Loss is:  0.5916416645050049
+# Loss is:  0.3415909707546234
 
 # Epoch #1 done. Testing accuracy
-# Accuracy: 88.49000000000001%
-# Loss:     0.3582650691270828
+# Accuracy: 87.91%
+# Loss:     0.3657706841826439
 ```
 
 
-### Tensors on CPU and on Cuda
-Tensors and CudaTensors do not have the same features implemented yet.
-Also Cuda Tensors can only be float32 or float64 while Cpu Tensor can be integers, string, boolean or any custom object.
+### Tensors on CPU, on Cuda and OpenCL
+Tensors, CudaTensors and CLTensors do not have the same features implemented yet.
+Also CudaTensors and CLTensors can only be float32 or float64 while Cpu Tensor can be integers, string, boolean or any custom object.
 
 Here is a comparative table, not that this feature set is developing very rapidly.
 

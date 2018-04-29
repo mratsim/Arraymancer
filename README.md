@@ -101,6 +101,61 @@ echo j .+ k
 # |30     31      32|
 ```
 
+### A simple two layers neural network
+
+From [example 3](./examples/ex02_simple_two_layers.nim).
+
+```Nim
+import ../src/arraymancer, strformat
+
+discard """
+A fully-connected ReLU network with one hidden layer, trained to predict y from x
+by minimizing squared Euclidean distance.
+"""
+
+# ##################################################################
+# Environment variables
+
+# N is batch size; D_in is input dimension;
+# H is hidden dimension; D_out is output dimension.
+let (N, D_in, H, D_out) = (64, 1000, 100, 10)
+
+# Create the autograd context that will hold the computational graph
+let ctx = newContext Tensor[float32]
+
+# Create random Tensors to hold inputs and outputs, and wrap them in Variables.
+let
+  x = ctx.variable(randomTensor[float32](N, D_in, 1'f32), requires_grad = true)
+  y = randomTensor[float32](N, D_out, 1'f32)
+
+# ##################################################################
+# Define the model.
+
+network ctx, TwoLayersNet:
+  layers:
+    fc1: Linear(D_in, H)
+    fc2: Linear(H, D_out)
+  forward x:
+    x.fc1.relu.fc2
+
+let
+  model = ctx.init(TwoLayersNet)
+  optim = model.optimizerSGD(learning_rate = 1e-4'f32)
+
+# ##################################################################
+# Training
+
+for t in 0 ..< 500:
+  let
+    y_pred = model.forward(x)
+    loss = mse_loss(y_pred, y)
+
+  echo &"Epoch {t}: loss {loss.value[0]}"
+
+  loss.backprop()
+  optim.update()
+```
+
 ## Table of Contents
 <!-- TOC -->
 
@@ -109,6 +164,7 @@ echo j .+ k
     - [Tensor creation and slicing](#tensor-creation-and-slicing)
     - [Reshaping and concatenation](#reshaping-and-concatenation)
     - [Broadcasting](#broadcasting)
+    - [A simple two layers neural network](#a-simple-two-layers-neural-network)
   - [Table of Contents](#table-of-contents)
   - [3 reasons why Arraymancer](#3-reasons-why-arraymancer)
     - [The Python community is struggling to bring Numpy up-to-speed](#the-python-community-is-struggling-to-bring-numpy-up-to-speed)
@@ -212,94 +268,38 @@ Note: The final interface is still **work in progress.**
 From [example 2](https://github.com/mratsim/Arraymancer/blob/master/examples/ex02_handwritten_digits_recognition.nim).
 
 ```Nim
-import src/arraymancer, random
+import ../src/arraymancer, random
 
-# This is an early minimum viable example of handwritten digits recognition.
-# It uses convolutional neural networks to achieve high accuracy.
-#
-# Data files (MNIST) can be downloaded here http://yann.lecun.com/exdb/mnist/
-# and must be decompressed in "./build/" (or change the path "build/..." below)
-#
-# Note:
-# In the future, model, weights and optimizer definition will be streamlined.
-
-# Make the results reproducible by initializing a random seed
-randomize(42)
+randomize(42) # Random seed for reproducibility
 
 let
   ctx = newContext Tensor[float32] # Autograd/neural network graph
   n = 32                           # Batch size
 
 let
-  # Training data is 60k 28x28 greyscale images from 0-255,
-  # neural net prefers input rescaled to [0, 1] or [-1, 1]
   x_train = read_mnist_images("build/train-images.idx3-ubyte").astype(float32) / 255'f32
+  X_train = ctx.variable x_train.unsqueeze(1) # Change shape from [N, H, W] to [N, C, H, W], with C = 1
 
-  # Change shape from [N, H, W] to [N, C, H, W], with C = 1 (unsqueeze). Convolution expect 4d tensors
-  # And store in the context to track operations applied and build a NN graph
-  X_train = ctx.variable x_train.unsqueeze(1)
-
-  # Labels are uint8, we must convert them to int
   y_train = read_mnist_labels("build/train-labels.idx1-ubyte").astype(int)
 
-  # Idem for testing data (10000 images)
   x_test = read_mnist_images("build/t10k-images.idx3-ubyte").astype(float32) / 255'f32
-  X_test = ctx.variable x_test.unsqueeze(1)
+  X_test = ctx.variable x_test.unsqueeze(1) Change shape from [N, H, W] to [N, C, H, W], with C = 1
   y_test = read_mnist_labels("build/t10k-labels.idx1-ubyte").astype(int)
 
-# Config (API is not finished)
-let
-  # We randomly initialize all weights and bias between [-0.5, 0.5]
-  # In the future requires_grad will be automatically set for neural network layers
+network ctx, DemoNet:
+  layers:
+    x:          Input([1, 28, 28])
+    cv1:        Conv2D(x.out_shape, 20, 5, 5)
+    mp1:        MaxPool2D(cv1.out_shape, (2,2), (0,0), (2,2))
+    cv2:        Conv2D(mp1.out_shape, 50, 5, 5)
+    mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
+    hidden:     Linear(mp2.out_shape.flatten, 500)
+    classifier: Linear(500, 10)
+  forward x:
+    x.cv1.relu.mp1.cv2.relu.mp2.flatten.hidden.classifier
 
-  cv1_w = ctx.variable(
-    randomTensor(20, 1, 5, 5, 1'f32) .- 0.5'f32,    # Weight of 1st convolution
-    requires_grad = true
-    )
-  cv1_b = ctx.variable(
-    randomTensor(20, 1, 1, 1'f32) .- 0.5'f32,       # Bias of 1st convolution
-    requires_grad = true
-    )
-
-  cv2_w = ctx.variable(
-    randomTensor(50, 20, 5, 5, 1'f32) .- 0.5'f32,   # Weight of 2nd convolution
-    requires_grad = true
-    )
-
-  cv2_b = ctx.variable(
-    randomTensor(50, 1, 1, 1'f32) .- 0.5'f32,       # Bias of 2nd convolution
-    requires_grad = true
-    )
-
-  fc3 = ctx.variable(
-    randomTensor(500, 800, 1'f32) .- 0.5'f32,       # Fully connected: 800 in, 500 ou
-    requires_grad = true
-    )
-
-  classifier = ctx.variable(
-    randomTensor(10, 500, 1'f32) .- 0.5'f32,        # Fully connected: 500 in, 10 classes out
-    requires_grad = true
-    )
-
-proc model[TT](x: Variable[TT]): Variable[TT] =
-  # The formula of the output size of convolutions and maxpools is:
-  #   H_out = (H_in + (2*padding.height) - kernel.height) / stride.height + 1
-  #   W_out = (W_in + (2*padding.width) - kernel.width) / stride.width + 1
-
-  let cv1 = x.conv2d(cv1_w, cv1_b).relu()      # Conv1: [N, 1, 28, 28] --> [N, 20, 24, 24]     (kernel: 5, padding: 0, strides: 1)
-  let mp1 = cv1.maxpool2D((2,2), (0,0), (2,2)) # Maxpool1: [N, 20, 24, 24] --> [N, 20, 12, 12] (kernel: 2, padding: 0, strides: 2)
-  let cv2 = mp1.conv2d(cv2_w, cv2_b).relu()    # Conv2: [N, 20, 12, 12] --> [N, 50, 8, 8]      (kernel: 5, padding: 0, strides: 1)
-  let mp2 = cv2.maxpool2D((2,2), (0,0), (2,2)) # Maxpool1: [N, 50, 8, 8] --> [N, 50, 4, 4]     (kernel: 2, padding: 0, strides: 2)
-
-  let f = mp2.flatten                          # [N, 50, 4, 4] -> [N, 800]
-  let hidden = f.linear(fc3).relu              # [N, 800]      -> [N, 500]
-
-  result = hidden.linear(classifier)           # [N, 500]      -> [N, 10]
-
-# Stochastic Gradient Descent (API will change)
-let optim = newSGD[float32](
-  cv1_w, cv1_b, cv2_w, cv2_b, fc3, classifier, 0.01f # 0.01 is the learning rate
-)
+let model = ctx.init(DemoNet)
+let optim = model.optimizerSGD(learning_rate = 0.01'f32)
 
 # Learning loop
 for epoch in 0 ..< 5:
@@ -309,8 +309,7 @@ for epoch in 0 ..< 5:
     let x = X_train[offset ..< offset + n, _]
     let target = y_train[offset ..< offset + n]
 
-    # Running through the network and computing loss
-    let clf = x.model
+    let clf = model.forward(x)
     let loss = clf.sparse_softmax_cross_entropy(target)
 
     if batch_id mod 200 == 0:
@@ -319,30 +318,27 @@ for epoch in 0 ..< 5:
       echo "Batch id: " & $batch_id
       echo "Loss is:  " & $loss.value.data[0]
 
-    # Compute the gradient (i.e. contribution of each parameter to the loss)
     loss.backprop()
-
-    # Correct the weights now that we have the gradient information
     optim.update()
 
   # Validation (checking the accuracy/generalization of our model on unseen data)
   ctx.no_grad_mode:
     echo "\nEpoch #" & $epoch & " done. Testing accuracy"
 
-    # To avoid using too much memory we will compute accuracy in 10 batches of 1000 images
-    # instead of loading 10 000 images at once
+    # Validation by batches of 1000 images
     var score = 0.0
     var loss = 0.0
     for i in 0 ..< 10:
-      let y_pred = X_test[i ..< i+1000, _].model.value.softmax.argmax(axis = 1).indices.squeeze
-      score += accuracy_score(y_test[i ..< i+1000, _], y_pred)
+      let y_pred = model.forward(X_test[i*1000 ..< (i+1)*1000, _]).value.softmax.argmax(axis = 1).indices.squeeze
+      score += accuracy_score(y_test[i*1000 ..< (i+1)*1000], y_pred)
 
-      loss += X_test[i ..< i+1000, _].model.sparse_softmax_cross_entropy(y_test[i ..< i+1000, _]).value.data[0]
+      loss += model.forward(X_test[i*1000 ..< (i+1)*1000, _]).sparse_softmax_cross_entropy(y_test[i*1000 ..< (i+1)*1000]).value.data[0]
     score /= 10
     loss /= 10
     echo "Accuracy: " & $(score * 100) & "%"
     echo "Loss:     " & $loss
     echo "\n"
+
 
 
 ############# Output ############

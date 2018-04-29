@@ -42,7 +42,7 @@ method backward*[TT](self: LinearGate[TT], gradOutput: TT): SmallDiffs[TT] {.noI
     result[1] = gradOutput.transpose * self.input.value
 
   if not self.bias.isNil and self.bias.requires_grad:
-    result[0] = sum(gradOutput, axis = 0)
+    result[2] = sum(gradOutput, axis = 0)
 
 proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variable[TT] =
   ## Input:
@@ -70,7 +70,7 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
 
     # weight has shape: Out_features * In_features
     # bias must have shape: Out_features * 1
-    if not bias.isNil and not (bias.value.shape == [weight.value.shape[0], 1].toMetadataArray):
+    if not bias.isNil and not (bias.value.shape == [1, weight.value.shape[0]].toMetadataArray):
       raise newException(ValueError, "Incompatible shape: bias must be a vector of shape [out_features, 1]")
 
   # Gate

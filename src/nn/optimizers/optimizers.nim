@@ -44,6 +44,7 @@ func optimizeSGD*[M](model: M, learning_rate: SomeReal): Sgd[Tensor[SomeReal]] =
   ## Create a SGD optimizer that will update the model weight
 
   # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeReal): ...
+  # Pending https://github.com/nim-lang/Nim/issues/7734 and https://github.com/nim-lang/Nim/issues/7733
 
   result.params = @[]
   result.lr = learning_rate

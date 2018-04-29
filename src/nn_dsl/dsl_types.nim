@@ -55,13 +55,18 @@ type
 
   #####################################################
   # Todo: move that in NN part
-  TrainableLayer*[TT] = object of RootObj
+  # We have to use concepts here: non-ref object inheritance
+  # doesn't work properly: https://github.com/nim-lang/Nim/issues/7713
+  TrainableLayer*[TT] = concept layer
+    layer.weight is Variable[TT]
+    layer.bias   is Variable[TT]
+
+  Conv2DLayer*[TT] = object
     weight*: Variable[TT]
     bias*: Variable[TT]
-
-  Conv2DLayer*[T] = object of TrainableLayer[T]
-  LinearLayer*[T] = object of TrainableLayer[T]
-
+  LinearLayer*[TT] = object
+    weight*: Variable[TT]
+    bias*: Variable[TT]
 
 proc hash*(x: NimNode): Hash =
   assert x.kind == nnkIdent

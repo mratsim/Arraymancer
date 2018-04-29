@@ -2,7 +2,10 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
-import dsl_core, dsl_types
+import
+  macros,
+  dsl_core, dsl_types,
+  ../nn/nn
 
 export
   network,
@@ -20,3 +23,13 @@ proc flatten*(s: openarray[int]): int {.inline.}=
   result = 1
   for val in s:
     result *= val
+
+func optimizer*[M; U: SomeReal](model: M, optimizer: typedesc[Optimizer[U]], learning_rate: U): Optimizer[U] =
+  result.params = @[]
+  result.lr = learning_rate
+
+  for layer in fields(model):
+    when layer is TrainableLayer:
+      result.params.add layer.weight
+      result.params.add layer.bias
+

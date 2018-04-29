@@ -28,8 +28,8 @@ proc zeroGrads*(o: Optimizer) =
   for v in o.params:
     v.grad = v.value.zeros_like
 
-proc newSGD*[TT](params: varargs[Variable[TT]], learning_rate: SomeReal): SGD[TT] {.deprecated: "Use the optimizer macro instead".}=
-  SGD[TT](params: @params, lr: learning_rate)
+proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[Tensor[T]] {.deprecated: "Use the optimizer macro instead".}=
+  SGD[Tensor[T]](params: @params, lr: learning_rate)
 
 proc update*(self: Sgd) =
   # Update the params with formula Value -= lr * gradient
@@ -40,7 +40,7 @@ proc update*(self: Sgd) =
       x - self.lr * y
     v.grad = v.value.zeros_like
 
-func optimizeSGD*[M](model: M, learning_rate: SomeReal): Sgd[Tensor[SomeReal]] =
+func optimizerSGD*[M](model: M, learning_rate: SomeReal): Sgd[Tensor[SomeReal]] =
   ## Create a SGD optimizer that will update the model weight
 
   # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeReal): ...

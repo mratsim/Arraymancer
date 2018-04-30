@@ -224,6 +224,10 @@ Furthermore, Python preprocessing steps, unless using OpenCV, often needs a cust
 - Tensorflow is supposed to bridge the gap between research and production but its syntax and ergonomics are a pain to work with. Like for researchers, you need to code twice, "Prototype in Keras, and when you need low-level --> Tensorflow".
 - Deployed models are static, there is no interface to add a new observation/training sample to any framework, what if you want to use a model as a webservice with online learning?
 
+[Relevant XKCD from Apr 30, 2018](https://xkcd.com/1987/)
+
+![Python environment mess](https://imgs.xkcd.com/comics/python_environment.png)
+
 ### So why Arraymancer ?
 
 All those pain points may seem like a huge undertaking however thanks to the Nim language, we can have Arraymancer:

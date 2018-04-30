@@ -166,9 +166,10 @@ for t in 0 ..< 500:
     - [Broadcasting](#broadcasting)
     - [A simple two layers neural network](#a-simple-two-layers-neural-network)
   - [Table of Contents](#table-of-contents)
-  - [3 reasons why Arraymancer](#3-reasons-why-arraymancer)
+  - [4 reasons why Arraymancer](#4-reasons-why-arraymancer)
     - [The Python community is struggling to bring Numpy up-to-speed](#the-python-community-is-struggling-to-bring-numpy-up-to-speed)
     - [A researcher workflow is a fight against inefficiencies](#a-researcher-workflow-is-a-fight-against-inefficiencies)
+    - [Can be distributed almost dependency free](#can-be-distributed-almost-dependency-free)
     - [Bridging the gap between deep learning research and production](#bridging-the-gap-between-deep-learning-research-and-production)
     - [So why Arraymancer ?](#so-why-arraymancer)
   - [Future ambitions](#future-ambitions)
@@ -185,7 +186,7 @@ for t in 0 ..< 500:
 
 <!-- /TOC -->
 
-## 3 reasons why Arraymancer
+## 4 reasons why Arraymancer
 
 ### The Python community is struggling to bring Numpy up-to-speed
 
@@ -205,6 +206,12 @@ Researchers in a heavy scientific computing domain often have the following work
 
 Why not use in a language as productive as Python and as fast as C? Code once, and don't spend months redoing the same thing at a lower level.
 
+### Can be distributed almost dependency free
+
+Arraymancer models can be packaged in a self-contained binary that only depends on a BLAS library like OpenBLAS, MKL or Apple Accelerate (present on all Mac and iOS).
+
+This means that there is no need to install a huge library or language ecosystem to use Arraymancer. This also makes it naturally suitable for resource-constrained devices like mobile phones and Raspberry Pi.
+
 ### Bridging the gap between deep learning research and production
 The deep learning frameworks are currently in two camps:
 - Research: Theano, Tensorflow, Keras, Torch, PyTorch
@@ -223,6 +230,7 @@ All those pain points may seem like a huge undertaking however thanks to the Nim
 - Be as fast as C
 - Accelerated routines with Intel MKL/OpenBLAS or even NNPACK
 - Access to CUDA and CuDNN and generate custom CUDA kernels on the fly via metaprogramming.
+- Almost dependency free distribution (BLAS library)
 - A Python-like syntax with custom operators `a * b` for tensor multiplication instead of `a.dot(b)` (Numpy/Tensorflow) or `a.mm(b)` (Torch)
 - Numpy-like slicing ergonomics `t[0..4, 2..10|2]`
 - For everything that Nim doesn't have yet, you can use Nim bindings to C, C++, Objective-C or Javascript to bring it to Nim. Nim also has unofficial Python->Nim and Nim->Python wrappers.

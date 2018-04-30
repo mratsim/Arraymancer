@@ -125,7 +125,7 @@ let ctx = newContext Tensor[float32]
 
 # Create random Tensors to hold inputs and outputs, and wrap them in Variables.
 let
-  x = ctx.variable(randomTensor[float32](N, D_in, 1'f32), requires_grad = true)
+  x = ctx.variable(randomTensor[float32](N, D_in, 1'f32))
   y = randomTensor[float32](N, D_out, 1'f32)
 
 # ##################################################################

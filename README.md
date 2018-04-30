@@ -103,10 +103,10 @@ echo j .+ k
 
 ### A simple two layers neural network
 
-From [example 3](./examples/ex02_simple_two_layers.nim).
+From [example 3](./examples/ex03_simple_two_layers.nim).
 
 ```Nim
-import ../src/arraymancer, strformat
+import arraymancer, strformat
 
 discard """
 A fully-connected ReLU network with one hidden layer, trained to predict y from x
@@ -268,7 +268,7 @@ Note: The final interface is still **work in progress.**
 From [example 2](https://github.com/mratsim/Arraymancer/blob/master/examples/ex02_handwritten_digits_recognition.nim).
 
 ```Nim
-import ../src/arraymancer, random
+import arraymancer, random
 
 randomize(42) # Random seed for reproducibility
 

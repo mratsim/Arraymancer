@@ -37,7 +37,7 @@ for i in 101 ..< 2^NumDigits:
   x_train[i - 101, _] = binary_encode(i, NumDigits)
   y_train[i - 101] = fizz_buzz_encode(i)
 
-# How many neurons do we need to change a ~light bulb~, sorry do a division? let's pick ...
+# How many neurons do we need to change a light bulb, sorry do a division? let's pick ...
 const NumHidden = 100
 
 # Let's setup our neural network context, variables and model
@@ -62,7 +62,7 @@ func fizz_buzz(i: int, prediction: int): string =
 const BatchSize = 128
 const Epochs    = 2500
 
-# And let's start training the ~dog~ network
+# And let's start training the network
 for epoch in 0 ..< Epochs:
   # Here I should probably shuffle the input data.
   for start_batch in countup(0, x_train.shape[0]-1, BatchSize):
@@ -99,7 +99,7 @@ for epoch in 0 ..< Epochs:
     echo "\n"
 
 
-# Our ~dog~ network is trained, let's see if it's well behaved
+# Our network is trained, let's see if it's well behaved
 
 # Now let's use what we really want to fizzbuzz, numbers from 1 to 100
 var x_buzz = newTensor[float32](100, NumDigits)

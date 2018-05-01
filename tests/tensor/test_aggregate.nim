@@ -104,3 +104,10 @@ suite "[Core] Testing aggregation functions":
     check: argmax(a, 1).indices == [[2],
                                     [1],
                                     [1]].toTensor
+
+    block:
+      let a =  [[0, 1, 2],
+                [3, 4, 5]].toTensor
+      check: argmax(a, 0).indices == [[1, 1, 1]].toTensor
+      check: argmax(a, 1).indices == [[2],
+                                      [2]].toTensor

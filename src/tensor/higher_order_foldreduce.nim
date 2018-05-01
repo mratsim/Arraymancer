@@ -53,22 +53,10 @@ template fold_axis_inline*[T](t: Tensor[T], accumType: typedesc, fold_axis: int,
   var reduced: accumType
   let weight = z.size div z.shape[fold_axis]
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, z.shape[fold_axis], weight, op_final) do:
-    let y {.inject.} = z.atAxisIndex(fold_axis, block_offset)
+    let y {.inject.} = z.atAxisIndex(fold_axis, block_offset).clone()
     op_initial
   do:
     for y {.inject.} in z.axis(fold_axis, block_offset, block_size):
-      op_middle
-  reduced
-
-template fold_enumerateAxis_inline*[T](t: Tensor[T], result_type: typedesc, fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
-  let z = t # ensure that if t is the result of a function it is not called multiple times
-  var reduced : result_type
-  let weight = z.size div z.shape[fold_axis]
-  omp_parallel_reduce_blocks(reduced, block_offset, block_size, z.shape[fold_axis], weight, op_final) do:
-    let y {.inject.} = z.atAxisIndex(fold_axis, block_offset)
-    op_initial
-  do:
-    for i {.inject.}, y {.inject.} in z.enumerateAxis(fold_axis, block_offset, block_size):
       op_middle
   reduced
 

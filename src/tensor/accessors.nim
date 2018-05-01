@@ -332,7 +332,7 @@ iterator zipAxis*[T, U](a: Tensor[T], b: Tensor[U], axis: int): tuple[a: Tensor[
   dualAxisIterator(a, b, axis, 0, a.shape[axis])
 
 template enumerateAxisIterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyped =
-  var out_t = t.atAxisIndex(axis, iter_offset)
+  var out_t = t.atAxisIndex(axis, iter_offset) # do we need a clone there?
 
   for i in 0..<iter_size:
     yield (i + iter_offset, out_t)

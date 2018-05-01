@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./private/p_aggregate,
+import  ./backend/memory_optimization_hints,
         ./data_structure,
         ./init_cpu,
         ./higher_order_applymap,
         ./higher_order_foldreduce,
         ./math_functions,
+        ./accessors,
         math
 
 # ### Standard aggregate functions
@@ -147,19 +148,19 @@ proc argmax*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes: Ten
   ##                                     [1],
   ##                                     [1]].toTensor
 
-  type elemType = tuple[idx: int, max: T]
+  assert axis in {0, 1}, "Only 1D and 2D tensors are supported at the moment for argmax"
+  # TODO: Reimplement parallel Argmax (introduced by https://github.com/mratsim/Arraymancer/pull/171)
+  #       must be done with care: https://github.com/mratsim/Arraymancer/issues/183
 
-  let accum = t.fold_enumerateAxis_inline(Tensor[elemType], axis) do:
-    # Initialize the first element
-    x = map_inline(y): # x from fold
-      (0, x)           # x from map
-  do:
-    # Core computation
-    cmp_idx_max(x, i, y) # i is injected from fold_enumerate
-  do:
-    # Merge partial folds
-    cmp_idx_max(x, y)
+  result.maxes = t.atAxisIndex(axis, 0).clone()
+  result.indices = zeros[int](result.maxes.shape)
 
-  # Now convert the tensor of tuples to a tuple of tensors
-  result = unzip_idx_max(accum):
-    (x.idx, x.max)
+  withMemoryOptimHints()
+  let dmax{.restrict.} = result.maxes.dataArray
+  let dind{.restrict.} = result.indices.dataArray
+
+  for i, subtensor in t.enumerateAxis(axis, 1, t.shape[axis] - 1):
+    for j, val in enumerate(subtensor):
+      if val > dmax[j]:
+        dind[j] = i
+        dmax[j] = val

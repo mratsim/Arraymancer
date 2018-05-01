@@ -166,4 +166,22 @@ proc argmax_max*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes:
         dmax[j] = val
 
 proc argmax*[T](t: Tensor[T], axis: int): Tensor[int] {.inline.}=
+  ## Returns the index of the maximum along an axis
+  ##
+  ## Input:
+  ##   - A tensor
+  ##   - An axis (int)
+  ##
+  ## Returns:
+  ##   - A tensor of index of the maximums along this axis
+  ##
+  ## Example:
+  ##   .. code:: nim
+  ##     let a = [[0, 4, 7],
+  ##              [1, 9, 5],
+  ##              [3, 4, 1]].toTensor
+  ##     assert argmax(a, 0) == [[2, 1, 0]].toTensor
+  ##     assert argmax(a, 1) == [[2],
+  ##                             [1],
+  ##                             [1]].toTensor
   argmax_max(t, axis).indices

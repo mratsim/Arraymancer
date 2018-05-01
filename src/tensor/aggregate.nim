@@ -128,7 +128,7 @@ proc std*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.} =
   ## The normalization is by the (n-1), like in the formal definition
   sqrt(t.variance(axis))
 
-proc argmax*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes: Tensor[T]] {.noInit.} =
+proc argmax_max*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes: Tensor[T]] {.noInit.} =
   ## Returns (indices, maxes) along an axis
   ##
   ## Input:
@@ -164,3 +164,6 @@ proc argmax*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes: Ten
       if val > dmax[j]:
         dind[j] = i
         dmax[j] = val
+
+proc argmax*[T](t: Tensor[T], axis: int): Tensor[int] {.inline.}=
+  argmax_max(t, axis).indices

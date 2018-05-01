@@ -91,7 +91,6 @@ for epoch in 0 ..< Epochs:
                   .value
                   .softmax
                   .argmax(axis = 1)
-                  .indices
                   .squeeze
 
     let score = accuracy_score(y_train, y_pred)
@@ -116,7 +115,6 @@ ctx.no_grad_mode:
                 .value
                 .softmax
                 .argmax(axis = 1)
-                .indices
                 .squeeze
 
 # Extract the answer

@@ -341,7 +341,7 @@ for epoch in 0 ..< 5:
     var score = 0.0
     var loss = 0.0
     for i in 0 ..< 10:
-      let y_pred = model.forward(X_test[i*1000 ..< (i+1)*1000, _]).value.softmax.argmax(axis = 1).indices.squeeze
+      let y_pred = model.forward(X_test[i*1000 ..< (i+1)*1000, _]).value.softmax.argmax(axis = 1).squeeze
       score += accuracy_score(y_test[i*1000 ..< (i+1)*1000], y_pred)
 
       loss += model.forward(X_test[i*1000 ..< (i+1)*1000, _]).sparse_softmax_cross_entropy(y_test[i*1000 ..< (i+1)*1000]).value.data[0]

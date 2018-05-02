@@ -21,7 +21,8 @@ import  ./tensor/tensor,
         ./nn_dsl/nn_dsl,
         ./datasets/mnist,
         ./io/io_csv,
-        ./ml/ml
+        ./ml/ml,
+        ./stats/stats
 
 export  tensor,
         nn_primitives,
@@ -30,7 +31,8 @@ export  tensor,
         nn_dsl,
         mnist,
         io_csv,
-        ml
+        ml,
+        stats
 
 when not defined(no_lapack):
   import ./linear_algebra/linear_algebra

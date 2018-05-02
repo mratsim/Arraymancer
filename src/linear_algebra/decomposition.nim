@@ -19,7 +19,22 @@ proc syev*(jobz: cstring; uplo: cstring; n: ptr cint; a: ptr cdouble; lda: ptr c
         w, work, lwork, info)
 
 proc symeig*[T: SomeReal](a: Tensor[T]): tuple[eigenval, eigenvec: Tensor[T]] =
-  # Compute the eigenvalues and eigen vectors of a symmetric matrix
+  ## Compute the eigenvalues and eigen vectors of a symmetric matrix
+  ## Input:
+  ##   - A symmetric matrix
+  ## Returns:
+  ##   - A tuple with:
+  ##     - The eigenvalues sorted from lowest to highest
+  ##     - The corresponding eigenvector
+
+  # TODO: Use the faster divide-and-conquer algorithm *SYEVD. Note that this require N^2 more workspace
+  # than the QR decomposition algorithm
+  # Or
+  # the Relatively Robust Representations *SYEVR
+  # https://software.intel.com/en-us/mkl-developer-reference-fortran-symmetric-eigenvalue-problems-lapack-computational-routines
+  # http://www.netlib.org/lapack/lug/node71.html
+  # *SYEVR can select a range of i-j singular values which might be quite useful.
+
 
   assert a.shape[0] == a.shape[1], "Input should be a symmetric matrix"
   # TODO, support "symmetric matrices" with only the upper or lower part filled.

@@ -102,3 +102,42 @@ suite "Linear algebra":
       check:
         mean_absolute_error(val, expected_val) < 1e-4
         mean_absolute_error(vec, expected_vec) < 1e-4
+
+    block: # p15 of http://www.cs.otago.ac.nz/cosc453/student_tutorials/principal_components.pdf
+
+      let a =  [[0.616555556'f32, 0.615444444],
+                [0.615444444'f32, 0.716555556]].toTensor
+
+      let expected_val = [0.0490833989'f32, 1.28402771].toTensor
+
+      # Note: here the 1st vec is returned positive by Fortran (both are correct eigenvec)
+      let expected_vec = [[-0.735178656'f32, 0.677873399],
+                          [ 0.677873399'f32, 0.735178656]].toTensor
+
+      let (val, vec) = symeig(a)
+
+      check:
+        mean_absolute_error(val, expected_val) < 1e-7
+        mean_absolute_error(vec, expected_vec) < 1e-10
+
+    block: # https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/dsyevd_ex.c.htm
+
+      let a =  [[ 6.39,  0.13, -8.23,  5.71, -3.18],
+                [ 0.13,  8.37, -4.46, -6.10,  7.21],
+                [-8.23, -4.46, -9.58, -9.25, -7.42],
+                [ 5.71, -6.10, -9.25,  3.72,  8.54],
+                [-3.18,  7.21, -7.42,  8.54,  2.51]].toTensor
+
+      let expected_val = [-17.44, -11.96, 6.72, 14.25, 19.84].toTensor
+
+      let expected_vec = [[-0.26,  0.31, -0.74,  0.33,  0.42],
+                          [-0.17, -0.39, -0.38, -0.80,  0.16],
+                          [-0.89,  0.04,  0.09,  0.03, -0.45],
+                          [-0.29, -0.59,  0.34,  0.31,  0.60],
+                          [-0.19,  0.63,  0.44, -0.38,  0.48]].toTensor
+
+      let (val, vec) = symeig(a)
+
+      check:
+        mean_absolute_error(val, expected_val) < 1e-2
+        mean_absolute_error(vec, expected_vec) < 1e-2

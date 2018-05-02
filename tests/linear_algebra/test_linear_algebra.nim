@@ -78,3 +78,27 @@ suite "Linear algebra":
         residuals.rank == 0 and residuals.shape[0] == 0 and residuals.strides[0] == 0
         matrix_rank == expected_matrix_rank
         mean_relative_error(singular_values, expected_sv) < 1e-03
+
+  test "Eigenvalues and eigenvector of symmetric matrices":
+    block:  # https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/dsyev_ex.c.htm
+            # https://pytorch.org/docs/master/torch.html#torch.symeig
+
+      let a =  [[1.96, -6.49, -0.47, -7.20, -0.65],
+                [0.00,  3.80, -6.39,  1.50, -6.34],
+                [0.00,  0.00,  4.17, -1.51,  2.67],
+                [0.00,  0.00,  0.00,  5.70,  1.80],
+                [0.00,  0.00,  0.00,  0.00, -7.10]].toTensor
+
+      let expected_val = [-11.0656,  -6.2287,   0.8640,   8.8655,  16.0948].toTensor
+
+      let expected_vec = [[-0.2981, -0.6075,  0.4026, -0.3745,  0.4896],
+                          [-0.5078, -0.2880, -0.4066, -0.3572, -0.6053],
+                          [-0.0816, -0.3843, -0.6600,  0.5008,  0.3991],
+                          [-0.0036, -0.4467,  0.4553,  0.6204, -0.4564],
+                          [-0.8041,  0.4480,  0.1725,  0.3108,  0.1622]].toTensor
+
+      let (val, vec) = symeig(a)
+
+      check:
+        mean_absolute_error(val, expected_val) < 1e-4
+        mean_absolute_error(vec, expected_vec) < 1e-4

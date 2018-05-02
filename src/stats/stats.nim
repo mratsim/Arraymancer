@@ -21,7 +21,7 @@ proc covariance_matrix*[T: SomeReal](x, y: Tensor[T]): Tensor[T] =
   # http://www.cs.otago.ac.nz/cosc453/student_tutorials/principal_components.pdf
 
   # TODO proper checks
-  assert x.rank in {1, 2}
+  assert x.rank == 2
   assert x.shape == y.shape
 
   let deviation_X = (x .- x.mean(axis=0)).transpose # shape [features, batch_size]

@@ -80,24 +80,29 @@ suite "Linear algebra":
         mean_relative_error(singular_values, expected_sv) < 1e-03
 
   test "Eigenvalues and eigenvector of symmetric matrices":
+    # Note: Functions should return a unit vector (norm == 1).
+    #       But, if v is an eigen vector, any λv is also an eigen vector especially for λ = -1.
+    #       changing library implementation will create failures if they return a vector of the opposite sign.
+    #       (even though it is also a unit vector)
+
     block:  # https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/dsyev_ex.c.htm
             # https://pytorch.org/docs/master/torch.html#torch.symeig
 
-      let a =  [[1.96, -6.49, -0.47, -7.20, -0.65],
-                [0.00,  3.80, -6.39,  1.50, -6.34],
-                [0.00,  0.00,  4.17, -1.51,  2.67],
-                [0.00,  0.00,  0.00,  5.70,  1.80],
-                [0.00,  0.00,  0.00,  0.00, -7.10]].toTensor
+      let a =  [[ 1.96, -6.49, -0.47, -7.20, -0.65],
+                [-6.49,  3.80, -6.39,  1.50, -6.34],
+                [-0.47, -6.39,  4.17, -1.51,  2.67],
+                [-7.20,  1.50, -1.51,  5.70,  1.80],
+                [-0.65, -6.34,  2.67,  1.80, -7.10]].toTensor
 
       let expected_val = [-11.0656,  -6.2287,   0.8640,   8.8655,  16.0948].toTensor
 
-      let expected_vec = [[-0.2981, -0.6075,  0.4026, -0.3745,  0.4896],
-                          [-0.5078, -0.2880, -0.4066, -0.3572, -0.6053],
-                          [-0.0816, -0.3843, -0.6600,  0.5008,  0.3991],
-                          [-0.0036, -0.4467,  0.4553,  0.6204, -0.4564],
-                          [-0.8041,  0.4480,  0.1725,  0.3108,  0.1622]].toTensor
+      let expected_vec = [[0.2981, -0.6075,  0.4026,  0.3745, -0.4896],
+                          [0.5078, -0.2880, -0.4066,  0.3572,  0.6053],
+                          [0.0816, -0.3843, -0.6600, -0.5008, -0.3991],
+                          [0.0036, -0.4467,  0.4553, -0.6204,  0.4564],
+                          [0.8041,  0.4480,  0.1725, -0.3108, -0.1622]].toTensor
 
-      let (val, vec) = symeig(a)
+      let (val, vec) = symeig(a, true)
 
       check:
         mean_absolute_error(val, expected_val) < 1e-4
@@ -114,7 +119,7 @@ suite "Linear algebra":
       let expected_vec = [[-0.735178656'f32, 0.677873399],
                           [ 0.677873399'f32, 0.735178656]].toTensor
 
-      let (val, vec) = symeig(a)
+      let (val, vec) = symeig(a, true)
 
       check:
         mean_absolute_error(val, expected_val) < 1e-7
@@ -130,14 +135,56 @@ suite "Linear algebra":
 
       let expected_val = [-17.44, -11.96, 6.72, 14.25, 19.84].toTensor
 
-      let expected_vec = [[-0.26,  0.31, -0.74,  0.33,  0.42],
-                          [-0.17, -0.39, -0.38, -0.80,  0.16],
-                          [-0.89,  0.04,  0.09,  0.03, -0.45],
-                          [-0.29, -0.59,  0.34,  0.31,  0.60],
-                          [-0.19,  0.63,  0.44, -0.38,  0.48]].toTensor
+      let expected_vec = [[-0.26,  0.31, -0.74, -0.33, -0.42],
+                          [-0.17, -0.39, -0.38,  0.80, -0.16],
+                          [-0.89,  0.04,  0.09, -0.03,  0.45],
+                          [-0.29, -0.59,  0.34, -0.31, -0.60],
+                          [-0.19,  0.63,  0.44,  0.38, -0.48]].toTensor
 
-      let (val, vec) = symeig(a)
+      let (val, vec) = symeig(a, true)
 
       check:
         mean_absolute_error(val, expected_val) < 1e-2
         mean_absolute_error(vec, expected_vec) < 1e-2
+
+    block: # https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/dsyevr_ex.c.htm
+
+      let a =  [[ 0.67, -0.20,  0.19, -1.06,  0.46],
+                [-0.20,  3.82, -0.13,  1.06, -0.48],
+                [ 0.19, -0.13,  3.27,  0.11,  1.10],
+                [-1.06,  1.06,  0.11,  5.86, -0.98],
+                [ 0.46, -0.48,  1.10, -0.98,  3.54]].toTensor
+
+      let selected_val = [0.43, 2.14, 3.37].toTensor
+
+      let selected_vec = [[-0.98, -0.01, -0.08],
+                          [ 0.01,  0.02, -0.93],
+                          [ 0.04, -0.69, -0.07],
+                          [-0.18,  0.19,  0.31],
+                          [ 0.07,  0.69, -0.13]].toTensor
+
+      let (val, vec) = symeig(a, true, 0..2)
+
+      check:
+        mean_absolute_error(val, selected_val) < 1e-1
+        mean_absolute_error(vec, selected_vec) < 1e-1
+
+    block: # Check that input is not overwritten
+
+      let a, b =  [[ 0.67, -0.20,  0.19, -1.06,  0.46],
+                [-0.20,  3.82, -0.13,  1.06, -0.48],
+                [ 0.19, -0.13,  3.27,  0.11,  1.10],
+                [-1.06,  1.06,  0.11,  5.86, -0.98],
+                [ 0.46, -0.48,  1.10, -0.98,  3.54]].toTensor
+
+      let selected_val = [0.43, 0.24, 3.37].toTensor
+
+      let selected_vec = [[-0.98, -0.01, -0.08],
+                          [ 0.01,  0.02, -0.93],
+                          [ 0.04, -0.69, -0.07],
+                          [-0.18,  0.19,  0.31],
+                          [ 0.07,  0.69, -0.13]].toTensor
+
+      let (val, vec) = symeig(a, true, 0..2)
+
+      check: a == b

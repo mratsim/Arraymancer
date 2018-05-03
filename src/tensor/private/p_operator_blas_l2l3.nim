@@ -72,7 +72,7 @@ proc blasMV_y_eq_aAx_p_by*[T: SomeReal](
 
   gemv( cont_A_order, noTranspose,
         M, N,
-        alpha, a.get_offset_ptr, lda,
+        alpha, cont_A.get_offset_ptr, lda,
         x.get_offset_ptr, x.strides[0],
         beta, y.get_offset_ptr, y.strides[0])
 
@@ -129,8 +129,8 @@ proc blasMM_C_eq_aAB_p_bC*[T: SomeReal](
     K = a.shape[1] # b.shape[0]
     N = b.shape[1]
 
-    cont_a = a.asContiguous
-    cont_b = b.asContiguous
+    cont_A = a.asContiguous
+    cont_B = b.asContiguous
     c = c.asContiguous
 
     cont_A_is_rowMajor = cont_a.is_C_contiguous
@@ -156,6 +156,6 @@ proc blasMM_C_eq_aAB_p_bC*[T: SomeReal](
   gemm( order_C,
         transpose_A, transpose_B,
         M, N, K,
-        alpha, a.get_offset_ptr, lda,
-        b.get_offset_ptr, ldb,
+        alpha, cont_A.get_offset_ptr, lda,
+        cont_B.get_offset_ptr, ldb,
         beta, c.get_offset_ptr, ldc)

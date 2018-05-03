@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import math
 import  ../tensor/tensor,
         ./private/p_activation,
         ./private/p_logsumexp
@@ -35,6 +36,9 @@ proc sigmoid*[T: SomeReal](t: Tensor[T]): Tensor[T] {.noInit.}=
 proc relu*[T](t: Tensor[T]): Tensor[T] {.noInit.}=
   t.map_inline max(0.T,x)
 
+proc tanh*[T: SomeReal](t: Tensor[T]): Tensor[T] {.noInit.}=
+  t.map_inline tanh(x)
+
 # ##################################################################################################
 # In-place forward
 
@@ -49,7 +53,9 @@ proc msigmoid*[T: SomeReal](t: var Tensor[T]) =
 proc mrelu*[T](t: var Tensor[T]) =
   t.apply_inline max(0.T, x)
 
-
+proc mtanh*[T: SomeReal](t: var Tensor[T]) =
+  t.apply_inline tanh(x)
+      
 # ##################################################################################################
 # Backward
 
@@ -64,6 +70,10 @@ proc relu_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]
     else:
       y
 
+proc tanh_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.noInit.}=
+  result = map2_inline(cached_tensor, gradient):
+    1 - (x ^ 2)
+    
 # ####################################################################################################
 # Documentation
 

@@ -38,6 +38,7 @@ import ../src/arraymancer,
 
 when not defined(no_lapack):
   import ./linear_algebra/test_linear_algebra
+  import ./ml/test_dimensionality_reduction
 
 import  ./stability_tests/test_stability_openmp,
         ./end_to_end/examples

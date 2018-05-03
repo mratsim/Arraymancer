@@ -1,0 +1,49 @@
+# Copyright (c) 2018 Mamy André-Ratsimbazafy and the Arraymancer contributors
+# Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
+# This file may not be copied, modified, or distributed except according to those terms.
+
+import ../../src/arraymancer
+import unittest, math
+
+suite "[ML] Dimensionality reduction":
+  test "Principal component analysis (PCA)":
+
+    block: # http://www.cs.otago.ac.nz/cosc453/student_tutorials/principal_components.pdf
+      let data = [[2.5, 2.4],
+                  [0.5, 0.7],
+                  [2.2, 2.9],
+                  [1.9, 2.2],
+                  [3.1, 3.0],
+                  [2.3, 2.7],
+                  [2.0, 1.6],
+                  [1.0, 1.1],
+                  [1.5, 1.6],
+                  [1.1, 0.9]].toTensor
+
+      let val = data.pca(2)
+
+      let expected = [[ 0.827970186, -0.175115307],
+                      [-1.77758033,   0.142857227],
+                      [ 0.992197494,  0.384374989],
+                      [ 0.274210416,  0.130417207],
+                      [ 1.67580142,  -0.209498461],
+                      [ 0.912949103,  0.175282444],
+                      [-0.0991094375,-0.349824698],
+                      [-1.14457216,   0.0464172582],
+                      [-0.438046137,  0.0177646297],
+                      [-1.22382056,  -0.162675287]].toTensor
+
+      check: mean_absolute_error(expected, val) < 1e-9
+
+    block: # https://www.cgg.com/technicaldocuments/cggv_0000014063.pdf
+      let x =  [[ 1.0, -1.0],
+                [ 0.0,  1.0],
+                [-1.0, 0.0]].toTensor
+
+      let val = x.pca(2)
+
+      let expected = [[-2.0,  0.0],
+                      [ 1.0, -1.0],
+                      [ 1.0,  1.0]].toTensor / sqrt(2.0)
+
+      check: mean_absolute_error(expected, val) < 1e-9

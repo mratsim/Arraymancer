@@ -35,5 +35,6 @@ export  tensor,
         stats
 
 when not defined(no_lapack):
+  # THe ml module also does not export everything is LAPACK is not available
   import ./linear_algebra/linear_algebra
   export linear_algebra

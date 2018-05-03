@@ -168,7 +168,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     eigvecs[1, 0] = 0.6778733985280118
     eigvecs[1, 1] = 0.735178655544408
 
-    let val = a * eigvecs[_, ^1..0|-1].clone
+    let val = a * eigvecs[_, ^1..0|-1]
 
     let expected = [[ 0.827970186, -0.175115307],
                     [-1.77758033,   0.142857227],

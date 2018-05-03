@@ -17,3 +17,7 @@ import  ./metrics/accuracy_score,
 
 export  accuracy_score,
         common_error_functions
+
+when not defined(no_lapack):
+  import ./dimensionality_reduction/pca
+  export pca

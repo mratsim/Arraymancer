@@ -15,6 +15,8 @@
 import ../../src/arraymancer
 import unittest, future
 
+import ../../src/tensor/private/p_init_cpu # needed for testing column major tensors
+
 suite "BLAS (Basic Linear Algebra Subprograms)":
   test "GEMM - General Matrix to Matrix Multiplication":
     ## TODO: test with slices
@@ -142,6 +144,46 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
     check: d * e == transpose(dt) * e
 
+  test "GEMM with sliced matrices in column-major order":
+    # http://www.cs.otago.ac.nz/cosc453/student_tutorials/principal_components.pdf
+
+    let a =  [[ 0.6899999999999999,  0.4900000000000002],
+              [-1.31,               -1.21],
+              [ 0.3900000000000001,  0.9900000000000002],
+              [ 0.08999999999999986, 0.2900000000000005],
+              [ 1.29,                1.09],
+              [ 0.4899999999999998,  0.7900000000000005],
+              [ 0.1899999999999999, -0.3099999999999996],
+              [-0.8100000000000001, -0.8099999999999996],
+              [-0.3100000000000001, -0.3099999999999996],
+              [-0.71,               -1.01]].toTensor
+
+    var eigvecs: Tensor[float64]
+
+    tensorCpu(2, 2, eigvecs, colMajor)
+    eigvecs.storage.Fdata = newSeq[float64](eigvecs.size)
+
+    eigvecs[0, 0] = -0.735178655544408
+    eigvecs[0, 1] = 0.6778733985280118
+    eigvecs[1, 0] = 0.6778733985280118
+    eigvecs[1, 1] = 0.735178655544408
+
+    let val = a * eigvecs[_, ^1..0|-1]
+
+    let expected = [[ 0.827970186, -0.175115307],
+                    [-1.77758033,   0.142857227],
+                    [ 0.992197494,  0.384374989],
+                    [ 0.274210416,  0.130417207],
+                    [ 1.67580142,  -0.209498461],
+                    [ 0.912949103,  0.175282444],
+                    [-0.0991094375,-0.349824698],
+                    [-1.14457216,   0.0464172582],
+                    [-0.438046137,  0.0177646297],
+                    [-1.22382056,  -0.162675287]].toTensor
+
+    check:
+      mean_absolute_error(expected, val) < 1e-9
+
   test "Scalar/dot product":
     ## TODO: test with slices
     let u_int = @[1, 3, -5].toTensor()
@@ -196,7 +238,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
     check: u_int + v_int == expected_add
     check: u_int - v_int == expected_sub
-  
+
   test "Tensor addition and substraction (inplace)":
     var u_int = @[1, 3, -5].toTensor()
     let v_int = @[1, 1, 1].toTensor()

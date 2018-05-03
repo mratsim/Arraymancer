@@ -126,12 +126,12 @@ template `^^`(s, i: untyped): untyped =
 proc symeig*[T: SomeReal](a: Tensor[T], eigenvectors = false): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
   ## Compute the eigenvalues and eigen vectors of a symmetric matrix
   ## Input:
-  ##   - A symmetric matrix
+  ##   - A symmetric matrix of shape [n x n]
   ##   - A boolean: true if you also want the eigenvectors, false otherwise
   ## Returns:
   ##   - A tuple with:
-  ##     - The eigenvalues sorted from lowest to highest
-  ##     - The corresponding eigenvector if it was requested.
+  ##     - The eigenvalues sorted from lowest to highest. (shape [n])
+  ##     - The corresponding eigenvectors of shape [n, n] if it was requested.
   ##       If eigenvectors were not requested, this have to be discarded.
   ##       Using the result will create a runtime error.
   ##
@@ -143,14 +143,14 @@ proc symeig*[T: SomeReal](a: Tensor[T], eigenvectors = false,
   slice: HSlice[int or BackwardsIndex, int or BackwardsIndex]): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
   ## Compute the eigenvalues and eigen vectors of a symmetric matrix
   ## Input:
-  ##   - A symmetric matrix
+  ##   - A symmetric matrix of shape [n, n]
   ##   - A boolean: true if you also want the eigenvectors, false otherwise
   ##   - A slice of the rankings of eigenvalues you request. For example requesting
   ##     eigenvalues 2 and 3 would be done with 1..2.
   ## Returns:
   ##   - A tuple with:
-  ##     - The eigenvalues sorted from lowest to highest
-  ##     - The corresponding eigenvector if it was requested.
+  ##     - The eigenvalues sorted from lowest to highest. (shape [m] where m is the slice size)
+  ##     - The corresponding eigenvector if it was requested. (shape [n, m])
   ##       If eigenvectors were not requested, this have to be discarded.
   ##       Using the result will create a runtime error.
   ##

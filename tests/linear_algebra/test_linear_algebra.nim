@@ -96,17 +96,19 @@ suite "Linear algebra":
 
       let expected_val = [-11.0656,  -6.2287,   0.8640,   8.8655,  16.0948].toTensor
 
-      let expected_vec = [[0.2981, -0.6075,  0.4026,  0.3745, -0.4896],
-                          [0.5078, -0.2880, -0.4066,  0.3572,  0.6053],
-                          [0.0816, -0.3843, -0.6600, -0.5008, -0.3991],
-                          [0.0036, -0.4467,  0.4553, -0.6204,  0.4564],
-                          [0.8041,  0.4480,  0.1725, -0.3108, -0.1622]].toTensor
+      let expected_vec = [[-0.2981, -0.6075,  0.4026, -0.3745,  0.4896],
+                          [-0.5078, -0.2880, -0.4066, -0.3572, -0.6053],
+                          [-0.0816, -0.3843, -0.6600,  0.5008,  0.3991],
+                          [-0.0036, -0.4467,  0.4553,  0.6204, -0.4564],
+                          [-0.8041,  0.4480,  0.1725,  0.3108,  0.1622]].toTensor
 
       let (val, vec) = symeig(a, true)
 
-      check:
-        mean_absolute_error(val, expected_val) < 1e-4
-        mean_absolute_error(vec, expected_vec) < 1e-4
+      check: mean_absolute_error(val, expected_val) < 1e-4
+
+      for col in 0..<5:
+        check:  mean_absolute_error( vec[_, col], expected_vec[_, col]) < 1e-4 or
+                mean_absolute_error(-vec[_, col], expected_vec[_, col]) < 1e-4
 
     block: # p15 of http://www.cs.otago.ac.nz/cosc453/student_tutorials/principal_components.pdf
 
@@ -116,14 +118,16 @@ suite "Linear algebra":
       let expected_val = [0.0490833989'f32, 1.28402771].toTensor
 
       # Note: here the 1st vec is returned positive by Fortran (both are correct eigenvec)
-      let expected_vec = [[-0.735178656'f32, 0.677873399],
-                          [ 0.677873399'f32, 0.735178656]].toTensor
+      let expected_vec = [[-0.735178656'f32, -0.677873399],
+                          [ 0.677873399'f32, -0.735178656]].toTensor
 
       let (val, vec) = symeig(a, true)
 
-      check:
-        mean_absolute_error(val, expected_val) < 1e-7
-        mean_absolute_error(vec, expected_vec) < 1e-10
+      check: mean_absolute_error(val, expected_val) < 1e-7
+
+      for col in 0..<2:
+        check:  mean_absolute_error( vec[_, col], expected_vec[_, col]) < 1e-11 or
+                mean_absolute_error(-vec[_, col], expected_vec[_, col]) < 1e-11
 
     block: # https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/dsyevd_ex.c.htm
 
@@ -135,17 +139,19 @@ suite "Linear algebra":
 
       let expected_val = [-17.44, -11.96, 6.72, 14.25, 19.84].toTensor
 
-      let expected_vec = [[-0.26,  0.31, -0.74, -0.33, -0.42],
-                          [-0.17, -0.39, -0.38,  0.80, -0.16],
-                          [-0.89,  0.04,  0.09, -0.03,  0.45],
-                          [-0.29, -0.59,  0.34, -0.31, -0.60],
-                          [-0.19,  0.63,  0.44,  0.38, -0.48]].toTensor
+      let expected_vec = [[-0.26,  0.31, -0.74,  0.33,  0.42],
+                          [-0.17, -0.39, -0.38, -0.80,  0.16],
+                          [-0.89,  0.04,  0.09,  0.03, -0.45],
+                          [-0.29, -0.59,  0.34,  0.31,  0.60],
+                          [-0.19,  0.63,  0.44, -0.38,  0.48]].toTensor
 
       let (val, vec) = symeig(a, true)
 
-      check:
-        mean_absolute_error(val, expected_val) < 1e-2
-        mean_absolute_error(vec, expected_vec) < 1e-2
+      check: mean_absolute_error(val, expected_val) < 1e-2
+
+      for col in 0..<5:
+        check:  mean_absolute_error( vec[_, col], expected_vec[_, col]) < 1e-2 or
+                mean_absolute_error(-vec[_, col], expected_vec[_, col]) < 1e-2
 
     block: # https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/dsyevr_ex.c.htm
 
@@ -165,13 +171,15 @@ suite "Linear algebra":
 
       let (val, vec) = symeig(a, true, 0..2)
 
-      check:
-        mean_absolute_error(val, selected_val) < 1e-1
-        mean_absolute_error(vec, selected_vec) < 1e-1
+      check: mean_absolute_error(val, selected_val) < 1e-1
+
+      for col in 0..<3:
+        check:  mean_absolute_error( vec[_, col], selected_vec[_, col]) < 1e-2 or
+                mean_absolute_error(-vec[_, col], selected_vec[_, col]) < 1e-2
 
     block: # Check that input is not overwritten
 
-      let a, b =  [[ 0.67, -0.20,  0.19, -1.06,  0.46],
+      let a, b =[[ 0.67, -0.20,  0.19, -1.06,  0.46],
                 [-0.20,  3.82, -0.13,  1.06, -0.48],
                 [ 0.19, -0.13,  3.27,  0.11,  1.10],
                 [-1.06,  1.06,  0.11,  5.86, -0.98],

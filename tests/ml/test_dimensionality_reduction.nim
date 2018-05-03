@@ -22,18 +22,20 @@ suite "[ML] Dimensionality reduction":
 
       let val = data.pca(2)
 
-      let expected = [[ 0.827970186, -0.175115307],
-                      [-1.77758033,   0.142857227],
-                      [ 0.992197494,  0.384374989],
-                      [ 0.274210416,  0.130417207],
-                      [ 1.67580142,  -0.209498461],
-                      [ 0.912949103,  0.175282444],
-                      [-0.0991094375,-0.349824698],
-                      [-1.14457216,   0.0464172582],
-                      [-0.438046137,  0.0177646297],
-                      [-1.22382056,  -0.162675287]].toTensor
+      let expected = [[-0.827970186, -0.175115307],
+                      [ 1.77758033,   0.142857227],
+                      [-0.992197494,  0.384374989],
+                      [-0.274210416,  0.130417207],
+                      [-1.67580142,  -0.209498461],
+                      [-0.912949103,  0.175282444],
+                      [ 0.0991094375,-0.349824698],
+                      [ 1.14457216,   0.0464172582],
+                      [ 0.438046137,  0.0177646297],
+                      [ 1.22382056,  -0.162675287]].toTensor
 
-      check: mean_absolute_error(expected, val) < 1e-9
+      for col in 0..<2:
+        check:  mean_absolute_error( val[_, col], expected[_, col]) < 1e-08 or
+                mean_absolute_error(-val[_, col], expected[_, col]) < 1e-08
 
     block: # https://www.cgg.com/technicaldocuments/cggv_0000014063.pdf
       let x =  [[ 1.0, -1.0],
@@ -42,8 +44,10 @@ suite "[ML] Dimensionality reduction":
 
       let val = x.pca(2)
 
-      let expected = [[-2.0,  0.0],
-                      [ 1.0, -1.0],
-                      [ 1.0,  1.0]].toTensor / sqrt(2.0)
+      let expected = [[ 2.0,  0.0],
+                      [-1.0,  1.0],
+                      [-1.0, -1.0]].toTensor / sqrt(2.0)
 
-      check: mean_absolute_error(expected, val) < 1e-9
+      for col in 0..<2:
+        check:  mean_absolute_error( val[_, col], expected[_, col]) < 1e-10 or
+                mean_absolute_error(-val[_, col], expected[_, col]) < 1e-10

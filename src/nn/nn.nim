@@ -14,6 +14,7 @@
 
 import  ./activation/sigmoid,
         ./activation/relu,
+        ./activation/tanh,
         ./layers/linear,
         ./layers/conv2D,
         ./layers/maxpool2D,
@@ -22,7 +23,7 @@ import  ./activation/sigmoid,
         ./optimizers/optimizers,
         ./shapeshifting/reshape_flatten
 
-export sigmoid, relu
+export sigmoid, relu, tanh
 export linear, conv2D, maxpool2d, cross_entropy_losses, mean_square_error_loss
 export optimizers
 export reshape_flatten

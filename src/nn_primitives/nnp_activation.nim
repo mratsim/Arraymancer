@@ -55,7 +55,7 @@ proc mrelu*[T](t: var Tensor[T]) =
 
 proc mtanh*[T: SomeReal](t: var Tensor[T]) =
   t.apply_inline tanh(x)
-      
+
 # ##################################################################################################
 # Backward
 
@@ -72,8 +72,8 @@ proc relu_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]
 
 proc tanh_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.noInit.}=
   result = map2_inline(cached_tensor, gradient):
-    1 - (x ^ 2)
-    
+    y - y * (x * x)
+
 # ####################################################################################################
 # Documentation
 

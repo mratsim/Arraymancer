@@ -26,12 +26,13 @@ proc initCudaStream(): cudaStream_t =
 proc initCublasHandle(): cublasHandle_t =
   check cublasCreate(addr result)
 
-{.experimental.}
-proc `=destroy`(c: cublasHandle_t) =
-  check cublasDestroy(c)
+# Temporarily removed https://github.com/nim-lang/Nim/issues/7776
+# {.experimental.}
+# proc `=destroy`(c: cublasHandle_t) =
+#   check cublasDestroy(c)
 
-proc `=destroy`(c: cudaStream_t) =
-  check cudaStreamDestroy(c)
+# proc `=destroy`(c: cudaStream_t) =
+#   check cudaStreamDestroy(c)
 
 let cudaStream0* = initCudaStream()
 let cublasHandle0*  = initCublasHandle()

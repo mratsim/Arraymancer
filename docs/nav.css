@@ -43,7 +43,9 @@ header span a {
 }
 
 header span ul {
-    display: none;
+    opacity: 0;
+    visibility: hidden;
+    transition:visibility 0s linear 0.5s, opacity 0.5s linear;
     position: absolute;
     top: 100%;
     list-style: none;
@@ -52,11 +54,17 @@ header span ul {
 }
 
 header span ul:after {
-    content: ""; clear: both; display: block;
+    content: "";
+    clear: both;
+    opacity: 1;
+    visibility: visible;
+    transition-delay:0s;
 }
 
 header span:hover > ul {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    transition-delay:0s;
 }
 
 header span ul a {

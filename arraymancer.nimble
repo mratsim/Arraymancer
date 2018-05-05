@@ -177,7 +177,6 @@ task test_release, "Run all tests - Release mode":
   test "tests_cpu"
 
 task gen_doc, "Generate Arraymancer documentation":
-
   # TODO: Industrialize: something more robust that only check nim files (and not .DS_Store ...)
   for filePath in listFiles("src/tensor/"):
     let modName = filePath[11..^5] # Removing src/tensor/ (11 chars) and .nim (4 chars) # TODO: something more robust
@@ -219,3 +218,7 @@ task gen_doc, "Generate Arraymancer documentation":
     if filePath[^4..^1] == ".rst":
       let modName = filePath[5..^5]
       exec r"nim rst2html -o:docs/build/" & modName & ".html " & filePath
+
+  # Copy stylesheets
+  cpFile("docs/docutils.css", "docs/build/docutils.css")
+  cpFile("docs/nav.css", "docs/build/docutils.css")

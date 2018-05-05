@@ -177,7 +177,6 @@ task test_release, "Run all tests - Release mode":
   test "tests_cpu"
 
 task gen_doc, "Generate Arraymancer documentation":
-  switch("define", "doc")
 
   # TODO: Industrialize: something more robust that only check nim files (and not .DS_Store ...)
   for filePath in listFiles("src/tensor/"):

@@ -17,12 +17,14 @@ import nimcl, opencl
 # ###################################################
 # Global Cuda and CuBLAS state
 
-{.experimental.}
+# {.experimental.}
 
 type clResource = PCommandQueue | PKernel | PProgram | PMem | PContext
 
-proc `=destroy`*(clres: clResource) =
-  release clres
+
+# This was removed in master, feature request https://github.com/nim-lang/Nim/issues/7776
+# proc `=destroy`*(clres: clResource) =
+#   release clres
 
 # TODO detect and use accelerators (FPGAs) or GPU by default
 # And allow switching OpenCL device.

@@ -155,31 +155,30 @@ Tensors and CudaTensors do not have the same features implemented yet.
 Also Cuda Tensors can only be float32 or float64 while Cpu Tensor can be
 integers, string, boolean or any custom object.
 
-Here is a comparative table, not that this feature set is developing
-very rapidly.
+Here is a comparative table, not that this feature set is developing rapidly.
 
--------------------------------------------------- --------- ---------------------------------------------------------------
- Action                                            Tensor    CudaTensor
--------------------------------------------------- --------- ---------------------------------------------------------------
- Accessing tensor properties                       [x]       [x]
- Tensor creation                                   [x]       by converting a cpu Tensor
- Accessing or modifying a single value             [x]       []
- Iterating on a Tensor                             [x]       []
- Slicing a Tensor                                  [x]       [x]
- Slice mutation ``a[1,_] = 10``                    [x]       []
- Comparison ``==``                                 [x]       Coming soon
- Element-wise basic operations                     [x]       [x]
- Universal functions                               [x]       [x]
- Automatically broadcasted operations              [x]       Coming soon
- Matrix-Matrix and Matrix vector multiplication    [x]       [x] Note: sliced CudaTensors must explicitly be made contiguous
- Displaying a tensor                               [x]       [x]
- Higher-order functions (map, apply, reduce, fold) [x]       Apply, but only for internal use
- Transposing                                       [x]       [x]
- Converting to contiguous                          [x]       [x]
- Reshaping                                         [x]       []
- Explicit broadcast                                [x]       Coming soon
- Permuting dimensions                              [x]       Coming soon
- Concatenating along existing dimensions           [x]       []
- Squeezing singleton dimensions                    [x]       Coming soon
- Slicing + squeezing in one operation              [x]       Coming soon
--------------------------------------------------- --------- ---------------------------------------------------------------
+-------------------------------------------------- --------- --------------------------- --------------------------
+ Feature                                            Tensor    CudaTensor                  ClTensor
+-------------------------------------------------- --------- --------------------------- --------------------------
+ Accessing tensor properties                       [x]       [x]                         [x]
+ Tensor creation                                   [x]       by converting a cpu Tensor  by converting a cpu Tensor
+ Accessing or modifying a single value             [x]       []                          []
+ Iterating on a Tensor                             [x]       []                          []
+ Slicing a Tensor                                  [x]       [x]                         [x]
+ Slice mutation ``a[1,_] = 10``                    [x]       []                          []
+ Comparison ``==``                                 [x]       []                          []
+ Element-wise basic operations                     [x]       [x]                         [x]
+ Universal functions                               [x]       []                          []
+ Automatically broadcasted operations              [x]       [x]                         [x]
+ Matrix-Matrix and Matrix vector multiplication    [x]       [x]                         [x]
+ Displaying a tensor                               [x]       [x]                         [x]
+ Higher-order functions (map, apply, reduce, fold) [x]       internal only               internal only
+ Transposing                                       [x]       [x]                         []
+ Converting to contiguous                          [x]       [x]                         []
+ Reshaping                                         [x]       [x]                         []
+ Explicit broadcast                                [x]       [x]                         [x]
+ Permuting dimensions                              [x]       []                          []
+ Concatenating along existing dimensions           [x]       []                          []
+ Squeezing singleton dimensions                    [x]       [x]                         []
+ Slicing + squeezing in one operation              [x]       []                          []
+-------------------------------------------------- --------- --------------------------- --------------------------

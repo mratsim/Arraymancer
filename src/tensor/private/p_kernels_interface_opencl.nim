@@ -40,11 +40,11 @@ template opencl_getIndexOfElementID: string =
   """
 
 template gen_cl_apply3*(kern_name, ctype, op: string): string =
-  ## Generates an OpenCL kernel for an elementwise binary infic operation (like +, *, /, -)
+  ## Generates an OpenCL kernel for an elementwise binary infix operations (like +, -, ...)
   ## Input:
   ##   - The C type
   ##   - The C kernel name (this only helps debugging the C code)
-  ##   - The C operation (+, -, *, /)
+  ##   - The C operation (+, -, ...)
 
 
   opencl_getIndexOfElementID() & """
@@ -91,13 +91,13 @@ template genClInfixOp*( T: typedesc,
                         cName: string,
                         cInfixOp: string,
                         exported: static[bool] = true): untyped =
-  ## Generates binding to an OpenCL kernel for an elementwise binary infix operation (like +, *, /, -)
+  ## Generates binding to an OpenCL kernel for an elementwise binary infix operation (like +, -, ...)
   ## Input:
   ##   - The Nim type of the elements of the input tensors
   ##   - The equivalent C type
   ##   - The Nim identifier of the resulting proc
   ##   - The C kernel name (this only helps debugging the C code)
-  ##   - The C operation (+, -, *, /)
+  ##   - The C operation (+, -, ...)
 
   proc procName(a, b: ClTensor[T]): ClTensor[T] {.noInit.}=
     when compileOption("boundChecks"):
@@ -130,7 +130,7 @@ template gen_cl_apply2*(kern_name, ctype, op: string): string =
   ## Input:
   ##   - The C type
   ##   - The C kernel name (this only helps debugging the C code)
-  ##   - The C operation (+=, -=, *=, /=)
+  ##   - The C operation (+=, -=, .*= or ./=)
 
   opencl_getIndexOfElementID() & """
   __kernel
@@ -171,7 +171,7 @@ template genClInPlaceOp*( T: typedesc,
   ##   - The equivalent C type
   ##   - The Nim identifier of the resulting proc
   ##   - The C kernel name (this only helps debugging the C code)
-  ##   - The C operation (+=, -=, *=, /=)
+  ##   - The C operation (+=, -=, .*= or ./=)
 
   proc procName(dst: var ClTensor[T], src: ClTensor[T]) =
     when compileOption("boundChecks"):

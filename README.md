@@ -262,7 +262,7 @@ Arraymancer requires a BLAS and Lapack library.
 
 ## Full documentation
 
-Detailed API is available on Arraymancer official [documentation](https://mratsim.github.io/Arraymancer/).
+Detailed API is available at Arraymancer official [documentation](https://mratsim.github.io/Arraymancer/).
 
 ## Features
 
@@ -433,31 +433,42 @@ Epoch is: 0
 Tensors, CudaTensors and CLTensors do not have the same features implemented yet.
 Also CudaTensors and CLTensors can only be float32 or float64 while Cpu Tensor can be integers, string, boolean or any custom object.
 
-Here is a comparative table, not that this feature set is developing very rapidly.
+Here is a comparative table of the core features, not that this feature set is developing
+rapidly.
 
-| Action | Tensor | CudaTensor |
-| ------ | ------ | ---------- |
-| Accessing tensor properties |[x]|[x]|
-| Tensor creation |[x]| by converting a cpu Tensor|
-| Accessing or modifying a single value |[x]|[]|
-| Iterating on a Tensor |[x]|[]|
-| Slicing a Tensor |[x]|[x]|
-| Slice mutation `a[1,_] = 10` |[x]|[]|
-| Comparison `==`|[x]| Coming soon|
-| Element-wise basic operations|[x]|[x]|
-| Universal functions |[x]|[x]|
-| Automatically broadcasted operations |[x]| Coming soon|
-| Matrix-Matrix and Matrix-Vector multiplication|[x]|[x] Note that sliced CudaTensors must explicitly be made contiguous for the moment|
-| Displaying a tensor |[x]|[x]|
-| Higher-order functions (map, apply, reduce, fold)|[x]| Apply, but only internally|
-| Transposing | [x] | [x] |
-| Converting to contiguous | [x] | [x] |
-| Reshaping |[x] | [] |
-| Explicit broadcast | [x] | Coming soon |
-| Permuting dimensions | [x]| Coming soon |
-| Concatenating tensors along existing dimension | [x]|[]|
-| Squeezing singleton dimension |[x]| Coming soon|
-| Slicing + squeezing |[x] | Coming soon |
+| Action                                            | Tensor                      | CudaTensor                 | ClTensor                   |
+| ------------------------------------------------- | --------------------------- | -------------------------- | -------------------------- |
+| Accessing tensor properties                       | [x]                         | [x]                        | [x]                        |
+| Tensor creation                                   | [x]                         | by converting a cpu Tensor | by converting a cpu Tensor |
+| Accessing or modifying a single value             | [x]                         | []                         | []                         |
+| Iterating on a Tensor                             | [x]                         | []                         | []                         |
+| Slicing a Tensor                                  | [x]                         | [x]                        | [x]                        |
+| Slice mutation `a[1,_] = 10`                      | [x]                         | []                         | []                         |
+| Comparison `==`                                   | [x]                         | []                         | []                         |
+| Element-wise basic operations                     | [x]                         | [x]                        | [x]                        |
+| Universal functions                               | [x]                         | []                         | []                         |
+| Automatically broadcasted operations              | [x]                         | [x]                        | [x]                        |
+| Matrix-Matrix and Matrix-Vector multiplication    | [x]                         | [x]                        | [x]                        |
+| Displaying a tensor                               | [x]                         | [x]                        | [x]                        |
+| Higher-order functions (map, apply, reduce, fold) | [x]                         | internal only              | internal only              |
+| Transposing                                       | [x]                         | [x]                        | []                         |
+| Converting to contiguous                          | [x]                         | [x]                        | []                         |
+| Reshaping                                         | [x]                         | [x]                        | []                         |
+| Explicit broadcast                                | [x]                         | [x]                        | [x]                        |
+| Permuting dimensions                              | [x]                         | []                         | []                         |
+| Concatenating tensors along existing dimension    | [x]                         | []                         | []                         |
+| Squeezing singleton dimension                     | [x]                         | [x]                        | []                         |
+| Slicing + squeezing                               | [x]                         | []                         | []                         |
+
+Advanced features built upon this are:
+  - Neural networks: Dense and Convolutional neural networks are supported on CPU. Primitives are available on Cuda.
+  - Linear algebra: Least squares solver and eigenvalue decomposition for symmetric matrices.
+  - Machine Learning: Accuracy score, common loss function (MAE, MSE, ...), Principal Component Analysis (PCA).
+  - Statistics: Covariance matrix.
+  - IO & Datasets: CSV reading and writing, and reading MNIST files.
+  - A tensor plotting tool using Python matplotlib.
+
+Detailed API is available at Arraymancer [documentation](https://mratsim.github.io/Arraymancer/).
 
 ### Speed
 

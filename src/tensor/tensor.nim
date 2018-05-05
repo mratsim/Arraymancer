@@ -68,10 +68,10 @@ export  metadataArray,
         syntactic_sugar,
         exporting
 
-when defined(cuda):
+when defined(cuda) or defined(nimdoc):
   import ./tensor_cuda
   export tensor_cuda
 
-when defined(opencl):
+when defined(opencl) or defined(nimdoc):
   import ./tensor_opencl
   export tensor_opencl

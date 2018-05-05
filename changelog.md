@@ -1,3 +1,49 @@
+Arraymancer v0.4.0 May 05 2018 "The Name of the Wind"
+=====================================================
+
+Changes:
+
+- Core:
+  - OpenCL tensors are now available! However Arraymancer will naively select the first backend available. It can be CPU, it can be GPU. They support basic and broadcasted operations (Addition, matrix multiplication, elementwise multiplication, ...)
+  - Addition of an `argmax` and `argmax_max` procs.
+
+- Datasets:
+  - Loading the MNIST dataset from http://yann.lecun.com/exdb/mnist/
+  - Reading and writing from CSV
+
+- Linear algebra:
+  - Least squares solver
+  - Eigenvalues and eigenvectors decomposition for symmetric matrices
+
+- Machine Learning
+  - Principal Component Analysis (PCA)
+
+- Statistics
+  - Computation of covariance matrices
+
+- Neural network
+  - Introduction of a short intuitive syntax to build neural networks! (A blend of Keras and PyTorch).
+  - Maxpool2D layer
+  - Mean Squared Error loss
+  - Tanh and softmax activation functions
+
+- Examples and tutorials
+  - Digit recognition using Convolutional Neural Net
+  - Teaching Fizzbuzz to a neural network
+
+- Tooling
+  - Plotting tensors through Python
+
+Several updates linked to Nim rapid development and several bugfixes.
+
+Thanks:
+  - Bluenote10 for the CSV writing proc and the tensor plotting tool
+  - Miran for benchmarking
+  - Manguluka for tanh
+  - Vindaar for bugfixing
+  - Every participants in RFCs
+  - And you user of the library.
+
 Arraymancer v0.3.0 Dec. 14 2017 "Wizard's First Rule"
 =====================================================
 
@@ -89,7 +135,7 @@ Without further ado:
    - Slicing (read-only) is supported
    - Transforming a slice to a new contiguous Tensor is supported
 - Tensors
-   - Introduction of `unsafe` operations that works without copy: `unsafeTranspose`, `unsafeReshape`, `unsafebroadcast`, `unsafeBroadcast2`, `unsafeContiguous`, 
+   - Introduction of `unsafe` operations that works without copy: `unsafeTranspose`, `unsafeReshape`, `unsafebroadcast`, `unsafeBroadcast2`, `unsafeContiguous`,
    - Implicit broadcasting via `.+, .*, ./, .-` and their in-place equivalent `.+=, .-=, .*=, ./=`
    - Several shapeshifting operations: `squeeze`, `at` and their `unsafe` version.
    - New property: `size`

@@ -128,7 +128,7 @@ proc convOutDims*(input, kernel: CudaTensor, padding, strides, dilation: SizeHW)
   # )
 
 
-################################################################
+# ###############################################################
 # Forward convolution: Algorithm and Worksize space
 
 proc conv_algo_workspace*[T: SomeReal](
@@ -173,7 +173,7 @@ proc conv_algo_workspace*[T: SomeReal](
     # cudaMalloc multiply by sizeof(T) so we must divide before hand
     result.workspace[] = cudaMalloc[T](result.sizeInBytes div sizeof(T))
 
-################################################################
+# ###############################################################
 # Backward convolution - Kernel: Algorithm and Worksize space
 
 proc conv_bwd_kernel_algo_workspace*[T: SomeReal](
@@ -218,7 +218,7 @@ proc conv_bwd_kernel_algo_workspace*[T: SomeReal](
     # cudaMalloc multiply by sizeof(T) so we must divide before hand
     result.workspace[] = cudaMalloc[T](result.sizeInBytes div sizeof(T))
 
-################################################################
+# ###############################################################
 # Backward convolution - Data: Algorithm and Worksize space
 
 proc conv_bwd_data_algo_workspace*[T: SomeReal](

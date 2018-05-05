@@ -26,9 +26,10 @@ export  cudnn, cuda
 proc initCudnnHandle(): cudnnHandle_t =
   check cudnnCreate(addr result)
 
-{.experimental.}
-proc `=destroy`(c: cudnnHandle_t) =
-  check cudnnDestroy(c)
+# Temporarily remove destructors: https://github.com/nim-lang/Nim/issues/7776
+# {.experimental.}
+# proc `=destroy`(c: cudnnHandle_t) =
+#   check cudnnDestroy(c)
 
 let cudnnHandle0* = initCudnnHandle()
 
@@ -41,15 +42,16 @@ template asCudnnType*[T: SomeReal](typ: typedesc[T]): cudnnDataType_t =
   elif T is float64:
     CUDNN_DATA_DOUBLE
 
-{.experimental.}
-proc `=destroy`(o: cudnnTensorDescriptor_t) =
-  check cudnnDestroyTensorDescriptor o
+# Temporarily remove destructors: https://github.com/nim-lang/Nim/issues/7776
+# {.experimental.}
+# proc `=destroy`(o: cudnnTensorDescriptor_t) =
+#   check cudnnDestroyTensorDescriptor o
 
-proc `=destroy`(o: cudnnFilterDescriptor_t) =
-  check cudnnDestroyFilterDescriptor o
+# proc `=destroy`(o: cudnnFilterDescriptor_t) =
+#   check cudnnDestroyFilterDescriptor o
 
-proc `=destroy`(o: cudnnConvolutionDescriptor_t) =
-  check cudnnDestroyConvolutionDescriptor o
+# proc `=destroy`(o: cudnnConvolutionDescriptor_t) =
+#   check cudnnDestroyConvolutionDescriptor o
 
 # #####################################################################
 # Tensor descriptor

@@ -177,18 +177,18 @@ task test_release, "Run all tests - Release mode":
   test "tests_cpu"
 
 task gen_doc, "Generate Arraymancer documentation":
-  switch("define", "doc")
-
   # TODO: Industrialize: something more robust that only check nim files (and not .DS_Store ...)
   for filePath in listFiles("src/tensor/"):
     let modName = filePath[11..^5] # Removing src/tensor/ (11 chars) and .nim (4 chars) # TODO: something more robust
-    if modName[^4..^1] != "cuda": # Cuda doc is broken https://github.com/nim-lang/Nim/issues/6910
-      exec r"nim doc -o:docs/build/tensor." & modName & ".html " & filePath
+    # Cuda doc is broken https://github.com/nim-lang/Nim/issues/6910
+    # Delete doc comment from nimcuda before using this
+    exec r"nim doc -o:docs/build/tensor." & modName & ".html " & filePath
 
   for filePath in listFiles("src/nn_primitives/"):
     let modName = filePath[18..^5] # Removing src/nn_primitives/ (18 chars) and .nim (4 chars) # TODO: something more robust
-    if modName[^5..^1] != "cudnn": # Cuda doc is broken https://github.com/nim-lang/Nim/issues/6910
-      exec r"nim doc -o:docs/build/nnp." & modName & ".html " & filePath
+    # Cuda doc is broken https://github.com/nim-lang/Nim/issues/6910
+    # Delete doc comment from nimcuda before using this
+    exec r"nim doc -o:docs/build/nnp." & modName & ".html " & filePath
 
   for filePath in listFiles("src/autograd/"):
     let modName = filePath[13..^5] # Removing src/autograd/ (13 chars) and .nim (4 chars) # TODO: something more robust
@@ -215,8 +215,44 @@ task gen_doc, "Generate Arraymancer documentation":
     let modName = filePath[18..^5]
     exec r"nim doc -o:docs/build/nn_optimizers." & modName & ".html " & filePath
 
+  for filePath in listFiles("src/nn/shapeshifting/"):
+    let modName = filePath[21..^5]
+    exec r"nim doc -o:docs/build/nn_optimizers." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/nn_dsl/"):
+    let modName = filePath[11..^5]
+    exec r"nim doc -o:docs/build/nn_dsl." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/linear_algebra/"):
+    let modName = filePath[19..^5]
+    exec r"nim doc -o:docs/build/la." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/stats/"):
+    let modName = filePath[10..^5]
+    exec r"nim doc -o:docs/build/stats." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/ml/dimensionality_reduction/"):
+    let modName = filePath[32..^5]
+    exec r"nim doc -o:docs/build/ml." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/ml/metrics/"):
+    let modName = filePath[15..^5]
+    exec r"nim doc -o:docs/build/ml." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/io/"):
+    let modName = filePath[7..^5]
+    exec r"nim doc -o:docs/build/io." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/datasets/"):
+    let modName = filePath[13..^5]
+    exec r"nim doc -o:docs/build/datasets." & modName & ".html " & filePath
+
   # Process the rst
   for filePath in listFiles("docs/"):
     if filePath[^4..^1] == ".rst":
       let modName = filePath[5..^5]
       exec r"nim rst2html -o:docs/build/" & modName & ".html " & filePath
+
+  # Copy stylesheets
+  cpFile("docs/docutils.css", "docs/build/docutils.css")
+  cpFile("docs/nav.css", "docs/build/nav.css")

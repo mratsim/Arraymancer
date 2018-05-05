@@ -49,6 +49,17 @@ proc out_shape_maxpool2d(in_shape: array[3, int], kernel, padding, strides: tupl
   result[1] = (H + (2 * pH) - kH) div sH + 1
   result[2] = (W + (2 * pW) - kW) div sW + 1
 
+proc out_shape_flatten*(in_shape: openarray[int]): int {.inline.}=
+  ## Flatten a tensor shape (i.e. returns the product)
+  ## A tensor of shape [1, 2, 3] will have a shape [1*2*3]
+  ## when flattened
+  # TODO: make that work only at compile-time on a custom TopoShape type
+  #       to avoid conflicts with other libraries.
+  assert in_shape.len != 0
+  result = 1
+  for val in in_shape:
+    result *= val
+
 proc isValidLayerSection(section: NimNode): bool =
 
   # Expected AST - cv1: Conv2D(20, 5, 5)
@@ -57,6 +68,7 @@ proc isValidLayerSection(section: NimNode): bool =
   #   StmtList
   #     Call
   #       Ident "Conv2D"
+  #       IntLit 1
   #       IntLit 20
   #       IntLit 5
   #       IntLit 5
@@ -100,7 +112,10 @@ proc topoFromConv2D(self: var TopoTable, ident: NimNode, desc: NimNode) =
 
   # Call
   #   Ident "Conv2D"
-  #   # Kernel (C_out, kH, kW)
+  #   # Kernel (C_in,C_out, kH, kW)
+  #   DotExpr
+  #     Ident "x"
+  #     Ident "out_shape"
   #   IntLit 20
   #   IntLit 5
   #   IntLit 5
@@ -140,6 +155,9 @@ proc topoFromMaxPool2D(self: var TopoTable, ident: NimNode, desc: NimNode) =
 
   # Call
   #   Ident "MaxPool2D"
+  #   DotExpr
+  #     Ident "cv1"
+  #     Ident "out_shape"
   #   Par
   #     IntLit 2
   #     IntLit 2
@@ -175,6 +193,7 @@ proc topoFromLinear(self: var TopoTable, ident: NimNode, desc: NimNode) =
 
   # Call
   #   Ident "Linear"
+  #   IntLit 500
   #   IntLit 10
 
   if desc.len != 3:
@@ -187,6 +206,27 @@ proc topoFromLinear(self: var TopoTable, ident: NimNode, desc: NimNode) =
                                 in_shape: in_shape,
                                 out_shape: desc[2])
 
+proc topoFromFlatten(self: var TopoTable, ident: NimNode, desc: NimNode) =
+
+  # Call
+  #   Ident "Flatten"
+  #   DotExpr
+  #     Ident "mp2.out_shape"
+  #     Ident "out_shape"
+
+  if desc.len != 2:
+    incorrect(desc)
+
+  var in_shape = self.replaceInputNodes(desc[1])
+  in_shape = quote do: `in_shape`
+
+  let out_shape = quote do:
+    out_shape_flatten(`in_shape`)
+
+  self.add ident, LayerTopology(kind: lkFlatten,
+                                in_shape: in_shape,
+                                out_shape: out_shape)
+
 proc topoFromLayer(self: var TopoTable, ident: NimNode, desc: NimNode) =
 
   if eqIdent(desc[0], "Conv2D"):
@@ -197,6 +237,8 @@ proc topoFromLayer(self: var TopoTable, ident: NimNode, desc: NimNode) =
     self.topoFromLinear(ident, desc)
   elif eqIdent(desc[0], "Input"):
     self.topoFromInput(ident, desc)
+  elif eqIdent(desc[0], "Flatten"):
+    self.topoFromFlatten(ident, desc)
   else:
     unknown(desc)
 

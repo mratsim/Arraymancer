@@ -11,14 +11,3 @@ export
   TrainableLayer,
   Conv2DLayer,
   LinearLayer
-
-proc flatten*(s: openarray[int]): int {.inline.}=
-  ## Flatten a tensor shape (i.e. returns the product)
-  ## A tensor of shape [1, 2, 3] will have a shape [1*2*3]
-  ## when flattened
-  # TODO: make that work only at compile-time on a custom TopoShape type
-  #       to avoid conflicts with other libraries.
-  assert s.len != 0
-  result = 1
-  for val in s:
-    result *= val

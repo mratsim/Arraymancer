@@ -37,7 +37,7 @@ type
   #################################################
 
   LayerKind* = enum
-    lkInput, lkConv2D, lkLinear, lkMaxPool2D
+    lkInput, lkConv2D, lkLinear, lkMaxPool2D, lkFlatten
 
   LayerTopology* = object
     ## Describe a layer topology

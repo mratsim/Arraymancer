@@ -305,10 +305,11 @@ network ctx, DemoNet:
     mp1:        MaxPool2D(cv1.out_shape, (2,2), (0,0), (2,2))
     cv2:        Conv2D(mp1.out_shape, 50, 5, 5)
     mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
-    hidden:     Linear(mp2.out_shape.flatten, 500)
+    fl:         Flatten(mp2.out_shape)
+    hidden:     Linear(fl.out_shape, 500)
     classifier: Linear(500, 10)
   forward x:
-    x.cv1.relu.mp1.cv2.relu.mp2.flatten.hidden.relu.classifier
+    x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
 
 let model = ctx.init(DemoNet)
 let optim = model.optimizerSGD(learning_rate = 0.01'f32)

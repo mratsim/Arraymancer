@@ -1,5 +1,5 @@
 /*
-Credits: Flyx and NimYAML: https://github.com/flyx/NimYAML/blob/e9658f22ecc25444fac361af3a0eca4f3b152578/doc/style.css
+Original credits: Flyx and NimYAML: https://github.com/flyx/NimYAML/blob/e9658f22ecc25444fac361af3a0eca4f3b152578/doc/style.css
 */
 
 header {
@@ -12,6 +12,8 @@ header {
     margin: 0;
     padding: 0;
     z-index: 1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 header a {

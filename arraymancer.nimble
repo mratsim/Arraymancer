@@ -221,4 +221,4 @@ task gen_doc, "Generate Arraymancer documentation":
 
   # Copy stylesheets
   cpFile("docs/docutils.css", "docs/build/docutils.css")
-  cpFile("docs/nav.css", "docs/build/docutils.css")
+  cpFile("docs/nav.css", "docs/build/nav.css")

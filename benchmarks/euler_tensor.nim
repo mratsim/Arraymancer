@@ -48,19 +48,27 @@ let stop = getTime()
 let elapsed = stop - start
 echo &"Arraymancer Euler solve - time taken: {elapsed} seconds"
 
+#############################################################
+# Single-threaded
 
 # Measurement on i5-5257U (Dual core mobile Broadwell 2.7Ghz)
+# Arraymancer 0.4.0 and Nim devel after Nim perf regression fix 88cf6573e04bd7ee8762aa336460b9748f0d4644
 
-# Arraymancer Euler solve - time taken: 8.375565 seconds
-# xtime.rb - 10.22s, 3854.9Mb
+# Arraymancer Euler solve - time taken: 6.198931 seconds
+# Measured by xtime.rb: 6.48s, 3854.8Mb
 
-# OpenMP (yes it slows things done, probably false sharing)
-# Arraymancer Euler solve - time taken: 9.488133999999999 seconds
-# xtime.rb - 27.86s, 3114.4Mb (multithreading counting woes?)
+####################
 
-# Measurement on i7-970 (Hexa core 3.2GHz)
-# 42.0060796609176
-# 34.83783780774945
-# 29.89741051712985
+# Measurement on i7-970 (Hexa core 3.2GHz) (Note: measurement before the perf regression fix)
 # Arraymancer Euler solve - time taken: 5.060707 seconds
-# 5.08s, 3882.8Mb
+# Measured by xtime.rb: 5.08s, 3882.8Mb
+
+#############################################################
+# Multi-threaded - OpenMP
+# Note: there are probably multicore cache invalidation issues that slow down multithreading.
+
+# Measurement on i5-5257U (Dual core mobile Broadwell 2.7Ghz)
+# Arraymancer 0.4.0 and Nim devel after perf regression fix 88cf6573e04bd7ee8762aa336460b9748f0d4644
+
+# Arraymancer Euler solve - time taken: 17.7961540222168 seconds
+# Measured by xtime.rb: 18.11s, 3719.5Mb

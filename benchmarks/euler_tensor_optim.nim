@@ -53,31 +53,17 @@ let stop = getTime()
 let elapsed = stop - start
 echo &"Arraymancer Euler solve - time taken: {elapsed} seconds"
 
+#############################################################
+# Single-threaded - Optimized version with no temporaries
 
 # Measurement on i5-5257U (Dual core mobile Broadwell 2.7Ghz)
+# Arraymancer 0.4.0 and Nim devel after Nim perf regression fix 88cf6573e04bd7ee8762aa336460b9748f0d4644
 
-# Arraymancer Euler solve - time taken: 8.375565 seconds
-# xtime.rb - 10.22s, 3854.9Mb
+# Arraymancer Euler solve - time taken: 3.72415 seconds
+# Measured by xtime.rb: 4.34s, 3854.8Mb
 
-# OpenMP slows things by a lot, probably due to false sharing with the non-contiguous slices.
+############
 
-# Measurement on i7-970 (Hexa core 3.2GHz)
-# 42.0060796609176
-# 34.83783780774945
-# 29.89741051712985
-# Arraymancer Euler solve - time taken: 5.060707 seconds
-# 5.08s, 3882.8Mb
-
-###################################
-# Optimized version with no temporaries
-
-# Single-threaded i5-5257U (Dual core mobile Broadwell 2.7Ghz)
-# Arraymancer Euler solve - time taken: 6.646692 seconds
-# 7.47s, 3037.2Mb
-
-# Measurement on i7-970 (Hexa core 3.2GHz)
-# 42.0060796609176
-# 34.83783780774945
-# 29.89741051712985
+# Measurement on i7-970 (Hexa core 3.2GHz) (Note: measurement before the perf regression fix)
 # Arraymancer Euler solve - time taken: 2.085845 seconds
-# 2.10s, 3882.8Mb
+# Measured by xtime.rb: 2.10s, 3882.8Mb

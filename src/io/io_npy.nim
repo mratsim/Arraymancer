@@ -76,7 +76,7 @@ proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noInit.} =
   if unlikely(not existsFile(npyPath)):
     raise newException(IOError, &".npy file \"{npyPath}\" does not exist")
 
-  let stream = openFileStream(npyPath, mode = fmRead)
+  let stream = newFileStream(npyPath, mode = fmRead)
   defer: stream.close()
 
   # Check magic string
@@ -163,7 +163,7 @@ proc write_npy*[T: SomeNumber](t: Tensor[T], npyPath: string) =
   header &= spaces(padding) & '\n'
 
   # Write to disk
-  let stream = openFileStream(npyPath, mode = fmWrite)
+  let stream = newFileStream(npyPath, mode = fmWrite)
   defer: stream.close()
 
   stream.write "\x93NUMPY"

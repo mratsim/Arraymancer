@@ -52,7 +52,7 @@ let expected_output_semicolon = """dimension_1;dimension_2;value
 
 let test_file_path = getTempDir() / "arraymancer_test.csv"
 
-suite "io_csv":
+suite "[IO] CSV support":
 
   test "Should export 1d Tensor":
     let t = @[1, 2, 3, 4, 5].toTensor()

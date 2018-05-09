@@ -20,7 +20,7 @@ import  ./tensor/tensor,
         ./nn/nn,
         ./nn_dsl/nn_dsl,
         ./datasets/mnist,
-        ./io/io_csv,
+        ./io/io,
         ./ml/ml,
         ./stats/stats
 
@@ -30,7 +30,7 @@ export  tensor,
         nn,
         nn_dsl,
         mnist,
-        io_csv,
+        io,
         ml,
         stats
 

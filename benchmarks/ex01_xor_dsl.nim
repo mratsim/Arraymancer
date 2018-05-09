@@ -14,20 +14,18 @@ let y = y_bool.astype(float32)
 # We will build the following network:
 # Input --> Linear(out_features = 3) --> relu --> Linear(out_features = 1) --> Sigmoid --> Cross-Entropy Loss
 
-let layer_3neurons = ctx.variable(
-                      randomTensor(3, 2, 2.0f) .- 1.0f,
-                      requires_grad = true
-                      )
+network ctx, XorNet:
+  layers:
+    x:          Input([2])
+    hidden:     Linear(2, 3)
+    classifier: Linear(3, 1)
+  forward x:
+    x.hidden.relu.classifier
 
-let classifier_layer = ctx.variable(
-                  randomTensor(1, 3, 2.0f) .- 1.0f,
-                  requires_grad = true
-                  )
+let model = ctx.init(XorNet)
 
 # Stochastic Gradient Descent
-let optim = newSGD[float32](
-  layer_3neurons, classifier_layer, 0.01f
-)
+let optim = model.optimizerSGD(learning_rate = 0.01'f32)
 
 # Learning loop
 for epoch in 0..10000:
@@ -38,10 +36,11 @@ for epoch in 0..10000:
     let x = x_train[offset ..< offset + 32, _]
     let target = y[offset ..< offset + 32, _]
 
-    # Building the network
-    let n1 = relu linear(x, layer_3neurons)
-    let n2 = linear(n1, classifier_layer)
-    let loss = sigmoid_cross_entropy(n2, target)
+    # Running input through the network
+    let output = model.forward(x)
+
+    # Computing the loss
+    let loss = sigmoid_cross_entropy(output, target)
 
     # Compute the gradient (i.e. contribution of each parameter to the loss)
     loss.backprop()

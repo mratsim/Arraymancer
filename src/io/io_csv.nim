@@ -33,7 +33,7 @@ proc read_csv*[T: SomeNumber|bool|string](
   ##   - quote: a char, default '\"' (single and double quotes must be escaped).
   ##     Separators inside quoted strings are ignored, for example: `"foo", "bar, baz"` corresponds to 2 columns not 3.
 
-  var parser: proc(x:string): T
+  var parser: proc(x:string): T {.nimcall.}
   when T is SomeSignedInt:
     parser = proc(x:string): T = x.parseInt.T
   elif T is SomeUnsignedInt:
@@ -53,6 +53,7 @@ proc read_csv*[T: SomeNumber|bool|string](
             quote = quote,
             skipInitialSpace = true
           )
+  defer: csv.close
 
   if skip_header:
     discard csv.readRow
@@ -73,8 +74,6 @@ proc read_csv*[T: SomeNumber|bool|string](
   # Finalizing
   let num_rows= if skip_header: csv.processedRows - 2
                 else: csv.processedRows - 1
-
-  csv.close
 
   result = newTensorUninit[T](num_rows, num_cols)
   shallowCopy(result.storage.Fdata, csvdata)
@@ -109,6 +108,7 @@ proc to_csv*[T](
   ##   - separator: a char, default ','
 
   let file = open(csvPath, fmWrite)
+  defer: file.close
 
   # write header
   for i in 1 .. tensor.rank:
@@ -147,6 +147,3 @@ proc to_csv*[T](
         j += 1
       else:
         break
-
-  file.close()
-

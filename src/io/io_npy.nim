@@ -126,7 +126,7 @@ proc write_npy*[T: SomeNumber](t: Tensor[T], npyPath: string) =
     endian = when system.cpuEndian == littleEndian: '<' else: '>'
     npy_type: char =  when T is SomeUnsignedInt: 'u'
                       elif T is SomeSignedInt: 'i'
-                      elif T is SomeFloat: 'f'
+                      elif T is SomeReal: 'f'
                       else: "Unreachable"
     npy_size = char T.sizeof + ord('0')
     dtype = endian & npy_type & $npy_size

@@ -2,7 +2,6 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
-
 import
   ../tensor/tensor, ./io_stream_readers,
   ../tensor/private/p_init_cpu,
@@ -114,6 +113,13 @@ proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noInit.} =
     r_ptr[i] = stream.parser
 
 proc write_npy*[T: SomeNumber](t: Tensor[T], npyPath: string) =
+  ## Export a Tensor to the Numpy format
+  ##
+  ## Input:
+  ##   - The tensor
+  ##   - The path to a numpy file as string
+  ##
+  ## Only integer, unsigned integer and float ndarrays are supported at the moment.
 
   # 'Descr' field
   const
@@ -136,7 +142,7 @@ proc write_npy*[T: SomeNumber](t: Tensor[T], npyPath: string) =
   var npy_shape = '(' & $t.shape[0]
 
   for i in 1 .. t.shape.len - 1:
-    npy_shape &= ", " & $i
+    npy_shape &= ", " & $t.shape[i]
 
   if t.shape.len == 1:
     npy_shape &= ','

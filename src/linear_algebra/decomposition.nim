@@ -3,6 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
+  ../private/sequninit,
   ../tensor/tensor, nimlapack,
   ../tensor/private/p_init_cpu # TODO: can't call newTensorUninit with optional colMajor, varargs breaks it
 
@@ -80,11 +81,11 @@ proc symeigImpl[T: SomeReal](a: Tensor[T], eigenvectors: bool,
 
     # Varargs + optional colMajor argument issue, must resort to low level proc at the moment
     tensorCpu(ldz.int, m.int, result.eigenvec, colMajor)
-    result.eigenvec.storage.Fdata = newSeqUninitialized[T](result.eigenvec.size)
+    result.eigenvec.storage.Fdata = newSeqUninit[T](result.eigenvec.size)
 
     z = result.eigenvec.get_data_ptr
     if interval == "A": # or (il == 1 and iu == n): -> Already checked before
-      isuppz = newSeqUninitialized[cint](2*m)
+      isuppz = newSeqUninit[cint](2*m)
       isuppz_ptr = isuppz[0].addr
   else:
     jobz = "N"
@@ -97,9 +98,9 @@ proc symeigImpl[T: SomeReal](a: Tensor[T], eigenvectors: bool,
 
   # Allocating workspace
   lwork = wkopt.cint
-  work = newSeqUninitialized[T](lwork)
+  work = newSeqUninit[T](lwork)
   liwork = iwkopt.cint
-  iwork = newSeqUninitialized[cint](liwork)
+  iwork = newSeqUninit[cint](liwork)
 
   syevr(jobz, interval, uplo, n.addr, a.get_data_ptr, lda.addr, vl.addr, vu.addr, il.addr, iu.addr,
         abstol.addr, m.addr, w, z, ldz.addr, isuppz_ptr, work[0].addr, lwork.addr, iwork[0].addr, liwork.addr, info.addr)

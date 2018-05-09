@@ -4,6 +4,7 @@
 
 import  ../tensor/tensor, ../tensor/backend/metadataArray,
         ../tensor/private/p_init_cpu,
+        ../private/sequninit,
         nimlapack, fenv, math
 
 
@@ -94,8 +95,8 @@ proc least_squares_solver*[T: SOmeReal](a, b: Tensor[T]):
     # Condition for a float to be considered 0
     rcond = epsilon(T) * a.shape.max.T * a.max
     lwork = max(1, 12 * m + 2 * m * smlsiz + 8 * m * nlvl + m * nrhs + (smlsiz + 1) ^ 2)
-    work = newSeqUninitialized[T](lwork)
-    iwork = newSeqUninitialized[cint](liwork)
+    work = newSeqUninit[T](lwork)
+    iwork = newSeqUninit[cint](liwork)
     info, rank: cint
 
   # Solve the equations A*X = B

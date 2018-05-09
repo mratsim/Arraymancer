@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-proc newSeqUninit*[T](len: Natural): seq[T] {.noSideEffect, inline.} =
+func newSeqUninit*[T](len: Natural): seq[T] {.inline.} =
+  ## Creates an uninitialzed seq.
+  ## Contrary to newSequnitialized in system.nim this works for any subtype T
   result = newSeqOfCap[T](len)
   result.setLen(len)

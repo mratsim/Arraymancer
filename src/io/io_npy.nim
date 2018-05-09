@@ -3,6 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
+  ../private/sequninit,
   ../tensor/tensor, ./io_stream_readers,
   ../tensor/private/p_init_cpu,
   ../tensor/backend/memory_optimization_hints,
@@ -104,7 +105,7 @@ proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noInit.} =
 
   # Read the data
   tensorCpu(shape, result, layout)
-  result.storage.Fdata = newSeqUninitialized[T](result.size)
+  result.storage.Fdata = newSeqUninit[T](result.size)
 
   withMemoryOptimHints()
   let r_ptr {.restrict.}= result.dataArray

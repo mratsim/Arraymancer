@@ -15,11 +15,9 @@
 import  ./ag_data_structure,
         ./gates_basic,
         ./gates_blas,
-        ./gates_reduce,
-        ./ag_accessors
+        ./gates_reduce
 
 export  ag_data_structure,
         gates_basic,
         gates_blas,
-        gates_reduce,
-        ag_accessors
+        gates_reduce

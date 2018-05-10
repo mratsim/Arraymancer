@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typetraits
+import typetraits, macros
 
 const MAX_NB_GRADS = 3 # Max number of gradients output of autograd operations
 
@@ -113,18 +113,6 @@ proc variable*[TT](ctx: Context[TT], value: TT, requires_grad = false): Variable
   result.grad = value.zeros_like
   result.requires_grad = requires_grad
 
-proc weakRef*[TT](v: Variable[TT]): VariablePtr[TT] {.inline.} =
-  ## Get a weak/untraced reference to a Variable
-  ## This is intended for library writers and Neural Network graphs
-  ## to avoid strong cyclic references.
-  cast[VariablePtr[TT]](v)
-
-proc weakRef*[TT](ctx: Context[TT]): ContextPtr[TT] {.inline.} =
-  ## Get a weak/untraced reference to a Variable
-  ## This is intended for library writers and Neural Network graphs
-  ## to avoid strong cyclic references.
-  cast[ContextPtr[TT]](ctx)
-
 proc len[TT](ctx: ContextPtr[TT]): int {.noSideEffect, inline.}=
   ## Returns the number of operations applied in the context
   ctx.nodes.len()
@@ -190,3 +178,40 @@ proc backprop*[TT](v: Variable[TT]) =
       let parent_i = curNode.parents[i]
       if parent_i.requires_grad:
         parent_i.grad += diffs[i]
+
+macro `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] or VariableObj[TT]=
+  ## Slice the tensor contained by the dynamic graph Variable
+  ## Input:
+  ##   - a Variable
+  ## Output:
+  ##   - a sliced Variable
+
+  if args.len == 0:
+    # This is the dereference operator
+    result = nnkDerefExpr.newTree(v)
+  else:
+    result = quote do:
+      var v = `v` # Shadow to make sure that if v is an expression it is called only once
+
+      var sliced: type(v)
+      new sliced
+
+      sliced.context       = v.context
+      sliced.value         = v.value[`args`]
+      sliced.grad          = v.grad[`args`]
+      sliced.requires_grad = v.requires_grad
+
+      sliced
+      # TODO: tests for slicing correspondence
+
+proc weakRef*[TT](v: Variable[TT]): VariablePtr[TT] {.inline.} =
+  ## Get a weak/untraced reference to a Variable
+  ## This is intended for library writers and Neural Network graphs
+  ## to avoid strong cyclic references.
+  addr v[]
+
+proc weakRef*[TT](ctx: Context[TT]): ContextPtr[TT] {.inline.} =
+  ## Get a weak/untraced reference to a Variable
+  ## This is intended for library writers and Neural Network graphs
+  ## to avoid strong cyclic references.
+  addr ctx[]

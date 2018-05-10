@@ -241,7 +241,7 @@ suite "Slice mutations":
         t_van[^2..^1,2..4] = t_van[^1..^3|-1, 4..2|-1]
   else:
     echo "Bound-checking is disabled or OpenMP is used. The Out of bound checking test has been skipped."
-  
+
   test "Chained slicing - foo[1..^2,1..2][1..^1, 0]":
     let t_van = t_van_immut
     check: t_van[1..^2,1..2][1..^1, 0] == [[9],[16]].toTensor()
@@ -257,3 +257,33 @@ suite "Slice mutations":
 
     check: a[2, `...`, 2] == a[2, _, _, _, 2]
     check: a[2, 1..2, `...`, 2] == a[2, 1..2, _, _, 2]
+
+suite "Axis slicing":
+  let a =  [[  1,  2,  3,  4,  5,  6],
+            [  7,  8,  9, 10, 11, 12],
+            [ 13, 14, 15, 16, 17, 18]].toTensor
+  test "atAxisIndex slicing":
+
+    check:
+      a.atAxisIndex(0, 0) == [[  1,  2,  3,  4,  5,  6]].toTensor
+      a.atAxisIndex(0, 1) == [[  7,  8,  9, 10, 11, 12]].toTensor
+      a.atAxisIndex(0, 2) == [[ 13, 14, 15, 16, 17, 18]].toTensor
+
+      a.atAxisIndex(0, 0, 2) ==  [[  1,  2,  3,  4,  5,  6],
+                                  [  7,  8,  9, 10, 11, 12]].toTensor
+      a.atAxisIndex(0, 1, 2) ==  [[  7,  8,  9, 10, 11, 12],
+                                  [ 13, 14, 15, 16, 17, 18]].toTensor
+
+      a.atAxisIndex(1, 0) == [[1],
+                              [7],
+                              [13]].toTensor
+      a.atAxisIndex(1, 1, 2) ==  [[2, 3],
+                                  [8, 9],
+                                  [14, 15]].toTensor
+
+  when compileOption("boundChecks") and not defined(openmp):
+    test "atAxisIndex bounds checking":
+      expect(IndexError):
+        echo a.atAxisIndex(0, 3)
+      expect(IndexError):
+        echo a.atAxisIndex(1, 3, 6)

@@ -26,14 +26,14 @@ proc atContiguousIndex*[T](t: var Tensor[T], idx: int): var T {.noSideEffect,inl
   ## i.e. as treat the tensor as flattened
   return t.data[t.getContiguousIndex(idx)]
 
-proc atAxisIndex*[T](t: Tensor[T], axis, idx: int): Tensor[T] {.noInit,inline.} =
+proc atAxisIndex*[T](t: Tensor[T], axis, idx: int, length = 1): Tensor[T] {.noInit,inline.} =
   ## Returns a sliced tensor in the given axis index
 
   when compileOption("boundChecks"):
-    check_axis_index(t, axis, idx)
+    check_axis_index(t, axis, idx, length)
 
   result = t
-  result.shape[axis] = 1
+  result.shape[axis] = length
   result.offset += result.strides[axis]*idx
 
 iterator items*[T](t: Tensor[T]): T {.inline,noSideEffect.} =
@@ -274,8 +274,7 @@ iterator menumerateZip*[T,U](t1: var Tensor[T], t2: Tensor[U], offset, size: int
 
 template axisIterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyped =
   when compileOption("boundChecks"):
-    check_axis_index(t, axis, iter_offset)
-    check_axis_index(t, axis, iter_offset+iter_size-1)
+    check_axis_index(t, axis, iter_offset, iter_size-1)
 
   var out_t = t.atAxisIndex(axis, iter_offset)
 
@@ -286,8 +285,7 @@ template axisIterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyp
 
 template dualAxisIterator[T, U](a: Tensor[T], b: Tensor[U], axis, iter_offset, iter_size: int): untyped =
   when compileOption("boundChecks"):
-    check_axis_index(a, axis, iter_offset)
-    check_axis_index(b, axis, iter_offset+iter_size-1)
+    check_axis_index(a, axis, iter_offset, iter_size-1)
     assert a.shape[axis] == b.shape[axis] # TODO use a proper check
 
   var out_a = a.atAxisIndex(axis, iter_offset)

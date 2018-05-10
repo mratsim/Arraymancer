@@ -129,9 +129,9 @@ proc check_matvec*(a, b: AnyTensor) {.noSideEffect, inline.}=
                     ", must be the same as the number of rows in the vector: " &
                     $(rowB))
 
-proc check_axis_index*(t: AnyTensor, axis, index: int) {.noSideEffect, inline.}=
-  if unlikely(not (axis < t.rank and index < t.shape[axis])):
+proc check_axis_index*(t: AnyTensor, axis, index, len: Natural) {.noSideEffect, inline.}=
+  if unlikely(not (axis < t.rank and index+len <= t.shape[axis])):
     raise newException(IndexError, "The axis is out of range, axis requested is " &
                                     $axis &
-                                    " and index requested " & $index &
-                                    " while tensor shape is " & $(t.shape))
+                                    " and (index, length) requested (" & $index & ", " & $len &
+                                    ") while tensor shape is " & $(t.shape))

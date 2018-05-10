@@ -18,7 +18,7 @@ func binary_encode(i: int, num_digits: int): Tensor[float32] =
   for d in 0 ..< num_digits:
     result[0, d] = float32(i shr d and 1)
 
-# For the input, we distinguishes 4 cases, nothing, fizz, buzz and fizzbuzz.
+# For the input, we distinguish 4 cases: nothing, fizz, buzz and fizzbuzz.
 func fizz_buzz_encode(i: int): int =
   if   i mod 15 == 0: return 3 # fizzbuzz
   elif i mod  5 == 0: return 2 # buzz

@@ -29,7 +29,7 @@ proc opencl*[T:SomeReal](t: Tensor[T]): ClTensor[T] {.noInit.}=
   # TODO error checking in Nim opencl is broken
   # See https://github.com/nim-lang/opencl/pull/3
 
-  let err = enqueueWriteBuffer(
+  check enqueueWriteBuffer(
     clQueue0,
     result.get_data_ptr.toClpointer,
     CL_true, # Blocking copy, we don't want contig_t to disappear while copy is pending
@@ -38,8 +38,6 @@ proc opencl*[T:SomeReal](t: Tensor[T]): ClTensor[T] {.noInit.}=
     contig_t.get_data_ptr.toClpointer,
     0, nil, nil
   )
-
-  assert err == TClResult.SUCCESS
 
 proc cpu*[T:SomeReal](t: ClTensor[T]): Tensor[T] {.noInit.}=
   ## Convert a tensor on an OpenCL device to a tensor on Cpu.
@@ -56,7 +54,7 @@ proc cpu*[T:SomeReal](t: ClTensor[T]): Tensor[T] {.noInit.}=
   # TODO error checking in Nim opencl is broken
   # See https://github.com/nim-lang/opencl/pull/3
 
-  let err = enqueueReadBuffer(
+  check enqueueReadBuffer(
     clQueue0,
     t.get_data_ptr.toClpointer,
     CL_true, # Blocking copy, we don't want computation to continue while copy is still pending
@@ -65,8 +63,6 @@ proc cpu*[T:SomeReal](t: ClTensor[T]): Tensor[T] {.noInit.}=
     result.get_data_ptr.toClpointer,
     0, nil, nil
   )
-
-  assert err == TClResult.SUCCESS
 
 proc zeros_like*[T: SomeReal](t: ClTensor[T]): ClTensor[T] {.noInit, inline.} =
   ## Creates a new ClTensor filled with 0 with the same shape as the input

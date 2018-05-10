@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-import  ./backend/opencl_backend except check
+import  ./backend/opencl_backend
 import  clblast
 # TODO error checking in Nim opencl is broken
 # See https://github.com/nim-lang/opencl/pull/3
@@ -42,7 +42,7 @@ template dotImpl(T: typedesc[SomeReal], clblast_proc: untyped): untyped =
 
     # TODO error checking in Nim opencl is broken
     # See https://github.com/nim-lang/opencl/pull/3
-    let err2 = enqueueReadBuffer(
+    check enqueueReadBuffer(
       clQueue0,
       clResult.toClpointer,
       CL_true, # Blocking copy, we don't want computation to continue while copy is still pending
@@ -51,8 +51,6 @@ template dotImpl(T: typedesc[SomeReal], clblast_proc: untyped): untyped =
       result.addr.toClpointer,
       0, nil, nil
     )
-
-    assert err2 == TClResult.SUCCESS
 
 dotImpl(float32, clblastSdot)
 dotImpl(float64, clblastDdot)

@@ -24,8 +24,6 @@ import  ../../private/ast_utils,
 template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSlices): untyped =
   ## Slicing routine
 
-  mixin _
-
   when compileOption("boundChecks"):
     if unlikely(slices.len > result.rank):
       raise newException(

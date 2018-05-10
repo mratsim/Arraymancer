@@ -34,7 +34,7 @@ import private/p_nnp_types
 export Size2D
 
 
-when defined(cudnn) or defined(nimdoc):
+when defined(cudnn) or defined(nimdoc) or defined(nimsuggest):
   import  ./backend/cudnn,
           ./nnp_conv2d_cudnn
 

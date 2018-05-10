@@ -38,11 +38,11 @@ suite "Accessing and setting tensor values":
         a[2,0,0] = 200
       var b = newTensor[int](@[3,4])
       expect(IndexError):
-        b[3,4] = 999 #FIXME: C++ backend doesn't throw this exception
+        b[3,4] = 999
       expect(IndexError):
-        discard b[-1,0] #FIXME: C++ backend doesn't throw this exception
+        echo b[-1,0] # We don't use discard here because with the C++ backend it is optimized away.
       expect(IndexError):
-        discard b[0,-2]
+        echo b[0,-2]
   else:
     echo "Bound-checking is disabled or OpenMP is used. The out-of-bounds checking test has been skipped."
 

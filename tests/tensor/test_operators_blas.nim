@@ -266,9 +266,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     check: a[1..2, 1..2] - a_t[1..2, 1..2] == [[0.0, -2], [2.0, 0]].toTensor()
 
   when compileOption("boundChecks") and not defined(openmp):
-    # OpenMP or cpp backend are crashing the test suite.
-    # OpenMP: always
-    # FIXME: C++: only if all tests are run together
+    # OpenMP backend is crashing when exceptions are thrown due to GC alloc.
     test "Addition-Substraction - Bounds checking":
       let a = [[1.0,2,3], [4.0,5,6], [7.0,8,9]].toTensor()
       let a_t = a.transpose()
@@ -279,7 +277,8 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
       expect(ValueError):
         discard a - a_t[1..2,1..2]
   else:
-    echo "Bound-checking is disabled or OpenMP or C++ is used. The addition bounds-check checking test has been skipped."
+    echo  "Bound-checking is disabled as OpenMP backend crashes when exception are thrown (due to GC alloc). " &
+          "The addition bounds-check checking test has been skipped."
 
   test "Integer Matrix-Vector Multiplication fallback":
     let a = [[1,2,3],

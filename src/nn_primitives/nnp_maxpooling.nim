@@ -52,7 +52,7 @@ proc maxpool2d*[T](input: Tensor[T],
       for h in 0 ..< outH:
         for w in 0 ..< outW:
           var max = -Inf.T
-          var argmax = -Inf.int
+          var argmax = low(int)
           for ph in 0 ..< kH:
             let row = h * stride.height + ph - padding.height
             if 0 <= row and row < H:

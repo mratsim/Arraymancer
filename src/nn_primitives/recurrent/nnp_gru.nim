@@ -6,10 +6,11 @@ import
   ../../tensor/tensor,
   ../private/p_activation, ../nnp_linear
 
-proc gru_cell_forward*[T: SomeReal](input, hidden,
-                                    w_input, w_recur,
-                                    b_input, b_recur: Tensor[T],
-                                    result: var Tensor[T]) =
+proc gru_cell_inference*[T: SomeReal](
+  input, hidden,
+  W3, U3,
+  bW3, bU3: Tensor[T],
+  result: var Tensor[T]) =
 
   ## Input:
   ##   - input tensor of shape [batch_size, features]
@@ -17,6 +18,12 @@ proc gru_cell_forward*[T: SomeReal](input, hidden,
   ##   - weight of input  [3 * hidden_size, features]
   ##   - weight of hidden [3 * hidden_size, hidden_size]
   ##   - biases of input and hidden state [1, 3 * hidden_size]
+  ##
+  ## Output:
+  ##   - y == h'(t): The next hidden state of the GRU Cell.
+  ##     (GRU output and next hidden state are the same)
+  ##
+  ## This is an optimized function when backpropagation is not needed.
 
   # For compatibility with CuDNN and allow loading CPU/Cuda weights interchangeably,
   # we use the following equations,
@@ -49,24 +56,24 @@ proc gru_cell_forward*[T: SomeReal](input, hidden,
     srz = (0 ..< 2*H)|1
     sn = (2*H ..< 3*H)|1
 
-  var Wx, Rh: Tensor[T] # TODO, pass those as parameter to allow buffer reuse
+  var W3x, U3h: Tensor[T] # TODO, pass those as parameter to allow buffer reuse
   # Resulting shape [batch_size, 3*H]
-  linear(input, w_input, b_input, Wx)
-  linear(hidden, w_recur, b_recur, Rh)
+  linear(input, W3, bW3, W3x)
+  linear(hidden, U3, bU3, U3h)
 
   # To reduce allocations, we compute reset gate r
   # and update gate z in the previous buffers
   # We keep them concatenated to improve throughput
-  var reset_update = Wx[_, srz] # shape [batch_size, 2*H]
-  apply2_inline(reset_update, Rh[_, srz]):
+  var W2ru = W3x[_, srz] # shape [batch_size, 2*H]
+  apply2_inline(W2ru, U3h[_, srz]):
     sigmoid(x + y)
 
   # We also reuse the previous buffer for the candidate hidden state n
   # shape [H, batch_size]
-  var n = Wx[_, sn] # shape [batch_size, H]
-  apply3_inline(n, reset_update[_, sr], Rh[_, sn]):
+  var n = W3x[_, sn] # shape [batch_size, H]
+  apply3_inline(n, W2ru[_, sr], U3h[_, sn]):
     tanh(x + y * z)
 
   # Compute the next hidden state
-  result = map3_inline(Wx[_, sz], n, hidden):
+  result = map3_inline(W3x[_, sz], n, hidden):
     (1 - x) * y + x * z

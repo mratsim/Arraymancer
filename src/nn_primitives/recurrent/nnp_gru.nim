@@ -10,13 +10,13 @@ proc gru_cell_inference*[T: SomeReal](
   input, hidden,
   W3, U3,
   bW3, bU3: Tensor[T],
-  result: var Tensor[T]) =
+  next_hidden: var Tensor[T]) =
 
   ## Input:
   ##   - input tensor of shape [batch_size, features]
   ##   - hidden state of shape [batch_size, hidden_size]
-  ##   - weight of input  [3 * hidden_size, features]
-  ##   - weight of hidden [3 * hidden_size, hidden_size]
+  ##   - weight of input  W3 [3 * hidden_size, features]
+  ##   - weight of hidden U3 [3 * hidden_size, hidden_size]
   ##   - biases of input and hidden state [1, 3 * hidden_size]
   ##
   ## Output:
@@ -33,15 +33,11 @@ proc gru_cell_inference*[T: SomeReal](
   #   - n = h~ (the candidate hidden state)
   #   - r is the reset gate
   #   - z is the update gate
-  #   - h' is a linear interpolation
-  #   - w_input  == W, the concatenation of [Wr, Wz, Wn]
-  #   - w_recur  == R, the concatenation of [Rr, Rz, Rn]
-  #   - bW and bR are the corresponding bias
-  #   - R is called U in the original paper
+  #   - h', the final output, is a linear interpolation
   #
-  # r  =    σ(Wr * x + bWr +       Rr * h + bRr)
-  # z  =    σ(Wz * x + bWz +       Rz * h + bRz)
-  # n  = tanh(Wn * x + bWn + r .* (Rn * h + bRn))
+  # r  =    σ(Wr * x + bWr +       Ur * h + bUr)
+  # z  =    σ(Wz * x + bWz +       Uz * h + bUz)
+  # n  = tanh(W  * x + bW  + r .* (U  * h + bU ))
   # h' = (1 - z) .* n + z .* h
   #
   # Those differs from the original paper for n and h'
@@ -54,26 +50,98 @@ proc gru_cell_inference*[T: SomeReal](
     sr = (0 ..< H)|1
     sz = (H ..< 2*H)|1
     srz = (0 ..< 2*H)|1
-    sn = (2*H ..< 3*H)|1
+    s = (2*H ..< 3*H)|1
 
+
+  # Step 1 - U*h and W*x - Resulting shape [batch_size, 3*H]
   var W3x, U3h: Tensor[T] # TODO, pass those as parameter to allow buffer reuse
-  # Resulting shape [batch_size, 3*H]
+
   linear(input, W3, bW3, W3x)
   linear(hidden, U3, bU3, U3h)
 
-  # To reduce allocations, we compute reset gate r
-  # and update gate z in the previous buffers
-  # We keep them concatenated to improve throughput
-  var W2ru = W3x[_, srz] # shape [batch_size, 2*H]
+  # Step 2 - Computing reset (r) and update (z) gate
+  var W2ru = W3x[_, srz] # shape [batch_size, 2*H] - we reuse the previous buffer
   apply2_inline(W2ru, U3h[_, srz]):
     sigmoid(x + y)
 
-  # We also reuse the previous buffer for the candidate hidden state n
-  # shape [H, batch_size]
-  var n = W3x[_, sn] # shape [batch_size, H]
-  apply3_inline(n, W2ru[_, sr], U3h[_, sn]):
+  # Step 3 - Computing candidate hidden state ñ
+  var n = W3x[_, s] # shape [batch_size, H] - we reuse the previous buffer
+  apply3_inline(n, W2ru[_, sr], U3h[_, s]):
     tanh(x + y * z)
 
-  # Compute the next hidden state
-  result = map3_inline(W3x[_, sz], n, hidden):
+  # Step 4 - Compute the next hidden state
+  next_hidden = map3_inline(W3x[_, sz], n, hidden):
+    (1 - x) * y + x * z
+
+proc gru_cell_forward*[T: SomeReal](
+  input, hidden,
+  W3, U3,
+  bW3, bU3: Tensor[T],
+  r, z, n, Uh,
+  next_hidden: var Tensor[T]
+) =
+  ## Input:
+  ##   - input tensor of shape [batch_size, features]
+  ##   - hidden state of shape [batch_size, hidden_size]
+  ##   - weight of input  W3 [3 * hidden_size, features]
+  ##   - weight of hidden U3 [3 * hidden_size, hidden_size]
+  ##   - biases of input and hidden state [1, 3 * hidden_size]
+  ##
+  ## Output:
+  ##   - r, z, n, Uh: intermediate tensors saved for backpropagation.
+  ##     of size [batch_size, hidden_size]
+  ##   - y == h'(t): The next hidden state of the GRU Cell.
+  ##     (GRU output and next hidden state are the same)
+  ##
+  ## This is an optimized function when backpropagation is not needed.
+
+  # For compatibility with CuDNN and allow loading CPU/Cuda weights interchangeably,
+  # we use the following equations,
+  #
+  #   - h is hidden state at t-1, h' at t
+  #   - input == x, hidden == h
+  #   - n = h~ (the candidate hidden state)
+  #   - r is the reset gate
+  #   - z is the update gate
+  #   - h', the final output, is a linear interpolation
+  #
+  # r  =    σ(Wr * x + bWr +       Ur * h + bUr)
+  # z  =    σ(Wz * x + bWz +       Uz * h + bUz)
+  # n  = tanh(W  * x + bW  + r .* (U  * h + bU ))
+  # h' = (1 - z) .* n + z .* h
+  #
+  # Those differs from the original paper for n and h'
+  #   - The pointwise multiplication by r is after the matrix multiplication
+  #   - The linear interpolation has the terms switched
+
+  let
+    H = hidden.shape[1]
+    # Slices
+    sr = (0 ..< H)|1
+    sz = (H ..< 2*H)|1
+    srz = (0 ..< 2*H)|1
+    s = (2*H ..< 3*H)|1
+
+  # Step 1 - U*h and W*x - Resulting shape [batch_size, 3*H]
+  var W3x, U3h: Tensor[T] # TODO, pass those as parameter to allow buffer reuse
+
+  linear(input, W3, bW3, W3x)
+  linear(hidden, U3, bU3, U3h)
+
+  # Saving for backprop
+  Uh = U3h[_, s].clone()
+
+  # Step 2 - Computing reset (r) and update (z) gate
+  apply3_inline(r, W3x[_, sr], U3h[_, sr]):
+    sigmoid(y + z)
+
+  apply3_inline(z, W3x[_, sz], U3h[_, sz]):
+    sigmoid(y + z)
+
+  # Step 3 - Computing candidate hidden state ñ
+  n = map3_inline(W3x[_, s], r, U3h[_, s]):
+    tanh(x + y * z)
+
+  # Step 4 - Compute the next hidden state
+  next_hidden = map3_inline(z, n, hidden):
     (1 - x) * y + x * z

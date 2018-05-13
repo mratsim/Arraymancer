@@ -39,7 +39,6 @@ proc linear*[T](input, weight: Tensor[T], output: var Tensor[T]) {.inline.} =
 proc linear_backward*[T](
         input,
         weight,
-        bias,
         gradOutput: Tensor[T],
         gradInput,
         gradWeight,

@@ -4,14 +4,44 @@
 
 import
   ../../tensor/tensor,
-  ../private/p_activation, ../nnp_linear
+  ../private/p_activation, ../nnp_linear,
+  ../nnp_activation
+
+# For compatibility with CuDNN and allow loading CPU/Cuda weights interchangeably,
+# we use the following equations,
+#
+#   - h is hidden state at t-1, h' at t
+#   - input == x, hidden == h
+#   - n = h~ (the candidate hidden state)
+#   - r is the reset gate
+#   - z is the update gate
+#   - h', the final output, is a linear interpolation
+#
+# r  =    σ(Wr * x + bWr +       Ur * h + bUr)
+# z  =    σ(Wz * x + bWz +       Uz * h + bUz)
+# n  = tanh(W  * x + bW  + r .* (U  * h + bU ))
+# h' = (1 - z) .* n + z .* h
+#
+# Those differs from the original paper for n and h'
+#   - The pointwise multiplication by r is after the matrix multiplication
+#   - The linear interpolation has the terms switched
+
+# TODO: after the 2 "linear" in forward prop and before the linear
+#       in backprop, everything is elementwise
+# we could use a giant loop-fusion to avoid intermediate tensors
+#
+# Note that the CPU prefetcher might not work as well, because
+# between the use of U3h.data[i] and U3h.data[i+1]
+# there will be a lot of intermediate computation.
+#
+# Also see here for counterarg: https://software.intel.com/en-us/forums/intel-moderncode-for-parallel-architectures/topic/635075
+# Intel CPUs prefetcher can maintain 32 streams
 
 proc gru_cell_inference*[T: SomeReal](
   input, hidden,
   W3, U3,
   bW3, bU3: Tensor[T],
   next_hidden: var Tensor[T]) =
-
   ## Input:
   ##   - input tensor of shape [batch_size, features]
   ##   - hidden state of shape [batch_size, hidden_size]
@@ -24,25 +54,6 @@ proc gru_cell_inference*[T: SomeReal](
   ##     (GRU output and next hidden state are the same)
   ##
   ## This is an optimized function when backpropagation is not needed.
-
-  # For compatibility with CuDNN and allow loading CPU/Cuda weights interchangeably,
-  # we use the following equations,
-  #
-  #   - h is hidden state at t-1, h' at t
-  #   - input == x, hidden == h
-  #   - n = h~ (the candidate hidden state)
-  #   - r is the reset gate
-  #   - z is the update gate
-  #   - h', the final output, is a linear interpolation
-  #
-  # r  =    σ(Wr * x + bWr +       Ur * h + bUr)
-  # z  =    σ(Wz * x + bWz +       Uz * h + bUz)
-  # n  = tanh(W  * x + bW  + r .* (U  * h + bU ))
-  # h' = (1 - z) .* n + z .* h
-  #
-  # Those differs from the original paper for n and h'
-  #   - The pointwise multiplication by r is after the matrix multiplication
-  #   - The linear interpolation has the terms switched
 
   let
     H = hidden.shape[1]
@@ -93,33 +104,12 @@ proc gru_cell_forward*[T: SomeReal](
   ##   - y == h'(t): The next hidden state of the GRU Cell.
   ##     (GRU output and next hidden state are the same)
   ##
-  ## This is an optimized function when backpropagation is not needed.
-
-  # For compatibility with CuDNN and allow loading CPU/Cuda weights interchangeably,
-  # we use the following equations,
-  #
-  #   - h is hidden state at t-1, h' at t
-  #   - input == x, hidden == h
-  #   - n = h~ (the candidate hidden state)
-  #   - r is the reset gate
-  #   - z is the update gate
-  #   - h', the final output, is a linear interpolation
-  #
-  # r  =    σ(Wr * x + bWr +       Ur * h + bUr)
-  # z  =    σ(Wz * x + bWz +       Uz * h + bUz)
-  # n  = tanh(W  * x + bW  + r .* (U  * h + bU ))
-  # h' = (1 - z) .* n + z .* h
-  #
-  # Those differs from the original paper for n and h'
-  #   - The pointwise multiplication by r is after the matrix multiplication
-  #   - The linear interpolation has the terms switched
 
   let
     H = hidden.shape[1]
     # Slices
     sr = (0 ..< H)|1
     sz = (H ..< 2*H)|1
-    srz = (0 ..< 2*H)|1
     s = (2*H ..< 3*H)|1
 
   # Step 1 - U*h and W*x - Resulting shape [batch_size, 3*H]
@@ -128,7 +118,7 @@ proc gru_cell_forward*[T: SomeReal](
   linear(input, W3, bW3, W3x)
   linear(hidden, U3, bU3, U3h)
 
-  # Saving for backprop
+  # # Saving for backprop
   Uh = U3h[_, s].clone()
 
   # Step 2 - Computing reset (r) and update (z) gate
@@ -145,3 +135,40 @@ proc gru_cell_forward*[T: SomeReal](
   # Step 4 - Compute the next hidden state
   next_hidden = map3_inline(z, n, hidden):
     (1 - x) * y + x * z
+
+proc gru_cell_backward*[T: SomeReal](
+  dx, dh, dW3, dU3,          # input and weights gradients
+  dbW3, dbU3: var Tensor[T], # bias gradient
+  dnext: Tensor[T],          # gradient flowing back from the next hidden state
+  x, h, W3, U3: Tensor[T],   # input parameters saved from forward
+  r, z, n, Uh: Tensor[T]     # Intermediate tensors saved from forward
+) =
+
+  # Backprop of step 4 - z part
+  let dz = (h - n) .* dnext
+  let dn = (1.0 .- z) .* dnext
+
+  # Backprop of step 3.
+  let dWx = tanh_backward(dn, n)
+  let dr = Uh .* dWx
+  let dUh = r .* dWx
+
+  # Backprop of step 2 - update gate z
+  let dWzx = sigmoid_backward(dz, z)
+  let dUzh = dWzx
+
+  # Backprop of step 2 - reset gate r
+  let dWrx = sigmoid_backward(dr, r)
+  let dUrh = dWrx
+
+  # Concat
+  let dW3x = concat(dWrx, dWzx, dWx, axis = 1)
+  let dU3h = concat(dUrh, dUzh, dUh, axis = 1)
+
+  # Backprop of step 1
+  linear_backward(x, W3, dW3x, dx, dW3, dbW3)
+  linear_backward(h, U3, dU3h, dh, dU3, dbU3)
+
+  # Backprop of step 4 - h part
+  apply3_inline(dh, dnext, z):
+    x + y * z

@@ -34,6 +34,7 @@ import ../src/arraymancer,
         ./nn_primitives/test_nnp_convolution,
         ./nn_primitives/test_nnp_loss,
         ./nn_primitives/test_nnp_maxpool,
+        ./nn_primitives/test_nnp_gru,
         ./autograd/test_gate_blas,
         ./ml/test_metrics
 

@@ -72,7 +72,7 @@ proc relu_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]
 
 proc tanh_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.noInit.}=
   result = map2_inline(cached_tensor, gradient):
-    y - y * (x * x)
+    y * (1 - x * x)
 
 # ####################################################################################################
 # Documentation

@@ -19,7 +19,8 @@ import  ./nnp_activation,
         ./nnp_softmax_cross_entropy,
         ./nnp_maxpooling,
         ./nnp_softmax,
-        ./nnp_numerical_gradient
+        ./nnp_numerical_gradient,
+        ./recurrent/nnp_gru
 
 export  nnp_activation,
         nnp_convolution,
@@ -28,11 +29,11 @@ export  nnp_activation,
         nnp_softmax_cross_entropy,
         nnp_maxpooling,
         nnp_softmax,
-        nnp_numerical_gradient
+        nnp_numerical_gradient,
+        nnp_gru
 
 import private/p_nnp_types
 export Size2D
-
 
 when defined(cudnn) or defined(nimdoc) or defined(nimsuggest):
   import  ./backend/cudnn,

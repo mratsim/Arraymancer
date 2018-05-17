@@ -15,7 +15,7 @@
 import ../../src/arraymancer
 import unittest, sequtils
 
-suite "Exporting a tensor":
+suite "Exporting":
   test "Raw sequence exporting":
     let t = toSeq(1..6).toTensor().reshape(2, 3)
     check t.toRawSeq == toSeq(1 .. 6)

@@ -14,7 +14,7 @@
 
 import typetraits, macros
 
-const MAX_NB_GRADS = 3 # Max number of gradients output of autograd operations
+const MAX_NB_GRADS = 6 # Max number of gradients output of autograd operations
 
 type
   Context*[TT] = ref ContextObj[TT]

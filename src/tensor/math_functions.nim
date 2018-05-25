@@ -68,7 +68,7 @@ proc abs*[T](t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Return a Tensor with absolute values of all elements
   t.map_inline(abs(x))
 
-proc mabs*[T](t: var Tensor[T]) {.noInit.} =
+proc mabs*[T](t: var Tensor[T]) =
   ## Return a Tensor with absolute values of all elements
   t.apply_inline(abs(x))
 

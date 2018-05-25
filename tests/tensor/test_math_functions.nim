@@ -56,3 +56,17 @@ suite "Math functions":
     a.mclamp(-2,2)
     check: a == target
 
+  test "Absolute value":
+    var a = [1.0, -10, -20, 30].toTensor.reshape(4,1)
+
+    check: a.abs  == [[1.0],
+                      [10.0],
+                      [20.0],
+                      [30.0]].toTensor
+
+    a.mabs
+
+    check: a == [[1.0],
+                [10.0],
+                [20.0],
+                [30.0]].toTensor

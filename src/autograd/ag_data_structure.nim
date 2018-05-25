@@ -179,39 +179,42 @@ proc backprop*[TT](v: Variable[TT]) =
       if parent_i.requires_grad:
         parent_i.grad += diffs[i]
 
-macro `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] or VariableObj[TT]=
+template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
   ## Slice the tensor contained by the dynamic graph Variable
   ## Input:
   ##   - a Variable
   ## Output:
   ##   - a sliced Variable
 
-  if args.len == 0:
-    # This is the dereference operator
-    result = nnkDerefExpr.newTree(v)
-  else:
-    result = quote do:
-      var v = `v` # Shadow to make sure that if v is an expression it is called only once
+  # TODO - investigate https://github.com/mratsim/Arraymancer/issues/241
+  # As https://github.com/mratsim/Arraymancer/commit/e609e998d663710281dbe161249a0139befa818c
+  # which fixed https://github.com/mratsim/Arraymancer/issues/185 had to be rollbacked
 
-      var sliced: type(v)
-      new sliced
+  # Ensure that v is only called once even if it's a function with side-effects
+  let z = v
 
-      sliced.context       = v.context
-      sliced.value         = v.value[`args`]
-      sliced.grad          = v.grad[`args`]
-      sliced.requires_grad = v.requires_grad
+  # TODO: backprop support
+  var result: type(z)
+  new result
 
-      sliced
-      # TODO: tests for slicing correspondence
+  result.context = z.context
+  result.value = z.value[args]
+  result.grad = z.grad[args]
+  result.requires_grad = z.requires_grad
+
+  result
+
+  # TODO: tests for slicing correspondence
 
 proc weakRef*[TT](v: Variable[TT]): VariablePtr[TT] {.inline.} =
   ## Get a weak/untraced reference to a Variable
   ## This is intended for library writers and Neural Network graphs
   ## to avoid strong cyclic references.
-  addr v[]
+  cast[VariablePtr[TT]](v)
+
 
 proc weakRef*[TT](ctx: Context[TT]): ContextPtr[TT] {.inline.} =
   ## Get a weak/untraced reference to a Variable
   ## This is intended for library writers and Neural Network graphs
   ## to avoid strong cyclic references.
-  addr ctx[]
+  cast[ContextPtr[TT]](ctx)

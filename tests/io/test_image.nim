@@ -5,10 +5,13 @@
 import ../../src/arraymancer
 import unittest, os
 
-suite "[IO] Numpy .npy file support":
-  const imgpath = "./tests/io/images/nim_in_action_cover.jpg"
+suite "[IO] Reading and writing images":
+  const
+    imgpath = "./tests/io/images/nim_in_action_cover.jpg"
+    outpng = "./build/test_img_out.png"
+    outjpg = "./build/test_img_out.jpg"
 
-  test "[IO] Reading numpy files with numeric ndarrays":
+  test "[IO] Reading images":
     let img = read_image(imgpath)
 
     let channels = 3
@@ -16,3 +19,10 @@ suite "[IO] Numpy .npy file support":
     let height = 964
 
     check: img.shape == [channels, height, width].toMetadataArray
+
+  test "[IO] Writing images":
+    let img = read_image(imgpath)
+
+    img.write_png(outpng)
+    img.write_jpg(outjpg, quality = 70)
+

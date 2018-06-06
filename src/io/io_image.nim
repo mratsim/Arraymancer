@@ -35,11 +35,3 @@ proc read_image*(filepath: string): Tensor[uint8] =
 
   let raw_pixels = load(filepath, width, height, channels, desired_channels)
   result = raw_pixels.toTensor.reshape(width, height, channels).whc_to_chw
-
-# TODO should we add:
-#   - Normalization:
-#     - [0, 1] range  - img / 255.0
-#     - [-1, 1] range - img * 2 / 255.0 - 1
-#   - mean centering: (img - mean(dataset)) / stddev(dataset)
-#     - do we substract a global mean
-#     - or a mean per color channel

@@ -46,8 +46,10 @@ suite "[ML] Dimensionality reduction":
                 [ 0.0,  1.0],
                 [-1.0, 0.0]].toTensor
 
-      let (val, components) = x.pca(2)
-      let transformed = x.pca(components)
+      let 
+        (val, components) = x.pca(2)
+        transformed = x.pca(components)
+
       check: transformed == val
 
       let expected = [[ 2.0,  0.0],

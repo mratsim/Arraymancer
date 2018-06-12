@@ -20,7 +20,11 @@ suite "[ML] Dimensionality reduction":
                   [1.5, 1.6],
                   [1.1, 0.9]].toTensor
 
-      let val = data.pca(2)
+      let
+        (val, components) = data.pca(2)
+        transformed = data.pca(components)
+
+      check: transformed == val
 
       let expected = [[-0.827970186, -0.175115307],
                       [ 1.77758033,   0.142857227],
@@ -37,17 +41,14 @@ suite "[ML] Dimensionality reduction":
         check:  mean_absolute_error( val[_, col], expected[_, col]) < 1e-08 or
                 mean_absolute_error(-val[_, col], expected[_, col]) < 1e-08
 
-      # Test getting prinicpal components, then transforming
-      let principal_components = data.pca(nb_components = 2, transform = false)
-      let transformed = data.pca(principal_components)
-      check: transformed == val
-
     block: # https://www.cgg.com/technicaldocuments/cggv_0000014063.pdf
       let x =  [[ 1.0, -1.0],
                 [ 0.0,  1.0],
                 [-1.0, 0.0]].toTensor
 
-      let val = x.pca(2)
+      let (val, components) = x.pca(2)
+      let transformed = x.pca(components)
+      check: transformed == val
 
       let expected = [[ 2.0,  0.0],
                       [-1.0,  1.0],
@@ -56,8 +57,3 @@ suite "[ML] Dimensionality reduction":
       for col in 0..<2:
         check:  mean_absolute_error( val[_, col], expected[_, col]) < 1e-10 or
                 mean_absolute_error(-val[_, col], expected[_, col]) < 1e-10
-
-      # Test getting prinicpal components, then transforming
-      let principal_components = x.pca(nb_components = 2, transform = false)
-      let transformed = x.pca(principal_components)
-      check: transformed == val

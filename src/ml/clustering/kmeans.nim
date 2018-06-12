@@ -110,23 +110,23 @@ proc assign_labels [T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.
       var inertia: T
 
       for row_idx in 0..<n_rows:
-        var minDist: T = -1.0
-        var minLabel = -1
+        var min_dist: T = -1.0
+        var min_label = -1
         for centroid_idx in 0..<n_clusters:
           var dist = euclidean_distance(x[row_idx, _], centroids[centroid_idx, _])
-          if minDist == -1 or dist < minDist:
-            minDist = dist
-            minLabel = centroid_idx
+          if min_dist == -1 or dist < min_dist:
+            min_dist = dist
+            min_label = centroid_idx
 
         # Update inertia
-        inertia += minDist
+        inertia += min_dist
         # Assign that cluster id the labels tensor
-        labels[row_idx] = minLabel
+        labels[row_idx] = min_label
 
         # Update the counts
-        counts[minLabel] += 1
+        counts[min_label] += 1
         # Update the running total
-        totals[minLabel] += x[row_idx, _]
+        totals[min_label] += x[row_idx, _]
       
       # Stopping criteria
       if (inertia - previous_inertia) <= tol or (iters >= max_iters):
@@ -173,7 +173,7 @@ proc kmeans*[T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0001, n
   else:
     return centroids[best_clustering]
 
-proc kmeans*[T: SomeFLoat](x: Tensor[T], centroids: Tensor[T]): Tensor[T] =
+proc kmeans*[T: SomeFloat](x: Tensor[T], centroids: Tensor[T]): Tensor[T] =
   ## K-Means Clustering
   ## Inputs:
   ##   - x: A matrix of shape [Nb of observations, Nb of features]
@@ -188,16 +188,14 @@ proc kmeans*[T: SomeFLoat](x: Tensor[T], centroids: Tensor[T]): Tensor[T] =
   var labels = newTensor[int](n_rows)
 
   for row_idx in 0..<n_rows:
-    # Keep the distances to find the minimum
-    var distances = newSeq[T](n_clusters)
+    var min_dist: T = -1.0
+    var min_label = -1
     for centroid_idx in 0..<n_clusters:
-      let distortion = euclidean_distance(x[row_idx, _], centroids[centroid_idx, _])
-      # Update inertia
-      distances[centroid_idx] = distortion
-
-    # Find the index of the closet centroid
-    var cluster_id = distances.find(distances.min)
-    # Assign that to the labels tensor
-    labels[row_idx] = cluster_id
+      var dist = euclidean_distance(x[row_idx, _], centroids[centroid_idx, _])
+      if min_dist == -1 or dist < min_dist:
+        min_dist = dist
+        min_label = centroid_idx
+    
+    labels[row_idx] = min_label 
   
   return labels.astype(T)

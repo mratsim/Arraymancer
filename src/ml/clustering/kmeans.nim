@@ -17,9 +17,8 @@ proc init_random [T: SomeFloat](x: Tensor[T], n_clusters: int): Tensor[T] =
   var centroids = newTensor[T](n_clusters, x.shape[1])
   # Produce a random coordinate for each component
   for i in 0..<n_clusters:
-    var randomPoint = rand(x.shape[1])
-    echo randomPoint
-    centroids[i, _] = x[randomPoint, _]
+    var random_point = rand(x.shape[1])
+    centroids[i, _] = x[random_point, _]
   return centroids
 
 proc init_plus_plus [T: SomeFloat](x: Tensor[T], n_clusters: int): Tensor[T] = 
@@ -74,16 +73,19 @@ proc assign_labels [T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.
   ##   - labels: cluster labels produced by the algorithm - a tensor of shape [Nb of observations, 1]
   ##   - centroids: the coordinates of the centroids - a matrix of shape [n_clusters, x.shape[1]]
   ##   - inertia: a measurement of distortion across all clustering labeling - a single value of type T
+  let 
+    n_rows = x.shape[0]
+    n_cols = x.shape[1]
   assert x.rank == 2
-  let n_rows = x.shape[0]
-  let n_cols = x.shape[1]
   assert n_clusters <= n_cols
 
-  var iters: int = 0
-  var inertia: T
-  var previous_inertia: T 
-  var labels = newTensor[int](n_rows)
-  var centroids = newTensor[T](n_clusters, n_cols)
+  var 
+    iters: int = 0
+    inertia: T
+    previous_inertia: T 
+    labels = newTensor[int](n_rows)
+    centroids = newTensor[T](n_clusters, n_cols)
+
   if not random:
     centroids = init_plus_plus(x, n_clusters)
   else:
@@ -92,8 +94,9 @@ proc assign_labels [T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.
 
   # Keep a running total of the count and total
   # to calculate the means. Keyed by centroid_id
-  var counts = initTable[int, int]()
-  var totals = initTable[int, Tensor[T]]()
+  var 
+    counts = initTable[int, int]()
+    totals = initTable[int, Tensor[T]]()
   
   # Populate defaults in tables
   for i in 0..<n_clusters:
@@ -110,8 +113,9 @@ proc assign_labels [T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.
       var inertia: T
 
       for row_idx in 0..<n_rows:
-        var min_dist: T = -1.0
-        var min_label = -1
+        var 
+          min_dist: T = -1.0
+          min_label = -1
         for centroid_idx in 0..<n_clusters:
           var dist = euclidean_distance(x[row_idx, _], centroids[centroid_idx, _])
           if min_dist == -1 or dist < min_dist:
@@ -155,9 +159,10 @@ proc kmeans*[T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0001, n
   ##   - Cluster labels if transform is true: a matrix of shape [Nb of observations, 1]
   ##   - Centroid coordinates if transform is false: a matrix of shape [n_clusters, Nb of features]
   ##    
-  var inertias = newTensor[T](n_init)
-  var labels = newSeq[Tensor[T]](n_init)
-  var centroids = newSeq[Tensor[T]](n_init)
+  var 
+    inertias = newTensor[T](n_init)
+    labels = newSeq[Tensor[T]](n_init)
+    centroids = newSeq[Tensor[T]](n_init)
 
   randomize(seed)
 
@@ -178,18 +183,20 @@ proc kmeans*[T: SomeFloat](x: Tensor[T], centroids: Tensor[T]): Tensor[T] =
   ## Inputs:
   ##   - x: A matrix of shape [Nb of observations, Nb of features]
   ##   - centroids: A matrix of shape [Nb of centroids, Nb of features]
+  let 
+    n_rows = x.shape[0]
+    n_cols = x.shape[1]
+    n_clusters = centroids.shape[0]
   assert x.rank == 2
   assert centroids.rank == 2
-  let n_rows = x.shape[0]
-  let n_cols = x.shape[1]
-  let n_clusters = centroids.shape[0]
   assert n_clusters <= n_cols
 
   var labels = newTensor[int](n_rows)
 
   for row_idx in 0..<n_rows:
-    var min_dist: T = -1.0
-    var min_label = -1
+    var 
+      min_dist: T = -1.0
+      min_label = -1
     for centroid_idx in 0..<n_clusters:
       var dist = euclidean_distance(x[row_idx, _], centroids[centroid_idx, _])
       if min_dist == -1 or dist < min_dist:

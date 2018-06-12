@@ -19,5 +19,7 @@ export  accuracy_score,
         common_error_functions
 
 when not defined(no_lapack):
-  import ./dimensionality_reduction/pca
-  export pca
+  import ./dimensionality_reduction/pca,
+         ./clustering/kmeans
+  export pca,
+         kmeans

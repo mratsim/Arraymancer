@@ -6,11 +6,14 @@ import
   ../../tensor/tensor, ../../linear_algebra/linear_algebra
 
 
-proc pca*[T: SomeReal](x: Tensor[T], nb_components = 2): Tensor[T] =
+proc pca*[T: SomeReal](x: Tensor[T], nb_components = 2, transform: bool = true): Tensor[T] =
   ## Principal Component Analysis (PCA)
   ## Inputs:
   ##   - A matrix of shape [Nb of observations, Nb of features]
   ##   - The number of components to keep (default 2D for 2D projection)
+  ##   - transform: whether or not to output the tensor or components:
+  ##     If transform: output the dimensionality reduced tensor
+  ##     Else output the first n principal components feature plane
   ##
   ## Returns:
   ##   - A matrix of shape [Nb of observations, Nb of components]
@@ -26,3 +29,19 @@ proc pca*[T: SomeReal](x: Tensor[T], nb_components = 2): Tensor[T] =
 
   # [Nb_obs, Nb_feats] * [Nb_feats, Nb_components], don't forget to reorder component in descending order
   result = mean_centered * eigvecs[_, ^1..0|-1]
+
+  if transform:
+    return result
+  else:
+    return eigvecs
+
+proc pca*[T: SomeReal](x: Tensor[T], principal_axes: Tensor[T]): Tensor[T] =
+  ## Principal Component Analysis (PCA) projection
+  ## Inputs:
+  ##    - A matrix of shape [Nb of observations, Nb of features]
+  ##    - A matrix of shape [Nb of observations, Nb of principal axes] to project on
+  ##
+  ## Returns:
+  ##    - A matrix of shape [Nb of observations, Nb of components]
+  let mean_centered = x .- x.mean(axis=0)
+  result = mean_centered * principal_axes[_, ^1..0|-1]

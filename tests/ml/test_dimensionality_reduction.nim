@@ -37,6 +37,11 @@ suite "[ML] Dimensionality reduction":
         check:  mean_absolute_error( val[_, col], expected[_, col]) < 1e-08 or
                 mean_absolute_error(-val[_, col], expected[_, col]) < 1e-08
 
+      # Test getting prinicpal components, then transforming
+      let principal_components = data.pca(nb_components = 2, transform = false)
+      let transformed = data.pca(principal_components)
+      check: transformed == val
+
     block: # https://www.cgg.com/technicaldocuments/cggv_0000014063.pdf
       let x =  [[ 1.0, -1.0],
                 [ 0.0,  1.0],
@@ -51,3 +56,8 @@ suite "[ML] Dimensionality reduction":
       for col in 0..<2:
         check:  mean_absolute_error( val[_, col], expected[_, col]) < 1e-10 or
                 mean_absolute_error(-val[_, col], expected[_, col]) < 1e-10
+
+      # Test getting prinicpal components, then transforming
+      let principal_components = x.pca(nb_components = 2, transform = false)
+      let transformed = x.pca(principal_components)
+      check: transformed == val

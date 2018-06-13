@@ -6,15 +6,16 @@ import
   ../../tensor/tensor, ../../linear_algebra/linear_algebra
 
 
-proc pca*[T: SomeReal](x: Tensor[T], nb_components = 2): Tensor[T] =
+proc pca*[T: SomeReal](x: Tensor[T], nb_components = 2): tuple[results: Tensor[T], components: Tensor[T]] {.noInit.} =
   ## Principal Component Analysis (PCA)
   ## Inputs:
   ##   - A matrix of shape [Nb of observations, Nb of features]
   ##   - The number of components to keep (default 2D for 2D projection)
   ##
   ## Returns:
-  ##   - A matrix of shape [Nb of observations, Nb of components]
-
+  ##   - A tuple of results and components:
+  ##     results: a matrix of shape [Nb of observations, Nb of components]
+  ##     components: a matrix of shape [Nb of observations, Nb of components] in descending order
   assert x.rank == 2
 
   let mean_centered = x .- x.mean(axis=0)
@@ -25,4 +26,16 @@ proc pca*[T: SomeReal](x: Tensor[T], nb_components = 2): Tensor[T] =
   let (_, eigvecs) = cov_matrix.symeig(true, ^nb_components .. ^1) # Note: eigvals/vecs are returned in ascending order
 
   # [Nb_obs, Nb_feats] * [Nb_feats, Nb_components], don't forget to reorder component in descending order
-  result = mean_centered * eigvecs[_, ^1..0|-1]
+  result.components = eigvecs[_, ^1..0|-1]
+  result.results= mean_centered * result.components
+
+proc pca*[T: SomeReal](x: Tensor[T], principal_axes: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Principal Component Analysis (PCA) projection
+  ## Inputs:
+  ##    - A matrix of shape [Nb of observations, Nb of components]
+  ##    - A matrix of shape [Nb of observations, Nb of components] to project on, in descending order
+  ##
+  ## Returns:
+  ##    - A matrix of shape [Nb of observations, Nb of components]
+  let mean_centered = x .- x.mean(axis=0)
+  result = mean_centered * principal_axes

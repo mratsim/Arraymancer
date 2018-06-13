@@ -6,7 +6,7 @@ import
   ../../tensor/tensor, ../../linear_algebra/linear_algebra
 
 
-proc pca*[T: SomeReal](x: Tensor[T], nb_components = 2, transform: bool = true): tuple[results: Tensor[T], components: Tensor[T]] =
+proc pca*[T: SomeReal](x: Tensor[T], nb_components = 2): tuple[results: Tensor[T], components: Tensor[T]] {.noInit.} =
   ## Principal Component Analysis (PCA)
   ## Inputs:
   ##   - A matrix of shape [Nb of observations, Nb of features]
@@ -26,13 +26,10 @@ proc pca*[T: SomeReal](x: Tensor[T], nb_components = 2, transform: bool = true):
   let (_, eigvecs) = cov_matrix.symeig(true, ^nb_components .. ^1) # Note: eigvals/vecs are returned in ascending order
 
   # [Nb_obs, Nb_feats] * [Nb_feats, Nb_components], don't forget to reorder component in descending order
-  var
-    descending_eigvecs = eigvecs[_, ^1..0|-1]
-    pca_results = mean_centered * descending_eigvecs
+  result.components = eigvecs[_, ^1..0|-1]
+  result.results= mean_centered * result.components
 
-  return (pca_results, descending_eigvecs)
-
-proc pca*[T: SomeReal](x: Tensor[T], principal_axes: Tensor[T]): Tensor[T] =
+proc pca*[T: SomeReal](x: Tensor[T], principal_axes: Tensor[T]): Tensor[T] {.noInit.} =
   ## Principal Component Analysis (PCA) projection
   ## Inputs:
   ##    - A matrix of shape [Nb of observations, Nb of components]

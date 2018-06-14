@@ -1,10 +1,10 @@
 # Copyright (c) 2018 Mamy André-Ratsimbazafy and the Arraymancer contributors
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
+import math, random, tables
 
 import
   ../../tensor/tensor, ../../linear_algebra/linear_algebra
-import math, random, tables, sugar
 
 proc euclidean_distance [T: SomeFloat](u: Tensor[T], v: Tensor[T], squared: bool = false): T =
   ## Calculates the euclidean distance

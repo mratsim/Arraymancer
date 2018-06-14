@@ -4,75 +4,126 @@
 
 import
   ../../tensor/tensor, ../../linear_algebra/linear_algebra
-import math, random, tables
+import math, random, tables, sugar
 
-proc euclidean_distance [T: SomeFloat](u: Tensor[T], v: Tensor[T]): T =
-  ## Helper method to calculate the euclidean distance
+proc euclidean_distance [T: SomeFloat](u: Tensor[T], v: Tensor[T], squared: bool = false): T =
+  ## Calculates the euclidean distance
+  ##    - u: a tensor
+  ##    - v: a tensor
+  ##    - squared: whether or not to square the result
   ## sqrt( (u - v) dot (u - v) )
+  ## which can be reformulated
+  ## sqrt((u dot u) - 2 * (u dot v) + (v dot v))
   var u_v = (u .- v).reshape(u.shape[1])
-  return sqrt(dot(u_v, u_v))
+  result = dot(u_v, u_v)
+  if not squared:
+    result = sqrt(result) 
+
+proc cumsum [T: SomeFloat](p: Tensor[T]): Tensor[T] =
+  assert p.rank == 1
+  var n_rows = p.shape[0]
+  result = p
+  for i in 1..<n_rows:
+    result[i] += result[i-1]
 
 proc init_random [T: SomeFloat](x: Tensor[T], n_clusters: int): Tensor[T] =
   ## Helper method to randomly assign the initial centroids
-  var centroids = newTensor[T](n_clusters, x.shape[1])
+  result = newTensor[T](n_clusters, x.shape[1])
   # Produce a random coordinate for each component
   for i in 0..<n_clusters:
     var random_point = rand(x.shape[1])
-    centroids[i, _] = x[random_point, _]
-  return centroids
+    result[i, _] = x[random_point, _]
+
+proc get_closest [T: SomeFloat](x: Tensor[T], centroids: Tensor[T], cid: int): int =
+  ## Helper method to get the closest centroid
+  var closest_dist = Inf
+  var closest_centroid_id: int
+  for closest in 0..<centroids.shape[0]:
+    if euclidean_distance(x[cid, _], centroids[closest, _], squared = true) < closest_dist:
+      closest_centroid_id = closest
+  return closest_centroid_id
+
+proc get_candidates [T: SomeFloat](n: int, distances: Tensor[T]): Tensor[int] =
+  ## Sample candidates with probability weighted by the distances
+  var
+    probs = cumsum(distances ./ @[distances.sum].toTensor)
+    candidates = newTensor[int](n)
+  for t in 0..<n:
+    block sampling:
+      for i in 0..<probs.shape[0]:
+        if rand(1.0) <= probs[i]:
+          candidates[t] = i
+          break sampling
+  return candidates
+
+proc get_distances [T: SomeFloat](point: int, x: Tensor[T], squared: bool = false): Tensor[T] =
+  ## Helper method to keep code DRY.
+  var 
+    n_rows = x.shape[0]
+    dists = newTensor[T](n_rows)
+  for i in 0..<n_rows:
+    dists[i] = euclidean_distance(x[point, _], x[i, _], squared)
+  return dists
 
 proc init_plus_plus [T: SomeFloat](x: Tensor[T], n_clusters: int): Tensor[T] = 
-  ## Helper method to use the KMeans++ heuristic for initial centroidsk
+  ## Helper method to use the KMeans++ heuristic for initial centroids
+  ##  - x: a tensor of input data with rank of 2
+  ##  - n_clusters: the number of centroids to initialize 
+  ##
+  ## k-means++ is an initialization heuristic for the standard k-means algorithm.
+  ## It uses a simple randomized seeding technique that is O(log k) competive with
+  ## the optimal clustering and speeds up convergance. The implementation here is based 
+  ## loosely ## off the one in scikit-learn: 
+  ## https://github.com/scikit-learn/scikit-learn/blob/a24c8b46/sklearn/cluster/k_means_.py#L43
+  ##
+  ## The intuition behind the algorithm is to choose centroids that are far away from each other,
+  ## by sampling each centroid weighted by the distance function. 
+  ##
+  ## See Arthur and Vassilvitskii (2007) "k-means++: The Advantages of Careful Seeding"
+  assert x.rank == 2
   var
-    potential: T
     n_rows = x.shape[0]
     n_cols = x.shape[1]
-    # Choose first centroid randomly
-    center_id = rand(n_rows)
-    # Container for centroids
     centroids = newTensor[T](n_clusters, n_cols)
+    n_trials = int(2 + (ln(float(n_clusters))))
 
-  for c in 0..<n_clusters:
-    var
-      probs = newTensor[T](n_rows)
-      random_values = newTensor[T](n_rows)
-      distances = newTensor[T](n_rows)
-      candidate_probability = rand(1.0)
-      candidate_id = -1
+  # Assign first centroid randomly
+  var first_centroid = rand(n_rows)
+  centroids[0, _] = x[first_centroid, _]
 
-    # Get distances
-    for i in 0..<n_rows:
-      distances[i] = euclidean_distance(x[center_id, _], x[i, _])
-    
-    # Probabilities, weighted by distance
-    var total_distance = distances.sum
-    if total_distance > 0:
-      probs = distances ./ @[total_distance].toTensor
+  for cid in 1..<n_clusters:
+    var 
+      closest_centroid_id = get_closest(x, centroids, cid)
+      distances = get_distances(closest_centroid_id, x, squared = true)
+      candidates = get_candidates(n_trials, distances)
+      best_candidate_inertia = 0.0 
+      best_candidate_id: int
 
-    for i in 1..<n_rows:
-      # Cum sum
-      probs[i] += probs[i-1]
-      if candidate_probability < probs[i]:
-        # If unchosen, or further than before
-        if candidate_id == -1 or distances[candidate_id] < distances[i]:
-          # Assign as new centroid
-          centroids[c, _] = x[i, _]
+    # Find best candidate by highest inertia
+    for candidate in 0..<n_trials:          
+      var candidate_inertia = get_distances(candidate, x, squared = true).sum
+      if candidate_inertia >= best_candidate_inertia:
+        best_candidate_inertia = candidate_inertia
+        best_candidate_id = candidate
+
+    # Assign best candidate
+    centroids[cid, _] = x[best_candidate_id, _]
+
   return centroids
 
-
-proc assign_labels [T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0001, max_iters = 300, random: bool = false): tuple[labels: Tensor[int], centroids: Tensor[T], inertia: T] =
+proc assign_labels [T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0001, max_iters = 300, random: bool = false):
+  tuple[labels: Tensor[int], centroids: Tensor[T], inertia: T] =
   ## K-Means Clustering label assignment
-
-  ##   - x: A matrix of shape [Nb of observations, Nb of features]
-  ##   - n_clusters: The number of cluster centroids to compute
-  ##   - tol: early stopping criterion if centroids move less than this amount on an iteration
-  ##   - max_iters: maximum total passes over x before stopping
-  ##   - random: whether or not to start the centroid coordinates randomly. By default, uses kmeans++ to choose the centroids.
+  ##  - x: A matrix of shape [Nb of observations, Nb of features]
+  ##  - n_clusters: The number of cluster centroids to compute
+  ##  - tol: early stopping criterion if centroids move less than this amount on an iteration
+  ##  - max_iters: maximum total passes over x before stopping
+  ##  - random: whether or not to start the centroid coordinates randomly. By default, uses kmeans++ to choose the centroids.
   ##
   ## Returns:
-  ##   - labels: cluster labels produced by the algorithm - a tensor of shape [Nb of observations, 1]
-  ##   - centroids: the coordinates of the centroids - a matrix of shape [n_clusters, x.shape[1]]
-  ##   - inertia: a measurement of distortion across all clustering labeling - a single value of type T
+  ##  - labels: cluster labels produced by the algorithm - a tensor of shape [Nb of observations, 1]
+  ##  - centroids: the coordinates of the centroids - a matrix of shape [n_clusters, x.shape[1]]
+  ##  - inertia: a measurement of distortion across all clustering labeling - a single value of type T
   let 
     n_rows = x.shape[0]
     n_cols = x.shape[1]
@@ -80,7 +131,7 @@ proc assign_labels [T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.
   assert n_clusters <= n_cols
 
   var 
-    iters: int = 0
+    iters: int
     inertia: T
     previous_inertia: T 
     labels = newTensor[int](n_rows)
@@ -90,7 +141,6 @@ proc assign_labels [T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.
     centroids = init_plus_plus(x, n_clusters)
   else:
     centroids = init_random(x, n_clusters)
-
 
   # Keep a running total of the count and total
   # to calculate the means. Keyed by centroid_id
@@ -107,10 +157,9 @@ proc assign_labels [T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.
   block update_centroids:
     while true:
       iters += 1
-
-      # Store previous inertia and reset
+      # Store previous inertia
       previous_inertia = inertia
-      var inertia: T
+      inertia = 0.0
 
       for row_idx in 0..<n_rows:
         var 
@@ -145,20 +194,21 @@ proc assign_labels [T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.
 
   return (labels: labels, centroids: centroids, inertia: inertia)
 
-proc kmeans*[T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0001, n_init = 10, max_iters = 300, seed = 1000, transform = true): Tensor[T] =
+proc kmeans*[T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0001, n_init = 10, max_iters = 300, seed = 1000, transform = true):
+  tuple[labels: Tensor[T], centroids: Tensor[T], inertia: T] =
   ## K-Means Clustering
   ## Inputs:
-  ##   - x: A matrix of shape [Nb of observations, Nb of features]
-  ##   - n_clusters: The number of cluster centroids to compute
-  ##   - tol: early stopping criterion if centroids move less than this amount on an iteration
-  ##   - max_iters: maximum total passes over x before stopping
-  ##   - seed: random seed for reproducability
-  ##   - transform: whether or not to return the cluster labels or centroids
+  ##  - x: A matrix of shape [Nb of observations, Nb of features]
+  ##  - n_clusters: The number of cluster centroids to compute
+  ##  - tol: early stopping criterion if centroids move less than this amount on an iteration
+  ##  - max_iters: maximum total passes over x before stopping
+  ##  - seed: random seed for reproducability
   ##
   ## Returns:
-  ##   - Cluster labels if transform is true: a matrix of shape [Nb of observations, 1]
-  ##   - Centroid coordinates if transform is false: a matrix of shape [n_clusters, Nb of features]
-  ##    
+  ##  - a tuple of:
+  ##    - Cluster labels : a matrix of shape [Nb of observations, 1]
+  ##    - Centroid coordinates : a matrix of shape [n_clusters, Nb of features]
+  ##    - Inertia: the sum of sq distances from each point to its centroid 
   var 
     inertias = newTensor[T](n_init)
     labels = newSeq[Tensor[T]](n_init)
@@ -172,17 +222,17 @@ proc kmeans*[T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0001, n
     inertias[i] = output.inertia
     centroids[i] = output.centroids
 
-  let best_clustering = inertias.find(inertias.min)
-  if transform:
-    return labels[best_clustering]
-  else:
-    return centroids[best_clustering]
+  let i = inertias.find(inertias.min)
+  return (labels[i], centroids[i], inertias[i]) 
 
 proc kmeans*[T: SomeFloat](x: Tensor[T], centroids: Tensor[T]): Tensor[T] =
   ## K-Means Clustering
   ## Inputs:
   ##   - x: A matrix of shape [Nb of observations, Nb of features]
   ##   - centroids: A matrix of shape [Nb of centroids, Nb of features]
+  ##
+  ## Returns:
+  ##   - Cluster labels : a matrix of shape [Nb of observations, 1]
   let 
     n_rows = x.shape[0]
     n_cols = x.shape[1]

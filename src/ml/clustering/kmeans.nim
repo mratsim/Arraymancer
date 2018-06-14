@@ -200,7 +200,7 @@ proc assign_labels [T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.
   return (labels: labels, centroids: centroids, inertia: inertia)
 
 proc kmeans*[T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0001, n_init = 10, max_iters = 300, seed = 1000, random = true):
-  tuple[labels: Tensor[T], centroids: Tensor[T], inertia: T] =
+  tuple[labels: Tensor[T], centroids: Tensor[T], inertia: T] {.noInit.} =
   ## K-Means Clustering
   ## Inputs:
   ##  - x: A matrix of shape [Nb of observations, Nb of features]
@@ -235,7 +235,7 @@ proc kmeans*[T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0001, n
   let i = inertias.find(inertias.min)
   return (labels[i], centroids[i], inertias[i]) 
 
-proc kmeans*[T: SomeFloat](x: Tensor[T], centroids: Tensor[T]): Tensor[T] =
+proc kmeans*[T: SomeFloat](x: Tensor[T], centroids: Tensor[T]): Tensor[T] {.noInit.} =
   ## K-Means Clustering
   ## Inputs:
   ##  - x: A matrix of shape [Nb of observations, Nb of features]

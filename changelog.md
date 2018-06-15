@@ -119,7 +119,7 @@ Arraymancer v0.2.0 Sept. 24, 2017 "The Color of Magic"
 I am very excited to announce the second release of Arraymancer which includes numerous improvements `blablabla` ...
 
 Without further ado:
-- Communauty
+- community
    - There is a Gitter room!
 - Breaking
    - `shallowCopy` is now `unsafeView` and accepts `let` arguments
@@ -144,7 +144,7 @@ Without further ado:
 - Ecosystem:
    - I express my deep thanks to @edubart for testing Arraymancer, contributing new functions, and improving its overall performance. He built [arraymancer-demos](https://github.com/edubart/arraymancer-demos) and [arraymancer-vision](https://github.com/edubart/arraymancer-vision),check those out you can load images in Tensor and do logistic regression on those!
 
-Also thanks to the Nim communauty on IRC/Gitter, they are a tremendous help (yes Varriount, Yardanico, Zachary, Krux).
+Also thanks to the Nim community on IRC/Gitter, they are a tremendous help (yes Varriount, Yardanico, Zachary, Krux).
 I probably would have struggled a lot more without the guidance of Andrea's code for Cuda in his [neo](https://github.com/unicredit/neo) and [nimcuda](https://github.com/unicredit/nimcuda) library. And obviously Araq and Dom for Nim which is an amazing language for performance, productivity, safety and metaprogramming.
 
 

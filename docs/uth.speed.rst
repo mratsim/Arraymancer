@@ -21,7 +21,7 @@ A naïve logistic sigmoid implementation in Numpy would be:
 
     import math
 
-    def sigmoid(x):
+    proc sigmoid(x):
       return 1 / (1 + math.exp(-x))
 
 With Numpy broadcasting, all those operations would be done on whole
@@ -40,7 +40,7 @@ and ``.+``. (To avoid name conflict we change the logistic sigmoid name)
 
     import arraymancer
 
-    def customSigmoid[T: SomeReal](t: Tensor[T]): Tensor[T] =
+    proc customSigmoid[T: SomeReal](t: Tensor[T]): Tensor[T] =
       result = 1 ./ (1 .+ exp(-t))
 
 Well, unfortunately, the only thing we gain here is parallelism but we
@@ -51,7 +51,7 @@ the loop fusion template ``map_inline``:
 
     import arraymancer
 
-    def customSigmoid2[T: SomeReal](t: Tensor[T]): Tensor[T] =
+    proc customSigmoid2[T: SomeReal](t: Tensor[T]): Tensor[T] =
       result = map_inline(t):
         1 / (1 + exp(-x))
 
@@ -66,7 +66,7 @@ multiply-add ``C += A .* B``:
 
     import arraymancer
 
-    def fusedMultiplyAdd[T: SomeNumber](c: var Tensor[T], a, b: Tensor[T]) =
+    proc fusedMultiplyAdd[T: SomeNumber](c: var Tensor[T], a, b: Tensor[T]) =
       ## Implements C += A .* B, .* is the element-wise multiply
       apply3_inline(c, a, b):
         x += y * z

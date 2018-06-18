@@ -129,6 +129,14 @@ proc `./`*[T: SomeReal](val: T, t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Broadcasted division of a float by a tensor of floats.
   result = t.map_inline(val / x)
 
+proc `./`*[T: SomeInteger](t: Tensor[T], val: T): Tensor[T] {.noInit.} =
+  ## Broadcasted division of tensor of integers by an integer.
+  result = t.map_inline(x div val)
+
+proc `./`*[T: SomeReal](t: Tensor[T], val: T): Tensor[T] {.noInit.} =
+  ## Broadcasted division of a tensor of floats by a float.
+  result = t.map_inline(x / val)
+
 proc `.^`*[T: SomeReal](t: Tensor[T], exponent: T): Tensor[T] {.noInit.} =
   ## Compute element-wise exponentiation
   result = t.map_inline pow(x, exponent)

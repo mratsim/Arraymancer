@@ -22,7 +22,7 @@ proc euclidean_distance [T: SomeReal](u: Tensor[T], v: Tensor[T], squared: bool 
   let u_v = (u .- v).reshape(u.shape[1])
   result = dot(u_v, u_v)
   if not squared:
-    result = sqrt(result) 
+    result = sqrt(result)
 
 proc cumsum [T: SomeReal](p: Tensor[T]): Tensor[T] {.noInit.} =
   ## Calculates the cumulative sum of a vector.
@@ -49,7 +49,7 @@ proc init_random [T: SomeReal](x: Tensor[T], n_clusters: int): Tensor[T] {.noIni
     let random_point = rand(x.shape[0])
     result[i, _] = x[random_point, _]
 
-proc get_closest_centroid [T: SomeReal](x: Tensor[T], centroids: Tensor[T], cid: int): int {.noInit.} =
+proc get_closest_centroid [T: SomeReal](x: Tensor[T], centroids: Tensor[T], cid: int): int =
   ## Helper method to get the closest centroid
   var
     closest_dist = Inf
@@ -61,7 +61,7 @@ proc get_closest_centroid [T: SomeReal](x: Tensor[T], centroids: Tensor[T], cid:
 
 proc get_candidates [T: SomeReal](n: int, distances: Tensor[T]): Tensor[int] {.noInit.} =
   ## Sample candidates with probability weighted by the distances
-  let probs = cumsum(distances ./ @[distances.sum].toTensor)
+  let probs = cumsum(distances ./ distances.sum)
   var candidates = newTensor[int](n)
   for t in 0..<n:
     block sampling:
@@ -82,16 +82,16 @@ proc get_distances [T: SomeReal](point: int, x: Tensor[T], squared: bool = false
 proc init_plus_plus [T: SomeReal](x: Tensor[T], n_clusters: int): Tensor[T] {.noInit.} =
   ## Helper method to use the KMeans++ heuristic for initial centroids
   ##  - x: a tensor of input data with rank of 2
-  ##  - n_clusters: the number of centroids to initialize 
+  ##  - n_clusters: the number of centroids to initialize
   ##
   ## k-means++ is an initialization heuristic for the standard k-means algorithm.
   ## It uses a simple randomized seeding technique that is O(log k) competive with
-  ## the optimal clustering and speeds up convergance. The implementation here is based 
-  ## loosely ## off the one in scikit-learn: 
+  ## the optimal clustering and speeds up convergance. The implementation here is based
+  ## loosely ## off the one in scikit-learn:
   ## https://github.com/scikit-learn/scikit-learn/blob/a24c8b46/sklearn/cluster/k_means_.py#L43
   ##
   ## The intuition behind the algorithm is to choose centroids that are far away from each other,
-  ## by sampling each centroid weighted by the distance function. 
+  ## by sampling each centroid weighted by the distance function.
   ##
   ## See Arthur and Vassilvitskii (2007) "k-means++: The Advantages of Careful Seeding"
   assert x.rank == 2
@@ -115,7 +115,7 @@ proc init_plus_plus [T: SomeReal](x: Tensor[T], n_clusters: int): Tensor[T] {.no
       best_candidate_id: int
 
     # Find best candidate by highest inertia
-    for candidate_idx in 0..<n_trials:          
+    for candidate_idx in 0..<n_trials:
       let
         candidate_id = candidates[candidate_idx]
         candidate_inertia = get_distances(candidate_id, x, squared = true).sum
@@ -142,16 +142,16 @@ proc assign_labels [T: SomeReal](x: Tensor[T], n_clusters = 10, tol: float = 0.0
   ##  - labels: cluster labels produced by the algorithm - a tensor of shape [Nb of observations, 1]
   ##  - centroids: the coordinates of the centroids - a matrix of shape [n_clusters, x.shape[1]]
   ##  - inertia: a measurement of distortion across all clustering labeling - a single value of type T
-  let 
+  let
     n_rows = x.shape[0]
     n_cols = x.shape[1]
   assert x.rank == 2
   assert n_clusters <= n_cols
 
-  var 
+  var
     iters: int
     inertia: T
-    previous_inertia: T 
+    previous_inertia: T
     labels = newTensor[int](n_rows)
     centroids = newTensor[T](n_clusters, n_cols)
     # Keep a running total of the count and total
@@ -163,7 +163,7 @@ proc assign_labels [T: SomeReal](x: Tensor[T], n_clusters = 10, tol: float = 0.0
     centroids = init_plus_plus(x, n_clusters)
   else:
     centroids = init_random(x, n_clusters)
-  
+
   # Populate defaults in tables
   for i in 0..<n_clusters:
     counts[i] = 0
@@ -178,9 +178,9 @@ proc assign_labels [T: SomeReal](x: Tensor[T], n_clusters = 10, tol: float = 0.0
       inertia = 0.0
 
       for row_idx in 0..<n_rows:
-        var 
+        var
           min_dist: T = Inf
-          min_label: int 
+          min_label: int
         for centroid_idx in 0..<n_clusters:
           let dist = euclidean_distance(x[row_idx, _], centroids[centroid_idx, _])
           if min_dist == -1 or dist < min_dist:
@@ -196,11 +196,11 @@ proc assign_labels [T: SomeReal](x: Tensor[T], n_clusters = 10, tol: float = 0.0
         counts[min_label] += 1
         # Update the running total
         totals[min_label] += x[row_idx, _]
-      
+
       # Stopping criteria
       if (inertia - previous_inertia) <= tol or (iters >= max_iters):
         break update_centroids
-      
+
       # Update centroids, update inertia, if points have been assigned to them
       for i in 0..<n_clusters:
         # Avoid NaNs
@@ -224,13 +224,13 @@ proc kmeans*[T: SomeReal](x: Tensor[T], n_clusters = 10, tol: float = 0.0001, n_
   ##  - a tuple of:
   ##    - Cluster labels : a matrix of shape [Nb of observations, 1]
   ##    - Centroid coordinates : a matrix of shape [n_clusters, Nb of features]
-  ##    - Inertia: the sum of sq distances from each point to its centroid 
+  ##    - Inertia: the sum of sq distances from each point to its centroid
   let
     n_rows = x.shape[0]
     n_cols = x.shape[1]
   assert x.rank == 2
   assert n_clusters <= n_cols
-  var 
+  var
     inertias = newTensor[T](n_init)
     labels = newSeq[Tensor[T]](n_init)
     centroids = newSeq[Tensor[T]](n_init)
@@ -244,7 +244,7 @@ proc kmeans*[T: SomeReal](x: Tensor[T], n_clusters = 10, tol: float = 0.0001, n_
     centroids[i] = output.centroids
 
   let i = inertias.find(inertias.min)
-  return (labels[i], centroids[i], inertias[i]) 
+  return (labels[i], centroids[i], inertias[i])
 
 proc kmeans*[T: SomeReal](x: Tensor[T], centroids: Tensor[T]): Tensor[T] {.noInit.} =
   ## K-Means Clustering
@@ -254,7 +254,7 @@ proc kmeans*[T: SomeReal](x: Tensor[T], centroids: Tensor[T]): Tensor[T] {.noIni
   ##
   ## Returns:
   ##  - Cluster labels : a matrix of shape [Nb of observations, 1]
-  let 
+  let
     n_rows = x.shape[0]
     n_cols = x.shape[1]
     n_clusters = centroids.shape[0]
@@ -265,7 +265,7 @@ proc kmeans*[T: SomeReal](x: Tensor[T], centroids: Tensor[T]): Tensor[T] {.noIni
   var labels = newTensor[int](n_rows)
 
   for row_idx in 0..<n_rows:
-    var 
+    var
       min_dist: T = -1.0
       min_label = -1
     for centroid_idx in 0..<n_clusters:
@@ -273,7 +273,7 @@ proc kmeans*[T: SomeReal](x: Tensor[T], centroids: Tensor[T]): Tensor[T] {.noIni
       if min_dist == -1 or dist < min_dist:
         min_dist = dist
         min_label = centroid_idx
-    
-    labels[row_idx] = min_label 
-  
+
+    labels[row_idx] = min_label
+
   return labels.astype(T)

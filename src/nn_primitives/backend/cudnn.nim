@@ -36,7 +36,7 @@ let cudnnHandle0* = initCudnnHandle()
 # #####################################################################
 # Types and destructors
 
-template asCudnnType*[T: SomeReal](typ: typedesc[T]): cudnnDataType_t =
+template asCudnnType*[T: SomeFloat](typ: typedesc[T]): cudnnDataType_t =
   when T is float32:
     CUDNN_DATA_FLOAT
   elif T is float64:
@@ -56,7 +56,7 @@ template asCudnnType*[T: SomeReal](typ: typedesc[T]): cudnnDataType_t =
 # #####################################################################
 # Tensor descriptor
 
-proc newCudnn4DTensorDesc*[T: SomeReal](t: CudaTensor[T]): cudnnTensorDescriptor_t {.inline, noinit.}=
+proc newCudnn4DTensorDesc*[T: SomeFloat](t: CudaTensor[T]): cudnnTensorDescriptor_t {.inline, noinit.}=
   # TODO: destroy descriptor automatically
   # TODO: generalize with the NDTensor Desc
   check cudnnCreateTensorDescriptor addr result

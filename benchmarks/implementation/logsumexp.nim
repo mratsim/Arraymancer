@@ -16,7 +16,7 @@ import times, ../../src/arraymancer, math, sequtils
 # - Streaming: from http://www.nowozin.net/sebastian/blog/streaming-log-sum-exp-computation.html
 # which is similar to Welford algorithm for streaming mean and variance in statistics
 
-proc logsumexp[T: SomeReal](t: Tensor[T]): T =
+proc logsumexp[T: SomeFloat](t: Tensor[T]): T =
   # Advantage:
   #  - OpenMP parallel
   #  - No branching in a tight loop
@@ -51,7 +51,7 @@ proc streaming_max_sumexp*[T](t: Tensor[T]): tuple[max:T, sumexp: T] {.noSideEff
       result.sumexp += 1
       result.max = x
 
-proc logsumexp_stream*[T: SomeReal](t: Tensor[T]): T =
+proc logsumexp_stream*[T: SomeFloat](t: Tensor[T]): T =
   # Advantage:
   #  - Only one loop over the data
   #  - Can be done "on-the-fly"

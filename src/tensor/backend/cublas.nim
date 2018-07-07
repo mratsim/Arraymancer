@@ -26,7 +26,7 @@ export cuda, cublas_v2, cublas_api
 # L1 BLAS
 
 # Vector copy
-proc cublas_copy*[T: SomeReal](
+proc cublas_copy*[T: SomeFloat](
   n: int; x: ptr T; incx: int;
   y: ptr T; incy: int) {.inline.}=
 
@@ -38,7 +38,7 @@ proc cublas_copy*[T: SomeReal](
     check cublasDcopy(cublasHandle0, n.cint, x, incx.cint, y, incy.cint)
 
 # Vector dot product
-proc cublas_dot*[T: SomeReal](
+proc cublas_dot*[T: SomeFloat](
   n: int;
   x: ptr T; incx: int;
   y: ptr T; incy: int;
@@ -52,7 +52,7 @@ proc cublas_dot*[T: SomeReal](
     check cublasDdot(cublasHandle0, n.cint, x, incx.cint, y, incy.cint, output)
 
 # Vector addition
-proc cublas_axpy*[T: SomeReal](
+proc cublas_axpy*[T: SomeFloat](
   n: int;
   alpha: T;
   x: ptr T; incx: int;
@@ -70,7 +70,7 @@ proc cublas_axpy*[T: SomeReal](
     check cublasDaxpy(cublasHandle0, n.cint, addr al, x, incx.cint, y, incy.cint)
 
 # Scalar multiplication
-proc cublas_scal*[T: SomeReal](
+proc cublas_scal*[T: SomeFloat](
   n: int; alpha: T;
   x: ptr T; incx: int) {.inline.}=
 
@@ -85,7 +85,7 @@ proc cublas_scal*[T: SomeReal](
 
 # BLAS extension (L1-like)
 # Matrix addition (non-standard BLAS)
-proc cublas_geam*[T: SomeReal](
+proc cublas_geam*[T: SomeFloat](
   transa, transb: cublasOperation_t;
   m, n: int;
   alpha: T; A: ptr T; lda: int;
@@ -112,7 +112,7 @@ proc cublas_geam*[T: SomeReal](
                       C, ldc.cint)
 
 # L2 BLAS
-proc cublas_gemv*[T: SomeReal](
+proc cublas_gemv*[T: SomeFloat](
   trans: cublasOperation_t, m, n: int,
   alpha: T, A: ptr T, lda: int,
   x: ptr T, incx: int,
@@ -139,7 +139,7 @@ proc cublas_gemv*[T: SomeReal](
                       addr be, y, incy.cint)
 
 # L3 BLAS
-proc cublas_gemm*[T: SomeReal](
+proc cublas_gemm*[T: SomeFloat](
   transa, transb: cublasOperation_t,
   m, n, k: int,
   alpha: T, A: ptr T, lda: int,
@@ -169,7 +169,7 @@ proc cublas_gemm*[T: SomeReal](
                       B, ldb.cint,
                       addr be, C, ldc.cint)
 
-proc cublas_gemmStridedBatched*[T: SomeReal](
+proc cublas_gemmStridedBatched*[T: SomeFloat](
   transa, transb: cublasOperation_t;
   m, n, k: int;
   alpha: T; A: ptr T; lda: int; strideA: int;

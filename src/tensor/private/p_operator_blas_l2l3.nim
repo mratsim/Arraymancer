@@ -25,7 +25,7 @@ import  ./p_checks,
 # BLAS Level 2 (Matrix-Vector)
 
 when defined(blis):
-  proc blisMV_y_eq_aAx_p_by*[T: SomeReal](
+  proc blisMV_y_eq_aAx_p_by*[T: SomeFloat](
     alpha: T, a, x: Tensor[T],
     beta: T, y: var Tensor[T]) {.inline,noSideEffect.}=
     # Matrix-Vector: y = alpha A matvecmul x + beta y
@@ -49,7 +49,7 @@ when defined(blis):
 
 # Note the fallback for non-real "naive_gemv_fallback" is called directly
 
-proc blasMV_y_eq_aAx_p_by*[T: SomeReal](
+proc blasMV_y_eq_aAx_p_by*[T: SomeFloat](
   alpha: T, a, x: Tensor[T],
   beta: T, y: var Tensor[T]) =
   # Matrix-Vector: y = alpha A matvecmul x + beta y
@@ -81,7 +81,7 @@ proc blasMV_y_eq_aAx_p_by*[T: SomeReal](
 # BLAS Level 3 (Matrix-Matrix)
 
 when defined(blis):
-  proc blisMM_C_eq_aAB_p_bC*[T: SomeReal](
+  proc blisMM_C_eq_aAB_p_bC*[T: SomeFloat](
     alpha: T, a, b: Tensor[T],
     beta: T, c: var Tensor[T]) {.inline,noSideEffect.}=
     # Matrix: C = alpha A matmul B + beta C
@@ -118,7 +118,7 @@ proc fallbackMM_C_eq_aAB_p_bC*[T: SomeInteger](
                     c.data, c.offset,
                     c.strides[0], c.strides[1])
 
-proc blasMM_C_eq_aAB_p_bC*[T: SomeReal](
+proc blasMM_C_eq_aAB_p_bC*[T: SomeFloat](
   alpha: T, a, b: Tensor[T],
   beta: T, c: var Tensor[T]) =
   # Matrix: C = alpha A matmul B + beta C

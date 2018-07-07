@@ -46,7 +46,7 @@ proc `./`*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = map2_inline(tmp_a, tmp_b, x div y)
 
-proc `./`*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noInit.} =
+proc `./`*[T: SomeFloat](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Tensor element-wise division for real numbers.
   ##
   ## And broadcasted element-wise division.
@@ -92,7 +92,7 @@ proc `./=`*[T: SomeInteger](a: var Tensor[T], b: Tensor[T]) =
   let tmp_b = b.broadcast(a.shape)
   apply2_inline(a, tmp_b, x div y)
 
-proc `./=`*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) =
+proc `./=`*[T: SomeFloat](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor broadcasted in-place float division.
   ##
   ## Only the right hand side tensor can be broadcasted.
@@ -125,7 +125,7 @@ proc `./`*[T: SomeInteger](val: T, t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Broadcasted division of an integer by a tensor of integers.
   result = t.map_inline(val div x)
 
-proc `./`*[T: SomeReal](val: T, t: Tensor[T]): Tensor[T] {.noInit.} =
+proc `./`*[T: SomeFloat](val: T, t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Broadcasted division of a float by a tensor of floats.
   result = t.map_inline(val / x)
 
@@ -133,11 +133,11 @@ proc `./`*[T: SomeInteger](t: Tensor[T], val: T): Tensor[T] {.noInit.} =
   ## Broadcasted division of tensor of integers by an integer.
   result = t.map_inline(x div val)
 
-proc `./`*[T: SomeReal](t: Tensor[T], val: T): Tensor[T] {.noInit.} =
+proc `./`*[T: SomeFloat](t: Tensor[T], val: T): Tensor[T] {.noInit.} =
   ## Broadcasted division of a tensor of floats by a float.
   result = t.map_inline(x / val)
 
-proc `.^`*[T: SomeReal](t: Tensor[T], exponent: T): Tensor[T] {.noInit.} =
+proc `.^`*[T: SomeFloat](t: Tensor[T], exponent: T): Tensor[T] {.noInit.} =
   ## Compute element-wise exponentiation
   result = t.map_inline pow(x, exponent)
 
@@ -152,6 +152,6 @@ proc `.-=`*[T: SomeNumber](t: var Tensor[T], val: T) =
   ## Tensor in-place substraction with a broadcasted scalar.
   t.apply_inline(x - val)
 
-proc `.^=`*[T: SomeReal](t: var Tensor[T], exponent: T) =
+proc `.^=`*[T: SomeFloat](t: var Tensor[T], exponent: T) =
   ## Compute in-place element-wise exponentiation
   t.apply_inline pow(x, exponent)

@@ -16,7 +16,7 @@ import ../../src/arraymancer, unittest
 
 
 suite "[NN primitives] Loss functions":
-  proc `~=`[T: SomeReal](a, b: T): bool =
+  proc `~=`[T: SomeFloat](a, b: T): bool =
     let eps = 2e-5.T
     result = abs(a - b) <= eps
 

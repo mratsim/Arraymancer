@@ -34,7 +34,7 @@ proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
 
 cuda_assign_glue("cuda_asContiguous", "CopyOp", cuda_asContiguous)
 
-proc asContiguous*[T: SomeReal](t: CudaTensor[T], layout: OrderType = colMajor, force: bool = false):
+proc asContiguous*[T: SomeFloat](t: CudaTensor[T], layout: OrderType = colMajor, force: bool = false):
   CudaTensor[T] {.noSideEffect.}=
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
   ##

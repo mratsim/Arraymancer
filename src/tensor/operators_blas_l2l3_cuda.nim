@@ -17,7 +17,7 @@ import  ./backend/cublas,
         ./private/p_checks,
         ./data_structure
 
-proc cudaMV_y_eq_aAx_p_by[T: SomeReal](
+proc cudaMV_y_eq_aAx_p_by[T: SomeFloat](
   alpha: T, a, x: CudaTensor[T],
   beta: T, y: var CudaTensor[T]) =
   # Matrix-Vector: y = alpha A matvecmul x + beta y
@@ -40,7 +40,7 @@ proc cudaMV_y_eq_aAx_p_by[T: SomeReal](
       x.get_data_ptr, x.strides[0],
       beta, y.get_data_ptr, y.strides[0])
 
-proc cudaMM_C_eq_aAB_p_bC[T: SomeReal](
+proc cudaMM_C_eq_aAB_p_bC[T: SomeFloat](
   alpha: T, a, b: CudaTensor[T],
   beta: T, c: var CudaTensor[T]) =
   # Matrix: C = alpha A matmul B + beta C
@@ -71,7 +71,7 @@ proc cudaMM_C_eq_aAB_p_bC[T: SomeReal](
               b.get_data_ptr, ldb,
               beta, c.get_data_ptr, ldc)
 
-proc `*`*[T: SomeReal](a, b: CudaTensor[T]): CudaTensor[T] =
+proc `*`*[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T] =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector) on CUDA
 
   if a.rank == 2 and b.rank == 2:

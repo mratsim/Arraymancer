@@ -34,7 +34,7 @@ proc syevr(jobz: cstring; range: cstring; uplo: cstring; n: ptr cint; a: ptr cdo
           liwork, info)
 
 
-proc symeigImpl[T: SomeReal](a: Tensor[T], eigenvectors: bool,
+proc symeigImpl[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
   low_idx: int, high_idx: int, result: var tuple[eigenval, eigenvec: Tensor[T]]) =
 
   assert a.shape[0] == a.shape[1], "Input should be a symmetric matrix"
@@ -124,7 +124,7 @@ proc symeigImpl[T: SomeReal](a: Tensor[T], eigenvectors: bool,
 template `^^`(s, i: untyped): untyped =
   (when i is BackwardsIndex: s.shape[0] - int(i) else: int(i))
 
-proc symeig*[T: SomeReal](a: Tensor[T], eigenvectors = false): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
+proc symeig*[T: SomeFloat](a: Tensor[T], eigenvectors = false): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
   ## Compute the eigenvalues and eigen vectors of a symmetric matrix
   ## Input:
   ##   - A symmetric matrix of shape [n x n]
@@ -140,7 +140,7 @@ proc symeig*[T: SomeReal](a: Tensor[T], eigenvectors = false): tuple[eigenval, e
 
   symeigImpl(a, eigenvectors, 0, a.shape[0] - 1, result)
 
-proc symeig*[T: SomeReal](a: Tensor[T], eigenvectors = false,
+proc symeig*[T: SomeFloat](a: Tensor[T], eigenvectors = false,
   slice: HSlice[int or BackwardsIndex, int or BackwardsIndex]): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
   ## Compute the eigenvalues and eigen vectors of a symmetric matrix
   ## Input:

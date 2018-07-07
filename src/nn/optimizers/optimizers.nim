@@ -40,10 +40,10 @@ proc update*(self: Sgd) =
       x - self.lr * y
     v.grad = v.value.zeros_like
 
-func optimizerSGD*[M](model: M, learning_rate: SomeReal): Sgd[Tensor[SomeReal]] =
+func optimizerSGD*[M](model: M, learning_rate: SomeFloat): Sgd[Tensor[SomeFloat]] =
   ## Create a SGD optimizer that will update the model weight
 
-  # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeReal): ...
+  # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...
   # Pending https://github.com/nim-lang/Nim/issues/7734 and https://github.com/nim-lang/Nim/issues/7733
 
   result.params = @[]

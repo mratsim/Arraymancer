@@ -37,7 +37,7 @@ import
 # Also see here for counterarg: https://software.intel.com/en-us/forums/intel-moderncode-for-parallel-architectures/topic/635075
 # Intel CPUs prefetcher can maintain 32 streams
 
-proc gru_cell_inference*[T: SomeReal](
+proc gru_cell_inference*[T: SomeFloat](
   input, hidden,
   W3, U3,
   bW3, bU3: Tensor[T],
@@ -84,7 +84,7 @@ proc gru_cell_inference*[T: SomeReal](
   next_hidden = map3_inline(W3x[_, sz], n, hidden):
     (1 - x) * y + x * z
 
-proc gru_cell_forward*[T: SomeReal](
+proc gru_cell_forward*[T: SomeFloat](
   input, hidden,
   W3, U3,
   bW3, bU3: Tensor[T],
@@ -136,7 +136,7 @@ proc gru_cell_forward*[T: SomeReal](
   next_hidden = map3_inline(z, n, hidden):
     (1 - x) * y + x * z
 
-proc gru_cell_backward*[T: SomeReal](
+proc gru_cell_backward*[T: SomeFloat](
   dx, dh, dW3, dU3,          # input and weights gradients
   dbW3, dbU3: var Tensor[T], # bias gradient
   dnext: Tensor[T],          # gradient flowing back from the next hidden state

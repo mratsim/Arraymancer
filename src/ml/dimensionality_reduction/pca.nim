@@ -6,7 +6,7 @@ import
   ../../tensor/tensor, ../../linear_algebra/linear_algebra
 
 
-proc pca*[T: SomeReal](x: Tensor[T], nb_components = 2): tuple[results: Tensor[T], components: Tensor[T]] {.noInit.} =
+proc pca*[T: SomeFloat](x: Tensor[T], nb_components = 2): tuple[results: Tensor[T], components: Tensor[T]] {.noInit.} =
   ## Principal Component Analysis (PCA)
   ## Inputs:
   ##   - A matrix of shape [Nb of observations, Nb of features]
@@ -29,7 +29,7 @@ proc pca*[T: SomeReal](x: Tensor[T], nb_components = 2): tuple[results: Tensor[T
   result.components = eigvecs[_, ^1..0|-1]
   result.results= mean_centered * result.components
 
-proc pca*[T: SomeReal](x: Tensor[T], principal_axes: Tensor[T]): Tensor[T] {.noInit.} =
+proc pca*[T: SomeFloat](x: Tensor[T], principal_axes: Tensor[T]): Tensor[T] {.noInit.} =
   ## Principal Component Analysis (PCA) projection
   ## Inputs:
   ##    - A matrix of shape [Nb of observations, Nb of components]

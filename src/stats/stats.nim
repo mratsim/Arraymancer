@@ -4,7 +4,7 @@
 
 import ../tensor/tensor
 
-proc covariance_matrix*[T: SomeReal](x, y: Tensor[T]): Tensor[T] =
+proc covariance_matrix*[T: SomeFloat](x, y: Tensor[T]): Tensor[T] =
 
   ## Input:
   ##   - 2 tensors of shape [Nb observations, features]

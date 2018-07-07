@@ -6,18 +6,18 @@ import times, ../../src/arraymancer, math
 # We create a random tensor with randomly positive and negative value
 let a = randomTensor(1000, 1000, 100.0f) .- 50.0f
 
-proc sigmoid1[T: SomeReal](t: Tensor[T]): Tensor[T] {.noInit.}=
+proc sigmoid1[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.}=
   # Instable for large negative
   result = t.map_inline():
     1.T / (1.T + exp(-x))
 
-proc sigmoid2[T: SomeReal](t: Tensor[T]): Tensor[T] {.noInit.}=
+proc sigmoid2[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.}=
   # Instable for large positive
   result = t.map_inline():
     let tmp = exp(x)
     tmp / (1.T + tmp)
 
-proc sigmoid3[T: SomeReal](t: Tensor[T]): Tensor[T] {.noInit.}=
+proc sigmoid3[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.}=
   # Stable but branching in a loop
   result = t.map_inline():
     if x >= 0:
@@ -26,12 +26,12 @@ proc sigmoid3[T: SomeReal](t: Tensor[T]): Tensor[T] {.noInit.}=
       let z = exp(x)
       z / (1 + z)
 
-proc sigmoid4*[T: SomeReal](t: Tensor[T]): Tensor[T] {.noInit.}=
+proc sigmoid4*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.}=
   # Stable but expensive tanh
   result = t.map_inline():
     0.5.T * (tanh(0.5.T * x) + 1.T)
 
-proc sigmoid5*[T: SomeReal](t: Tensor[T]): Tensor[T] {.noInit.}=
+proc sigmoid5*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.}=
   # Stable and probably fastest
   result = t.map_inline():
     let clip_x = max(-500, -x)

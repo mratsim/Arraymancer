@@ -23,7 +23,7 @@ import  ./private/p_checks,
   # FIXME: Can't use built-in proc `+` in map: https://github.com/nim-lang/Nim/issues/5702
   # map2(a, `+`, b)
 
-proc dot*[T: SomeReal](a, b: Tensor[T]): T {.noSideEffect.} =
+proc dot*[T: SomeFloat](a, b: Tensor[T]): T {.noSideEffect.} =
   ## Vector to Vector dot (scalar) product
   when compileOption("boundChecks"): check_dot_prod(a,b)
   return dot(a.shape[0], a.get_offset_ptr, a.strides[0], b.get_offset_ptr, b.strides[0])
@@ -69,7 +69,7 @@ proc `*`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
   ## Element-wise multiplication by a scalar
   a * t
 
-proc `/`*[T: SomeReal](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
+proc `/`*[T: SomeFloat](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
   ## Element-wise division by a float scalar
   t.map_inline(x / a)
 
@@ -84,7 +84,7 @@ proc `*=`*[T: SomeNumber](t: var Tensor[T], a: T) =
   ## Element-wise multiplication by a scalar (in-place)
   t.apply_inline(x * a)
 
-proc `/=`*[T: SomeReal](t: var Tensor[T], a: T) =
+proc `/=`*[T: SomeFloat](t: var Tensor[T], a: T) =
   ## Element-wise division by a scalar (in-place)
   t.apply_inline(x / a)
 

@@ -35,7 +35,7 @@ type
 
 type Algo = cudnnConvolutionFwdAlgo_t or cudnnConvolutionBwdFilterAlgo_t or cudnnConvolutionBwdDataAlgo_t
 
-type ConvAlgoSpace*[T: SomeReal, Algo] = object
+type ConvAlgoSpace*[T: SomeFloat, Algo] = object
   algo*: Algo
   workspace*: ref[ptr T]
   sizeInBytes*: csize
@@ -66,14 +66,14 @@ proc newConvDesc( convolution_dimension: range[2..3],
     T.asCudnnType
   )
 
-proc newConv2dDesc*[T: SomeReal](padding, strides, dilation: SizeHW): cudnnConvolutionDescriptor_t {.noInit, inline.}=
+proc newConv2dDesc*[T: SomeFloat](padding, strides, dilation: SizeHW): cudnnConvolutionDescriptor_t {.noInit, inline.}=
   let convConfig = initConv2DConfig(padding, strides, dilation)
   result = newConvDesc(2, convConfig, CUDNN_CROSS_CORRELATION, T)
 
 # #####################################################################
 # Convolution kernel descriptor
 
-proc newCudnnConvKernelDesc*[T: SomeReal](
+proc newCudnnConvKernelDesc*[T: SomeFloat](
   convKernel: CudaTensor[T]): cudnnFilterDescriptor_t {.inline, noInit.}=
   # TODO: destroy descriptor automatically
   check cudnnCreateFilterDescriptor addr result
@@ -131,7 +131,7 @@ proc convOutDims*(input, kernel: CudaTensor, padding, strides, dilation: SizeHW)
 # ###############################################################
 # Forward convolution: Algorithm and Worksize space
 
-proc conv_algo_workspace*[T: SomeReal](
+proc conv_algo_workspace*[T: SomeFloat](
   srcTensorDesc: cudnnTensorDescriptor_t,
   kernelDesc: cudnnFilterDescriptor_t,
   convDesc: cudnnConvolutionDescriptor_t,
@@ -176,7 +176,7 @@ proc conv_algo_workspace*[T: SomeReal](
 # ###############################################################
 # Backward convolution - Kernel: Algorithm and Worksize space
 
-proc conv_bwd_kernel_algo_workspace*[T: SomeReal](
+proc conv_bwd_kernel_algo_workspace*[T: SomeFloat](
   srcTensorDesc: cudnnTensorDescriptor_t,
   gradOutputTensorDesc: cudnnTensorDescriptor_t, # gradOuput is the gradient of the output. Result will be the gradient of the input
   gradKernelDesc: cudnnFilterDescriptor_t,
@@ -221,7 +221,7 @@ proc conv_bwd_kernel_algo_workspace*[T: SomeReal](
 # ###############################################################
 # Backward convolution - Data: Algorithm and Worksize space
 
-proc conv_bwd_data_algo_workspace*[T: SomeReal](
+proc conv_bwd_data_algo_workspace*[T: SomeFloat](
   srcTensorDesc: cudnnTensorDescriptor_t,
   gradOutputTensorDesc: cudnnTensorDescriptor_t, # gradOuput is the gradient of the output. Result will be the gradient of the input
   kernelDesc: cudnnFilterDescriptor_t,

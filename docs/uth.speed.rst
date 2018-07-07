@@ -40,7 +40,7 @@ and ``.+``. (To avoid name conflict we change the logistic sigmoid name)
 
     import arraymancer
 
-    proc customSigmoid[T: SomeReal](t: Tensor[T]): Tensor[T] =
+    proc customSigmoid[T: SomeFloat](t: Tensor[T]): Tensor[T] =
       result = 1 ./ (1 .+ exp(-t))
 
 Well, unfortunately, the only thing we gain here is parallelism but we
@@ -51,7 +51,7 @@ the loop fusion template ``map_inline``:
 
     import arraymancer
 
-    proc customSigmoid2[T: SomeReal](t: Tensor[T]): Tensor[T] =
+    proc customSigmoid2[T: SomeFloat](t: Tensor[T]): Tensor[T] =
       result = map_inline(t):
         1 / (1 + exp(-x))
 

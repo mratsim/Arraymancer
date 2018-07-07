@@ -23,7 +23,7 @@ import  ../tensor/tensor,
 # ##################################################################################################
 # Forward
 
-proc sigmoid*[T: SomeReal](t: Tensor[T]): Tensor[T] {.noInit.}=
+proc sigmoid*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.}=
   ## Logistic sigmoid activation function, :math:`f(x) = 1 / (1 + \exp(-x))`
   ## Note: Canonical sigmoid is not stable for large negative value
   ## Please use sigmoid_cross_entropy for the final layer for better stability and performance
@@ -36,13 +36,13 @@ proc sigmoid*[T: SomeReal](t: Tensor[T]): Tensor[T] {.noInit.}=
 proc relu*[T](t: Tensor[T]): Tensor[T] {.noInit.}=
   t.map_inline max(0.T,x)
 
-proc tanh*[T: SomeReal](t: Tensor[T]): Tensor[T] {.noInit.}=
+proc tanh*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.}=
   t.map_inline tanh(x)
 
 # ##################################################################################################
 # In-place forward
 
-proc msigmoid*[T: SomeReal](t: var Tensor[T]) =
+proc msigmoid*[T: SomeFloat](t: var Tensor[T]) =
   ## Logistic sigmoid activation function, :math:`f(x) = 1 / (1 + \exp(-x))`
   ## Note: Canonical sigmoid is not stable for large negative value
 
@@ -53,7 +53,7 @@ proc msigmoid*[T: SomeReal](t: var Tensor[T]) =
 proc mrelu*[T](t: var Tensor[T]) =
   t.apply_inline max(0.T, x)
 
-proc mtanh*[T: SomeReal](t: var Tensor[T]) =
+proc mtanh*[T: SomeFloat](t: var Tensor[T]) =
   t.apply_inline tanh(x)
 
 # ##################################################################################################

@@ -34,7 +34,7 @@ proc gelsd(m: ptr cint; n: ptr cint; nrhs: ptr cint; a: ptr cdouble; lda: ptr ci
   )
 
 
-proc least_squares_solver*[T: SOmeReal](a, b: Tensor[T]):
+proc least_squares_solver*[T: SomeFloat](a, b: Tensor[T]):
   tuple[
     least_square_sol: Tensor[T],
     residuals:  Tensor[T],

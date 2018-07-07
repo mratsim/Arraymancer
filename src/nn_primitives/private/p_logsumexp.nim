@@ -58,7 +58,7 @@ proc stable_softmax*[T](x, max, sumexp: T): T {.noSideEffect, inline.}=
   # Numerically stable streaming softmax helper
   result = exp(x - max) / sumexp
 
-proc logsumexp*[T: SomeReal](t: Tensor[T]): T =
+proc logsumexp*[T: SomeFloat](t: Tensor[T]): T =
   # Advantage:
   #  - Only one loop over the data
   #  - Can be done "on-the-fly"
@@ -78,7 +78,7 @@ proc logsumexp*[T: SomeReal](t: Tensor[T]): T =
   result = max + ln(sumexp)
 
 
-# proc logsumexp_classic[T: SomeReal](t: Tensor[T]): T =
+# proc logsumexp_classic[T: SomeFloat](t: Tensor[T]): T =
 #   # Advantage:
 #   #  - OpenMP parallel
 #   #  - No branching in a tight loop

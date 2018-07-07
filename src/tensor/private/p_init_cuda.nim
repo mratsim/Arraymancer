@@ -17,7 +17,7 @@ import  ../backend/cuda,
         ../data_structure
 
 
-template tensorCuda[T: SomeReal](
+template tensorCuda[T: SomeFloat](
   shape: typed,
   layout: OrderType = colMajor,
   result: var CudaTensor[T])=
@@ -27,7 +27,7 @@ template tensorCuda[T: SomeReal](
   result.offset = 0
   result.storage = newCudaStorage[T](result.size)
 
-proc newCudaTensor*[T: SomeReal](
+proc newCudaTensor*[T: SomeFloat](
   shape: varargs[int],
   layout: OrderType = colMajor): CudaTensor[T] {.noInit, noSideEffect.}=
   ## Internal proc
@@ -40,7 +40,7 @@ proc newCudaTensor*[T: SomeReal](
 
   tensorCuda(shape, layout, result)
 
-proc newCudaTensor*[T: SomeReal](
+proc newCudaTensor*[T: SomeFloat](
   shape: MetadataArray,
   layout: OrderType = colMajor): CudaTensor[T] {.noInit, noSideEffect.}=
 

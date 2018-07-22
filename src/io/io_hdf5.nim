@@ -4,7 +4,7 @@
 
 import
   ../tensor/tensor,
-  strutils, strformat, ospaths,
+  strutils, strformat, ospaths, options,
   nimhdf5
 
 # constant which we use to keep track of how many tensors are stored
@@ -14,6 +14,53 @@ import
 const NumTensorStored = "numTensorsStored"
 
 proc read_hdf5*[T: SomeNumber](hdf5Path: string): Tensor[T] {.noInit.} =
+proc parseNameAndGroup(h5f: var H5FileObj,
+                       toWrite: static[bool],
+                       name, group: Option[string],
+                       number: Option[int] = none(int)):
+                      tuple[dsetName, grpName: string, numTensors: uint32] =
+  ## helper proc to parse the name and group arguments
+  ## of write/read_hdf5
+  ## Input:
+  ##   - name: name of the tensor dataset in the file
+  ##   - group: location to store the tensor in
+  ##   - number = if no name and group given, the number of the
+  ##     generic tensor to read
+  ## Output:
+  ##   - (string, string): tuple of dataset name, group name
+  ##     correctly parsed according to user desired name /
+  ##     generic name
+
+  # TODO: clean up this proc!
+  # maybe disallow no args at all?
+  # use Option[T] for number arg
+
+  if group.isSome:
+    result.grpName = group.get
+  if name.isSome:
+    result.dsetName = name.get
+  else:
+    # create a generic name based on tensor rank and number of
+    # tensors stored in file
+    # get num tensors in file (uint32 should be plenty I guess...)
+    result.numTensors = 0'u32
+
+    if NumTensorStored in h5f.attrs:
+      result.numTensors = h5f.attrs[NumTensorStored, uint32]
+
+    when toWrite:
+      if number.isSome and number.get < result.numTensors.int:
+        let num = number.get
+        result.dsetName = &"Tensor_{num}"
+      else:
+        result.dsetName = &"Tensor_{result.numTensors}"
+    else:
+      if number.isSome and number.get < result.numTensors.int:
+        let num = number.get
+        result.dsetName = &"Tensor_{num}"
+      elif result.numTensors.int > 0:
+        # if we read without specific tensor, read the last written
+        result.dsetName = &"Tensor_{result.numTensors - 1}"
   ## Reads a .h5 file (written by arraymancer) and returns a tensor of the
   ## specified type.
   ## If the tensor is stored in a different type in the file, it will be

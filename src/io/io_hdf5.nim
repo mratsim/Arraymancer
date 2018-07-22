@@ -13,7 +13,6 @@ import
 # for each tensor.
 const NumTensorStored = "numTensorsStored"
 
-proc read_hdf5*[T: SomeNumber](hdf5Path: string): Tensor[T] {.noInit.} =
 proc parseNameAndGroup(h5f: var H5FileObj,
                        toWrite: static[bool],
                        name, group: Option[string],
@@ -61,6 +60,10 @@ proc parseNameAndGroup(h5f: var H5FileObj,
       elif result.numTensors.int > 0:
         # if we read without specific tensor, read the last written
         result.dsetName = &"Tensor_{result.numTensors - 1}"
+
+proc read_hdf5*[T: SomeNumber](hdf5Path: string,
+                               name, group: Option[string],
+                               number: Option[int]): Tensor[T] {.noInit.} =
   ## Reads a .h5 file (written by arraymancer) and returns a tensor of the
   ## specified type.
   ## If the tensor is stored in a different type in the file, it will be
@@ -68,14 +71,61 @@ proc parseNameAndGroup(h5f: var H5FileObj,
   ##
   ## Input:
   ##   - The path to a HDF5 file as a string
+  ##   - A non-generic name of the tensor to read
+  ##   - A group different from the root group in which tensor is stored
+  ##   - if generic names are used the `number`-th tensor to read
   ## Output:
   ##   - A tensor
-  discard
+  # open hdf5 file
+  var h5f = H5File(hdf5Path, "r")
+  # get name of the correct tensor
+  let (dsetName, grpName, _) = h5f.parseNameAndGroup(false, name, group, number)
+
+  var h5dset = h5f[(grpName / dsetName).dset_str]
+
+  # get the meta data from the attributes
+  let shape = h5dset.attrs["shape", seq[int]]
+  let rank  = h5dset.attrs["rank", int]
+  let size  = h5dset.attrs["size", int]
+  let is_C_contiguous =
+    if h5dset.attrs["is_C_contiguous", string] == "true":
+      true
+    else:
+      false
+
+  # since the datatype of the resulting tensor is not necessarily
+  # the same as the actual data in the H5 file (we may want to convert
+  # it), get a converter proc for it
+  let convertTo = h5dset.convertType(T)
+  # finally convert seq to tensor and reshape
+  result = convertTo(h5dset).toTensor.reshape(shape)
+
+  # TODO: take these out...
+  assert shape == h5dset.shape
+  assert shape == @(result.shape)
+  assert rank == result.rank
+  assert size == result.size
+
+  # close file
+  let err = h5f.close()
+  if err != 0:
+    # TODO: raise? echo?
+    echo "WARNING: could not properly close H5 file. Error code: ", err
+
+proc read_hdf5*[T: SomeNumber](hdf5Path: string,
+                               name, group = "",
+                               number = -1): Tensor[T] {.noInit, inline.} =
+  ## wrapper around the real `read_hdf5` to provide a nicer interface
+  ## without having to worry about `some` and `none`
+  let
+    nameOpt = if name.len > 0: some(name) else: none(string)
+    groupOpt = if group.len > 0: some(group) else: none(string)
+    numberOpt = if number >= 0: some(number) else: none(int)
+  result = read_hdf5[T](hdf5Path, nameOpt, groupOpt, numberOpt)
 
 proc write_hdf5*[T: SomeNumber](t: Tensor[T],
                                 hdf5Path: string,
-                                name = "",
-                                group = "") =
+                                name, group: Option[string]) =
   ## Exports a tensor to a hdf5 file
   ## To keep this a simple convenience proc, the tensor is stored
   ## in the root group of the hdf5 file under a generic name.
@@ -97,22 +147,9 @@ proc write_hdf5*[T: SomeNumber](t: Tensor[T],
   ##   - An optional name for a `group` to store the tensor in
 
   # create hdf5 file
-  var
-    h5f = H5File(hdf5Path, "rw")
-    grpName = ""
-    dsetName = ""
-  if group.len > 0:
-    grpName = group
-  if name.len > 0:
-    dsetName = name
-  else:
-    # create a generic name based on tensor rank and number of
-    # tensors stored in file
-    # get num tensors in file (int32 should be plenty I guess...)
-    var numTensors = 0'u32
-    if NumTensorStored in h5f.attrs:
-      numTensors = h5f.attrs[NumTensorStored, uint32]
-    dsetName = &"Tensor_{t.rank}_{numTensors}"
+  var h5f = H5File(hdf5Path, "rw")
+
+  let (dsetName, grpName, numTensors) = h5f.parseNameAndGroup(true, name, group)
 
   var dset = h5f.create_dataset(grpName / dsetName,
                                 @(t.shape),
@@ -130,6 +167,9 @@ proc write_hdf5*[T: SomeNumber](t: Tensor[T],
   # workaround since we can't write bool attributes
   dset.attrs["is_C_contiguous"] = if t.is_C_contiguous: "true" else: "false"
 
+  # write new number of tensors stored
+  h5f.attrs[NumTensorStored] = numTensors + 1
+
   # close file
   let err = h5f.close()
   if err != 0:
@@ -137,3 +177,13 @@ proc write_hdf5*[T: SomeNumber](t: Tensor[T],
     echo "WARNING: could not properly close H5 file. Error code: ", err
     #raise newException(HDF5LibraryError,  "WARNING: could not properly close " &
     #  "H5 file. Error code: ", err)
+
+proc write_hdf5*[T: SomeNumber](t: Tensor[T],
+                                hdf5Path: string,
+                                name, group = "") {.inline.} =
+  ## wrapper around the real `write_hdf5` to provide a nicer interface
+  ## without having to worry about `some` and `none`
+  let
+    nameOpt = if name.len > 0: some(name) else: none(string)
+    groupOpt = if group.len > 0: some(group) else: none(string)
+  write_hdf5[T](t, hdf5Path, nameOpt, groupOpt)

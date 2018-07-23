@@ -36,8 +36,6 @@ suite "[IO] HDF5 .h5 file support":
                        [5'i64, 6, 7, 8]],
                       [[1'i64, 2, 3, 4],
                        [5'i64, 6, 7, 8]]]].toTensor
-  echo expected_4d.shape
-
 
   # test the HDF5 interface via the following:
   # - write tensor to file
@@ -50,46 +48,49 @@ suite "[IO] HDF5 .h5 file support":
   test "[IO] Writing Arraymancer tensor to HDF5 file":
 
     withFile(test_write_file):
+      # write 1D tensor and read back
       expected_1d.write_hdf5(test_write_file)
 
-      # read back
       let a = read_hdf5[int64](test_write_file)
       check a == expected_1d
 
     withFile(test_write_file):
-      # write an integer dataset
+      # write an 1D integer tensor and read back as float
       expected_1d.write_hdf5(test_write_file)
 
-      # read back as float dataset
       let a = read_hdf5[float64](test_write_file)
       check a == expected_1d_float
 
     withFile(test_write_file):
-      # write an integer dataset
-      expected_2d.write_hdf5(test_write_file, name = tensorName)
-
-      # read back as float dataset
-      let a = read_hdf5[float64](test_write_file, name = tensorName)
-      check a == expected_2d_float
-
-    withFile(test_write_file):
+      # write 2d tensor and read back
       expected_2d.write_hdf5(test_write_file)
 
-
-      # read back
       let a = read_hdf5[int64](test_write_file)
       check a == expected_2d
 
     withFile(test_write_file):
+      # write a 2D integer tensor and read back as float
+      expected_2d.write_hdf5(test_write_file, name = tensorName)
+
+      let a = read_hdf5[float64](test_write_file, name = tensorName)
+      check a == expected_2d_float
+
+    withFile(test_write_file):
+      # write 4D tensor and read back
       expected_4d.write_hdf5(test_write_file, name = name4D)
 
-      # read back
       let a = read_hdf5[int64](test_write_file, name = name4D)
       check a == expected_4d
 
     withFile(test_write_file):
+      # write tensor to subgroup and read back
+      expected_2d.write_hdf5(test_write_file, group = groupName)
+
+      let a = read_hdf5[int64](test_write_file, group = groupName)
+      check a == expected_2d
+
+    withFile(test_write_file):
       # write several tensors one after another, read them back
-      echo "Now more one"
       expected_1d.write_hdf5(test_write_file)
       expected_1d_float.write_hdf5(test_write_file)
       expected_2d.write_hdf5(test_write_file)
@@ -106,3 +107,28 @@ suite "[IO] HDF5 .h5 file support":
       check d == expected_2d_float
       let e = read_hdf5[int64](test_write_file, number = 4)
       check e == expected_4d
+
+    withFile(test_write_file):
+      # write several tensors without closing the file in between
+      var h5f = H5file(test_write_file, "rw")
+
+      h5f.write_hdf5(expected_1d)
+      h5f.write_hdf5(expected_1d_float)
+      h5f.write_hdf5(expected_2d)
+      h5f.write_hdf5(expected_2d_float)
+      h5f.write_hdf5(expected_4d)
+
+      let a = read_hdf5[int64](h5f, number = 0)
+      check a == expected_1d
+      let b = read_hdf5[float64](h5f, number = 1)
+      check b == expected_1d_float
+      let c = read_hdf5[int64](h5f, number = 2)
+      check c == expected_2d
+      let d = read_hdf5[float64](h5f, number = 3)
+      check d == expected_2d_float
+      let e = read_hdf5[int64](h5f, number = 4)
+      check e == expected_4d
+
+      let err = h5f.close()
+      if err != 0:
+        assert false, "Could not close H5 file correctly!"

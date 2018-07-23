@@ -36,16 +36,12 @@ suite "[IO] HDF5 .h5 file support":
                        [5'i64, 6, 7, 8]],
                       [[1'i64, 2, 3, 4],
                        [5'i64, 6, 7, 8]]]].toTensor
+  var expected_fortran = [[1'i64, 2, 3],
+                          [4'i64, 5, 6],
+                          [7'i64, 8, 9]].toTensor
+  expected_fortran = expected_fortran.asContiguous(colMajor, force = true)
 
-  # test the HDF5 interface via the following:
-  # - write tensor to file
-  # - read tensor back, compare with input tensor
-  # - read tensor back as different type
-  # - write tensor to specific name and group, read back
-  # - write several tensors to one file, read them back
-  # - ?
-
-  test "[IO] Writing Arraymancer tensor to HDF5 file":
+  test "[IO] Writing Arraymancer tensors to HDF5 file and reading them back":
 
     withFile(test_write_file):
       # write 1D tensor and read back
@@ -132,3 +128,22 @@ suite "[IO] HDF5 .h5 file support":
       let err = h5f.close()
       if err != 0:
         assert false, "Could not close H5 file correctly!"
+
+    withFile(test_write_file):
+      # check whether Fortran order is recovered
+      expected_fortran.write_hdf5(test_write_file)
+
+      let a = read_hdf5[int64](test_write_file)
+      check a == expected_fortran
+      check a.is_F_contiguous
+
+    withFile(test_write_file):
+      # write named tensor into nested group, read back
+      expected_2d.write_hdf5(test_write_file,
+                             name = tensorName,
+                             group = nestedGroups)
+
+      let a = read_hdf5[int64](test_write_file,
+                               name = tensorName,
+                               group = nestedGroups)
+      check a == expected_2d

@@ -4,6 +4,7 @@
 
 import
   ../tensor/tensor,
+  ../tensor/private/p_init_cpu,
   strutils, strformat, ospaths, options,
   nimhdf5
 
@@ -90,18 +91,21 @@ proc read_hdf5*[T: SomeNumber](h5f: var H5FileObj,
   let shape = h5dset.attrs["shape", seq[int]]
   let rank  = h5dset.attrs["rank", int]
   let size  = h5dset.attrs["size", int]
-  let is_C_contiguous =
+  let layout =
     if h5dset.attrs["is_C_contiguous", string] == "true":
-      true
+      rowMajor
     else:
-      false
+      colMajor
 
   # since the datatype of the resulting tensor is not necessarily
   # the same as the actual data in the H5 file (we may want to convert
   # it), get a converter proc for it
   let convertTo = h5dset.convertType(T)
   # finally convert seq to tensor and reshape
-  result = convertTo(h5dset).toTensor.reshape(shape)
+
+  # Read the data
+  tensorCpu(shape, result, layout)
+  result.data = convertTo(h5dset)
 
   # TODO: take these out...
   assert shape == h5dset.shape
@@ -158,15 +162,18 @@ proc write_hdf5*[T: SomeNumber](h5f: var H5FileObj,
   var dset = h5f.create_dataset(grpName / dsetName,
                                 @(t.shape),
                                 dtype = T)
+
+  # make sure the tensor is contiguous
+  let tCont = t.asContiguous
   # write tensor data
-  dset.unsafeWrite(t.get_data_ptr, t.size)
+  dset.unsafeWrite(tCont.get_data_ptr, tCont.size)
 
   # now write attributes of tensor
-  dset.attrs["rank"] = t.rank
-  dset.attrs["shape"] = @(t.shape)
-  dset.attrs["size"] = t.size
+  dset.attrs["rank"] = tCont.rank
+  dset.attrs["shape"] = @(tCont.shape)
+  dset.attrs["size"] = tCont.size
   # workaround since we can't write bool attributes
-  dset.attrs["is_C_contiguous"] = if t.is_C_contiguous: "true" else: "false"
+  dset.attrs["is_C_contiguous"] = if tCont.is_C_contiguous: "true" else: "false"
 
   # write new number of tensors stored
   h5f.attrs[NumTensorStored] = numTensors + 1

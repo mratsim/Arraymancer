@@ -81,6 +81,11 @@ proc read_hdf5*[T: SomeNumber](hdf5Path: string,
   # get name of the correct tensor
   let (dsetName, grpName, _) = h5f.parseNameAndGroup(false, name, group, number)
 
+  # check whether dataset exists in file
+  if not h5f.isDataset(grpName / dsetName):
+    raise newException(ValueError, "Given name `" & grpName / dsetName & "` does not " &
+      "correspond to an existing tensor in the file: " & h5f.name)
+
   var h5dset = h5f[(grpName / dsetName).dset_str]
 
   # get the meta data from the attributes

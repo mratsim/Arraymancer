@@ -61,7 +61,7 @@ proc parseNameAndGroup(h5f: var H5FileObj,
         # if we read without specific tensor, read the last written
         result.dsetName = &"Tensor_{result.numTensors - 1}"
 
-proc read_hdf5*[T: SomeNumber](hdf5Path: string,
+proc read_hdf5*[T: SomeNumber](h5f: var H5FileObj,
                                name, group: Option[string],
                                number: Option[int]): Tensor[T] {.noInit.} =
   ## Reads a .h5 file (written by arraymancer) and returns a tensor of the
@@ -70,14 +70,12 @@ proc read_hdf5*[T: SomeNumber](hdf5Path: string,
   ## converted.
   ##
   ## Input:
-  ##   - The path to a HDF5 file as a string
+  ##   - The H5 file object we read from
   ##   - A non-generic name of the tensor to read
   ##   - A group different from the root group in which tensor is stored
   ##   - if generic names are used the `number`-th tensor to read
   ## Output:
   ##   - A tensor
-  # open hdf5 file
-  var h5f = H5File(hdf5Path, "r")
   # get name of the correct tensor
   let (dsetName, grpName, _) = h5f.parseNameAndGroup(false, name, group, number)
 
@@ -111,25 +109,29 @@ proc read_hdf5*[T: SomeNumber](hdf5Path: string,
   assert rank == result.rank
   assert size == result.size
 
-  # close file
-  let err = h5f.close()
-  if err != 0:
-    # TODO: raise? echo?
-    echo "WARNING: could not properly close H5 file. Error code: ", err
-
-proc read_hdf5*[T: SomeNumber](hdf5Path: string,
-                               name, group = "",
-                               number = -1): Tensor[T] {.noInit, inline.} =
+proc read_hdf5*[T: SomeNumber](h5f: var H5FileObj,
+                              name, group = "",
+                              number = -1): Tensor[T] {.noInit, inline.} =
   ## wrapper around the real `read_hdf5` to provide a nicer interface
   ## without having to worry about `some` and `none`
   let
     nameOpt = if name.len > 0: some(name) else: none(string)
     groupOpt = if group.len > 0: some(group) else: none(string)
     numberOpt = if number >= 0: some(number) else: none(int)
-  result = read_hdf5[T](hdf5Path, nameOpt, groupOpt, numberOpt)
+  result = read_hdf5[T](h5f, nameOpt, groupOpt, numberOpt)
 
-proc write_hdf5*[T: SomeNumber](t: Tensor[T],
-                                hdf5Path: string,
+proc read_hdf5*[T: SomeNumber](hdf5Path: string,
+                               name, group = "",
+                               number = -1): Tensor[T] {.noInit, inline.} =
+  ## convenience wrapper around `read_hdf5` with `var H5DataSet` argument.
+  ## opens the given H5 file for reading and then calls the read proc
+  withH5(hdf5Path, "r"):
+    # template opens file with read access as injected `h5f` and closes
+    # file after actions
+    result = read_hdf5[T](h5f, name, group, number)
+
+proc write_hdf5*[T: SomeNumber](h5f: var H5FileObj,
+                                t: Tensor[T],
                                 name, group: Option[string]) =
   ## Exports a tensor to a hdf5 file
   ## To keep this a simple convenience proc, the tensor is stored
@@ -146,13 +148,10 @@ proc write_hdf5*[T: SomeNumber](t: Tensor[T],
   ##
   ## Input:
   ##   - The tensor to write
-  ##   - The path to a HDF5 file as a string (will be created)
+  ##   - The H5 file object we write to
   ##   - An optional name for the dataset of the tensor in the file
   ##     Useful to store multiple tensors in a single HDF5 file
   ##   - An optional name for a `group` to store the tensor in
-
-  # create hdf5 file
-  var h5f = H5File(hdf5Path, "rw")
 
   let (dsetName, grpName, numTensors) = h5f.parseNameAndGroup(true, name, group)
 
@@ -160,9 +159,6 @@ proc write_hdf5*[T: SomeNumber](t: Tensor[T],
                                 @(t.shape),
                                 dtype = T)
   # write tensor data
-  # TODO: for efficiency we'd want to hand the whole tensor and in
-  # nimhdf5 access its data as the raw data ptr. Modify tensor
-  # functions in nimhdf5!
   dset.unsafeWrite(t.get_data_ptr, t.size)
 
   # now write attributes of tensor
@@ -175,20 +171,22 @@ proc write_hdf5*[T: SomeNumber](t: Tensor[T],
   # write new number of tensors stored
   h5f.attrs[NumTensorStored] = numTensors + 1
 
-  # close file
-  let err = h5f.close()
-  if err != 0:
-    # TODO: raise? echo?
-    echo "WARNING: could not properly close H5 file. Error code: ", err
-    #raise newException(HDF5LibraryError,  "WARNING: could not properly close " &
-    #  "H5 file. Error code: ", err)
-
-proc write_hdf5*[T: SomeNumber](t: Tensor[T],
-                                hdf5Path: string,
+proc write_hdf5*[T: SomeNumber](h5f: var H5FileObj,
+                                t: Tensor[T],
                                 name, group = "") {.inline.} =
   ## wrapper around the real `write_hdf5` to provide a nicer interface
   ## without having to worry about `some` and `none`
   let
     nameOpt = if name.len > 0: some(name) else: none(string)
     groupOpt = if group.len > 0: some(group) else: none(string)
-  write_hdf5[T](t, hdf5Path, nameOpt, groupOpt)
+  h5f.write_hdf5(t, nameOpt, groupOpt)
+
+proc write_hdf5*[T: SomeNumber](t: Tensor[T],
+                                hdf5Path: string,
+                                name, group = "") {.inline.} =
+  ## convenience wrapper around `write_hdf5` with `var H5DataSet` argument.
+  ## opens the given H5 file for writing and then calls the write proc
+  withH5(hdf5Path, "rw"):
+    # template opens file with write access as injected `h5f` and closes
+    # file after actions
+    h5f.write_hdf5(t, name, group)

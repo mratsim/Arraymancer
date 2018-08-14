@@ -9,7 +9,7 @@ requires "nim >= 0.18.0",
   "nimblas >= 0.1.3",
   "nimlapack >= 0.1.1",
   "nimcuda >= 0.1.4",
-  "nimcl >= 0.1.2",
+  "nimcl >= 0.1.3",
   "clblast",
   "stb_image"
 

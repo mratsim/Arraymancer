@@ -46,7 +46,7 @@ proc init_random[T: SomeReal](x: Tensor[T], n_clusters: int): Tensor[T] {.noInit
   ## Helper method to randomly assign the initial centroids
   result = newTensor[T](n_clusters, x.shape[1])
   for i in 0..<n_clusters:
-    let random_point = rand(x.shape[0])
+    let random_point = rand(x.shape[0]-1)
     result[i, _] = x[random_point, _]
 
 proc get_closest_centroid[T: SomeReal](x: Tensor[T], centroids: Tensor[T], cid: int): int =
@@ -95,7 +95,7 @@ proc init_plus_plus[T: SomeReal](x: Tensor[T], n_clusters: int): Tensor[T] {.noI
   let
     n_rows = x.shape[0]
     n_cols = x.shape[1]
-    first_centroid = rand(n_rows)
+    first_centroid = rand(n_rows-1)
     n_trials = int(2 + (ln(float(n_clusters))))
   result = newTensor[T](n_clusters, n_cols)
 

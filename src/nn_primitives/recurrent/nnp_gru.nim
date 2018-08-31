@@ -38,7 +38,7 @@ import
 # Intel CPUs prefetcher can maintain 32 streams
 
 proc gru_cell_inference*[T: SomeReal](
-  input, hidden,
+  input, hidden: Tensor[T],
   W3, U3,
   bW3, bU3: Tensor[T],
   next_hidden: var Tensor[T]) =
@@ -172,3 +172,96 @@ proc gru_cell_backward*[T: SomeReal](
   # Backprop of step 4 - h part
   apply3_inline(dh, dnext, z):
     x + y * z
+
+proc gru_inference*[T: SomeReal](
+  input, hidden0: Tensor[T],
+  W3s, U3s,
+  bW3s, bU3s: Tensor[T],
+  output, hiddenN: var Tensor[T]
+) =
+  ## Inputs:
+  ##   - `input`: Input tensor of shape [sequence/timesteps, batch, features]
+  ##   - `hidden0`: Initial hidden state for each element in the batch of shape
+  ##     [num_stacked_layers * num_directions, batch, hidden_size]
+  ##   - A series of input weights `W3s` of shape [num_stacked_layers, 3 * hidden_size, features]
+  ##   - A series of hidden state weights `U3s` of shape [num_stacked_layers, 3 * hidden_size, hidden_size]
+  ##   - A series of biases for input and hidden state weights of shape [num_stacked_layers, 1, 3 * hidden_size]
+  ##
+  ## Outputs:
+  ##   - `output` of shape [sequence/timesteps, batch, num_directions * hidden_size].
+  ##     `output` contains the output features `hiddenT` for each T (timesteps)
+  ##   - `hiddenN` of shape [num_stacked_layers * num_directions, batch, hidden_size].
+  ##     `hiddenN` contains the hidden state for timestep T == sequence/timesteps length of `input`
+
+  # 0. Retrieve the metadata and validate it
+  let
+    seq_len = input.shape[0]
+    batch_size = input.shape[1]
+    num_features = input.shape[2]
+    hidden_size = hidden0.shape[2]
+    num_stacked_layers = W3s.shape[0]
+    num_directions = hidden0.shape[0] div num_stacked_layers
+
+  doAssert:
+    hidden0.shape == [num_stacked_layers * num_directions, batch, hidden_size]
+    hiddenN.shape == hidden0.shape
+    W3s.shape == [num_stacked_layers, 3 * hidden_size, features]
+    U3s.shape == [num_stacked_layers, 3 * hidden_size, hidden_size]
+    bW3s.shape == [num_stacked_layers, 1, 3 * hidden_size]
+    bU3s.shape == bW3s.shape
+
+  # Preallocate work buffers
+  var Wx = newTensorUninit[T](seq_len, batch_size, 3 * hidden_size) # Alloc across time for batch matmul
+  var U3h: Tensor[T] # Time dependency so we re-use this buffer across time
+
+  hiddenN = hidden0.clone()
+
+  # TODO: directions?
+  let direction = 1 # stub
+
+  for layer in 0 ..< num_stacked_layers:
+    let
+      W3l = W3s[layer, _, _].squeeze
+      U3l = U3s[layer, _, _].squeeze
+      bU3l = bU3s[layer, _, _].squeeze
+
+    # 1. Precompute Wx across all timesteps
+    for timestep in 0 ..< seq_len:
+      let input_ts = input[timestep, _, _].squeeze
+      let W3x_ts = Wx[timestep, _, _].squeeze
+
+      # Ideally we should use batch_matmul here but it's only implemented in Intel MKL
+      # https://github.com/mratsim/Arraymancer/issues/101
+      gemm(input_ts, W3l.transpose, W3x_ts)
+    Wx .+= bW3s
+
+    # 2. Timesteps-dependent computation
+    for timestep in 0 ..< seq_len:
+      let hidden_ts = hiddenN[layer * direction, _, _].squeeze
+      let
+        H = hidden_ts.shape[1]
+        # Slices
+        sr = (0 ..< H)|1
+        sz = (H ..< 2*H)|1
+        srz = (0 ..< 2*H)|1
+        s = (2*H ..< 3*H)|1
+
+      # 2.1 -- U*h, shape [batch_size, 3*H]
+      linear(hidden_ts, U3l, bU3l, U3h)
+
+      # Before that point, everything can be started in parallel with step 1.
+      let W3x_ts = Wx[timestep, _, _].squeeze
+
+      # 2.2 - Computing reset (r) and update (z) gate
+      var W2ru = W3x_ts[_, srz] # shape [batch_size, 2*H] - we reuse the previous buffer
+      apply2_inline(W2ru, U3h[_, srz]):
+        sigmoid(x + y)
+
+      # Step 3 - Computing candidate hidden state ñ
+      var n = W3x_ts[_, s] # shape [batch_size, H] - we reuse the previous buffer
+      apply3_inline(n, W2ru[_, sr], U3h[_, s]):
+        tanh(x + y * z)
+
+      # Step 4 - Compute the next hidden state
+      apply3_inline(hidden_ts, W3x[_, sz], n):
+        (1 - y) * z + y * x

@@ -6,7 +6,7 @@
 import ../../src/arraymancer
 import unittest
 
-suite "[NN Primitives - Gated Recurrent Unit]":
+suite "[NN Primitives - Gated Recurrent Unit - Cell]":
   let x = toTensor([[ 0.1,  0.2,  0.3,  0.4],
                     [-0.1, -0.2, -0.3, -0.4],
                     [ 0.5,  0.6,  0.7,  0.8]])
@@ -177,3 +177,87 @@ suite "[NN Primitives - Gated Recurrent Unit]":
       mean_relative_error(target_grad_U3, dU3) < 1e-4
       mean_relative_error(target_grad_bW3, dbW3) < 1e-4
       mean_relative_error(target_grad_bU3, dbU3) < 1e-4
+
+suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
+  let x = toTensor([
+      [ [ 0.1,  0.2,  0.3,  0.4,  0.5],  # Sequence/timestep 1
+        [-0.1, -0.2, -0.3, -0.4, -0.5],
+        [ 0.5,  0.6,  0.7,  0.8,  0.9]],
+      [ [-0.1, -0.2, -0.3, -0.4, -0.5],  # Sequence/timestep 2
+        [-0.1, -0.2, -0.3, -0.4, -0.5],
+        [ 0.5,  0.6,  0.7,  0.8,  0.9]],
+      [ [ 0.1,  0.2,  0.3,  0.4,  0.5],  # Sequence/timestep 3
+        [-0.1, -0.2, -0.3, -0.4, -0.5],
+        [-0.1, -0.2, -0.3, -0.4, -0.5]],
+      [ [-0.1, -0.2, -0.3, -0.4, -0.5],  # Sequence/timestep 4
+        [-0.1, -0.2, -0.3, -0.4, -0.5],
+        [-0.1, -0.2, -0.3, -0.4, -0.5]]
+    ])
+
+  let hidden0 = toTensor([
+      [ [ -1.0, -1.0],  # Stacked layer 1
+        [ -1.0, -1.0],
+        [ -1.0, -1.0]],
+      [ [  2.0,  3.0],  # Stacked layer 2
+        [  2.0,  3.0],
+        [  2.0,  3.0]]
+    ])
+
+  let W3s = [
+      toTensor(
+        [ [0.9, 0.8, 0.7, 0.6, 0.5], # Stacked layer 1
+          [0.8, 0.7, 0.6, 0.5, 0.4],
+          [0.7, 0.6, 0.5, 0.4, 0.3],
+          [0.6, 0.5, 0.4, 0.3, 0.2],
+          [0.5, 0.4, 0.3, 0.2, 0.1],
+          [0.4, 0.3, 0.2, 0.1, 0.0]]),
+      toTensor(
+        [ [0.5, 0.6], # Stacked layer 2
+          [0.4, 0.5],
+          [0.3, 0.4],
+          [0.2, 0.3],
+          [0.1, 0.2],
+          [0.0, 0.1]])
+    ]
+
+  let U3s = toTensor([
+      [ [-0.3, -0.1], # Stacked layer 1
+        [-0.2,  0.0],
+        [-0.3, -0.1],
+        [-0.2,  0.0],
+        [-0.3, -0.1],
+        [-0.2,  0.0]],
+      [ [-0.4, -0.5], # Stacked layer 2
+        [-0.4,  0.5],
+        [-0.4, -0.5],
+        [-0.4,  0.5],
+        [-0.4, -0.5],
+        [-0.4,  0.5]]
+    ])
+
+  let bW3s = toTensor([
+      [[0.1, 0.2, 0.3, 0.4, 0.5, 0.6]], # Stacked layer 1
+      [[0.2, 0.3, 0.4, 0.2, 0.3, 0.4]]  # Stacked layer 2
+    ])
+
+  let bU3s = toTensor([
+      [[-0.1, -0.2, -0.3, -0.4, -0.5, -0.6]], # Stacked layer 1
+      [[ 0.1,  0.2,  0.3,  0.4,  0.5,  0.6]], # Stacked layer 2
+    ])
+
+  test "GRU inference only - equivalent to PyTorch/CuDNN":
+
+    var output, hiddenN: Tensor[float64]
+
+    gru_inference(x, hidden0,
+                  W3s,
+                  U3s, bW3s, bU3s,
+                  output, hiddenN)
+
+    # let pytorch_expected = [[-0.5317, -0.4753],
+    #                         [-0.3930, -0.3210],
+    #                         [-0.7325, -0.6430]].toTensor
+
+    # check: mean_relative_error(pytorch_expected, hprime) < 1e-4
+    echo output
+    echo hiddenN

@@ -175,15 +175,19 @@ proc gru_cell_backward*[T: SomeReal](
 
 proc gru_inference*[T: SomeReal](
   input, hidden0: Tensor[T],
-  W3s, U3s,
-  bW3s, bU3s: Tensor[T],
+  W3s: openarray[Tensor[T]],
+  U3s, bW3s, bU3s: Tensor[T],
   output, hiddenN: var Tensor[T]
 ) =
+  ## Bidirectional support is not implemented
+  ##
   ## Inputs:
   ##   - `input`: Input tensor of shape [sequence/timesteps, batch, features]
   ##   - `hidden0`: Initial hidden state for each element in the batch of shape
   ##     [num_stacked_layers * num_directions, batch, hidden_size]
-  ##   - A series of input weights `W3s` of shape [num_stacked_layers, 3 * hidden_size, features]
+  ##   - An array of `num_stacked_layers` input weights `W3s` of shapes:
+  ##       - [3 * hidden_size, features] for the first layer
+  ##       - [3 * hidden_size, num_directions * hidden_size] for the following layers
   ##   - A series of hidden state weights `U3s` of shape [num_stacked_layers, 3 * hidden_size, hidden_size]
   ##   - A series of biases for input and hidden state weights of shape [num_stacked_layers, 1, 3 * hidden_size]
   ##
@@ -199,42 +203,57 @@ proc gru_inference*[T: SomeReal](
     batch_size = input.shape[1]
     num_features = input.shape[2]
     hidden_size = hidden0.shape[2]
-    num_stacked_layers = W3s.shape[0]
+    num_stacked_layers = W3s.len
     num_directions = hidden0.shape[0] div num_stacked_layers
 
-  doAssert:
-    hidden0.shape == [num_stacked_layers * num_directions, batch, hidden_size]
-    hiddenN.shape == hidden0.shape
-    W3s.shape == [num_stacked_layers, 3 * hidden_size, features]
-    U3s.shape == [num_stacked_layers, 3 * hidden_size, hidden_size]
-    bW3s.shape == [num_stacked_layers, 1, 3 * hidden_size]
-    bU3s.shape == bW3s.shape
+  doAssert hidden0.shape == [num_stacked_layers * num_directions, batch_size, hidden_size]
+  doAssert W3s[0].shape == [3 * hidden_size, num_features]
+  for k in 1 ..< num_stacked_layers:
+    doAssert W3s[k].shape == [3 * hidden_size, num_directions * hidden_size]
+  doAssert U3s.shape == [num_stacked_layers, 3 * hidden_size, hidden_size]
+  doAssert bW3s.shape == [num_stacked_layers, 1, 3 * hidden_size]
+  doAssert bU3s.shape == bW3s.shape
 
+  let directions = 1 # stub
+
+  # Initialize outputs
   hiddenN = hidden0.clone()
-  let direction = 1 # stub
+  output = newTensorUninit[T](seq_len, batch_size, directions * hidden_size)
 
-  for layer in 0 ..< num_stacked_layers:
+  block: # 1. Initial layer
     let
-      W3l = W3s[layer, _, _].squeeze
-      U3l = U3s[layer, _, _].squeeze
-      bW3l = bW3s[layer, _, _].squeeze
-      bU3l = bU3s[layer, _, _].squeeze
+      W3l = W3s[0]
+      U3l = U3s[0, _, _].squeeze(0)
+      bW3l = bW3s[0, _, _].squeeze(0)
+      bU3l = bU3s[0, _, _].squeeze(0)
+    var hiddenl = hiddenN[0, _, _].squeeze(0)
 
     for timestep in 0 ..< seq_len:
-      # For speed we could use batch_matmul
-      # for `input_ts * W3l.transpose` computation
-      # but it's only implemented in Intel MKL
-      # https://github.com/mratsim/Arraymancer/issues/101
-      # It's also a memory vs speed tradeoff.
-      # If M is the memory used for a timestep, we would use num_timesteps * M memory
-      # to store the intermediate tensor.
-
       let input_ts = input[timestep, _, _].squeeze
-      let hidden_ts = hiddenN[layer * direction, _, _].squeeze
-
       # TODO: reuse buffers
       gru_cell_inference(
-        input_ts, hidden_ts,
+        input_ts, hiddenl,
         W3l, U3l, bW3l, bU3l,
-        hidden_ts
+        hiddenl
       )
+      output[timestep, _, _] = hiddenl.unsqueeze(0)
+
+  # 2. Subsequent layers
+  for layer in 1 ..< num_stacked_layers:
+    let
+      W3l = W3s[layer]
+      U3l = U3s[layer, _, _].squeeze(0)
+      bW3l = bW3s[layer, _, _].squeeze(0)
+      bU3l = bU3s[layer, _, _].squeeze(0)
+
+    var hiddenl = hiddenN[layer * directions, _, _].squeeze
+
+    for timestep in 0 ..< seq_len:
+      # TODO: reuse more than the output buffer
+      let output_ts = output[timestep, _, _].squeeze
+      gru_cell_inference(
+        output_ts, hiddenl,
+        W3l, U3l, bW3l, bU3l,
+        hiddenl
+      )
+      output[timestep, _, _] = hiddenl.unsqueeze(0)

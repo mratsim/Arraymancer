@@ -48,12 +48,13 @@ proc gru_cell_inference*[T: SomeReal](
   ##   - weight of hidden U3 [3 * hidden_size, hidden_size]
   ##   - biases of input and hidden state [1, 3 * hidden_size]
   ##
-  ## Note - updated in-place:
-  ##   - h(t), hidden state of shape [batch_size, hidden_size]
-  ##
   ## Output (in-place):
   ##   - y == h'(t): The next hidden state of the GRU Cell.
   ##     (GRU output and next hidden state are the same)
+  ##
+  ## ⚠️ Input/Output updated in-place:
+  ##   - h(t) -> h'(t), the hidden state of shape [batch_size, hidden_size]
+  ##     is both an input and output
   ##
   ## This is an optimized function when backpropagation is not needed.
 
@@ -82,16 +83,16 @@ proc gru_cell_inference*[T: SomeReal](
   apply3_inline(n, W2ru[_, sr], U3h[_, s]):
     tanh(x + y * z)
 
-  # Step 4 - Compute the next hidden state
+  # Step 4 - Update the hidden state
   apply3_inline(hidden, W3x[_, sz], n):
     (1 - y) * z + y * x
 
 proc gru_cell_forward*[T: SomeReal](
-  input, hidden,
+  input,
   W3, U3,
   bW3, bU3: Tensor[T],
   r, z, n, Uh,
-  next_hidden: var Tensor[T]
+  hidden: var Tensor[T]
 ) =
   ## Input:
   ##   - input tensor of shape [batch_size, features]
@@ -106,6 +107,9 @@ proc gru_cell_forward*[T: SomeReal](
   ##   - y == h'(t): The next hidden state of the GRU Cell.
   ##     (GRU output and next hidden state are the same)
   ##
+  ## ⚠️ Input/output updated in place:
+  ##   - h(t) -> h'(t), the hidden state of shape [batch_size, hidden_size]
+  ##     is both an input and output
 
   let
     H = hidden.shape[1]
@@ -134,9 +138,9 @@ proc gru_cell_forward*[T: SomeReal](
   n = map3_inline(W3x[_, s], r, U3h[_, s]):
     tanh(x + y * z)
 
-  # Step 4 - Compute the next hidden state
-  next_hidden = map3_inline(z, n, hidden):
-    (1 - x) * y + x * z
+  # Step 4 - Update the hidden state
+  apply3_inline(hidden, z, n):
+    (1 - y) * z + y * x
 
 proc gru_cell_backward*[T: SomeReal](
   dx, dh, dW3, dU3,          # input and weights gradients

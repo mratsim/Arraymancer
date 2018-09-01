@@ -43,7 +43,6 @@ suite "[NN Primitives - Gated Recurrent Unit - Cell]":
       )
 
     test "GRU Cell inference only - equivalent to PyTorch/CuDNN":
-
       var h = hidden.clone()
 
       gru_cell_inference(x,
@@ -63,19 +62,19 @@ suite "[NN Primitives - Gated Recurrent Unit - Cell]":
         hidden.shape[0], hidden.shape[1], Inf # Making sure that values are overwritten
         )
 
-      var hprime: Tensor[float64]
+      var h = hidden.clone()
 
-      gru_cell_forward(x, hidden,
+      gru_cell_forward(x,
                       W3, U3,
                       bW3, bU3,
                       r, z, n, Uh,
-                      h_prime)
+                      h)
 
       let pytorch_expected = [[-0.5317437280, -0.4752916969],
                               [-0.3930421219, -0.3209550879],
                               [-0.7325259335, -0.6429624731]].toTensor
 
-      check: mean_relative_error(pytorch_expected, h_prime) < 1e-8
+      check: mean_relative_error(pytorch_expected, h) < 1e-8
 
   ################################
 
@@ -161,11 +160,12 @@ suite "[NN Primitives - Gated Recurrent Unit - Cell]":
     var dx, dHidden, dW3, dU3, dbW3, dbU3: Tensor[float64]
 
     # Do a forward and backward pass
-    gru_cell_forward(x, hidden,
+    var h = hidden.clone()
+    gru_cell_forward(x,
                     W3, U3,
                     bW3, bU3,
                     r, z, n, Uh,
-                    next_hidden)
+                    h)
 
     gru_cell_backward(dx, dHidden, dW3, dU3,
                       dbW3, dbU3,

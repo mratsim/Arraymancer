@@ -136,6 +136,8 @@ proc gru_cell_forward*[T: SomeReal](
     sigmoid(y + z)
 
   # Step 3 - Computing candidate hidden state ñ
+  # TODO: need apply4 / loopfusion for efficient
+  # buffer passing in Stacked GRU implementation
   n = map3_inline(W3x[_, s], r, U3h[_, s]):
     tanh(x + y * z)
 
@@ -283,8 +285,8 @@ proc gru_forward*[T: SomeReal](
   ##   - A series of biases for input and hidden state weights of shape [num_stacked_layers, 1, 3 * hidden_size]
   ##
   ## Outputs:
-  ##   - r, z, n, Uh: intermediate tensors saved for backpropagation.
-  ##     Size [num_stacked_layers, batch_size, hidden_size]
+  ##   - rs, zs, ns, Uhs: intermediate tensors saved for backpropagation.
+  ##     Shape [num_stacked_layers, batch_size, hidden_size]. They must be preallocated (but it can be with random values).
   ##   - `output` of shape [sequence/timesteps, batch, num_directions * hidden_size].
   ##     `output` contains the output features `hiddenT` for each T (timesteps)
   ##   - `hidden` of shape [num_stacked_layers * num_directions, batch, hidden_size].
@@ -293,3 +295,95 @@ proc gru_forward*[T: SomeReal](
   ## ⚠️ Input/Output updated in-place:
   ##   - h(t) -> h'(t), the hidden state of shape [batch_size, hidden_size]
   ##     is both an input and output
+
+  # 0. Retrieve the metadata and validate it
+  let
+    seq_len = input.shape[0]
+    batch_size = input.shape[1]
+    num_features = input.shape[2]
+    hidden_size = hidden.shape[2]
+    num_stacked_layers = W3s.len
+    num_directions = hidden.shape[0] div num_stacked_layers
+
+  doAssert hidden.shape == [num_stacked_layers * num_directions, batch_size, hidden_size]
+  doAssert W3s[0].shape == [3 * hidden_size, num_features]
+  for k in 1 ..< num_stacked_layers:
+    doAssert W3s[k].shape == [3 * hidden_size, num_directions * hidden_size]
+  doAssert U3s.shape == [num_stacked_layers, 3 * hidden_size, hidden_size]
+  doAssert bW3s.shape == [num_stacked_layers, 1, 3 * hidden_size]
+  doAssert bU3s.shape == bW3s.shape
+
+  doAssert rs.shape == [num_stacked_layers, batch_size, hidden_size]
+  doAssert zs.shape == [num_stacked_layers, batch_size, hidden_size]
+  doAssert ns.shape == [num_stacked_layers, batch_size, hidden_size]
+  doAssert Uhs.shape == [num_stacked_layers, batch_size, hidden_size]
+
+  let directions = 1 # stub
+
+  # Initialize output
+  output = newTensorUninit[T](seq_len, batch_size, directions * hidden_size)
+
+  block: # 1. Initial layer
+    let
+      W3l = W3s[0]
+      U3l = U3s[0, _, _].squeeze(0)
+      bW3l = bW3s[0, _, _].squeeze(0)
+      bU3l = bU3s[0, _, _].squeeze(0)
+    var
+      rl = rs[0, _, _].squeeze(0)
+      zl = zs[0, _, _].squeeze(0)
+      nl = ns[0, _, _].squeeze(0)
+      Uhl = Uhs[0, _, _].squeeze(0)
+      hiddenl = hidden[0, _, _].squeeze(0)
+
+    # TODO: gru_cell_forward will detach `nl``
+    # due to a missing apply4/loop-fusion operation
+    var n_tmp = nl
+
+    for timestep in 0 ..< seq_len:
+      let input_ts = input[timestep, _, _].squeeze
+      # TODO: reuse buffers
+      gru_cell_forward(
+        input_ts,
+        W3l, U3l, bW3l, bU3l,
+        rl, zl, n_tmp, Uhl,
+        hiddenl
+      )
+      output[timestep, _, _] = hiddenl.unsqueeze(0)
+      # TODO: apply/loop-fusion
+      # copy n_tmpl back to nl
+      apply2_inline(nl, n_tmp):
+        y
+
+  # 2. Subsequent layers
+  for layer in 1 ..< num_stacked_layers:
+    let
+      W3l = W3s[layer]
+      U3l = U3s[layer, _, _].squeeze(0)
+      bW3l = bW3s[layer, _, _].squeeze(0)
+      bU3l = bU3s[layer, _, _].squeeze(0)
+    var
+      rl = rs[layer, _, _].squeeze(0)
+      zl = zs[layer, _, _].squeeze(0)
+      nl = ns[layer, _, _].squeeze(0)
+      Uhl = Uhs[layer, _, _].squeeze(0)
+      hiddenl = hidden[layer, _, _].squeeze(0)
+
+    # TODO: gru_cell_forward will detach `nl``
+    # due to a missing apply4/loop-fusion operation
+    var n_tmp = nl
+
+    for timestep in 0 ..< seq_len:
+      let output_ts = output[timestep, _, _].squeeze
+      # TODO: reuse buffers
+      gru_cell_forward(
+        output_ts,
+        W3l, U3l, bW3l, bU3l,
+        rl, zl, n_tmp, Uhl,
+        hiddenl
+      )
+      output[timestep, _, _] = hiddenl.unsqueeze(0)
+      # TODO: apply/loop-fusion
+      # copy n_tmpl back to nl
+      apply2_inline(nl, n_tmp):
+        y

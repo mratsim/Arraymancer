@@ -281,3 +281,21 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
     check:
       mean_relative_error(py_expected_output, output) < 1e-8
       mean_relative_error(py_expected_hiddenN, h) < 1e-8
+
+  test "GRU forward - equivalent to PyTorch/CuDNN":
+    # 1 direction hence `hidden.shape[0] * 1`
+    var rs, zs, ns, Uhs = randomTensor[float64](
+      [hidden.shape[0] * 1, hidden.shape[1], hidden.shape[2]], Inf # Making sure that values are overwritten
+      )
+    var output: Tensor[float64]
+    var h = hidden.clone()
+
+    gru_forward(x,
+                W3s,
+                U3s, bW3s, bU3s,
+                rs, zs, ns, Uhs,
+                output, h)
+
+    check:
+      mean_relative_error(py_expected_output, output) < 1e-8
+      mean_relative_error(py_expected_hiddenN, h) < 1e-8

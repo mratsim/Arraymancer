@@ -50,11 +50,11 @@ suite "[NN Primitives - Gated Recurrent Unit - Cell]":
                     bW3, bU3,
                     h_prime)
 
-    let pytorch_expected = [[-0.5317, -0.4753],
-                            [-0.3930, -0.3210],
-                            [-0.7325, -0.6430]].toTensor
+    let pytorch_expected = [[-0.5317437280, -0.4752916969],
+                            [-0.3930421219, -0.3209550879],
+                            [-0.7325259335, -0.6429624731]].toTensor
 
-    check: mean_relative_error(pytorch_expected, hprime) < 1e-4
+    check: mean_relative_error(pytorch_expected, hprime) < 1e-8
 
   test "GRU Cell forward - equivalent to PyTorch/CuDNN":
 
@@ -254,10 +254,30 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
                   U3s, bW3s, bU3s,
                   output, hiddenN)
 
-    # let pytorch_expected = [[-0.5317, -0.4753],
-    #                         [-0.3930, -0.3210],
-    #                         [-0.7325, -0.6430]].toTensor
+    let py_expected_output = [[[0.2564464804, 2.4324064858],
+                              [0.3212793315, 2.4821776260],
+                              [0.1983539289, 2.3849941275]],
 
-    # check: mean_relative_error(pytorch_expected, hprime) < 1e-4
-    echo output
-    echo hiddenN
+                              [[0.1323593874, 2.1939630024],
+                              [0.1591080583, 2.2447442148],
+                              [0.0683269257, 2.1121420346]],
+
+                              [[0.1233993158, 1.9977140846],
+                              [0.1320258443, 2.0434525564],
+                              [0.0904040251, 1.9111566097]],
+
+                              [[0.1355803839, 1.8195602154],
+                              [0.1369919053, 1.8612790359],
+                              [0.1230976350, 1.7381913793]]].toTensor
+
+    let py_expected_hiddenN = [[[0.0155439572, 0.1680427130],
+                              [-0.0038861287, 0.1854366532],
+                              [-0.0549487103, 0.1189245136]],
+
+                              [[0.1355803839, 1.8195602154],
+                              [0.1369919053, 1.8612790359],
+                              [0.1230976350, 1.7381913793]]].toTensor
+
+    check:
+      mean_relative_error(py_expected_output, output) < 1e-8
+      mean_relative_error(py_expected_hiddenN, hiddenN) < 1e-8

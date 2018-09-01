@@ -234,9 +234,10 @@ proc gru_inference*[T: SomeReal](
       gru_cell_inference(
         input_ts, hiddenl,
         W3l, U3l, bW3l, bU3l,
-        hiddenl
+        hiddenl # hiddenl gets detached from hiddenN here
       )
       output[timestep, _, _] = hiddenl.unsqueeze(0)
+    hiddenN[0, _, _] = hiddenl.unsqueeze(0)
 
   # 2. Subsequent layers
   for layer in 1 ..< num_stacked_layers:
@@ -254,6 +255,7 @@ proc gru_inference*[T: SomeReal](
       gru_cell_inference(
         output_ts, hiddenl,
         W3l, U3l, bW3l, bU3l,
-        hiddenl
+        hiddenl # hiddenl gets detached from hiddenN here
       )
       output[timestep, _, _] = hiddenl.unsqueeze(0)
+    hiddenN[layer * directions, _, _] = hiddenl.unsqueeze(0)

@@ -38,18 +38,20 @@ import
 # Intel CPUs prefetcher can maintain 32 streams
 
 proc gru_cell_inference*[T: SomeReal](
-  input, hidden: Tensor[T],
+  input: Tensor[T],
   W3, U3,
   bW3, bU3: Tensor[T],
-  next_hidden: var Tensor[T]) =
+  hidden: var Tensor[T]) =
   ## Input:
   ##   - input tensor of shape [batch_size, features]
-  ##   - hidden state of shape [batch_size, hidden_size]
   ##   - weight of input  W3 [3 * hidden_size, features]
   ##   - weight of hidden U3 [3 * hidden_size, hidden_size]
   ##   - biases of input and hidden state [1, 3 * hidden_size]
   ##
-  ## Output:
+  ## Updated in-place:
+  ##   - hidden state of shape [batch_size, hidden_size]
+  ##
+  ## Output (in-place):
   ##   - y == h'(t): The next hidden state of the GRU Cell.
   ##     (GRU output and next hidden state are the same)
   ##
@@ -81,8 +83,8 @@ proc gru_cell_inference*[T: SomeReal](
     tanh(x + y * z)
 
   # Step 4 - Compute the next hidden state
-  next_hidden = map3_inline(W3x[_, sz], n, hidden):
-    (1 - x) * y + x * z
+  apply3_inline(hidden, W3x[_, sz], n):
+    (1 - y) * z + y * x
 
 proc gru_cell_forward*[T: SomeReal](
   input, hidden,
@@ -232,12 +234,11 @@ proc gru_inference*[T: SomeReal](
       let input_ts = input[timestep, _, _].squeeze
       # TODO: reuse buffers
       gru_cell_inference(
-        input_ts, hiddenl,
+        input_ts,
         W3l, U3l, bW3l, bU3l,
-        hiddenl # hiddenl gets detached from hiddenN here
+        hiddenl
       )
       output[timestep, _, _] = hiddenl.unsqueeze(0)
-    hiddenN[0, _, _] = hiddenl.unsqueeze(0)
 
   # 2. Subsequent layers
   for layer in 1 ..< num_stacked_layers:
@@ -246,16 +247,14 @@ proc gru_inference*[T: SomeReal](
       U3l = U3s[layer, _, _].squeeze(0)
       bW3l = bW3s[layer, _, _].squeeze(0)
       bU3l = bU3s[layer, _, _].squeeze(0)
-
     var hiddenl = hiddenN[layer * directions, _, _].squeeze
 
     for timestep in 0 ..< seq_len:
       # TODO: reuse more than the output buffer
       let output_ts = output[timestep, _, _].squeeze
       gru_cell_inference(
-        output_ts, hiddenl,
+        output_ts,
         W3l, U3l, bW3l, bU3l,
-        hiddenl # hiddenl gets detached from hiddenN here
+        hiddenl
       )
       output[timestep, _, _] = hiddenl.unsqueeze(0)
-    hiddenN[layer * directions, _, _] = hiddenl.unsqueeze(0)

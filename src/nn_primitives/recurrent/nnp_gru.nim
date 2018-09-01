@@ -210,58 +210,31 @@ proc gru_inference*[T: SomeReal](
     bW3s.shape == [num_stacked_layers, 1, 3 * hidden_size]
     bU3s.shape == bW3s.shape
 
-  # Preallocate work buffers
-  var Wx = newTensorUninit[T](seq_len, batch_size, 3 * hidden_size) # Alloc across time for batch matmul
-  var U3h: Tensor[T] # Time dependency so we re-use this buffer across time
-
   hiddenN = hidden0.clone()
-
-  # TODO: directions?
   let direction = 1 # stub
 
   for layer in 0 ..< num_stacked_layers:
     let
       W3l = W3s[layer, _, _].squeeze
       U3l = U3s[layer, _, _].squeeze
+      bW3l = bW3s[layer, _, _].squeeze
       bU3l = bU3s[layer, _, _].squeeze
 
-    # 1. Precompute Wx across all timesteps
     for timestep in 0 ..< seq_len:
-      let input_ts = input[timestep, _, _].squeeze
-      let W3x_ts = Wx[timestep, _, _].squeeze
-
-      # Ideally we should use batch_matmul here but it's only implemented in Intel MKL
+      # For speed we could use batch_matmul
+      # for `input_ts * W3l.transpose` computation
+      # but it's only implemented in Intel MKL
       # https://github.com/mratsim/Arraymancer/issues/101
-      gemm(input_ts, W3l.transpose, W3x_ts)
-    Wx .+= bW3s
+      # It's also a memory vs speed tradeoff.
+      # If M is the memory used for a timestep, we would use num_timesteps * M memory
+      # to store the intermediate tensor.
 
-    # 2. Timesteps-dependent computation
-    for timestep in 0 ..< seq_len:
+      let input_ts = input[timestep, _, _].squeeze
       let hidden_ts = hiddenN[layer * direction, _, _].squeeze
-      let
-        H = hidden_ts.shape[1]
-        # Slices
-        sr = (0 ..< H)|1
-        sz = (H ..< 2*H)|1
-        srz = (0 ..< 2*H)|1
-        s = (2*H ..< 3*H)|1
 
-      # 2.1 -- U*h, shape [batch_size, 3*H]
-      linear(hidden_ts, U3l, bU3l, U3h)
-
-      # Before that point, everything can be started in parallel with step 1.
-      let W3x_ts = Wx[timestep, _, _].squeeze
-
-      # 2.2 - Computing reset (r) and update (z) gate
-      var W2ru = W3x_ts[_, srz] # shape [batch_size, 2*H] - we reuse the previous buffer
-      apply2_inline(W2ru, U3h[_, srz]):
-        sigmoid(x + y)
-
-      # Step 3 - Computing candidate hidden state ñ
-      var n = W3x_ts[_, s] # shape [batch_size, H] - we reuse the previous buffer
-      apply3_inline(n, W2ru[_, sr], U3h[_, s]):
-        tanh(x + y * z)
-
-      # Step 4 - Compute the next hidden state
-      apply3_inline(hidden_ts, W3x[_, sz], n):
-        (1 - y) * z + y * x
+      # TODO: reuse buffers
+      gru_cell_inference(
+        input_ts, hidden_ts,
+        W3l, U3l, bW3l, bU3l,
+        hidden_ts
+      )

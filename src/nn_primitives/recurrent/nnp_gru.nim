@@ -125,7 +125,8 @@ proc gru_cell_forward*[T: SomeReal](
   linear(hidden, U3, bU3, U3h)
 
   # # Saving for backprop
-  Uh = U3h[_, s].clone()
+  apply2_inline(Uh, U3h[_, s]):
+    y
 
   # Step 2 - Computing reset (r) and update (z) gate
   apply3_inline(r, W3x[_, sr], U3h[_, sr]):
@@ -195,15 +196,15 @@ proc gru_inference*[T: SomeReal](
   ##   - A series of hidden state weights `U3s` of shape [num_stacked_layers, 3 * hidden_size, hidden_size]
   ##   - A series of biases for input and hidden state weights of shape [num_stacked_layers, 1, 3 * hidden_size]
   ##
-  ## Note - updated in-place:
-  ##   - `hidden`: Initial hidden state for each element in the batch of shape
-  ##     [num_stacked_layers * num_directions, batch, hidden_size]
-  ##
   ## Outputs:
   ##   - `output` of shape [sequence/timesteps, batch, num_directions * hidden_size].
   ##     `output` contains the output features `hiddenT` for each T (timesteps)
   ##   - `hidden` of shape [num_stacked_layers * num_directions, batch, hidden_size].
   ##     `hidden` contains the hidden state for timestep T == sequence/timesteps length of `input`
+  ##
+  ## ⚠️ Input/Output updated in-place:
+  ##   - h(t) -> h'(t), the hidden state of shape [batch_size, hidden_size]
+  ##     is both an input and output
 
   # 0. Retrieve the metadata and validate it
   let
@@ -263,3 +264,32 @@ proc gru_inference*[T: SomeReal](
         hiddenl
       )
       output[timestep, _, _] = hiddenl.unsqueeze(0)
+
+proc gru_forward*[T: SomeReal](
+  input: Tensor[T],
+  W3s: openarray[Tensor[T]],
+  U3s, bW3s, bU3s: Tensor[T],
+  rs, zs, ns, Uhs: var Tensor[T],
+  output, hidden: var Tensor[T]
+) =
+  ## Bidirectional support is not implemented
+  ##
+  ## Inputs:
+  ##   - `input`: Input tensor of shape [sequence/timesteps, batch, features]
+  ##   - An array of `num_stacked_layers` input weights `W3s` of shapes:
+  ##       - [3 * hidden_size, features] for the first layer
+  ##       - [3 * hidden_size, num_directions * hidden_size] for the following layers
+  ##   - A series of hidden state weights `U3s` of shape [num_stacked_layers, 3 * hidden_size, hidden_size]
+  ##   - A series of biases for input and hidden state weights of shape [num_stacked_layers, 1, 3 * hidden_size]
+  ##
+  ## Outputs:
+  ##   - r, z, n, Uh: intermediate tensors saved for backpropagation.
+  ##     Size [num_stacked_layers, batch_size, hidden_size]
+  ##   - `output` of shape [sequence/timesteps, batch, num_directions * hidden_size].
+  ##     `output` contains the output features `hiddenT` for each T (timesteps)
+  ##   - `hidden` of shape [num_stacked_layers * num_directions, batch, hidden_size].
+  ##     `hidden` contains the hidden state for timestep T == sequence/timesteps length of `input`
+  ##
+  ## ⚠️ Input/Output updated in-place:
+  ##   - h(t) -> h'(t), the hidden state of shape [batch_size, hidden_size]
+  ##     is both an input and output

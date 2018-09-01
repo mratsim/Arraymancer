@@ -206,11 +206,11 @@ proc gru_inference*[T: SomeReal](
     seq_len = input.shape[0]
     batch_size = input.shape[1]
     num_features = input.shape[2]
-    hidden_size = hidden0.shape[2]
+    hidden_size = hidden.shape[2]
     num_stacked_layers = W3s.len
-    num_directions = hidden0.shape[0] div num_stacked_layers
+    num_directions = hidden.shape[0] div num_stacked_layers
 
-  doAssert hidden0.shape == [num_stacked_layers * num_directions, batch_size, hidden_size]
+  doAssert hidden.shape == [num_stacked_layers * num_directions, batch_size, hidden_size]
   doAssert W3s[0].shape == [3 * hidden_size, num_features]
   for k in 1 ..< num_stacked_layers:
     doAssert W3s[k].shape == [3 * hidden_size, num_directions * hidden_size]
@@ -220,8 +220,7 @@ proc gru_inference*[T: SomeReal](
 
   let directions = 1 # stub
 
-  # Initialize outputs
-  hiddenN = hidden0.clone()
+  # Initialize output
   output = newTensorUninit[T](seq_len, batch_size, directions * hidden_size)
 
   block: # 1. Initial layer
@@ -230,7 +229,7 @@ proc gru_inference*[T: SomeReal](
       U3l = U3s[0, _, _].squeeze(0)
       bW3l = bW3s[0, _, _].squeeze(0)
       bU3l = bU3s[0, _, _].squeeze(0)
-    var hiddenl = hiddenN[0, _, _].squeeze(0)
+    var hiddenl = hidden[0, _, _].squeeze(0)
 
     for timestep in 0 ..< seq_len:
       let input_ts = input[timestep, _, _].squeeze
@@ -249,7 +248,7 @@ proc gru_inference*[T: SomeReal](
       U3l = U3s[layer, _, _].squeeze(0)
       bW3l = bW3s[layer, _, _].squeeze(0)
       bU3l = bU3s[layer, _, _].squeeze(0)
-    var hiddenl = hiddenN[layer * directions, _, _].squeeze
+    var hiddenl = hidden[layer * directions, _, _].squeeze
 
     for timestep in 0 ..< seq_len:
       # TODO: reuse more than the output buffer

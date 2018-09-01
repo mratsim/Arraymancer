@@ -197,7 +197,7 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
         [-0.1, -0.2, -0.3, -0.4, -0.5]]
     ])
 
-  let hidden0 = toTensor([
+  let hidden = toTensor([
       [ [ -1.0, -1.0],  # Stacked layer 1
         [ -1.0, -1.0],
         [ -1.0, -1.0]],
@@ -250,12 +250,13 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
 
   test "GRU inference only - equivalent to PyTorch/CuDNN":
 
-    var output, hiddenN: Tensor[float64]
+    var output: Tensor[float64]
+    var h = hidden.clone()
 
-    gru_inference(x, hidden0,
+    gru_inference(x,
                   W3s,
                   U3s, bW3s, bU3s,
-                  output, hiddenN)
+                  output, h)
 
     let py_expected_output = [[[0.2564464804, 2.4324064858],
                               [0.3212793315, 2.4821776260],
@@ -283,4 +284,4 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
 
     check:
       mean_relative_error(py_expected_output, output) < 1e-8
-      mean_relative_error(py_expected_hiddenN, hiddenN) < 1e-8
+      mean_relative_error(py_expected_hiddenN, h) < 1e-8

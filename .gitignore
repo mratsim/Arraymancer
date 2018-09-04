@@ -6,3 +6,4 @@ nimcache/
 build/
 docs/build/
 .DS_Store
+.vscode

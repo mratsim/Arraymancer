@@ -11,7 +11,8 @@ requires "nim >= 0.18.0",
   "nimcuda >= 0.1.4",
   "nimcl >= 0.1.3",
   "clblast",
-  "stb_image"
+  "stb_image",
+  "zip"
 
 ## Install files
 srcDir = "src"

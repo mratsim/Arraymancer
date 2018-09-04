@@ -30,19 +30,8 @@ install:
   - 7z x -y "%MINGW_ARCHIVE%" -o"%CD%\tools_tmp"> nul
   - IF not exist "%NIM_ARCHIVE%" appveyor DownloadFile "%NIM_URL%" -FileName "%NIM_ARCHIVE%"
   - 7z x -y "%NIM_ARCHIVE%" -o"%CD%\tools_tmp"> nul
-  # Download and build zlib
-  - IF not exist "%ZLIB%".tar.gz appveyor DownloadFile "%ZLIB_URL%" -FileName "%ZLIB%".tar.gz
-  - 7z x -y "%ZLIB%".tar.gz > NUL
-  - 7z x "%ZLIB%".tar > NUL
-  - cd "%ZLIB%"
-  - md build
-  - cd build
-  - cmake -G "%MSCV%" ..
-  - cmake --build . --config Release
-  - cd ..
-  - cd ..
-  # Update Path
-  - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%CD%\tools_tmp\%MINGW_DIR%\bin;%CD%\tools_tmp\%ZLIB%\build\Release;%PATH%
+  - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%CD%\tools_tmp\%MINGW_DIR%\bin;%PATH%
+  - ps: C:\MinGW\bin\mingw-get install mingw32-libz 
   - ps: nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}"
   - ps: cp OpenBLAS.0.2.14.1/lib/native/bin/x64/libopenblas.dll blas.dll
   # - ps: Start-FileDownload http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win64/liblapack.dll lapack.dll # This does not work, why?

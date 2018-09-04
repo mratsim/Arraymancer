@@ -4,54 +4,54 @@
 
 import streams, endians
 
-proc readInt32BE*(stream: FileStream): int32 {.inline.}=
+proc readInt32BE*(stream: Stream): int32 {.inline.}=
   var raw_bytes = stream.readInt32
   bigEndian32(addr result, addr raw_bytes)
 
-proc readInt64BE*(stream: FileStream): int64 {.inline.}=
+proc readInt64BE*(stream: Stream): int64 {.inline.}=
   var raw_bytes = stream.readInt64
   bigEndian64(addr result, addr raw_bytes)
 
-proc readUInt32BE*(stream: FileStream): uint32 {.inline.}=
+proc readUInt32BE*(stream: Stream): uint32 {.inline.}=
   var raw_bytes = stream.readUInt32
   bigEndian32(addr result, addr raw_bytes)
 
-proc readUInt64BE*(stream: FileStream): uint64 {.inline.}=
+proc readUInt64BE*(stream: Stream): uint64 {.inline.}=
   var raw_bytes = stream.readUInt64
   bigEndian64(addr result, addr raw_bytes)
 
-proc readFloat32BE*(stream: FileStream): float32 {.inline.}=
+proc readFloat32BE*(stream: Stream): float32 {.inline.}=
   var raw_bytes = stream.readInt32
   bigEndian32(addr result, addr raw_bytes)
 
-proc readFloat64BE*(stream: FileStream): float64 {.inline.}=
+proc readFloat64BE*(stream: Stream): float64 {.inline.}=
   var raw_bytes = stream.readInt64
   bigEndian64(addr result, addr raw_bytes)
 
-proc readInt32LE*(stream: FileStream): int32 {.inline.}=
+proc readInt32LE*(stream: Stream): int32 {.inline.}=
   var raw_bytes = stream.readInt32
   littleEndian32(addr result, addr raw_bytes)
 
-proc readInt64LE*(stream: FileStream): int64 {.inline.}=
+proc readInt64LE*(stream: Stream): int64 {.inline.}=
   var raw_bytes = stream.readInt64
   littleEndian64(addr result, addr raw_bytes)
 
-proc readUInt16LE*(stream: FileStream): uint16 {.inline.}=
+proc readUInt16LE*(stream: Stream): uint16 {.inline.}=
   var raw_bytes = stream.readUInt16
   littleEndian16(addr result, addr raw_bytes)
 
-proc readUInt32LE*(stream: FileStream): uint32 {.inline.}=
+proc readUInt32LE*(stream: Stream): uint32 {.inline.}=
   var raw_bytes = stream.readUInt32
   littleEndian32(addr result, addr raw_bytes)
 
-proc readUInt64LE*(stream: FileStream): uint64 {.inline.}=
+proc readUInt64LE*(stream: Stream): uint64 {.inline.}=
   var raw_bytes = stream.readUInt64
   littleEndian64(addr result, addr raw_bytes)
 
-proc readFloat32LE*(stream: FileStream): float32 {.inline.}=
+proc readFloat32LE*(stream: Stream): float32 {.inline.}=
   var raw_bytes = stream.readInt32
   littleEndian32(addr result, addr raw_bytes)
 
-proc readFloat64LE*(stream: FileStream): float64 {.inline.}=
+proc readFloat64LE*(stream: Stream): float64 {.inline.}=
   var raw_bytes = stream.readInt64
   littleEndian64(addr result, addr raw_bytes)

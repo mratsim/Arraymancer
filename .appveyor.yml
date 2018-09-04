@@ -39,6 +39,8 @@ install:
   - cd build
   - cmake -G "%MSCV%" ..
   - cmake --build . --config Release
+  - cd ..
+  - cd ..
   # Update Path
   - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%CD%\tools_tmp\%MINGW_DIR%\bin;%CD%\tools_tmp\%ZLIB%\build\Release;%PATH%
   - ps: nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}"

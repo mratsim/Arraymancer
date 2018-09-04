@@ -4,7 +4,7 @@
 import ../../src/arraymancer
 import unittest
 
-suite "Datasets":
+suite "Datasets - MNIST":
   test "Load MNIST":
     let mnist = load_mnist()
     check:

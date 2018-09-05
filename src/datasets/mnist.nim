@@ -49,7 +49,7 @@
 # The labels values are 0 to 9.
 
 
-import  streams, endians, os, httpClient, strformat, future, sequtils,
+import  streams, endians, os, httpClient, strformat, future, sequtils, ospaths,
         ../tensor/tensor, ../io/io_stream_readers,
         zip/gzipfiles
 
@@ -59,10 +59,16 @@ type mnist = tuple[
   train_labels: Tensor[uint8],
   test_labels: Tensor[uint8],
 ]
+const
+  Tmp = joinPath(".cache", "arraymancer", "")
+  Files = @[
+    "train-images-idx3-ubyte.gz",
+    "train-labels-idx1-ubyte.gz",
+    "t10k-images-idx3-ubyte.gz",
+    "t10k-labels-idx1-ubyte.gz",
+  ]
 
-const tmp = getTempDir()
-
-proc read_mnist_images*(stream: Stream): Tensor[uint8] {.noInit.}=
+proc read_mnist_images(stream: Stream): Tensor[uint8] {.noInit.}=
   ## Load MNIST images into a Tensor[uint8] from a stream
   ## Input:
   ##   - A stream of MNIST image data
@@ -137,50 +143,44 @@ proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noInit.}=
   let stream = newGzFileStream(labelsPath, mode = fmRead)
   return read_mnist_labels(stream)
 
-proc get_mnist_files(): seq[string] =
-  ## Produces the file names for the MNIST dataset
-  ## Returns:
-  ## - seq[string] of filenames
-  return @[
-    "train-images-idx3-ubyte.gz",
-    "train-labels-idx1-ubyte.gz",
-    "t10k-images-idx3-ubyte.gz",
-    "t10k-labels-idx1-ubyte.gz",
-  ]
-
-proc download_mnist_files(files: seq[string]) =
+proc download_mnist_files() =
   ## Download the MNIST files from http://yann.lecun.com/exdb/mnist/
   ## It will download the files to the current directory.
   let
     mnist_domain = "http://yann.lecun.com/exdb/mnist/"
     client = newHttpClient()
 
-  for f in files:
+  if not existsDir(Tmp):
+    createDir(Tmp)
+
+  for f in Files:
     let url = fmt"{mnist_domain}{f}"
-    client.downloadFile(url, tmp & f)
+    client.downloadFile(url, Tmp & f)
 
-proc delete_mnist_files(files: seq[string]) =
+proc delete_mnist_files() =
   ## Deletes the downloaded MNIST files.
-  for f in files:
-    discard tryRemoveFile(tmp & f)
+  for f in Files:
+    discard tryRemoveFile(Tmp & f)
 
-proc load_mnist*(): mnist =
+proc load_mnist*(cache = true): mnist =
   ## Loads the MNIST dataset into a tuple with fields:
   ## - train_images
   ## - train_labels
   ## - test_images
   ## - test_labels
   ##
+  ## Use the cache argument (bool) as false to cleanup the files each time.
+  ##
   ## This proc will:
-  ## - download the files
+  ## - download the files if necessary
   ## - unzip them
   ## - load into a tuple
-  ## - delete the downloaded files
+  ## - delete the downloaded files if cache is false
   let
-    mnist_files = get_mnist_files()
-    tmp_files = map(mnist_files, (s: string) -> (string) => (tmp & s))
+    tmp_files = map(Files, (s: string) -> (string) => (Tmp & s))
 
-  download_mnist_files(mnist_files)
+  if not all(tmp_files, proc (x: string): bool = return existsFile(x)):
+    download_mnist_files()
 
   # Training
   result.train_images = read_mnist_images(tmp_files[0])
@@ -190,4 +190,5 @@ proc load_mnist*(): mnist =
   result.test_images = read_mnist_images(tmp_files[2])
   result.test_labels = read_mnist_labels(tmp_files[3])
 
-  delete_mnist_files(tmp_files)
+  if not cache:
+    delete_mnist_files()

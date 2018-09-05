@@ -6,7 +6,7 @@ import unittest
 
 suite "Datasets - MNIST":
   test "Load MNIST":
-    let mnist = load_mnist()
+    let mnist = load_mnist(cache = true)
     check:
       mnist.train_images.shape == [60000, 28, 28]
       mnist.test_images.shape == [10000, 28, 28]

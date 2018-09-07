@@ -289,14 +289,15 @@ let
   n = 32                           # Batch size
 
 let
-  x_train = read_mnist_images("build/train-images.idx3-ubyte").astype(float32) / 255'f32
+  mnist = load_mnist()
+  x_train = mnist.train_images.astype(float32) / 255'f32
   X_train = ctx.variable x_train.unsqueeze(1) # Change shape from [N, H, W] to [N, C, H, W], with C = 1
 
-  y_train = read_mnist_labels("build/train-labels.idx1-ubyte").astype(int)
+  y_train = mnist.train_labels.astype(int)
 
-  x_test = read_mnist_images("build/t10k-images.idx3-ubyte").astype(float32) / 255'f32
+  x_test = mnist.test_images.astype(float32) / 255'f32
   X_test = ctx.variable x_test.unsqueeze(1) Change shape from [N, H, W] to [N, C, H, W], with C = 1
-  y_test = read_mnist_labels("build/t10k-labels.idx1-ubyte").astype(int)
+  y_test = mnist.test_labels.astype(int)
 
 network ctx, DemoNet:
   layers:

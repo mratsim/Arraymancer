@@ -15,21 +15,22 @@ let
   n = 32                           # Batch size
 
 let
+  mnist = load_mnist()
   # Training data is 60k 28x28 greyscale images from 0-255,
   # neural net prefers input rescaled to [0, 1] or [-1, 1]
-  x_train = read_mnist_images("build/train-images.idx3-ubyte").astype(float32) / 255'f32
+  x_train = mnist.train_images.astype(float32) / 255'f32
 
   # Change shape from [N, H, W] to [N, C, H, W], with C = 1 (unsqueeze). Convolution expect 4d tensors
   # And store in the context to track operations applied and build a NN graph
   X_train = ctx.variable x_train.unsqueeze(1)
 
   # Labels are uint8, we must convert them to int
-  y_train = read_mnist_labels("build/train-labels.idx1-ubyte").astype(int)
+  y_train = mnist.train_labels.astype(int)
 
   # Idem for testing data (10000 images)
-  x_test = read_mnist_images("build/t10k-images.idx3-ubyte").astype(float32) / 255'f32
+  x_test = mnist.test_images.astype(float32) / 255'f32
   X_test = ctx.variable x_test.unsqueeze(1)
-  y_test = read_mnist_labels("build/t10k-labels.idx1-ubyte").astype(int)
+  y_test = mnist.test_labels.astype(int)
 
 # Configuration of the neural network
 network ctx, DemoNet:

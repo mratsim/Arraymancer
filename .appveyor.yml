@@ -36,7 +36,7 @@ install:
   - ps: wget 'https://docs.google.com/uc?authuser=0&id=0B46akLGdg-uaYm9MTTI4MUtUcmc&export=download' -outfile zlib-1.2.8-vc2010-x64.zip
   - ps: Expand-Archive zlib-1.2.8-vc2010-x64.zip -DestinationPath 'C:\Program Files'
   - ECHO "Installed zlib:"
-  - ps: "ls \"C:/Program Files/zlib\lib\""
+  - ps: "ls \"C:/Program Files/zlib/lib\""
   - set PATH=%PATH%;C:\Program Files\zlib\lib
   # - ps: Start-FileDownload http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win64/liblapack.dll lapack.dll # This does not work, why?
   - SET PATH=%PATH%;%CD%

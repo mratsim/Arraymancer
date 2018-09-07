@@ -296,7 +296,7 @@ let
   y_train = mnist.train_labels.astype(int)
 
   x_test = mnist.test_images.astype(float32) / 255'f32
-  X_test = ctx.variable x_test.unsqueeze(1) Change shape from [N, H, W] to [N, C, H, W], with C = 1
+  X_test = ctx.variable x_test.unsqueeze(1) # Change shape from [N, H, W] to [N, C, H, W], with C = 1
   y_test = mnist.test_labels.astype(int)
 
 network ctx, DemoNet:

@@ -357,7 +357,7 @@ for epoch in 0 ..< 5:
 
 ############# Output ############
 
-Epoch is: 0
+# Epoch is: 0
 # Batch id: 0
 # Loss is:  194.3991851806641
 # Epoch is: 0

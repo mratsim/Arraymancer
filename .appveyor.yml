@@ -1,11 +1,11 @@
 version: '{build}'
 
 cache:
-- nim-0.18.0_x64.zip
-- x86_64-4.9.2-release-win32-seh-rt_v4-rev4.7z
-- packages -> **\packages.config
-- '%LocalAppData%\NuGet\Cache -> **\packages.config'
-- .cache
+- nim-0.18.0_x64.zip -> .appveyor.yml
+- x86_64-4.9.2-release-win32-seh-rt_v4-rev4.7z -> .appveyor.yml
+- .cache -> .appveyor.yml
+- blas.dll
+- zlib1.dll
 
 matrix:
   fast_finish: true
@@ -28,10 +28,14 @@ install:
   - IF not exist "%NIM_ARCHIVE%" appveyor DownloadFile "%NIM_URL%" -FileName "%NIM_ARCHIVE%"
   - 7z x -y "%NIM_ARCHIVE%" -o"%CD%\tools_tmp"> nul
   - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%CD%\tools_tmp\%MINGW_DIR%\bin;%PATH%
-  - ps: nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}"
-  - ps: cp OpenBLAS.0.2.14.1/lib/native/bin/x64/libopenblas.dll blas.dll
-  - ps: nuget install zlib-msvc14-x64 -o "${env:APPVEYOR_BUILD_FOLDER}"
-  - ps: cp zlib-msvc14-x64.1.2.11.7795/build/native/bin_release/zlib.dll zlib1.dll
+  - IF not exist "blas.dll" (
+    (ps: nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}") &
+    (ps: cp OpenBLAS.0.2.14.1/lib/native/bin/x64/libopenblas.dll blas.dll)
+    )
+  - IF not exist "zlib1.dll" (
+    (ps: nuget install zlib-msvc14-x64 -o "${env:APPVEYOR_BUILD_FOLDER}") &
+    (ps: cp zlib-msvc14-x64.1.2.11.7795/build/native/bin_release/zlib.dll zlib1.dll)
+    )
   # - ps: Start-FileDownload http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win64/liblapack.dll lapack.dll # This does not work, why?
   - SET PATH=%PATH%;%CD%
 

@@ -18,12 +18,12 @@ suite "End-to-End: Examples compile and run":
 
     let layer_3neurons = ctx.variable(
                           randomTensor(3, 2, 2.0f) .- 1.0f,
-                          requires_grad = true
+                          true
                           )
 
     let classifier_layer = ctx.variable(
                       randomTensor(1, 3, 2.0f) .- 1.0f,
-                      requires_grad = true
+                      true
                       )
 
     let optim = newSGD[float32](

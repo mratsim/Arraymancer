@@ -2,6 +2,9 @@
 language: c
 
 cache: ccache
+cache:
+  directories:
+  - .cache
 
 matrix:
   include:

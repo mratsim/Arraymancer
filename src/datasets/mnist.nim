@@ -179,10 +179,13 @@ proc load_mnist*(cache = true): mnist =
   ## - load into a tuple
   ## - delete the downloaded files if cache is false
 
-  let cachedir = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache").string / "arraymancer"
-  let files = cachedir.mnistFilesPath
+  let
+    cache_home = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache").string
+    cachedir = cache_home / "arraymancer"
+    files = cachedir.mnistFilesPath
 
   if not files.all(x => x.existsFile):
+    discard existsOrCreateDir(cache_home)
     discard existsOrCreateDir(cachedir)
     download_mnist_files(files)
 

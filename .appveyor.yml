@@ -29,12 +29,12 @@ install:
   - 7z x -y "%NIM_ARCHIVE%" -o"%CD%\tools_tmp"> nul
   - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%CD%\tools_tmp\%MINGW_DIR%\bin;%PATH%
   - ps: |
-      IF (![System.IO.File]::Exists(blas.dll)){
+      IF (![System.IO.File]::Exists("blas.dll")){
         nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}"
         cp OpenBLAS.0.2.14.1/lib/native/bin/x64/libopenblas.dll blas.dll
       }
   - ps: |
-      IF (![System.IO.File]::Exists(zlib1.dll)){
+      IF (![System.IO.File]::Exists("zlib1.dll")){
         nuget install zlib-msvc14-x64 -o "${env:APPVEYOR_BUILD_FOLDER}"
         cp zlib-msvc14-x64.1.2.11.7795/build/native/bin_release/zlib.dll zlib1.dll
       }

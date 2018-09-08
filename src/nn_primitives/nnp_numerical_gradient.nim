@@ -14,7 +14,7 @@
 
 import ../tensor/tensor
 
-proc numerical_gradient*[T](input: T, f: (proc(x: T): T), h: T = 1e-5.T): T {.inline.} =
+proc numerical_gradient*[T](input: T, f: (proc(x: T): T), h = T(1e-5)): T {.inline.} =
   ## Compute numerical gradient for any function w.r.t. to an input value,
   ## useful for gradient checking, recommend using float64 types to assure
   ## numerical precision. The gradient is calculated as:
@@ -22,7 +22,7 @@ proc numerical_gradient*[T](input: T, f: (proc(x: T): T), h: T = 1e-5.T): T {.in
   ## where h is a small number, typically 1e-5.
   result = (f(input + h) - f(input - h)) / (2.0.T * h)
 
-proc numerical_gradient*[T](input: Tensor[T], f: (proc(x: Tensor[T]): T), h: T = 1e-5.T): Tensor[T] {.noInit.} =
+proc numerical_gradient*[T](input: Tensor[T], f: (proc(x: Tensor[T]): T), h = T(1e-5)): Tensor[T] {.noInit.} =
   ## Compute numerical gradient for any function w.r.t. to an input Tensor,
   ## useful for gradient checking, recommend using float64 types to assure
   ## numerical precision. The gradient is calculated as:

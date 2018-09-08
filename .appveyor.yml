@@ -4,8 +4,8 @@ cache:
 - nim-0.18.0_x64.zip -> .appveyor.yml
 - x86_64-4.9.2-release-win32-seh-rt_v4-rev4.7z -> .appveyor.yml
 - .cache -> .appveyor.yml
-- blas.dll
-- zlib1.dll
+- blas.dll -> .appveyor.yml
+- zlib1.dll -> .appveyor.yml
 
 matrix:
   fast_finish: true

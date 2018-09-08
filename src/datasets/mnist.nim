@@ -59,13 +59,11 @@ type mnist = tuple[
   train_labels: Tensor[uint8],
   test_labels: Tensor[uint8],
 ]
-const
-  Tmp = joinPath(".cache", "arraymancer", "")
-  Files = @[
+const MNISTFilenames = [
     "train-images-idx3-ubyte.gz",
     "train-labels-idx1-ubyte.gz",
     "t10k-images-idx3-ubyte.gz",
-    "t10k-labels-idx1-ubyte.gz",
+    "t10k-labels-idx1-ubyte.gz"
   ]
 
 proc read_mnist_images(stream: Stream): Tensor[uint8] {.noInit.}=
@@ -143,24 +141,24 @@ proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noInit.}=
   let stream = newGzFileStream(labelsPath, mode = fmRead)
   return read_mnist_labels(stream)
 
-proc download_mnist_files() =
+func mnistFilesPath(cachedir: string): array[4, string] =
+  for idx, val in result.mpairs:
+    val = cachedir / MNISTFileNames[idx]
+
+proc download_mnist_files(files: array[4, string]) =
   ## Download the MNIST files from http://yann.lecun.com/exdb/mnist/
   ## It will download the files to the current directory.
-  let
-    mnist_domain = "http://yann.lecun.com/exdb/mnist/"
-    client = newHttpClient()
+  const mnist_domain = "http://yann.lecun.com/exdb/mnist/"
+  let client = newHttpClient()
 
-  if not existsDir(Tmp):
-    createDir(Tmp)
+  for idx, f in files:
+    let url = fmt"{mnist_domain}{MNISTFilenames[idx]}"
+    client.downloadFile(url, f)
 
-  for f in Files:
-    let url = fmt"{mnist_domain}{f}"
-    client.downloadFile(url, Tmp & f)
-
-proc delete_mnist_files() =
+proc delete_mnist_files(files: array[4, string]) =
   ## Deletes the downloaded MNIST files.
-  for f in Files:
-    discard tryRemoveFile(Tmp & f)
+  for f in files:
+    discard tryRemoveFile(f)
 
 proc load_mnist*(cache = true): mnist =
   ## Loads the MNIST dataset into a tuple with fields:
@@ -171,24 +169,33 @@ proc load_mnist*(cache = true): mnist =
   ##
   ## Use the cache argument (bool) as false to cleanup the files each time.
   ##
+  ## The cache by default will be in "~/.cache/arraymancer" on Unix
+  ## and "%USERNAME%/.cache/arraymancer" on Windows, yhis can be changed with
+  ## the XDG_CACHE_HOME environment variable.
+  ##
   ## This proc will:
   ## - download the files if necessary
   ## - unzip them
   ## - load into a tuple
   ## - delete the downloaded files if cache is false
+
   let
-    tmp_files = map(Files, (s: string) -> (string) => (Tmp & s))
+    cache_home = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache").string
+    cachedir = cache_home / "arraymancer"
+    files = cachedir.mnistFilesPath
 
-  if not all(tmp_files, proc (x: string): bool = return existsFile(x)):
-    download_mnist_files()
+  if not files.all(x => x.existsFile):
+    discard existsOrCreateDir(cache_home)
+    discard existsOrCreateDir(cachedir)
+    download_mnist_files(files)
 
-  # Training
-  result.train_images = read_mnist_images(tmp_files[0])
-  result.train_labels = read_mnist_labels(tmp_files[1])
+  # Trai
+  result.train_images = read_mnist_images(files[0])
+  result.train_labels = read_mnist_labels(files[1])
 
   # Testing
-  result.test_images = read_mnist_images(tmp_files[2])
-  result.test_labels = read_mnist_labels(tmp_files[3])
+  result.test_images = read_mnist_images(files[2])
+  result.test_labels = read_mnist_labels(files[3])
 
   if not cache:
-    delete_mnist_files()
+    delete_mnist_files(files)

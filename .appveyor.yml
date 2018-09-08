@@ -20,8 +20,6 @@ environment:
       NIM_DIR: nim-0.18.0
       NIM_URL: https://nim-lang.org/download/nim-0.18.0_x64.zip
       platform: x64
-      MSCV: "Visual Studio 14 2015"
-
 
 install:
   - MKDIR %CD%\tools_tmp
@@ -32,12 +30,8 @@ install:
   - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%CD%\tools_tmp\%MINGW_DIR%\bin;%PATH%
   - ps: nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}"
   - ps: cp OpenBLAS.0.2.14.1/lib/native/bin/x64/libopenblas.dll blas.dll
-  # Zlib - copied from https://github.com/introlab/rtabmap/blob/master/.appveyor.yml
-  - ps: wget 'https://docs.google.com/uc?authuser=0&id=0B46akLGdg-uaYm9MTTI4MUtUcmc&export=download' -outfile zlib-1.2.8-vc2010-x64.zip
-  - ps: Expand-Archive zlib-1.2.8-vc2010-x64.zip -DestinationPath 'C:\Program Files'
-  - ECHO "Installed zlib:"
-  - ps: "ls \"C:/Program Files/zlib/lib\""
-  - set PATH=%PATH%;C:\Program Files\zlib\lib
+  - ps: nuget install zlib-msvc14-x64 -o "${env:APPVEYOR_BUILD_FOLDER}"
+  - ps: cp zlib-msvc14-x64.1.2.11.7795/build/native/bin_release/zlib.dll zlib1.dll
   # - ps: Start-FileDownload http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win64/liblapack.dll lapack.dll # This does not work, why?
   - SET PATH=%PATH%;%CD%
 

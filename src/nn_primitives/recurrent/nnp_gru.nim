@@ -97,13 +97,13 @@ proc gru_cell_forward*[T: SomeReal](
   ## Input:
   ##   - input tensor of shape [batch_size, features]
   ##   - hidden state of shape [batch_size, hidden_size]
-  ##   - weight of input  W3 [3 * hidden_size, features]
-  ##   - weight of hidden U3 [3 * hidden_size, hidden_size]
+  ##   - gates weights of input W3 [3 * hidden_size, features]
+  ##   - recurrent weights of hidden state U3 [3 * hidden_size, hidden_size]
   ##   - biases of input and hidden state [1, 3 * hidden_size]
   ##
   ## Output:
   ##   - r, z, n, Uh: intermediate tensors saved for backpropagation.
-  ##     of size [batch_size, hidden_size]
+  ##     of shape [batch_size, hidden_size]
   ##   - y == h'(t): The next hidden state of the GRU Cell.
   ##     (GRU output and next hidden state are the same)
   ##
@@ -152,7 +152,16 @@ proc gru_cell_backward*[T: SomeReal](
   x, h, W3, U3: Tensor[T],   # input parameters saved from forward
   r, z, n, Uh: Tensor[T]     # Intermediate tensors saved from forward
 ) =
-
+  ## Input:
+  ##   - dx, dh, dW3, dU3: respectively gradients of
+  ##     - x, input tensor during the forward pass. Shape [batch_size, features]
+  ##     - h, hidden state during the forward pass. Shape [batch_size, hidden_size]
+  ##     - W3, gate input weights (multiplied by x) during the forward pass. Shape [3 * hidden_size, features]
+  ##     - U3, recurrent weights (multiplied by h) during the forward pass. Shape [3 * hidden_size, features]
+  ##   - dbW3 and dbU3: gradients of the biases for W3 and U3 weights
+  ##   - dnext: gradient floowing back from the next layer
+  ##   - x, h, W3, U3: inputs saved from the forward pass
+  ##   - r, z, n, Uh: intermediate results saved from the forward pass of shape [batch_size, hidden_size]
   # Backprop of step 4 - z part
   let dz = (h - n) .* dnext
   let dn = (1.0 .- z) .* dnext

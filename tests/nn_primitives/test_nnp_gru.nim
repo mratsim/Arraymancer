@@ -289,12 +289,13 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
       )
     var output: Tensor[float64]
     var h = hidden.clone()
+    var cached_inputs: seq[Tensor[float64]]
 
     gru_forward(x,
                 W3s,
                 U3s, bW3s, bU3s,
                 rs, zs, ns, Uhs,
-                output, h)
+                output, h, cached_inputs)
 
     check:
       mean_relative_error(py_expected_output, output) < 1e-8

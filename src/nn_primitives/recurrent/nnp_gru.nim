@@ -159,7 +159,7 @@ proc gru_cell_backward*[T: SomeReal](
   ##     - W3, gate input weights (multiplied by x) during the forward pass. Shape [3 * hidden_size, features]
   ##     - U3, recurrent weights (multiplied by h) during the forward pass. Shape [3 * hidden_size, features]
   ##   - dbW3 and dbU3: gradients of the biases for W3 and U3 weights
-  ##   - dnext: gradient floowing back from the next layer
+  ##   - dnext: gradient flowing back from the next layer
   ##   - x, h, W3, U3: inputs saved from the forward pass
   ##   - r, z, n, Uh: intermediate results saved from the forward pass of shape [batch_size, hidden_size]
   # Backprop of step 4 - z part
@@ -183,7 +183,7 @@ proc gru_cell_backward*[T: SomeReal](
   let dW3x = concat(dWrx, dWzx, dWx, axis = 1)
   let dU3h = concat(dUrh, dUzh, dUh, axis = 1)
 
-  # Backprop of step 1
+  # Backprop of step 1 - TODO this detaches gradients if they are slices
   linear_backward(x, W3, dW3x, dx, dW3, dbW3)
   linear_backward(h, U3, dU3h, dh, dU3, dbU3)
 
@@ -281,7 +281,8 @@ proc gru_forward*[T: SomeReal](
   W3s: openarray[Tensor[T]],
   U3s, bW3s, bU3s: Tensor[T],
   rs, zs, ns, Uhs: var Tensor[T],
-  output, hidden: var Tensor[T]
+  output, hidden: var Tensor[T],
+  cached_inputs: var seq[Tensor[T]]
 ) =
   ## Bidirectional support is not implemented
   ##
@@ -300,6 +301,9 @@ proc gru_forward*[T: SomeReal](
   ##     `output` contains the output features `hiddenT` for each T (timesteps)
   ##   - `hidden` of shape [num_stacked_layers * num_directions, batch, hidden_size].
   ##     `hidden` contains the hidden state for timestep T == sequence/timesteps length of `input`
+  ##   - `cached_inputs`, a sequence of length num_stacked_layers containing
+  ##     - the first layer input of shape [sequence/timesteps, batch, features]
+  ##     - the following layer inputs of shape [sequence/timesteps, batch, num_directions * hidden_size]
   ##
   ## ⚠️ Input/Output updated in-place:
   ##   - h(t) -> h'(t), the hidden state of shape [batch_size, hidden_size]
@@ -331,8 +335,10 @@ proc gru_forward*[T: SomeReal](
 
   # Initialize output
   output = newTensorUninit[T](seq_len, batch_size, directions * hidden_size)
+  cached_inputs = @[]
 
   block: # 1. Initial layer
+    cached_inputs.add input
     let
       W3l = W3s[0]
       U3l = U3s[0, _, _].squeeze(0)
@@ -366,6 +372,7 @@ proc gru_forward*[T: SomeReal](
 
   # 2. Subsequent layers
   for layer in 1 ..< num_stacked_layers:
+    cached_inputs.add output.clone()
     let
       W3l = W3s[layer]
       U3l = U3s[layer, _, _].squeeze(0)
@@ -396,3 +403,111 @@ proc gru_forward*[T: SomeReal](
       # copy n_tmpl back to nl
       apply2_inline(nl, n_tmp):
         y
+
+proc gru_backward*[T: SomeReal](
+  dinput, dhidden: var Tensor[T],          # Input and starting hidden state gradient
+  dW3s: var openarray[Tensor[T]],          # Weight tensor
+  dU3s, dbW3s, dbU3s: var Tensor[T],       # Weights & biases gradients
+  doutput,                                 # Gradient flowing back from the output/next hidden state
+  cached_inputs,                           # Input params saved from forward
+  hidden, W3s, U3s,                        # Input params saved from forward
+  rs, zs, ns, Uhs: Tensor[T]               # Intermediate tensors saved from forward
+) =
+  ## Outputs:
+  ##   - dinput, dhidden, dW3s, dU3s:
+  ##     Gradient tensors, will hold the results corresponding to the respective gradients of:
+  ##     - `input`: Input tensor during the forward pass of shape [sequence/timesteps, batch, features]
+  ##     - `hidden`: Hidden states during the forward pass of shape [num_stacked_layers * num_directions, batch, hidden_size]
+  ##     - `W3s`: An array of `num_stacked_layers` input weights of shapes:
+  ##       - [3 * hidden_size, features] for the first layer
+  ##       - [3 * hidden_size, num_directions * hidden_size] for the following layers
+  ##     - `U3s`: A series of hidden state weights of shape [num_stacked_layers, 3 * hidden_size, hidden_size]
+  ##   - dbW3s and dbU3s: gradients of the biases. Shape [num_stacked_layers, 1, 3 * hidden_size]
+  ##
+  ## Inputs:
+  ##   - doutput: gradient flowing back from the next layer.
+  ##     Shape: [sequence/timesteps, batch, num_directions * hidden_size]
+  ##   - cached_inputs, hidden, W3s, U3s: saved from the forward pass
+  ##   - rs, zs, ns, Uhs: intermediate results saved from the forward pass
+  ##     Shape [num_stacked_layers, batch_size, hidden_size]
+
+  # 0. Retrieve the metadata and validate it
+  let
+    seq_len = input.shape[0]
+    batch_size = input.shape[1]
+    num_features = input.shape[2]
+    hidden_size = hidden.shape[2]
+    num_stacked_layers = W3s.len
+    num_directions = hidden.shape[0] div num_stacked_layers
+
+  doAssert hidden.shape == [num_stacked_layers * num_directions, batch_size, hidden_size]
+  doAssert W3s[0].shape == [3 * hidden_size, num_features]
+  for k in 1 ..< num_stacked_layers:
+    doAssert W3s[k].shape == [3 * hidden_size, num_directions * hidden_size]
+  doAssert U3s.shape == [num_stacked_layers, 3 * hidden_size, hidden_size]
+  doAssert bW3s.shape == [num_stacked_layers, 1, 3 * hidden_size]
+  doAssert bU3s.shape == bW3s.shape
+
+  doAssert rs.shape == [num_stacked_layers, batch_size, hidden_size]
+  doAssert zs.shape == [num_stacked_layers, batch_size, hidden_size]
+  doAssert ns.shape == [num_stacked_layers, batch_size, hidden_size]
+  doAssert Uhs.shape == [num_stacked_layers, batch_size, hidden_size]
+
+  let directions = 1 # stub
+
+  # 1. Preallocate the results (TODO: separate alloc from compute so that users can pass buffers)
+  dhidden = newTensorUninit[T](hidden.shape)
+  for i,t in dW3s.len:
+    t = newTensorUninit[T](W3s[i])
+  dU3s = newTensorUninit[T](U3s.shape)
+  dbW3s = newTensorUninit[T]([num_stacked_layers, 1, 3 * hidden_size])
+  dbU3s = newTensorUninit[T]([num_stacked_layers, 1, 3 * hidden_size])
+
+  # 2. Proceed from last layer to initial layer
+  var layer_out_grad = doutput
+
+  for layer in countdown(num_stacked_layers - 1, 1):
+    let
+      W3l = W3s[layer]
+      U3l = U3s[layer, _, _].squeeze(0)
+      bW3l = bW3s[layer, _, _].squeeze(0)
+      bU3l = bU3s[layer, _, _].squeeze(0)
+
+      rl = rs[layer, _, _].squeeze(0)
+      zl = zs[layer, _, _].squeeze(0)
+      nl = ns[layer, _, _].squeeze(0)
+      Uhl = Uhs[layer, _, _].squeeze(0)
+
+      hiddenl = hidden[layer, _, _].squeeze(0)
+      inputl = cached_inputs[layer]
+
+    var
+      dinputl, dhiddenl, dW3sl, dU3sl, dbW3sl, dbU3sl: Tensor[T]
+
+    gru_cell_backward(
+      dinputl, dhiddenl, dW3sl, dU3sl,
+      dbW3sl, dbU3sl,
+      layer_out_grad,
+      inputl, hiddenl, W3l, U3l,
+      rl, zl, nl, Uhl
+    )
+
+    # Copy to the respective result - TODO use the buffers directly
+    layer_out_grad = dinputl
+
+    var tmp = dhiddenl[layer, _, _].squeeze(0)
+    apply2_inline(tmp, dhiddenl): y
+
+    apply2_inline(dW3s[layer], dW3sl): y
+
+    tmp = dU3s[layer, _, _].squeeze(0)
+    apply2_inline(tmp, dU3sl): y
+
+    tmp = dbW3sl[layer, _, _].squeeze(0)
+    apply2_inline(tmp, dbW3sl): y
+
+    tmp = dbU3sl[layer, _, _].squeeze(0)
+    apply2_inline(tmp, dbU3sl): y
+
+  # 3. Finalization
+  dinput = layer_out_grad # this contains the last dinputl

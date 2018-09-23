@@ -437,10 +437,10 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
   # 1. Preallocate the results (TODO: separate alloc from compute so that users can pass buffers)
   dhidden = newTensorUninit[T](num_stacked_layers, batch_size, hidden_size)
   for i, t in dW3s.mpairs:
-    t = newTensorUninit[T](W3s[i].shape)
-  dU3s = newTensorUninit[T](U3s.shape)
-  dbW3s = newTensorUninit[T]([num_stacked_layers, 1, 3 * hidden_size])
-  dbU3s = newTensorUninit[T]([num_stacked_layers, 1, 3 * hidden_size])
+    t = zeros_like(W3s[i])
+  dU3s = zeros_like(U3s)
+  dbW3s = zeros[T]([num_stacked_layers, 1, 3 * hidden_size])
+  dbU3s = zeros[T]([num_stacked_layers, 1, 3 * hidden_size])
 
   # 2. Proceed from last layer to initial layer
   var gFlowBack = doutput # gradient flowing back
@@ -458,7 +458,6 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
 
       inputl = cached_inputs[layer]
 
-    var dW3sl, dU3sl, dbW3sl, dbU3sl: Tensor[T]
     var dht1 = zeros[T](batch_size, hidden_size)
     var dht: Tensor[T]
 
@@ -471,9 +470,12 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
       var dx: Tensor[T]
       dht1 += gFlowBack_ts
 
+      # Contribution of weights for this timestep
+      var dW3s_lts, dU3s_lts, dbW3s_lts, dbU3s_lts: Tensor[T]
+
       gru_cell_backward(
-        dx, dht, dW3sl, dU3sl,
-        dbW3sl, dbU3sl,
+        dx, dht, dW3s_lts, dU3s_lts,
+        dbW3s_lts, dbU3s_lts,
         dht1,
         input_lts, hidden_lts, W3l, U3l,
         rl, zl, nl, Uhl
@@ -487,9 +489,10 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
       if timestep != 0:
         dht1 = dht
 
-    # TODO: broadcasted assignation
+      # Accumulate the contribution of weights
+      dW3s[layer] = dW3s_lts
+      dU3s[layer, _, _] = dU3s_lts.unsqueeze(0)
+      dbW3s[layer, _, _] = dbW3s_lts.unsqueeze(0)
+      dbU3s[layer, _, _] = dbU3s_lts.unsqueeze(0)
+
     dhidden[layer, _, _] = dht.unsqueeze(0)
-    dW3s[layer] = dW3sl
-    dU3s[layer, _, _] = dU3sl.unsqueeze(0)
-    dbW3s[layer, _, _] = dbW3sl.unsqueeze(0)
-    dbU3s[layer, _, _] = dbU3sl.unsqueeze(0)

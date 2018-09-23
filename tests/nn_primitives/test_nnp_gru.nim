@@ -143,16 +143,14 @@ suite "[NN Primitives - Gated Recurrent Unit - Cell]":
       target_grad_bW3    = bW3.numerical_gradient(gru_bW3)
       target_grad_bU3    = bU3.numerical_gradient(gru_bU3)
 
-    var # Forward outputs
-      next_hidden = zeros_like(hidden)
-      # Value saved for backprop
+    var # Value saved for backprop
       r = zeros_like(hidden)
       z = zeros_like(hidden)
       n = zeros_like(hidden)
       Uh = zeros_like(hidden)
 
     # gradients
-    let grad_next_hidden = ones_like(next_hidden)
+    let grad_next_hidden = ones_like(hidden)
     var dx, dHidden, dW3, dU3, dbW3, dbU3: Tensor[float64]
 
     # Do a forward and backward pass
@@ -431,4 +429,4 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
         # mean_relative_error(target_grad_bU3s, dbU3s) < tol
 
   GRU_backprop(4, 1, 1e-3)
-  GRU_backprop(1, 2, 1e-3)
+  GRU_backprop(1, 4, 1e-3)

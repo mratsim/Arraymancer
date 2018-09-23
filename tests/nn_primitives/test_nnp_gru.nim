@@ -309,107 +309,115 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
       mean_relative_error(py_expected_output, output) < 1e-8
       mean_relative_error(py_expected_hiddenN, h) < 1e-8
 
-  # test "GRU backpropagation":
-  #   const
-  #     Layers = 5
-  #     TimeSteps = 24
-  #     HiddenSize = 2
-  #     BatchSize = 3
-  #     Features = 4
+  test "GRU backpropagation":
+    const
+      Layers = 5
+      TimeSteps = 24
+      HiddenSize = 2
+      BatchSize = 3
+      Features = 4
 
-  #   let # input values
-  #     x       = randomTensor([TimeSteps, BatchSize, Features], 1.0)
-  #     hidden  = randomTensor([Layers, BatchSize, HiddenSize], 1.0)
-  #     W3s     = @[randomTensor([3*HiddenSize, Features], 1.0)] & newSeqWith(Layers-1, randomTensor([3*HiddenSize, HiddenSize], 1.0))
-  #     U3s     = randomTensor([Layers, 3*HiddenSize, HiddenSize], 1.0)
-  #     bW3s    = randomTensor([Layers, 1, 3*HiddenSize], 1.0)
-  #     bU3s    = randomTensor([Layers, 1, 3*HiddenSize], 1.0)
+    let # input values
+      x       = randomTensor([TimeSteps, BatchSize, Features], 1.0)
+      hidden  = randomTensor([Layers, BatchSize, HiddenSize], 1.0)
+      W3s     = block:
+                  var ret: array[Layers, Tensor[float64]]
+                  ret[0] = randomTensor([3*HiddenSize, Features], 1.0)
+                  for i in 1 ..< Layers:
+                    ret[i] = randomTensor([3*HiddenSize, HiddenSize], 1.0)
+                  ret
+      U3s     = randomTensor([Layers, 3*HiddenSize, HiddenSize], 1.0)
+      bW3s    = randomTensor([Layers, 1, 3*HiddenSize], 1.0)
+      bU3s    = randomTensor([Layers, 1, 3*HiddenSize], 1.0)
 
-  #   # Creating the closure for numerical gradient testing
-  #   # We use inference mode here
-  #   # and test with forward-backward procs
-  #   proc gru_x(x: Tensor[float64]): float64 =
-  #     var output: Tensor[float64]
-  #     var h = hidden.clone()
-  #     gru_inference(x,
-  #                   W3s, U3s,
-  #                   bW3s, bU3s,
-  #                   output, h)
-  #     result = output.sum
-  #   proc gru_hidden(hidden: Tensor[float64]): float64 =
-  #     var output: Tensor[float64]
-  #     var h = hidden.clone()
-  #     gru_inference(x,
-  #                   W3s, U3s,
-  #                   bW3s, bU3s,
-  #                   output, h)
-  #     result = output.sum
+    # Creating the closure for numerical gradient testing
+    # We use inference mode here
+    # and test with forward-backward procs
+    proc gru_x(x: Tensor[float64]): float64 =
+      var output: Tensor[float64]
+      var h = hidden.clone()
+      gru_inference(x,
+                    W3s, U3s,
+                    bW3s, bU3s,
+                    output, h)
+      result = output.sum
+    proc gru_hidden(hidden: Tensor[float64]): float64 =
+      var output: Tensor[float64]
+      var h = hidden.clone()
+      gru_inference(x,
+                    W3s, U3s,
+                    bW3s, bU3s,
+                    output, h)
+      result = output.sum
 
-  #   # TODO: Numerical gradient doesn't work on seq of tensors :/
-  #   # proc gru_W3(W3: openarray[Tensor[float64]]): float64 =
-  #   #   var output: Tensor[float64]
-  #   #   var h = hidden.clone()
-  #   #   gru_inference(x,
-  #   #                 W3s, U3s,
-  #   #                 bW3s, bU3s,
-  #   #                 output, h)
-  #   #   result = output.sum
-  #   proc gru_U3(U3: Tensor[float64]): float64 =
-  #     var output: Tensor[float64]
-  #     var h = hidden.clone()
-  #     gru_inference(x,
-  #                   W3s, U3s,
-  #                   bW3s, bU3s,
-  #                   output, h)
-  #     result = output.sum
-  #   proc gru_bW3(bW3: Tensor[float64]): float64 =
-  #     var output: Tensor[float64]
-  #     var h = hidden.clone()
-  #     gru_inference(x,
-  #                   W3s, U3s,
-  #                   bW3s, bU3s,
-  #                   output, h)
-  #     result = output.sum
-  #   proc gru_bU3(bU3: Tensor[float64]): float64 =
-  #     var output: Tensor[float64]
-  #     var h = hidden.clone()
-  #     gru_inference(x,
-  #                   W3s, U3s,
-  #                   bW3s, bU3s,
-  #                   output, h)
-  #     result = output.sum
+    # TODO: Numerical gradient doesn't work on seq of tensors :/
+    # proc gru_W3(W3: openarray[Tensor[float64]]): float64 =
+    #   var output: Tensor[float64]
+    #   var h = hidden.clone()
+    #   gru_inference(x,
+    #                 W3s, U3s,
+    #                 bW3s, bU3s,
+    #                 output, h)
+    #   result = output.sum
+    proc gru_U3(U3: Tensor[float64]): float64 =
+      var output: Tensor[float64]
+      var h = hidden.clone()
+      gru_inference(x,
+                    W3s, U3s,
+                    bW3s, bU3s,
+                    output, h)
+      result = output.sum
+    proc gru_bW3(bW3: Tensor[float64]): float64 =
+      var output: Tensor[float64]
+      var h = hidden.clone()
+      gru_inference(x,
+                    W3s, U3s,
+                    bW3s, bU3s,
+                    output, h)
+      result = output.sum
+    proc gru_bU3(bU3: Tensor[float64]): float64 =
+      var output: Tensor[float64]
+      var h = hidden.clone()
+      gru_inference(x,
+                    W3s, U3s,
+                    bW3s, bU3s,
+                    output, h)
+      result = output.sum
 
-  #   let # Compute the numerical gradients
-  #     target_grad_x      = x.numerical_gradient(gru_x)
-  #     target_grad_hidden = hidden.numerical_gradient(gru_hidden)
-  #     # target_grad_W3     = W3s.numerical_gradient(gru_W3) # numerical gradient doesn't work on seq of tensors
-  #     target_grad_U3     = U3s.numerical_gradient(gru_U3)
-  #     target_grad_bW3    = bW3s.numerical_gradient(gru_bW3)
-  #     target_grad_bU3    = bU3s.numerical_gradient(gru_bU3)
+    let # Compute the numerical gradients
+      target_grad_x      = x.numerical_gradient(gru_x)
+      target_grad_hidden = hidden.numerical_gradient(gru_hidden)
+      # target_grad_W3     = W3s.numerical_gradient(gru_W3) # numerical gradient doesn't work on seq of tensors
+      target_grad_U3     = U3s.numerical_gradient(gru_U3)
+      target_grad_bW3    = bW3s.numerical_gradient(gru_bW3)
+      target_grad_bU3    = bU3s.numerical_gradient(gru_bU3)
 
-  #   var # Forward outputs
-  #     output: Tensor[float64]
-  #     cached_inputs: array[Layers, Tensor[float64]]
-  #     h = hidden.clone()
-  #     rs = zeros_like(hidden)
-  #     zs = zeros_like(hidden)
-  #     ns = zeros_like(hidden)
-  #     Uhs = zeros_like(hidden)
+    var # Forward outputs
+      output: Tensor[float64]
+      cached_inputs: array[Layers, Tensor[float64]]
+      cached_hiddens: array[Layers, array[Timesteps, Tensor[float64]]]
+      h = hidden.clone()
+      rs = zeros_like(hidden)
+      zs = zeros_like(hidden)
+      ns = zeros_like(hidden)
+      Uhs = zeros_like(hidden)
 
-  #   # Gradients
-  #   let grad_output = ones[float64]([TimeSteps, BatchSize, HiddenSize])
-  #   var dx, dHidden, dU3s, dbW3s, dbU3s: Tensor[float64]
-  #   var dW3s: array[Layers, Tensor[float64]]
+    # Gradients
+    let grad_output = ones[float64]([TimeSteps, BatchSize, HiddenSize])
+    var dx, dHidden, dU3s, dbW3s, dbU3s: Tensor[float64]
+    var dW3s: array[Layers, Tensor[float64]]
 
-  #   # Do a forward and backward pass
-  #   gru_forward(x,
-  #               W3s, U3s,
-  #               bW3s, bU3s,
-  #               rs, zs, ns, Uhs,
-  #               output, h, cached_inputs)
+    # Do a forward and backward pass
+    gru_forward(x,
+                W3s, U3s,
+                bW3s, bU3s,
+                rs, zs, ns, Uhs,
+                output, h,
+                cached_inputs, cached_hiddens)
 
-  #   gru_backward(dx, dHidden, dW3s, dU3s,
-  #           dbW3s, dbU3s,
-  #           grad_output,
-  #           cached_inputs, h, W3s, U3s,
-  #           rs, zs, ns, Uhs)
+    gru_backward(dx, dHidden, dW3s, dU3s,
+            dbW3s, dbU3s,
+            grad_output,
+            cached_inputs, cached_hiddens,
+            W3s, U3s,
+            rs, zs, ns, Uhs)

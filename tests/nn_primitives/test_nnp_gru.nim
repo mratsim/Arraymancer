@@ -307,7 +307,7 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
       mean_relative_error(py_expected_output, output) < 1e-8
       mean_relative_error(py_expected_hiddenN, h) < 1e-8
 
-  func GRU_backprop(Layers, TimeSteps: static[int], tol = 1e-4) =
+  proc GRU_backprop(Layers, TimeSteps: static[int], tol = 1e-4) =
     let test_name = &"GRU backpropagation: {Layers} layer(s), {TimeSteps} timestep(s)"
     test test_name:
       const
@@ -424,15 +424,15 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
         mean_relative_error(target_grad_x, dx) < tol
         mean_relative_error(target_grad_hidden, dhidden) < tol
         # mean_relative_error(target_grad_W3s, dW3s) < tol # TODO numerical gradient doesn't work on arrays of tensors
-        # mean_relative_error(target_grad_U3s, dU3s) < tol # TODO need 1e-2 tolerance
+        mean_relative_error(target_grad_U3s, dU3s) < tol
         mean_relative_error(target_grad_bW3s, dbW3s) < tol
         mean_relative_error(target_grad_bU3s, dbU3s) < tol
 
-  GRU_backprop(1, 1, 1e-3)
-  GRU_backprop(4, 1, 1e-3)
-  GRU_backprop(1, 48, 1e-3)
+  GRU_backprop(1, 1, 1e-4)
+  GRU_backprop(1, 48, 1e-4)
 
   # TODO fix the following lack of precision
-  GRU_backprop(4, 5, 1e-2)
+  GRU_backprop(4, 1, 3e-3)
+  GRU_backprop(4, 5, 3e-3)
   # GRU_backprop(4, 48, 1e-3)
   # GRU_backprop(10, 1, 1e-3)

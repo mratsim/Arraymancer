@@ -297,7 +297,7 @@ proc gru_forward*[Layers, Timesteps: static[int], T: SomeReal](
   ##
   ## Outputs:
   ##   - rs, zs, ns, Uhs: intermediate tensors saved for backpropagation.
-  ##     Shape [num_stacked_layers, batch_size, hidden_size]. They must be preallocated (but it can be with random values).
+  ##     Shape [num_stacked_layers, timesteps, batch_size, hidden_size]. They must be preallocated (but it can be with unitialized buffers).
   ##   - `output` of shape [sequence/timesteps, batch, num_directions * hidden_size].
   ##     `output` contains the output features `hiddenT` for each T (timesteps)
   ##   - `hidden` of shape [num_stacked_layers * num_directions, batch, hidden_size].
@@ -330,10 +330,10 @@ proc gru_forward*[Layers, Timesteps: static[int], T: SomeReal](
   doAssert bW3s.shape == [num_stacked_layers, 1, 3 * hidden_size]
   doAssert bU3s.shape == bW3s.shape
 
-  doAssert rs.shape == [num_stacked_layers, batch_size, hidden_size]
-  doAssert zs.shape == [num_stacked_layers, batch_size, hidden_size]
-  doAssert ns.shape == [num_stacked_layers, batch_size, hidden_size]
-  doAssert Uhs.shape == [num_stacked_layers, batch_size, hidden_size]
+  doAssert rs.shape == [num_stacked_layers, seq_len, batch_size, hidden_size]
+  doAssert zs.shape == [num_stacked_layers, seq_len, batch_size, hidden_size]
+  doAssert ns.shape == [num_stacked_layers, seq_len, batch_size, hidden_size]
+  doAssert Uhs.shape == [num_stacked_layers, seq_len, batch_size, hidden_size]
 
   # doAssert cached_inputs.len == num_stacked_layers
   # doAssert cached_hidden.len == num_stacked_layers
@@ -354,19 +354,21 @@ proc gru_forward*[Layers, Timesteps: static[int], T: SomeReal](
       U3l = U3s[layer, _, _].squeeze(0)
       bW3l = bW3s[layer, _, _].squeeze(0)
       bU3l = bU3s[layer, _, _].squeeze(0)
-    var
-      rl = rs[layer, _, _].squeeze(0)
-      zl = zs[layer, _, _].squeeze(0)
-      nl = ns[layer, _, _].squeeze(0)
-      Uhl = Uhs[layer, _, _].squeeze(0)
-      hiddenl = hidden[layer, _, _].squeeze(0)
-
-    # TODO: gru_cell_forward will detach `nl``
-    # due to a missing apply4/loop-fusion operation
-    var n_tmp = nl
+    var hiddenl = hidden[layer, _, _].squeeze(0)
 
     for timestep in 0 ..< seq_len:
       cached_hiddens[layer][timestep] = hiddenl.clone()
+
+      var # Cache for backprop, squeeze the first 2 dim
+        r_lts = rs[layer, timestep, _, _].squeeze(0).squeeze(0)
+        z_lts = zs[layer, timestep, _, _].squeeze(0).squeeze(0)
+        n_lts = ns[layer, timestep, _, _].squeeze(0).squeeze(0)
+        Uh_lts = Uhs[layer, timestep, _, _].squeeze(0).squeeze(0)
+
+      # TODO: gru_cell_forward will detach `nl``
+      # due to a missing apply4/loop-fusion operation
+      var n_tmp = n_lts
+
       let input_ts = block:
             if layer == 0:
               input[timestep, _, _].squeeze(0)
@@ -376,13 +378,13 @@ proc gru_forward*[Layers, Timesteps: static[int], T: SomeReal](
       gru_cell_forward(
         input_ts,
         W3l, U3l, bW3l, bU3l,
-        rl, zl, n_tmp, Uhl,
+        r_lts, z_lts, n_tmp, Uh_lts,
         hiddenl
       )
       output[timestep, _, _] = hiddenl.unsqueeze(0)
       # TODO: apply/loop-fusion
       # copy n_tmpl back to nl
-      apply2_inline(nl, n_tmp):
+      apply2_inline(n_lts, n_tmp):
         y
 
 proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
@@ -429,10 +431,10 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
     doAssert W3s[k].shape == [3 * hidden_size, num_directions * hidden_size]
   doAssert U3s.shape == [num_stacked_layers, 3 * hidden_size, hidden_size]
 
-  doAssert rs.shape == [num_stacked_layers, batch_size, hidden_size]
-  doAssert zs.shape == [num_stacked_layers, batch_size, hidden_size]
-  doAssert ns.shape == [num_stacked_layers, batch_size, hidden_size]
-  doAssert Uhs.shape == [num_stacked_layers, batch_size, hidden_size]
+  doAssert rs.shape  == [num_stacked_layers, seq_len, batch_size, hidden_size]
+  doAssert zs.shape  == [num_stacked_layers, seq_len, batch_size, hidden_size]
+  doAssert ns.shape  == [num_stacked_layers, seq_len, batch_size, hidden_size]
+  doAssert Uhs.shape == [num_stacked_layers, seq_len, batch_size, hidden_size]
 
   # 1. Preallocate the results (TODO: separate alloc from compute so that users can pass buffers)
   dhidden = newTensorUninit[T](num_stacked_layers, batch_size, hidden_size)
@@ -450,20 +452,19 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
     let
       W3l = W3s[layer]
       U3l = U3s[layer, _, _].squeeze(0)
-
-      rl = rs[layer, _, _].squeeze(0)
-      zl = zs[layer, _, _].squeeze(0)
-      nl = ns[layer, _, _].squeeze(0)
-      Uhl = Uhs[layer, _, _].squeeze(0)
-
       inputl = cached_inputs[layer]
 
     var dht1 = zeros[T](batch_size, hidden_size)
     var dht: Tensor[T]
 
     for timestep in countdown(seq_len - 1, 0):
-      let input_lts = inputl[timestep, _, _].squeeze(0)
-      let hidden_lts = cached_hiddens[layer][timestep]
+      let
+        input_lts = inputl[timestep, _, _].squeeze(0)
+        hidden_lts = cached_hiddens[layer][timestep]
+        r_lts  =  rs[layer, timestep, _, _].squeeze(0).squeeze(0)
+        z_lts  =  zs[layer, timestep, _, _].squeeze(0).squeeze(0)
+        n_lts  =  ns[layer, timestep, _, _].squeeze(0).squeeze(0)
+        Uh_lts = Uhs[layer, timestep, _, _].squeeze(0).squeeze(0)
       var gFlowBack_ts = gFlowBack[timestep, _, _].squeeze(0)
 
       # gradients of hidden state and hidden state (t+1)
@@ -478,12 +479,12 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
         dbW3s_lts, dbU3s_lts,
         dht1,
         input_lts, hidden_lts, W3l, U3l,
-        rl, zl, nl, Uhl
+        r_lts, z_lts, n_lts, Uh_lts
       )
 
       # Update gradient flowing back at timestep to pass to next layer
       if layer != 0:
-        apply2_inline(gFlowBack_ts, dx): y
+        gFlowBack[timestep, _, _] = dx.unsqueeze(0)
       else:
         dInput[timestep, _, _] = dx.unsqueeze(0)
       if timestep != 0:

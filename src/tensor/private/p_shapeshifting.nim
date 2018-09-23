@@ -18,7 +18,7 @@ import  ../../private/sequninit,
         ../init_cpu,
         ./p_init_cpu,
         ./p_checks,
-        nimblas, strformat
+        nimblas
 
 proc contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]) =
   if layout == rowMajor:
@@ -62,7 +62,15 @@ proc broadcastImpl*(t: var AnyTensor, shape: varargs[int]|MetadataArray) {.noSid
         t.shape[i] = shape[i]
         t.strides[i] = 0
     elif t.shape[i] != shape[i]:
-      raise newException(ValueError, &"The broadcasted size of the tensor {shape}, must match existing size {t.shape} for non-singleton dimension")
+      # TODO: $varargs is not supported on stable
+      var strShape = "["
+      for i in shape:
+        if i != 0: strShape.add ','
+        strShape.add ' '
+        strShape.add $i
+      strShape.add ']'
+      raise newException(ValueError, "The broadcasted size of the tensor " & strShape &
+        ", must match existing size " & $t.shape & " for non-singleton dimension")
 
 proc broadcast2Impl*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T]]) {.noSideEffect.}=
   let rank = max(a.rank, b.rank)
@@ -93,7 +101,8 @@ proc broadcast2Impl*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T]
       stridesA[i] = a.strides[i]
       # stridesB[i] is already 0
     else:
-      raise newException(ValueError, &"Broadcasting error: non-singleton dimensions must be the same in both tensors. Tensors' shapes were: {a.shape} and {b.shape}")
+      raise newException(ValueError, "Broadcasting error: non-singleton dimensions must be the same in both tensors. Tensors' shapes were: " &
+        $a.shape & " and " & $b.shape)
 
   result.a.shape = shapeA
   result.a.strides = stridesA

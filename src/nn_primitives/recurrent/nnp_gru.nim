@@ -389,7 +389,7 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
   dinput, dhidden: var Tensor[T],                             # Input and starting hidden state gradient
   dW3s: var array[Layers, Tensor[T]],                         # Weight tensor
   dU3s, dbW3s, dbU3s: var Tensor[T],                          # Weights & biases gradients
-  doutput: Tensor[T],                                         # Gradient flowing back from the output/next hidden state
+  dOutput: Tensor[T],                                         # Gradient flowing back from the output/next hidden state
   cached_inputs: array[Layers, Tensor[T]],                    # Input params saved from forward
   cached_hiddens: array[Layers, array[Timesteps, Tensor[T]]], # Input params saved from forward
   W3s: array[Layers, Tensor[T]], U3s,                         # Input params saved from forward
@@ -409,7 +409,7 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
   ##   - dbW3s and dbU3s: gradients of the biases. Shape [num_stacked_layers, 1, 3 * hidden_size]
   ##
   ## Inputs:
-  ##   - doutput: gradient flowing back from the next layer.
+  ##   - dOutput: gradient flowing back from the next layer.
   ##     Shape: [sequence/timesteps, batch, num_directions * hidden_size]
   ##   - cached_inputs, cached_hiddens, W3s, U3s: saved from the forward pass
   ##   - rs, zs, ns, Uhs: intermediate results saved from the forward pass
@@ -443,7 +443,7 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
   dbU3s = zeros[T]([num_stacked_layers, 1, 3 * hidden_size])
 
   # 2. Proceed from last layer to initial layer
-  var gFlowBack = doutput # gradient flowing back
+  var gFlowBack = dOutput # gradient flowing back
   dInput = newTensorUninit[T](seq_len, batch_size, num_features)
 
   for layer in countdown(num_stacked_layers - 1, 0):
@@ -490,9 +490,15 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
         dht1 = dht
 
       # Accumulate the contribution of weights
-      dW3s[layer] = dW3s_lts
-      dU3s[layer, _, _] = dU3s_lts.unsqueeze(0)
-      dbW3s[layer, _, _] = dbW3s_lts.unsqueeze(0)
-      dbU3s[layer, _, _] = dbU3s_lts.unsqueeze(0)
+      dW3s[layer] += dW3s_lts
+
+      var tmp = dU3s[layer, _, _]
+      tmp += dU3s_lts.unsqueeze(0)
+
+      tmp = dbW3s[layer, _, _]
+      tmp .+= dbW3s_lts.unsqueeze(0)
+
+      tmp = dbU3s[layer, _, _]
+      tmp .+= dbU3s_lts.unsqueeze(0)
 
     dhidden[layer, _, _] = dht.unsqueeze(0)

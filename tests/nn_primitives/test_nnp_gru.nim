@@ -387,10 +387,10 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
     let # Compute the numerical gradients
       target_grad_x      = x.numerical_gradient(gru_x)
       target_grad_hidden = hidden.numerical_gradient(gru_hidden)
-      # target_grad_W3     = W3s.numerical_gradient(gru_W3) # numerical gradient doesn't work on seq of tensors
-      target_grad_U3     = U3s.numerical_gradient(gru_U3)
-      target_grad_bW3    = bW3s.numerical_gradient(gru_bW3)
-      target_grad_bU3    = bU3s.numerical_gradient(gru_bU3)
+      # target_grad_W3s     = W3s.numerical_gradient(gru_W3) # TODO numerical gradient doesn't work on arrays of tensors
+      target_grad_U3s     = U3s.numerical_gradient(gru_U3)
+      target_grad_bW3s    = bW3s.numerical_gradient(gru_bW3)
+      target_grad_bU3s    = bU3s.numerical_gradient(gru_bU3)
 
     var # Forward outputs
       output: Tensor[float64]
@@ -421,3 +421,11 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
             cached_inputs, cached_hiddens,
             W3s, U3s,
             rs, zs, ns, Uhs)
+
+    check:
+      mean_relative_error(target_grad_x, dx) < 1e-4
+      mean_relative_error(target_grad_hidden, dhidden) < 1e-4
+      # mean_relative_error(target_grad_W3s, dW3s) < 1e-4 # TODO numerical gradient doesn't work on arrays of tensors
+      mean_relative_error(target_grad_U3s, dU3s) < 1e-4
+      mean_relative_error(target_grad_bW3s, dbW3s) < 1e-4
+      mean_relative_error(target_grad_bU3s, dbU3s) < 1e-4

@@ -444,8 +444,9 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
 
   # 2. Proceed from last layer to initial layer
   var gFlowBack = doutput # gradient flowing back
+  dInput = newTensorUninit[T](seq_len, batch_size, num_features)
 
-  for layer in countdown(num_stacked_layers - 1, 1):
+  for layer in countdown(num_stacked_layers - 1, 0):
     let
       W3l = W3s[layer]
       U3l = U3s[layer, _, _].squeeze(0)
@@ -474,7 +475,11 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
       )
 
       # Update gradient flowing back at timestep to pass to next layer
-      apply2_inline(gFlowBack_ts, dinputl): y
+      if layer != 0:
+        apply2_inline(gFlowBack_ts, dinputl): y
+      else:
+        var dinput_ts = dInput[timestep, _, _].squeeze(0)
+        apply2_inline(dinput_ts, dinputl): y
 
     var tmp = dhidden[layer, _, _].squeeze(0)
     apply2_inline(tmp, dhiddenl): y
@@ -489,7 +494,3 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
 
     tmp = dbU3s[layer, _, _].squeeze(0)
     apply2_inline(tmp, dbU3sl): y
-
-  # 3. Finalization
-  dinput = gFlowBack # this contains the last dinputl
-

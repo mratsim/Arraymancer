@@ -458,28 +458,33 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
 
       inputl = cached_inputs[layer]
 
-    var
-      dinputl, dhiddenl, dW3sl, dU3sl, dbW3sl, dbU3sl: Tensor[T]
+    var dhiddenl, dW3sl, dU3sl, dbW3sl, dbU3sl: Tensor[T]
+    var dht1 = zeros[T](batch_size, hidden_size)
 
     for timestep in countdown(seq_len - 1, 0):
       let input_lts = inputl[timestep, _, _].squeeze(0)
       let hidden_lts = cached_hiddens[layer][timestep]
       var gFlowBack_ts = gFlowBack[timestep, _, _].squeeze(0)
 
+      # gradients of hidden state and hidden state (t+1)
+      var dht: Tensor[T]
+      dht1 += gFlowBack_ts
+
       gru_cell_backward(
-        dinputl, dhiddenl, dW3sl, dU3sl,
+        dht, dhiddenl, dW3sl, dU3sl,
         dbW3sl, dbU3sl,
-        gFlowBack_ts,
+        dht1,
         input_lts, hidden_lts, W3l, U3l,
         rl, zl, nl, Uhl
       )
 
       # Update gradient flowing back at timestep to pass to next layer
       if layer != 0:
-        apply2_inline(gFlowBack_ts, dinputl): y
+        apply2_inline(gFlowBack_ts, dht): y
+        dht1 = dht
       else:
-        var dinput_ts = dInput[timestep, _, _].squeeze(0)
-        apply2_inline(dinput_ts, dinputl): y
+        var dInput_ts = dInput[timestep, _, _].squeeze(0)
+        apply2_inline(dInput_ts, dht): y
 
     var tmp = dhidden[layer, _, _].squeeze(0)
     apply2_inline(tmp, dhiddenl): y

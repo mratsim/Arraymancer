@@ -46,6 +46,9 @@ proc linear_backward*[T](
   # Linear (Dense) backward primitive with bias
   # Tensors are expected in a batch first shape [batch_size, n_features]
   # var Tensors do not need to be initialized to 0 or the proper shape, data will be overwritten
+
+  # TODO: have a prealloc procedure and make linear_backward in_place.
+  #       Currently linear backward is unsuitable when result is already slice to assign to.
   gradInput = gradOutput * weight
   gradWeight = gradOutput.transpose * input
 

@@ -43,3 +43,9 @@ method forward*[Layers, Timesteps: static[int], TT](
       self.cached_inputs,
       self.cached_hiddens
     )
+
+
+# method backward*[Layers, Timesteps: static[int], TT](
+#           self: GRUGate[Layers, TimeSteps, TT],
+#           gradient: TT,
+#           ): SmallDiffs[TT] =

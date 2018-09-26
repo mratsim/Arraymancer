@@ -327,7 +327,7 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
         var output: Tensor[float64]
         var h = hidden.clone()
         gru_inference(x,
-                      W3s0, W3sn, U3s,
+                      W3s0, W3sN, U3s,
                       bW3s, bU3s,
                       output, h)
         result = output.sum
@@ -335,25 +335,31 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
         var output: Tensor[float64]
         var h = hidden.clone()
         gru_inference(x,
-                      W3s0, W3sn, U3s,
+                      W3s0, W3sN, U3s,
                       bW3s, bU3s,
                       output, h)
         result = output.sum
-
-      # TODO: Numerical gradient doesn't work on seq of tensors :/
-      # proc gru_W3(W3: openarray[Tensor[float64]]): float64 =
-      #   var output: Tensor[float64]
-      #   var h = hidden.clone()
-      #   gru_inference(x,
-      #                 W3s, U3s,
-      #                 bW3s, bU3s,
-      #                 output, h)
-      #   result = output.sum
+      proc gru_W3s0(W3s0: Tensor[float64]): float64 =
+        var output: Tensor[float64]
+        var h = hidden.clone()
+        gru_inference(x,
+                      W3s0, W3sN, U3s,
+                      bW3s, bU3s,
+                      output, h)
+        result = output.sum
+      proc gru_W3sN(W3sN: Tensor[float64]): float64 =
+        var output: Tensor[float64]
+        var h = hidden.clone()
+        gru_inference(x,
+                      W3s0, W3sN, U3s,
+                      bW3s, bU3s,
+                      output, h)
+        result = output.sum
       proc gru_U3(U3: Tensor[float64]): float64 =
         var output: Tensor[float64]
         var h = hidden.clone()
         gru_inference(x,
-                      W3s0, W3sn, U3s,
+                      W3s0, W3sN, U3s,
                       bW3s, bU3s,
                       output, h)
         result = output.sum
@@ -361,7 +367,7 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
         var output: Tensor[float64]
         var h = hidden.clone()
         gru_inference(x,
-                      W3s0, W3sn, U3s,
+                      W3s0, W3sN, U3s,
                       bW3s, bU3s,
                       output, h)
         result = output.sum
@@ -369,7 +375,7 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
         var output: Tensor[float64]
         var h = hidden.clone()
         gru_inference(x,
-                      W3s0, W3sn, U3s,
+                      W3s0, W3sN, U3s,
                       bW3s, bU3s,
                       output, h)
         result = output.sum
@@ -377,10 +383,10 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
       let # Compute the numerical gradients
         target_grad_x      = x.numerical_gradient(gru_x)
         target_grad_hidden = hidden.numerical_gradient(gru_hidden)
-        # target_grad_W3s     = W3s.numerical_gradient(gru_W3) # TODO numerical gradient doesn't work on arrays of tensors
-        target_grad_U3s     = U3s.numerical_gradient(gru_U3)
-        target_grad_bW3s    = bW3s.numerical_gradient(gru_bW3)
-        target_grad_bU3s    = bU3s.numerical_gradient(gru_bU3)
+        target_grad_W3s0   = W3s0.numerical_gradient(gru_W3s0)
+        target_grad_U3s    = U3s.numerical_gradient(gru_U3)
+        target_grad_bW3s   = bW3s.numerical_gradient(gru_bW3)
+        target_grad_bU3s   = bU3s.numerical_gradient(gru_bU3)
 
       var # Forward outputs
         output: Tensor[float64]
@@ -415,16 +421,20 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
       check:
         mean_relative_error(target_grad_x, dx) < tol
         mean_relative_error(target_grad_hidden, dhidden) < tol
-        # mean_relative_error(target_grad_W3s, dW3s) < tol # TODO numerical gradient doesn't work on arrays of tensors
+        mean_relative_error(target_grad_W3s0, dW3s0) < tol
         mean_relative_error(target_grad_U3s, dU3s) < tol
         mean_relative_error(target_grad_bW3s, dbW3s) < tol
         mean_relative_error(target_grad_bU3s, dbU3s) < tol
+
+      when Layers > 1:
+        let target_grad_W3sN   = W3sN.numerical_gradient(gru_W3sN)
+        check: mean_relative_error(target_grad_W3sN, dW3sN) < tol
 
   GRU_backprop(1, 1, 1e-4)
   GRU_backprop(1, 48, 1e-4)
 
   # TODO fix the following lack of precision
-  GRU_backprop(4, 1, 4.9e-3)
+  GRU_backprop(4, 1, 5.4e-3)
   GRU_backprop(4, 5, 3.2e-3)
   # GRU_backprop(4, 48, 1e-3)
   # GRU_backprop(10, 1, 1e-3)

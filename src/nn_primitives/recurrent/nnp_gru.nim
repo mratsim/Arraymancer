@@ -274,9 +274,9 @@ proc gru_forward*[Layers, Timesteps: static[int], T: SomeReal](
   ##
   ## Inputs:
   ##   - `input`: Input tensor of shape [sequence/timesteps, batch, features]
-  ##   - An array of `num_stacked_layers` input weights `W3s` of shapes:
-  ##       - [3 * hidden_size, features] for the first layer
-  ##       - [3 * hidden_size, num_directions * hidden_size] for the following layers
+  ##   - Input weights `W3s` of shapes:
+  ##       - W3s0: [3 * hidden_size, features] for the first layer
+  ##       - W3sN: [num_stacked_layers - 1, 3 * hidden_size, num_directions * hidden_size] for the following layers
   ##   - A series of hidden state weights `U3s` of shape [num_stacked_layers, 3 * hidden_size, hidden_size]
   ##   - A series of biases for input and hidden state weights of shape [num_stacked_layers, 1, 3 * hidden_size]
   ##
@@ -388,9 +388,9 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
   ##     Gradient tensors, will hold the results corresponding to the respective gradients of:
   ##     - `input`: Input tensor during the forward pass of shape [sequence/timesteps, batch, features]
   ##     - `hidden`: Hidden states during the forward pass of shape [num_stacked_layers * num_directions, batch, hidden_size]
-  ##     - `W3s`: An array of `num_stacked_layers` input weights of shapes:
-  ##       - [3 * hidden_size, features] for the first layer
-  ##       - [3 * hidden_size, num_directions * hidden_size] for the following layers
+  ##   - Input weights `W3s` of shapes:
+  ##       - W3s0: [3 * hidden_size, features] for the first layer
+  ##       - W3sN: [num_stacked_layers - 1, 3 * hidden_size, num_directions * hidden_size] for the following layers
   ##     - `U3s`: A series of hidden state weights of shape [num_stacked_layers, 3 * hidden_size, hidden_size]
   ##   - dbW3s and dbU3s: gradients of the biases. Shape [num_stacked_layers, 1, 3 * hidden_size]
   ##

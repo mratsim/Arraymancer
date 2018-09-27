@@ -162,7 +162,7 @@ macro network*(ctx: Context, model_name: untyped, config: untyped): untyped =
 
   # 0. - Separate the configuration into layers and forward part
   #    - get the subtype of the model (Tensor[float32], CudaTensor[float64], ...)
-  let sections = config.splitSections
+  let sections = config.splitSections()
 
   # 1. Initialize the VM to analyse the neural network Graph.
   #    - Get the input shapes

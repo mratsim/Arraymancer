@@ -46,6 +46,24 @@ proc shortcutFlatten(self: Neuromancer, field_name: NimNode, topo: LayerTopology
 
   self.forward_templates.add shortcut
 
+proc shortcutGRU(self: Neuromancer, field_name: NimNode, topo: LayerTopology) =
+
+  let
+    topo = self.topoTable.getOrDefault(field_name)
+    seq_len = topo.gru_seq_len
+    layers = topo.gru_nb_layers
+
+  let shortcut = quote do:
+    template `field_name`(input, hidden0: Variable): tuple[output, hiddenN: Variable] =
+      input.gru(
+        hidden0, `seq_len`, `layers`,
+        self.`field_name`.W3s0, self.`field_name`.W3sN,
+        self.`field_name`.U3s,
+        self.`field_name`.bW3s, self.`field_name`.bU3s
+      )
+
+  self.forward_templates.add shortcut
+
 proc genTemplateShortcuts*(self: Neuromancer) =
 
   self.forward_templates = @[]
@@ -56,5 +74,6 @@ proc genTemplateShortcuts*(self: Neuromancer) =
     of lkLinear: self.shortcutLinear(k, v)
     of lkMaxPool2D: self.shortcutMaxPool2D(k, v)
     of lkFlatten: self.shortcutFlatten(k, v)
+    of lkGRU: self.shortcutGRU(k, v)
     else:
       discard

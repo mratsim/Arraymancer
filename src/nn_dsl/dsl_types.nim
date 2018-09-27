@@ -37,7 +37,8 @@ type
   #################################################
 
   LayerKind* = enum
-    lkInput, lkConv2D, lkLinear, lkMaxPool2D, lkFlatten
+    lkInput, lkConv2D, lkLinear, lkMaxPool2D, lkFlatten,
+    lkGRU
 
   LayerTopology* = object
     ## Describe a layer topology
@@ -48,6 +49,9 @@ type
       c2d_padding*, c2d_strides*: NimNode
     of lkMaxPool2D:
       m2d_kernel*, m2d_padding*, m2d_strides*: NimNode
+    of lkGRU:
+      gru_hidden_size*: NimNode
+      gru_nb_layers*: NimNode
     else:
       discard
 
@@ -55,11 +59,12 @@ type
 
   #####################################################
   # Todo: move that in NN part
-  # We have to use concepts here: non-ref object inheritance
-  # doesn't work properly: https://github.com/nim-lang/Nim/issues/7713
   TrainableLayer*[TT] = concept layer
-    layer.weight is Variable[TT]
-    layer.bias   is Variable[TT]
+    block:
+      var trainable: false
+      for field in fields(layer):
+        trainable = trainable or (field is Variable[TT])
+      trainable
 
   Conv2DLayer*[TT] = object
     weight*: Variable[TT]
@@ -67,6 +72,10 @@ type
   LinearLayer*[TT] = object
     weight*: Variable[TT]
     bias*: Variable[TT]
+  GRULayer*[TT] = object
+    W3s0*, W3sN*: Variable[TT]
+    U3s*: Variable[TT]
+    bW3s*, bU3s*: Variable[TT]
 
 proc hash*(x: NimNode): Hash =
   assert x.kind == nnkIdent

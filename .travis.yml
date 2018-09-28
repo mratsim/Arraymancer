@@ -67,7 +67,15 @@ install:
 
 script:
     - nimble refresh
-    - nimble test
+    - if [[$BLIS]];
+        then nimble test_blis;
+        else nimble test;
+        fi
+
+    # TODO:
+    # - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then nimble test_openmp; fi
+    # error: expected ‘#pragma omp’ clause before ‘simd’ #pragma omp parallel for simd
+    # https://travis-ci.org/mratsim/Arraymancer/jobs/434653044#L2191
 
 branches:
   except:

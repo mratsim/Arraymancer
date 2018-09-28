@@ -37,7 +37,7 @@ method backward*[TT](self: StackGate[TT], gradient: TT): SmallDiffs[TT] {.noInit
   for i in 0 ..< gradient.shape[self.axis]:
     result[i] = gradient.atAxisIndex(self.axis, i)
 
-func stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
+proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
   ## Join a sequence of Variables along a new axis into a new Variable.
   ## All variables must be of the same shape
   ##

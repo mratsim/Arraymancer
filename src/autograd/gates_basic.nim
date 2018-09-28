@@ -20,7 +20,6 @@ import  ../private/ast_utils,
         ./ag_data_structure
 
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
-  ab_shape: MetadataArray
 
 method forward*[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline, locks:0.}=
   new result
@@ -59,5 +58,3 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   if a.is_grad_needed or b.is_grad_needed:
     result.grad = zeros[getSubType(TT)](result.value.shape)
     result.requires_grad = true
-
-    gate.ab_shape = a.value.shape # Shape equality is checked in a + b in forward method

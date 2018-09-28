@@ -252,10 +252,12 @@ proc topoFromGRU(self: var TopoTable, ident: NimNode, desc: NimNode) =
     var out_shape = `in_shape`
     out_shape[2] = `hidden_size`
     out_shape
+  let seq_len = quote do: `out_shape`[0]
 
   self.add ident, LayerTopology(kind: lkGRU,
                                 in_shape: in_shape,
                                 out_shape: out_shape,
+                                gru_seq_len: seq_len,
                                 gru_hidden_size: hidden_size,
                                 gru_nb_layers: desc[3]
                                 )

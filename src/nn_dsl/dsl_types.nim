@@ -50,6 +50,7 @@ type
     of lkMaxPool2D:
       m2d_kernel*, m2d_padding*, m2d_strides*: NimNode
     of lkGRU:
+      gru_seq_len*: NimNode
       gru_hidden_size*: NimNode
       gru_nb_layers*: NimNode
     else:

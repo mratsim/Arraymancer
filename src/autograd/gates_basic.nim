@@ -58,3 +58,43 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   if a.is_grad_needed or b.is_grad_needed:
     result.grad = zeros[getSubType(TT)](result.value.shape)
     result.requires_grad = true
+
+type SubGate* {.final.} [TT] = ref object of Gate[TT]
+
+method forward*[TT](self: SubGate[TT], a, b: Variable[TT]): Variable[TT] {.inline, locks:0.}=
+  new result
+
+  result.context = a.context
+  result.value = a.value - b.value
+
+method backward*[TT](self: SubGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  result[0] = gradient
+  result[1] = -gradient
+
+proc `-`*[TT](a, b: Variable[TT]): Variable[TT] =
+  when compileOption("boundChecks"):
+    check_ctx(a, b)
+
+  # Gate
+  var gate: SubGate[TT]
+  new gate
+  gate.nb_grads = 2
+
+  # Node
+  var node: Node[TT]
+  new node
+
+  node.gate = gate
+  node.parents[0] = a.weakRef
+  node.parents[1] = b.weakRef
+
+  a.context.push(node)
+
+  # Resulting var
+  result = gate.forward(a, b)
+  node.payload = result
+
+  # Caching for backprop
+  if a.is_grad_needed or b.is_grad_needed:
+    result.grad = zeros[getSubType(TT)](result.value.shape)
+    result.requires_grad = true

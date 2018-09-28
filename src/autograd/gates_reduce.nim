@@ -38,11 +38,54 @@ method backward*[TT](self: MeanGate[TT], gradient: TT): SmallDiffs[TT] {.noInit,
   result[0] = result[0].reshape(z_shape).broadcast(self.cached_input_shape)
 
 proc mean*[TT](a: Variable[TT]): Variable[TT] =
-  when compileOption("boundChecks"):
-    check_ctx(a, b)
-
   # Gate
   var gate: MeanGate[TT]
+  new gate
+  gate.nb_grads = 1
+
+  # Node
+  var node: Node[TT]
+  new node
+
+  node.gate = gate
+  node.parents[0] = a.weakRef
+
+  a.context.push(node)
+
+  # Resulting var
+  result = gate.forward(a)
+  node.payload = result
+
+  # Caching for backprop
+  if a.is_grad_needed:
+    result.grad = zeros_like(result.value)
+    result.requires_grad = true
+
+    gate.cached_input_shape = a.value.shape
+
+type SumGate* {.final.} [TT] = ref object of Gate[TT]
+  ## TODO: generalize to C <- alpha AB + C
+  cached_input_shape: MetadataArray
+
+method forward*[TT](self: SumGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
+  new result
+
+  result.context = a.context
+  result.value = [a.value.sum].toTensor
+
+  if a.is_grad_needed:
+    result.grad = zeros[getSubType(TT)](1)
+    result.requires_grad = true
+
+method backward*[TT](self: SumGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  result[0] = gradient
+
+  let z_shape = newSeqWith(self.cached_input_shape.len, 1) # We create a shape of 1 dimension that we will expand with broadcast
+  result[0] = result[0].reshape(z_shape).broadcast(self.cached_input_shape)
+
+proc sum*[TT](a: Variable[TT]): Variable[TT] =
+  # Gate
+  var gate: SumGate[TT]
   new gate
   gate.nb_grads = 1
 

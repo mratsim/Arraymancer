@@ -215,7 +215,7 @@ proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit.}=
     result.slicerMut(slices, t)
     iaxis += t.shape[axis]
 
-proc squeeze*(t: AnyTensor): AnyTensor {.noInit,noSideEffect.}=
+func squeeze*(t: AnyTensor): AnyTensor {.noInit.}=
   ## Squeeze tensors. For example a Tensor of shape [4,1,3] will become [4,3]
   ## Input:
   ##   - a tensor
@@ -224,7 +224,7 @@ proc squeeze*(t: AnyTensor): AnyTensor {.noInit,noSideEffect.}=
   result = t
   result.squeezeImpl
 
-proc squeeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
+func squeeze*(t: Tensor, axis: int): Tensor {.noInit.}=
   ## Collapse the given axis, if the dimension is not 1, it does nothing.
   ## Input:
   ##   - a tensor
@@ -234,7 +234,7 @@ proc squeeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   result = t
   result.squeezeImpl(axis)
 
-proc unsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
+func unsqueeze*(t: Tensor, axis: int): Tensor {.noInit.}=
   ## Insert a new axis just before the given axis, increasing the tensor
   ## dimension (rank) by 1
   ## Input:
@@ -245,12 +245,12 @@ proc unsqueeze*(t: Tensor, axis: int): Tensor {.noInit,noSideEffect.}=
   result = t
   result.unsqueezeImpl(axis)
 
-proc stack*[T](tensors: varargs[Tensor[T]], axis: int = 0): Tensor[T] {.noInit.} =
+func stack*[T](tensors: varargs[Tensor[T]], axis = 0): Tensor[T] {.noInit.} =
   ## Join a sequence of tensors along a new axis into a new tensor.
   ## Input:
   ##   - a tensor
   ##   - an axis (dimension)
   ## Returns:
   ##   - a new stacked tensor along the new axis
-  proc stack_unsqueeze(t: Tensor[T]): Tensor[T] = t.unsqueeze(axis)
+  func stack_unsqueeze(t: Tensor[T]): Tensor[T] = t.unsqueeze(axis)
   tensors.map(stack_unsqueeze).concat(axis)

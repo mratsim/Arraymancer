@@ -67,7 +67,11 @@ install:
 
 script:
     - nimble refresh
-    - nimble test
+    - if [[$BLIS]];
+        then nimble test_blis;
+        else nimble test;
+        fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then nimble test_omp; fi
 
 branches:
   except:

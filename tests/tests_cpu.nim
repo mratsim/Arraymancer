@@ -38,6 +38,7 @@ import ../src/arraymancer,
         ./nn_primitives/test_nnp_maxpool,
         ./nn_primitives/test_nnp_gru,
         ./autograd/test_gate_blas,
+        ./autograd/test_gate_shapeshifting,
         ./ml/test_metrics
 
 when not defined(no_lapack):

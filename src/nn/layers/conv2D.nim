@@ -45,7 +45,7 @@ method backward*[TT](self: Conv2DGate[TT], gradient: TT): SmallDiffs[TT] {.noIni
 proc conv2d*[TT]( input, weight: Variable[TT],
                   bias: Variable[TT] = nil,
                   padding: Size2D = (0,0),
-                  stride: Size2D = (1,1)): Variable[TT] {.inline.} =
+                  stride: Size2D = (1,1)): Variable[TT] =
   ## Input:
   ##     - ``input`` Variable wrapping a 4D Tensor batch of images of the size [N,C_in,H_in,W_in]
   ##     - ``weight`` Variable wrapping a 4D Tensor convolving kernel weights of the size [C_out,C_in,kH,kW]

@@ -227,6 +227,41 @@ proc topoFromFlatten(self: var TopoTable, ident: NimNode, desc: NimNode) =
                                 in_shape: in_shape,
                                 out_shape: out_shape)
 
+proc topoFromGRU(self: var TopoTable, ident: NimNode, desc: NimNode) =
+
+  # TODO: check that input
+
+  # Call
+  #   Ident "GRU"
+  #   DotExpr             # [seq_len/time, batch_size, features]
+  #     Ident "foo"
+  #     Ident "out_shape"
+  #   IntLit 4            # Hidden size
+  #   IntLit 5            # Nb layers
+
+  if desc.len != 4:
+    incorrect(desc)
+
+  # TODO: ensure single computation `in_shape`
+  var in_shape = self.replaceInputNodes(desc[1])
+  in_shape = quote do: `in_shape`
+
+  # TODO: support bidirectional
+  let hidden_size = desc[2]
+  let out_shape = quote do:
+    var out_shape = `in_shape`
+    out_shape[2] = `hidden_size`
+    out_shape
+  let seq_len = quote do: `out_shape`[0]
+
+  self.add ident, LayerTopology(kind: lkGRU,
+                                in_shape: in_shape,
+                                out_shape: out_shape,
+                                gru_seq_len: seq_len,
+                                gru_hidden_size: hidden_size,
+                                gru_nb_layers: desc[3]
+                                )
+
 proc topoFromLayer(self: var TopoTable, ident: NimNode, desc: NimNode) =
 
   if eqIdent(desc[0], "Conv2D"):
@@ -239,6 +274,8 @@ proc topoFromLayer(self: var TopoTable, ident: NimNode, desc: NimNode) =
     self.topoFromInput(ident, desc)
   elif eqIdent(desc[0], "Flatten"):
     self.topoFromFlatten(ident, desc)
+  elif eqIdent(desc[0], "GRU"):
+    self.topoFromGRU(ident, desc)
   else:
     unknown(desc)
 

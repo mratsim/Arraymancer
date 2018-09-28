@@ -71,7 +71,7 @@ script:
         then nimble test_blis;
         else nimble test;
         fi
-    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then nimble test_omp; fi
+    - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then nimble test_openmp; fi
 
 branches:
   except:

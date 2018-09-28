@@ -16,6 +16,7 @@ import  ./backend/metadataArray,
         ./private/p_shapeshifting,
         ./private/p_checks,
         ./private/p_accessors_macros_write,
+        ./accessors,
         ./data_structure, ./init_cpu, ./higher_order_applymap,
         sequtils
 
@@ -224,7 +225,7 @@ func squeeze*(t: AnyTensor): AnyTensor {.noInit.}=
   result = t
   result.squeezeImpl
 
-func squeeze*(t: Tensor, axis: int): Tensor {.noInit.}=
+func squeeze*(t: Tensor, axis: Natural): Tensor {.noInit.}=
   ## Collapse the given axis, if the dimension is not 1, it does nothing.
   ## Input:
   ##   - a tensor
@@ -234,7 +235,7 @@ func squeeze*(t: Tensor, axis: int): Tensor {.noInit.}=
   result = t
   result.squeezeImpl(axis)
 
-func unsqueeze*(t: Tensor, axis: int): Tensor {.noInit.}=
+func unsqueeze*(t: Tensor, axis: Natural): Tensor {.noInit.}=
   ## Insert a new axis just before the given axis, increasing the tensor
   ## dimension (rank) by 1
   ## Input:
@@ -245,7 +246,7 @@ func unsqueeze*(t: Tensor, axis: int): Tensor {.noInit.}=
   result = t
   result.unsqueezeImpl(axis)
 
-proc stack*[T](tensors: varargs[Tensor[T]], axis = 0): Tensor[T] {.noInit.} =
+proc stack*[T](tensors: varargs[Tensor[T]], axis: Natural = 0): Tensor[T] {.noInit.} =
   ## Join a sequence of tensors along a new axis into a new tensor.
   ## Input:
   ##   - a tensor
@@ -254,3 +255,41 @@ proc stack*[T](tensors: varargs[Tensor[T]], axis = 0): Tensor[T] {.noInit.} =
   ##   - a new stacked tensor along the new axis
   func stack_unsqueeze(t: Tensor[T]): Tensor[T] = t.unsqueeze(axis)
   tensors.map(stack_unsqueeze).concat(axis)
+
+func split*[T](t: Tensor[T], chunk_size: Positive, axis: Natural): seq[Tensor[T]] {.noInit.} =
+  ## Split the tensor into chunks of size ``chunk_size`` along the specified axis.
+  ## Last chunk size will equal the remainder if the specified axis length is not divisible
+  ## by ``chunk_size``
+
+  doAssert t.shape[axis] >= chunk_size
+  let nb_chunks = t.shape[axis] div chunk_size
+  let rem_size  = t.shape[axis] mod chunk_size
+
+  result = newSeq[Tensor[T]](nb_chunks + int(rem_size != 0))
+  for i in 0 ..< nb_chunks:
+    result[i] = t.atAxisIndex(axis, i * chunk_size, chunk_size)
+
+  if rem_size != 0:
+    result[^1] = t.atAxisIndex(axis, nb_chunks * chunk_size, rem_size)
+
+
+func chunk*[T](t: Tensor[T], nb_chunks: Positive, axis: Natural): seq[Tensor[T]] {.noInit.} =
+  ## Splits a Tensor into n chunks along the specified axis.
+  ##
+  ## In case a tensor cannot be split evenly,
+  ## with la == length_axis, n = n_chunks
+  ## it returns la mod n subtensors of size `(la div n) + 1`
+  ##            the rest of size `la div n`.
+  ##
+  ## This is consistent with numpy array_split
+
+  doAssert t.shape[axis] >= nb_chunks
+  let chunk_size = t.shape[axis] div nb_chunks
+  let remainder  = t.shape[axis] mod nb_chunks
+
+  result = newSeq[Tensor[T]](nb_chunks)
+  for i in 0 ..< nb_chunks:
+    if i < remainder:
+      result[i] = t.atAxisIndex(axis, i * chunk_size + i, chunk_size + 1)
+    else:
+      result[i] = t.atAxisIndex(axis, i * chunk_size + remainder, chunk_size)

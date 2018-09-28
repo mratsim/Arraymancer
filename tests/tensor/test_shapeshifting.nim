@@ -150,3 +150,16 @@ suite "Shapeshifting":
     check b.stack(1) == [[[1,2],[4,5]],[[3,4],[6,7]]].toTensor()
     check b.stack(2) == [[[1,4],[2,5]],[[3,6],[4,7]]].toTensor()
 
+  test "Split tensors":
+    let a = toSeq(1..12).toTensor
+    check:
+      a.split(3, axis = 0) == [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]].mapIt(it.toTensor)
+      a.split(4, axis = 0) == [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]].mapIt(it.toTensor)
+      a.split(5, axis = 0) == [@[1, 2, 3, 4, 5], @[6, 7, 8, 9, 10], @[11, 12]].mapIt(it.toTensor)
+
+  test "Chunk tensors":
+    let a = toSeq(1..12).toTensor
+    check:
+      a.chunk(3, axis = 0) == [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]].mapIt(it.toTensor)
+      a.chunk(4, axis = 0) == [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]].mapIt(it.toTensor)
+      a.chunk(5, axis = 0) == [@[1, 2, 3], @[4, 5, 6], @[7, 8], @[9, 10], @[11, 12]].mapIt(it.toTensor)

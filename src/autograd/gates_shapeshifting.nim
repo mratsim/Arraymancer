@@ -77,3 +77,52 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
   if anyIt(variables, it.is_grad_needed):
     result.grad = zeros[getSubType(TT)](result.value.shape)
     result.requires_grad = true
+
+type ChunkSplitGate*[TT] = ref object of Gate[TT]
+  axis: int
+
+proc forward_chunk[TT](self: ChunkSplitGate[TT], x: Variable[TT], nb_chunks: Positive): seq[Variable[TT]] {.inline.}=
+  result = x.data.chunk(nb_chunks, self.axis).mapIt(ctx.variable)
+
+method backward[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let gradients = payload.sequence
+  var tensors = newSeq[TT](gradients.len) # TODO, inefficient to build a temp seq
+  for i, val in gradients:
+    tensors[i] = val.grad
+  result[0] = concat(tensors, self.axis)
+
+proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variable[TT]] =
+  ## Splits a Variable into n chunks along the specified axis.
+  ##
+  ## In case a tensor cannot be split evenly,
+  ## with la == length_axis, n = n_chunks
+  ## it returns la mod n subtensors of size `(la div n) + 1`
+  ##            the rest of size `la div n`.
+  ##
+  ## This is consistent with numpy array_split
+
+  # Gate
+  var gate: ChunkSplitGate[TT]
+  new gate
+  gate.nb_grads = 1
+  gate.axis = axis
+
+  # Node
+  var node: Node[TT]
+  new node
+
+  node.gate = gate
+  node.parents[0] = v.weakRef
+  v.context.push node
+
+  # Resulting var
+  result = gate.forward_chunk v
+  node.payload = Payload[TT](kind: pkVar, sequence: result)
+
+  # Caching for backprop
+  if v.requires_grad:
+    gate.cache = result
+    gate.index_splits = newSeqUninitialized[int](nb_chunks)
+    for idx, variable in result:
+      variable.requires_grad = true
+      variable.grad = zeros_like variable.value

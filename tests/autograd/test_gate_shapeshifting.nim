@@ -53,3 +53,28 @@ suite "Autograd of shapeshifting operations":
       mean_relative_error(vb.grad, target_grad_b) < 1e-07
       mean_relative_error(vc.grad, target_grad_c) < 1e-07
       mean_relative_error(vd.grad, target_grad_d) < 1e-07
+
+  test "Gradient of chunk operation":
+
+    block: # Dimension is divisible by nb chunks
+      let
+        height = rand(1..20)
+        width = rand(1..20)
+
+        x = randomTensor([4 * height, width], 1.0)
+
+      proc network(x: Tensor[float64]): float64 =
+        let s = x.chunk(4, axis = 0)
+        result = sum(s[0] + s[1] - (s[2] + s[3]))
+
+      let
+        expected = x.numerical_gradient(network)
+        ctx = newContext Tensor[float64]
+        vx = ctx.variable(x, requires_grad = true)
+
+      let
+        vs = vx.chunk(4, axis = 0)
+        loss = sum(vs[0] + vs[1] - (vs[2] + vs[3]))
+
+      loss.backprop()
+      check: mean_relative_error(vx.grad, expected) < 1e-07

@@ -19,13 +19,14 @@ import  ../../autograd/autograd,
 type TanhActivation* {.final.} [TT] = ref object of Gate[TT]
   cache: TT
 
-method forward*[TT](self: TanhActivation[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
+proc forward[TT](self: TanhActivation[TT], a: Variable[TT]): Variable[TT] {.inline.}=
   new result
 
   result.context = a.context
   result.value = tanh a.value
 
-method backward*[TT](self: TanhActivation[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: TanhActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  let gradient = payload.variable.grad
   result[0] = gradient.tanh_backward(self.cache)
 
 proc tanh*[TT](a: Variable[TT]): Variable[TT] =
@@ -48,7 +49,7 @@ proc tanh*[TT](a: Variable[TT]): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a)
-  node.payload = result
+  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop
   if a.is_grad_needed:

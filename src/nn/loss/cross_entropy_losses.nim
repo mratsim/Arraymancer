@@ -26,7 +26,7 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
     # nb_grads, from Gate
     # target, from Loss
 
-  method forward*[TT](self: LossType[TT], a: Variable[TT], target: TT): Variable[TT] {.inline, locks:0.}=
+  proc forward[TT](self: LossType[TT], a: Variable[TT], target: TT): Variable[TT] {.inline.}=
     # We expect a in shape [batch_size, features]
 
     new result
@@ -40,7 +40,8 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
       result.requires_grad = true
 
 
-  method backward*[TT](self: LossType[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  method backward*[TT](self: LossType[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+    let gradient = payload.variable.grad
     result[0] = backward_proc(gradient, self.cache.value, self.target)
 
   proc forward_proc*[TT](a: Variable[TT], target: TT): Variable[TT] =
@@ -62,7 +63,7 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
 
     # Resulting var
     result = gate.forward(a, target)
-    node.payload = result
+    node.payload = Payload[TT](kind: pkVar, variable: result)
 
 gen_cross_entropy_loss SigmoidCrossEntropyLoss, sigmoid_cross_entropy, sigmoid_cross_entropy_backward
 gen_cross_entropy_loss SoftmaxCrossEntropyLoss, softmax_cross_entropy, softmax_cross_entropy_backward
@@ -74,7 +75,7 @@ type SparseSoftmaxCrossEntropyLoss* {.final.} [TT] = ref object of SparseLoss[TT
   # nb_grads, from Gate
   # target, from Loss
 
-method forward*[TT](self: SparseSoftmaxCrossEntropyLoss[TT], a: Variable[TT], target: Tensor[int]): Variable[TT] {.inline, locks:0.}=
+proc forward[TT](self: SparseSoftmaxCrossEntropyLoss[TT], a: Variable[TT], target: Tensor[int]): Variable[TT] {.inline.}=
   # We expect a in shape [batch_size, features]
 
   new result
@@ -83,7 +84,8 @@ method forward*[TT](self: SparseSoftmaxCrossEntropyLoss[TT], a: Variable[TT], ta
   # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
   result.value = [sparse_softmax_crossentropy(a.value, target)].toTensor
 
-method backward*[TT](self: SparseSoftmaxCrossEntropyLoss[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: SparseSoftmaxCrossEntropyLoss[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  let gradient = payload.variable.grad
   result[0] = sparse_softmax_crossentropy_backward(gradient, self.cache.value, self.target)
 
 proc sparse_softmax_crossentropy*[TT](a: Variable[TT], target: Tensor[int]): Variable[TT] =
@@ -103,7 +105,7 @@ proc sparse_softmax_crossentropy*[TT](a: Variable[TT], target: Tensor[int]): Var
 
   # Resulting var
   result = gate.forward(a, target)
-  node.payload = result
+  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop
   if a.is_grad_needed:

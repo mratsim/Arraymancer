@@ -66,12 +66,19 @@ type
     requires_grad*: bool
     # TODO make the grad initialization optional to optimize memory use
 
-  Gate*[TT] = ref object {.inheritable.}
+  Gate*[TT] = ref object of RootObj
     nb_grads*: int
     ## Base operator or layer. You can describe your custom operations or layers
     ## by inheriting from Gate and add a forward and optionally a backward method.
     ## Each operations should set the number of gradients produced during backpropagation.
     ## Additional fields specific to the operations like weights or inputs cache should be added too.
+
+  PayloadKind* = enum
+    pkVar, pkSeq
+  Payload*[TT] = object
+    case kind*: PayloadKind
+    of pkVar: variable*: Variable[TT]
+    of pkSeq: sequence*: seq[Variable[TT]]
 
   Node*[TT] = ref object
     ## A node consist of:
@@ -80,23 +87,13 @@ type
     ##   - The actual value of the node (``payload``)
     gate*: Gate[TT]
     parents*: Parents[TT]
-    payload*: Variable[TT]
+    payload*: Payload[TT]
 
   Parents[TT] = array[MAX_NB_GRADS, VariablePtr[TT]]
   SmallDiffs*[TT] = array[MAX_NB_GRADS, TT]
 
-# Somehow if you declare forward before backward, you get invalid declaration order
-# https://github.com/nim-lang/Nim/issues/5325
-method backward*[TT](self: Gate[TT], gradient: TT): SmallDiffs[TT] {.noInit, base, inline.} =
+method backward*[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, base, inline.} =
   raise newException(ValueError, "backward method is not implemented for " & $self.type.name)
-
-method forward*[TT](self: Gate[TT], a, b: Variable[TT]): Variable[TT] {.base, inline.} =
-  # Binary forward
-  raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
-
-method forward*[TT](self: Gate[TT], a: Variable[TT]): Variable[TT] {.base, inline.}=
-  # Unary forward
-  raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
 
 proc newContext*(TT: typedesc): Context[TT] {.noSideEffect.} =
   ## Initialize a context
@@ -161,7 +158,7 @@ proc backprop*[TT](v: Variable[TT]) =
   v.grad = v.value.ones_like
 
   # We pop the context until we find the gate that produced our Variable
-  while v.context.len > 0 and v.context.peek.payload != v:
+  while v.context.len > 0 and v.context.peek.payload.variable != v:
     discard v.context.pop
 
   # Now, until the context is been all backpropagated through we update
@@ -172,7 +169,7 @@ proc backprop*[TT](v: Variable[TT]) =
   while v.context.len > 0:
     let curNode = v.context.pop
     let curGate = curNode.gate
-    let diffs = curGate.backward(curnode.payload.grad)
+    let diffs = curGate.backward(curnode.payload)
 
     for i in 0 ..< curGate.nb_grads:
       let parent_i = curNode.parents[i]

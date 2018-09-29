@@ -20,9 +20,8 @@ import  ../private/ast_utils,
 type StackGate{.final.}[TT] = ref object of Gate[TT]
   ## TODO support unlimited stacking
   axis: int
-  slices_length: seq[int]
 
-method forward*[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[TT] =
+proc forward[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[TT] =
   new result
 
   # TODO: avoid the intermediate seq alloc to extract varargs Tensors from varargs variables
@@ -33,7 +32,8 @@ method forward*[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[TT]
   result.context = x[0].context
   result.value = stack(ts, self.axis)
 
-method backward*[TT](self: StackGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: StackGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  let gradient = payload.variable.grad
   for i in 0 ..< gradient.shape[self.axis]:
     result[i] = gradient.atAxisIndex(self.axis, i)
 
@@ -71,7 +71,7 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
 
   # Resulting var
   result = gate.forward variables
-  node.payload = result
+  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop
   if anyIt(variables, it.is_grad_needed):

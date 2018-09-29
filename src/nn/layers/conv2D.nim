@@ -22,7 +22,7 @@ type Conv2DGate* {.final.} [TT] = ref object of Gate[TT]
   padding, stride: Size2D
   # TODO: store the algorithm (NNPACK / im2col)
 
-method forward*[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
+proc forward[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
   new result
 
   result.context = a.context
@@ -33,7 +33,8 @@ method forward*[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.inlin
                         self.stride
                         )
 
-method backward*[TT](self: Conv2DGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: Conv2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  let gradient = payload.variable.grad
   conv2d_backward(
     self.cached_input.value,
     self.weight.value, self.bias.value,
@@ -101,7 +102,7 @@ proc conv2d*[TT]( input, weight: Variable[TT],
 
   # Resulting var
   result = gate.forward(input)
-  node.payload = result
+  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop:
   if input.is_grad_needed or weight.is_grad_needed or (not bias.isNil and bias.is_grad_needed):

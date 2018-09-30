@@ -1,4 +1,4 @@
-# Copyright 2017 the Arraymancer contributors
+# Copyright 2017-2018 Mamy André-Ratsimbazafy & the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,9 +12,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../tensor/tensor,
-        ../../nn_primitives/nn_primitives,
-        ../../autograd/autograd
+import  ../tensor/tensor,
+        ./ag_data_structure
+
+template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
+  ## Slice the tensor contained by the dynamic graph Variable
+  ## Input:
+  ##   - a Variable
+  ## Output:
+  ##   - a sliced Variable
+
+  # TODO - investigate https://github.com/mratsim/Arraymancer/issues/241
+  # As https://github.com/mratsim/Arraymancer/commit/e609e998d663710281dbe161249a0139befa818c
+  # which fixed https://github.com/mratsim/Arraymancer/issues/185 had to be rollbacked
+
+  # Ensure that v is only called once even if it's a function with side-effects
+  let z = v
+
+  # TODO: backprop support
+  var result: type(z)
+  new result
+
+  result.context = z.context
+  result.value = z.value[args]
+  result.grad = z.grad[args]
+  result.requires_grad = z.requires_grad
+
+  result
+
+  # TODO: tests for slicing correspondence
+
+# #############################################
 
 type ReshapeGate* [TT] = ref object of Gate[TT]
   cached_input_shape: MetadataArray
@@ -54,16 +82,13 @@ proc reshapeImpl[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
   if a.is_grad_needed:
     result.grad = zeros_like(result.value)
     result.requires_grad = true
-
     gate.cached_input_shape = a.value.shape
-
 
 proc reshape*[TT](a: Variable[TT], shape: varargs[int]): Variable[TT] =
   ## Input:
   ##   - A variable
   ##   - A shape
   reshapeImpl(a, shape.toMetadataArray)
-
 
 proc reshape*[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
   ## Input:

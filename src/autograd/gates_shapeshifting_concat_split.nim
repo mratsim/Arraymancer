@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/ast_utils,
-        ../tensor/tensor,
+import  ../tensor/tensor,
         ./ag_data_structure,
         sequtils
 
@@ -75,19 +74,21 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
 
   # Caching for backprop
   if anyIt(variables, it.is_grad_needed):
-    result.grad = zeros[getSubType(TT)](result.value.shape)
+    result.grad = zeros_like result.value
     result.requires_grad = true
+
+# ###########################################################
 
 type ChunkSplitGate*[TT] = ref object of Gate[TT]
   axis: int
 
 proc forward_chunk[TT](self: ChunkSplitGate[TT], x: Variable[TT], nb_chunks: Positive): seq[Variable[TT]] {.inline.}=
-  result = x.value.chunk(nb_chunks, self.axis).mapIt(
+  result = x.value.chunk(nb_chunks, self.axis).mapIt( # TODO: inefficient to create an intermediate sequence
     Variable[TT](context: x.context, value: it)
   )
 
 method backward[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
-  let gradients = payload.sequence.mapIt(it.grad)
+  let gradients = payload.sequence.mapIt(it.grad) # TODO: inefficient to create an intermediate sequence
   result[0] = concat(gradients, self.axis)
 
 proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variable[TT]] =

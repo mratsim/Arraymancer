@@ -132,7 +132,7 @@ suite "Autograd of shapeshifting operations":
     loss.backprop()
     check: mean_relative_error(vx.grad, expected) < 1e-07
 
-  test "Gradient of squeeze operation":
+  test "Gradient of squeeze operation (+ chunking)":
 
     let
       M = rand(1..20)
@@ -185,3 +185,31 @@ suite "Autograd of shapeshifting operations":
       mean_relative_error(vx.grad, expected_x) < 1e-07
       mean_relative_error(vy.grad, expected_y) < 1e-07
       mean_relative_error(vz.grad, expected_z) < 1e-07
+
+  test "Gradient of unsqueeze operation":
+
+    let
+      M = rand(1..20)
+      N = rand(1..20)
+
+      x = randomTensor([M, N], 1.0)
+      y = randomTensor([M, 1, N], 1.0)
+
+    proc network_x(x: Tensor[float64]): float64 =
+      result = sum x.unsqueeze(1) + y
+    proc network_y(y: Tensor[float64]): float64 =
+      result = sum x.unsqueeze(1) + y
+
+    let
+      expected_x = x.clone().numerical_gradient(network_x)
+      expected_y = y.clone().numerical_gradient(network_y)
+      ctx = newContext Tensor[float64]
+      vx = ctx.variable(x, requires_grad = true)
+      vy = ctx.variable(y, requires_grad = true)
+
+      loss = sum vx.unsqueeze(1) + vy
+
+    loss.backprop()
+    check:
+      mean_relative_error(vx.grad, expected_x) < 1e-07
+      mean_relative_error(vy.grad, expected_y) < 1e-07

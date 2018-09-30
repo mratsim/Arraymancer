@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../tensor/tensor,
+import  ../private/sequninit,
+        ../tensor/tensor,
         ./ag_data_structure
 
 template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
@@ -53,21 +54,22 @@ proc forward_reshape[TT](self: ReshapeGate[TT], a: Variable[TT], shape: Metadata
   result.context = a.context
   result.value = a.value.reshape(shape)
 
-method backward*[TT](self: ReshapeGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: ReshapeGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
+  result = newSeqUninit[TT](1)
   result[0] = gradient.reshape(self.cached_input_shape)
 
 proc reshapeImpl[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
   # Gate
   var gate: ReshapeGate[TT]
   new gate
-  gate.nb_grads = 1
 
   # Node
   var node: Node[TT]
   new node
 
   node.gate = gate
+  node.parents = newSeqUninit[VariablePtr[TT]](1)
   node.parents[0] = a.weakRef
 
   a.context.push(node)
@@ -112,13 +114,13 @@ template squeezeUnsqueeze(GateName, forward_proc, backward_proc: untyped): untyp
     result.value = forward_proc(x.value, self.axis)
 
   method backward[TT](self: GateName[TT], payload: Payload[TT]): SmallDiffs[TT] =
+    result = newSeqUninit[TT](1)
     result[0] = payload.variable.grad.backward_proc(self.axis)
 
   proc forward_proc*[TT](v: Variable[TT], axis: Natural): Variable[TT] =
     # Gate
     var gate: GateName[TT]
     new gate
-    gate.nb_grads = 1
     gate.axis = axis
 
     # Node
@@ -126,6 +128,7 @@ template squeezeUnsqueeze(GateName, forward_proc, backward_proc: untyped): untyp
     new node
 
     node.gate = gate
+    node.parents = newSeqUninit[VariablePtr[TT]](1)
     node.parents[0] = v.weakRef
     v.context.push node
 

@@ -14,8 +14,6 @@
 
 import typetraits, macros
 
-const MAX_NB_GRADS = 7 # Max number of gradients output of autograd operations
-
 type
   Context*[TT] = ref ContextObj[TT]
     ## An autograd context is a record of operations or layers.
@@ -49,7 +47,7 @@ type
     ## Warning  ⚠: Make sure the ``Context`` outlives the ``Variable``.
     ## In the future ``grad`` will be optional: ``Option[TT]`` or ``opt[TT]``
 
-  VariablePtr[TT] = ptr VariableObj[TT]
+  VariablePtr*[TT] = ptr VariableObj[TT]
     ## A ``VariablePtr`` is almost the same as a ``Variable``
     ## except that it is not traced by the garbage collector.
     ##
@@ -67,7 +65,6 @@ type
     # TODO make the grad initialization optional to optimize memory use
 
   Gate*[TT] = ref object of RootObj
-    nb_grads*: int
     ## Base operator or layer. You can describe your custom operations or layers
     ## by inheriting from Gate and add a forward and optionally a backward method.
     ## Each operations should set the number of gradients produced during backpropagation.
@@ -89,18 +86,18 @@ type
     parents*: Parents[TT]
     payload*: Payload[TT]
 
-  Parents[TT] = array[MAX_NB_GRADS, VariablePtr[TT]]
-  SmallDiffs*[TT] = array[MAX_NB_GRADS, TT]
+  Parents[TT] = seq[VariablePtr[TT]]
+  SmallDiffs*[TT] = seq[TT]
 
-method backward*[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, base, inline.} =
+method backward*[TT](self: Gate[TT], payload: Payload[TT]): seq[TT] {.noInit, base, inline.} =
   raise newException(ValueError, "backward method is not implemented for " & $self.type.name)
 
-proc newContext*(TT: typedesc): Context[TT] {.noSideEffect.} =
+func newContext*(TT: typedesc): Context[TT] =
   ## Initialize a context
   new result
   result.nodes = newSeq[Node[TT]]()
 
-proc variable*[TT](ctx: Context[TT], value: TT, requires_grad = false): Variable[TT] {.noSideEffect.} =
+func variable*[TT](ctx: Context[TT], value: TT, requires_grad = false): Variable[TT] =
   ## Wrap a variable to the context
   ## T is a Tensor[T, CudaTensor[T] or scalar T
   # TODO make the grad initialization optional to optimize memory use
@@ -110,19 +107,19 @@ proc variable*[TT](ctx: Context[TT], value: TT, requires_grad = false): Variable
   result.grad = value.zeros_like
   result.requires_grad = requires_grad
 
-proc len[TT](ctx: ContextPtr[TT]): int {.noSideEffect, inline.}=
+func len[TT](ctx: ContextPtr[TT]): int {.inline.}=
   ## Returns the number of operations applied in the context
-  ctx.nodes.len()
+  ctx.nodes.len
 
-proc push*[TT](ctx: ContextPtr[TT], node: Node[TT]) {.noSideEffect, inline.}=
+func push*[TT](ctx: ContextPtr[TT], node: Node[TT]) {.inline.}=
   ## Append a new operation to the context
   if not ctx.no_grad:
     ctx.nodes.add(node)
 
-proc peek[TT](ctx: ContextPtr[TT]): Node[TT] {.noSideEffect, inline.}=
+func peek[TT](ctx: ContextPtr[TT]): Node[TT] {.inline.}=
   ctx.nodes[ctx.len - 1]
 
-proc pop[TT](ctx: ContextPtr[TT]): Node[TT] {.noSideEffect, inline.}=
+func pop[TT](ctx: ContextPtr[TT]): Node[TT] {.inline.}=
   ctx.nodes.pop
 
 template no_grad_mode*(ctx: Context, body: untyped): untyped =
@@ -137,12 +134,12 @@ template no_grad_mode*(ctx: Context, body: untyped): untyped =
 
   ctx.no_grad = prev_state
 
-proc is_grad_needed*(v: Variable): bool {.noSideEffect, inline.} =
+func is_grad_needed*(v: Variable): bool {.inline.} =
   ## Depending on the input variable and its context no_grad_mode,
   ## returns true if gradient computation is needed and false otherwise
   v.requires_grad and not v.context.no_grad
 
-proc check_ctx*(a, b: Variable) {.noSideEffect, inline.} =
+func check_ctx*(a, b: Variable) {.inline.} =
   if unlikely(a.context != b.context):
     raise newException(ValueError, "You cannot combine variable from different contexts")
 
@@ -171,18 +168,18 @@ proc backprop*[TT](v: Variable[TT]) =
     let curGate = curNode.gate
     let diffs = curGate.backward(curnode.payload)
 
-    for i in 0 ..< curGate.nb_grads:
+    for i, diff in diffs:
       let parent_i = curNode.parents[i]
       if parent_i.requires_grad:
-        parent_i.grad += diffs[i]
+        parent_i.grad += diff
 
-proc weakRef*[TT](v: Variable[TT]): VariablePtr[TT] {.inline.} =
+func weakRef*[TT](v: Variable[TT]): VariablePtr[TT] {.inline.} =
   ## Get a weak/untraced reference to a Variable
   ## This is intended for library writers and Neural Network graphs
   ## to avoid strong cyclic references.
   cast[VariablePtr[TT]](v)
 
-proc weakRef*[TT](ctx: Context[TT]): ContextPtr[TT] {.inline.} =
+func weakRef*[TT](ctx: Context[TT]): ContextPtr[TT] {.inline.} =
   ## Get a weak/untraced reference to a Variable
   ## This is intended for library writers and Neural Network graphs
   ## to avoid strong cyclic references.

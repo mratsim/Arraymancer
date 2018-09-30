@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../tensor/tensor,
+import  ../../private/sequninit,
+        ../../tensor/tensor,
         ../../autograd/autograd,
         ../../nn_primitives/nn_primitives
 
@@ -55,8 +56,9 @@ proc forward[Layers, Timesteps: static[int], TT](
 method backward*[Layers, Timesteps: static[int], TT](
           self: GRUGate[Layers, TimeSteps, TT],
           payload: Payload[TT],
-          ): SmallDiffs[TT] =
+          ): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
+  result = newSeqUninit[TT](7)
   gru_backward(
     result[0], result[1],            # dinput, dhidden,
     result[2], result[3],            # dW3s0, dW3sN,
@@ -92,7 +94,6 @@ proc gru*[TT](
   # Gate
   var gate: GRUGate[Layers, Timesteps, TT]
   new gate
-  gate.nb_grads = 7
   gate.W3s0 = W3s0
   gate.W3sN = W3sN
   gate.U3s = U3s
@@ -104,6 +105,7 @@ proc gru*[TT](
   new node
 
   node.gate = gate
+  node.parents = newSeqUninit[VariablePtr[TT]](7)
   node.parents[0] = input.weakRef
   node.parents[1] = hidden0.weakRef
   node.parents[2] = W3s0.weakRef

@@ -15,7 +15,7 @@
 # By convention a is the LHS (left-hand side)
 # b is the rhs (right-hand side)
 
-import  ../private/ast_utils,
+import  ../private/sequninit,
         ../tensor/tensor,
         ./ag_data_structure
 
@@ -27,8 +27,9 @@ proc forward[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}
   result.context = a.context
   result.value = a.value + b.value
 
-method backward*[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
+  result = newSeq[TT](2)
   result[0] = gradient
   result[1] = gradient
 
@@ -39,13 +40,13 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   # Gate
   var gate: AddGate[TT]
   new gate
-  gate.nb_grads = 2
 
   # Node
   var node: Node[TT]
   new node
 
   node.gate = gate
+  node.parents = newSeq[VariablePtr[TT]](2)
   node.parents[0] = a.weakRef
   node.parents[1] = b.weakRef
 
@@ -57,7 +58,7 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
 
   # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:
-    result.grad = zeros[getSubType(TT)](result.value.shape)
+    result.grad = zeros_like result.value
     result.requires_grad = true
 
 type SubGate* {.final.} [TT] = ref object of Gate[TT]
@@ -68,8 +69,9 @@ proc forward[TT](self: SubGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}
   result.context = a.context
   result.value = a.value - b.value
 
-method backward*[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
+  result = newSeqUninit[TT](2)
   result[0] = gradient
   result[1] = -gradient
 
@@ -80,13 +82,13 @@ proc `-`*[TT](a, b: Variable[TT]): Variable[TT] =
   # Gate
   var gate: SubGate[TT]
   new gate
-  gate.nb_grads = 2
 
   # Node
   var node: Node[TT]
   new node
 
   node.gate = gate
+  node.parents = newSeqUninit[VariablePtr[TT]](2)
   node.parents[0] = a.weakRef
   node.parents[1] = b.weakRef
 
@@ -98,5 +100,5 @@ proc `-`*[TT](a, b: Variable[TT]): Variable[TT] =
 
   # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:
-    result.grad = zeros[getSubType(TT)](result.value.shape)
+    result.grad = zeros_like result.value
     result.requires_grad = true

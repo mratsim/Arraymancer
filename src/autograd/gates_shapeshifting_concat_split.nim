@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../tensor/tensor,
+import  ../private/sequninit,
+        ../tensor/tensor,
         ./ag_data_structure,
         sequtils
 
 type StackGate{.final.}[TT] = ref object of Gate[TT]
   ## TODO support unlimited stacking
   axis: int
+  nb_grads: int
 
 proc forward[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[TT] =
   new result
@@ -31,8 +33,9 @@ proc forward[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[TT] =
   result.context = x[0].context
   result.value = stack(ts, self.axis)
 
-method backward*[TT](self: StackGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: StackGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
+  result = newSeqUninit[TT](self.nb_grads)
   for i in 0 ..< gradient.shape[self.axis]:
     result[i] = gradient.atAxisIndex(self.axis, i)
 
@@ -55,7 +58,7 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
   # Gate
   var gate: StackGate[TT]
   new gate
-  gate.nb_grads = variables.len # TODO Max stack supported is 7 at the moment. Need "infinite" for timeseries and NLP
+  gate.nb_grads = variables.len
   gate.axis = axis
 
   # Node
@@ -63,6 +66,7 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
   new node
 
   node.gate = gate
+  node.parents = newSeqUninit[VariablePtr[TT]](variables.len)
   for idx, v in variables:
     node.parents[idx] = v.weakRef
 
@@ -82,13 +86,14 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
 type ChunkSplitGate*{.final.}[TT] = ref object of Gate[TT]
   axis: int
 
-proc forward_chunk[TT](self: ChunkSplitGate[TT], x: Variable[TT], nb_chunks: Positive): seq[Variable[TT]] {.inline.}=
+proc forward_chunk[TT](self: ChunkSplitGate[TT], x: Variable[TT], nb_chunks: Positive): seq[Variable[TT]] {.noInit, inline.}=
   result = x.value.chunk(nb_chunks, self.axis).mapIt( # TODO: inefficient to create an intermediate sequence
     Variable[TT](context: x.context, value: it)
   )
 
-method backward[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+method backward[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradients = payload.sequence.mapIt(it.grad) # TODO: inefficient to create an intermediate sequence
+  result = newSeqUninit[TT](1)
   result[0] = concat(gradients, self.axis)
 
 proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variable[TT]] =
@@ -104,7 +109,6 @@ proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variab
   # Gate
   var gate: ChunkSplitGate[TT]
   new gate
-  gate.nb_grads = 1
   gate.axis = axis
 
   # Node
@@ -112,6 +116,7 @@ proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variab
   new node
 
   node.gate = gate
+  node.parents = newSeqUninit[VariablePtr[TT]](1)
   node.parents[0] = v.weakRef
   v.context.push node
 

@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../autograd/autograd,
+import  ../../private/sequninit,
+        ../../autograd/autograd,
         ../../tensor/tensor,
         ../../nn_primitives/nn_primitives
 
@@ -25,8 +26,9 @@ proc forward[TT](self: TanhActivation[TT], a: Variable[TT]): Variable[TT] {.inli
   result.context = a.context
   result.value = tanh a.value
 
-method backward*[TT](self: TanhActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: TanhActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
+  result = newSequninit[TT](1)
   result[0] = gradient.tanh_backward(self.cache)
 
 proc tanh*[TT](a: Variable[TT]): Variable[TT] =
@@ -36,13 +38,13 @@ proc tanh*[TT](a: Variable[TT]): Variable[TT] =
   # Gate
   var gate: TanhActivation[TT]
   new gate
-  gate.nb_grads = 1
 
   # Node
   var node: Node[TT]
   new node
 
   node.gate = gate
+  node.parents = newSeqUninit[VariablePtr[TT]](1)
   node.parents[0] = a.weakRef
 
   a.context.push(node)

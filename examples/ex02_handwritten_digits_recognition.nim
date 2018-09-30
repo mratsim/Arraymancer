@@ -15,7 +15,7 @@ let
   n = 32                           # Batch size
 
 let
-  mnist = load_mnist()
+  mnist = load_mnist(cache = true)
   # Training data is 60k 28x28 greyscale images from 0-255,
   # neural net prefers input rescaled to [0, 1] or [-1, 1]
   x_train = mnist.train_images.astype(float32) / 255'f32

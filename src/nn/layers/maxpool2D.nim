@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../tensor/tensor,
+import  ../../private/sequninit,
+        ../../tensor/tensor,
         ../../autograd/autograd,
         ../../nn_primitives/nn_primitives
 
@@ -31,8 +32,9 @@ proc forward[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[TT] {.inlin
                                                       self.padding,
                                                       self.stride)
 
-method backward*[TT](self: MaxPool2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: MaxPool2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
+  result = newSeqUninit[TT](1)
   result[0] = maxpool2d_backward(
     self.cached_input_shape,
     self.cached_max_indices,
@@ -43,7 +45,7 @@ proc maxpool2d*[TT](input: Variable[TT],
                     kernel: Size2D,
                     padding: Size2D = (0,0),
                     stride: Size2D = (1,1)
-                    ): Variable[TT] {.inline.} =
+                    ): Variable[TT] =
   ## Input:
   ##     - ``input`` Variable wrapping a 4D Tensor shape [N,C,H_in,W_in]
   ##     - ``kernel`` Height (kH) and width (kW) of the pooling kernel.
@@ -65,7 +67,6 @@ proc maxpool2d*[TT](input: Variable[TT],
   # Gate
   var gate: MaxPool2DGate[TT]
   new gate
-  gate.nb_grads = 1
   gate.kernel = kernel
   gate.padding = padding
   gate.stride = stride
@@ -75,6 +76,7 @@ proc maxpool2d*[TT](input: Variable[TT],
   new node
 
   node.gate = gate
+  node.parents = newSeqUninit[VariablePtr[TT]](1)
   node.parents[0] = input.weakRef
 
   input.context.push(node)

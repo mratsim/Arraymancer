@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../tensor/tensor,
+import  ../../private/sequninit,
+        ../../tensor/tensor,
         ../../autograd/autograd,
         ../../nn_primitives/nn_primitives
 
@@ -20,6 +21,7 @@ type Conv2DGate* {.final.} [TT] = ref object of Gate[TT]
   cached_input: Variable[TT]
   weight, bias: Variable[TT]
   padding, stride: Size2D
+  nb_grads: int
   # TODO: store the algorithm (NNPACK / im2col)
 
 proc forward[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
@@ -33,8 +35,9 @@ proc forward[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.inline.}
                         self.stride
                         )
 
-method backward*[TT](self: Conv2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: Conv2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
+  result = newSeqUninit[TT](self.nb_grads)
   conv2d_backward(
     self.cached_input.value,
     self.weight.value, self.bias.value,
@@ -93,6 +96,7 @@ proc conv2d*[TT]( input, weight: Variable[TT],
   new node
 
   node.gate = gate
+  node.parents = newSeqUninit[VariablePtr[TT]](gate.nb_grads)
   node.parents[0] = input.weakRef
   node.parents[1] = weight.weakRef
   if not bias.isNil:

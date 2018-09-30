@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../tensor/tensor,
+import  ../../private/sequninit,
+        ../../tensor/tensor,
         ../../nn_primitives/nn_primitives,
         ../../autograd/autograd
 
 type LinearGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: use fused AddMatMul gate: C <- alpha AB + beta C
   input, weight, bias: Variable[TT]
+  nb_grads: int
 
 proc forward[TT](self: LinearGate[TT], input: Variable[TT]): Variable[TT] {.inline.}=
   new result
@@ -30,12 +32,13 @@ proc forward[TT](self: LinearGate[TT], input: Variable[TT]): Variable[TT] {.inli
 
   result.context = input.context
 
-method backward*[TT](self: LinearGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: LinearGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   # result[0] grad w.r.t. input
   # result[1] grad w.r.t. weight
   # result[2] grad w.r.t. bias
 
   let gradOutput = payload.variable.grad
+  result = newSeqUninit[TT](self.nb_grads)
 
   if self.input.requires_grad:
     result[0] = gradOutput * self.weight.value
@@ -88,6 +91,7 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
   new node
 
   node.gate = gate
+  node.parents = newSeqUninit[VariablePtr[TT]](gate.nb_grads)
   node.parents[0] = input.weakRef
   node.parents[1] = weight.weakRef
   if not bias.isNil:

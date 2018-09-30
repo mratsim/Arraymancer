@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/ast_utils,
+import  ../private/sequninit,
         ../tensor/tensor,
         ./ag_data_structure
 
@@ -27,8 +27,9 @@ proc forward[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.inlin
   result.context = a.context
   result.value = a.value * b.value
 
-method backward*[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
+  result = newSeqUninit[TT](2)
   result[0] = gradient * self.b.value.transpose
   result[1] = self.a.value.transpose * gradient
 
@@ -39,13 +40,13 @@ proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
   # Gate
   var gate: MatMulGate[TT]
   new gate
-  gate.nb_grads = 2
 
   # Node
   var node: Node[TT]
   new node
 
   node.gate = gate
+  node.parents = newSeqUninit[VariablePtr[TT]](2)
   node.parents[0] = a.weakRef
   node.parents[1] = b.weakRef
 
@@ -56,7 +57,7 @@ proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
   node.payload = Payload[TT](kind: pkVar, variable: result)
 
   if a.is_grad_needed or b.is_grad_needed:
-    result.grad = zeros[getSubType(TT)](result.value.shape)
+    result.grad = zeros_like result.value
     result.requires_grad = true
 
     gate.a = a

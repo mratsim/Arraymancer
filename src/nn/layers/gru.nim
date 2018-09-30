@@ -15,19 +15,20 @@
 import  ../../private/sequninit,
         ../../tensor/tensor,
         ../../autograd/autograd,
-        ../../nn_primitives/nn_primitives
+        ../../nn_primitives/nn_primitives,
+        sequtils
 
-type GRUGate*{.final.}[Layers, Timesteps: static[int], TT] = ref object of Gate[TT]
+type GRUGate*{.final.}[TT] = ref object of Gate[TT]
   ## For now the GRU layer only supports fixed size GRU stack and Timesteps
-  cached_inputs: array[Layers, TT]
-  cached_hiddens: array[Layers, array[Timesteps, TT]]
+  cached_inputs: seq[TT]
+  cached_hiddens: seq[seq[TT]]
   W3s0, W3sN: Variable[TT]      # Weights
   U3s, bW3s, bU3s: Variable[TT] # Weights
   rs, zs, ns, Uhs: TT           # Intermediate tensors for backprop
   # TODO: store hidden_state for weight sharing?
 
-proc forward[Layers, Timesteps: static[int], TT](
-          self: GRUGate[Layers, TimeSteps, TT],
+proc forward[TT](
+          self: GRUGate[TT],
           a: Variable[TT], hidden0: Variable[TT],
           ): tuple[output, hiddenN: Variable[TT]] =
   ## Hidden_state is update in-place it's both an input and output
@@ -37,24 +38,25 @@ proc forward[Layers, Timesteps: static[int], TT](
 
   result.output.context = a.context
   result.hiddenN.context = a.context
+  result.hiddenN.value = hidden0.value.clone()
   if not a.is_grad_needed:
     gru_inference(
-      a.data,
-      self.W3s0.data, self.W3sN.data, self.U3s.data,
-      self.bW3s.data, self.bU3s.data, result.data, hidden0.data
+      a.value,
+      self.W3s0.value, self.W3sN.value, self.U3s.value,
+      self.bW3s.value, self.bU3s.value, result.output.value, result.hiddenN.value
       )
   else:
     gru_forward(
-      a.data, self.W3s0.data, self.W3sN.data, self.U3s.data,
-      self.bW3s.data, self.bU3s.data,
+      a.value, self.W3s0.value, self.W3sN.value, self.U3s.value,
+      self.bW3s.value, self.bU3s.value,
       self.rs, self.zs, self.ns, self.Uhs,
-      result.data, hidden0.data,
+      result.output.value, result.hiddenN.value,
       self.cached_inputs,
       self.cached_hiddens
     )
 
-method backward*[Layers, Timesteps: static[int], TT](
-          self: GRUGate[Layers, TimeSteps, TT],
+method backward*[TT](
+          self: GRUGate[TT],
           payload: Payload[TT],
           ): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
@@ -66,12 +68,12 @@ method backward*[Layers, Timesteps: static[int], TT](
     gradient,
     self.cached_inputs,
     self.cached_hiddens,
-    self.W3s0, self.W3sN, self.U3s,
+    self.W3s0.value, self.W3sN.value, self.U3s.value,
     self.rs, self.zs, self.ns, self.Uhs
   )
 
 proc gru*[TT](
-      input, hidden0: Variable[TT], Layers, Timesteps: static[int],
+      input, hidden0: Variable[TT], seq_len, layers: Natural,
       W3s0, W3sN, U3s: Variable[TT],
       bW3s, bU3s: Variable[TT]
       ): tuple[output, hiddenN: Variable[TT]] =
@@ -92,7 +94,7 @@ proc gru*[TT](
   # TODO bound checking
 
   # Gate
-  var gate: GRUGate[Layers, Timesteps, TT]
+  var gate: GRUGate[TT]
   new gate
   gate.W3s0 = W3s0
   gate.W3sN = W3sN
@@ -115,6 +117,8 @@ proc gru*[TT](
   node.parents[6] = bU3s.weakRef
 
   # Resulting Variable
+  gate.cached_inputs = newSeqUninit[TT](layers)
+  gate.cached_hiddens = newSeqWith(layers) do: newSeq[TT](seq_len)
   result = gate.forward(input, hidden0)
 
   # Since output == hidden we need one Node for each

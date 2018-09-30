@@ -289,8 +289,8 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
         )
       output: Tensor[float64]
       h = hidden.clone()
-      cached_inputs: array[Layers, Tensor[float64]]
-      cached_hidden: array[Layers, array[Timesteps, Tensor[float64]]]
+      cached_inputs = newSeq[Tensor[float64]](Layers)
+      cached_hidden = newSeqWith(Layers) do: newSeq[Tensor[float64]](TimeSteps)
 
     gru_forward(x,
                 W3s0, W3sN,
@@ -390,8 +390,8 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
 
       var # Forward outputs
         output: Tensor[float64]
-        cached_inputs: array[Layers, Tensor[float64]]
-        cached_hiddens: array[Layers, array[Timesteps, Tensor[float64]]]
+        cached_inputs = newSeq[Tensor[float64]](Layers)
+        cached_hiddens = newSeqWith(Layers) do: newSeq[Tensor[float64]](TimeSteps)
         h = hidden.clone()
         rs = zeros[float64](Layers, TimeSteps, h.shape[1], h.shape[2])
         zs = zeros_like(rs)

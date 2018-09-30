@@ -10,4 +10,5 @@ export
   network,
   TrainableLayer,
   Conv2DLayer,
-  LinearLayer
+  LinearLayer,
+  GRULayer

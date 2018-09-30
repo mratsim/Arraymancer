@@ -243,16 +243,16 @@ proc topoFromGRU(self: var TopoTable, ident: NimNode, desc: NimNode) =
     incorrect(desc)
 
   # TODO: ensure single computation `in_shape`
-  var in_shape = self.replaceInputNodes(desc[1])
-  in_shape = quote do: `in_shape`
+  let in_shape = self.replaceInputNodes(desc[1])
 
   # TODO: support bidirectional
   let hidden_size = desc[2]
-  let out_shape = quote do:
-    var out_shape = `in_shape`
-    out_shape[2] = `hidden_size`
-    out_shape
-  let seq_len = quote do: `out_shape`[0]
+  let out_shape = nnkBracket.newTree(
+      nnkBracketExpr.newTree(in_shape, newLit 0),
+      nnkBracketExpr.newTree(in_shape, newLit 1),
+      hidden_size
+    )
+  let seq_len = nnkBracketExpr.newTree(in_shape, newLit 0)
 
   self.add ident, LayerTopology(kind: lkGRU,
                                 in_shape: in_shape,

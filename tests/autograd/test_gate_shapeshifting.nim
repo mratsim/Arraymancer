@@ -55,26 +55,80 @@ suite "Autograd of shapeshifting operations":
       mean_relative_error(vd.grad, target_grad_d) < 1e-07
 
   test "Gradient of chunk operation":
+    let
+      height = rand(1..20)
+      width = rand(1..20)
 
-    block: # Dimension is divisible by nb chunks
-      let
-        height = rand(1..20)
-        width = rand(1..20)
+      x = randomTensor([4 * height, width], 1.0)
 
-        x = randomTensor([4 * height, width], 1.0)
+    proc network(x: Tensor[float64]): float64 =
+      let s = x.chunk(4, axis = 0)
+      check:
+        s[0].shape == [height, width]
+        s[1].shape == [height, width]
+        s[2].shape == [height, width]
+        s[3].shape == [height, width]
+      result = sum(s[0] + s[1] - (s[2] + s[3]))
 
-      proc network(x: Tensor[float64]): float64 =
-        let s = x.chunk(4, axis = 0)
-        result = sum(s[0] + s[1] - (s[2] + s[3]))
+    let
+      expected = x.clone().numerical_gradient(network)
+      ctx = newContext Tensor[float64]
+      vx = ctx.variable(x, requires_grad = true)
 
-      let
-        expected = x.numerical_gradient(network)
-        ctx = newContext Tensor[float64]
-        vx = ctx.variable(x, requires_grad = true)
+    let
+      vs = vx.chunk(4, axis = 0)
+      loss = sum(vs[0] + vs[1] - (vs[2] + vs[3]))
 
-      let
-        vs = vx.chunk(4, axis = 0)
-        loss = sum(vs[0] + vs[1] - (vs[2] + vs[3]))
+    loss.backprop()
+    check: mean_relative_error(vx.grad, expected) < 1e-07
 
-      loss.backprop()
-      check: mean_relative_error(vx.grad, expected) < 1e-07
+  test "Gradient of uneven chunks + slicing operations":
+
+    # We split [10, width] tensors into 4 chunks along the first dim
+    # We should have:
+    #   - 2x [3, width] tensors
+    #   - 2x [2, width] tensors
+    # Then we slice each with t[0 ..< 2, _]
+
+    let
+      height = rand(1..20)
+      width = rand(1..20)
+
+      x = randomTensor([10, width], 1.0)
+
+    proc network(x: Tensor[float64]): float64 =
+      let s = x.chunk(4, axis = 0)
+
+      check:
+        s[0].shape == [3, width]
+        s[1].shape == [3, width]
+        s[2].shape == [2, width]
+        s[3].shape == [2, width]
+
+      result = sum(
+                  s[0][0 ..< 2, _] +
+                  s[1][0 ..< 2, _] -
+                  (
+                    s[2][0 ..< 2, _] +
+                    s[3][0 ..< 2, _]
+                  )
+                )
+
+    let
+      expected = x.clone().numerical_gradient(network)
+      ctx = newContext Tensor[float64]
+      vx = ctx.variable(x, requires_grad = true)
+
+    let
+      vs = vx.chunk(4, axis = 0)
+      loss = sum(
+                vs[0][0 ..< 2, _] +
+                vs[1][0 ..< 2, _] -
+                (
+                  vs[2][0 ..< 2, _] +
+                  vs[3][0 ..< 2, _]
+                )
+              )
+
+    loss.backprop()
+    check: mean_relative_error(vx.grad, expected) < 1e-07

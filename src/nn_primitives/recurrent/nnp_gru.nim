@@ -164,7 +164,7 @@ proc gru_cell_backward*[T: SomeReal](
   ##   - r, z, n, Uh: intermediate results saved from the forward pass of shape [batch_size, hidden_size]
   # Backprop of step 4 - z part
   let dz = (h - n) .* dnext
-  let dn = (1.0 .- z) .* dnext
+  let dn = (1.0.T .- z) .* dnext
 
   # Backprop of step 3.
   let dWx = tanh_backward(dn, n)
@@ -259,14 +259,14 @@ proc gru_inference*[T: SomeReal](
       )
       output[timestep, _, _] = hiddenl.unsqueeze(0)
 
-proc gru_forward*[Layers, Timesteps: static[int], T: SomeReal](
+proc gru_forward*[T: SomeReal](
   input: Tensor[T],
   W3s0, W3sN: Tensor[T],
   U3s, bW3s, bU3s: Tensor[T],
   rs, zs, ns, Uhs: var Tensor[T],
   output, hidden: var Tensor[T],
-  cached_inputs: var array[Layers, Tensor[T]],
-  cached_hiddens: var array[Layers, array[Timesteps, Tensor[T]]]
+  cached_inputs: var seq[Tensor[T]],
+  cached_hiddens: var seq[seq[Tensor[T]]]
 ) =
   ## ⚠️ API subject to change to match CuDNNs
   ##
@@ -304,12 +304,13 @@ proc gru_forward*[Layers, Timesteps: static[int], T: SomeReal](
     batch_size = input.shape[1]
     num_features = input.shape[2]
     hidden_size = hidden.shape[2]
-    num_stacked_layers = int(Layers)
+    num_stacked_layers = cached_inputs.len
     num_directions = hidden.shape[0] div num_stacked_layers
 
   doAssert hidden.shape == [num_stacked_layers * num_directions, batch_size, hidden_size]
   doAssert W3s0.shape == [3 * hidden_size, num_features]
-  doAssert W3sN.shape == [num_stacked_layers - 1, 3 * hidden_size, num_directions * hidden_size]
+  if num_stacked_layers > 1:
+    doAssert W3sN.shape == [num_stacked_layers - 1, 3 * hidden_size, num_directions * hidden_size]
   doAssert U3s.shape == [num_stacked_layers, 3 * hidden_size, hidden_size]
   doAssert bW3s.shape == [num_stacked_layers, 1, 3 * hidden_size]
   doAssert bU3s.shape == bW3s.shape
@@ -320,8 +321,9 @@ proc gru_forward*[Layers, Timesteps: static[int], T: SomeReal](
   doAssert Uhs.shape == [num_stacked_layers, seq_len, batch_size, hidden_size]
 
   # doAssert cached_inputs.len == num_stacked_layers
-  # doAssert cached_hidden.len == num_stacked_layers
-  # doAssert num_stacked_layers[0].len == seq_len
+  doAssert cached_hiddens.len == num_stacked_layers
+  for x in cached_hiddens:
+    doAssert x.len == seq_len
 
   let directions = 1 # stub
 
@@ -371,15 +373,15 @@ proc gru_forward*[Layers, Timesteps: static[int], T: SomeReal](
       apply2_inline(n_lts, n_tmp):
         y
 
-proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
-  dinput, dhidden,                                            # Input and starting hidden state gradient
-  dW3s0, dW3sN,                                               # Weight tensor
-  dU3s, dbW3s, dbU3s: var Tensor[T],                          # Weights & biases gradients
-  dOutput: Tensor[T],                                         # Gradient flowing back from the output/next hidden state
-  cached_inputs: array[Layers, Tensor[T]],                    # Input params saved from forward
-  cached_hiddens: array[Layers, array[Timesteps, Tensor[T]]], # Input params saved from forward
-  W3s0, W3sN, U3s,                                            # Input params saved from forward
-  rs, zs, ns, Uhs: Tensor[T]                                  # Intermediate tensors saved from forward
+proc gru_backward*[T: SomeReal](
+  dinput, dhidden,                     # Input and starting hidden state gradient
+  dW3s0, dW3sN,                        # Weight tensor
+  dU3s, dbW3s, dbU3s: var Tensor[T],   # Weights & biases gradients
+  dOutput: Tensor[T],                  # Gradient flowing back from the output/next hidden state
+  cached_inputs: seq[Tensor[T]],       # Input params saved from forward
+  cached_hiddens: seq[seq[Tensor[T]]], # Input params saved from forward
+  W3s0, W3sN, U3s,                     # Input params saved from forward
+  rs, zs, ns, Uhs: Tensor[T]           # Intermediate tensors saved from forward
 ) =
   ## ⚠️ API subject to change to match CuDNNs
 
@@ -407,11 +409,12 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
     batch_size = cached_inputs[0].shape[1]
     num_features = cached_inputs[0].shape[2]
     hidden_size = cached_hiddens[0][0].shape[1]
-    num_stacked_layers = int(Layers) # Workaround for Nim 0.18.0. Not needed in devel
+    num_stacked_layers = cached_inputs.len
     num_directions = 1 # stub
 
   doAssert W3s0.shape == [3 * hidden_size, num_features]
-  doAssert W3sN.shape == [num_stacked_layers - 1, 3 * hidden_size, num_directions * hidden_size]
+  if num_stacked_layers > 1:
+    doAssert W3sN.shape == [num_stacked_layers - 1, 3 * hidden_size, num_directions * hidden_size]
   doAssert U3s.shape == [num_stacked_layers, 3 * hidden_size, hidden_size]
 
   doAssert rs.shape  == [num_stacked_layers, seq_len, batch_size, hidden_size]
@@ -419,10 +422,16 @@ proc gru_backward*[Layers, Timesteps: static[int], T: SomeReal](
   doAssert ns.shape  == [num_stacked_layers, seq_len, batch_size, hidden_size]
   doAssert Uhs.shape == [num_stacked_layers, seq_len, batch_size, hidden_size]
 
+  # doAssert cached_inputs.len == num_stacked_layers
+  doAssert cached_hiddens.len == num_stacked_layers
+  for x in cached_hiddens:
+    doAssert x.len == seq_len
+
   # 1. Preallocate the results (TODO: separate alloc from compute so that users can pass buffers)
   dhidden = newTensorUninit[T](num_stacked_layers, batch_size, hidden_size)
   dW3s0 = zeros_like(W3s0)
-  dW3sN = zeros_like(W3sN)
+  if num_stacked_layers > 1:
+    dW3sN = zeros_like(W3sN)
   dU3s = zeros_like(U3s)
   dbW3s = zeros[T]([num_stacked_layers, 1, 3 * hidden_size])
   dbU3s = zeros[T]([num_stacked_layers, 1, 3 * hidden_size])

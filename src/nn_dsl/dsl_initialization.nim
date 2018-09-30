@@ -103,11 +103,10 @@ proc trainParamsGRU(self: Neuromancer, field_name: NimNode, topo: LayerTopology)
     hidden_size = topo.gru_hidden_size
     nb_layers = topo.gru_nb_layers
 
-
     W3s0_shape = quote do: [3 * `hidden_size`, `nb_features`]
     W3sN_shape = quote do: [`nb_layers` - 1, 3 * `hidden_size`, `nb_features`] # TODO bidir support
     U3s_shape = quote do: [`nb_layers`, 3 * `hidden_size`, `hidden_size`]
-    biases_shape = quote do: [`nb_layers`, 1, 3 $ `hidden_size`]
+    biases_shape = quote do: [`nb_layers`, 1, 3 * `hidden_size`]
 
     W3s0 = quote do: randomTensor(`W3s0_shape`, `sst`(1)) .- `sst`(0.5)
     W3sN = quote do: randomTensor(`W3sN_shape`, `sst`(1)) .- `sst`(0.5)
@@ -124,9 +123,14 @@ proc trainParamsGRU(self: Neuromancer, field_name: NimNode, topo: LayerTopology)
       `W3s0`, requires_grad = true # TODO allow freezing
     )
 
-    result.`field_name`.W3sN = `ctx`.variable(
-      `W3sN`, requires_grad = true # TODO allow freezing
-    )
+    result.`field_name`.W3sN = block:
+      if `nb_layers` > 1:
+        `ctx`.variable(
+            `W3sN`, requires_grad = true # TODO allow freezing
+          )
+      else:
+        # Empty variable, we stille needed it initialized to allow `requires_grad`
+        Variable[Tensor[`sst`]](context: `ctx`.weakRef)
 
     result.`field_name`.U3s = `ctx`.variable(
       `U3s`, requires_grad = true # TODO allow freezing

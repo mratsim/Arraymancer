@@ -50,13 +50,12 @@ proc shortcutGRU(self: Neuromancer, field_name: NimNode, topo: LayerTopology) =
 
   let
     topo = self.topoTable.getOrDefault(field_name)
-    seq_len = topo.gru_seq_len
     layers = topo.gru_nb_layers
 
   let shortcut = quote do:
     template `field_name`(input, hidden0: Variable): tuple[output, hiddenN: Variable] =
       input.gru(
-        hidden0, `seq_len`, `layers`,
+        hidden0, `layers`,
         self.`field_name`.W3s0, self.`field_name`.W3sN,
         self.`field_name`.U3s,
         self.`field_name`.bW3s, self.`field_name`.bU3s

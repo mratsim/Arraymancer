@@ -18,10 +18,11 @@ import  ./activation/sigmoid,
         ./layers/linear,
         ./layers/conv2D,
         ./layers/maxpool2D,
+        ./layers/gru,
         ./loss/cross_entropy_losses,
         ./loss/mean_square_error_loss,
         ./optimizers/optimizers
 
 export sigmoid, relu, tanh
-export linear, conv2D, maxpool2d, cross_entropy_losses, mean_square_error_loss
+export linear, conv2D, maxpool2d, gru, cross_entropy_losses, mean_square_error_loss
 export optimizers

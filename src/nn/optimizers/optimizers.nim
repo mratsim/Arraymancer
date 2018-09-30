@@ -36,9 +36,10 @@ proc update*(self: Sgd) =
   # Note: SGD expects gradient to be scaled by batchsize (done by default in Arraymancer)
   for v in self.params:
     # v.value -= learning rate * grad
-    apply2_inline(v.value, v.grad):
-      x - self.lr * y
-    v.grad = v.value.zeros_like
+    if v.requires_grad:
+      apply2_inline(v.value, v.grad):
+        x - self.lr * y
+      v.grad = v.value.zeros_like
 
 func optimizerSGD*[M](model: M, learning_rate: SomeReal): Sgd[Tensor[SomeReal]] =
   ## Create a SGD optimizer that will update the model weight
@@ -50,6 +51,6 @@ func optimizerSGD*[M](model: M, learning_rate: SomeReal): Sgd[Tensor[SomeReal]] 
   result.lr = learning_rate
 
   for layer in fields(model):
-  # when layer is TrainableLayer: # TODO: This is broken and generates two method declarations with the same name.
-    result.params.add layer.weight
-    result.params.add layer.bias
+    for field in fields(layer): # TODO recursive for any nesting depth of Model
+      if field is Variable:
+        result.params.add field

@@ -214,7 +214,7 @@ proc gru_inference*[T: SomeReal](
   ##     `hidden` contains the hidden state for timestep T == sequence/timesteps length of `input`
   ##
   ## ⚠️ Input/Output updated in-place:
-  ##   - h(t) -> h'(t), the hidden state of shape [batch_size, hidden_size]
+  ##   - h(t) -> h'(t), the hidden state of shape [num_stacked_layers * num_directions, batch, hidden_size]
   ##     is both an input and output
 
   # 0. Retrieve the metadata and validate it
@@ -228,7 +228,8 @@ proc gru_inference*[T: SomeReal](
 
   doAssert hidden.shape == [num_stacked_layers * num_directions, batch_size, hidden_size]
   doAssert W3s0.shape == [3 * hidden_size, num_features]
-  doAssert W3sN.shape == [num_stacked_layers - 1, 3 * hidden_size, num_directions * hidden_size]
+  if num_stacked_layers > 1:
+    doAssert W3sN.shape == [num_stacked_layers - 1, 3 * hidden_size, num_directions * hidden_size]
   doAssert U3s.shape == [num_stacked_layers, 3 * hidden_size, hidden_size]
   doAssert bW3s.shape == [num_stacked_layers, 1, 3 * hidden_size]
   doAssert bU3s.shape == bW3s.shape
@@ -295,7 +296,7 @@ proc gru_forward*[T: SomeReal](
   ##       Hidden states are of tensors of shape [3 * hidden_size, hidden_size]
   ##
   ## ⚠️ Input/Output updated in-place:
-  ##   - h(t) -> h'(t), the hidden state of shape [batch_size, hidden_size]
+  ##   - h(t) -> h'(t), the hidden state of shape [num_stacked_layers * num_directions, batch, hidden_size]
   ##     is both an input and output
 
   # 0. Retrieve the metadata and validate it
@@ -329,7 +330,6 @@ proc gru_forward*[T: SomeReal](
 
   # Initialize output
   output = newTensorUninit[T](seq_len, batch_size, directions * hidden_size)
-
   for layer in 0 ..< num_stacked_layers:
     if layer == 0:
       cached_inputs[0] = input

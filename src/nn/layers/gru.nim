@@ -39,13 +39,11 @@ proc forward[TT](
   result.output.context = a.context
   result.hiddenN.context = a.context
   result.hiddenN.value = hidden0.value.clone()
-  if not a.is_grad_needed:
-    gru_inference(
-      a.value,
-      self.W3s0.value, self.W3sN.value, self.U3s.value,
-      self.bW3s.value, self.bU3s.value, result.output.value, result.hiddenN.value
-      )
-  else:
+  if ( # input.is_grad_needed or hidden0.is_grad_needed or
+      # TODO improve inference shortcut - https://github.com/mratsim/Arraymancer/issues/301
+      self.W3s0.is_grad_needed or self.W3sN.is_grad_needed or
+      self.U3s.is_grad_needed or
+      self.bW3s.is_grad_needed or self.bU3s.is_grad_needed):
     gru_forward(
       a.value, self.W3s0.value, self.W3sN.value, self.U3s.value,
       self.bW3s.value, self.bU3s.value,
@@ -54,6 +52,12 @@ proc forward[TT](
       self.cached_inputs,
       self.cached_hiddens
     )
+  else:
+    gru_inference(
+      a.value,
+      self.W3s0.value, self.W3sN.value, self.U3s.value,
+      self.bW3s.value, self.bU3s.value, result.output.value, result.hiddenN.value
+      )
 
 method backward*[TT](
           self: GRUGate[TT],

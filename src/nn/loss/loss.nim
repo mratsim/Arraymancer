@@ -20,16 +20,5 @@ import  ../../tensor/tensor,
 type Loss* [TT] = ref object of Gate[TT]
   target*: TT
 
-
-method forward*[TT](self: Loss[TT], a: Variable[TT], target: TT): Variable[TT] {.base, inline.}=
-  # Forward for loss layers
-  raise newException(ValueError, "forward method is not implemented for " & $self.type.name)
-
-
 type SparseLoss* [TT] = ref object of Gate[TT]
   target*: Tensor[int]
-
-
-method forward*[TT](self: SparseLoss[TT], a: Variable[TT], target: Tensor[int]): Variable[TT] {.base, inline.}=
-  # Forward for sparse loss layers
-  raise newException(ValueError, "forward method is not implemented for " & $self.type.name)

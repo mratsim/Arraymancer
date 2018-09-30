@@ -21,13 +21,14 @@ type MatMulGate* {.final.} [TT] = ref object of Gate[TT]
   a: Variable[TT]
   b: Variable[TT]
 
-method forward*[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.inline, locks:0.}=
+proc forward[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
   new result
 
   result.context = a.context
   result.value = a.value * b.value
 
-method backward*[TT](self: MatMulGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  let gradient = payload.variable.grad
   result[0] = gradient * self.b.value.transpose
   result[1] = self.a.value.transpose * gradient
 
@@ -52,7 +53,7 @@ proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a, b)
-  node.payload = result
+  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   if a.is_grad_needed or b.is_grad_needed:
     result.grad = zeros[getSubType(TT)](result.value.shape)

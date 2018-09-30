@@ -21,13 +21,14 @@ import  ../private/ast_utils,
 
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
 
-method forward*[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline, locks:0.}=
+proc forward[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
   new result
 
   result.context = a.context
   result.value = a.value + b.value
 
-method backward*[TT](self: AddGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  let gradient = payload.variable.grad
   result[0] = gradient
   result[1] = gradient
 
@@ -52,7 +53,7 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a, b)
-  node.payload = result
+  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:
@@ -61,13 +62,14 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
 
 type SubGate* {.final.} [TT] = ref object of Gate[TT]
 
-method forward*[TT](self: SubGate[TT], a, b: Variable[TT]): Variable[TT] {.inline, locks:0.}=
+proc forward[TT](self: SubGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
   new result
 
   result.context = a.context
   result.value = a.value - b.value
 
-method backward*[TT](self: SubGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  let gradient = payload.variable.grad
   result[0] = gradient
   result[1] = -gradient
 
@@ -92,7 +94,7 @@ proc `-`*[TT](a, b: Variable[TT]): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a, b)
-  node.payload = result
+  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:

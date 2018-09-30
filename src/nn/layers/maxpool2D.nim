@@ -22,7 +22,7 @@ type MaxPool2DGate* {.final.} [TT] = ref object of Gate[TT]
   cached_max_indices: Tensor[int]
   kernel, padding, stride: Size2D
 
-method forward*[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
+proc forward[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
   new result
 
   result.context = a.context
@@ -31,7 +31,8 @@ method forward*[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[TT] {.in
                                                       self.padding,
                                                       self.stride)
 
-method backward*[TT](self: MaxPool2DGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: MaxPool2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  let gradient = payload.variable.grad
   result[0] = maxpool2d_backward(
     self.cached_input_shape,
     self.cached_max_indices,
@@ -80,7 +81,7 @@ proc maxpool2d*[TT](input: Variable[TT],
 
   # Resulting var
   result = gate.forward(input)
-  node.payload = result
+  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop
   if input.is_grad_needed:

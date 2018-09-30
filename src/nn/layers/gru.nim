@@ -25,7 +25,7 @@ type GRUGate*{.final.}[Layers, Timesteps: static[int], TT] = ref object of Gate[
   rs, zs, ns, Uhs: TT           # Intermediate tensors for backprop
   # TODO: store hidden_state for weight sharing?
 
-method forward*[Layers, Timesteps: static[int], TT](
+proc forward[Layers, Timesteps: static[int], TT](
           self: GRUGate[Layers, TimeSteps, TT],
           a: Variable[TT], hidden0: Variable[TT],
           ): tuple[output, hiddenN: Variable[TT]] =
@@ -54,8 +54,9 @@ method forward*[Layers, Timesteps: static[int], TT](
 
 method backward*[Layers, Timesteps: static[int], TT](
           self: GRUGate[Layers, TimeSteps, TT],
-          gradient: TT,
+          payload: Payload[TT],
           ): SmallDiffs[TT] =
+  let gradient = payload.variable.grad
   gru_backward(
     result[0], result[1],            # dinput, dhidden,
     result[2], result[3],            # dW3s0, dW3sN,
@@ -119,8 +120,8 @@ proc gru*[TT](
   var node_hidden: Node[TT]
   node_hidden[] = node[]
 
-  node.payload = result.output
-  node_hidden.payload = result.hiddenN
+  node.payload = Payload[TT](kind: pkVar, variable: result.output)
+  node_hidden.payload = Payload[TT](kind: pkVar, variable: result.hiddenN)
 
   input.context.push(node)
   input.context.push(node_hidden)

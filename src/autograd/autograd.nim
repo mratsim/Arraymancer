@@ -16,10 +16,12 @@ import  ./ag_data_structure,
         ./gates_basic,
         ./gates_blas,
         ./gates_reduce,
-        ./gates_shapeshifting
+        ./gates_shapeshifting_views,
+        ./gates_shapeshifting_concat_split
 
 export  ag_data_structure,
         gates_basic,
         gates_blas,
         gates_reduce,
-        gates_shapeshifting
+        gates_shapeshifting_views,
+        gates_shapeshifting_concat_split

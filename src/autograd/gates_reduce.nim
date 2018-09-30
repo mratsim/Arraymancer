@@ -21,17 +21,14 @@ type MeanGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
   cached_input_shape: MetadataArray
 
-method forward*[TT](self: MeanGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
+proc forward[TT](self: MeanGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
   new result
 
   result.context = a.context
   result.value = [a.value.mean].toTensor
 
-  if a.is_grad_needed:
-    result.grad = zeros[getSubType(TT)](1)
-    result.requires_grad = true
-
-method backward*[TT](self: MeanGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: MeanGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  let gradient = payload.variable.grad
   result[0] = gradient / getSubType(TT)(self.cached_input_shape.product) # Conversion to subtype T, oh Higher kinded-types ...
 
   let z_shape = newSeqWith(self.cached_input_shape.len, 1) # We create a shape of 1 dimension that we will expand with broadcast
@@ -54,7 +51,7 @@ proc mean*[TT](a: Variable[TT]): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a)
-  node.payload = result
+  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop
   if a.is_grad_needed:
@@ -67,21 +64,17 @@ type SumGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
   cached_input_shape: MetadataArray
 
-method forward*[TT](self: SumGate[TT], a: Variable[TT]): Variable[TT] {.inline, locks:0.}=
+proc forward[TT](self: SumGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
   new result
 
   result.context = a.context
   result.value = [a.value.sum].toTensor
 
-  if a.is_grad_needed:
-    result.grad = zeros[getSubType(TT)](1)
-    result.requires_grad = true
-
-method backward*[TT](self: SumGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
-  result[0] = gradient
+method backward*[TT](self: SumGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  let gradient = payload.variable.grad
 
   let z_shape = newSeqWith(self.cached_input_shape.len, 1) # We create a shape of 1 dimension that we will expand with broadcast
-  result[0] = result[0].reshape(z_shape).broadcast(self.cached_input_shape)
+  result[0] = gradient.reshape(z_shape).broadcast(self.cached_input_shape)
 
 proc sum*[TT](a: Variable[TT]): Variable[TT] =
   # Gate
@@ -100,7 +93,7 @@ proc sum*[TT](a: Variable[TT]): Variable[TT] =
 
   # Resulting var
   result = gate.forward(a)
-  node.payload = result
+  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop
   if a.is_grad_needed:

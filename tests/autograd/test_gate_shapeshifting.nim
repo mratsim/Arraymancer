@@ -53,3 +53,163 @@ suite "Autograd of shapeshifting operations":
       mean_relative_error(vb.grad, target_grad_b) < 1e-07
       mean_relative_error(vc.grad, target_grad_c) < 1e-07
       mean_relative_error(vd.grad, target_grad_d) < 1e-07
+
+  test "Gradient of chunk operation":
+    let
+      height = rand(1..20)
+      width = rand(1..20)
+
+      x = randomTensor([4 * height, width], 1.0)
+
+    proc network(x: Tensor[float64]): float64 =
+      let s = x.chunk(4, axis = 0)
+      check:
+        s[0].shape == [height, width]
+        s[1].shape == [height, width]
+        s[2].shape == [height, width]
+        s[3].shape == [height, width]
+      result = sum(s[0] + s[1] - (s[2] + s[3]))
+
+    let
+      expected = x.clone().numerical_gradient(network)
+      ctx = newContext Tensor[float64]
+      vx = ctx.variable(x, requires_grad = true)
+
+    let
+      vs = vx.chunk(4, axis = 0)
+      loss = sum(vs[0] + vs[1] - (vs[2] + vs[3]))
+
+    loss.backprop()
+    check: mean_relative_error(vx.grad, expected) < 1e-07
+
+  test "Gradient of uneven chunks + slicing operations":
+
+    # We split [10, width] tensors into 4 chunks along the first dim
+    # We should have:
+    #   - 2x [3, width] tensors
+    #   - 2x [2, width] tensors
+    # Then we slice each with t[0 ..< 2, _]
+
+    let
+      width = rand(1..20)
+
+      x = randomTensor([10, width], 1.0)
+
+    proc network(x: Tensor[float64]): float64 =
+      let s = x.chunk(4, axis = 0)
+
+      check:
+        s[0].shape == [3, width]
+        s[1].shape == [3, width]
+        s[2].shape == [2, width]
+        s[3].shape == [2, width]
+
+      result = sum(
+                  s[0][0 ..< 2, _] +
+                  s[1][0 ..< 2, _] -
+                  (
+                    s[2][0 ..< 2, _] +
+                    s[3][0 ..< 2, _]
+                  )
+                )
+
+    let
+      expected = x.clone().numerical_gradient(network)
+      ctx = newContext Tensor[float64]
+      vx = ctx.variable(x, requires_grad = true)
+
+    let
+      vs = vx.chunk(4, axis = 0)
+      loss = sum(
+                vs[0][0 ..< 2, _] +
+                vs[1][0 ..< 2, _] -
+                (
+                  vs[2][0 ..< 2, _] +
+                  vs[3][0 ..< 2, _]
+                )
+              )
+
+    loss.backprop()
+    check: mean_relative_error(vx.grad, expected) < 1e-07
+
+  test "Gradient of squeeze operation (+ chunking)":
+
+    let
+      M = rand(1..20)
+      N = rand(1..20)
+
+      x = randomTensor([1, M, N], 1.0)
+      y = randomTensor([M, 1, N], 1.0)
+      z = randomTensor([N, M, 3], 1.0)
+
+    proc network_x(x: Tensor[float64]): float64 =
+      result = 0
+      for t in z.chunk(3, axis = 2):
+        result += sum(
+          (x.squeeze(0) + y.squeeze(1)) * t.squeeze(2)
+        )
+    proc network_y(y: Tensor[float64]): float64 =
+      result = 0
+      for t in z.chunk(3, axis = 2):
+        result += sum(
+          (x.squeeze(0) + y.squeeze(1)) * t.squeeze(2)
+        )
+    proc network_z(z: Tensor[float64]): float64 =
+      result = 0
+      for t in z.chunk(3, axis = 2):
+        result += sum(
+          (x.squeeze(0) + y.squeeze(1)) * t.squeeze(2)
+        )
+
+    let
+      expected_x = x.clone().numerical_gradient(network_x)
+      expected_y = y.clone().numerical_gradient(network_y)
+      expected_z = z.clone().numerical_gradient(network_z)
+      ctx = newContext Tensor[float64]
+      vx = ctx.variable(x, requires_grad = true)
+      vy = ctx.variable(y, requires_grad = true)
+      vz = ctx.variable(z, requires_grad = true)
+
+    # TODO: ease the following construct with variables
+    let chunked = vz.chunk(3, axis = 2)
+    var loss = sum(
+      (vx.squeeze(0) + vy.squeeze(1)) * chunked[0].squeeze(2)
+    )
+    for i in 1..2:
+      loss = loss + sum(
+        (vx.squeeze(0) + vy.squeeze(1)) * chunked[i].squeeze(2)
+      )
+
+    loss.backprop()
+    check:
+      mean_relative_error(vx.grad, expected_x) < 1e-07
+      mean_relative_error(vy.grad, expected_y) < 1e-07
+      mean_relative_error(vz.grad, expected_z) < 1e-07
+
+  test "Gradient of unsqueeze operation":
+
+    let
+      M = rand(1..20)
+      N = rand(1..20)
+
+      x = randomTensor([M, N], 1.0)
+      y = randomTensor([M, 1, N], 1.0)
+
+    proc network_x(x: Tensor[float64]): float64 =
+      result = sum x.unsqueeze(1) + y
+    proc network_y(y: Tensor[float64]): float64 =
+      result = sum x.unsqueeze(1) + y
+
+    let
+      expected_x = x.clone().numerical_gradient(network_x)
+      expected_y = y.clone().numerical_gradient(network_y)
+      ctx = newContext Tensor[float64]
+      vx = ctx.variable(x, requires_grad = true)
+      vy = ctx.variable(y, requires_grad = true)
+
+      loss = sum vx.unsqueeze(1) + vy
+
+    loss.backprop()
+    check:
+      mean_relative_error(vx.grad, expected_x) < 1e-07
+      mean_relative_error(vy.grad, expected_y) < 1e-07

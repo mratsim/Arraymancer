@@ -12,17 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/ast_utils,
-        ../tensor/tensor,
+import  ../tensor/tensor,
         ./ag_data_structure,
         sequtils
 
 type StackGate{.final.}[TT] = ref object of Gate[TT]
   ## TODO support unlimited stacking
   axis: int
-  slices_length: seq[int]
 
-method forward*[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[TT] =
+proc forward[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[TT] =
   new result
 
   # TODO: avoid the intermediate seq alloc to extract varargs Tensors from varargs variables
@@ -33,7 +31,8 @@ method forward*[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[TT]
   result.context = x[0].context
   result.value = stack(ts, self.axis)
 
-method backward*[TT](self: StackGate[TT], gradient: TT): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+method backward*[TT](self: StackGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline, locks:0.}=
+  let gradient = payload.variable.grad
   for i in 0 ..< gradient.shape[self.axis]:
     result[i] = gradient.atAxisIndex(self.axis, i)
 
@@ -71,9 +70,57 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
 
   # Resulting var
   result = gate.forward variables
-  node.payload = result
+  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop
   if anyIt(variables, it.is_grad_needed):
-    result.grad = zeros[getSubType(TT)](result.value.shape)
+    result.grad = zeros_like result.value
     result.requires_grad = true
+
+# ###########################################################
+
+type ChunkSplitGate*{.final.}[TT] = ref object of Gate[TT]
+  axis: int
+
+proc forward_chunk[TT](self: ChunkSplitGate[TT], x: Variable[TT], nb_chunks: Positive): seq[Variable[TT]] {.inline.}=
+  result = x.value.chunk(nb_chunks, self.axis).mapIt( # TODO: inefficient to create an intermediate sequence
+    Variable[TT](context: x.context, value: it)
+  )
+
+method backward[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let gradients = payload.sequence.mapIt(it.grad) # TODO: inefficient to create an intermediate sequence
+  result[0] = concat(gradients, self.axis)
+
+proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variable[TT]] =
+  ## Splits a Variable into n chunks along the specified axis.
+  ##
+  ## In case a tensor cannot be split evenly,
+  ## with la == length_axis, n = n_chunks
+  ## it returns la mod n subtensors of size `(la div n) + 1`
+  ##            the rest of size `la div n`.
+  ##
+  ## This is consistent with numpy array_split
+
+  # Gate
+  var gate: ChunkSplitGate[TT]
+  new gate
+  gate.nb_grads = 1
+  gate.axis = axis
+
+  # Node
+  var node: Node[TT]
+  new node
+
+  node.gate = gate
+  node.parents[0] = v.weakRef
+  v.context.push node
+
+  # Resulting var
+  result = gate.forward_chunk(v, nb_chunks)
+  node.payload = Payload[TT](kind: pkSeq, sequence: result)
+
+  # Caching for backprop
+  if v.requires_grad:
+    for idx, variable in result:
+      variable.requires_grad = true
+      variable.grad = zeros_like variable.value

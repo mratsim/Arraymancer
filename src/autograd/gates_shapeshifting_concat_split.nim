@@ -79,7 +79,7 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
 
 # ###########################################################
 
-type ChunkSplitGate*[TT] = ref object of Gate[TT]
+type ChunkSplitGate*{.final.}[TT] = ref object of Gate[TT]
   axis: int
 
 proc forward_chunk[TT](self: ChunkSplitGate[TT], x: Variable[TT], nb_chunks: Positive): seq[Variable[TT]] {.inline.}=

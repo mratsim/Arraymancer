@@ -252,12 +252,10 @@ proc topoFromGRU(self: var TopoTable, ident: NimNode, desc: NimNode) =
       nnkBracketExpr.newTree(in_shape, newLit 1),
       hidden_size
     )
-  let seq_len = nnkBracketExpr.newTree(in_shape, newLit 0)
 
   self.add ident, LayerTopology(kind: lkGRU,
                                 in_shape: in_shape,
                                 out_shape: out_shape,
-                                gru_seq_len: seq_len,
                                 gru_hidden_size: hidden_size,
                                 gru_nb_layers: desc[3]
                                 )

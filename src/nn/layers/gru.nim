@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
+import  ../../private/[ast_utils, sequninit],
         ../../tensor/tensor,
         ../../autograd/autograd,
         ../../nn_primitives/nn_primitives,
@@ -73,7 +73,7 @@ method backward*[TT](
   )
 
 proc gru*[TT](
-      input, hidden0: Variable[TT], seq_len, layers: Natural,
+      input, hidden0: Variable[TT], layers: int,
       W3s0, W3sN, U3s: Variable[TT],
       bW3s, bU3s: Variable[TT]
       ): tuple[output, hiddenN: Variable[TT]] =
@@ -116,14 +116,31 @@ proc gru*[TT](
   node.parents[5] = bW3s.weakRef
   node.parents[6] = bU3s.weakRef
 
+  # Checks
+  let seq_len = input.value.shape[0]
+  let batch_size = input.value.shape[1]
+  let hidden_size = hidden0.value.shape[2]
+
+  doAssert hidden0.value.shape[0] == layers # TODO bidirectional
+  doAssert hidden0.value.shape[1] == batch_size
+
+
   # Resulting Variable
   gate.cached_inputs = newSeqUninit[TT](layers)
   gate.cached_hiddens = newSeqWith(layers) do: newSeq[TT](seq_len)
+
+  type T = getSubtype TT
+  gate.rs = newTensorUninit[T](layers, seq_len, batch_size, hidden_size)
+  gate.zs = newTensorUninit[T](layers, seq_len, batch_size, hidden_size)
+  gate.ns = newTensorUninit[T](layers, seq_len, batch_size, hidden_size)
+  gate.Uhs = newTensorUninit[T](layers, seq_len, batch_size, hidden_size)
+
   result = gate.forward(input, hidden0)
 
   # Since output == hidden we need one Node for each
   # with only the payload differing
   var node_hidden: Node[TT]
+  new node_hidden
   node_hidden[] = node[]
 
   node.payload = Payload[TT](kind: pkVar, variable: result.output)

@@ -309,7 +309,8 @@ proc gru_forward*[T: SomeReal](
 
   doAssert hidden.shape == [num_stacked_layers * num_directions, batch_size, hidden_size]
   doAssert W3s0.shape == [3 * hidden_size, num_features]
-  doAssert W3sN.shape == [num_stacked_layers - 1, 3 * hidden_size, num_directions * hidden_size]
+  if num_stacked_layers > 1:
+    doAssert W3sN.shape == [num_stacked_layers - 1, 3 * hidden_size, num_directions * hidden_size]
   doAssert U3s.shape == [num_stacked_layers, 3 * hidden_size, hidden_size]
   doAssert bW3s.shape == [num_stacked_layers, 1, 3 * hidden_size]
   doAssert bU3s.shape == bW3s.shape
@@ -412,7 +413,8 @@ proc gru_backward*[T: SomeReal](
     num_directions = 1 # stub
 
   doAssert W3s0.shape == [3 * hidden_size, num_features]
-  doAssert W3sN.shape == [num_stacked_layers - 1, 3 * hidden_size, num_directions * hidden_size]
+  if num_stacked_layers > 1:
+    doAssert W3sN.shape == [num_stacked_layers - 1, 3 * hidden_size, num_directions * hidden_size]
   doAssert U3s.shape == [num_stacked_layers, 3 * hidden_size, hidden_size]
 
   doAssert rs.shape  == [num_stacked_layers, seq_len, batch_size, hidden_size]
@@ -428,7 +430,8 @@ proc gru_backward*[T: SomeReal](
   # 1. Preallocate the results (TODO: separate alloc from compute so that users can pass buffers)
   dhidden = newTensorUninit[T](num_stacked_layers, batch_size, hidden_size)
   dW3s0 = zeros_like(W3s0)
-  dW3sN = zeros_like(W3sN)
+  if num_stacked_layers > 1:
+    dW3sN = zeros_like(W3sN)
   dU3s = zeros_like(U3s)
   dbW3s = zeros[T]([num_stacked_layers, 1, 3 * hidden_size])
   dbU3s = zeros[T]([num_stacked_layers, 1, 3 * hidden_size])

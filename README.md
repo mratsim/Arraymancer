@@ -166,6 +166,18 @@ for t in 0 ..< 500:
     - [Broadcasting](#broadcasting)
     - [A simple two layers neural network](#a-simple-two-layers-neural-network)
   - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Full documentation](#full-documentation)
+  - [Features](#features)
+    - [Arraymancer as a Deep Learning library](#arraymancer-as-a-deep-learning-library)
+      - [Fizzbuzz with fully-connected layers (also called Dense, Affine or Linear layers)](#fizzbuzz-with-fully-connected-layers-also-called-dense-affine-or-linear-layers)
+      - [Handwritten digit recognition with convolutions](#handwritten-digit-recognition-with-convolutions)
+      - [Sequence classification with stacked Recurrent Neural Networks](#sequence-classification-with-stacked-recurrent-neural-networks)
+    - [Tensors on CPU, on Cuda and OpenCL](#tensors-on-cpu-on-cuda-and-opencl)
+    - [Speed](#speed)
+      - [Micro benchmark: Int64 matrix multiplication](#micro-benchmark-int64-matrix-multiplication)
+      - [Logistic regression](#logistic-regression)
+      - [DNN - 3 hidden layers](#dnn---3-hidden-layers)
   - [4 reasons why Arraymancer](#4-reasons-why-arraymancer)
     - [The Python community is struggling to bring Numpy up-to-speed](#the-python-community-is-struggling-to-bring-numpy-up-to-speed)
     - [A researcher workflow is a fight against inefficiencies](#a-researcher-workflow-is-a-fight-against-inefficiencies)
@@ -173,78 +185,8 @@ for t in 0 ..< 500:
     - [Bridging the gap between deep learning research and production](#bridging-the-gap-between-deep-learning-research-and-production)
     - [So why Arraymancer ?](#so-why-arraymancer)
   - [Future ambitions](#future-ambitions)
-  - [Installation](#installation)
-  - [Full documentation](#full-documentation)
-  - [Features](#features)
-    - [Arraymancer as a Deep Learning library](#arraymancer-as-a-deep-learning-library)
-      - [Handwritten digit recognition with Arraymancer](#handwritten-digit-recognition-with-arraymancer)
-    - [Tensors on CPU, on Cuda and OpenCL](#tensors-on-cpu-on-cuda-and-opencl)
-    - [Speed](#speed)
-      - [Micro benchmark: Int64 matrix multiplication](#micro-benchmark-int64-matrix-multiplication)
-      - [Logistic regression](#logistic-regression)
-      - [DNN - 3 hidden layers](#dnn---3-hidden-layers)
 
 <!-- /TOC -->
-
-## 4 reasons why Arraymancer
-
-### The Python community is struggling to bring Numpy up-to-speed
-
-- Numba JIT compiler
-- Dask delayed parallel computation graph
-- Cython to ease numerical computations in Python
-- Due to the GIL shared-memory parallelism (OpenMP) is not possible in pure Python
-- Use "vectorized operations" (i.e. don't use for loops in Python)
-
-Why not use in a single language with all the blocks to build the most efficient scientific computing library with Python ergonomics.
-
-OpenMP batteries included.
-
-### A researcher workflow is a fight against inefficiencies
-
-Researchers in a heavy scientific computing domain often have the following workflow: Mathematica/Matlab/Python/R (prototyping) -> C/C++/Fortran (speed, memory)
-
-Why not use in a language as productive as Python and as fast as C? Code once, and don't spend months redoing the same thing at a lower level.
-
-### Can be distributed almost dependency free
-
-Arraymancer models can be packaged in a self-contained binary that only depends on a BLAS library like OpenBLAS, MKL or Apple Accelerate (present on all Mac and iOS).
-
-This means that there is no need to install a huge library or language ecosystem to use Arraymancer. This also makes it naturally suitable for resource-constrained devices like mobile phones and Raspberry Pi.
-
-### Bridging the gap between deep learning research and production
-The deep learning frameworks are currently in two camps:
-- Research: Theano, Tensorflow, Keras, Torch, PyTorch
-- Production: Caffe, Darknet, (Tensorflow)
-
-Furthermore, Python preprocessing steps, unless using OpenCV, often needs a custom implementation (think text/speech preprocessing on phones).
-
-- Managing and deploying Python (2.7, 3.5, 3.6) and packages version in a robust manner requires devops-fu (virtualenv, Docker, ...)
-- Python data science ecosystem does not run on embedded devices (Nvidia Tegra/drones) or mobile phones, especially preprocessing dependencies.
-- Tensorflow is supposed to bridge the gap between research and production but its syntax and ergonomics are a pain to work with. Like for researchers, you need to code twice, "Prototype in Keras, and when you need low-level --> Tensorflow".
-- Deployed models are static, there is no interface to add a new observation/training sample to any framework, what if you want to use a model as a webservice with online learning?
-
-[Relevant XKCD from Apr 30, 2018](https://xkcd.com/1987/)
-
-![Python environment mess](https://imgs.xkcd.com/comics/python_environment.png)
-
-### So why Arraymancer ?
-
-All those pain points may seem like a huge undertaking however thanks to the Nim language, we can have Arraymancer:
-- Be as fast as C
-- Accelerated routines with Intel MKL/OpenBLAS or even NNPACK
-- Access to CUDA and CuDNN and generate custom CUDA kernels on the fly via metaprogramming.
-- Almost dependency free distribution (BLAS library)
-- A Python-like syntax with custom operators `a * b` for tensor multiplication instead of `a.dot(b)` (Numpy/Tensorflow) or `a.mm(b)` (Torch)
-- Numpy-like slicing ergonomics `t[0..4, 2..10|2]`
-- For everything that Nim doesn't have yet, you can use Nim bindings to C, C++, Objective-C or Javascript to bring it to Nim. Nim also has unofficial Python->Nim and Nim->Python wrappers.
-
-## Future ambitions
-Because apparently to be successful you need a vision, I would like Arraymancer to be:
-- The go-to tool for Deep Learning video processing. I.e. `vid = load_video("./cats/youtube_cat_video.mkv")`
-- Target javascript, WebAssembly, Apple Metal, ARM devices, AMD Rocm, OpenCL, you name it.
-- The base of a Starcraft II AI bot.
-- Target cryptominers FPGAs because they drove the price of GPUs for honest deep-learners too high.
 
 ## Installation
 
@@ -262,42 +204,74 @@ Arraymancer requires a BLAS and Lapack library.
 
 ## Full documentation
 
-Detailed API is available at Arraymancer official [documentation](https://mratsim.github.io/Arraymancer/).
+Detailed API is available at Arraymancer official [documentation](https://mratsim.github.io/Arraymancer/). Note: This documentation is only generated for 0.X release. Check the [examples folder](examples/) for the latest devel evolutions.
 
 ## Features
 
-For now Arraymancer is mostly at the ndarray stage, a [vision package](https://github.com/edubart/arraymancer-vision) and a [deep learning demo](https://github.com/edubart/arraymancer-demos) are available with logistic regression and perceptron from scratch.
+For now Arraymancer is mostly at the multidimensional array stage, in particular Arraymancer offers the following:
 
-You can also check the [detailed example](https://github.com/mratsim/Arraymancer/blob/master/examples/ex01_xor_perceptron_from_scratch.nim) or [benchmark](https://github.com/mratsim/Arraymancer/blob/master/benchmarks/ex01_xor.nim) perceptron for a preview of Arraymancer deep learning usage.
-
-Available autograd and neural networks features are detailed in the technical reference part of the [documentation](https://mratsim.github.io/Arraymancer/).
+- Basic math operations generalized to tensors (sin, cos, ...)
+- Matrix algebra primitives: Matrix-Matrix, Matrix-Vector multiplication.
+- Easy and efficient slicing including with ranges and steps.
+- No need to worry about "vectorized" operations.
+- Broadcasting support. Unlike Numpy it is explicit, you just need to use `.+` instead of `+`.
+- Plenty of reshaping operations: concat, reshape, split, chunk, permute, transpose.
+- Supports tensors of up to 7 dimensions for example a stack of 4 3D RGB minifilms of 10 seconds would be 6 dimensions:
+  `[4, 10, 3, 64, 1920, 1080]` for `[nb_movies, time, colors, depth, height, width]`
+- Can read and write .csv and Numpy (.npy) files. [HDF5 support](https://github.com/mratsim/Arraymancer/pull/257) coming soon.
+- OpenCL and Cuda backed tensors (not as feature packed as CPU tensors at the moment).
+- Covariance matrices.
+- Eigenvalues and Eigenvectors decomposition.
+- Least squares solver.
+- K-means and PCA (Principal Component Analysis).
 
 ### Arraymancer as a Deep Learning library
 
-Note: The final interface is still **work in progress.**
+Deep learning features can be explored but are considered unstable while I iron out their final interface.
 
-#### Handwritten digit recognition with Arraymancer
-From [example 2](https://github.com/mratsim/Arraymancer/blob/master/examples/ex02_handwritten_digits_recognition.nim).
+Reminder: The final interface is still **work in progress.**
+
+You can also watch the following animated [deep learning demo](https://github.com/edubart/arraymancer-demos) which shows live training via [nim-plotly](https://github.com/brentp/nim-plotly).
+
+#### Fizzbuzz with fully-connected layers (also called Dense, Affine or Linear layers)
+Neural network definition extracted from [example 4](examples/ex04_fizzbuzz_interview_cheatsheet.nim).
 
 ```Nim
-import arraymancer, random
+const
+  NumDigits = 10
+  NumHidden = 100
 
-randomize(42) # Random seed for reproducibility
+let ctx = newContext Tensor[float32]
 
-let
-  ctx = newContext Tensor[float32] # Autograd/neural network graph
-  n = 32                           # Batch size
+network ctx, FizzBuzzNet:
+  layers:
+    hidden: Linear(NumDigits, NumHidden)
+    output: Linear(NumHidden, 4)
+  forward x:
+    x.hidden.relu.output
 
-let
-  mnist = load_mnist()
-  x_train = mnist.train_images.astype(float32) / 255'f32
-  X_train = ctx.variable x_train.unsqueeze(1) # Change shape from [N, H, W] to [N, C, H, W], with C = 1
+let model = ctx.init(FizzBuzzNet)
+let optim = model.optimizerSGD(0.05'f32)
 
-  y_train = mnist.train_labels.astype(int)
+# ....
+echo answer
+# @["1", "2", "fizz", "4", "buzz", "6", "7", "8", "fizz", "10",
+#   "11", "12", "13", "14", "15", "16", "17", "fizz", "19", "buzz",
+#   "fizz", "22", "23", "24", "buzz", "26", "fizz", "28", "29", "30",
+#   "31", "32", "fizz", "34", "buzz", "36", "37", "38", "39", "40",
+#   "41", "fizz", "43", "44", "fizzbuzz", "46", "47", "fizz", "49", "50",
+#   "fizz", "52","53", "54", "buzz", "56", "fizz", "58", "59", "fizzbuzz",
+#   "61", "62", "63", "64", "buzz", "fizz", "67", "68", "fizz", "buzz",
+#   "71", "fizz", "73", "74", "75", "76", "77","fizz", "79", "buzz",
+#   "fizz", "82", "83", "fizz", "buzz", "86", "fizz", "88", "89", "90",
+#   "91", "92", "fizz", "94", "buzz", "fizz", "97", "98", "fizz", "buzz"]
+```
 
-  x_test = mnist.test_images.astype(float32) / 255'f32
-  X_test = ctx.variable x_test.unsqueeze(1) # Change shape from [N, H, W] to [N, C, H, W], with C = 1
-  y_test = mnist.test_labels.astype(int)
+#### Handwritten digit recognition with convolutions
+Neural network definition extracted from [example 2](examples/ex02_handwritten_digits_recognition.nim).
+
+```Nim
+let ctx = newContext Tensor[float32] # Autograd/neural network graph
 
 network ctx, DemoNet:
   layers:
@@ -315,120 +289,71 @@ network ctx, DemoNet:
 let model = ctx.init(DemoNet)
 let optim = model.optimizerSGD(learning_rate = 0.01'f32)
 
-# Learning loop
-for epoch in 0 ..< 5:
-  for batch_id in 0 ..< X_train.value.shape[0] div n: # some at the end may be missing, oh well ...
-    # minibatch offset in the Tensor
-    let offset = batch_id * n
-    let x = X_train[offset ..< offset + n, _]
-    let target = y_train[offset ..< offset + n]
-
-    let clf = model.forward(x)
-    let loss = clf.sparse_softmax_cross_entropy(target)
-
-    if batch_id mod 200 == 0:
-      # Print status every 200 batches
-      echo "Epoch is: " & $epoch
-      echo "Batch id: " & $batch_id
-      echo "Loss is:  " & $loss.value.data[0]
-
-    loss.backprop()
-    optim.update()
-
-  # Validation (checking the accuracy/generalization of our model on unseen data)
-  ctx.no_grad_mode:
-    echo "\nEpoch #" & $epoch & " done. Testing accuracy"
-
-    # Validation by batches of 1000 images
-    var score = 0.0
-    var loss = 0.0
-    for i in 0 ..< 10:
-      let y_pred = model.forward(X_test[i*1000 ..< (i+1)*1000, _]).value.softmax.argmax(axis = 1).squeeze
-      score += accuracy_score(y_test[i*1000 ..< (i+1)*1000], y_pred)
-
-      loss += model.forward(X_test[i*1000 ..< (i+1)*1000, _]).sparse_softmax_cross_entropy(y_test[i*1000 ..< (i+1)*1000]).value.data[0]
-    score /= 10
-    loss /= 10
-    echo "Accuracy: " & $(score * 100) & "%"
-    echo "Loss:     " & $loss
-    echo "\n"
-
-
-
-############# Output ############
-
-# Epoch is: 0
-# Batch id: 0
-# Loss is:  194.3991851806641
-# Epoch is: 0
-# Batch id: 200
-# Loss is:  2.60599946975708
-# Epoch is: 0
-# Batch id: 400
-# Loss is:  1.708131313323975
-# Epoch is: 0
-# Batch id: 600
-# Loss is:  1.061241149902344
-# Epoch is: 0
-# Batch id: 800
-# Loss is:  0.8607467412948608
-# Epoch is: 0
-# Batch id: 1000
-# Loss is:  0.9292868375778198
-# Epoch is: 0
-# Batch id: 1200
-# Loss is:  0.6178927421569824
-# Epoch is: 0
-# Batch id: 1400
-# Loss is:  0.4008050560951233
-# Epoch is: 0
-# Batch id: 1600
-# Loss is:  0.2450754344463348
-# Epoch is: 0
-# Batch id: 1800
-# Loss is:  0.3787734508514404
-
-# Epoch #0 done. Testing accuracy
-# Accuracy: 84.24999999999999%
-# Loss:     0.4853884726762772
-
-
-# Epoch is: 1
-# Batch id: 0
-# Loss is:  0.8319419622421265
-# Epoch is: 1
-# Batch id: 200
-# Loss is:  0.3116425573825836
-# Epoch is: 1
-# Batch id: 400
-# Loss is:  0.232885867357254
-# Epoch is: 1
-# Batch id: 600
-# Loss is:  0.3877259492874146
-# Epoch is: 1
-# Batch id: 800
-# Loss is:  0.3621436357498169
-# Epoch is: 1
-# Batch id: 1000
-# Loss is:  0.5054937601089478
-# Epoch is: 1
-# Batch id: 1200
-# Loss is:  0.4431287050247192
-# Epoch is: 1
-# Batch id: 1400
-# Loss is:  0.2153264284133911
-# Epoch is: 1
-# Batch id: 1600
-# Loss is:  0.1401071697473526
-# Epoch is: 1
-# Batch id: 1800
-# Loss is:  0.3415909707546234
-
-# Epoch #1 done. Testing accuracy
-# Accuracy: 87.91%
-# Loss:     0.3657706841826439
+# ...
+# Accuracy over 90% in a couple minutes on a laptop CPU
 ```
 
+#### Sequence classification with stacked Recurrent Neural Networks
+Neural network definition extracted [example 5](examples/ex05_sequence_classification_GRU.nim).
+
+```Nim
+const
+  HiddenSize = 256
+  Layers = 4
+  BatchSize = 512
+
+let ctx = newContext Tensor[float32]
+
+network ctx, TheGreatSequencer:
+  layers:
+    # Note input_shape will only require the number of features in the future
+    # Input shape = [seq_len, batch_size, features]
+    gru1: GRU([3, Batch_size, 1], HiddenSize, 4) # (input_shape, hidden_size, stacked_layers)
+    fc1: Linear(HiddenSize, 32)                  # 1 classifier per GRU layer
+    fc2: Linear(HiddenSize, 32)
+    fc3: Linear(HiddenSize, 32)
+    fc4: Linear(HiddenSize, 32)
+    classifier: Linear(32 * 4, 3)                # Stacking a classifier which learns from the other 4
+  forward x, hidden0:
+    let
+      (output, hiddenN) = gru1(x, hidden0)
+      clf1 = hiddenN[0, _, _].squeeze(0).fc1.relu
+      clf2 = hiddenN[1, _, _].squeeze(0).fc2.relu
+      clf3 = hiddenN[2, _, _].squeeze(0).fc3.relu
+      clf4 = hiddenN[3, _, _].squeeze(0).fc4.relu
+
+    # Concat all
+    #   Since concat backprop is not implemented we cheat by stacking
+    #   then flatten
+    result = stack(clf1, clf2, clf3, clf4, axis = 2)
+    result = classifier(result.flatten)
+
+# Allocate the model
+let model = ctx.init(TheGreatSequencer)
+let optim = model.optimizerSGD(0.01'f32)
+
+# ...
+let exam = ctx.variable([
+    [float32 0.10, 0.20, 0.30], # increasing
+    [float32 0.10, 0.90, 0.95], # increasing
+    [float32 0.45, 0.50, 0.55], # increasing
+    [float32 0.10, 0.30, 0.20], # non-monotonic
+    [float32 0.20, 0.10, 0.30], # non-monotonic
+    [float32 0.98, 0.97, 0.96], # decreasing
+    [float32 0.12, 0.05, 0.01], # decreasing
+    [float32 0.95, 0.05, 0.07]  # non-monotonic
+# ...
+echo answer.unsqueeze(1)
+# Tensor[ex05_sequence_classification_GRU.SeqKind] of shape [8, 1] of type "SeqKind" on backend "Cpu"
+#         Increasing|
+#         Increasing|
+#         Increasing|
+#         NonMonotonic|
+#         NonMonotonic|
+#         Increasing| <----- Wrong!
+#         Decreasing|
+#         Decreasing| <----- Wrong!
+```
 
 ### Tensors on CPU, on Cuda and OpenCL
 Tensors, CudaTensors and CLTensors do not have the same features implemented yet.
@@ -461,19 +386,9 @@ rapidly.
 | Squeezing singleton dimension                     | [x]                         | [x]                        | []                         |
 | Slicing + squeezing                               | [x]                         | []                         | []                         |
 
-Advanced features built upon this are:
-  - Neural networks: Dense and Convolutional neural networks are supported on CPU. Primitives are available on Cuda.
-  - Linear algebra: Least squares solver and eigenvalue decomposition for symmetric matrices.
-  - Machine Learning: Accuracy score, common loss function (MAE, MSE, ...), Principal Component Analysis (PCA).
-  - Statistics: Covariance matrix.
-  - IO & Datasets: CSV reading and writing, and reading MNIST files.
-  - A tensor plotting tool using Python matplotlib.
-
-Detailed API is available at Arraymancer [documentation](https://mratsim.github.io/Arraymancer/).
-
 ### Speed
 
-Arraymancer is fast, how it achieves its speed under the hood is detailed [here](https://mratsim.github.io/Arraymancer/uth.speed.html).
+Arraymancer is fast, how it achieves its speed under the hood is detailed [here](https://mratsim.github.io/Arraymancer/uth.speed.html). Slowness is a bug.
 
 #### Micro benchmark: Int64 matrix multiplication
 
@@ -550,3 +465,63 @@ Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz, gcc 7.2.0, MKL 2017.17.0.4.4, OpenBLAS
 
 In the future, Arraymancer will leverage Nim compiler to automatically fuse operations
 like `alpha A*B + beta C` or a combination of element-wise operations. This is already done to fuse `toTensor` and `reshape`.
+
+## 4 reasons why Arraymancer
+
+### The Python community is struggling to bring Numpy up-to-speed
+
+- Numba JIT compiler
+- Dask delayed parallel computation graph
+- Cython to ease numerical computations in Python
+- Due to the GIL shared-memory parallelism (OpenMP) is not possible in pure Python
+- Use "vectorized operations" (i.e. don't use for loops in Python)
+
+Why not use in a single language with all the blocks to build the most efficient scientific computing library with Python ergonomics.
+
+OpenMP batteries included.
+
+### A researcher workflow is a fight against inefficiencies
+
+Researchers in a heavy scientific computing domain often have the following workflow: Mathematica/Matlab/Python/R (prototyping) -> C/C++/Fortran (speed, memory)
+
+Why not use in a language as productive as Python and as fast as C? Code once, and don't spend months redoing the same thing at a lower level.
+
+### Can be distributed almost dependency free
+
+Arraymancer models can be packaged in a self-contained binary that only depends on a BLAS library like OpenBLAS, MKL or Apple Accelerate (present on all Mac and iOS).
+
+This means that there is no need to install a huge library or language ecosystem to use Arraymancer. This also makes it naturally suitable for resource-constrained devices like mobile phones and Raspberry Pi.
+
+### Bridging the gap between deep learning research and production
+The deep learning frameworks are currently in two camps:
+- Research: Theano, Tensorflow, Keras, Torch, PyTorch
+- Production: Caffe, Darknet, (Tensorflow)
+
+Furthermore, Python preprocessing steps, unless using OpenCV, often needs a custom implementation (think text/speech preprocessing on phones).
+
+- Managing and deploying Python (2.7, 3.5, 3.6) and packages version in a robust manner requires devops-fu (virtualenv, Docker, ...)
+- Python data science ecosystem does not run on embedded devices (Nvidia Tegra/drones) or mobile phones, especially preprocessing dependencies.
+- Tensorflow is supposed to bridge the gap between research and production but its syntax and ergonomics are a pain to work with. Like for researchers, you need to code twice, "Prototype in Keras, and when you need low-level --> Tensorflow".
+- Deployed models are static, there is no interface to add a new observation/training sample to any framework, what if you want to use a model as a webservice with online learning?
+
+[Relevant XKCD from Apr 30, 2018](https://xkcd.com/1987/)
+
+![Python environment mess](https://imgs.xkcd.com/comics/python_environment.png)
+
+### So why Arraymancer ?
+
+All those pain points may seem like a huge undertaking however thanks to the Nim language, we can have Arraymancer:
+- Be as fast as C
+- Accelerated routines with Intel MKL/OpenBLAS or even NNPACK
+- Access to CUDA and CuDNN and generate custom CUDA kernels on the fly via metaprogramming.
+- Almost dependency free distribution (BLAS library)
+- A Python-like syntax with custom operators `a * b` for tensor multiplication instead of `a.dot(b)` (Numpy/Tensorflow) or `a.mm(b)` (Torch)
+- Numpy-like slicing ergonomics `t[0..4, 2..10|2]`
+- For everything that Nim doesn't have yet, you can use Nim bindings to C, C++, Objective-C or Javascript to bring it to Nim. Nim also has unofficial Python->Nim and Nim->Python wrappers.
+
+## Future ambitions
+Because apparently to be successful you need a vision, I would like Arraymancer to be:
+- The go-to tool for Deep Learning video processing. I.e. `vid = load_video("./cats/youtube_cat_video.mkv")`
+- Target javascript, WebAssembly, Apple Metal, ARM devices, AMD Rocm, OpenCL, you name it.
+- The base of a Starcraft II AI bot.
+- Target cryptominers FPGAs because they drove the price of GPUs for honest deep-learners too high.

@@ -41,7 +41,9 @@ template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSl
             else: slice.b
 
     # Bounds checking
-    when compileOption("boundChecks"): check_steps(a, b, slice.step)
+    when compileOption("boundChecks"):
+      check_start_end(a, b, result.shape[i])
+      check_steps(a, b, slice.step)
     ## TODO bounds-check the offset or leave the default?
     ## The default only checks when we retrieve the value
 

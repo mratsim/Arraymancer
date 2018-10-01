@@ -45,3 +45,8 @@ suite "Testing specific issues from bug tracker":
         discard t[0..1|1, 0..<2|1, 0..^1|1, ^1..0|-1, _, 1] # doesnt work
 
       discard t.foo()
+
+  test "#307 3D slicing with same shape: offset is off":
+    let x = zeros[int]([1, 2, 3])
+    expect(IndexError):
+      let y = x[1, _, _]

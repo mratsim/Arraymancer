@@ -175,9 +175,9 @@ for t in 0 ..< 500:
       - [Sequence classification with stacked Recurrent Neural Networks](#sequence-classification-with-stacked-recurrent-neural-networks)
     - [Tensors on CPU, on Cuda and OpenCL](#tensors-on-cpu-on-cuda-and-opencl)
     - [Speed](#speed)
-      - [Micro benchmark: Int64 matrix multiplication](#micro-benchmark-int64-matrix-multiplication)
-      - [Logistic regression](#logistic-regression)
-      - [DNN - 3 hidden layers](#dnn---3-hidden-layers)
+      - [Micro benchmark: Int64 matrix multiplication (October 2017)](#micro-benchmark-int64-matrix-multiplication-october-2017)
+      - [Logistic regression (October 2017)](#logistic-regression-october-2017)
+      - [DNN - 3 hidden layers (October 2017)](#dnn---3-hidden-layers-october-2017)
   - [4 reasons why Arraymancer](#4-reasons-why-arraymancer)
     - [The Python community is struggling to bring Numpy up-to-speed](#the-python-community-is-struggling-to-bring-numpy-up-to-speed)
     - [A researcher workflow is a fight against inefficiencies](#a-researcher-workflow-is-a-fight-against-inefficiencies)
@@ -198,9 +198,9 @@ To install Arraymancer development version you can use `nimble install arraymanc
 
 Arraymancer requires a BLAS and Lapack library.
 
-- On Windows you can get OpenBLAS and Lapack for Windows.
-- On MacOS, Apple Accelerate should provides those by default.
-- On Linux, you can downlod libopenblas and liblapack through your package manager.
+- On Windows you can get [OpenBLAS ](https://github.com/xianyi/OpenBLAS/wiki/Precompiled-installation-packages)and [Lapack](https://icl.cs.utk.edu/lapack-for-windows/lapack/) for Windows.
+- On MacOS, Apple Accelerate Framework is included in all MacOS versions and provides those.
+- On Linux, you can download libopenblas and liblapack through your package manager.
 
 ## Full documentation
 
@@ -231,7 +231,7 @@ Deep learning features can be explored but are considered unstable while I iron 
 
 Reminder: The final interface is still **work in progress.**
 
-You can also watch the following animated [deep learning demo](https://github.com/edubart/arraymancer-demos) which shows live training via [nim-plotly](https://github.com/brentp/nim-plotly).
+You can also watch the following animated [neural network demo](https://github.com/Vindaar/NeuralNetworkLiveDemo) which shows live training via [nim-plotly](https://github.com/brentp/nim-plotly).
 
 #### Fizzbuzz with fully-connected layers (also called Dense, Affine or Linear layers)
 Neural network definition extracted from [example 4](examples/ex04_fizzbuzz_interview_cheatsheet.nim).
@@ -357,10 +357,9 @@ echo answer.unsqueeze(1)
 
 ### Tensors on CPU, on Cuda and OpenCL
 Tensors, CudaTensors and CLTensors do not have the same features implemented yet.
-Also CudaTensors and CLTensors can only be float32 or float64 while Cpu Tensor can be integers, string, boolean or any custom object.
+Also CudaTensors and CLTensors can only be float32 or float64 while CpuTensors can be integers, string, boolean or any custom object.
 
-Here is a comparative table of the core features, not that this feature set is developing
-rapidly.
+Here is a comparative table of the core features.
 
 | Action                                            | Tensor                      | CudaTensor                 | ClTensor                   |
 | ------------------------------------------------- | --------------------------- | -------------------------- | -------------------------- |
@@ -390,7 +389,7 @@ rapidly.
 
 Arraymancer is fast, how it achieves its speed under the hood is detailed [here](https://mratsim.github.io/Arraymancer/uth.speed.html). Slowness is a bug.
 
-#### Micro benchmark: Int64 matrix multiplication
+#### Micro benchmark: Int64 matrix multiplication (October 2017)
 
 Integers seem to be the abandoned children of ndarrays and tensors libraries. Everyone is optimising the hell of floating points. Not so with Arraymancer:
 
@@ -424,7 +423,7 @@ with OpenMP: nim c -d:openmp --cc:gcc --gcc.exe:"/usr/local/bin/gcc-6" --gcc.lin
 
 Benchmark setup is in the `./benchmarks` folder and similar to (stolen from) [Kostya's](https://github.com/kostya/benchmarks#matmul). Note: Arraymancer float matmul is as fast as `Julia Native Thread`.
 
-#### Logistic regression
+#### Logistic regression (October 2017)
 On the [demo benchmark](https://github.com/edubart/arraymancer-demos), Arraymancer is faster than Torch in v0.2.90.
 
 CPU
@@ -442,7 +441,7 @@ GPU
 | Arraymancer v0.2.90| Cuda | WIP  |
 | Torch7 | Cuda | 0.286ms  |
 
-#### DNN - 3 hidden layers
+#### DNN - 3 hidden layers (October 2017)
 
 CPU
 

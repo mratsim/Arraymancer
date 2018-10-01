@@ -374,10 +374,10 @@ proc gru_forward*[T: SomeReal](
         y
 
 proc gru_backward*[T: SomeReal](
-  dinput, dhidden,                     # Input and starting hidden state gradient
+  dInput, dHidden0,                    # Input and starting hidden state gradient
   dW3s0, dW3sN,                        # Weight tensor
   dU3s, dbW3s, dbU3s: var Tensor[T],   # Weights & biases gradients
-  dOutput: Tensor[T],                  # Gradient flowing back from the output/next hidden state
+  dOutput, dHiddenN: Tensor[T],        # Gradient flowing back from the output/next hidden state
   cached_inputs: seq[Tensor[T]],       # Input params saved from forward
   cached_hiddens: seq[seq[Tensor[T]]], # Input params saved from forward
   W3s0, W3sN, U3s,                     # Input params saved from forward
@@ -386,7 +386,7 @@ proc gru_backward*[T: SomeReal](
   ## ⚠️ API subject to change to match CuDNNs
 
   ## Outputs:
-  ##   - dinput, dhidden, dW3s, dU3s:
+  ##   - dinput, dhidden0, dW3s, dU3s:
   ##     Gradient tensors, will hold the results corresponding to the respective gradients of:
   ##     - `input`: Input tensor during the forward pass of shape [sequence/timesteps, batch, features]
   ##     - `hidden`: Hidden states during the forward pass of shape [num_stacked_layers * num_directions, batch, hidden_size]
@@ -399,6 +399,8 @@ proc gru_backward*[T: SomeReal](
   ## Inputs:
   ##   - dOutput: gradient flowing back from the next layer.
   ##     Shape: [sequence/timesteps, batch, num_directions * hidden_size]
+  ##   - dHiddenN: gradient flowing back from the last hidden states of each layers
+  ##     Shape: [num_stacked_layers * num_directions, batch, hidden_size]
   ##   - cached_inputs, cached_hiddens, W3s, U3s: saved from the forward pass
   ##   - rs, zs, ns, Uhs: intermediate results saved from the forward pass
   ##     Shape [num_stacked_layers, batch_size, hidden_size]
@@ -422,13 +424,16 @@ proc gru_backward*[T: SomeReal](
   doAssert ns.shape  == [num_stacked_layers, seq_len, batch_size, hidden_size]
   doAssert Uhs.shape == [num_stacked_layers, seq_len, batch_size, hidden_size]
 
+  doAssert dOutput.shape == [seq_len, batch_size, num_directions * hidden_size]
+  doAssert dHiddenN.shape == [num_stacked_layers * num_directions, batch_size, hidden_size]
+
   # doAssert cached_inputs.len == num_stacked_layers
   doAssert cached_hiddens.len == num_stacked_layers
   for x in cached_hiddens:
     doAssert x.len == seq_len
 
   # 1. Preallocate the results (TODO: separate alloc from compute so that users can pass buffers)
-  dhidden = newTensorUninit[T](num_stacked_layers, batch_size, hidden_size)
+  dhidden0 = newTensorUninit[T](num_stacked_layers, batch_size, hidden_size)
   dW3s0 = zeros_like(W3s0)
   if num_stacked_layers > 1:
     dW3sN = zeros_like(W3sN)
@@ -437,7 +442,7 @@ proc gru_backward*[T: SomeReal](
   dbU3s = zeros[T]([num_stacked_layers, 1, 3 * hidden_size])
 
   # 2. Proceed from last layer to initial layer
-  var gFlowBack = dOutput # gradient flowing back
+  var gFlowBack = dOutput.clone() # gradient flowing back
   dInput = newTensorUninit[T](seq_len, batch_size, num_features)
 
   for layer in countdown(num_stacked_layers - 1, 0):
@@ -446,8 +451,7 @@ proc gru_backward*[T: SomeReal](
       U3l = U3s[layer, _, _].squeeze(0)
       inputl = cached_inputs[layer]
 
-    var dht1 = zeros[T](batch_size, hidden_size)
-    var dht: Tensor[T]
+    var dht1 = dHiddenN[layer, _, _].squeeze(0).clone() # Start from the gradient of the hidden state
 
     for timestep in countdown(seq_len - 1, 0):
       let
@@ -460,8 +464,9 @@ proc gru_backward*[T: SomeReal](
       var gFlowBack_ts = gFlowBack[timestep, _, _].squeeze(0)
 
       # gradients of hidden state and hidden state (t+1)
+      var dht: Tensor[T]
       var dx: Tensor[T]
-      dht1 += gFlowBack_ts
+      dht1 += gFlowBack_ts # Add the gradient of the last time step (copy during forward = addition in backward)
 
       # Contribution of weights for this timestep
       var dW3s_lts, dU3s_lts, dbW3s_lts, dbU3s_lts: Tensor[T]
@@ -476,11 +481,13 @@ proc gru_backward*[T: SomeReal](
 
       # Update gradient flowing back at timestep to pass to next layer
       if layer != 0:
-        gFlowBack[timestep, _, _] = dx.unsqueeze(0)
+        gFlowBack_ts.copyFrom dx
       else:
         dInput[timestep, _, _] = dx.unsqueeze(0)
       if timestep != 0:
         dht1 = dht
+      else:
+        dhidden0[layer, _, _] = dht.unsqueeze(0)
 
       # Accumulate the contribution of weights
       if layer == 0:
@@ -498,4 +505,3 @@ proc gru_backward*[T: SomeReal](
       tmp = dbU3s[layer, _, _]
       tmp .+= dbU3s_lts.unsqueeze(0)
 
-    dhidden[layer, _, _] = dht.unsqueeze(0)

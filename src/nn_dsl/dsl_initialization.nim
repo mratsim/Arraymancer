@@ -104,7 +104,7 @@ proc trainParamsGRU(self: Neuromancer, field_name: NimNode, topo: LayerTopology)
     nb_layers = topo.gru_nb_layers
 
     W3s0_shape = quote do: [3 * `hidden_size`, `nb_features`]
-    W3sN_shape = quote do: [`nb_layers` - 1, 3 * `hidden_size`, `nb_features`] # TODO bidir support
+    W3sN_shape = quote do: [`nb_layers` - 1, 3 * `hidden_size`, `hidden_size`] # TODO bidir support
     U3s_shape = quote do: [`nb_layers`, 3 * `hidden_size`, `hidden_size`]
     biases_shape = quote do: [`nb_layers`, 1, 3 * `hidden_size`]
 

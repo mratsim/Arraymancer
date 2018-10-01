@@ -168,12 +168,12 @@ suite "[NN Primitives - Gated Recurrent Unit - Cell]":
                       r, z, n, Uh)
 
     check:
-      mean_relative_error(target_grad_x, dx) < 1e-4
-      mean_relative_error(target_grad_hidden, dhidden) < 1e-4
-      mean_relative_error(target_grad_W3, dW3) < 1e-4
-      mean_relative_error(target_grad_U3, dU3) < 1e-4
-      mean_relative_error(target_grad_bW3, dbW3) < 1e-4
-      mean_relative_error(target_grad_bU3, dbU3) < 1e-4
+      mean_absolute_error(target_grad_x, dx) < 1e-8
+      mean_absolute_error(target_grad_hidden, dhidden) < 1e-8
+      mean_absolute_error(target_grad_W3, dW3) < 1e-8
+      mean_absolute_error(target_grad_U3, dU3) < 1e-8
+      mean_absolute_error(target_grad_bW3, dbW3) < 1e-8
+      mean_absolute_error(target_grad_bU3, dbU3) < 1e-8
 
 suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
 
@@ -303,8 +303,11 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
       mean_relative_error(py_expected_output, output) < 1e-8
       mean_relative_error(py_expected_hiddenN, h) < 1e-8
 
-  proc GRU_backprop(Layers, TimeSteps: static[int], tol = 1e-4) =
-    let test_name = &"GRU backpropagation: {Layers} layer(s), {TimeSteps} timestep(s)"
+  type GradKind = enum
+    HiddenN, Output, Both
+
+  proc GRU_backprop(Layers, TimeSteps: static int, GKind: static GradKind, tol = 1e-8) =
+    let test_name = &"GRU backpropagation: {Layers} layer(s), {TimeSteps} timestep(s). Backpropagating on {GKind}."
     test test_name:
       const
         HiddenSize = 2
@@ -330,7 +333,12 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
                       W3s0, W3sN, U3s,
                       bW3s, bU3s,
                       output, h)
-        result = output.sum
+        when GKind == Output:
+          result = output.sum
+        elif GKind == HiddenN:
+          result = h.sum
+        else:
+          result = output.sum + h.sum
       proc gru_hidden(hidden: Tensor[float64]): float64 =
         var output: Tensor[float64]
         var h = hidden.clone()
@@ -338,7 +346,12 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
                       W3s0, W3sN, U3s,
                       bW3s, bU3s,
                       output, h)
-        result = output.sum
+        when GKind == Output:
+          result = output.sum
+        elif GKind == HiddenN:
+          result = h.sum
+        else:
+          result = output.sum + h.sum
       proc gru_W3s0(W3s0: Tensor[float64]): float64 =
         var output: Tensor[float64]
         var h = hidden.clone()
@@ -346,7 +359,12 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
                       W3s0, W3sN, U3s,
                       bW3s, bU3s,
                       output, h)
-        result = output.sum
+        when GKind == Output:
+          result = output.sum
+        elif GKind == HiddenN:
+          result = h.sum
+        else:
+          result = output.sum + h.sum
       proc gru_W3sN(W3sN: Tensor[float64]): float64 =
         var output: Tensor[float64]
         var h = hidden.clone()
@@ -354,7 +372,12 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
                       W3s0, W3sN, U3s,
                       bW3s, bU3s,
                       output, h)
-        result = output.sum
+        when GKind == Output:
+          result = output.sum
+        elif GKind == HiddenN:
+          result = h.sum
+        else:
+          result = output.sum + h.sum
       proc gru_U3(U3: Tensor[float64]): float64 =
         var output: Tensor[float64]
         var h = hidden.clone()
@@ -362,7 +385,12 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
                       W3s0, W3sN, U3s,
                       bW3s, bU3s,
                       output, h)
-        result = output.sum
+        when GKind == Output:
+          result = output.sum
+        elif GKind == HiddenN:
+          result = h.sum
+        else:
+          result = output.sum + h.sum
       proc gru_bW3(bW3: Tensor[float64]): float64 =
         var output: Tensor[float64]
         var h = hidden.clone()
@@ -370,7 +398,12 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
                       W3s0, W3sN, U3s,
                       bW3s, bU3s,
                       output, h)
-        result = output.sum
+        when GKind == Output:
+          result = output.sum
+        elif GKind == HiddenN:
+          result = h.sum
+        else:
+          result = output.sum + h.sum
       proc gru_bU3(bU3: Tensor[float64]): float64 =
         var output: Tensor[float64]
         var h = hidden.clone()
@@ -378,7 +411,12 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
                       W3s0, W3sN, U3s,
                       bW3s, bU3s,
                       output, h)
-        result = output.sum
+        when GKind == Output:
+          result = output.sum
+        elif GKind == HiddenN:
+          result = h.sum
+        else:
+          result = output.sum + h.sum
 
       let # Compute the numerical gradients
         target_grad_x      = x.numerical_gradient(gru_x)
@@ -399,8 +437,16 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
         Uhs = zeros_like(rs)
 
       # Gradients
-      let grad_output = ones[float64]([TimeSteps, BatchSize, HiddenSize])
-      var dx, dHidden, dU3s, dbW3s, dbU3s: Tensor[float64]
+      when GKind == Output:
+        let grad_output = ones[float64]([TimeSteps, BatchSize, HiddenSize])
+        let grad_hiddenN = zeros[float64]([Layers, BatchSize, HiddenSize])
+      elif GKind == HiddenN:
+        let grad_output = zeros[float64]([TimeSteps, BatchSize, HiddenSize])
+        let grad_hiddenN = ones[float64]([Layers, BatchSize, HiddenSize])
+      else:
+        let grad_output = ones[float64]([TimeSteps, BatchSize, HiddenSize])
+        let grad_hiddenN = ones[float64]([Layers, BatchSize, HiddenSize])
+      var dx, dHidden0, dU3s, dbW3s, dbU3s: Tensor[float64]
       var dW3s0, dW3sN: Tensor[float64]
 
       # Do a forward and backward pass
@@ -411,30 +457,48 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
                   output, h,
                   cached_inputs, cached_hiddens)
 
-      gru_backward(dx, dHidden, dW3s0, dW3sN, dU3s,
+      gru_backward(dx, dHidden0, dW3s0, dW3sN, dU3s,
               dbW3s, dbU3s,
-              grad_output,
+              grad_output, grad_hiddenN,
               cached_inputs, cached_hiddens,
               W3s0, W3sN, U3s,
               rs, zs, ns, Uhs)
 
       check:
-        mean_relative_error(target_grad_x, dx) < tol
-        mean_relative_error(target_grad_hidden, dhidden) < tol
-        mean_relative_error(target_grad_W3s0, dW3s0) < tol
-        mean_relative_error(target_grad_U3s, dU3s) < tol
-        mean_relative_error(target_grad_bW3s, dbW3s) < tol
-        mean_relative_error(target_grad_bU3s, dbU3s) < tol
+        mean_absolute_error(target_grad_x, dx) < tol
+        mean_absolute_error(target_grad_hidden, dhidden0) < tol
+        mean_absolute_error(target_grad_W3s0, dW3s0) < tol
+        mean_absolute_error(target_grad_U3s, dU3s) < tol
+        mean_absolute_error(target_grad_bW3s, dbW3s) < tol
+        mean_absolute_error(target_grad_bU3s, dbU3s) < tol
 
       when Layers > 1:
         let target_grad_W3sN   = W3sN.numerical_gradient(gru_W3sN)
-        check: mean_relative_error(target_grad_W3sN, dW3sN) < tol
+        check: mean_absolute_error(target_grad_W3sN, dW3sN) < tol
 
-  GRU_backprop(1, 1, 1e-4)
-  GRU_backprop(1, 48, 1e-4)
 
-  # TODO fix the following lack of precision
-  GRU_backprop(4, 1, 5.4e-3)
-  GRU_backprop(4, 5, 3.2e-3)
-  # GRU_backprop(4, 48, 1e-3)
-  # GRU_backprop(10, 1, 1e-3)
+  GRU_backprop( 1,  1,  Output,   1e-8)
+  GRU_backprop( 1, 48,  Output,   1e-8)
+  GRU_backprop( 4,  1,  Output,   1e-8)
+  GRU_backprop( 4,  5,  Output,   1e-8)
+  GRU_backprop( 4, 48,  Output,   1e-8)
+  GRU_backprop(10,  1,  Output,   1e-8)
+
+  # #################################
+
+  GRU_backprop( 1,  1, HiddenN,   1e-8)
+  GRU_backprop( 1, 48, HiddenN,   1e-8)
+  GRU_backprop( 4,  1, HiddenN,   1e-8)
+  GRU_backprop( 4,  5, HiddenN,   1e-8)
+  GRU_backprop( 4, 48, HiddenN,   1e-8)
+  GRU_backprop(10,  1, HiddenN,   1e-8)
+
+
+  # #################################
+
+  GRU_backprop( 1,  1,    Both,   1e-8)
+  GRU_backprop( 1, 48,    Both,   1e-8)
+  GRU_backprop( 4,  1,    Both,   1e-8)
+  GRU_backprop( 4,  5,    Both,   1e-8)
+  GRU_backprop( 4, 48,    Both,   1e-8)
+  GRU_backprop(10,  1,    Both,   1e-8)

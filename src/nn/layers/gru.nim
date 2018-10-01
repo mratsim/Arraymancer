@@ -39,13 +39,11 @@ proc forward[TT](
   result.output.context = a.context
   result.hiddenN.context = a.context
   result.hiddenN.value = hidden0.value.clone()
-  if not a.is_grad_needed:
-    gru_inference(
-      a.value,
-      self.W3s0.value, self.W3sN.value, self.U3s.value,
-      self.bW3s.value, self.bU3s.value, result.output.value, result.hiddenN.value
-      )
-  else:
+  if ( # input.is_grad_needed or hidden0.is_grad_needed or
+      # TODO improve inference shortcut - https://github.com/mratsim/Arraymancer/issues/301
+      self.W3s0.is_grad_needed or self.W3sN.is_grad_needed or
+      self.U3s.is_grad_needed or
+      self.bW3s.is_grad_needed or self.bU3s.is_grad_needed):
     gru_forward(
       a.value, self.W3s0.value, self.W3sN.value, self.U3s.value,
       self.bW3s.value, self.bU3s.value,
@@ -54,18 +52,24 @@ proc forward[TT](
       self.cached_inputs,
       self.cached_hiddens
     )
+  else:
+    gru_inference(
+      a.value,
+      self.W3s0.value, self.W3sN.value, self.U3s.value,
+      self.bW3s.value, self.bU3s.value, result.output.value, result.hiddenN.value
+      )
 
 method backward*[TT](
           self: GRUGate[TT],
           payload: Payload[TT],
           ): SmallDiffs[TT] {.noInit.}=
-  let gradient = payload.variable.grad
+  let gradients = payload.sequence
   result = newSeqUninit[TT](7)
   gru_backward(
-    result[0], result[1],            # dinput, dhidden,
-    result[2], result[3],            # dW3s0, dW3sN,
-    result[4], result[5], result[6], # dU3s, dbW3s, dbU3s
-    gradient,
+    result[0], result[1],                 # Result   dinput, dhidden,
+    result[2], result[3],                 # Result   dW3s0, dW3sN,
+    result[4], result[5], result[6],      # Result   dU3s, dbW3s, dbU3s
+    gradients[0].grad, gradients[1].grad, # Incoming dOutput, dHiddenN
     self.cached_inputs,
     self.cached_hiddens,
     self.W3s0.value, self.W3sN.value, self.U3s.value,
@@ -115,6 +119,7 @@ proc gru*[TT](
   node.parents[4] = U3s.weakRef
   node.parents[5] = bW3s.weakRef
   node.parents[6] = bU3s.weakRef
+  input.context.push(node)
 
   # Checks
   let seq_len = input.value.shape[0]
@@ -122,8 +127,7 @@ proc gru*[TT](
   let hidden_size = hidden0.value.shape[2]
 
   doAssert hidden0.value.shape[0] == layers # TODO bidirectional
-  doAssert hidden0.value.shape[1] == batch_size
-
+  doAssert hidden0.value.shape[1] == batch_size, " - hidden0: " & $hidden0.value.shape[1] & ", batch_size: " & $batch_size
 
   # Resulting Variable
   gate.cached_inputs = newSeqUninit[TT](layers)
@@ -136,18 +140,10 @@ proc gru*[TT](
   gate.Uhs = newTensorUninit[T](layers, seq_len, batch_size, hidden_size)
 
   result = gate.forward(input, hidden0)
-
-  # Since output == hidden we need one Node for each
-  # with only the payload differing
-  var node_hidden: Node[TT]
-  new node_hidden
-  node_hidden[] = node[]
-
-  node.payload = Payload[TT](kind: pkVar, variable: result.output)
-  node_hidden.payload = Payload[TT](kind: pkVar, variable: result.hiddenN)
-
-  input.context.push(node)
-  input.context.push(node_hidden)
+  node.payload = Payload[TT](
+    kind: pkSeq,
+    sequence: @[result.output, result.hiddenN]
+    )
 
   # Caching for backprop
   if input.is_grad_needed or hidden0.is_grad_needed or

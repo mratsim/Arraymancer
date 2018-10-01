@@ -10,7 +10,7 @@ randomize(42)
 type SeqKind = enum
   Increasing, Decreasing, NonMonotonic
 
-const DataSize = 1000
+const DataSize = 30000
 
 func classify(input: Tensor[float32], id: int): SeqKind =
   if input[id, 0] < input[id, 1] and input[id, 1] < input[id, 2]:
@@ -43,12 +43,14 @@ for i in 0 ..< DataSize:
 
 echo dataset_X[0 ..< 10, _]
 echo dataset_y[0 ..< 10]
+echo "\n"
 
 # How many neurons do we need to change a light bulb, sorry compare 3 numbers? let's pick ...
 const
-  HiddenSize = 100
-  BatchSize = 10
-  Epochs = 2500
+  HiddenSize = 256
+  BatchSize = 512
+  Epochs = 8
+  Layers = 4
 
 # Let's setup our neural network context, variables and model
 let
@@ -63,18 +65,30 @@ doAssert X.value.shape == [3, DataSize, 1]
 network ctx, TheGreatSequencer:
   layers:
     # Note input_shape will only require the number of features in the future
-    gru1: GRU([3, Batch_size, 1], HiddenSize, 1) # (input_shape, hidden_size, stacked_layers)
-    classifier: Linear(HiddenSize, 3) # With GRU we need some reshape magic to move the batch_size/seq_len around
+    # Input shape = [seq_len, Batch, features]
+    gru1: GRU([3, Batch_size, 1], HiddenSize, 4) # (input_shape, hidden_size, stacked_layers)
+    fc1: Linear(HiddenSize, 32)                  # 1 classifier per GRU layer
+    fc2: Linear(HiddenSize, 32)
+    fc3: Linear(HiddenSize, 32)
+    fc4: Linear(HiddenSize, 32)
+    classifier: Linear(32 * 4, 3)                # Stacking a classifier which learns from the other 4
   forward x, hidden0:
-    let (output, hiddenN) = gru1(x, hidden0)
-    # hiddenN of shape [num_stacked_layers * num_directions, batch_size, hidden_size]
-    # We discard the output and consider that the hidden layer stores
-    # our monotonic info
-    result = classifier(hiddenN.squeeze(0))
+    let
+      (output, hiddenN) = gru1(x, hidden0)
+      clf1 = hiddenN[0, _, _].squeeze(0).fc1.relu
+      clf2 = hiddenN[1, _, _].squeeze(0).fc2.relu
+      clf3 = hiddenN[2, _, _].squeeze(0).fc3.relu
+      clf4 = hiddenN[3, _, _].squeeze(0).fc4.relu
+
+    # Concat all
+    # Since concat backprop is not implemented we cheat by stacking
+    # Then flatten
+    result = stack(clf1, clf2, clf3, clf4, axis = 2)
+    result = classifier(result.flatten)
 
 # Allocate the model
 let model = ctx.init(TheGreatSequencer)
-let optim = model.optimizerSGD(0.001'f32)
+let optim = model.optimizerSGD(0.01'f32)
 
 # And let's start training the network
 for epoch in 0 ..< Epochs:
@@ -87,7 +101,7 @@ for epoch in 0 ..< Epochs:
     let this_batch_size = end_batch - start_batch
 
     # Go through the model
-    let hidden0 = ctx.variable zeros[float32](1, this_batch_size, HiddenSize)
+    let hidden0 = ctx.variable zeros[float32](Layers, this_batch_size, HiddenSize)
     let clf = model.forward(X_batch, hidden0)
 
     # Go through our cost function
@@ -99,8 +113,7 @@ for epoch in 0 ..< Epochs:
 
   # Let's see how we fare:
   ctx.no_grad_mode:
-    echo &"\nEpoch #{epoch} done. Testing accuracy"
-    let hidden0 = ctx.variable zeros[float32](1, DataSize, HiddenSize)
+    let hidden0 = ctx.variable zeros[float32](Layers, DataSize, HiddenSize)
     let y_pred = model
                   .forward(X, hidden0)
                   .value
@@ -109,5 +122,70 @@ for epoch in 0 ..< Epochs:
                   .squeeze
 
     let score = accuracy_score(y, y_pred)
-    echo &"Accuracy: {score:.3f}%"
-    echo "\n"
+    echo &"Epoch #{epoch:> 04}. Accuracy: {score*100:00.3f}%"
+
+###################
+# Output
+
+# Tensor[system.float32] of shape [10, 3] of type "float32" on backend "Cpu"
+# |0.08715851604938507    0.6252052187919617      0.8734603524208069|
+# |0.4635309278964996     0.1152218133211136      0.6088221073150635|
+# |0.4754987359046936     0.7151913642883301      0.7708750367164612|
+# |0.3764243125915527     0.3795507848262787      0.9351327419281006|
+# |0.6993147730827332     0.733343780040741       0.8100541830062866|
+# |0.4297148883342743     0.09527183324098587     0.01486776024103165|
+# |0.875207245349884      0.2490521669387817      0.1578131020069122|
+# |0.02143412455916405    0.0222312156111002      0.7928663492202759|
+# |0.07909850776195526    0.1905942112207413      0.4293616414070129|
+# |0.04384680092334747    0.7198637723922729      0.2911368310451508|
+
+# Tensor[ex05_sequence_classification_GRU.SeqKind] of shape [10] of type "SeqKind" on backend "Cpu"
+#         Increasing      NonMonotonic    Increasing      Increasing      Increasing      Decreasing      Decreasing      Increasing      Increasing      NonMonotonic
+
+# Epoch # 000. Accuracy: 72.717%
+# Epoch # 001. Accuracy: 86.037%
+# Epoch # 002. Accuracy: 88.763%
+# Epoch # 003. Accuracy: 90.177%
+# Epoch # 004. Accuracy: 92.937%
+# Epoch # 005. Accuracy: 95.677%
+# Epoch # 006. Accuracy: 95.910%
+# Epoch # 007. Accuracy: 95.867%
+
+
+###################
+## Let's give our model some handcrafted tests
+block:
+  let exam = ctx.variable([
+      [float32 0.10, 0.20, 0.30], # increasing
+      [float32 0.10, 0.90, 0.95], # increasing
+      [float32 0.45, 0.50, 0.55], # increasing
+      [float32 0.10, 0.30, 0.20], # non-monotonic
+      [float32 0.20, 0.10, 0.30], # non-monotonic
+      [float32 0.98, 0.97, 0.96], # decreasing
+      [float32 0.12, 0.05, 0.01], # decreasing
+      [float32 0.95, 0.05, 0.07]  # non-monotonic
+    ].toTensor.transpose.unsqueeze(2))
+
+  let hidden0 = ctx.variable zeros[float32](Layers, 8, HiddenSize)
+
+  let answer = model
+                .forward(exam, hidden0)
+                .value
+                .softmax
+                .argmax(axis = 1)
+                .squeeze
+                .astype(SeqKind)
+
+  echo answer.unsqueeze(1)
+  # Tensor[ex05_sequence_classification_GRU.SeqKind] of shape [8, 1] of type "SeqKind" on backend "Cpu"
+  #         Increasing|
+  #         Increasing|
+  #         Increasing|
+  #         NonMonotonic|
+  #         NonMonotonic|
+  #         Increasing| <----- Wrong!
+  #         Decreasing|
+  #         Decreasing| <----- Wrong!
+
+  # Maybe we need more data with very large or narrow difference.
+  # Next step: financial markets, let's collar those bears.

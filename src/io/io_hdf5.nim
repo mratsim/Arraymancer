@@ -14,7 +14,7 @@ import
 # for each tensor.
 const NumTensorStored = "numTensorsStored"
 
-proc parseNameAndGroup(h5f: var H5FileObj,
+func parseNameAndGroup(h5f: var H5FileObj,
                        toWrite: static[bool],
                        name, group: Option[string],
                        number: Option[int] = none(int)):
@@ -30,10 +30,6 @@ proc parseNameAndGroup(h5f: var H5FileObj,
   ##   - (string, string): tuple of dataset name, group name
   ##     correctly parsed according to user desired name /
   ##     generic name
-
-  # TODO: clean up this proc!
-  # maybe disallow no args at all?
-  # use Option[T] for number arg
 
   if group.isSome:
     result.grpName = group.get
@@ -107,7 +103,6 @@ proc read_hdf5*[T: SomeNumber](h5f: var H5FileObj,
   tensorCpu(shape, result, layout)
   result.data = convertTo(h5dset)
 
-  # TODO: take these out...
   assert shape == h5dset.shape
   assert shape == @(result.shape)
   assert rank == result.rank
@@ -146,9 +141,6 @@ proc write_hdf5*[T: SomeNumber](h5f: var H5FileObj,
   ## Note: if no `name` is given, we need to visit the whole file
   ## to check for existing tensors. This will introduce a small
   ## overhead!
-  ## TODO: introduce a "num tensors stored" like attribute in the
-  ## h5 file, which we write. Instead of visiting the whole file
-  ## just access that single attribute.
   ##
   ## Input:
   ##   - The tensor to write

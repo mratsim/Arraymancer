@@ -293,3 +293,21 @@ func chunk*[T](t: Tensor[T], nb_chunks: Positive, axis: Natural): seq[Tensor[T]]
       result[i] = t.atAxisIndex(axis, i * chunk_size + i, chunk_size + 1)
     else:
       result[i] = t.atAxisIndex(axis, i * chunk_size + remainder, chunk_size)
+
+func index_select*[T](t: Tensor[T], axis: int, indices: Tensor[int]): Tensor[T] =
+  ## Take elements from a tensor along an axis using the indices Tensor.
+  ## This is equivalent to NumPy `take`.
+  ## The result does not share the input storage, there are copies.
+
+  doAssert indices.shape.len == 1
+
+  var select_shape = t.shape
+  select_shape[axis] = indices.shape[0]
+  result = newTensorUninit[T](select_shape)
+
+  # TODO: optim for contiguous tensors
+  # TODO: use OpenMP for tensors of non-ref/strings/seqs
+  for i, index in enumerate(indices):
+    var r_slice = result.atAxisIndex(axis, i)
+    var t_slice = t.atAxisIndex(axis, index)
+    r_slice.copyFrom(t_slice)

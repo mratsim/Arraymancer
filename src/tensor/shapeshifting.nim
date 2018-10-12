@@ -57,7 +57,9 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
   contiguousImpl(t, layout, result)
 
 proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
-  ## Reshape a tensor
+  ## Reshape a tensor. If possible no data copy is done and the returned tensor
+  ## shares data with the input. If input is not contiguous, this is not possible
+  ## and a copy will be made.
   ##
   ## Input:
   ##   - a tensor
@@ -67,7 +69,9 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
   reshapeImpl(t, new_shape, result)
 
 proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
-  ## Reshape a tensor
+  ## Reshape a tensor. If possible no data copy is done and the returned tensor
+  ## shares data with the input. If input is not contiguous, this is not possible
+  ## and a copy will be made.
   ##
   ## Input:
   ##   - a tensor

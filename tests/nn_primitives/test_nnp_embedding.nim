@@ -3,7 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import ../../src/arraymancer
-import unittest, tables, sequtils
+import unittest, tables, sequtils, strutils
 
 suite "[NN Primitive] Embedding":
 
@@ -30,13 +30,15 @@ suite "[NN Primitive] Embedding":
     [0.22, 0.33, 0.44, 0.55, 0.66], # in
     [0.33, 0.44, 0.55, 0.66, 0.77], # seed
     [0.44, 0.55, 0.66, 0.77, 0.88], # time
-    [0.55, 0.66, 0.77, 0.88, 0.99], # teach
+    [0.55, 0.66, 0.77, 0.88, 0.99], # learn
                                     # (in)
     [0.99, 0.88, 0.77, 0.66, 0.55], # harvest
     [0.88, 0.77, 0.66, 0.55, 0.44], # teach
                                     # (in)
                                     # (winter)
     [0.77, 0.66, 0.55, 0.44, 0.33], # enjoy
+    [1.00, 1.00, 1.00, 1.00, 1.00], # <START>
+    [0.50, 0.50, 0.50, 0.50, 0.50], # <STOP>
     [0.00, 0.00, 0.00, 0.00, 0.00]  # <PAD>
   ].toTensor
 
@@ -58,10 +60,13 @@ suite "[NN Primitive] Embedding":
     "in": 14,
     "seed": 15,
     "time": 16,
-    "teach": 17,
+    "learn": 17,
     "harvest": 18,
     "teach": 19,
-    "enjoy": 20
+    "enjoy": 20,
+    "<START>": 21,
+    "<STOP>": 22,
+    "<PAD>": 23
   }.toTable
 
 
@@ -80,3 +85,33 @@ suite "[NN Primitive] Embedding":
       [0.05, 0.06, 0.07, 0.08, 0.09], # you
       [0.22, 0.33, 0.44, 0.55, 0.66]  # in
     ].toTensor
+
+  test "Embedding forward, input [batch_size, seq_len] and [seq_len, batch_size]":
+    let sent1 = "<START> winter is coming <STOP>".splitWhitespace()
+    let sent2 = "<START> you can cut all the flowers but you cannot keep spring from coming <STOP>".splitWhitespace()
+    let sent3 = "<START> in seed time learn in harvest teach in winter enjoy <STOP>".splitWhitespace()
+
+    let seq_len = max(max(sent1.len, sent2.len), sent3.len)
+
+    let input_raw = [
+      sent1 & sequtils.repeat("<PAD>", seq_len - sent1.len),
+      sent2 & sequtils.repeat("<PAD>", seq_len - sent2.len),
+      sent3 & sequtils.repeat("<PAD>", seq_len - sent3.len),
+    ].toTensor
+
+    check: input_raw.shape == [3, seq_len] # batch_size, seq_len
+
+    let input_idx = input_raw.map_inline(words_to_ix[x])
+    check: input_idx.at(0, _) == toTensor(@[21, 0, 1, 2, 22] & repeat(23, seq_len - sent1.len))
+
+    block: # batch_size, seq_len
+      let embed = embedding(input_idx, embed_matrix)
+
+      check: embed.at(0, _) == toTensor(@[
+        [1.00, 1.00, 1.00, 1.00, 1.00], # <START>
+        [0.10, 0.20, 0.30, 0.40, 0.50], # winter
+        [0.50, 0.60, 0.70, 0.80, 0.90], # is
+        [0.90, 0.80, 0.70, 0.60, 0.50], # coming
+        [0.50, 0.50, 0.50, 0.50, 0.50]  # <STOP>
+      ] & repeat([0.00, 0.00, 0.00, 0.00, 0.00], seq_len - sent1.len) # <PAD>
+      )

@@ -5,11 +5,8 @@
 import
   ../tensor/tensor
 
-func flatten(t: Tensor): Tensor =
-  # We don't export this flatten as its specific to
-  # neural network: it flattens all dimensions except
-  # the first one corresponding to the batch size
-  t.reshape(t.shape[0], t.size div t.shape[0])
+func flatten_idx(t: Tensor): Tensor {.inline.}=
+  t.reshape(t.size)
 
 func embedding*[T](
       vocab_id: Tensor[int],
@@ -31,17 +28,17 @@ func embedding*[T](
   ## Make sure to add an index to represent <UNKNOWN> words.
   ## (Words present during test that didn't exist in the training vocabulary)
   ##
-  ## If working with variable-length sequences a <PAD> word index
-  ## is also useful
+  ## If working with variable-length sequences a <START>, <STOP> and <PAD> "words"
+  ## are also useful
   ##
   ## In summary it's a lookup table that maps words to meanings
   ## in a high-dimensional space and that can be trained.
   ##
   ## Input:
   ##   - A tensor of vocabulary indices, either:
-  ##       - [batch_size, vocab_id]
-  ##       - [seq_len, batch_size, vocab_id]
-  ##       - [batch_size, seq_len, vocab_id]
+  ##       - [batch_size]
+  ##       - [seq_len, batch_size]
+  ##       - [batch_size, seq_len]
   ##   - A weight matrix that maps those indices to the embedding
   ##     of shape [vocabulary_size, embedding_size]
   ##
@@ -54,5 +51,5 @@ func embedding*[T](
   if vocab_id.rank == 1:
     return weight.index_select(0, vocab_id)
 
-  let shape = vocab_id.shape[0 ..< ^1] & weight.shape[1]
-  result = weight.index_select(0, vocab_id.flatten).reshape(shape)
+  let shape = vocab_id.shape & weight.shape[1]
+  result = weight.index_select(0, vocab_id.flatten_idx).reshape(shape)

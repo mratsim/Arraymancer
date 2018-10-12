@@ -164,8 +164,6 @@ proc write_hdf5*[T: SomeNumber](h5f: var H5FileObj,
   dset.attrs["rank"] = tCont.rank
   dset.attrs["shape"] = @(tCont.shape)
   dset.attrs["size"] = tCont.size
-  # workaround since we can't write bool attributes
-  dset.attrs["is_C_contiguous"] = if tCont.is_C_contiguous: "true" else: "false"
 
   # write new number of tensors stored
   h5f.attrs[NumTensorStored] = numTensors + 1

@@ -107,7 +107,7 @@ suite "[NN Primitive] Embedding":
     block: # batch_size, seq_len
       let embed = embedding(input_idx, embed_matrix)
 
-      check: embed.at(0, _) == toTensor(@[
+      check: embed.at(0, _, _) == toTensor(@[
         [1.00, 1.00, 1.00, 1.00, 1.00], # <START>
         [0.10, 0.20, 0.30, 0.40, 0.50], # winter
         [0.50, 0.60, 0.70, 0.80, 0.90], # is
@@ -115,3 +115,7 @@ suite "[NN Primitive] Embedding":
         [0.50, 0.50, 0.50, 0.50, 0.50]  # <STOP>
       ] & repeat([0.00, 0.00, 0.00, 0.00, 0.00], seq_len - sent1.len) # <PAD>
       )
+
+    block: # seq_len, batch_size
+      # TODO
+      echo "       [seq_len, batch_size] test skipped"

@@ -20,7 +20,8 @@ import  ./nnp_activation,
         ./nnp_maxpooling,
         ./nnp_softmax,
         ./nnp_numerical_gradient,
-        ./recurrent/nnp_gru
+        ./recurrent/nnp_gru,
+        ./nnp_embedding.nim
 
 export  nnp_activation,
         nnp_convolution,
@@ -30,7 +31,8 @@ export  nnp_activation,
         nnp_maxpooling,
         nnp_softmax,
         nnp_numerical_gradient,
-        nnp_gru
+        nnp_gru,
+        nnp_embedding
 
 import private/p_nnp_types
 export Size2D

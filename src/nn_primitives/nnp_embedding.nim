@@ -3,7 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  ../tensor/tensor
+  ../tensor/tensor, tables, math
 
 func flatten_idx(t: Tensor): Tensor {.inline.}=
   t.reshape(t.size)
@@ -53,3 +53,37 @@ func embedding*[T](
 
   let shape = vocab_id.shape & weight.shape[1]
   result = weight.index_select(0, vocab_id.flatten_idx).reshape(shape)
+
+proc embedding_backward*[T](
+      dWeight: var Tensor[T],
+      vocab_id: Tensor[int],
+      dOutput: Tensor[T],
+      padding_idx: int,
+      scale_grad_by_freq: static[bool] = false # scale by the inverse document frequency, i.e. divide by count in minibatch
+    ) =
+
+  when scale_grad_by_freq:
+    let count_size = nextPowerOfTwo dWeight.shape[0] # vocabulary size
+    var counts {.global.} = initCountTable[int](count_size) # Optim: we reuse the buffer across minibatches
+
+    counts.clear()
+    for word_idx in vocab_id:
+      counts.inc word_idx
+
+  # We assume that dWeight is zero initialized with shape
+  # [vocabulary_size, embedding_size] for us.
+  let size = vocab_id.size()
+  let flat_vocab_id = vocab_id.flatten_idx()
+  let flat_dOutput = dOutput.flatten_idx()
+
+  for i, word_idx in enumerate(flat_vocab_id):
+    if word_idx != padding_idx:
+      var grad_curr_word = dWeight[word_idx, _]
+      when scale_grad_by_freq:
+        grad_curr_word .+= flat_dOutput
+      else:
+        # For speed don't respect IEEE-754 and avoid
+        # division in tight loop by multiplying by the inverse
+        let idf = 1.T div counts[word_idx] # inverse document frequency
+        apply2_inline(grad_curr_word, flat_dOutput):
+          x + y * idf

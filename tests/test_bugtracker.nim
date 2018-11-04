@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../src/arraymancer
 import unittest
-
 
 suite "Testing specific issues from bug tracker":
   test "#43: Span slicing inside dynamic type procs fails to compile":

@@ -27,7 +27,6 @@ import ../src/arraymancer,
         ./tensor/test_ufunc,
         ./tensor/test_filling_data,
         ./tensor/test_optimization,
-        ./tensor/test_bugtracker,
         ./tensor/test_exporting,
         ./io/test_csv,
         ./io/test_numpy,
@@ -39,7 +38,8 @@ import ../src/arraymancer,
         ./nn_primitives/test_nnp_gru,
         ./autograd/test_gate_blas,
         ./autograd/test_gate_shapeshifting,
-        ./ml/test_metrics
+        ./ml/test_metrics,
+        ./test_bugtracker
 
 when not defined(no_lapack):
   import ./linear_algebra/test_linear_algebra,

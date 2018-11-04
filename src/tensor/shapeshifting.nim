@@ -191,6 +191,8 @@ proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit.}=
   ##   - An axis (dimension)
   ## Returns:
   ##   - a tensor
+  mixin `|`
+
   var axis_dim = 0
   let t0 = t_list[0]
 

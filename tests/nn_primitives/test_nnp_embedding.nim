@@ -6,7 +6,6 @@ import ../../src/arraymancer
 import unittest, tables, sequtils, strutils
 
 suite "[NN Primitive] Embedding":
-
   ## Embedding matrix that maps a vocabulary
   ## of size 21 into a 5-dimensional space
   ## (initialization completely random of course)
@@ -118,4 +117,30 @@ suite "[NN Primitive] Embedding":
 
     block: # seq_len, batch_size
       # TODO
-      echo "       [seq_len, batch_size] test skipped"
+      echo "       Next test: [seq_len, batch_size] skipped"
+
+  test "Embedding backpropagation - vocabulary of shape [batch_size]":
+    const
+      BatchSize =   3
+      NbWords   =  21
+      EmbedSize =   5
+    let
+      vocab: Tensor[int] = randomTensor([BatchSize], NbWords)
+      embed_matrix: Tensor[float64] = randomTensor([NbWords, EmbedSize], 1.0)
+
+    proc embed(embed_matrix: Tensor[float64]): float64 =
+      embedding(vocab, embed_matrix).sum()
+    let target_grad_embed = embed_matrix.numerical_gradient(embed)
+
+    ## Backward pass
+    let dOutput = ones[float64](BatchSize, EmbedSize)
+    var dWeight = zeros_like(embed_matrix)
+
+    embedding_backward(
+      dWeight, vocab,
+      dOutput,
+      padding_idx = -1, # For testing we assume no padding (all indices contribute)
+      scale_grad_by_freq = false # We don't reduce contribution of common words
+    )
+
+    check: mean_absolute_error(target_grad_embed, dWeight) < 1e-8

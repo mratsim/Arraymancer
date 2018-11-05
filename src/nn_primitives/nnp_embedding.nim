@@ -80,10 +80,9 @@ proc embedding_backward*[T](
     if word_idx != padding_idx:
       var grad_curr_word = dWeight[word_idx, _]
       when scale_grad_by_freq:
-        grad_curr_word .+= flat_dOutput
-      else:
         # For speed don't respect IEEE-754 and avoid
         # division in tight loop by multiplying by the inverse
         let idf = 1.T div counts[word_idx] # inverse document frequency
-        apply2_inline(grad_curr_word, flat_dOutput):
-          x + y * idf
+        grad_curr_word .+= flat_dOutput[i] * idf
+      else:
+        grad_curr_word .+= flat_dOutput[i]

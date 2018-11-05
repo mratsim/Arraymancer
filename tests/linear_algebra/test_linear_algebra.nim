@@ -28,7 +28,7 @@ suite "Linear algebra":
 
       check:
         mean_relative_error(solution, expected_sol) < 1e-6
-        mean_relative_error(residuals, expected_residuals) < 1e-6
+        mean_relative_error(residuals, expected_residuals) < 2e-6 # Due to parallelism hazards this sometimes go over 1e-6 on Travis
         matrix_rank == expected_matrix_rank
         mean_relative_error(singular_values, expected_sv) < 1e-6
 

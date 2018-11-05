@@ -62,6 +62,8 @@ proc embedding_backward*[T](
       scale_grad_by_freq: static[bool] = false # scale by the inverse document frequency, i.e. divide by count in minibatch
     ) =
 
+  doAssert vocab_id.size == dOutput.size div dOutput.shape[^1], "Besides the last dimension, vocab_id and the gradient flowing back must have the same shape"
+
   when scale_grad_by_freq:
     let count_size = nextPowerOfTwo dWeight.shape[0] # vocabulary size
     var counts {.global.} = initCountTable[int](count_size) # Optim: we reuse the buffer across minibatches

@@ -125,7 +125,7 @@ suite "[NN Primitive] Embedding":
       NbWords   =  21
       EmbedSize =   5
     let
-      vocab: Tensor[int] = randomTensor([BatchSize], NbWords)
+      vocab: Tensor[int] = randomTensor([BatchSize], NbWords-1)
       embed_matrix: Tensor[float64] = randomTensor([NbWords, EmbedSize], 1.0)
 
     proc embed(embed_matrix: Tensor[float64]): float64 =
@@ -134,6 +134,33 @@ suite "[NN Primitive] Embedding":
 
     ## Backward pass
     let dOutput = ones[float64](BatchSize, EmbedSize)
+    var dWeight = zeros_like(embed_matrix)
+
+    embedding_backward(
+      dWeight, vocab,
+      dOutput,
+      padding_idx = -1, # For testing we assume no padding (all indices contribute)
+      scale_grad_by_freq = false # We don't reduce contribution of common words
+    )
+
+    check: mean_absolute_error(target_grad_embed, dWeight) < 1e-8
+
+  test "Embedding backpropagation - vocabulary of shape [batch_size, seq_len]":
+    const
+      BatchSize =  10
+      SeqLen    =  12
+      NbWords   =  42
+      EmbedSize =  11
+    let
+      vocab: Tensor[int] = randomTensor([BatchSize, Seqlen], NbWords-1)
+      embed_matrix: Tensor[float64] = randomTensor([NbWords, EmbedSize], 1.0)
+
+    proc embed(embed_matrix: Tensor[float64]): float64 =
+      embedding(vocab, embed_matrix).sum()
+    let target_grad_embed = embed_matrix.numerical_gradient(embed)
+
+    ## Backward pass
+    let dOutput = ones[float64](BatchSize, SeqLen, EmbedSize)
     var dWeight = zeros_like(embed_matrix)
 
     embedding_backward(

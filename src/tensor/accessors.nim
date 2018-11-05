@@ -282,7 +282,6 @@ template axisIterator[T](t: Tensor[T], axis, iter_offset, iter_size: int): untyp
     yield out_t
     out_t.offset += t.strides[axis]
 
-
 template dualAxisIterator[T, U](a: Tensor[T], b: Tensor[U], axis, iter_offset, iter_size: int): untyped =
   when compileOption("boundChecks"):
     check_axis_index(a, axis, iter_offset, iter_size-1)

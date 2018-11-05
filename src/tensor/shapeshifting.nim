@@ -57,7 +57,9 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
   contiguousImpl(t, layout, result)
 
 proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
-  ## Reshape a tensor
+  ## Reshape a tensor. If possible no data copy is done and the returned tensor
+  ## shares data with the input. If input is not contiguous, this is not possible
+  ## and a copy will be made.
   ##
   ## Input:
   ##   - a tensor
@@ -67,7 +69,9 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
   reshapeImpl(t, new_shape, result)
 
 proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
-  ## Reshape a tensor
+  ## Reshape a tensor. If possible no data copy is done and the returned tensor
+  ## shares data with the input. If input is not contiguous, this is not possible
+  ## and a copy will be made.
   ##
   ## Input:
   ##   - a tensor
@@ -201,14 +205,15 @@ proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit.}=
       check_concat(t0, t, axis)
     axis_dim += t.shape[axis]
 
-  let concat_shape = t0.shape[0..<axis] & axis_dim & t0.shape[axis+1..<t0.shape.len]
+  var concat_shape = t0.shape
+  concat_shape[axis] = axis_dim
 
   ## Setup the Tensor
   result = newTensorUninit[T](concat_shape)
 
   ## Fill in the copy with the matching values
   ### First a sequence of SteppedSlices corresponding to each tensors to concatenate
-  var slices = concat_shape.mapIt((0..<it)|1)
+  var slices = concat_shape.mapIt((0..<it)|1) # TODO avoid allocation
   var iaxis = 0
 
   ### Now, create "windows" in the result tensor and assign corresponding tensors
@@ -274,7 +279,6 @@ func split*[T](t: Tensor[T], chunk_size: Positive, axis: Natural): seq[Tensor[T]
   if rem_size != 0:
     result[^1] = t.atAxisIndex(axis, nb_chunks * chunk_size, rem_size)
 
-
 func chunk*[T](t: Tensor[T], nb_chunks: Positive, axis: Natural): seq[Tensor[T]] {.noInit.} =
   ## Splits a Tensor into n chunks along the specified axis.
   ##
@@ -295,3 +299,21 @@ func chunk*[T](t: Tensor[T], nb_chunks: Positive, axis: Natural): seq[Tensor[T]]
       result[i] = t.atAxisIndex(axis, i * chunk_size + i, chunk_size + 1)
     else:
       result[i] = t.atAxisIndex(axis, i * chunk_size + remainder, chunk_size)
+
+func index_select*[T](t: Tensor[T], axis: int, indices: Tensor[int]): Tensor[T] =
+  ## Take elements from a tensor along an axis using the indices Tensor.
+  ## This is equivalent to NumPy `take`.
+  ## The result does not share the input storage, there are copies.
+
+  doAssert indices.shape.len == 1
+
+  var select_shape = t.shape
+  select_shape[axis] = indices.shape[0]
+  result = newTensorUninit[T](select_shape)
+
+  # TODO: optim for contiguous tensors
+  # TODO: use OpenMP for tensors of non-ref/strings/seqs
+  for i, index in enumerate(indices):
+    var r_slice = result.atAxisIndex(axis, i)
+    var t_slice = t.atAxisIndex(axis, index)
+    r_slice.copyFrom(t_slice)

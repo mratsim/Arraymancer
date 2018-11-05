@@ -92,14 +92,12 @@ proc `[]=`*[T](a: var DynamicStackArray[T], idx: Index, v: T) {.inline.} =
   #   assert idx >= 0 and idx < MAXRANK
   a.data[a ^^ idx] = v
 
-proc `[]`*[T](a: DynamicStackArray[T], slice: Slice[int]): DynamicStackArray[T] {.inline.} =
+proc `[]`*[T, U, V](a: DynamicStackArray[T], slice: HSlice[U, V]): DynamicStackArray[T] {.inline.} =
   let bgn_slice = a ^^ slice.a
   let end_slice = a ^^ slice.b
 
-  if end_slice >= bgn_slice:
-    # boundsChecks automatically done for array indexing
-    # when compileOption("boundChecks"):
-    #   assert slice.a >= 0 and slice.b < a.len
+  # boundsChecks automatically done for array indexing
+  if bgn_slice <= end_slice:
     result.len = (end_slice - bgn_slice + 1)
     for i in 0..<result.len:
       result[i] = a[bgn_slice+i]

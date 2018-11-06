@@ -27,9 +27,9 @@ proc out_shape_conv2d(in_shape: array[3, int], kernel: array[4, int], padding, s
   template dH: int = 1 # dilation # TODO
   template dW: int = 1 # dilation
 
-  result[0] = kernel[0]                                    # C
-  result[1] = 1 + (iH + 2*pH - (((kH-1) * dH) + 1) div sH) # H
-  result[2] = 1 + (iW + 2*pW - (((kW-1) * dW) + 1) div sW) # W
+  result[0] = kernel[0]                                     # C
+  result[1] = 1 + (iH + 2*pH - (((kH-1) * dH) + 1)) div sH  # H
+  result[2] = 1 + (iW + 2*pW - (((kW-1) * dW) + 1)) div sW  # W
 
 proc out_shape_maxpool2d(in_shape: array[3, int], kernel, padding, strides: tuple[h, w: int]): array[3, int] {.noInit.}=
 

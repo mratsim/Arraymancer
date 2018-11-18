@@ -12,7 +12,8 @@ requires "nim >= 0.19.0",
   "nimcl >= 0.1.3",
   "clblast",
   "stb_image",
-  "zip"
+  "zip",
+  "untar"
 
 ## Install files
 srcDir = "src"

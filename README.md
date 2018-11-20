@@ -16,7 +16,7 @@ Here is a preview of Arraymancer syntax.
 
 ### Tensor creation and slicing
 ```Nim
-import math, arraymancer, future
+import math, arraymancer, sugar
 
 const
     x = @[1, 2, 3, 4, 5]

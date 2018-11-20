@@ -170,7 +170,7 @@ template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typ
   tensorCpu(shape, t)
   result.storage.Fdata = newSeqWith(t.size, T(rand(max_or_range))) # Due to automatic converter (float32 -> float64), we must force T #68
 
-proc randomTensor*[T:SomeReal](shape: varargs[int], max: T): Tensor[T] {.noInit.} =
+proc randomTensor*[T:SomeFloat](shape: varargs[int], max: T): Tensor[T] {.noInit.} =
   ## Creates a new float Tensor filled with values between 0 and max.
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
@@ -221,7 +221,7 @@ proc randomNormal(mean = 0.0, std = 1.0): float =
     valid = false
     return rho*sin(2.0*PI*x)*std+mean
 
-proc randomNormalTensor*[T:SomeReal](shape: varargs[int], mean:T = 0, std:T = 1): Tensor[T] {.noInit.} =
+proc randomNormalTensor*[T:SomeFloat](shape: varargs[int], mean:T = 0, std:T = 1): Tensor[T] {.noInit.} =
   ## Creates a new Tensor filled with values in the normal distribution
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``

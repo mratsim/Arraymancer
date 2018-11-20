@@ -28,7 +28,7 @@ template cuda_assign_binding(kernel_name: string, binding_name: untyped)=
   # The "*" in '*8 is needed to remove the pointer *
 
   # We create an new identifier on the fly with backticks
-  proc `binding_name`[T: SomeReal](
+  proc `binding_name`[T: SomeFloat](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
     dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
@@ -72,7 +72,7 @@ template cuda_assign_glue*(
 
   cuda_assign_binding(kernel_name, binding_name)
 
-template cuda_assign_call*[T: SomeReal](
+template cuda_assign_call*[T: SomeFloat](
   kernel_name: untyped, destination: var CudaTensor[T], source: CudaTensor[T]): untyped =
   ## Does the heavy-lifting to format the tensors for the cuda call
   #
@@ -103,7 +103,7 @@ template cuda_binary_binding(kernel_name: string, binding_name: untyped)=
   # The "*" in '*8 is needed to remove the pointer *
 
   # We create an new identifier on the fly with backticks
-  proc `binding_name`[T: SomeReal](
+  proc `binding_name`[T: SomeFloat](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
     dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
@@ -155,7 +155,7 @@ template cuda_binary_glue*(
   cuda_binary_binding(kernel_name, binding_name)
 
 
-template cuda_binary_call*[T: SomeReal](
+template cuda_binary_call*[T: SomeFloat](
   kernel_name: untyped, destination: var CudaTensor[T], a, b: CudaTensor[T]): untyped =
   ## Does the heavy-lifting to format the tensors for the cuda call
   #
@@ -190,7 +190,7 @@ template cuda_rscal_binding(kernel_name: string, binding_name: untyped)=
   # The "*" in '*8 is needed to remove the pointer *
 
   # We create an new identifier on the fly with backticks
-  proc `binding_name`[T: SomeReal](
+  proc `binding_name`[T: SomeFloat](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
     dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
@@ -238,7 +238,7 @@ template cuda_rscal_glue*(
   cuda_rscal_binding(kernel_name, binding_name)
 
 
-template cuda_rscal_call*[T: SomeReal](
+template cuda_rscal_call*[T: SomeFloat](
   kernel_name: untyped, destination: var CudaTensor[T], source: CudaTensor[T], beta: T): untyped =
   ## Does the heavy-lifting to format the tensors for the cuda call
   #
@@ -271,7 +271,7 @@ template cuda_lscal_binding(kernel_name: string, binding_name: untyped)=
   # The "*" in '*8 is needed to remove the pointer *
 
   # We create an new identifier on the fly with backticks
-  proc `binding_name`[T: SomeReal](
+  proc `binding_name`[T: SomeFloat](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
     dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
@@ -318,7 +318,7 @@ template cuda_lscal_glue*(
   cuda_lscal_binding(kernel_name, binding_name)
 
 
-template cuda_lscal_call*[T: SomeReal](
+template cuda_lscal_call*[T: SomeFloat](
   kernel_name: untyped, destination: var CudaTensor[T], alpha: T, source: CudaTensor[T]): untyped =
   ## Does the heavy-lifting to format the tensors for the cuda call
   #
@@ -349,7 +349,7 @@ template cuda_assignscal_binding(kernel_name: string, binding_name: untyped)=
   # The "*" in '*8 is needed to remove the pointer *
 
   # We create an new identifier on the fly with backticks
-  proc `binding_name`[T: SomeReal](
+  proc `binding_name`[T: SomeFloat](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
     dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
@@ -389,7 +389,7 @@ template cuda_assignscal_glue*(
 
   cuda_assignscal_binding(kernel_name, binding_name)
 
-template cuda_assignscal_call*[T: SomeReal](
+template cuda_assignscal_call*[T: SomeFloat](
   kernel_name: untyped, destination: var CudaTensor[T], val: T): untyped =
   ## Does the heavy-lifting to format the tensors for the cuda call
   #

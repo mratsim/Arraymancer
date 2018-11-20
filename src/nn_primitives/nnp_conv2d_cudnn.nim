@@ -17,7 +17,7 @@ import  ./backend/cudnn,
         ../tensor/tensor,
         ../tensor/private/p_init_cuda # TODO: it might be worth it to export newCudaTensor
 
-proc conv2d*[T: SomeReal](input, kernel, bias: CudaTensor[T],
+proc conv2d*[T: SomeFloat](input, kernel, bias: CudaTensor[T],
                 padding: SizeHW = [0,0],
                 strides, dilation: SizeHW = [1,1]): CudaTensor[T] {.noInit.}=
   ## Input:

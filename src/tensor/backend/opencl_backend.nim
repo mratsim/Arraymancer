@@ -46,7 +46,7 @@ proc deallocCl*[T](p: ref[ptr UncheckedArray[T]]) {.noSideEffect.}=
 # ##############################################################
 # # Base ClStorage type
 
-proc newClStorage*[T: SomeReal](length: int): ClStorage[T] =
+proc newClStorage*[T: SomeFloat](length: int): ClStorage[T] =
   result.Flen = length
   new(result.Fref_tracking, deallocCl)
   result.Fdata = clMalloc[T](result.Flen)
@@ -61,7 +61,7 @@ type
     # TODO: finalizer
     # or replace by a distinct type with a destructor
 
-  ClTensorLayout [T: SomeReal] = object
+  ClTensorLayout [T: SomeFloat] = object
     ## Mimicks CudaTensor
     ## Metadata stored on GPU or Accelerators
 
@@ -72,7 +72,7 @@ type
     data*: ptr T              # Data on OpenCL device
     len*: cint                # Number of elements allocated in memory
 
-proc layoutOnDevice*[T:SomeReal](t: ClTensor[T]): ClTensorLayout[T] =
+proc layoutOnDevice*[T:SomeFloat](t: ClTensor[T]): ClTensorLayout[T] =
   ## Store a ClTensor shape, strides, etc information on the GPU
   #
   # TODO: instead of storing pointers to shape/stride/etc that are passed to each kernel

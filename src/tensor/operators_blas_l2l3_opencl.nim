@@ -7,7 +7,7 @@ import  ./data_structure,
         ./private/[p_init_opencl, p_checks]
 
 
-template l1l2_blas_Impl(T: typedesc[SomeReal], clblast_gemv_proc, clblast_gemm_proc: untyped): untyped =
+template l1l2_blas_Impl(T: typedesc[SomeFloat], clblast_gemv_proc, clblast_gemm_proc: untyped): untyped =
   proc openCL_MV_y_eq_aAx_p_by(
     alpha: T, a, x: ClTensor[T],
     beta: T, y: var ClTensor[T]) =
@@ -77,7 +77,7 @@ template l1l2_blas_Impl(T: typedesc[SomeReal], clblast_gemv_proc, clblast_gemm_p
 l1l2_blas_Impl(float32, clblastSgemv, clblastSgemm)
 l1l2_blas_Impl(float64, clblastDgemv, clblastDgemm)
 
-proc `*`*[T: SomeReal](a, b: ClTensor[T]): ClTensor[T] =
+proc `*`*[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T] =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector) on CUDA
 
   if a.rank == 2 and b.rank == 2:

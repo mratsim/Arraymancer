@@ -31,7 +31,7 @@ proc elwise_div*[T: Someinteger](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Element-wise division
   map2_inline(a, b, x div y)
 
-proc elwise_div*[T: SomeReal](a, b: Tensor[T]): Tensor[T] {.noInit.} =
+proc elwise_div*[T: SomeFloat](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Element-wise division
   map2_inline(a, b, x / y)
 
@@ -39,23 +39,23 @@ proc melwise_div*[T: Someinteger](a: var Tensor[T], b: Tensor[T]) =
   ## Element-wise division (in-place)
   a.apply2_inline(b, x div y)
 
-proc melwise_div*[T: SomeReal](a: var Tensor[T], b: Tensor[T]) =
+proc melwise_div*[T: SomeFloat](a: var Tensor[T], b: Tensor[T]) =
   ## Element-wise division (in-place)
   a.apply2_inline(b, x / y)
 
-proc reciprocal*[T: SomeReal](t: Tensor[T]): Tensor[T] {.noInit.} =
+proc reciprocal*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Return a tensor with the reciprocal 1/x of all elements
   t.map_inline(1.T/x)
 
-proc mreciprocal*[T: SomeReal](t: var Tensor[T]) =
+proc mreciprocal*[T: SomeFloat](t: var Tensor[T]) =
   ## Apply the reciprocal 1/x in-place to all elements of the Tensor
   t.apply_inline(1.T/x)
 
-proc negate*[T: SomeSignedInt|SomeReal](t: Tensor[T]): Tensor[T] {.noInit.} =
+proc negate*[T: SomeSignedInt|SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Return a tensor with all elements negated (10 -> -10)
   t.map_inline(-x)
 
-proc mnegate*[T: SomeSignedInt|SomeReal](t: var Tensor[T]) =
+proc mnegate*[T: SomeSignedInt|SomeFloat](t: var Tensor[T]) =
   ## Negate in-place all elements of the tensor (10 -> -10)
   t.apply_inline(-x)
 

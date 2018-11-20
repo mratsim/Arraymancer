@@ -70,12 +70,12 @@ proc classic_max_sumexp[T](t: Tensor[T], axis: int): Tensor[tuple[max:T, sumexp:
     result = result.unsqueeze(0)
 
 
-proc streaming_logsumexp[T: SomeReal](t: Tensor[T]): T =
+proc streaming_logsumexp[T: SomeFloat](t: Tensor[T]): T =
   # 1 pass but branching
   let (max, sumexp) = t.streaming_max_sumexp
   result = max + ln(sumexp)
 
-proc classic_logsumexp[T: SomeReal](t: Tensor[T]): T =
+proc classic_logsumexp[T: SomeFloat](t: Tensor[T]): T =
   # 2 pass but no branching
   let max = t.max # first loop over data
 
@@ -91,7 +91,7 @@ proc classic_logsumexp[T: SomeReal](t: Tensor[T]): T =
 
   result = max + ln(result)
 
-proc classic_logsumexp_v2[T: SomeReal](t: Tensor[T]): T =
+proc classic_logsumexp_v2[T: SomeFloat](t: Tensor[T]): T =
   # 2 pass no branching
   let (max, sumexp) = t.classic_max_sumexp
   result = max + ln(sumexp)

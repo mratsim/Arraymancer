@@ -38,7 +38,7 @@ proc read_csv*[T: SomeNumber|bool|string](
     parser = proc(x:string): T = x.parseInt.T
   elif T is SomeUnsignedInt:
     parser = proc(x:string): T = x.parseUInt.T
-  elif T is SomeReal:
+  elif T is SomeFloat:
     parser = proc(x:string): T = x.parseFloat.T
   elif T is bool:
     parser = parseBool

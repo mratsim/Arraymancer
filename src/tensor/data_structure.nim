@@ -47,7 +47,7 @@ type
     offset*: int
     storage*: CpuStorage[T]
 
-  CudaStorage*[T: SomeReal] = object
+  CudaStorage*[T: SomeFloat] = object
     ## Opaque seq-like structure for storage on the Cuda backend.
     ##
     ## Nim garbage collector will automatically ask cuda to clear GPU memory if data becomes unused.
@@ -57,7 +57,7 @@ type
     Fdata*: ptr UncheckedArray[T]
     Fref_tracking*: ref[ptr UncheckedArray[T]] # We keep ref tracking for the GC in a separate field to avoid double indirection.
 
-  CudaTensor*[T: SomeReal] = object
+  CudaTensor*[T: SomeFloat] = object
     ## Tensor data structure stored on Nvidia GPU (Cuda)
     ##   - ``shape``: Dimensions of the CudaTensor
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
@@ -73,13 +73,13 @@ type
     offset*: int
     storage*: CudaStorage[T]
 
-  ClStorage*[T: SomeReal] = object
+  ClStorage*[T: SomeFloat] = object
     ## Opaque seq-like structure for storage on the OpenCL backend.
     Flen*: int
     Fdata*: ptr UncheckedArray[T]
     Fref_tracking*: ref[ptr UncheckedArray[T]] # We keep ref tracking for the GC in a separate field to avoid double indirection.
 
-  ClTensor*[T: SomeReal] = object
+  ClTensor*[T: SomeFloat] = object
     ## Tensor data structure stored on OpenCL (CPU, GPU, FPGAs or other accelerators)
     ##   - ``shape``: Dimensions of the CudaTensor
     ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.

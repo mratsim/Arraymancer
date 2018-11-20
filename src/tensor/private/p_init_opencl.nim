@@ -17,7 +17,7 @@ import  ../backend/opencl_backend,
         ../data_structure
 
 
-template tensorOpenCL[T: SomeReal](
+template tensorOpenCL[T: SomeFloat](
   shape: typed,
   layout: OrderType = rowMajor,
   result: var ClTensor[T])=
@@ -27,7 +27,7 @@ template tensorOpenCL[T: SomeReal](
   result.offset = 0
   result.storage = newClStorage[T](result.size)
 
-proc newClTensor*[T: SomeReal](
+proc newClTensor*[T: SomeFloat](
   shape: varargs[int],
   layout: OrderType = rowMajor): ClTensor[T] {.noInit.}=
   ## Internal proc
@@ -36,7 +36,7 @@ proc newClTensor*[T: SomeReal](
 
   tensorOpenCL(shape, layout, result)
 
-proc newClTensor*[T: SomeReal](
+proc newClTensor*[T: SomeFloat](
   shape: MetadataArray,
   layout: OrderType = rowMajor): ClTensor[T] {.noInit.}=
 

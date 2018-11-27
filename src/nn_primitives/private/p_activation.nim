@@ -14,5 +14,5 @@
 
 import math
 
-proc sigmoid*[T: SomeReal](x: T): T {.inline, noSideEffect.} =
+proc sigmoid*[T: SomeFloat](x: T): T {.inline, noSideEffect.} =
   1 / (1 + exp(-x))

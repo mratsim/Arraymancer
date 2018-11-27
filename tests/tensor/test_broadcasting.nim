@@ -205,7 +205,7 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
 
   test "Implicit broadcasting - Sigmoid 1 ./ (1 .+ exp(-x)":
     block:
-      proc sigmoid[T: SomeReal](t: Tensor[T]): Tensor[T]=
+      proc sigmoid[T: SomeFloat](t: Tensor[T]): Tensor[T]=
         1.T ./ (1.T .+ exp(-t))
 
       let a = newTensor[float32]([2,2])

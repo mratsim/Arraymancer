@@ -56,11 +56,11 @@ proc mean*[T: SomeInteger](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}
   ## Warning ⚠: Since input is integer, output will also be integer (using integer division)
   t.sum(axis) div t.shape[axis].T
 
-proc mean*[T: SomeReal](t: Tensor[T]): T {.inline.}=
+proc mean*[T: SomeFloat](t: Tensor[T]): T {.inline.}=
   ## Compute the mean of all elements
   t.sum / t.size.T
 
-proc mean*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
+proc mean*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
   ## Compute the mean along an axis
   t.sum(axis) / t.shape[axis].T
 
@@ -86,7 +86,7 @@ proc max*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
     for ex, ey in mzip(x,y):
       ex = max(ex,ey)
 
-proc variance*[T: SomeReal](t: Tensor[T]): T =
+proc variance*[T: SomeFloat](t: Tensor[T]): T =
   ## Compute the sample variance of all elements
   ## The normalization is by (n-1), also known as Bessel's correction,
   ## which partially correct the bias of estimating a population variance from a sample of this population.
@@ -102,7 +102,7 @@ proc variance*[T: SomeReal](t: Tensor[T]): T =
     x += y
   result /= (t.size-1).T
 
-proc variance*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
+proc variance*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
   ## Compute the variance of all elements
   ## The normalization is by the (n-1), like in the formal definition
   let mean = t.mean(axis)
@@ -118,12 +118,12 @@ proc variance*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
     x += y
   result /= (t.shape[axis]-1).T
 
-proc std*[T: SomeReal](t: Tensor[T]): T {.inline.} =
+proc std*[T: SomeFloat](t: Tensor[T]): T {.inline.} =
   ## Compute the standard deviation of all elements
   ## The normalization is by the (n-1), like in the formal definition
   sqrt(t.variance())
 
-proc std*[T: SomeReal](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.} =
+proc std*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.} =
   ## Compute the standard deviation of all elements
   ## The normalization is by the (n-1), like in the formal definition
   sqrt(t.variance(axis))

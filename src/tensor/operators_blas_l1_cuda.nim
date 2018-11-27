@@ -25,7 +25,7 @@ include ./private/incl_accessors_cuda,
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
 
-proc dot*[T: SomeReal](a, b: CudaTensor[T]): T {.inline.}=
+proc dot*[T: SomeFloat](a, b: CudaTensor[T]): T {.inline.}=
   ## Vector to Vector dot (scalar) product
   when compileOption("boundChecks"):
     check_dot_prod(a,b)
@@ -36,7 +36,7 @@ proc dot*[T: SomeReal](a, b: CudaTensor[T]): T {.inline.}=
 
 cuda_assign_glue("cuda_mAdd", "mAddOp", cuda_mAdd)
 
-proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
+proc `+=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## CudaTensor in-place addition
 
   when compileOption("boundChecks"):
@@ -48,7 +48,7 @@ proc `+=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
 
 cuda_binary_glue("cuda_Add", "AddOp", cuda_Add)
 
-proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.}=
+proc `+`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.}=
   ## CudaTensor addition
 
   when compileOption("boundChecks"):
@@ -59,7 +59,7 @@ proc `+`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.}=
 
 cuda_assign_glue("cuda_mSub", "mSubOp", cuda_mSub)
 
-proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
+proc `-=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## CudaTensor in-place substraction
 
   when compileOption("boundChecks"):
@@ -72,7 +72,7 @@ proc `-=`*[T: SomeReal](a: var CudaTensor[T], b: CudaTensor[T]) =
 
 cuda_binary_glue("cuda_Sub", "SubOp", cuda_Sub)
 
-proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+proc `-`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   ## CudaTensor substraction
 
   when compileOption("boundChecks"):
@@ -81,7 +81,7 @@ proc `-`*[T: SomeReal](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   result = newCudaTensor[T](a.shape)
   cuda_binary_call(cuda_Sub, result, a, b)
 
-proc `*=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
+proc `*=`*[T:SomeFloat](t: var CudaTensor[T]; a: T) {.inline.}=
   ## CudaTensor inplace multiplication by a scalar
 
   # We multiply all elements of the CudaTensor regardless of shape/strides
@@ -89,7 +89,7 @@ proc `*=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
   # Hence we use the whole allocated length and a stride of 1
   cublas_scal(t.storage.Flen, a, t.get_data_ptr, 1)
 
-proc `*`*[T:SomeReal](a: T, t: CudaTensor[T]): CudaTensor[T] {.noInit, inline.}=
+proc `*`*[T:SomeFloat](a: T, t: CudaTensor[T]): CudaTensor[T] {.noInit, inline.}=
   ## CudaTensor multiplication by a scalar
 
   # TODO replace by a custom kernel
@@ -98,19 +98,19 @@ proc `*`*[T:SomeReal](a: T, t: CudaTensor[T]): CudaTensor[T] {.noInit, inline.}=
   result = t.clone()
   result *= a
 
-proc `*`*[T:SomeReal](t: CudaTensor[T], a: T): CudaTensor[T] {.noInit, inline.}=
+proc `*`*[T:SomeFloat](t: CudaTensor[T], a: T): CudaTensor[T] {.noInit, inline.}=
   ## CudaTensor multiplication by a scalar
   a * t
 
 cuda_assignscal_glue("cuda_mscalDiv","mscalDivOp", cuda_mscalDiv)
 
-proc `/=`*[T:SomeReal](t: var CudaTensor[T]; a: T) {.inline.}=
+proc `/=`*[T:SomeFloat](t: var CudaTensor[T]; a: T) {.inline.}=
   ## CudaTensor in-place division by a scalar
   cuda_assignscal_call(cuda_mscalDiv, t, val)
 
 cuda_rscal_glue("cuda_rscalDiv","RscalDiv", cuda_rscalDiv)
 
-proc `/`*[T: SomeReal](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
+proc `/`*[T: SomeFloat](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
   ## CudaTensor division by a scalar
   result = newCudaTensor[T](t.shape)
   cuda_rscal_call(cuda_rscalDiv, result, t, val)

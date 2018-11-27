@@ -37,7 +37,7 @@ import
 # Also see here for counterarg: https://software.intel.com/en-us/forums/intel-moderncode-for-parallel-architectures/topic/635075
 # Intel CPUs prefetcher can maintain 32 streams
 
-proc gru_cell_inference*[T: SomeReal](
+proc gru_cell_inference*[T: SomeFloat](
   input: Tensor[T],
   W3, U3,
   bW3, bU3: Tensor[T],
@@ -87,7 +87,7 @@ proc gru_cell_inference*[T: SomeReal](
   apply3_inline(hidden, W3x[_, sz], n):
     (1 - y) * z + y * x
 
-proc gru_cell_forward*[T: SomeReal](
+proc gru_cell_forward*[T: SomeFloat](
   input,
   W3, U3,
   bW3, bU3: Tensor[T],
@@ -145,7 +145,7 @@ proc gru_cell_forward*[T: SomeReal](
   apply3_inline(hidden, z, n):
     (1 - y) * z + y * x
 
-proc gru_cell_backward*[T: SomeReal](
+proc gru_cell_backward*[T: SomeFloat](
   dx, dh, dW3, dU3,          # input and weights gradients
   dbW3, dbU3: var Tensor[T], # bias gradient
   dnext: Tensor[T],          # gradient flowing back from the next hidden state
@@ -191,7 +191,7 @@ proc gru_cell_backward*[T: SomeReal](
   apply3_inline(dh, dnext, z):
     x + y * z
 
-proc gru_inference*[T: SomeReal](
+proc gru_inference*[T: SomeFloat](
   input: Tensor[T],
   W3s0, W3sN: Tensor[T],
   U3s, bW3s, bU3s: Tensor[T],
@@ -260,7 +260,7 @@ proc gru_inference*[T: SomeReal](
       )
       output[timestep, _, _] = hiddenl.unsqueeze(0)
 
-proc gru_forward*[T: SomeReal](
+proc gru_forward*[T: SomeFloat](
   input: Tensor[T],
   W3s0, W3sN: Tensor[T],
   U3s, bW3s, bU3s: Tensor[T],
@@ -373,7 +373,7 @@ proc gru_forward*[T: SomeReal](
       apply2_inline(n_lts, n_tmp):
         y
 
-proc gru_backward*[T: SomeReal](
+proc gru_backward*[T: SomeFloat](
   dInput, dHidden0,                    # Input and starting hidden state gradient
   dW3s0, dW3sN,                        # Weight tensor
   dU3s, dbW3s, dbU3s: var Tensor[T],   # Weights & biases gradients
@@ -504,4 +504,3 @@ proc gru_backward*[T: SomeReal](
 
       tmp = dbU3s[layer, _, _]
       tmp .+= dbU3s_lts.unsqueeze(0)
-

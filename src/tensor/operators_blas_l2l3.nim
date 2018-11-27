@@ -21,7 +21,7 @@ import  ./private/p_checks,
         ./data_structure,
         ./init_cpu
 
-proc gemv*[T: SomeReal](
+proc gemv*[T: SomeFloat](
           alpha: T,
           A: Tensor[T],
           x: Tensor[T],
@@ -55,7 +55,7 @@ proc gemv*[T: SomeInteger](
 
   naive_gemv_fallback(alpha, A, x, beta, y)
 
-proc gemm*[T: SomeReal](
+proc gemm*[T: SomeFloat](
   alpha: T, A, B: Tensor[T],
   beta: T, C: var Tensor[T]) {.inline.}=
   # Matrix: C = alpha A matmul B + beta C

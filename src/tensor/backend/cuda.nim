@@ -34,7 +34,7 @@ proc deallocCuda*[T](p: ref[ptr T]) {.noSideEffect.}=
 # ##############################################################
 # # Base CudaStorage type
 
-proc newCudaStorage*[T: SomeReal](length: int): CudaStorage[T] {.noSideEffect.}=
+proc newCudaStorage*[T: SomeFloat](length: int): CudaStorage[T] {.noSideEffect.}=
   result.Flen = length
   new(result.Fref_tracking, deallocCuda)
   result.Fdata = cast[ptr UncheckedArray[T]](cudaMalloc[T](result.Flen))
@@ -72,7 +72,7 @@ type
   CudaLayoutArray = ref[ptr cint]
 
 
-  CudaTensorLayout [T: SomeReal] = object
+  CudaTensorLayout [T: SomeFloat] = object
     ## Mimicks CudaTensor
     ## This will be stored on GPU in the end
     ## Goal is to avoids clumbering proc with cudaMemcpyshape, strides, offset, data, rank, len
@@ -87,7 +87,7 @@ type
     data*: ptr T              # Data on Cuda device
     len*: cint                # Number of elements allocated in memory
 
-proc layoutOnDevice*[T:SomeReal](t: CudaTensor[T]): CudaTensorLayout[T] {.noSideEffect.}=
+proc layoutOnDevice*[T:SomeFloat](t: CudaTensor[T]): CudaTensorLayout[T] {.noSideEffect.}=
   ## Store a CudaTensor shape, strides, etc information on the GPU
   #
   # TODO: instead of storing pointers to shape/stride/etc that are passed to each kernel

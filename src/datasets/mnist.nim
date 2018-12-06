@@ -50,7 +50,7 @@
 
 
 import  streams, endians, os, httpClient, strformat, future, sequtils, ospaths,
-        ../tensor/tensor, ../io/io_stream_readers,
+        ../tensor/tensor, ../io/io_stream_readers, ./util,
         zip/gzipfiles
 
 type mnist = tuple[
@@ -141,9 +141,9 @@ proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noInit.}=
   let stream = newGzFileStream(labelsPath, mode = fmRead)
   return read_mnist_labels(stream)
 
-func mnistFilesPath(cachedir: string): array[4, string] =
+func mnistFilesPath(cache_dir: string): array[4, string] =
   for idx, val in result.mpairs:
-    val = cachedir / MNISTFileNames[idx]
+    val = cache_dir / MNISTFileNames[idx]
 
 proc download_mnist_files(files: array[4, string]) =
   ## Download the MNIST files from http://yann.lecun.com/exdb/mnist/
@@ -179,17 +179,15 @@ proc load_mnist*(cache = true): mnist =
   ## - load into a tuple
   ## - delete the downloaded files if cache is false
 
-  let
-    cache_home = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache").string
-    cachedir = cache_home / "arraymancer"
-    files = cachedir.mnistFilesPath
+  let 
+    cache_dir = get_cache_dir()
+    files = cache_dir.mnistFilesPath
 
   if not files.all(x => x.existsFile):
-    discard existsOrCreateDir(cache_home)
-    discard existsOrCreateDir(cachedir)
+    create_cache_dirs_if_necessary()
     download_mnist_files(files)
 
-  # Trai
+  # Training
   result.train_images = read_mnist_images(files[0])
   result.train_labels = read_mnist_labels(files[1])
 

@@ -10,12 +10,12 @@ import
 func whc_to_chw[T](img: Tensor[T]): Tensor[T] {.inline.}=
   ## Convert image from Width x Height x Channel convention
   ## to the Channel x Height x Width convention.
-  img.permute(2, 1, 0)
+  img.permute(2, 0, 1)
 
 func chw_to_whc[T](img: Tensor[T]): Tensor[T] {.inline.}=
   ## Convert image from Channel x Height x Width convention
   ## to the Width x Height x Channel convention.
-  img.permute(2, 1, 0)
+  img.permute(1, 2, 0)
 
 proc read_image*(filepath: string): Tensor[uint8] =
   ## Read an image file and loads it into a Tensor[uint8] of shape
@@ -34,7 +34,7 @@ proc read_image*(filepath: string): Tensor[uint8] =
   let desired_channels = 0 # Channel autodetection
 
   let raw_pixels = load(filepath, width, height, channels, desired_channels)
-  result = raw_pixels.toTensor.reshape(width, height, channels).whc_to_chw
+  result = raw_pixels.toTensor.reshape(height, width, channels).whc_to_chw
 
 proc read_image*(buffer: seq[byte]): Tensor[uint8] =
   ## Read an image from a buffer and loads it into a Tensor[uint8] of shape
@@ -62,8 +62,8 @@ template gen_write_image(proc_name: untyped): untyped {.dirty.}=
     var success = false
     let
       img = img.chw_to_whc.asContiguous(rowMajor, force = true)
-      w = img.shape[0]
-      h = img.shape[1]
+      h = img.shape[0]
+      w = img.shape[1]
       c = img.shape[2]
     success = proc_name(filepath, w, h, c, img.storage.Fdata)
 
@@ -79,8 +79,8 @@ proc write_jpg*(img: Tensor[uint8], filepath: string, quality = 100) =
   var success = false
   let
     img = img.chw_to_whc.asContiguous(rowMajor, force = true)
-    w = img.shape[0]
-    h = img.shape[1]
+    h = img.shape[0]
+    w = img.shape[1]
     c = img.shape[2]
   success = write_jpg(filepath, w, h, c, img.storage.Fdata, quality)
 

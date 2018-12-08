@@ -53,7 +53,7 @@ import  streams, endians, os, httpClient, strformat, future, sequtils, ospaths,
         ../tensor/tensor, ../io/io_stream_readers, ./util,
         zip/gzipfiles
 
-type mnist = tuple[
+type Mnist = tuple[
   train_images: Tensor[uint8],
   test_images: Tensor[uint8],
   train_labels: Tensor[uint8],
@@ -160,7 +160,7 @@ proc delete_mnist_files(files: array[4, string]) =
   for f in files:
     discard tryRemoveFile(f)
 
-proc load_mnist*(cache = true): mnist =
+proc load_mnist*(cache = true): Mnist =
   ## Loads the MNIST dataset into a tuple with fields:
   ## - train_images
   ## - train_labels
@@ -179,7 +179,7 @@ proc load_mnist*(cache = true): mnist =
   ## - load into a tuple
   ## - delete the downloaded files if cache is false
 
-  let 
+  let
     cache_dir = get_cache_dir()
     files = cache_dir.mnistFilesPath
 

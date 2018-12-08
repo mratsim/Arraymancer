@@ -160,7 +160,7 @@ proc delete_mnist_files(files: array[4, string]) =
   for f in files:
     discard tryRemoveFile(f)
 
-proc load_mnist*(cache = true): Mnist =
+proc load_mnist*(cache: static bool = true): Mnist =
   ## Loads the MNIST dataset into a tuple with fields:
   ## - train_images
   ## - train_labels

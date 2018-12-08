@@ -17,7 +17,7 @@ import  httpclient, zip/gzipfiles, strformat, os, strutils,
         ./util, ../tensor/tensor,
         untar
 
-let
+const
   folder_name = "aclImdb"
   file_name = fmt"{folder_name}_v1.tar.gz"
 
@@ -86,7 +86,7 @@ proc read_imdb(path: string): Imdb =
       result.test_labels = labels.toTensor()
 
 
-proc load_imdb*(cache = true): Imdb =
+proc load_imdb*(cache: static bool = true): Imdb =
   let cache_dir = get_cache_dir()
 
   if not dirExists( cache_dir / folder_name):
@@ -95,3 +95,6 @@ proc load_imdb*(cache = true): Imdb =
     extract_and_delete_tgz(cache_dir, file_name)
 
   result = read_imdb(cache_dir / folder_name)
+
+  if not cache:
+    removeDir(cache_dir / folder_name)

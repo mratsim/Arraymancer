@@ -28,7 +28,7 @@ type imdb = tuple[
     test_labels: Tensor[int],
 ]
 
-proc debug(msg: string) =
+template debug(msg: string) =
     when defined(debug):
         echo msg
 

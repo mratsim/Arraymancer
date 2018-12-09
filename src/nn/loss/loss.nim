@@ -17,8 +17,8 @@ import  ../../tensor/tensor,
         typetraits
 
 
-type Loss* [TT] = ref object of Gate[TT]
+type Loss*[TT] = ref object of Gate[TT]
   target*: TT
 
-type SparseLoss* [TT] = ref object of Gate[TT]
-  target*: Tensor[int]
+type SparseLoss*[TT; Idx: SomeNumber or byte or char or enum] = ref object of Gate[TT]
+  target*: Tensor[Idx]

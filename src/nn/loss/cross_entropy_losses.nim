@@ -69,12 +69,12 @@ gen_cross_entropy_loss SigmoidCrossEntropyLoss, sigmoid_cross_entropy, sigmoid_c
 gen_cross_entropy_loss SoftmaxCrossEntropyLoss, softmax_cross_entropy, softmax_cross_entropy_backward
 
 
-type SparseSoftmaxCrossEntropyLoss* {.final.} [TT] = ref object of SparseLoss[TT]
+type SparseSoftmaxCrossEntropyLoss*{.final.}[TT; Idx: SomeNumber or byte or char or enum] = ref object of SparseLoss[TT, Idx]
   cache: Variable[TT]
   # nb_grads, from Gate
   # target, from Loss
 
-proc forward[TT](self: SparseSoftmaxCrossEntropyLoss[TT], a: Variable[TT], target: Tensor[int]): Variable[TT] {.inline.}=
+proc forward[TT, Idx](self: SparseSoftmaxCrossEntropyLoss[TT, Idx], a: Variable[TT], target: Tensor[Idx]): Variable[TT] {.inline.}=
   # We expect a in shape [batch_size, features]
 
   new result
@@ -83,14 +83,16 @@ proc forward[TT](self: SparseSoftmaxCrossEntropyLoss[TT], a: Variable[TT], targe
   # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
   result.value = [sparse_softmax_crossentropy(a.value, target)].toTensor
 
-method backward*[TT](self: SparseSoftmaxCrossEntropyLoss[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+method backward*[TT, Idx](self: SparseSoftmaxCrossEntropyLoss[TT, Idx], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
   result = newSeqUninit[TT](1)
   result[0] = sparse_softmax_crossentropy_backward(gradient, self.cache.value, self.target)
 
-proc sparse_softmax_crossentropy*[TT](a: Variable[TT], target: Tensor[int]): Variable[TT] =
+proc sparse_softmax_crossentropy*[TT; Idx: SomeNumber or byte or char or enum](
+        a: Variable[TT],
+        target: Tensor[Idx]): Variable[TT] =
   # Gate
-  var gate: SparseSoftmaxCrossEntropyLoss[TT]
+  var gate: SparseSoftmaxCrossEntropyLoss[TT, Idx]
   new gate
 
   # Node

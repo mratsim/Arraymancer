@@ -77,6 +77,8 @@ type
     W3s0*, W3sN*: Variable[TT]
     U3s*: Variable[TT]
     bW3s*, bU3s*: Variable[TT]
+  EmbeddingLayer*[TT] = object
+    weight*: Variable[TT]
 
 proc hash*(x: NimNode): Hash =
   assert x.kind == nnkIdent

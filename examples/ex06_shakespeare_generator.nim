@@ -67,18 +67,25 @@ func strToTensor(x: TaintedString): Tensor[char] =
 # and then decoded back into text.
 # So we need to train the encoder, the internal representation and the decoder.
 
-type ShakespeareNet[TT] = object
-  # Embedding weight = Encoder
-  encoder_w: Variable[TT]
+type
+  ## The following is normally unnecessary when using the NN mini-lang
+  LinearLayer[TT] = object
+    weight: Variable[TT]
+    bias: Variable[TT]
+  GRULayer[TT] = object
+    W3s0, W3sN: Variable[TT]
+    U3s: Variable[TT]
+    bW3s, bU3s: Variable[TT]
+  EmbeddingLayer[TT] = object
+    weight: Variable[TT]
 
-  # GRU RNN = Internal representation
-  # GRU weights, normally this is hidden from you (see example 5), RNNs are very involved
-  # but without the NN mini-lang I unfortunately need to expose this.
-  gru_W3s0, gru_W3sN, gru_U3s, gru_bW3s, bU3s: Variable[TT]
-
-  # Linear layer weight and bias = Decoder
-  decoder_w: Variable[TT]
-  decoder_b: Variable[TT]
+  ShakespeareNet[TT] = object
+    # Embedding weight = Encoder
+    encoder: EmbeddingLayer[TT]
+    # GRU RNN = Internal representation
+    gru: GRULayer[TT]
+    # Linear layer weight and bias = Decoder
+    decoder: LinearLayer[TT]
 
 template weightInit(shape: varargs[int]): untyped {.dirty.} =
   ## Even though we need to do the initialisation manually
@@ -95,7 +102,7 @@ proc newShakespeareNet[TT](ctx: Context[TT]): ShakespeareNet[TT] =
   # Embedding layer
   #   Input: [SeqLen, BatchSize, VocabSize]
   #   Output: [SeqLen, BatchSize, EmbedSize]
-  result.encoder_w = weightInit(VocabSize, EmbedSize)
+  result.encoder.weight = weightInit(VocabSize, EmbedSize)
 
   # GRU layer
   #   Input:   [SeqLen, BatchSize, EmbedSize]
@@ -105,17 +112,17 @@ proc newShakespeareNet[TT](ctx: Context[TT]): ShakespeareNet[TT] =
   #   HiddenN: [Layers, BatchSize, HiddenSize]
 
   # GRU have 5 weights/biases that can be trained. This initialisation is normally hidden from you.
-  result.gru_W3s0 = weightInit(3 * HiddenSize, EmbedSize)
-  result.gru_W3sN = weightInit(Layers - 1, 3 * HiddenSize, HiddenSize)
-  result.gru_U3s = weightInit(Layers, 3 * HiddenSize, HiddenSize)
-  result.gru_bW3s = weightInit(Layers, 1, 3 * HiddenSize)
-  result.gru_bU3s = weightInit(Layers, 1, 3 * HiddenSize)
+  result.gru.W3s0 = weightInit(            3 * HiddenSize,     EmbedSize)
+  result.gru.W3sN = weightInit(Layers - 1, 3 * HiddenSize,     HiddenSize)
+  result.gru.U3s  = weightInit(    Layers, 3 * HiddenSize,     HiddenSize)
+  result.gru.bW3s = weightInit(    Layers,              1, 3 * HiddenSize)
+  result.gru.bU3s = weightInit(    Layers,              1, 3 * HiddenSize)
 
   # Linear layer
   #   Input: [BatchSize, HiddenSize]
   #   Output: [BatchSize, VocabSize]
-  result.decoder_w = weightInit(VocabSize, HiddenSize)
-  result.decoder_b = weightInit(        1, VocabSize)
+  result.decoder.weight = weightInit(VocabSize, HiddenSize)
+  result.decoder.bias   = weightInit(        1, VocabSize)
 
 # Some helper templates
 template encoder[TT](model: ShakespeareNet[TT], x: Tensor[int]): Variable[TT] =
@@ -221,5 +228,10 @@ proc main() =
   # Create our autograd context that will track deep learning operations applied to tensors.
   let ctx = newContext Tensor[float32]
 
+  # Build our model and initialize its weights
+  let model = ctx.newShakespeareNet()
+
+  # Stochastic Gradient Descent (API will change)
+  let optim = model.optimizerSGD(learning_rate = LearningRate)
 
 main()

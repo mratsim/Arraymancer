@@ -111,7 +111,7 @@ func debugContext(ctx: Context or ContextPtr) =
 
   debugecho "\n######"
   for i, node in ctx.nodes:
-    var s = &"Node {i:>5}: {debugGateName(node.gate):>30} - "
+    var s = &"Node {i:>4}: {debugGateName(node.gate):>25} - "
     if node.parents.len <= 1:
       s &= $node.parents[0].value.shape
     else:
@@ -121,7 +121,7 @@ func debugContext(ctx: Context or ContextPtr) =
           s &= ", "
         s &= $parent.value.shape
       s &= ')'
-    s &= " - Payload: "
+    s &= " ===>> "
     case node.payload.kind
     of pkVar: s &= $node.payload.variable.value.shape
     of pkSeq:
@@ -208,6 +208,8 @@ proc backprop*[TT](v: Variable[TT]) =
   while v.context.len > 0 and v.context.peek.payload.variable != v:
     discard v.context.pop
 
+  v.context.debugContext
+
   # Now, until the context is been all backpropagated through we update
   # each intermediate variables with its accumulated gradient and then pop the node
   # TODO: Count Toward Zero memory optimization:
@@ -218,8 +220,11 @@ proc backprop*[TT](v: Variable[TT]) =
     let curGate = curNode.gate
     let diffs = curGate.backward(curnode.payload)
 
+    echo debugGateName(curGate)
+
     for i, diff in diffs:
       let parent_i = curNode.parents[i]
+      echo &"Parent {i} shape: {$parent_i.value.shape}, gradient shape = {$parent_i.value.shape}, diff shape: {$diff.shape}"
       if parent_i.requires_grad:
         parent_i.grad += diff
 

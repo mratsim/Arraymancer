@@ -160,6 +160,10 @@ func variable*[TT](ctx: Context[TT], value: TT, requires_grad = false): Variable
   result.requires_grad = requires_grad
 
 type CtxAlias[TT] = Context[TT] or ContextPtr[TT]
+  ## Following https://github.com/mratsim/Arraymancer/pull/180
+  ## the CtxAlias used to take a ptr ContextObj instead of a ref
+  ## to reduce stress on the GC, this was reverted, see at the bottom of the file.
+  ## we keep this history. To re-optimise in the future.
 
 func len[TT](ctx: CtxAlias[TT]): int {.inline.}=
   ## Returns the number of operations applied in the context
@@ -241,19 +245,22 @@ func newDiffs*[TT](num: Natural): SmallDiffs[TT] {.inline.} =
 
 # As an optimisation to reduce stress on the GC
 # and expose the acyclic nature of NN graphs
-# the following used to created pointers
+# the following used to create pointers
 # to variables and context, but it seems like
 # when lots of node are created, the refs might point
 # to something wrong.
+#   - Optimisation: https://github.com/mratsim/Arraymancer/pull/180
+#   - Reverted in:  https://github.com/mratsim/Arraymancer/pull/329
+#   - TODO:         https://github.com/mratsim/Arraymancer/issues/302
 
-func weakRef*[TT](v: Variable[TT]): Variable[TT] {.inline.} =
+template weakRef*[TT](v: Variable[TT]): Variable[TT] =
   ## Get a weak/untraced reference to a Variable
   ## This is intended for library writers and Neural Network graphs
   ## to avoid strong cyclic references.
   # cast[VariablePtr[TT]](v)
   v
 
-func weakRef*[TT](ctx: Context[TT]): Context[TT] {.inline.} =
+template weakRef*[TT](ctx: Context[TT]): Context[TT] =
   ## Get a weak/untraced reference to a Variable
   ## This is intended for library writers and Neural Network graphs
   ## to avoid strong cyclic references.

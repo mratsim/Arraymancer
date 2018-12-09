@@ -15,8 +15,7 @@
 # By convention a is the LHS (left-hand side)
 # b is the rhs (right-hand side)
 
-import  ../private/sequninit,
-        ../tensor/tensor,
+import  ../tensor/tensor,
         ./ag_data_structure
 
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
@@ -46,7 +45,7 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents = newSeq[VariablePtr[TT]](2)
+  node.parents = newParents[TT](2)
   node.parents[0] = a.weakRef
   node.parents[1] = b.weakRef
 
@@ -71,7 +70,7 @@ proc forward[TT](self: SubGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}
 
 method backward*[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
-  result = newSeqUninit[TT](2)
+  result = newDiffs[TT](2)
   result[0] = gradient
   result[1] = -gradient
 
@@ -88,7 +87,7 @@ proc `-`*[TT](a, b: Variable[TT]): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](2)
+  node.parents = newParents(2)
   node.parents[0] = a.weakRef
   node.parents[1] = b.weakRef
 

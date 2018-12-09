@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../../tensor/tensor,
+import  ../../tensor/tensor,
         ../../nn_primitives/nn_primitives,
         ../../autograd/autograd,
         ./loss
@@ -37,7 +36,7 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
 
   method backward*[TT](self: LossType[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
     let gradient = payload.variable.grad
-    result = newSeqUninit[TT](1)
+    result = newDiffs[TT](1)
     result[0] = backward_proc(gradient, self.cache.value, self.target)
 
   proc forward_proc*[TT](a: Variable[TT], target: TT): Variable[TT] =
@@ -52,7 +51,7 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
     new node
 
     node.gate = gate
-    node.parents = newSeqUninit[VariablePtr[TT]](1)
+    node.parents = newParents[TT](1)
     node.parents[0] = a.weakRef
 
     a.context.push(node)
@@ -85,7 +84,7 @@ proc forward[TT, Idx](self: SparseSoftmaxCrossEntropyLoss[TT, Idx], a: Variable[
 
 method backward*[TT, Idx](self: SparseSoftmaxCrossEntropyLoss[TT, Idx], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
-  result = newSeqUninit[TT](1)
+  result = newDiffs[TT](1)
   result[0] = sparse_softmax_crossentropy_backward(gradient, self.cache.value, self.target)
 
 proc sparse_softmax_crossentropy*[TT; Idx: SomeNumber or byte or char or enum](
@@ -100,7 +99,7 @@ proc sparse_softmax_crossentropy*[TT; Idx: SomeNumber or byte or char or enum](
   new node
 
   node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](1)
+  node.parents = newParents[TT](1)
   node.parents[0] = a.weakRef
 
   a.context.push(node)

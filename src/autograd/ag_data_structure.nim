@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typetraits, macros, strformat
+import
+  typetraits, macros, strformat,
+  ../private/sequninit
 
 # ############################################################
 #
@@ -64,7 +66,7 @@ type
     ## nor can it delete parent because child refers to it.
 
   VariableObj[TT] = object
-    context*: ContextPtr[TT]
+    context*: Context[TT]
     value*: TT
     grad*: TT
     requires_grad*: bool
@@ -92,7 +94,7 @@ type
     parents*: Parents[TT]
     payload*: Payload[TT]
 
-  Parents[TT] = seq[VariablePtr[TT]]
+  Parents[TT] = seq[Variable[TT]]
   SmallDiffs*[TT] = seq[TT]
 
 # ############################################################
@@ -157,19 +159,21 @@ func variable*[TT](ctx: Context[TT], value: TT, requires_grad = false): Variable
   result.grad = value.zeros_like
   result.requires_grad = requires_grad
 
-func len[TT](ctx: ContextPtr[TT]): int {.inline.}=
+type CtxAlias[TT] = Context[TT] or ContextPtr[TT]
+
+func len[TT](ctx: CtxAlias[TT]): int {.inline.}=
   ## Returns the number of operations applied in the context
   ctx.nodes.len
 
-func push*[TT](ctx: ContextPtr[TT], node: Node[TT]) {.inline.}=
+func push*[TT](ctx: CtxAlias[TT], node: Node[TT]) {.inline.}=
   ## Append a new operation to the context
   if not ctx.no_grad:
     ctx.nodes.add(node)
 
-func peek[TT](ctx: ContextPtr[TT]): Node[TT] {.inline.}=
+func peek[TT](ctx: CtxAlias[TT]): Node[TT] {.inline.}=
   ctx.nodes[ctx.len - 1]
 
-func pop[TT](ctx: ContextPtr[TT]): Node[TT] {.inline.}=
+func pop[TT](ctx: CtxAlias[TT]): Node[TT] {.inline.}=
   ctx.nodes.pop
 
 template no_grad_mode*(ctx: Context, body: untyped): untyped =
@@ -208,8 +212,6 @@ proc backprop*[TT](v: Variable[TT]) =
   while v.context.len > 0 and v.context.peek.payload.variable != v:
     discard v.context.pop
 
-  v.context.debugContext
-
   # Now, until the context is been all backpropagated through we update
   # each intermediate variables with its accumulated gradient and then pop the node
   # TODO: Count Toward Zero memory optimization:
@@ -220,22 +222,40 @@ proc backprop*[TT](v: Variable[TT]) =
     let curGate = curNode.gate
     let diffs = curGate.backward(curnode.payload)
 
-    echo debugGateName(curGate)
-
     for i, diff in diffs:
       let parent_i = curNode.parents[i]
-      echo &"Parent {i} shape: {$parent_i.value.shape}, gradient shape = {$parent_i.value.shape}, diff shape: {$diff.shape}"
       if parent_i.requires_grad:
         parent_i.grad += diff
 
-func weakRef*[TT](v: Variable[TT]): VariablePtr[TT] {.inline.} =
-  ## Get a weak/untraced reference to a Variable
-  ## This is intended for library writers and Neural Network graphs
-  ## to avoid strong cyclic references.
-  cast[VariablePtr[TT]](v)
+func newParents*[TT](num: Natural): Parents[TT] {.inline.} =
+  newSeqUninit[Variable[TT]](num)
 
-func weakRef*[TT](ctx: Context[TT]): ContextPtr[TT] {.inline.} =
+func newDiffs*[TT](num: Natural): SmallDiffs[TT] {.inline.} =
+  newSeqUninit[TT](num)
+
+# ############################################################
+#
+#                       No-ops
+#
+# ############################################################
+
+# As an optimisation to reduce stress on the GC
+# and expose the acyclic nature of NN graphs
+# the following used to created pointers
+# to variables and context, but it seems like
+# when lots of node are created, the refs might point
+# to something wrong.
+
+func weakRef*[TT](v: Variable[TT]): Variable[TT] {.inline.} =
   ## Get a weak/untraced reference to a Variable
   ## This is intended for library writers and Neural Network graphs
   ## to avoid strong cyclic references.
-  cast[ContextPtr[TT]](ctx)
+  # cast[VariablePtr[TT]](v)
+  v
+
+func weakRef*[TT](ctx: Context[TT]): Context[TT] {.inline.} =
+  ## Get a weak/untraced reference to a Variable
+  ## This is intended for library writers and Neural Network graphs
+  ## to avoid strong cyclic references.
+  # cast[ContextPtr[TT]](ctx)
+  ctx

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/[ast_utils, sequninit],
+import  ../../private/ast_utils,
         ../../tensor/tensor,
         ../../autograd/autograd,
         ../../nn_primitives/nn_primitives,
@@ -41,7 +41,7 @@ proc forward[TT, scaled, Idx](self: EmbeddingGate[TT, scaled, Idx], input: Tenso
 
 method backward*[TT; scaled: static bool, Idx](self: EmbeddingGate[TT, scaled, Idx], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
 
-  result = newSeqUninit[TT](1)
+  result = newDiffs[TT](1)
   result[0] = zeros_like(self.weight.value)
 
   let gradOutput = payload.variable.grad
@@ -84,7 +84,7 @@ proc embedding*[TT; Idx: byte or char or SomeNumber](
   new node
 
   node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](1)
+  node.parents = newParents[TT](1)
   node.parents[0] = weight.weakRef
 
   weight.context.push(node)

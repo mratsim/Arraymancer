@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../../tensor/tensor,
+import  ../../tensor/tensor,
         ../../autograd/autograd,
         ../../nn_primitives/nn_primitives
 
@@ -34,7 +33,7 @@ proc forward[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[TT] {.inlin
 
 method backward*[TT](self: MaxPool2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
-  result = newSeqUninit[TT](1)
+  result = newDiffs[TT](1)
   result[0] = maxpool2d_backward(
     self.cached_input_shape,
     self.cached_max_indices,
@@ -76,7 +75,7 @@ proc maxpool2d*[TT](input: Variable[TT],
   new node
 
   node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](1)
+  node.parents = newParents[TT](1)
   node.parents[0] = input.weakRef
 
   input.context.push(node)

@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../../tensor/tensor,
+import  ../../tensor/tensor,
         ../../ml/ml,
         ../../autograd/autograd,
         ./loss
@@ -40,7 +39,7 @@ method backward*[TT](self: MSELoss[TT], payload: Payload[TT]): SmallDiffs[TT] {.
   let norm = grad * 2'f32 / gradient.size.float32 # TODO divide by total number of elements or by batch size? https://github.com/pytorch/pytorch/issues/3322
                                                   # See also Stanford course: http://theory.stanford.edu/~tim/s15/l/l15.pdf
 
-  result = newSeqUninit[TT](1)
+  result = newDiffs[TT](1)
   result[0] = map2_inline(self.cache.value, self.target):
     norm * (x - y)
 
@@ -59,7 +58,7 @@ proc mse_loss*[TT](input: Variable[TT], target: TT): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](1)
+  node.parents = newParents[TT](1)
   node.parents[0] = input.weakRef
 
   input.context.push(node)

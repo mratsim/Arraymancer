@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../../autograd/autograd,
+import  ../../autograd/autograd,
         ../../tensor/tensor,
         ../../nn_primitives/nn_primitives
 
@@ -28,7 +27,7 @@ proc forward[TT](self: SigmoidActivation[TT], a: Variable[TT]): Variable[TT] {.i
 
 method backward*[TT](self: SigmoidActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
-  result = newSeqUninit[TT](1)
+  result = newDiffs[TT](1)
   result[0] = gradient.sigmoid_backward(self.cache)
 
 proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
@@ -44,7 +43,7 @@ proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](1)
+  node.parents = newParents[TT](1)
   node.parents[0] = a.weakRef
 
   a.context.push(node)

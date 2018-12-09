@@ -64,7 +64,7 @@ method backward*[TT](
           payload: Payload[TT],
           ): SmallDiffs[TT] {.noInit.}=
   let gradients = payload.sequence
-  result = newSeqUninit[TT](7)
+  result = newDiffs[TT](7)
   gru_backward(
     result[0], result[1],                 # Result   dinput, dhidden,
     result[2], result[3],                 # Result   dW3s0, dW3sN,
@@ -112,7 +112,7 @@ proc gru*[TT](
   new node
 
   node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](7)
+  node.parents = newParents[TT](7)
   node.parents[0] = input.weakRef
   node.parents[1] = hidden0.weakRef
   node.parents[2] = W3s0.weakRef

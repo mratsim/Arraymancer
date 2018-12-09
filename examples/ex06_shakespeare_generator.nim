@@ -174,21 +174,15 @@ proc gen_training_set(
   ##         we can have ABC input
   ##                 and BCD target
 
-  # For input we order in [seq_len, batch_size] as this is faster with RNNs
   result.input = newTensor[char](seq_len, batch_size)
-
-  # For target we order with [batch_size, seq_len] as this is the natural
-  # result from the model, and also what is expected by loss functions
-  result.target = newTensor[char](batch_size, seq_len)
+  result.target = newTensor[char](seq_len, batch_size)
 
   let length = data.shape[0]
   for batch_id in 0 ..< batch_size:
     let start_idx = rng.rand(0 ..< (length - seq_len))
     let end_idx = start_idx + seq_len + 1
-    # [seq_len, batch_size]
     result.input[_, batch_id] =  data[start_idx ..< end_idx - 1]
-    # [batch_size, seq_len]
-    result.target[batch_id, _] = data[start_idx + 1 ..< end_idx].transpose()
+    result.target[_, batch_id] = data[start_idx + 1 ..< end_idx]
 
 proc train[TT](
         ctx: Context[TT],
@@ -203,16 +197,19 @@ proc train[TT](
 
   # We will cumulate the loss before backpropping at once
   # to avoid teacher forcing bias. (Adjusting weights just before the next char)
-  var loss = ctx.variable(zeros[float32](1), requires_grad = true)
+  var seq_loss = ctx.variable(zeros[float32](1), requires_grad = true)
 
   for char_pos in 0 ..< seq_len:
     let (output, hidden) = model.forward(input[char_pos, _], hidden0)
-    loss = loss + output.sparse_softmax_cross_entropy(target) # In-place operations are tricky in an autograd
+    let batch_loss = output.sparse_softmax_cross_entropy(target[char_pos, _].squeeze(0))
 
-  loss.backprop()
+    # Inplace `+=` is usually tricky with autograd
+    seq_loss = seq_loss + batch_loss
+
+  seq_loss.backprop()
   optimiser.update()
 
-  result = loss.value[0] / seq_len.float32
+  result = seq_loss.value[0] / seq_len.float32
 
 # ################################################################
 #

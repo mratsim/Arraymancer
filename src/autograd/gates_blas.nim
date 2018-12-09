@@ -45,7 +45,7 @@ proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents = newParents(2)
+  node.parents = newParents[TT](2)
   node.parents[0] = a.weakRef
   node.parents[1] = b.weakRef
 

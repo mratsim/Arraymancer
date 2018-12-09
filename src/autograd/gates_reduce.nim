@@ -45,7 +45,7 @@ proc mean*[TT](a: Variable[TT]): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents = newParents(1)
+  node.parents = newParents[TT](1)
   node.parents[0] = a.weakRef
 
   a.context.push(node)
@@ -88,7 +88,7 @@ proc sum*[TT](a: Variable[TT]): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents = newParents(1)
+  node.parents = newParents[TT](1)
   node.parents[0] = a.weakRef
 
   a.context.push(node)

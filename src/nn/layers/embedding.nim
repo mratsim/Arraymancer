@@ -24,15 +24,14 @@ import  ../../private/[ast_utils, sequninit],
 #   ## One here they are not.
 #   ## Due to runtime dispatch
 
-type EmbeddingGate*{.final.}[TT; scaled: static bool] = ref object of Gate[TT]
-  cached_input_vocab_id: Tensor[int]
+type EmbeddingGate*{.final.}[TT; scaled: static bool; Idx: byte or char or SomeNumber] = ref object of Gate[TT]
+  cached_input_vocab_id: Tensor[Idx]
   weight: Variable[TT]
   padding_idx: int
     # We special-case -1 to mean no padding. Ideally we should use an option,
     # and have a separate proc for padding and no padding (to avoid costly checks within a tight loop)
 
-
-proc forward[TT, scaled](self: EmbeddingGate[TT, scaled], input: Tensor[int]): Variable[TT] {.inline.} =
+proc forward[TT, scaled, Idx](self: EmbeddingGate[TT, scaled, Idx], input: Tensor[Idx]): Variable[TT] {.inline.} =
   ## TODO: at which level should we manage the context
 
   new result
@@ -40,7 +39,7 @@ proc forward[TT, scaled](self: EmbeddingGate[TT, scaled], input: Tensor[int]): V
   result.context = self.weight.context
   result.value = embedding(input, self.weight)
 
-method backward*[TT; scaled: static bool](self: EmbeddingGate[TT, scaled], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+method backward*[TT; scaled: static bool, Idx](self: EmbeddingGate[TT, scaled, Idx], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
 
   result = newSeqUninit[TT](1)
   result[0] = zeros_like(self.weight)
@@ -50,8 +49,8 @@ method backward*[TT; scaled: static bool](self: EmbeddingGate[TT, scaled], paylo
   if self.weight.requires_grad:
     embedding_backward(result[0], self.input_vocab_id, gradOutput, self.padding_idx, scaled)
 
-proc embedding*[TT](
-        input_vocab_id: Tensor[int],
+proc embedding*[TT; Idx: byte or char or SomeNumber](
+        input_vocab_id: Tensor[Idx],
         weight: Variable[TT],
         padding_idx = -1,
         scale_grad_by_freq: static[bool] = false

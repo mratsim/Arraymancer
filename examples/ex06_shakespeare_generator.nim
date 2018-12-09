@@ -3,7 +3,7 @@
 # and https://github.com/karpathy/char-rnn
 
 import
-  streams, os, random,
+  streams, os, random, times, strformat,
   ../src/arraymancer
 
 # ################################################################
@@ -124,21 +124,21 @@ proc newShakespeareNet[TT](ctx: Context[TT]): ShakespeareNet[TT] =
   result.decoder.weight = weightInit(VocabSize, HiddenSize)
   result.decoder.bias   = weightInit(        1, VocabSize)
 
-# Some helper templates
-template encoder[TT](model: ShakespeareNet[TT], x: Tensor[int]): Variable[TT] =
-  embedding(x, model.encoder_w)
+# Some wrappers to pass the layer weights
+proc encode[TT](model: ShakespeareNet[TT], x: Tensor[char]): Variable[TT] =
+  embedding(x, model.encoder.weight)
 
-template gru(model: ShakespeareNet, x, hidden0: Variable): Variable =
+proc gru_forward(model: ShakespeareNet, x, hidden0: Variable): tuple[output, hiddenN: Variable] =
   gru(
     x, hidden0,
     Layers,
-    model.gru_W3s0, model.gru_W3sN,
-    model.U3s,
-    model.bW3s, model.bU3s
+    model.gru.W3s0, model.gru.W3sN,
+    model.gru.U3s,
+    model.gru.bW3s, model.gru.bU3s
   )
 
-template decoder(model: ShakespeareNet, x: Variable): Variable =
-  linear(x, model.decoder_w, model.decoder_b)
+proc decode(model: ShakespeareNet, x: Variable): Variable =
+  linear(x, model.decoder.weight, model.decoder.bias)
 
 proc forward[TT](
         model: ShakespeareNet[TT],
@@ -146,14 +146,14 @@ proc forward[TT](
         hidden0: Variable[TT]
       ): tuple[output, hidden: Variable[TT]] =
 
-  let encoded = model.encoder(input)
-  let (output, hiddenN) = model.gru(encoded, hidden0)
+  let encoded = model.encode(input)
+  let (output, hiddenN) = model.gru_forward(encoded, hidden0)
 
   # result.output is of shape [Sequence, BatchSize, HiddenSize]
   # In our case the sequence is 1 so we can simply flatten
-  let flattened = output.reshape(output.shape[1], HiddenSize)
+  let flattened = output.reshape(output.value.shape[1], HiddenSize)
 
-  result.output = model.linear(flattened)
+  result.output = model.decode(flattened)
   result.hidden = hiddenN
 
 # ################################################################
@@ -165,7 +165,7 @@ proc forward[TT](
 proc gen_training_set(
         data: Tensor[char],
         seq_len, batch_size: int,
-        seed: int
+        rng: var Rand
       ): tuple[input, target: Tensor[char]] =
   ## Generate a set of input sequences of length `seq_len`
   ## and the immediate following `seq_len` characters to predict
@@ -174,18 +174,24 @@ proc gen_training_set(
   ##         we can have ABC input
   ##                 and BCD target
 
+  # For input we order in [seq_len, batch_size] as this is faster with RNNs
   result.input = newTensor[char](seq_len, batch_size)
-  result.target = newTensor[char](seq_len, batch_size)
 
-  var train_rng {.global.} = initRand(seed)
+  # For target we order with [batch_size, seq_len] as this is the natural
+  # result from the model, and also what is expected by loss functions
+  result.target = newTensor[char](batch_size, seq_len)
+
   let length = data.shape[0]
   for batch_id in 0 ..< batch_size:
-    let start_idx = train_rng.rand(0 ..< (length - seq_len))
+    let start_idx = rng.rand(0 ..< (length - seq_len))
     let end_idx = start_idx + seq_len + 1
+    # [seq_len, batch_size]
     result.input[_, batch_id] =  data[start_idx ..< end_idx - 1]
-    result.target[_, batch_id] = data[start_idx + 1 ..< end_idx]
+    # [batch_size, seq_len]
+    result.target[batch_id, _] = data[start_idx + 1 ..< end_idx].transpose()
 
 proc train[TT](
+        ctx: Context[TT],
         model: ShakespeareNet[TT],
         optimiser: Sgd[TT],
         input, target: Tensor[char]): float32 =
@@ -193,11 +199,10 @@ proc train[TT](
   ## Return the loss after the training session
 
   let seq_len = input.shape[0]
-  let hidden0 = zeros[float32](Layers, BatchSize, HiddenSize)
+  let hidden0 = ctx.variable zeros[float32](Layers, BatchSize, HiddenSize)
 
   # We will cumulate the loss before backpropping at once
   # to avoid teacher forcing bias. (Adjusting weights just before the next char)
-  let ctx = model.encoder_w.context
   var loss = ctx.variable(zeros[float32](1), requires_grad = true)
 
   for char_pos in 0 ..< seq_len:
@@ -207,6 +212,7 @@ proc train[TT](
   loss.backprop()
   optimiser.update()
 
+  result = loss.value[0] / seq_len.float32
 
 # ################################################################
 #
@@ -217,13 +223,16 @@ proc train[TT](
 proc main() =
   # Parse the input file
   let filePath = paramStr(1).string
-  let txt = readFile(filePath)
+  let txt_raw = readFile(filePath).strToTensor
 
   echo "Checking the Tensor of the first hundred characters of your file"
-  echo txt.strToTensor[0 .. 100]
+  echo txt_raw[0 .. 100]
+
+  # For our need in gen_training_set, we reshape it from [nb_chars] to [nb_chars, 1]
+  let txt = txt_raw.unsqueeze(1)
 
   # Make the results reproducible
-  randomize(0xDEADBEEF) # Changing that will change the text generated
+  randomize(0xDEADBEEF) # Changing that will change the weight initialisation
 
   # Create our autograd context that will track deep learning operations applied to tensors.
   let ctx = newContext Tensor[float32]
@@ -233,5 +242,20 @@ proc main() =
 
   # Stochastic Gradient Descent (API will change)
   let optim = model.optimizerSGD(learning_rate = LearningRate)
+
+  # We use a different RNG for seq split
+  var split_rng = initRand(42)
+
+  # Start our time counter
+  let start = epochTime()
+
+  for epoch in 0 ..< Epochs:
+    let (input, target) = gen_training_set(txt, SeqLen, BatchSize, split_rng)
+    let loss = ctx.train(model, optim, input, target)
+
+    if epoch mod StatusReport == 0:
+      let elapsed = epochTime() - start
+      echo &"Time: {elapsed:>4.4f} s, Epoch: {epoch}/{Epochs}, Loss: {loss:>2.4f}"
+      # TODO: example sentence generated
 
 main()

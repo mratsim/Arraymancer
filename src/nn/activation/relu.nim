@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../../tensor/tensor,
+import  ../../tensor/tensor,
         ../../nn_primitives/nn_primitives,
         ../../autograd/autograd
 
@@ -28,7 +27,7 @@ proc forward[TT](self: ReluActivation[TT], a: Variable[TT]): Variable[TT] {.inli
 
 method backward*[TT](self: ReluActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
-  result = newSeqUninit[TT](1)
+  result = newDiffs[TT](1)
   result[0] = gradient.relu_backward(self.cache)
 
 proc relu*[TT](a: Variable[TT]): Variable[TT] =
@@ -44,7 +43,7 @@ proc relu*[TT](a: Variable[TT]): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](1)
+  node.parents = newParents[TT](1)
   node.parents[0] = a.weakRef
 
   a.context.push(node)

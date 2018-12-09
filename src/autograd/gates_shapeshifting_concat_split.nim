@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/sequninit,
-        ../tensor/tensor,
+import  ../tensor/tensor,
         ./ag_data_structure,
         sequtils
 
@@ -35,7 +34,7 @@ proc forward[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[TT] =
 
 method backward*[TT](self: StackGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
-  result = newSeqUninit[TT](self.nb_grads)
+  result = newDiffs[TT](self.nb_grads)
   for i in 0 ..< gradient.shape[self.axis]:
     result[i] = gradient.atAxisIndex(self.axis, i)
 
@@ -66,7 +65,7 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](variables.len)
+  node.parents = newParents(variables.len)
   for idx, v in variables:
     node.parents[idx] = v.weakRef
 
@@ -93,7 +92,7 @@ proc forward_chunk[TT](self: ChunkSplitGate[TT], x: Variable[TT], nb_chunks: Pos
 
 method backward[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradients = payload.sequence.mapIt(it.grad) # TODO: inefficient to create an intermediate sequence
-  result = newSeqUninit[TT](1)
+  result = newDiffs[TT](1)
   result[0] = concat(gradients, self.axis)
 
 proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variable[TT]] =
@@ -116,7 +115,7 @@ proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variab
   new node
 
   node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](1)
+  node.parents = newParents(1)
   node.parents[0] = v.weakRef
   v.context.push node
 

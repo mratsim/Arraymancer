@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/sequninit,
-        ../tensor/tensor,
+import  ../tensor/tensor,
         ./ag_data_structure
 
 type MatMulGate* {.final.} [TT] = ref object of Gate[TT]
@@ -29,7 +28,7 @@ proc forward[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.inlin
 
 method backward*[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
-  result = newSeqUninit[TT](2)
+  result = newDiffs[TT](2)
   result[0] = gradient * self.b.value.transpose
   result[1] = self.a.value.transpose * gradient
 
@@ -46,7 +45,7 @@ proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](2)
+  node.parents = newParents(2)
   node.parents[0] = a.weakRef
   node.parents[1] = b.weakRef
 

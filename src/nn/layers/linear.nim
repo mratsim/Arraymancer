@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../../tensor/tensor,
+import  ../../tensor/tensor,
         ../../nn_primitives/nn_primitives,
         ../../autograd/autograd
 
@@ -38,7 +37,7 @@ method backward*[TT](self: LinearGate[TT], payload: Payload[TT]): SmallDiffs[TT]
   # result[2] grad w.r.t. bias
 
   let gradOutput = payload.variable.grad
-  result = newSeqUninit[TT](self.nb_grads)
+  result = newDiffs[TT](self.nb_grads)
 
   if self.input.requires_grad:
     result[0] = gradOutput * self.weight.value
@@ -91,7 +90,7 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
   new node
 
   node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](gate.nb_grads)
+  node.parents = newParents[TT](gate.nb_grads)
   node.parents[0] = input.weakRef
   node.parents[1] = weight.weakRef
   if not bias.isNil:

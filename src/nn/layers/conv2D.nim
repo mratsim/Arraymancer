@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../../tensor/tensor,
+import  ../../tensor/tensor,
         ../../autograd/autograd,
         ../../nn_primitives/nn_primitives
 
@@ -37,7 +36,7 @@ proc forward[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.inline.}
 
 method backward*[TT](self: Conv2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
   let gradient = payload.variable.grad
-  result = newSeqUninit[TT](self.nb_grads)
+  result = newDiffs[TT](self.nb_grads)
   conv2d_backward(
     self.cached_input.value,
     self.weight.value, self.bias.value,
@@ -96,7 +95,7 @@ proc conv2d*[TT]( input, weight: Variable[TT],
   new node
 
   node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](gate.nb_grads)
+  node.parents = newParents[TT](gate.nb_grads)
   node.parents[0] = input.weakRef
   node.parents[1] = weight.weakRef
   if not bias.isNil:

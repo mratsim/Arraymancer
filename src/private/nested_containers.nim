@@ -19,7 +19,7 @@ import ../tensor/backend/metadataArray
 iterator flatIter*(s: string): string {.noSideEffect.} =
   yield s
 
-iterator flatIter*[T: not char](s: openarray[T]): auto {.noSideEffect.}=
+iterator flatIter*[T](s: openarray[T]): auto {.noSideEffect.}=
   ## Inline iterator on any-depth seq or array
   ## Returns values in order
   for item in s:
@@ -29,23 +29,22 @@ iterator flatIter*[T: not char](s: openarray[T]): auto {.noSideEffect.}=
     else:
       yield item
 
-
-proc shape*[T: not char](s: openarray[T], parent_shape: MetadataArray = initMetadataArray(0)): MetadataArray {.noSideEffect.}=
-
-  result = parent_shape # Note result = parent_shape & s.len breaks at a random but deterministic point with C++ backend
-  result.add(s.len)     # on the full test suite
-
-  when (T is seq|array):
-    result = shape(s[0], result)
-
-proc shape*(s: string|seq[char], parent_shape: MetadataArray = initMetadataArray(0)): MetadataArray {.noSideEffect.}=
-  ## Handle char / string
+proc shape*(s: string, parent_shape: MetadataArray = initMetadataArray(0)): MetadataArray {.noSideEffect.}=
+  ## Handle strings
   const z = initMetadataArray(0)
   if parent_shape == z:
     result = z
     result.len = 1
     result[0] = 1
   else: return parent_shape
+
+proc shape*[T](s: openarray[T], parent_shape: MetadataArray = initMetadataArray(0)): MetadataArray {.noSideEffect.}=
+
+  result = parent_shape # Note result = parent_shape & s.len breaks at a random but deterministic point with C++ backend
+  result.add(s.len)     # on the full test suite
+
+  when (T is seq|array):
+    result = shape(s[0], result)
 
 # proc shape*[T: not char](s: openarray[T], parent_shape: seq[int] = @[]): seq[int] {.noSideEffect.}=
 #   ## Helper function to get the shape of nested arrays/sequences

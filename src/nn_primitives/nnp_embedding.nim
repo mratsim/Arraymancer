@@ -79,8 +79,8 @@ proc embedding_backward*[T; Idx: byte or char or SomeNumber](
   let flat_dOutput = dOutput.flatten_idx()
 
   for i, word_idx in enumerate(flat_vocab_id):
-    if word_idx != padding_idx:
-      var grad_curr_word = dWeight[word_idx, _]
+    if int(word_idx) != padding_idx:
+      var grad_curr_word = dWeight[int(word_idx), _]
       when scale_grad_by_freq:
         # For speed don't respect IEEE-754 and avoid
         # division in tight loop by multiplying by the inverse

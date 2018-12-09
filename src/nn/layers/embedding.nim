@@ -37,17 +37,17 @@ proc forward[TT, scaled, Idx](self: EmbeddingGate[TT, scaled, Idx], input: Tenso
   new result
 
   result.context = self.weight.context
-  result.value = embedding(input, self.weight)
+  result.value = embedding(input, self.weight.value)
 
 method backward*[TT; scaled: static bool, Idx](self: EmbeddingGate[TT, scaled, Idx], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
 
   result = newSeqUninit[TT](1)
-  result[0] = zeros_like(self.weight)
+  result[0] = zeros_like(self.weight.value)
 
   let gradOutput = payload.variable.grad
 
   if self.weight.requires_grad:
-    embedding_backward(result[0], self.input_vocab_id, gradOutput, self.padding_idx, scaled)
+    embedding_backward(result[0], self.cached_input_vocab_id, gradOutput, self.padding_idx, scaled)
 
 proc embedding*[TT; Idx: byte or char or SomeNumber](
         input_vocab_id: Tensor[Idx],
@@ -73,14 +73,14 @@ proc embedding*[TT; Idx: byte or char or SomeNumber](
   ##     This regularise variations in the weight of very frequent words.
 
   # Gate
-  var gate: EmbeddingGate[TT, scale_grad_by_freq]
+  var gate: EmbeddingGate[TT, scale_grad_by_freq, Idx]
   new gate
   gate.cached_input_vocab_id = input_vocab_id
   gate.weight = weight
   gate.padding_idx = padding_idx
 
   # Node
-  var node: Node:[TT]
+  var node: Node[TT]
   new node
 
   node.gate = gate

@@ -26,8 +26,8 @@ proc trainParamsConv2D(self: Neuromancer, field_name: NimNode, topo: LayerTopolo
     w_shape = kshape
     b_shape = quote do: [`kshape`[0], 1, 1]
 
-    w = quote do: randomTensor(`w_shape`, `sst`(1)) .- `sst`(0.5)
-    b = quote do: randomTensor(`b_shape`, `sst`(1)) .- `sst`(0.5)
+    w = quote do: randomTensor(`w_shape`, `sst`(-0.5) .. `sst`(0.5))
+    b = quote do: randomTensor(`b_shape`, `sst`(-0.5) .. `sst`(0.5))
 
   convConfig.init_call = newStmtList()
 
@@ -65,9 +65,8 @@ proc trainParamsLinear(self: Neuromancer, field_name: NimNode, topo: LayerTopolo
     w_shape = quote do: [`out_shape`, `in_shape`]
     b_shape = quote do: [1, `out_shape`]
 
-    w = quote do: randomTensor(`w_shape`, `sst`(1)) .- `sst`(0.5)
-    b = quote do: randomTensor(`b_shape`, `sst`(1)) .- `sst`(0.5)
-
+    w = quote do: randomTensor(`w_shape`, `sst`(-0.5) .. `sst`(0.5))
+    b = quote do: randomTensor(`b_shape`, `sst`(-0.5) .. `sst`(0.5))
   linearConfig.init_call = newStmtList()
 
   let ctx = self.context
@@ -108,11 +107,11 @@ proc trainParamsGRU(self: Neuromancer, field_name: NimNode, topo: LayerTopology)
     U3s_shape = quote do: [`nb_layers`, 3 * `hidden_size`, `hidden_size`]
     biases_shape = quote do: [`nb_layers`, 1, 3 * `hidden_size`]
 
-    W3s0 = quote do: randomTensor(`W3s0_shape`, `sst`(1)) .- `sst`(0.5)
-    W3sN = quote do: randomTensor(`W3sN_shape`, `sst`(1)) .- `sst`(0.5)
-    U3s = quote do: randomTensor(`U3s_shape`, `sst`(1)) .- `sst`(0.5)
-    bW3s = quote do: randomTensor(`biases_shape`, `sst`(1)) .- `sst`(0.5)
-    bU3s = quote do: randomTensor(`biases_shape`, `sst`(1)) .- `sst`(0.5)
+    W3s0 = quote do: randomTensor(`W3s0_shape`, `sst`(-0.5) .. `sst`(0.5))
+    W3sN = quote do: randomTensor(`W3sN_shape`, `sst`(-0.5) .. `sst`(0.5))
+    U3s = quote do: randomTensor(`U3s_shape`, `sst`(-0.5) .. `sst`(0.5))
+    bW3s = quote do: randomTensor(`biases_shape`, `sst`(-0.5) .. `sst`(0.5))
+    bU3s = quote do: randomTensor(`biases_shape`, `sst`(-0.5) .. `sst`(0.5))
 
   GRUConfig.init_call = newStmtList()
 

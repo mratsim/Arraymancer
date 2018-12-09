@@ -157,3 +157,11 @@ proc gru*[TT](
 
     result.hiddenN.grad = zeros_like(result.hiddenN.value)
     result.hiddenN.requires_grad = true
+
+# ############################################################
+#
+#                      Debugging
+#
+# ############################################################
+
+method debugGateName*[TT](self: GRUGate[TT]): string {.inline.} = "GRU"

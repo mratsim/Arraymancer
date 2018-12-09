@@ -107,7 +107,19 @@ proc flatten*[TT](a: Variable[TT]): Variable[TT] =
   ##   - A variable
   reshapeImpl(a, [a.value.shape[0], a.value.size div a.value.shape[0]].toMetadataArray)
 
-# #############################################
+# ############################################################
+#
+#                      Debugging
+#
+# ############################################################
+
+method debugGateName*[TT](self: ReshapeGate[TT]): string {.inline.} = "Reshape"
+
+# ############################################################
+#
+#                   Squeeze / Unsqueeze
+#
+# ############################################################
 
 template squeezeUnsqueeze(GateName, forward_proc, backward_proc: untyped): untyped =
 

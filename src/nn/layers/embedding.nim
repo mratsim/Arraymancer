@@ -97,3 +97,11 @@ proc embedding*[TT; Idx: byte or char or SomeNumber](
   if weight.is_grad_needed:
     result.grad = zeros_like(result.value)
     result.requires_grad = true
+
+# ############################################################
+#
+#                      Debugging
+#
+# ############################################################
+
+method debugGateName*[TT, scaled, Idx](self: EmbeddingGate[TT, scaled, Idx]): string {.inline.} = "Embedding"

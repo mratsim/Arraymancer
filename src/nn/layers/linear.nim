@@ -107,3 +107,11 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
   if input.is_grad_needed or weight.is_grad_needed or (not bias.isNil and bias.is_grad_needed):
     result.grad = zeros_like(result.value)
     result.requires_grad = true
+
+# ############################################################
+#
+#                      Debugging
+#
+# ############################################################
+
+method debugGateName*[TT](self: LinearGate[TT]): string {.inline.} = "Linear"

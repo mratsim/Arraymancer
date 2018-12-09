@@ -149,6 +149,64 @@ proc forward[TT](
   result.output = model.linear(flattened)
   result.hidden = hiddenN
 
+# ################################################################
+#
+#                        Training
+#
+# ################################################################
+
+proc gen_training_set(
+        data: Tensor[char],
+        seq_len, batch_size: int,
+        seed: int
+      ): tuple[input, target: Tensor[char]] =
+  ## Generate a set of input sequences of length `seq_len`
+  ## and the immediate following `seq_len` characters to predict
+  ## Sequence are extracted randomly from the whole text.
+  ## i.e. If we have ABCDEF input data
+  ##         we can have ABC input
+  ##                 and BCD target
+
+  result.input = newTensor[char](seq_len, batch_size)
+  result.target = newTensor[char](seq_len, batch_size)
+
+  var train_rng {.global.} = initRand(seed)
+  let length = data.shape[0]
+  for batch_id in 0 ..< batch_size:
+    let start_idx = train_rng.rand(0 ..< (length - seq_len))
+    let end_idx = start_idx + seq_len + 1
+    result.input[_, batch_id] =  data[start_idx ..< end_idx - 1]
+    result.target[_, batch_id] = data[start_idx + 1 ..< end_idx]
+
+proc train[TT](
+        model: ShakespeareNet[TT],
+        optimiser: Sgd[TT],
+        input, target: Tensor[char]): float32 =
+  ## Train a model with an input and the corresponding characters to predict.
+  ## Return the loss after the training session
+
+  let seq_len = input.shape[0]
+  let hidden0 = zeros[float32](Layers, BatchSize, HiddenSize)
+
+  # We will cumulate the loss before backpropping at once
+  # to avoid teacher forcing bias. (Adjusting weights just before the next char)
+  let ctx = model.encoder_w.context
+  var loss = ctx.variable(zeros[float32](1), requires_grad = true)
+
+  for char_pos in 0 ..< seq_len:
+    let (output, hidden) = model.forward(input[char_pos, _], hidden0)
+    loss = loss + output.sparse_softmax_cross_entropy(target) # In-place operations are tricky in an autograd
+
+  loss.backprop()
+  optimiser.update()
+
+
+# ################################################################
+#
+#                     User interaction
+#
+# ################################################################
+
 proc main() =
   # Parse the input file
   let filePath = paramStr(1).string

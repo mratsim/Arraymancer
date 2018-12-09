@@ -117,6 +117,38 @@ proc newShakespeareNet[TT](ctx: Context[TT]): ShakespeareNet[TT] =
   result.decoder_w = weightInit(VocabSize, HiddenSize)
   result.decoder_b = weightInit(        1, VocabSize)
 
+# Some helper templates
+template encoder[TT](model: ShakespeareNet[TT], x: Tensor[int]): Variable[TT] =
+  embedding(x, model.encoder_w)
+
+template gru(model: ShakespeareNet, x, hidden0: Variable): Variable =
+  gru(
+    x, hidden0,
+    Layers,
+    model.gru_W3s0, model.gru_W3sN,
+    model.U3s,
+    model.bW3s, model.bU3s
+  )
+
+template decoder(model: ShakespeareNet, x: Variable): Variable =
+  linear(x, model.decoder_w, model.decoder_b)
+
+proc forward[TT](
+        model: ShakespeareNet[TT],
+        input: Tensor[char],
+        hidden0: Variable[TT]
+      ): tuple[output, hidden: Variable[TT]] =
+
+  let encoded = model.encoder(input)
+  let (output, hiddenN) = model.gru(encoded, hidden0)
+
+  # result.output is of shape [Sequence, BatchSize, HiddenSize]
+  # In our case the sequence is 1 so we can simply flatten
+  let flattened = output.reshape(output.shape[1], HiddenSize)
+
+  result.output = model.linear(flattened)
+  result.hidden = hiddenN
+
 proc main() =
   # Parse the input file
   let filePath = paramStr(1).string

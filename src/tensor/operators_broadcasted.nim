@@ -155,3 +155,11 @@ proc `.-=`*[T: SomeNumber](t: var Tensor[T], val: T) =
 proc `.^=`*[T: SomeFloat](t: var Tensor[T], exponent: T) =
   ## Compute in-place element-wise exponentiation
   t.apply_inline pow(x, exponent)
+
+proc `.*=`*[T: SomeNumber](t: var Tensor[T], val: T) =
+  ## Tensor in-place multiplication with a broadcasted scalar.
+  t.apply_inline(x * val)
+
+proc `./=`*[T: SomeNumber](t: var Tensor[T], val: T) =
+  ## Tensor in-place division with a broadcasted scalar.
+  t.apply_inline(x - val)

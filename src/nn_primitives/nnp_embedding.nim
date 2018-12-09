@@ -5,10 +5,10 @@
 import
   ../tensor/tensor, tables, math
 
-func flatten_idx(t: Tensor): Tensor {.inline.}=
+proc flatten_idx(t: Tensor): Tensor {.inline.}=
   t.reshape(t.size)
 
-func embedding*[T; Idx: byte or char or SomeNumber](
+proc embedding*[T; Idx: byte or char or SomeNumber](
       vocab_id: Tensor[Idx],
       weight: Tensor[T]
     ): Tensor[T] =

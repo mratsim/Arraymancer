@@ -33,7 +33,10 @@ else:
   template omp_get_max_threads*(): cint = 1
   template omp_get_thread_num*(): cint = 0
 
-const OMP_FOR_ANNOTATION = "simd if(ompsize > " & $OMP_FOR_THRESHOLD & ")"
+when NimVersion <= "0.19.0":
+  const OMP_FOR_ANNOTATION = "simd if(ompsize > " & $OMP_FOR_THRESHOLD & ")"
+else:
+  const OMP_FOR_ANNOTATION = "parallel for simd if(ompsize > " & $OMP_FOR_THRESHOLD & ")"
 
 template omp_parallel_countup*(i: untyped, size: Natural, body: untyped): untyped =
   let ompsize = size # ensure that if size is computed it is only called once
@@ -55,7 +58,7 @@ template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, 
           let num_blocks = min(omp_get_max_threads(), ompsize)
           if num_blocks > 1:
             let bsize = ompsize div num_blocks
-            for block_index in `||`(0, num_blocks-1, "simd"):
+            for block_index in 0||(num_blocks-1):
               # block_offset and block_size are injected into the calling proc
               let block_offset = bsize*block_index
               let block_size = if block_index < num_blocks-1: bsize else: ompsize - block_offset
@@ -107,7 +110,7 @@ template omp_parallel_reduce_blocks*[T](reduced: T, block_offset, block_size: un
                   op_init
 
               # Reduce blocks
-              for block_index in `||`(0, num_blocks-1, "simd"):
+              for block_index in 0||(num_blocks-1):
                 # block_offset and block_size are injected into the calling proc
                 var block_offset = bsize*block_index
                 let block_size = (if block_index < num_blocks-1: bsize else: ompsize - block_offset) - 1

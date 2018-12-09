@@ -145,7 +145,7 @@ template squeezeUnsqueeze(GateName, forward_proc, backward_proc: untyped): untyp
     new node
 
     node.gate = gate
-    node.parents = newParents(1)
+    node.parents = newParents[TT](1)
     node.parents[0] = v.weakRef
     v.context.push node
 

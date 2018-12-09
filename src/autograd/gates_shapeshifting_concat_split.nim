@@ -65,7 +65,7 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
   new node
 
   node.gate = gate
-  node.parents = newParents(variables.len)
+  node.parents = newParents[TT](variables.len)
   for idx, v in variables:
     node.parents[idx] = v.weakRef
 
@@ -115,7 +115,7 @@ proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variab
   new node
 
   node.gate = gate
-  node.parents = newParents(1)
+  node.parents = newParents[TT](1)
   node.parents[0] = v.weakRef
   v.context.push node
 

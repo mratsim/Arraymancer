@@ -1,4 +1,4 @@
-# Copyright 2017 the Arraymancer contributors
+# Copyright 2017-2018 Mamy André-Ratsimbazafy & the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import unittest, sequtils
 # ∂C/∂X = W.transpose * previous_gradient
 # ∂C/∂W = previous_gradient * X.transpose
 
-suite "Autograd of basic operations":
+suite "Autograd of BLAS operations":
   test "Gradient of matrix multiplication":
 
     let W = toSeq(1..8).toTensor.reshape(2,4).astype(float32)

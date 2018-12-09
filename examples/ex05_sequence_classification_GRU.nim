@@ -66,7 +66,7 @@ network ctx, TheGreatSequencer:
   layers:
     # Note input_shape will only require the number of features in the future
     # Input shape = [seq_len, Batch, features]
-    gru1: GRU([3, Batch_size, 1], HiddenSize, 4) # (input_shape, hidden_size, stacked_layers)
+    gru1: GRU([3, Batch_size, 1], HiddenSize, 4) # ([input_shape], hidden_size, stacked_layers)
     fc1: Linear(HiddenSize, 32)                  # 1 classifier per GRU layer
     fc2: Linear(HiddenSize, 32)
     fc3: Linear(HiddenSize, 32)

@@ -2,6 +2,12 @@
 # Inspired by Andrej Karpathy http://karpathy.github.io/2015/05/21/rnn-effectiveness/
 # and https://github.com/karpathy/char-rnn
 
+# Note: training takes about 3 min per 200 batches on my machine
+#       so 30 min per epoch i.e. it's quite slow.
+#
+# Also parallelizing via OpenMP will slow down by about 30%
+# there is probably false sharing in the GRU layer, reshape layer or flatten_idx from Embedding.
+
 import
   streams, os, random, times, strformat,
   ../src/arraymancer

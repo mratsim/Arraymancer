@@ -244,7 +244,7 @@ proc gru_inference*[T: SomeFloat](
       U3l = U3s[layer, _, _].squeeze(0)
       bW3l = bW3s[layer, _, _].squeeze(0)
       bU3l = bU3s[layer, _, _].squeeze(0)
-    var hiddenl = hidden[layer * num_directions, _, _].squeeze
+    var hiddenl = hidden[layer * num_directions, _, _].squeeze(0)
 
     for timestep in 0 ..< seq_len:
       # TODO: reuse more than the output buffer

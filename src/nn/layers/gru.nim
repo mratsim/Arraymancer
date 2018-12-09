@@ -90,10 +90,11 @@ proc gru*[TT](
   ##     - ``W3s0`` and ``W3sN`` Size2D tuple with height and width of the padding
   ##     - ``stride`` Size2D tuple with height and width of the stride
   ##
-  ## Returns:
-  ##     - A variable with a convolved 4D Tensor of size [N,C_out,H_out,W_out], where
-  ##        H_out = (H_in + (2*padding.height) - kH) / stride.height + 1
-  ##        W_out = (W_in + (2*padding.width) - kW) / stride.width + 1
+  ## Outputs:
+  ##   - `output` of shape [sequence/timesteps, batch, num_directions * hidden_size].
+  ##     `output` contains the output features `hiddenT` for each T (timesteps)
+  ##   - `hidden` of shape [num_stacked_layers * num_directions, batch, hidden_size].
+  ##     `hidden` contains the hidden state for timestep T == sequence/timesteps length of `input`
 
   # TODO bound checking
 

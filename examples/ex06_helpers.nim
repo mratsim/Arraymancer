@@ -155,7 +155,7 @@ when isMainModule:
 
   vocab.corpus_counts.sort()
   vocab.unique_corpus_counts.sort()
-  vocab.max_tf_idf.sort(system.cmp)
+  vocab.max_tf_idf.sort(system.cmp) # Note we should sort in reverse
 
   import strformat
 
@@ -188,3 +188,76 @@ when isMainModule:
         break
       else:
         inc i
+
+
+  ## This is much too slow
+  ## Note that tfidf output is wrong because I forgot to reverse the sorting
+
+  # ### Most frequent words in all documents:
+  #             the    287174
+  #               a    155122
+  #             and    152719
+  #              of    142986
+  #              to    132583
+  #              is    103248
+  #              in     85593
+  #               I     69631
+  #            that     64568
+  #                     57479
+  #            this     57245
+  #              it     54454
+  #             was     46707
+  #              as     42521
+  #            with     41728
+  #             for     41078
+  #             The     41007
+  #             but     33799
+  #              on     30771
+  #           movie     30516
+  #             are     28503
+
+  # ### Most common words in all documents (counted once per doc):
+  #             the     24669
+  #               a     24048
+  #             and     23967
+  #              of     23675
+  #              to     23406
+  #              is     22262
+  #              in     21648
+  #            this     20700
+  #            that     19542
+  #              it     19043
+  #               I     18324
+  #             for     17354
+  #            with     17064
+  #             The     17026
+  #             but     16170
+  #             was     15994
+  #              as     15379
+  #              on     14948
+  #                     14665
+  #            have     14014
+  #              be     13716
+
+  # ### Most relevant words in all documents (counted once per doc):
+  #                     0.094
+  #       A     0.014
+  #            own     0.018
+  #               !     4.882
+  #              !!     0.135
+  #             !!!     0.234
+  #            !!!!     0.172
+  #           !!!!!     0.062
+  #          !!!!!!     0.210
+  #         !!!!!!!     0.278
+  #        !!!!!!!!     0.149
+  #       !!!!!!!!!     0.298
+  #      !!!!!!!!!!     0.103
+  #     !!!!!!!!!!!     0.095
+  #   !!!!!!!!!!!!!     0.081
+  #  !!!!!!!!!!!!!!     0.103
+  # !!!!!!!!!!!!!!!!!!!!!!     0.103
+  # !!!!!!!!!!!!!!!!!!!!!!!!!!     0.131
+  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!     0.103
+  #           !!!!"     0.066
+  #            !!!)     0.026

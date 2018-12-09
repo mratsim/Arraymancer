@@ -8,8 +8,8 @@ import
 func flatten_idx(t: Tensor): Tensor {.inline.}=
   t.reshape(t.size)
 
-func embedding*[T](
-      vocab_id: Tensor[int],
+func embedding*[T; Idx: byte or char or SomeNumber](
+      vocab_id: Tensor[Idx],
       weight: Tensor[T]
     ): Tensor[T] =
   ## Returns embeddings from a `weight` embedding matrix and `vocab_id`
@@ -54,9 +54,9 @@ func embedding*[T](
   let shape = vocab_id.shape & weight.shape[1]
   result = weight.index_select(0, vocab_id.flatten_idx).reshape(shape)
 
-proc embedding_backward*[T](
+proc embedding_backward*[T; Idx: byte or char or SomeNumber](
       dWeight: var Tensor[T],
-      vocab_id: Tensor[int],
+      vocab_id: Tensor[Idx],
       dOutput: Tensor[T],
       padding_idx: int,
       scale_grad_by_freq: static[bool] = false # scale by the inverse document frequency, i.e. divide by count in minibatch

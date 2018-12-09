@@ -2,8 +2,7 @@
 # Inspired by Andrej Karpathy http://karpathy.github.io/2015/05/21/rnn-effectiveness/
 # and https://github.com/karpathy/char-rnn
 
-# Note: training takes about 3 min per 200 batches on my machine
-#       so 30 min per epoch i.e. it's quite slow.
+# Note: training takes about 3 min per 200 epochs on my CPU
 #
 # Also parallelizing via OpenMP will slow down by about 30%
 # there is probably false sharing in the GRU layer, reshape layer or flatten_idx from Embedding.
@@ -35,7 +34,7 @@ const
 #
 # ################################################################
 
-func strToTensor(x: TaintedString): Tensor[char] =
+func strToTensor(x: string|TaintedString): Tensor[char] =
   ## By default unsafe string (read from disk)
   ## are protected by TaintedString and need explicit string conversion (no runtime cost)
   ## before you can handle them. This is to remind you that you must vlidate the string
@@ -117,7 +116,8 @@ proc newShakespeareNet[TT](ctx: Context[TT]): ShakespeareNet[TT] =
   #   Output:  [SeqLen, BatchSize, HiddenSize]
   #   HiddenN: [Layers, BatchSize, HiddenSize]
 
-  # GRU have 5 weights/biases that can be trained. This initialisation is normally hidden from you.
+  # GRU have 5 weights/biases that can be trained.
+  # This initialisation is normally hidden from you.
   result.gru.W3s0 = weightInit(            3 * HiddenSize,     EmbedSize)
   result.gru.W3sN = weightInit(Layers - 1, 3 * HiddenSize,     HiddenSize)
   result.gru.U3s  = weightInit(    Layers, 3 * HiddenSize,     HiddenSize)
@@ -219,6 +219,67 @@ proc train[TT](
 
 # ################################################################
 #
+#                     Text generator
+#
+# ################################################################
+
+proc gen_text[TT](
+        ctx: Context[TT],
+        model: ShakespeareNet[TT],
+        seed_chars = "Wh", # Why, What, Who ...
+        seq_len = SeqLen,
+        temperature = 0.8'f32
+      ): string =
+  ## Inputs:
+  ##   - Model:       the trained model
+  ##   - seed_chars:  A string to initialise the generator state and get it running
+  ##   - seq_len:     Generation are done by chunk of `seq_len` length
+  ##   - temperature: The conservative <--> diversity scale of the generator.
+  ##                  Value between 0 and 1, near 0 it will be conservative,
+  ##                  near 1 it will take liberties but make more mistakes.
+
+  ctx.no_grad_mode:
+    var
+      hidden = ctx.variable zeros[float32](Layers, 1, HiddenSize) # batch_size is now 1
+    let primer = seed_chars.strToTensor().unsqueeze(1) # Shape [seq_len, 1]
+
+    # Create a consistent hidden state
+    for char_pos in 0 ..< primer.shape[0] - 1:
+      var (_, hidden) = model.forward(primer[char_pos, _], hidden)
+
+
+    result = seed_chars
+
+    # And start from the last char!
+    var input = primer[^1, _]
+    var output: Variable[TT]
+
+    for _ in 0 ..< seq_len:
+      (output, hidden) = model.forward(input, hidden)
+      # output is of shape [BatchSize, VocabSize] with BatchSize = 1
+
+      # Go back in the tensor domain
+      var preds = output.value
+
+      # Instead of softmaxing, we sample from the network
+      # as if it was a multinomial distribution.
+      #
+      # We scale by the temperature first.
+      preds = preds.squeeze(0)
+      preds ./= temperature
+      var probs = exp(preds)
+      # Renormalise probabilities so that they sum to 1
+      probs ./= probs.sum()
+
+      # TODO
+      # ch = char(multinomial(probs, 1).sample())
+      # result += ch
+
+      # Next char
+      # input = ch.strToTensor().unsqueeze(1)
+
+# ################################################################
+#
 #                     User interaction
 #
 # ################################################################
@@ -259,6 +320,7 @@ proc main() =
     if epoch mod StatusReport == 0:
       let elapsed = epochTime() - start
       echo &"Time: {elapsed:>4.4f} s, Epoch: {epoch}/{Epochs}, Loss: {loss:>2.4f}"
-      # TODO: example sentence generated
+      echo "Sample: "
+      echo ctx.gen_text(model)
 
 main()

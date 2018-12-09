@@ -62,3 +62,11 @@ proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
 
     gate.a = a
     gate.b = b
+
+# ############################################################
+#
+#                      Debugging
+#
+# ############################################################
+
+method debugGateName*[TT](self: MatMulGate[TT]): string {.inline.} = "MatMul"

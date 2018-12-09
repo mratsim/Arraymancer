@@ -12,7 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import typetraits, macros
+import typetraits, macros, strformat
+
+# ############################################################
+#
+#                        Datatypes
+#
+# ############################################################
 
 type
   Context*[TT] = ref ContextObj[TT]
@@ -88,6 +94,50 @@ type
 
   Parents[TT] = seq[VariablePtr[TT]]
   SmallDiffs*[TT] = seq[TT]
+
+# ############################################################
+#
+#                      Debugging
+#
+# ############################################################
+
+# TODO: don't export that publicly
+
+method debugGateName*[TT](self: Gate[TT]): string {.noInit, base, inline.} =
+  raise newException(ValueError, "debugGateName method is not implemented for one of the gates. (And obviously we can't print its name)")
+
+func debugContext(ctx: Context or ContextPtr) =
+  ## Debug the autograd context
+
+  debugecho "\n######"
+  for i, node in ctx.nodes:
+    var s = &"Node {i:>5}: {debugGateName(node.gate):>30} - "
+    if node.parents.len <= 1:
+      s &= $node.parents[0].value.shape
+    else:
+      s &= '('
+      for p, parent in node.parents:
+        if p != 0:
+          s &= ", "
+        s &= $parent.value.shape
+      s &= ')'
+    s &= " - Payload: "
+    case node.payload.kind
+    of pkVar: s &= $node.payload.variable.value.shape
+    of pkSeq:
+      s &= "( "
+      for p, payload in node.payload.sequence:
+        if p != 0:
+          s &= ", "
+        s &= $payload.value.shape
+      s &= ")"
+    debugecho s
+
+# ############################################################
+#
+#                Autograd procedure
+#
+# ############################################################
 
 method backward*[TT](self: Gate[TT], payload: Payload[TT]): seq[TT] {.noInit, base, inline.} =
   raise newException(ValueError, "backward method is not implemented for " & $self.type.name)

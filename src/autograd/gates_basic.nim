@@ -102,3 +102,12 @@ proc `-`*[TT](a, b: Variable[TT]): Variable[TT] =
   if a.is_grad_needed or b.is_grad_needed:
     result.grad = zeros_like result.value
     result.requires_grad = true
+
+# ############################################################
+#
+#                      Debugging
+#
+# ############################################################
+
+method debugGateName*[TT](self: AddGate[TT]): string {.inline.} = "Add"
+method debugGateName*[TT](self: SubGate[TT]): string {.inline.} = "Sub"

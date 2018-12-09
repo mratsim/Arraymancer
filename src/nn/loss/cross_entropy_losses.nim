@@ -116,3 +116,11 @@ proc sparse_softmax_crossentropy*[TT; Idx: SomeNumber or byte or char or enum](
 
     gate.cache = a
     gate.target = target
+
+# ############################################################
+#
+#                      Debugging
+#
+# ############################################################
+
+method debugGateName*[TT, Idx](self: SparseSoftmaxCrossEntropyLoss[TT, Idx]): string {.inline.} = "SparseSoftmaxCrossEntropy"

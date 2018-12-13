@@ -16,10 +16,10 @@ import  ../../tensor/[tensor, higher_order_applymap],
         ../../autograd/autograd
 
 type
-  Sgd*[TT] = object
+  Sgd*[T] = object
     ## Stochastic gradient descent
-    params*: seq[Variable[TT]]
-    lr*: float32 # Learning rate.
+    params*: seq[Variable[Tensor[T]]]
+    lr*: T # Learning rate.
 
   Optimizer[TT] = Sgd[TT]
 

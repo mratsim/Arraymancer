@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import  ../tensor/tensor,
-        ./ag_data_structure
+        ./autograd_common
 
 type MatMulGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C

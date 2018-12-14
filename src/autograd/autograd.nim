@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./ag_data_structure,
-        ./gates_basic,
-        ./gates_blas,
-        ./gates_reduce,
-        ./gates_shapeshifting_views,
-        ./gates_shapeshifting_concat_split
+import  ./autograd_common,
+        ./gates_basic
+        # ./gates_blas,
+        # ./gates_reduce,
+        # ./gates_shapeshifting_views,
+        # ./gates_shapeshifting_concat_split
 
-export  ag_data_structure,
-        gates_basic,
-        gates_blas,
-        gates_reduce,
-        gates_shapeshifting_views,
-        gates_shapeshifting_concat_split
+export  autograd_common,
+        gates_basic
+        # gates_blas,
+        # gates_reduce,
+        # gates_shapeshifting_views,
+        # gates_shapeshifting_concat_split

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import  ../tensor/tensor,
-        ./ag_data_structure,
+        ./autograd_common,
         sequtils
 
 type StackGate{.final.}[TT] = ref object of Gate[TT]

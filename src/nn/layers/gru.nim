@@ -27,10 +27,10 @@ type GRUGate*{.final.}[TT] = ref object of Gate[TT]
   rs, zs, ns, Uhs: TT           # Intermediate tensors for backprop
   # TODO: store hidden_state for weight sharing?
 
-proc forward[TT](
+proc gru_forward[TT](
           self: GRUGate[TT],
           a: Variable[TT], hidden0: Variable[TT],
-          ): tuple[output, hiddenN: Variable[TT]] =
+        ): tuple[output, hiddenN: Variable[TT]] =
   ## Hidden_state is update in-place it's both an input and output
 
   new result.output
@@ -39,30 +39,38 @@ proc forward[TT](
   result.output.context = a.context
   result.hiddenN.context = a.context
   result.hiddenN.value = hidden0.value.clone()
-  if ( # input.is_grad_needed or hidden0.is_grad_needed or
-      # TODO improve inference shortcut - https://github.com/mratsim/Arraymancer/issues/301
-      self.W3s0.is_grad_needed or self.W3sN.is_grad_needed or
-      self.U3s.is_grad_needed or
-      self.bW3s.is_grad_needed or self.bU3s.is_grad_needed):
-    gru_forward(
-      a.value, self.W3s0.value, self.W3sN.value, self.U3s.value,
-      self.bW3s.value, self.bU3s.value,
-      self.rs, self.zs, self.ns, self.Uhs,
-      result.output.value, result.hiddenN.value,
-      self.cached_inputs,
-      self.cached_hiddens
-    )
-  else:
-    gru_inference(
-      a.value,
-      self.W3s0.value, self.W3sN.value, self.U3s.value,
-      self.bW3s.value, self.bU3s.value, result.output.value, result.hiddenN.value
-      )
+  gru_forward(
+    a.value, self.W3s0.value, self.W3sN.value, self.U3s.value,
+    self.bW3s.value, self.bU3s.value,
+    self.rs, self.zs, self.ns, self.Uhs,
+    result.output.value, result.hiddenN.value,
+    self.cached_inputs,
+    self.cached_hiddens
+  )
 
-method backward*[TT](
+proc gru_inference[TT](
+          self: GRUGate[TT],
+          a: Variable[TT], hidden0: Variable[TT],
+        ): tuple[output, hiddenN: Variable[TT]] =
+  ## Hidden_state is update in-place it's both an input and output
+  # TODO, we don't need to store the Variable in `self`
+  # https://github.com/mratsim/Arraymancer/issues/301
+  new result.output
+  new result.hiddenN
+
+  result.output.context = a.context
+  result.hiddenN.context = a.context
+  result.hiddenN.value = hidden0.value.clone()
+  gru_inference(
+    a.value,
+    self.W3s0.value, self.W3sN.value, self.U3s.value,
+    self.bW3s.value, self.bU3s.value, result.output.value, result.hiddenN.value
+  )
+
+proc gru_backward[TT](
           self: GRUGate[TT],
           payload: Payload[TT],
-          ): SmallDiffs[TT] {.noInit.}=
+        ): SmallDiffs[TT] {.noInit.}=
   let gradients = payload.sequence
   result = newDiffs[TT](7)
   gru_backward(
@@ -96,11 +104,21 @@ proc gru*[TT](
   ##   - `hidden` of shape [num_stacked_layers * num_directions, batch, hidden_size].
   ##     `hidden` contains the hidden state for timestep T == sequence/timesteps length of `input`
 
-  # TODO bound checking
+  # Checks - TODO more checks
+  let seq_len = input.value.shape[0]
+  let batch_size = input.value.shape[1]
+  let hidden_size = hidden0.value.shape[2]
+
+  doAssert hidden0.value.shape[0] == layers # TODO bidirectional
+  doAssert hidden0.value.shape[1] == batch_size, " - hidden0: " & $hidden0.value.shape[1] & ", batch_size: " & $batch_size
 
   # Gate
   var gate: GRUGate[TT]
   new gate
+
+  # TODO, for inference we don't need to store the Variable in `self`
+  # https://github.com/mratsim/Arraymancer/issues/301
+  # (but the compiler will push/pop them from the stack anyway so maybe no need to optimize)
   gate.W3s0 = W3s0
   gate.W3sN = W3sN
   gate.U3s = U3s
@@ -122,35 +140,24 @@ proc gru*[TT](
   node.parents[6] = bU3s.weakRef
   input.context.push(node)
 
-  # Checks
-  let seq_len = input.value.shape[0]
-  let batch_size = input.value.shape[1]
-  let hidden_size = hidden0.value.shape[2]
-
-  doAssert hidden0.value.shape[0] == layers # TODO bidirectional
-  doAssert hidden0.value.shape[1] == batch_size, " - hidden0: " & $hidden0.value.shape[1] & ", batch_size: " & $batch_size
-
-  # Resulting Variable
-  gate.cached_inputs = newSeqUninit[TT](layers)
-  gate.cached_hiddens = newSeqWith(layers) do: newSeq[TT](seq_len)
-
-  type T = getSubtype TT
-  gate.rs = newTensorUninit[T](layers, seq_len, batch_size, hidden_size)
-  gate.zs = newTensorUninit[T](layers, seq_len, batch_size, hidden_size)
-  gate.ns = newTensorUninit[T](layers, seq_len, batch_size, hidden_size)
-  gate.Uhs = newTensorUninit[T](layers, seq_len, batch_size, hidden_size)
-
-  result = gate.forward(input, hidden0)
-  node.payload = Payload[TT](
-    kind: pkSeq,
-    sequence: @[result.output, result.hiddenN]
-    )
-
-  # Caching for backprop
+  # Training
   if input.is_grad_needed or hidden0.is_grad_needed or
       W3s0.is_grad_needed or W3sN.is_grad_needed or
       U3s.is_grad_needed or
       bW3s.is_grad_needed or bU3s.is_grad_needed:
+
+    # Caching for backprop
+    gate.cached_inputs = newSeqUninit[TT](layers)
+    gate.cached_hiddens = newSeqWith(layers) do: newSeq[TT](seq_len)
+
+    type T = getSubtype TT
+    gate.rs = newTensorUninit[T](layers, seq_len, batch_size, hidden_size)
+    gate.zs = newTensorUninit[T](layers, seq_len, batch_size, hidden_size)
+    gate.ns = newTensorUninit[T](layers, seq_len, batch_size, hidden_size)
+    gate.Uhs = newTensorUninit[T](layers, seq_len, batch_size, hidden_size)
+
+    # Resulting var
+    result = gate.gru_forward(input, hidden0)
 
     result.output.grad = zeros_like(result.output.value)
     result.output.requires_grad = true
@@ -158,10 +165,14 @@ proc gru*[TT](
     result.hiddenN.grad = zeros_like(result.hiddenN.value)
     result.hiddenN.requires_grad = true
 
-# ############################################################
-#
-#                      Debugging
-#
-# ############################################################
-
-method debugGateName*[TT](self: GRUGate[TT]): string {.inline.} = "GRU"
+    register_node(
+      "GRU",
+      gate,
+      embedding_backward[TT, scaled, Idx],
+      result,
+      input, hidden0,
+      W3s0, W3sN, U3s,
+      bW3s, bU3s
+    )
+  else:
+    result = gate.gru_inference(input, hidden0)

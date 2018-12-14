@@ -21,7 +21,7 @@ type StackGate{.final.}[TT] = ref object of Gate[TT]
   axis: int
   nb_grads: int
 
-proc forward[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[TT] =
+proc stack_forward[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[TT] =
   new result
 
   # TODO: avoid the intermediate seq alloc to extract varargs Tensors from varargs variables
@@ -32,7 +32,7 @@ proc forward[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[TT] =
   result.context = x[0].context
   result.value = stack(ts, self.axis)
 
-method backward*[TT](self: StackGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc stack_backward[TT](self: StackGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](self.nb_grads)
   for i in 0 ..< gradient.shape[self.axis]:
@@ -48,8 +48,8 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
   ## Returns:
   ##   - a new stacked variable along the new axis
 
-  let v0 = variables[0]
   when compileOption("boundChecks"):
+    let v0 = variables[0]
     for v in variables:
       check_ctx(v0, v)
       assert v0.value.shape == v.value.shape
@@ -60,37 +60,33 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
   gate.nb_grads = variables.len
   gate.axis = axis
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](variables.len)
-  for idx, v in variables:
-    node.parents[idx] = v.weakRef
-
-  v0.context.push node
-
   # Resulting var
-  result = gate.forward variables
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  result = gate.stack_forward variables
 
   # Caching for backprop
   if anyIt(variables, it.is_grad_needed):
     result.grad = zeros_like result.value
     result.requires_grad = true
 
+    register_node(
+      "Stack",
+      gate,
+      stack_backward[TT],
+      result,
+      variables
+    )
+
 # ###########################################################
 
 type ChunkSplitGate*{.final.}[TT] = ref object of Gate[TT]
   axis: int
 
-proc forward_chunk[TT](self: ChunkSplitGate[TT], x: Variable[TT], nb_chunks: Positive): seq[Variable[TT]] {.noInit, inline.}=
+proc chunk_forward[TT](self: ChunkSplitGate[TT], x: Variable[TT], nb_chunks: Positive): seq[Variable[TT]] {.noInit, inline.}=
   result = x.value.chunk(nb_chunks, self.axis).mapIt( # TODO: inefficient to create an intermediate sequence
     Variable[TT](context: x.context, value: it)
   )
 
-method backward[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc chunk_backward[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradients = payload.sequence.mapIt(it.grad) # TODO: inefficient to create an intermediate sequence
   result = newDiffs[TT](1)
   result[0] = concat(gradients, self.axis)
@@ -102,6 +98,7 @@ proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variab
   ## with la == length_axis, n = n_chunks
   ## it returns la mod n subtensors of size `(la div n) + 1`
   ##            the rest of size `la div n`.
+  ## So split sizes at most differs by 1
   ##
   ## This is consistent with numpy array_split
 
@@ -110,21 +107,19 @@ proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variab
   new gate
   gate.axis = axis
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](1)
-  node.parents[0] = v.weakRef
-  v.context.push node
-
   # Resulting var
-  result = gate.forward_chunk(v, nb_chunks)
-  node.payload = Payload[TT](kind: pkSeq, sequence: result)
+  result = gate.chunk_forward(v, nb_chunks)
 
   # Caching for backprop
   if v.requires_grad:
     for idx, variable in result:
       variable.requires_grad = true
       variable.grad = zeros_like variable.value
+
+    register_node(
+      "Chunk",
+      gate,
+      chunk_backward[TT],
+      result,
+      v
+    )

@@ -20,13 +20,12 @@ type MatMulGate* {.final.} [TT] = ref object of Gate[TT]
   a: Variable[TT]
   b: Variable[TT]
 
-proc forward[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
+proc matmul_forward[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
   new result
-
   result.context = a.context
   result.value = a.value * b.value
 
-method backward*[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc matmul_backward[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](2)
   result[0] = gradient * self.b.value.transpose
@@ -40,20 +39,8 @@ proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
   var gate: MatMulGate[TT]
   new gate
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](2)
-  node.parents[0] = a.weakRef
-  node.parents[1] = b.weakRef
-
-  a.context.push(node)
-
   # Resulting var
-  result = gate.forward(a, b)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  result = gate.matmul_forward(a, b)
 
   if a.is_grad_needed or b.is_grad_needed:
     result.grad = zeros_like result.value
@@ -62,10 +49,10 @@ proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
     gate.a = a
     gate.b = b
 
-# ############################################################
-#
-#                      Debugging
-#
-# ############################################################
-
-method debugGateName*[TT](self: MatMulGate[TT]): string {.inline.} = "MatMul"
+    register_node(
+      "MatMul",
+      gate,
+      matmul_backward[TT],
+      result,
+      a, b
+    )

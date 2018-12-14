@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../tensor/tensor,
+import  typetraits,
+        ../tensor/tensor,
         ./autograd_common
 
 template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
@@ -53,13 +54,13 @@ template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
 type ReshapeGate*{.final.}[TT] = ref object of Gate[TT]
   cached_input_shape: MetadataArray
 
-proc forward_reshape[TT](self: ReshapeGate[TT], a: Variable[TT], shape: MetadataArray): Variable[TT] {.inline.}=
+proc reshape_forward[TT](self: ReshapeGate[TT], a: Variable[TT], shape: MetadataArray): Variable[TT] {.inline.}=
   new result
 
   result.context = a.context
   result.value = a.value.reshape(shape)
 
-method backward*[TT](self: ReshapeGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc reshape_backward[TT](self: ReshapeGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient.reshape(self.cached_input_shape)
@@ -69,25 +70,22 @@ proc reshapeImpl[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
   var gate: ReshapeGate[TT]
   new gate
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](1)
-  node.parents[0] = a.weakRef
-
-  a.context.push(node)
-
   # Resulting var
-  result = gate.forward_reshape(a, shape)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  result = gate.reshape_forward(a, shape)
 
   # Caching for backprop
   if a.is_grad_needed:
     result.grad = zeros_like(result.value)
     result.requires_grad = true
     gate.cached_input_shape = a.value.shape
+
+    register_node(
+      "Reshape",
+      gate,
+      reshape_backward[TT],
+      result,
+      a
+    )
 
 proc reshape*[TT](a: Variable[TT], shape: varargs[int]): Variable[TT] =
   ## Input:
@@ -108,14 +106,6 @@ proc flatten*[TT](a: Variable[TT]): Variable[TT] =
 
 # ############################################################
 #
-#                      Debugging
-#
-# ############################################################
-
-method debugGateName*[TT](self: ReshapeGate[TT]): string {.inline.} = "Reshape"
-
-# ############################################################
-#
 #                   Squeeze / Unsqueeze
 #
 # ############################################################
@@ -125,12 +115,12 @@ template squeezeUnsqueeze(GateName, forward_proc, backward_proc: untyped): untyp
   type GateName{.final.}[TT] = ref object of Gate[TT]
     axis: int
 
-  proc `forward _ forward_proc`[TT](self: GateName[TT], x: Variable[TT]): Variable[TT] {.inline.}=
+  proc `forward_proc _ forward`[TT](self: GateName[TT], x: Variable[TT]): Variable[TT] {.inline.}=
     new result
     result.context = x.context
     result.value = forward_proc(x.value, self.axis)
 
-  method backward[TT](self: GateName[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  proc `forward_proc _ backward`[TT](self: GateName[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
     result = newDiffs[TT](1)
     result[0] = payload.variable.grad.backward_proc(self.axis)
 
@@ -140,23 +130,21 @@ template squeezeUnsqueeze(GateName, forward_proc, backward_proc: untyped): untyp
     new gate
     gate.axis = axis
 
-    # Node
-    var node: Node[TT]
-    new node
-
-    node.gate = gate
-    node.parents = newParents[TT](1)
-    node.parents[0] = v.weakRef
-    v.context.push node
-
     # Resulting var
-    result = gate.`forward _ forward_proc`(v)
-    node.payload = Payload[TT](kind: pkVar, variable: result)
+    result = gate.`forward_proc _ forward`(v)
 
     # Caching for backprop
     if v.requires_grad:
       result.requires_grad = true
       result.grad = zeros_like result.value
+
+      register_node(
+        GateName.name,
+        gate,
+        `forward_proc _ backward`[TT],
+        result,
+        v
+      )
 
 squeezeUnsqueeze(SqueezeGate, squeeze, unsqueeze)
 squeezeUnsqueeze(UnsqueezeGate, unsqueeze, squeeze)

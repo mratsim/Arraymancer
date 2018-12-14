@@ -20,12 +20,12 @@ import  ../tensor/tensor,
 
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
 
-proc forward[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
+proc add_forward[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
   new result
   result.context = a.context
   result.value = a.value + b.value
 
-proc backward[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc add_backward[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newSeq[TT](2)
   result[0] = gradient
@@ -40,7 +40,7 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   new gate
 
   # Resulting var
-  result = gate.forward(a, b)
+  result = gate.add_forward(a, b)
 
   # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:
@@ -50,20 +50,19 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
     register_node(
       "Add",
       gate,
-      backward[TT],
+      add_backward[TT],
       result,
       a, b
     )
 
 type SubGate* {.final.} [TT] = ref object of Gate[TT]
 
-proc forward[TT](self: SubGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
+proc sub_forward[TT](self: SubGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
   new result
-
   result.context = a.context
   result.value = a.value - b.value
 
-proc backward*[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc sub_backward[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](2)
   result[0] = gradient
@@ -78,7 +77,7 @@ proc `-`*[TT](a, b: Variable[TT]): Variable[TT] =
   new gate
 
   # Resulting var
-  result = gate.forward(a, b)
+  result = gate.sub_forward(a, b)
 
   # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:
@@ -88,7 +87,7 @@ proc `-`*[TT](a, b: Variable[TT]): Variable[TT] =
     register_node(
       "Sub",
       gate,
-      backward[TT],
+      sub_backward[TT],
       result,
       a, b
     )

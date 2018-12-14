@@ -114,7 +114,7 @@ func debugContext(ctx: Context) =
 
   debugecho "\n######"
   for i, node in ctx.nodes:
-    var s = &"Node {i:>4}: {node.gateName:>25} - "
+    var s = &"Node {i:>4}: {node.name:>12} - "
     if node.parents.len <= 1:
       s &= $node.parents[0].value.shape
     else:

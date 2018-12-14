@@ -19,13 +19,12 @@ import  ../../autograd/autograd,
 type TanhActivation* {.final.} [TT] = ref object of Gate[TT]
   cache: TT
 
-proc forward[TT](self: TanhActivation[TT], a: Variable[TT]): Variable[TT] {.inline.}=
+proc tanh_forward[TT](self: TanhActivation[TT], a: Variable[TT]): Variable[TT] {.inline.}=
   new result
-
   result.context = a.context
   result.value = tanh a.value
 
-method backward*[TT](self: TanhActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc tanh_backward[TT](self: TanhActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.inline.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient.tanh_backward(self.cache)
@@ -38,19 +37,8 @@ proc tanh*[TT](a: Variable[TT]): Variable[TT] =
   var gate: TanhActivation[TT]
   new gate
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](1)
-  node.parents[0] = a.weakRef
-
-  a.context.push(node)
-
   # Resulting var
-  result = gate.forward(a)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  result = gate.tanh_forward(a)
 
   # Caching for backprop
   if a.is_grad_needed:
@@ -58,3 +46,11 @@ proc tanh*[TT](a: Variable[TT]): Variable[TT] =
     result.requires_grad = true
 
     gate.cache = result.value
+
+    register_node(
+      "Tanh",
+      gate,
+      relu_backward[TT],
+      result,
+      a
+    )

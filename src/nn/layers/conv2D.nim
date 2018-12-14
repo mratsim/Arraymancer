@@ -23,18 +23,17 @@ type Conv2DGate* {.final.} [TT] = ref object of Gate[TT]
   nb_grads: int
   # TODO: store the algorithm (NNPACK / im2col)
 
-proc forward[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
+proc conv2d_forward[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
   new result
-
   result.context = a.context
   result.value = conv2D(self.cached_input.value,
                         self.weight.value,
                         self.bias.value, # Todo, case when there is no bias
                         self.padding,
                         self.stride
-                        )
+                      )
 
-method backward*[TT](self: Conv2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc conv2d_backward*[TT](self: Conv2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](self.nb_grads)
   conv2d_backward(
@@ -90,24 +89,27 @@ proc conv2d*[TT]( input, weight: Variable[TT],
   gate.padding = padding
   gate.stride = stride
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](gate.nb_grads)
-  node.parents[0] = input.weakRef
-  node.parents[1] = weight.weakRef
-  if not bias.isNil:
-    node.parents[2] = bias.weakRef
-
-  input.context.push(node)
-
   # Resulting var
-  result = gate.forward(input)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  result = gate.conv2d_forward(input)
 
   # Caching for backprop:
   if input.is_grad_needed or weight.is_grad_needed or (not bias.isNil and bias.is_grad_needed):
     result.grad = zeros_like(result.value)
     result.requires_grad = true
+
+    if not bias.isNil:
+      register_node(
+        "Conv2D",
+        gate,
+        conv2d_backward[TT],
+        result,
+        input, weight, bias
+      )
+    else:
+      register_node(
+        "Conv2D",
+        gate,
+        conv2d_backward[TT],
+        result,
+        input, weight
+      )

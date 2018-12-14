@@ -19,13 +19,12 @@ import  ../../tensor/tensor,
 type ReluActivation* {.final.} [TT] = ref object of Gate[TT]
   cache: TT
 
-proc forward[TT](self: ReluActivation[TT], a: Variable[TT]): Variable[TT] {.inline.}=
+proc relu_forward[TT](self: ReluActivation[TT], a: Variable[TT]): Variable[TT] {.inline.}=
   new result
-
   result.context = a.context
   result.value = relu a.value
 
-method backward*[TT](self: ReluActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc relu_backward[TT](self: ReluActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient.relu_backward(self.cache)
@@ -38,19 +37,8 @@ proc relu*[TT](a: Variable[TT]): Variable[TT] =
   var gate: ReluActivation[TT]
   new gate
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](1)
-  node.parents[0] = a.weakRef
-
-  a.context.push(node)
-
   # Resulting var
-  result = gate.forward(a)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  result = gate.relu_forward(a)
 
   # Caching for backprop
   if a.is_grad_needed:
@@ -58,3 +46,11 @@ proc relu*[TT](a: Variable[TT]): Variable[TT] =
     result.requires_grad = true
 
     gate.cache = result.value
+
+    register_node(
+      "Relu",
+      gate,
+      relu_backward[TT],
+      result,
+      a
+    )

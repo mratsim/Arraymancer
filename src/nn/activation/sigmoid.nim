@@ -19,13 +19,12 @@ import  ../../autograd/autograd,
 type SigmoidActivation* {.final.} [TT] = ref object of Gate[TT]
   cache: TT
 
-proc forward[TT](self: SigmoidActivation[TT], a: Variable[TT]): Variable[TT] {.inline.}=
+proc sigmoid_forward[TT](self: SigmoidActivation[TT], a: Variable[TT]): Variable[TT] {.inline.}=
   new result
-
   result.context = a.context
   result.value = sigmoid a.value
 
-method backward*[TT](self: SigmoidActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc sigmoid_backward[TT](self: SigmoidActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient.sigmoid_backward(self.cache)
@@ -38,19 +37,8 @@ proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
   var gate: SigmoidActivation[TT]
   new gate
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](1)
-  node.parents[0] = a.weakRef
-
-  a.context.push(node)
-
   # Resulting var
-  result = gate.forward(a)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  result = gate.sigmoid_forward(a)
 
   # Caching for backprop
   if a.is_grad_needed:
@@ -58,3 +46,11 @@ proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
     result.requires_grad = true
 
     gate.cache = result.value
+
+    register_node(
+      "Sigmoid",
+      gate,
+      sigmoid_backward[TT],
+      result,
+      a
+    )

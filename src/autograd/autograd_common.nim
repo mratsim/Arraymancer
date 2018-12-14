@@ -22,8 +22,27 @@ import
 #
 # ############################################################
 
+# Design tradeoff:
+#
+# Nim default GC is deferred reference counting, meaning it doesn't deal well with
+# cyclic references where A refers to B and B refers to A.
+#
+# To solve that it must use the dreaded mark-and-sweep, i.e. stop the world
+# copy all live objects into a new location, everything that was not copied
+# was unused.
+#
+# Deep learning is already extremely memory-bandwidth intensive.
+# We can't use a direct pointer to the object as the GC can move it (https://github.com/mratsim/Arraymancer/pull/329)
+# so we need a pointer to the ref the GC is holding to break the ref cycle.
+#
+# The cost is that using objects through that requires a double pointer indirection,
+# so much more cache misses.
+# Though it's certainly much less costly than mark and sweep.
+#
+# This is pending https://github.com/nim-lang/Nim/issues/9974
+
 type
-  Context*[TT] = ref ContextObj[TT]
+  Context*[TT] = ref object # {.acyclic.}
     ## An autograd context is a record of operations or layers.
     ## It holds the following fields:
     ##   - ``nodes``: This records the list of operations(``Node``) applied in the context
@@ -34,45 +53,23 @@ type
     ## A context is also called a tape or a Wengert list.
     ##
     ## Note: backpropagation empties the list of operations.
-
-  ContextPtr[TT] = ptr ContextObj[TT]
-    ## A ``ContextPtr`` is a weak reference to a ``ContextObj``.
-    ## A ``Context`` refers to ``Nodes`` which refers to ``Variable``
-    ## which will weakly refer back to a ``Context``.
-    ## This avoids strong circular references with the associated garbage collection costs.
-
-  ContextObj[TT] = object
     nodes: seq[Node[TT]]
     no_grad: bool
 
-  Variable*[TT] = ref VariableObj[TT]
+  Variable*[TT] = ref object # {.acyclic.}
     ## A variable is a wrapper for Tensors that tracks operations applied to it.
     ## It consists of:
     ##    - A weak reference to a record of operations ``context``
     ##    - The tensor being tracked ``value``
     ##    - The gradient of the tensor ``grad``
-    ##
-    ## Warning  ⚠: Make sure the ``Context`` outlives the ``Variable``.
-    ## In the future ``grad`` will be optional: ``Option[TT]`` or ``opt[TT]``
-
-  VariablePtr*[TT] = ptr VariableObj[TT]
-    ## A ``VariablePtr`` is almost the same as a ``Variable``
-    ## except that it is not traced by the garbage collector.
-    ##
-    ## It is an optimization to break from the following cyclic reference:
-    ## parent --(ref)--> child
-    ## child  --(ref)--> parent
-    ## A naive (but fast) garbage collector cannot delete child because parent refers to it
-    ## nor can it delete parent because child refers to it.
-
-  VariableObj[TT] = object
+    ##    - a flag that indicates if gradient is needed
     context*: Context[TT]
+      # Variables shouldn't own their Context
     value*: TT
     grad*: TT
     requires_grad*: bool
-    # TODO make the grad initialization optional to optimize memory use
 
-  Gate*[TT] = ref object of RootObj
+  Gate*[TT] = ref object of RootObj # {.acyclic.}
     ## Base operator or layer. You can describe your custom operations or layers
     ## by inheriting from Gate and add a forward and optionally a backward method.
     ## Each operations should set the number of gradients produced during backpropagation.
@@ -85,16 +82,23 @@ type
     of pkVar: variable*: Variable[TT]
     of pkSeq: sequence*: seq[Variable[TT]]
 
-  Node*[TT] = ref object
+  Backward[TT] = proc(self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] {.nimcall.}
+
+  Node[TT] = object
     ## A node consist of:
     ##   - The description of the operator or layer (``gate``)
+    ##   - The corresponding proc that handles backpropagation
     ##   - A weak reference to the ``parents`` VariableObj
     ##   - The actual value of the node (``payload``)
-    gate*: Gate[TT]
-    parents*: Parents[TT]
-    payload*: Payload[TT]
+    gate: Gate[TT]
+    backward: Backward[TT]
+    parents: Parents[TT]
+    payload: Payload[TT]
+    when defined(debug):
+      name: string
 
   Parents[TT] = seq[Variable[TT]]
+    # Children nodes shouldn't own their parents
   SmallDiffs*[TT] = seq[TT]
 
 # ############################################################
@@ -105,15 +109,12 @@ type
 
 # TODO: don't export that publicly
 
-method debugGateName*[TT](self: Gate[TT]): string {.noInit, base, inline.} =
-  raise newException(ValueError, "debugGateName method is not implemented for one of the gates. (And obviously we can't print its name)")
-
-func debugContext(ctx: Context or ContextPtr) =
+func debugContext(ctx: Context) =
   ## Debug the autograd context
 
   debugecho "\n######"
   for i, node in ctx.nodes:
-    var s = &"Node {i:>4}: {debugGateName(node.gate):>25} - "
+    var s = &"Node {i:>4}: {node.gateName:>25} - "
     if node.parents.len <= 1:
       s &= $node.parents[0].value.shape
     else:
@@ -141,9 +142,6 @@ func debugContext(ctx: Context or ContextPtr) =
 #
 # ############################################################
 
-method backward*[TT](self: Gate[TT], payload: Payload[TT]): seq[TT] {.noInit, base, inline.} =
-  raise newException(ValueError, "backward method is not implemented for " & $self.type.name)
-
 func newContext*(TT: typedesc): Context[TT] =
   ## Initialize a context
   new result
@@ -154,31 +152,47 @@ func variable*[TT](ctx: Context[TT], value: TT, requires_grad = false): Variable
   ## T is a Tensor[T, CudaTensor[T] or scalar T
   # TODO make the grad initialization optional to optimize memory use
   new result
-  result.context = ctx.weakRef
+  result.context = ctx
   result.value = value
   result.grad = value.zeros_like
   result.requires_grad = requires_grad
 
-type CtxAlias[TT] = Context[TT] or ContextPtr[TT]
-  ## Following https://github.com/mratsim/Arraymancer/pull/180
-  ## the CtxAlias used to take a ptr ContextObj instead of a ref
-  ## to reduce stress on the GC, this was reverted, see at the bottom of the file.
-  ## we keep this history. To re-optimise in the future.
-
-func len[TT](ctx: CtxAlias[TT]): int {.inline.}=
+func len[TT](ctx: Context[TT]): int {.inline.}=
   ## Returns the number of operations applied in the context
   ctx.nodes.len
 
-func push*[TT](ctx: CtxAlias[TT], node: Node[TT]) {.inline.}=
+func push[TT](ctx: Context[TT], node: Node[TT]) {.inline.}=
   ## Append a new operation to the context
-  if not ctx.no_grad:
-    ctx.nodes.add(node)
+  ctx.nodes.add(node)
 
-func peek[TT](ctx: CtxAlias[TT]): Node[TT] {.inline.}=
+func peek[TT](ctx: Context[TT]): Node[TT] {.inline.}=
   ctx.nodes[ctx.len - 1]
 
-func pop[TT](ctx: CtxAlias[TT]): Node[TT] {.inline.}=
+func pop[TT](ctx: Context[TT]): Node[TT] {.inline.}=
   ctx.nodes.pop
+
+func register_node*[TT](
+        name: static string,
+        gate: Gate[TT],
+        backward: Backward[TT],
+        result: Variable[TT] or seq[Variable[TT]],
+        parents: varargs[Variable[TT]]) =
+  ## Add an operation / gate as a new node in the computation graph
+  var node: Node[TT]
+
+  node.gate = gate
+  node.backward = backward
+  node.parents = @parents
+
+  when result is Variable:
+    node.payload = Payload[TT](kind: pkVar, variable: result)
+  else:
+    node.payload = Payload[TT](kind: pkSeq, sequence: result)
+
+  when defined(debug):
+    node.name = name
+
+  parents[0].context.push node
 
 template no_grad_mode*(ctx: Context, body: untyped): untyped =
   ## Within this block, the context will not track the operations applied
@@ -223,8 +237,7 @@ proc backprop*[TT](v: Variable[TT]) =
 
   while v.context.len > 0:
     let curNode = v.context.pop
-    let curGate = curNode.gate
-    let diffs = curGate.backward(curnode.payload)
+    let diffs = curNode.backward(curNode.gate, curNode.payload)
 
     for i, diff in diffs:
       let parent_i = curNode.parents[i]
@@ -236,33 +249,3 @@ func newParents*[TT](num: Natural): Parents[TT] {.inline.} =
 
 func newDiffs*[TT](num: Natural): SmallDiffs[TT] {.inline.} =
   newSeqUninit[TT](num)
-
-# ############################################################
-#
-#                       No-ops
-#
-# ############################################################
-
-# As an optimisation to reduce stress on the GC
-# and expose the acyclic nature of NN graphs
-# the following used to create pointers
-# to variables and context, but it seems like
-# when lots of node are created, the refs might point
-# to something wrong.
-#   - Optimisation: https://github.com/mratsim/Arraymancer/pull/180
-#   - Reverted in:  https://github.com/mratsim/Arraymancer/pull/329
-#   - TODO:         https://github.com/mratsim/Arraymancer/issues/302
-
-template weakRef*[TT](v: Variable[TT]): Variable[TT] =
-  ## Get a weak/untraced reference to a Variable
-  ## This is intended for library writers and Neural Network graphs
-  ## to avoid strong cyclic references.
-  # cast[VariablePtr[TT]](v)
-  v
-
-template weakRef*[TT](ctx: Context[TT]): Context[TT] =
-  ## Get a weak/untraced reference to a Variable
-  ## This is intended for library writers and Neural Network graphs
-  ## to avoid strong cyclic references.
-  # cast[ContextPtr[TT]](ctx)
-  ctx

@@ -16,17 +16,16 @@
 # b is the rhs (right-hand side)
 
 import  ../tensor/tensor,
-        ./ag_data_structure
+        ./autograd_common
 
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
 
 proc forward[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
   new result
-
   result.context = a.context
   result.value = a.value + b.value
 
-method backward*[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc backward[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newSeq[TT](2)
   result[0] = gradient
@@ -40,25 +39,21 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   var gate: AddGate[TT]
   new gate
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](2)
-  node.parents[0] = a.weakRef
-  node.parents[1] = b.weakRef
-
-  a.context.push(node)
-
   # Resulting var
   result = gate.forward(a, b)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:
     result.grad = zeros_like result.value
     result.requires_grad = true
+
+    register_node(
+      "Add",
+      gate,
+      backward[TT],
+      result,
+      a, b
+    )
 
 type SubGate* {.final.} [TT] = ref object of Gate[TT]
 
@@ -68,7 +63,7 @@ proc forward[TT](self: SubGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}
   result.context = a.context
   result.value = a.value - b.value
 
-method backward*[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc backward*[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](2)
   result[0] = gradient
@@ -82,31 +77,18 @@ proc `-`*[TT](a, b: Variable[TT]): Variable[TT] =
   var gate: SubGate[TT]
   new gate
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](2)
-  node.parents[0] = a.weakRef
-  node.parents[1] = b.weakRef
-
-  a.context.push(node)
-
   # Resulting var
   result = gate.forward(a, b)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:
     result.grad = zeros_like result.value
     result.requires_grad = true
 
-# ############################################################
-#
-#                      Debugging
-#
-# ############################################################
-
-method debugGateName*[TT](self: AddGate[TT]): string {.inline.} = "Add"
-method debugGateName*[TT](self: SubGate[TT]): string {.inline.} = "Sub"
+    register_node(
+      "Sub",
+      gate,
+      backward[TT],
+      result,
+      a, b
+    )

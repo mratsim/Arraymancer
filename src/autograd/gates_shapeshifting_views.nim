@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import  ../tensor/tensor,
-        ./ag_data_structure
+        ./autograd_common
 
 template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
   ## Slice the tensor contained by the dynamic graph Variable

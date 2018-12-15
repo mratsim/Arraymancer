@@ -22,16 +22,21 @@ type MaxPool2DGate* {.final.} [TT] = ref object of Gate[TT]
   cached_max_indices: Tensor[int]
   kernel, padding, stride: Size2D
 
-proc maxpool2D_forward[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
-  new result
+proc maxpool2D_inference[TT](
+        result: Variable[TT],
+        input: Variable[TT],
+        kernel: Size2D,
+        padding: Size2D,
+        stride: Size2D
+      ) =
+  # TODO: change maxpool to be in-place
+  var unused: Tensor[int]
+  (unused, result.value) = maxpool2d(input.value,
+                                kernel,
+                                padding,
+                                stride)
 
-  result.context = a.context
-  (self.cached_max_indices, result.value) = maxpool2d(a.value,
-                                                      self.kernel,
-                                                      self.padding,
-                                                      self.stride)
-
-proc maxpool2D_backward_ag[TT](self: MaxPool2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc maxpool2D_backward_ag[TT](self: MaxPool2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = maxpool2d_backward(
@@ -40,11 +45,43 @@ proc maxpool2D_backward_ag[TT](self: MaxPool2DGate[TT], payload: Payload[TT]): S
     gradient
   )
 
+proc maxpool2D_forward[TT](
+        result: Variable[TT],
+        input: Variable[TT],
+        kernel: Size2D,
+        padding: Size2D,
+        stride: Size2D
+      ) =
+  # Gate
+  var gate: MaxPool2DGate[TT]
+  new gate
+  gate.kernel = kernel
+  gate.padding = padding
+  gate.stride = stride
+  gate.cached_input_shape = input.value.shape
+
+  (gate.cached_max_indices, result.value) = maxpool2d(input.value,
+                                                      kernel,
+                                                      padding,
+                                                      stride)
+  # Result setup
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
+  # Add to graph
+  register_node(
+    "Maxpool2D",
+    gate,
+    maxpool2D_backward_ag[TT],
+    result,
+    input
+  )
+
 proc maxpool2d*[TT](input: Variable[TT],
                     kernel: Size2D,
                     padding: Size2D = (0,0),
                     stride: Size2D = (1,1)
-                    ): Variable[TT] =
+                  ): Variable[TT] =
   ## Input:
   ##     - ``input`` Variable wrapping a 4D Tensor shape [N,C,H_in,W_in]
   ##     - ``kernel`` Height (kH) and width (kW) of the pooling kernel.
@@ -63,27 +100,12 @@ proc maxpool2d*[TT](input: Variable[TT],
     if unlikely(input.value.rank != 4):
       raise newException(ValueError, "Only 4d tensors are accepted for input and weight")
 
-  # Gate
-  var gate: MaxPool2DGate[TT]
-  new gate
-  gate.kernel = kernel
-  gate.padding = padding
-  gate.stride = stride
-
   # Resulting var
-  result = gate.maxpool2D_forward(input)
+  new result
+  result.context = input.context
 
   # Caching for backprop
   if input.is_grad_needed:
-    result.grad = zeros_like(result.value)
-    result.requires_grad = true
-
-    gate.cached_input_shape = input.value.shape
-
-    register_node(
-      "Maxpool2D",
-      gate,
-      maxpool2D_backward_ag[TT],
-      result,
-      input
-    )
+    result.maxpool2D_forward(input, kernel, padding, stride)
+  else:
+    result.maxpool2D_inference(input, kernel, padding, stride)

@@ -20,22 +20,14 @@ type Conv2DGate* {.final.} [TT] = ref object of Gate[TT]
   cached_input: Variable[TT]
   weight, bias: Variable[TT]
   padding, stride: Size2D
-  nb_grads: int
   # TODO: store the algorithm (NNPACK / im2col)
 
-proc conv2d_forward[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-  result.context = a.context
-  result.value = conv2D(self.cached_input.value,
-                        self.weight.value,
-                        self.bias.value, # Todo, case when there is no bias
-                        self.padding,
-                        self.stride
-                      )
-
-proc conv2d_backward_ag[TT](self: Conv2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc conv2d_backward_ag[TT](self: Conv2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
-  result = newDiffs[TT](self.nb_grads)
+  if self.bias.isNil:
+    result = newDiffs[TT](2)
+  else:
+    result = newDiffs[TT](3)
   conv2d_backward(
     self.cached_input.value,
     self.weight.value, self.bias.value,
@@ -43,6 +35,42 @@ proc conv2d_backward_ag[TT](self: Conv2DGate[TT], payload: Payload[TT]): SmallDi
     gradient,
     result[0], result[1], result[2]
   )
+
+proc conv2d_cache[TT](
+      result: Variable[TT],
+      input, weight, bias: Variable[TT],
+      padding, stride: Size2D) =
+
+  # Gate
+  var gate: Conv2DGate[TT]
+  new gate
+  gate.cached_input = input
+  gate.weight = weight
+  gate.padding = padding
+  gate.stride = stride
+
+  # Result setup
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
+  # Add to graph
+  if not bias.isNil:
+    gate.bias = bias
+    register_node(
+      "Conv2D",
+      gate,
+      conv2d_backward_ag[TT],
+      result,
+      input, weight, bias
+    )
+  else:
+    register_node(
+      "Conv2D",
+      gate,
+      conv2d_backward_ag[TT],
+      result,
+      input, weight
+    )
 
 proc conv2d*[TT]( input, weight: Variable[TT],
                   bias: Variable[TT] = nil,
@@ -79,37 +107,20 @@ proc conv2d*[TT]( input, weight: Variable[TT],
     if unlikely(not bias.isNil and bias.value.rank != 3) :
       raise newException(ValueError, "Incompatible shape: bias must be of rank 3")
 
-  # Gate
-  var gate: Conv2DGate[TT]
-  new gate
-  gate.nb_grads = if bias.isNil: 2 else: 3
-  gate.cached_input = input
-  gate.weight = weight
-  gate.bias = bias
-  gate.padding = padding
-  gate.stride = stride
-
   # Resulting var
-  result = gate.conv2d_forward(input)
+  new result
+  result.context = input.context
+  result.value = conv2D(input.value,
+                        weight.value,
+                        bias.value, # Todo, case when there is no bias
+                        padding,
+                        stride
+                      )
 
   # Caching for backprop:
   if input.is_grad_needed or weight.is_grad_needed or (not bias.isNil and bias.is_grad_needed):
-    result.grad = zeros_like(result.value)
-    result.requires_grad = true
-
-    if not bias.isNil:
-      register_node(
-        "Conv2D",
-        gate,
-        conv2d_backward_ag[TT],
+    conv2D_cache(
         result,
-        input, weight, bias
-      )
-    else:
-      register_node(
-        "Conv2D",
-        gate,
-        conv2d_backward_ag[TT],
-        result,
-        input, weight
+        input, weight, bias,
+        padding, stride
       )

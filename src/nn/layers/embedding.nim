@@ -25,11 +25,6 @@ type EmbeddingGate*{.final.}[TT; scaled: static bool; Idx: SomeNumber or byte or
     # We special-case -1 to mean no padding. Ideally we should use an option,
     # and have a separate proc for padding and no padding (to avoid costly checks within a tight loop)
 
-proc embedding_forward[TT, scaled, Idx](self: EmbeddingGate[TT, scaled, Idx], input: Tensor[Idx]): Variable[TT] {.inline.} =
-  new result
-  result.context = self.weight.context
-  result.value = embedding(input, self.weight.value)
-
 proc embedding_backward_ag[TT; scaled: static bool, Idx](
         self: EmbeddingGate[TT, scaled, Idx],
         payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
@@ -38,6 +33,37 @@ proc embedding_backward_ag[TT; scaled: static bool, Idx](
   let gradOutput = payload.variable.grad
   if self.weight.requires_grad:
     embedding_backward(result[0], self.cached_input_vocab_id, gradOutput, self.padding_idx, scaled)
+
+proc embedding_cache[TT, Idx](
+      result: Variable[TT],
+      input_vocab_id: Tensor[Idx],
+      weight: Variable[TT],
+      padding_idx: int,
+      scale_grad_by_freq: static[bool]
+    ) =
+
+  # Gate
+  var gate: EmbeddingGate[TT, scale_grad_by_freq, Idx]
+  new gate
+  gate.cached_input_vocab_id = input_vocab_id
+  gate.weight = weight
+  gate.padding_idx = padding_idx
+
+  # Result setup
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
+  # Add to graph
+  register_node(
+    "Embedding",
+    gate,
+    # Why do we not need to cast to Backward[TT]
+    # while we need to in sparse_softmax_cross_entropy?
+    embedding_backward_ag[TT, scale_grad_by_freq, Idx],
+    result,
+    weight
+  )
+
 
 proc embedding*[TT; Idx: byte or char or SomeNumber](
         input_vocab_id: Tensor[Idx],
@@ -62,27 +88,15 @@ proc embedding*[TT; Idx: byte or char or SomeNumber](
   ##     This divides the gradient of each words by their occurences in the minibatch.
   ##     This regularise variations in the weight of very frequent words.
 
-  # Gate
-  var gate: EmbeddingGate[TT, scale_grad_by_freq, Idx]
-  new gate
-  gate.cached_input_vocab_id = input_vocab_id
-  gate.weight = weight
-  gate.padding_idx = padding_idx
-
   # Resulting var
-  result = gate.embedding_forward(input_vocab_id)
+  new result
+  result.context = weight.context
+  result.value = embedding(input_vocab_id, weight.value)
 
   # Caching for backprop
   if weight.is_grad_needed:
-    result.grad = zeros_like(result.value)
-    result.requires_grad = true
-
-    register_node(
-      "Embedding",
-      gate,
-      # Why do we not need to cast to Backward[TT]
-      # while we need to in sparse_softmax_cross_entropy?
-      embedding_backward_ag[TT, scale_grad_by_freq, Idx],
+    embedding_cache(
       result,
-      weight
+      input_vocab_id, weight,
+      padding_idx, scale_grad_by_freq
     )

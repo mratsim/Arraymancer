@@ -27,13 +27,15 @@ proc add_backward_ag[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT
   result[1] = gradient
 
 proc add_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
-  result.grad = zeros_like result.value
-  result.requires_grad = true
-
   # Gate
   var gate: AddGate[TT]
   new gate
 
+  # Result setup
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+
+  # Add to graph
   register_node(
     "Add",
     gate,
@@ -46,10 +48,12 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   when compileOption("boundChecks"):
     check_ctx(a, b)
 
+  # Resulting var
   new result
   result.context = a.context
   result.value = a.value + b.value
 
+  # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:
     result.add_cache(a, b)
 
@@ -62,14 +66,15 @@ proc sub_backward_ag[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT
   result[1] = -gradient
 
 proc sub_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
-  result.value = a.value - b.value
-  result.grad = zeros_like result.value
-  result.requires_grad = true
-
   # Gate
   var gate: AddGate[TT]
   new gate
 
+  # Result setup
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+
+  # Caching for backprop
   register_node(
     "Sub",
     gate,
@@ -82,9 +87,11 @@ proc `-`*[TT](a, b: Variable[TT]): Variable[TT] =
   when compileOption("boundChecks"):
     check_ctx(a, b)
 
+  # Resulting var
   new result
   result.context = a.context
   result.value = a.value - b.value
 
+  # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:
     result.sub_cache(a, b)

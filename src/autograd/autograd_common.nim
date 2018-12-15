@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import
-  typetraits, macros, strformat,
+  typetraits, macros,
   ../private/sequninit
 
 # ############################################################
@@ -109,14 +109,14 @@ type
 #
 # ############################################################
 
-# TODO: don't export that publicly
-
-func debugContext(ctx: Context) =
+func debug[TT](ctx: Context[TT]) =
   ## Debug the autograd context
 
   debugecho "\n######"
   for i, node in ctx.nodes:
-    var s = &"Node {i:>4}: {node.name:>12} - "
+    # strformat doesn't work in generics
+    # var s = &"Node {i:>4}: {node.name:>12} - "
+    var s = "Node " & $i & ": " & node.name & " - "
     if node.parents.len <= 1:
       s &= $node.parents[0].value.shape
     else:
@@ -232,15 +232,9 @@ proc backprop*[TT](v: Variable[TT]) =
   while v.context.len > 0 and v.context.peek.payload.variable != v:
     discard v.context.pop
 
-  # Now, until the context is been all backpropagated through we update
-  # each intermediate variables with its accumulated gradient and then pop the node
-  # TODO: Count Toward Zero memory optimization:
-  # https://rufflewind.com/2016-12-30/reverse-mode-automatic-differentiation and https://github.com/Rufflewind/revad/blob/de509269fe878bc9d564775abc25c4fa663d8a5e/src/chain.rs
-
   while v.context.len > 0:
     let curNode = v.context.pop
     let diffs = curNode.backward(curNode.gate, curNode.payload)
-
     for i, diff in diffs:
       let parent_i = curNode.parents[i]
       if parent_i.requires_grad:

@@ -59,15 +59,17 @@ proc reshape_backward_ag[TT](self: ReshapeGate[TT], payload: Payload[TT]): Small
   result = newDiffs[TT](1)
   result[0] = gradient.reshape(self.cached_input_shape)
 
-proc reshape_forward[TT](result: Variable[TT], a: Variable[TT], shape: MetadataArray) =
+proc reshape_cache[TT](result: Variable[TT], a: Variable[TT]) =
   # Gate
   var gate: ReshapeGate[TT]
   new gate
-
-  result.grad = zeros_like(result.value)
-  result.requires_grad = true
   gate.cached_input_shape = a.value.shape
 
+  # Result setup
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
+  # Add to graph
   register_node(
     "Reshape",
     gate,
@@ -84,7 +86,7 @@ proc reshapeImpl[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
 
   # Caching for backprop
   if a.is_grad_needed:
-    result.reshape_forward(a, shape)
+    result.reshape_cache(a)
 
 proc reshape*[TT](a: Variable[TT], shape: varargs[int]): Variable[TT] =
   ## Input:

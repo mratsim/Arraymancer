@@ -26,7 +26,7 @@ proc mean_forward[TT](self: MeanGate[TT], a: Variable[TT]): Variable[TT] {.inlin
   result.context = a.context
   result.value = [a.value.mean].toTensor
 
-proc mean_backward[TT](self: MeanGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc mean_backward_ag[TT](self: MeanGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient / getSubType(TT)(self.cached_input_shape.product) # Conversion to subtype T, oh Higher kinded-types ...
@@ -53,7 +53,7 @@ proc mean*[TT](a: Variable[TT]): Variable[TT] =
     register_node(
       "Mean",
       gate,
-      mean_backward[TT],
+      mean_backward_ag[TT],
       result,
       a
     )
@@ -67,7 +67,7 @@ proc sum_forward[TT](self: SumGate[TT], a: Variable[TT]): Variable[TT] {.inline.
   result.context = a.context
   result.value = [a.value.sum].toTensor
 
-proc sum_backward[TT](self: SumGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc sum_backward_ag[TT](self: SumGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
 
@@ -93,7 +93,7 @@ proc sum*[TT](a: Variable[TT]): Variable[TT] =
     register_node(
       "Sum",
       gate,
-      sum_backward[TT],
+      sum_backward_ag[TT],
       result,
       a
     )

@@ -60,7 +60,7 @@ proc reshape_forward[TT](self: ReshapeGate[TT], a: Variable[TT], shape: Metadata
   result.context = a.context
   result.value = a.value.reshape(shape)
 
-proc reshape_backward[TT](self: ReshapeGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc reshape_backward_ag[TT](self: ReshapeGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient.reshape(self.cached_input_shape)
@@ -82,7 +82,7 @@ proc reshapeImpl[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
     register_node(
       "Reshape",
       gate,
-      reshape_backward[TT],
+      reshape_backward_ag[TT],
       result,
       a
     )
@@ -120,7 +120,7 @@ template squeezeUnsqueeze(GateName, forward_proc, backward_proc: untyped): untyp
     result.context = x.context
     result.value = forward_proc(x.value, self.axis)
 
-  proc `forward_proc _ backward`[TT](self: GateName[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+  proc `forward_proc _ backward _ ag`[TT](self: GateName[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
     result = newDiffs[TT](1)
     result[0] = payload.variable.grad.backward_proc(self.axis)
 
@@ -141,7 +141,7 @@ template squeezeUnsqueeze(GateName, forward_proc, backward_proc: untyped): untyp
       register_node(
         GateName.name,
         gate,
-        `forward_proc _ backward`[TT],
+        `forward_proc _ backward _ ag`[TT],
         result,
         v
       )

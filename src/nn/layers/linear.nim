@@ -31,7 +31,7 @@ proc linear_forward[TT](self: LinearGate[TT], input: Variable[TT]): Variable[TT]
 
   result.context = input.context
 
-proc linear_backward[TT](self: LinearGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc linear_backward_ag[TT](self: LinearGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   # result[0] grad w.r.t. input
   # result[1] grad w.r.t. weight
   # result[2] grad w.r.t. bias
@@ -97,7 +97,7 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
       register_node(
         "Linear",
         gate,
-        linear_backward[TT],
+        linear_backward_ag[TT],
         result,
         input, weight, bias
       )
@@ -105,7 +105,7 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
       register_node(
         "Linear",
         gate,
-        linear_backward[TT],
+        linear_backward_ag[TT],
         result,
         input, weight
       )

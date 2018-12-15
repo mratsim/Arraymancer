@@ -24,7 +24,7 @@ proc tanh_forward[TT](self: TanhActivation[TT], a: Variable[TT]): Variable[TT] {
   result.context = a.context
   result.value = tanh a.value
 
-proc tanh_backward[TT](self: TanhActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.inline.}=
+proc tanh_backward_ag[TT](self: TanhActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.inline.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient.tanh_backward(self.cache)
@@ -50,7 +50,7 @@ proc tanh*[TT](a: Variable[TT]): Variable[TT] =
     register_node(
       "Tanh",
       gate,
-      relu_backward[TT],
+      tanh_backward_ag[TT],
       result,
       a
     )

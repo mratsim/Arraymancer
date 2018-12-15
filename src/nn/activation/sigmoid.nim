@@ -24,7 +24,7 @@ proc sigmoid_forward[TT](self: SigmoidActivation[TT], a: Variable[TT]): Variable
   result.context = a.context
   result.value = sigmoid a.value
 
-proc sigmoid_backward[TT](self: SigmoidActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc sigmoid_backward_ag[TT](self: SigmoidActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient.sigmoid_backward(self.cache)
@@ -50,7 +50,7 @@ proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
     register_node(
       "Sigmoid",
       gate,
-      sigmoid_backward[TT],
+      sigmoid_backward_ag[TT],
       result,
       a
     )

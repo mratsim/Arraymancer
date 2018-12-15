@@ -83,6 +83,8 @@ type
     of pkSeq: sequence*: seq[Variable[TT]]
 
   Backward[TT] = proc(self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] {.nimcall.}
+    ## ⚠️ Warning: make sure the identifier is not overloaded
+    ## https://github.com/nim-lang/Nim/issues/9997
 
   Node[TT] = object
     ## A node consist of:

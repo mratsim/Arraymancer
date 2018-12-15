@@ -32,7 +32,7 @@ proc stack_forward[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[
   result.context = x[0].context
   result.value = stack(ts, self.axis)
 
-proc stack_backward[TT](self: StackGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc stack_backward_ag[TT](self: StackGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](self.nb_grads)
   for i in 0 ..< gradient.shape[self.axis]:
@@ -71,7 +71,7 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
     register_node(
       "Stack",
       gate,
-      stack_backward[TT],
+      stack_backward_ag[TT],
       result,
       variables
     )
@@ -86,7 +86,7 @@ proc chunk_forward[TT](self: ChunkSplitGate[TT], x: Variable[TT], nb_chunks: Pos
     Variable[TT](context: x.context, value: it)
   )
 
-proc chunk_backward[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc chunk_backward_ag[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradients = payload.sequence.mapIt(it.grad) # TODO: inefficient to create an intermediate sequence
   result = newDiffs[TT](1)
   result[0] = concat(gradients, self.axis)
@@ -119,7 +119,7 @@ proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variab
     register_node(
       "Chunk",
       gate,
-      chunk_backward[TT],
+      chunk_backward_ag[TT],
       result,
       v
     )

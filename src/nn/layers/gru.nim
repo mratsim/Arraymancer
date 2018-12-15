@@ -67,7 +67,7 @@ proc gru_inference[TT](
     self.bW3s.value, self.bU3s.value, result.output.value, result.hiddenN.value
   )
 
-proc gru_backward[TT](
+proc gru_backward_ag[TT](
           self: GRUGate[TT],
           payload: Payload[TT],
         ): SmallDiffs[TT] {.noInit.}=
@@ -168,7 +168,7 @@ proc gru*[TT](
     register_node(
       "GRU",
       gate,
-      embedding_backward[TT, scaled, Idx],
+      gru_backward_ag[TT],
       result,
       input, hidden0,
       W3s0, W3sN, U3s,

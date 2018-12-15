@@ -30,7 +30,7 @@ proc mse_forward[TT](self: MSELoss[TT], input: Variable[TT], target: TT): Variab
   # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
   result.value = [mean_squared_error(input.value, target)].toTensor
 
-proc mse_backward[TT](self: MSELoss[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc mse_backward_ag[TT](self: MSELoss[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   # Gradient is a tensor of shape 1
   assert gradient.shape == [1]
@@ -67,7 +67,7 @@ proc mse_loss*[TT](input: Variable[TT], target: TT): Variable[TT] =
     register_node(
       "Mean Squared Error",
       gate,
-      mse_backward[TT],
+      mse_backward_ag[TT],
       result,
       input
     )

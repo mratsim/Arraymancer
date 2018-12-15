@@ -25,7 +25,7 @@ proc add_forward[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inli
   result.context = a.context
   result.value = a.value + b.value
 
-proc add_backward[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc add_backward_ag[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newSeq[TT](2)
   result[0] = gradient
@@ -50,7 +50,7 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
     register_node(
       "Add",
       gate,
-      add_backward[TT],
+      add_backward_ag[TT],
       result,
       a, b
     )

@@ -31,7 +31,7 @@ proc maxpool2D_forward[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[T
                                                       self.padding,
                                                       self.stride)
 
-proc maxpool2D_backward[TT](self: MaxPool2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc maxpool2D_backward_ag[TT](self: MaxPool2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = maxpool2d_backward(
@@ -83,7 +83,7 @@ proc maxpool2d*[TT](input: Variable[TT],
     register_node(
       "Maxpool2D",
       gate,
-      maxpool2D_backward[TT],
+      maxpool2D_backward_ag[TT],
       result,
       input
     )

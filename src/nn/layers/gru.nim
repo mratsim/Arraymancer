@@ -125,21 +125,6 @@ proc gru*[TT](
   gate.bW3s = bW3s
   gate.bU3s = bU3s
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](7)
-  node.parents[0] = input.weakRef
-  node.parents[1] = hidden0.weakRef
-  node.parents[2] = W3s0.weakRef
-  node.parents[3] = W3sN.weakRef
-  node.parents[4] = U3s.weakRef
-  node.parents[5] = bW3s.weakRef
-  node.parents[6] = bU3s.weakRef
-  input.context.push(node)
-
   # Training
   if input.is_grad_needed or hidden0.is_grad_needed or
       W3s0.is_grad_needed or W3sN.is_grad_needed or
@@ -169,7 +154,7 @@ proc gru*[TT](
       "GRU",
       gate,
       gru_backward_ag[TT],
-      result,
+      @[result.output, result.hiddenN],
       input, hidden0,
       W3s0, W3sN, U3s,
       bW3s, bU3s

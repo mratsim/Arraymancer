@@ -128,8 +128,8 @@ proc trainParamsGRU(self: Neuromancer, field_name: NimNode, topo: LayerTopology)
             `W3sN`, requires_grad = true # TODO allow freezing
           )
       else:
-        # Empty variable, we stille needed it initialized to allow `requires_grad`
-        Variable[Tensor[`sst`]](context: `ctx`.weakRef)
+        # Empty variable, we still need it initialised to allow `requires_grad`
+        Variable[Tensor[`sst`]](context: `ctx`)
 
     result.`field_name`.U3s = `ctx`.variable(
       `U3s`, requires_grad = true # TODO allow freezing

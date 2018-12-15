@@ -19,38 +19,43 @@ import  ../../tensor/tensor,
 type ReluActivation* {.final.} [TT] = ref object of Gate[TT]
   cache: TT
 
-proc relu_forward[TT](self: ReluActivation[TT], a: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-  result.context = a.context
-  result.value = relu a.value
-
-proc relu_backward_ag[TT](self: ReluActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc relu_backward_ag[TT](self: ReluActivation[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient.relu_backward(self.cache)
+
+proc relu_cache[TT](result: Variable[TT], a: Variable[TT]) =
+  # Gate
+  var gate: ReluActivation[TT]
+  new gate
+  gate.cache = result.value
+
+  # Result setup
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
+  # Add to graph
+  register_node(
+    "Relu",
+    gate,
+    relu_backward_ag[TT],
+    result,
+    a
+  )
 
 proc relu*[TT](a: Variable[TT]): Variable[TT] =
   ## Input:
   ##   - A variable
 
-  # Gate
-  var gate: ReluActivation[TT]
-  new gate
-
   # Resulting var
-  result = gate.relu_forward(a)
+  new result
+  result.context = a.context
+  result.value = relu a.value
 
   # Caching for backprop
   if a.is_grad_needed:
-    result.grad = zeros_like(result.value)
-    result.requires_grad = true
+    result.relu_cache(a)
 
-    gate.cache = result.value
 
-    register_node(
-      "Relu",
-      gate,
-      relu_backward_ag[TT],
-      result,
-      a
-    )
+
+

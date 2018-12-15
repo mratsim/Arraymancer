@@ -19,25 +19,17 @@ import  ../../tensor/tensor,
 type LinearGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: use fused AddMatMul gate: C <- alpha AB + beta C
   input, weight, bias: Variable[TT]
-  nb_grads: int
 
-proc linear_forward[TT](self: LinearGate[TT], input: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-
-  if self.bias.isNil:
-    linear(input.value, self.weight.value, result.value)
-  else:
-    linear(input.value, self.weight.value, self.bias.value, result.value)
-
-  result.context = input.context
-
-proc linear_backward_ag[TT](self: LinearGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc linear_backward_ag[TT](self: LinearGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   # result[0] grad w.r.t. input
   # result[1] grad w.r.t. weight
   # result[2] grad w.r.t. bias
 
   let gradOutput = payload.variable.grad
-  result = newDiffs[TT](self.nb_grads)
+  if self.bias.isNil:
+    result = newDiffs[TT](2)
+  else:
+    result = newDiffs[TT](3)
 
   if self.input.requires_grad:
     result[0] = gradOutput * self.weight.value
@@ -47,6 +39,36 @@ proc linear_backward_ag[TT](self: LinearGate[TT], payload: Payload[TT]): SmallDi
 
   if not self.bias.isNil and self.bias.requires_grad:
     result[2] = sum(gradOutput, axis = 0)
+
+proc linear_cache[TT](result: Variable[TT], input, weight, bias: Variable[TT]) =
+  # Gate
+  var gate: LinearGate[TT]
+  new gate
+  gate.input = input
+  gate.weight = weight
+
+  # Result setup
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
+  # Add to graph
+  if not bias.isNil:
+    gate.bias = bias
+    register_node(
+      "Linear",
+      gate,
+      linear_backward_ag[TT],
+      result,
+      input, weight, bias
+    )
+  else:
+    register_node(
+      "Linear",
+      gate,
+      linear_backward_ag[TT],
+      result,
+      input, weight
+    )
 
 proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variable[TT] =
   ## Input:
@@ -77,35 +99,14 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
     if not bias.isNil and not (bias.value.shape == [1, weight.value.shape[0]].toMetadataArray):
       raise newException(ValueError, "Incompatible shape: bias must be a vector of shape [out_features, 1]")
 
-  # Gate
-  var gate: LinearGate[TT]
-  new gate
-  gate.nb_grads = if bias.isNil: 2 else: 3
-  gate.input = input
-  gate.weight = weight
-  gate.bias = bias
-
   # Resulting var
-  result = gate.linear_forward(input)
+  new result
+  result.context = input.context
+  if bias.isNil:
+    linear(input.value, weight.value, result.value)
+  else:
+    linear(input.value, weight.value, bias.value, result.value)
 
   # Caching for backprop
   if input.is_grad_needed or weight.is_grad_needed or (not bias.isNil and bias.is_grad_needed):
-    result.grad = zeros_like(result.value)
-    result.requires_grad = true
-
-    if not bias.isNil:
-      register_node(
-        "Linear",
-        gate,
-        linear_backward_ag[TT],
-        result,
-        input, weight, bias
-      )
-    else:
-      register_node(
-        "Linear",
-        gate,
-        linear_backward_ag[TT],
-        result,
-        input, weight
-      )
+    result.linear_cache(input, weight, bias)

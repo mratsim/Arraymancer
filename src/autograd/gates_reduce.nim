@@ -31,14 +31,16 @@ proc mean_backward_ag[TT](self: MeanGate[TT], payload: Payload[TT]): SmallDiffs[
   result[0] = result[0].reshape(z_shape).broadcast(self.cached_input_shape)
 
 proc mean_cache[TT](result: Variable[TT], a: Variable[TT]) =
-  result.grad = zeros_like(result.value)
-  result.requires_grad = true
-
   # Gate
   var gate: MeanGate[TT]
   new gate
   gate.cached_input_shape = a.value.shape
 
+  # Result setup
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
+  # Caching for backprop
   register_node(
     "Mean",
     gate,
@@ -61,7 +63,7 @@ type SumGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
   cached_input_shape: MetadataArray
 
-proc sum_backward_ag[TT](self: SumGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc sum_backward_ag[TT](self: SumGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
 
@@ -70,14 +72,16 @@ proc sum_backward_ag[TT](self: SumGate[TT], payload: Payload[TT]): SmallDiffs[TT
   result[0] = gradient.reshape(z_shape).broadcast(self.cached_input_shape)
 
 proc sum_cache[TT](result: Variable[TT], a: Variable[TT]) =
-  result.grad = zeros_like(result.value)
-  result.requires_grad = true
-
   # Gate
   var gate: SumGate[TT]
   new gate
   gate.cached_input_shape = a.value.shape
 
+  # Result setup
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
+  # Add to graph
   register_node(
     "Sum",
     gate,

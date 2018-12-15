@@ -27,15 +27,17 @@ proc matmul_backward_ag[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDi
   result[1] = self.a.value.transpose * gradient
 
 proc matmul_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
-  result.grad = zeros_like result.value
-  result.requires_grad = true
-
   # Gate
   var gate: MatMulGate[TT]
   new gate
   gate.a = a
   gate.b = b
 
+  # Result setup
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+
+  # Add to graph
   register_node(
     "MatMul",
     gate,

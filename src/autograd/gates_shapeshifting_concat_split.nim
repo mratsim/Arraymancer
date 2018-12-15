@@ -29,15 +29,17 @@ proc stack_backward_ag[TT](self: StackGate[TT], payload: Payload[TT]): SmallDiff
     result[i] = gradient.atAxisIndex(self.axis, i)
 
 proc stack_cache[TT](result: Variable[TT], variables: varargs[Variable[TT]], axis: int) =
-  result.grad = zeros_like result.value
-  result.requires_grad = true
-
   # Gate
   var gate: StackGate[TT]
   new gate
   gate.nb_grads = variables.len
   gate.axis = axis
 
+  # Result setup
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+
+  # Add to graph
   register_node(
     "Stack",
     gate,
@@ -87,7 +89,7 @@ proc chunk_inference[TT](result: var seq[Variable[TT]], x: Variable[TT], nb_chun
     Variable[TT](context: x.context, value: it)
   )
 
-proc chunk_backward_ag[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc chunk_backward_ag[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradients = payload.sequence.mapIt(it.grad) # TODO: inefficient to create an intermediate sequence
   result = newDiffs[TT](1)
   result[0] = concat(gradients, self.axis)

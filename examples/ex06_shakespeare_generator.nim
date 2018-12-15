@@ -223,7 +223,6 @@ proc encode[TT](model: ShakespeareNet[TT], x: Tensor[PrintableIdx]): Variable[TT
 proc gru_forward(model: ShakespeareNet, x, hidden0: Variable): tuple[output, hiddenN: Variable] =
   gru(
     x, hidden0,
-    Layers,
     model.gru.W3s0, model.gru.W3sN,
     model.gru.U3s,
     model.gru.bW3s, model.gru.bU3s

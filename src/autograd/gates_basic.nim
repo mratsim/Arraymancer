@@ -20,74 +20,71 @@ import  ../tensor/tensor,
 
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
 
-proc add_forward[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-  result.context = a.context
-  result.value = a.value + b.value
-
-proc add_backward_ag[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc add_backward_ag[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
   result = newSeq[TT](2)
   result[0] = gradient
   result[1] = gradient
 
-proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
-  when compileOption("boundChecks"):
-    check_ctx(a, b)
+proc add_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
+  result.grad = zeros_like result.value
+  result.requires_grad = true
 
   # Gate
   var gate: AddGate[TT]
   new gate
 
-  # Resulting var
-  result = gate.add_forward(a, b)
+  register_node(
+    "Add",
+    gate,
+    add_backward_ag[TT],
+    result,
+    a, b
+  )
 
-  # Caching for backprop
+proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
+  when compileOption("boundChecks"):
+    check_ctx(a, b)
+
+  new result
+  result.context = a.context
+  result.value = a.value + b.value
+
   if a.is_grad_needed or b.is_grad_needed:
-    result.grad = zeros_like result.value
-    result.requires_grad = true
-
-    register_node(
-      "Add",
-      gate,
-      add_backward_ag[TT],
-      result,
-      a, b
-    )
+    result.add_cache(a, b)
 
 type SubGate* {.final.} [TT] = ref object of Gate[TT]
 
-proc sub_forward[TT](self: SubGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-  result.context = a.context
-  result.value = a.value - b.value
-
-proc sub_backward[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc sub_backward_ag[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
-  result = newDiffs[TT](2)
+  result = newSeq[TT](2)
   result[0] = gradient
   result[1] = -gradient
+
+proc sub_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
+  result.value = a.value - b.value
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+
+  # Gate
+  var gate: AddGate[TT]
+  new gate
+
+  register_node(
+    "Sub",
+    gate,
+    sub_backward_ag[TT],
+    result,
+    a, b
+  )
 
 proc `-`*[TT](a, b: Variable[TT]): Variable[TT] =
   when compileOption("boundChecks"):
     check_ctx(a, b)
 
-  # Gate
-  var gate: SubGate[TT]
-  new gate
+  new result
+  result.context = a.context
+  result.value = a.value - b.value
 
-  # Resulting var
-  result = gate.sub_forward(a, b)
-
-  # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:
-    result.grad = zeros_like result.value
-    result.requires_grad = true
-
-    register_node(
-      "Sub",
-      gate,
-      sub_backward[TT],
-      result,
-      a, b
-    )
+    result.sub_cache(a, b)

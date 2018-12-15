@@ -21,12 +21,7 @@ type MeanGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
   cached_input_shape: MetadataArray
 
-proc mean_forward[TT](self: MeanGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-  result.context = a.context
-  result.value = [a.value.mean].toTensor
-
-proc mean_backward_ag[TT](self: MeanGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc mean_backward_ag[TT](self: MeanGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient / getSubType(TT)(self.cached_input_shape.product) # Conversion to subtype T, oh Higher kinded-types ...
@@ -35,37 +30,36 @@ proc mean_backward_ag[TT](self: MeanGate[TT], payload: Payload[TT]): SmallDiffs[
   let z_shape = newSeqWith(self.cached_input_shape.len, 1)
   result[0] = result[0].reshape(z_shape).broadcast(self.cached_input_shape)
 
-proc mean*[TT](a: Variable[TT]): Variable[TT] =
+proc mean_cache[TT](result: Variable[TT], a: Variable[TT]) =
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
   # Gate
   var gate: MeanGate[TT]
   new gate
+  gate.cached_input_shape = a.value.shape
 
+  register_node(
+    "Mean",
+    gate,
+    mean_backward_ag[TT],
+    result,
+    a
+  )
+
+proc mean*[TT](a: Variable[TT]): Variable[TT] =
   # Resulting var
-  result = gate.mean_forward(a)
+  new result
+  result.context = a.context
+  result.value = [a.value.mean].toTensor
 
   # Caching for backprop
   if a.is_grad_needed:
-    result.grad = zeros_like(result.value)
-    result.requires_grad = true
-
-    gate.cached_input_shape = a.value.shape
-
-    register_node(
-      "Mean",
-      gate,
-      mean_backward_ag[TT],
-      result,
-      a
-    )
+    result.mean_register(a)
 
 type SumGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
   cached_input_shape: MetadataArray
-
-proc sum_forward[TT](self: SumGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-  result.context = a.context
-  result.value = [a.value.sum].toTensor
 
 proc sum_backward_ag[TT](self: SumGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
@@ -75,25 +69,33 @@ proc sum_backward_ag[TT](self: SumGate[TT], payload: Payload[TT]): SmallDiffs[TT
   let z_shape = newSeqWith(self.cached_input_shape.len, 1)
   result[0] = gradient.reshape(z_shape).broadcast(self.cached_input_shape)
 
+proc sum_cache[TT](result: Variable[TT], a: Variable[TT]) =
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
+  # Gate
+  var gate: SumGate[TT]
+  new gate
+  gate.cached_input_shape = a.value.shape
+
+  register_node(
+    "Sum",
+    gate,
+    sum_backward_ag[TT],
+    result,
+    a
+  )
+
 proc sum*[TT](a: Variable[TT]): Variable[TT] =
   # Gate
   var gate: SumGate[TT]
   new gate
 
   # Resulting var
-  result = gate.sum_forward(a)
+  new result
+  result.context = a.context
+  result.value = [a.value.sum].toTensor
 
   # Caching for backprop
   if a.is_grad_needed:
-    result.grad = zeros_like(result.value)
-    result.requires_grad = true
-
-    gate.cached_input_shape = a.value.shape
-
-    register_node(
-      "Sum",
-      gate,
-      sum_backward_ag[TT],
-      result,
-      a
-    )
+    result.sum_cache(a)

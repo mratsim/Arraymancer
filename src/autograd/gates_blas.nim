@@ -25,7 +25,7 @@ proc matmul_forward[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] 
   result.context = a.context
   result.value = a.value * b.value
 
-proc matmul_backward[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc matmul_backward_ag[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](2)
   result[0] = gradient * self.b.value.transpose
@@ -52,7 +52,7 @@ proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
     register_node(
       "MatMul",
       gate,
-      matmul_backward[TT],
+      matmul_backward_ag[TT],
       result,
       a, b
     )

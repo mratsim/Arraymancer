@@ -33,7 +33,7 @@ proc conv2d_forward[TT](self: Conv2DGate[TT], a: Variable[TT]): Variable[TT] {.i
                         self.stride
                       )
 
-proc conv2d_backward*[TT](self: Conv2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc conv2d_backward_ag[TT](self: Conv2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](self.nb_grads)
   conv2d_backward(
@@ -101,7 +101,7 @@ proc conv2d*[TT]( input, weight: Variable[TT],
       register_node(
         "Conv2D",
         gate,
-        conv2d_backward[TT],
+        conv2d_backward_ag[TT],
         result,
         input, weight, bias
       )
@@ -109,7 +109,7 @@ proc conv2d*[TT]( input, weight: Variable[TT],
       register_node(
         "Conv2D",
         gate,
-        conv2d_backward[TT],
+        conv2d_backward_ag[TT],
         result,
         input, weight
       )

@@ -30,7 +30,7 @@ proc embedding_forward[TT, scaled, Idx](self: EmbeddingGate[TT, scaled, Idx], in
   result.context = self.weight.context
   result.value = embedding(input, self.weight.value)
 
-proc embedding_backward*[TT; scaled: static bool, Idx](
+proc embedding_backward_ag[TT; scaled: static bool, Idx](
         self: EmbeddingGate[TT, scaled, Idx],
         payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   result = newDiffs[TT](1)
@@ -80,7 +80,7 @@ proc embedding*[TT; Idx: byte or char or SomeNumber](
     register_node(
       "Embedding",
       gate,
-      embedding_backward[TT, scaled, Idx],
+      embedding_backward_ag[TT, scaled, Idx],
       result,
       weight
     )

@@ -24,7 +24,7 @@ proc relu_forward[TT](self: ReluActivation[TT], a: Variable[TT]): Variable[TT] {
   result.context = a.context
   result.value = relu a.value
 
-proc relu_backward[TT](self: ReluActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc relu_backward_ag[TT](self: ReluActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient.relu_backward(self.cache)
@@ -50,7 +50,7 @@ proc relu*[TT](a: Variable[TT]): Variable[TT] =
     register_node(
       "Relu",
       gate,
-      relu_backward[TT],
+      relu_backward_ag[TT],
       result,
       a
     )

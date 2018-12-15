@@ -41,7 +41,7 @@ proc update*(self: Sgd) =
         x - self.lr * y
       v.grad = v.value.zeros_like
 
-func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
+func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[T] =
   ## Create a SGD optimizer that will update the model weight
 
   # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...

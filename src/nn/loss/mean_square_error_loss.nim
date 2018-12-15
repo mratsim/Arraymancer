@@ -22,7 +22,7 @@ type MSELoss*{.final.}[TT] = ref object of Loss[TT]
   # nb_grads, from Gate
   # target, from Loss
 
-proc forward[TT](self: MSELoss[TT], input: Variable[TT], target: TT): Variable[TT] {.inline.}=
+proc mse_forward[TT](self: MSELoss[TT], input: Variable[TT], target: TT): Variable[TT] {.inline.}=
   # We expect input with shape [batch_size, features]
   new result
   result.context = input.context
@@ -30,7 +30,7 @@ proc forward[TT](self: MSELoss[TT], input: Variable[TT], target: TT): Variable[T
   # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
   result.value = [mean_squared_error(input.value, target)].toTensor
 
-method backward*[TT](self: MSELoss[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc mse_backward[TT](self: MSELoss[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   # Gradient is a tensor of shape 1
   assert gradient.shape == [1]
@@ -53,19 +53,8 @@ proc mse_loss*[TT](input: Variable[TT], target: TT): Variable[TT] =
   var gate: MSEloss[TT]
   new gate
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](1)
-  node.parents[0] = input.weakRef
-
-  input.context.push(node)
-
   # Resulting var
   result = gate.forward(input, target)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop
   if input.is_grad_needed:
@@ -74,3 +63,11 @@ proc mse_loss*[TT](input: Variable[TT], target: TT): Variable[TT] =
 
     gate.cache = input
     gate.target = target
+
+    register_node(
+      "Mean Squared Error",
+      gate,
+      mse_backward[TT],
+      result,
+      input
+    )

@@ -15,7 +15,8 @@
 import  ../../tensor/tensor,
         ../../nn_primitives/nn_primitives,
         ../../autograd/autograd,
-        ./loss
+        ./loss,
+        typetraits
 
 template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) =
   # Template of softmax and sigmoid cross entropy losses
@@ -25,7 +26,7 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
     # nb_grads, from Gate
     # target, from Loss
 
-  proc forward[TT](self: LossType[TT], a: Variable[TT], target: TT): Variable[TT] {.inline.}=
+  proc `forward_proc forward`[TT](self: LossType[TT], a: Variable[TT], target: TT): Variable[TT] {.inline.}=
     # We expect a in shape [batch_size, features]
 
     new result
@@ -34,7 +35,7 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
     # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
     result.value = [forward_proc(a.value, target)].toTensor
 
-  method backward*[TT](self: LossType[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+  proc `forward_proc backward`[TT](self: LossType[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
     let gradient = payload.variable.grad
     result = newDiffs[TT](1)
     result[0] = backward_proc(gradient, self.cache.value, self.target)
@@ -46,23 +47,20 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
     gate.cache = a
     gate.target = target
 
-    # Node
-    var node: Node[TT]
-    new node
-
-    node.gate = gate
-    node.parents = newParents[TT](1)
-    node.parents[0] = a.weakRef
-
-    a.context.push(node)
-
     # Resulting var
-    result = gate.forward(a, target)
-    node.payload = Payload[TT](kind: pkVar, variable: result)
+    result = gate.`forward_proc forward`(a, target)
 
     if a.is_grad_needed:
       result.grad = zeros_like result.value
       result.requires_grad = true
+
+      register_node(
+        LossType.name,
+        gate,
+        `forward_proc _ backward`[TT],
+        result,
+        a
+      )
 
 gen_cross_entropy_loss SigmoidCrossEntropyLoss, sigmoid_cross_entropy, sigmoid_cross_entropy_backward
 gen_cross_entropy_loss SoftmaxCrossEntropyLoss, softmax_cross_entropy, softmax_cross_entropy_backward
@@ -73,16 +71,14 @@ type SparseSoftmaxCrossEntropyLoss*{.final.}[TT; Idx: SomeNumber or byte or char
   # nb_grads, from Gate
   # target, from Loss
 
-proc forward[TT, Idx](self: SparseSoftmaxCrossEntropyLoss[TT, Idx], a: Variable[TT], target: Tensor[Idx]): Variable[TT] {.inline.}=
+proc sparse_softmax_ce_forward[TT, Idx](self: SparseSoftmaxCrossEntropyLoss[TT, Idx], a: Variable[TT], target: Tensor[Idx]): Variable[TT] {.inline.}=
   # We expect a in shape [batch_size, features]
-
   new result
   result.context = a.context
-
   # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
   result.value = [sparse_softmax_crossentropy(a.value, target)].toTensor
 
-method backward*[TT, Idx](self: SparseSoftmaxCrossEntropyLoss[TT, Idx], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc sparse_softmax_ce_backward[TT, Idx](self: SparseSoftmaxCrossEntropyLoss[TT, Idx], payload: Payload[TT]): SmallDiffs[TT] {.inline.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = sparse_softmax_crossentropy_backward(gradient, self.cache.value, self.target)
@@ -94,19 +90,8 @@ proc sparse_softmax_crossentropy*[TT; Idx: SomeNumber or byte or char or enum](
   var gate: SparseSoftmaxCrossEntropyLoss[TT, Idx]
   new gate
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](1)
-  node.parents[0] = a.weakRef
-
-  a.context.push(node)
-
   # Resulting var
   result = gate.forward(a, target)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
 
   # Caching for backprop
   if a.is_grad_needed:
@@ -116,10 +101,10 @@ proc sparse_softmax_crossentropy*[TT; Idx: SomeNumber or byte or char or enum](
     gate.cache = a
     gate.target = target
 
-# ############################################################
-#
-#                      Debugging
-#
-# ############################################################
-
-method debugGateName*[TT, Idx](self: SparseSoftmaxCrossEntropyLoss[TT, Idx]): string {.inline.} = "SparseSoftmaxCrossEntropy"
+    register_node(
+      "Sparse Softmax Cross-Entropy",
+      gate,
+      `forward_proc _ backward`[TT],
+      result,
+      a
+    )

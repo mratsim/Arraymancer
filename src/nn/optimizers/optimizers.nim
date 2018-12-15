@@ -13,13 +13,14 @@
 # limitations under the License.
 
 import  ../../tensor/[tensor, higher_order_applymap],
-        ../../autograd/autograd
+        ../../autograd/autograd,
+        ../../private/ast_utils
 
 type
-  Sgd*[T] = object
+  Sgd*[TT] = object
     ## Stochastic gradient descent
-    params*: seq[Variable[Tensor[T]]]
-    lr*: T # Learning rate.
+    params*: seq[Variable[TT]]
+    lr*: TT.T # Learning rate. T is the generic parameter of Tensor[T]
 
   Optimizer[TT] = Sgd[TT]
 
@@ -28,7 +29,7 @@ proc zeroGrads*(o: Optimizer) =
   for v in o.params:
     v.grad = v.value.zeros_like
 
-proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[T] {.deprecated: "Use the optimizer macro instead".}=
+proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[Tensor[T]] {.deprecated: "Use the optimizer macro instead".}=
   SGD[T](params: @params, lr: learning_rate)
 
 proc update*(self: Sgd) =
@@ -41,7 +42,7 @@ proc update*(self: Sgd) =
         x - self.lr * y
       v.grad = v.value.zeros_like
 
-func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[T] =
+func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
   ## Create a SGD optimizer that will update the model weight
 
   # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...

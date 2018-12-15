@@ -49,4 +49,5 @@ when not defined(no_lapack):
         ./ml/test_clustering
 
 import  ./stability_tests/test_stability_openmp,
-        ./end_to_end/examples
+        # /end_to_end/examples_compile
+        ./end_to_end/examples_run

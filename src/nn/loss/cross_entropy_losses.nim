@@ -101,10 +101,14 @@ proc sparse_softmax_crossentropy*[TT; Idx: SomeNumber or byte or char or enum](
     gate.cache = a
     gate.target = target
 
+    # Instantantiate with Idx but remove it from the signature
+    # Why is it needed here but not for Embedding?
+    let backward = cast[Backward[TT]](sparse_softmax_ce_backward_ag[TT, Idx])
+
     register_node(
       "Sparse Softmax Cross-Entropy",
       gate,
-      sparse_softmax_ce_backward_ag[TT, Idx],
+      backward,
       result,
       a
     )

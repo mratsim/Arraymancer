@@ -80,7 +80,9 @@ proc embedding*[TT; Idx: byte or char or SomeNumber](
     register_node(
       "Embedding",
       gate,
-      embedding_backward_ag[TT, scaled, Idx],
+      # Why do we not need to cast to Backward[TT]
+      # while we need to in sparse_softmax_cross_entropy?
+      embedding_backward_ag[TT, scale_grad_by_freq, Idx],
       result,
       weight
     )

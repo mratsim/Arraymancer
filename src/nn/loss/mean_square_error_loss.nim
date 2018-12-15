@@ -54,7 +54,7 @@ proc mse_loss*[TT](input: Variable[TT], target: TT): Variable[TT] =
   new gate
 
   # Resulting var
-  result = gate.forward(input, target)
+  result = gate.mse_forward(input, target)
 
   # Caching for backprop
   if input.is_grad_needed:

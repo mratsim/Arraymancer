@@ -30,7 +30,7 @@ proc zeroGrads*(o: Optimizer) =
     v.grad = v.value.zeros_like
 
 proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[Tensor[T]] {.deprecated: "Use the optimizer macro instead".}=
-  SGD[T](params: @params, lr: learning_rate)
+  SGD[Tensor[T]](params: @params, lr: learning_rate)
 
 proc update*(self: Sgd) =
   # Update the params with formula Value -= lr * gradient

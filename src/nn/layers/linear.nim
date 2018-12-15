@@ -21,7 +21,7 @@ type LinearGate* {.final.} [TT] = ref object of Gate[TT]
   input, weight, bias: Variable[TT]
   nb_grads: int
 
-proc forward[TT](self: LinearGate[TT], input: Variable[TT]): Variable[TT] {.inline.}=
+proc linear_forward[TT](self: LinearGate[TT], input: Variable[TT]): Variable[TT] {.inline.}=
   new result
 
   if self.bias.isNil:
@@ -31,7 +31,7 @@ proc forward[TT](self: LinearGate[TT], input: Variable[TT]): Variable[TT] {.inli
 
   result.context = input.context
 
-method backward*[TT](self: LinearGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc linear_backward[TT](self: LinearGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   # result[0] grad w.r.t. input
   # result[1] grad w.r.t. weight
   # result[2] grad w.r.t. bias
@@ -85,32 +85,27 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
   gate.weight = weight
   gate.bias = bias
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](gate.nb_grads)
-  node.parents[0] = input.weakRef
-  node.parents[1] = weight.weakRef
-  if not bias.isNil:
-    node.parents[2] = bias.weakRef
-
-  input.context.push(node)
-
   # Resulting var
-  result = gate.forward(input)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  result = gate.linear_forward(input)
 
   # Caching for backprop
   if input.is_grad_needed or weight.is_grad_needed or (not bias.isNil and bias.is_grad_needed):
     result.grad = zeros_like(result.value)
     result.requires_grad = true
 
-# ############################################################
-#
-#                      Debugging
-#
-# ############################################################
-
-method debugGateName*[TT](self: LinearGate[TT]): string {.inline.} = "Linear"
+    if not bias.isNil:
+      register_node(
+        "Linear",
+        gate,
+        linear_backward[TT],
+        result,
+        input, weight, bias
+      )
+    else:
+      register_node(
+        "Linear",
+        gate,
+        linear_backward[TT],
+        result,
+        input, weight
+      )

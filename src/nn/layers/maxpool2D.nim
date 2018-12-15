@@ -22,7 +22,7 @@ type MaxPool2DGate* {.final.} [TT] = ref object of Gate[TT]
   cached_max_indices: Tensor[int]
   kernel, padding, stride: Size2D
 
-proc forward[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
+proc maxpool2D_forward[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[TT] {.inline.}=
   new result
 
   result.context = a.context
@@ -31,7 +31,7 @@ proc forward[TT](self: MaxPool2DGate[TT], a: Variable[TT]): Variable[TT] {.inlin
                                                       self.padding,
                                                       self.stride)
 
-method backward*[TT](self: MaxPool2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc maxpool2D_backward[TT](self: MaxPool2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = maxpool2d_backward(
@@ -70,19 +70,8 @@ proc maxpool2d*[TT](input: Variable[TT],
   gate.padding = padding
   gate.stride = stride
 
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newParents[TT](1)
-  node.parents[0] = input.weakRef
-
-  input.context.push(node)
-
   # Resulting var
-  result = gate.forward(input)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  result = gate.maxpool2D_forward(input)
 
   # Caching for backprop
   if input.is_grad_needed:
@@ -90,3 +79,11 @@ proc maxpool2d*[TT](input: Variable[TT],
     result.requires_grad = true
 
     gate.cached_input_shape = input.value.shape
+
+    register_node(
+      "Maxpool2D",
+      gate,
+      maxpool2D_backward[TT],
+      result,
+      input
+    )

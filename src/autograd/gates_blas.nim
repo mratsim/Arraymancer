@@ -20,39 +20,37 @@ type MatMulGate* {.final.} [TT] = ref object of Gate[TT]
   a: Variable[TT]
   b: Variable[TT]
 
-proc matmul_forward[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-  result.context = a.context
-  result.value = a.value * b.value
-
-proc matmul_backward_ag[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc matmul_backward_ag[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
   result = newDiffs[TT](2)
   result[0] = gradient * self.b.value.transpose
   result[1] = self.a.value.transpose * gradient
 
-proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
-  when compileOption("boundChecks"):
-    check_ctx(a, b)
+proc matmul_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
+  result.grad = zeros_like result.value
+  result.requires_grad = true
 
   # Gate
   var gate: MatMulGate[TT]
   new gate
+  gate.a = a
+  gate.b = b
 
-  # Resulting var
-  result = gate.matmul_forward(a, b)
+  register_node(
+    "MatMul",
+    gate,
+    matmul_backward_ag[TT],
+    result,
+    a, b
+  )
+
+proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
+  when compileOption("boundChecks"):
+    check_ctx(a, b)
+
+  new result
+  result.context = a.context
+  result.value = a.value * b.value
 
   if a.is_grad_needed or b.is_grad_needed:
-    result.grad = zeros_like result.value
-    result.requires_grad = true
-
-    gate.a = a
-    gate.b = b
-
-    register_node(
-      "MatMul",
-      gate,
-      matmul_backward_ag[TT],
-      result,
-      a, b
-    )
+    result.matmul_cache(a, b)

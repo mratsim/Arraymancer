@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import  ../tensor/tensor,
+        ../private/sequninit,
         ./autograd_common,
         sequtils
 
@@ -21,22 +22,29 @@ type StackGate{.final.}[TT] = ref object of Gate[TT]
   axis: int
   nb_grads: int
 
-proc stack_forward[TT](self: StackGate[TT], x: varargs[Variable[TT]]): Variable[TT] =
-  new result
-
-  # TODO: avoid the intermediate seq alloc to extract varargs Tensors from varargs variables
-  var ts: seq[TT]
-  for variable in x:
-    ts.add variable.value
-
-  result.context = x[0].context
-  result.value = stack(ts, self.axis)
-
-proc stack_backward_ag[TT](self: StackGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+proc stack_backward_ag[TT](self: StackGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
   result = newDiffs[TT](self.nb_grads)
   for i in 0 ..< gradient.shape[self.axis]:
     result[i] = gradient.atAxisIndex(self.axis, i)
+
+proc stack_cache[TT](result: Variable[TT], variables: varargs[Variable[TT]], axis: int) =
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+
+  # Gate
+  var gate: StackGate[TT]
+  new gate
+  gate.nb_grads = variables.len
+  gate.axis = axis
+
+  register_node(
+    "Stack",
+    gate,
+    stack_backward_ag[TT],
+    result,
+    variables
+  )
 
 proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
   ## Join a sequence of Variables along a new axis into a new Variable.
@@ -54,35 +62,28 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
       check_ctx(v0, v)
       assert v0.value.shape == v.value.shape
 
-  # Gate
-  var gate: StackGate[TT]
-  new gate
-  gate.nb_grads = variables.len
-  gate.axis = axis
-
   # Resulting var
-  result = gate.stack_forward variables
+  new result
+  var ts = newSeqUninit[TT](variables.len)
+  for i in 0 ..< variables.len:
+    # TODO: avoid the intermediate seq alloc to extract varargs Tensors from varargs variables
+    ts[i] = variables[i].value
+
+  result.context = variables[0].context
+  result.value = stack(ts, axis)
 
   # Caching for backprop
   if anyIt(variables, it.is_grad_needed):
-    result.grad = zeros_like result.value
-    result.requires_grad = true
-
-    register_node(
-      "Stack",
-      gate,
-      stack_backward_ag[TT],
-      result,
-      variables
-    )
+    result.stack_cache(variables, axis)
 
 # ###########################################################
 
 type ChunkSplitGate*{.final.}[TT] = ref object of Gate[TT]
   axis: int
 
-proc chunk_forward[TT](self: ChunkSplitGate[TT], x: Variable[TT], nb_chunks: Positive): seq[Variable[TT]] {.noInit, inline.}=
-  result = x.value.chunk(nb_chunks, self.axis).mapIt( # TODO: inefficient to create an intermediate sequence
+proc chunk_inference[TT](result: var seq[Variable[TT]], x: Variable[TT], nb_chunks: Positive, axis: int) =
+  # TODO: inefficient to create an intermediate sequence
+  result = x.value.chunk(nb_chunks, axis).mapIt(
     Variable[TT](context: x.context, value: it)
   )
 
@@ -90,6 +91,24 @@ proc chunk_backward_ag[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): Smal
   let gradients = payload.sequence.mapIt(it.grad) # TODO: inefficient to create an intermediate sequence
   result = newDiffs[TT](1)
   result[0] = concat(gradients, self.axis)
+
+proc chunk_cache[TT](result: var seq[Variable[TT]], x: Variable[TT], nb_chunks: Positive, axis: int) =
+  for idx, variable in result:
+    variable.requires_grad = true
+    variable.grad = zeros_like variable.value
+
+  # Gate
+  var gate: ChunkSplitGate[TT]
+  new gate
+  gate.axis = axis
+
+  register_node(
+    "Chunk",
+    gate,
+    chunk_backward_ag[TT],
+    result,
+    x
+  )
 
 proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variable[TT]] =
   ## Splits a Variable into n chunks along the specified axis.
@@ -102,24 +121,9 @@ proc chunk*[TT](v: Variable[TT], nb_chunks: Positive, axis: Natural): seq[Variab
   ##
   ## This is consistent with numpy array_split
 
-  # Gate
-  var gate: ChunkSplitGate[TT]
-  new gate
-  gate.axis = axis
-
   # Resulting var
-  result = gate.chunk_forward(v, nb_chunks)
+  result.chunk_inference(v, nb_chunks, axis)
 
   # Caching for backprop
   if v.requires_grad:
-    for idx, variable in result:
-      variable.requires_grad = true
-      variable.grad = zeros_like variable.value
-
-    register_node(
-      "Chunk",
-      gate,
-      chunk_backward_ag[TT],
-      result,
-      v
-    )
+    result.chunk_cache(v, nb_chunks, axis)

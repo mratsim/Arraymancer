@@ -74,9 +74,11 @@ type
     second_moments: seq[TT]         ## Exponential moving averages squared (uncentered variance)
     epsilon: TT.T                   ## Epsilon for numerical stability when dividing
 
-proc update*(self: Adam) =
+proc update*(self: var Adam) =
   # We use the second formulation of Adam from Kingma et al similar to Tensorflow
-  let lr_t = lr * sqrt(1 - self.beta2_t) / (1 - self.beta1_t)
+
+  # Bias corrected learning rate
+  let lr_t = self.learning_rate * sqrt(1 - self.beta2_t) / (1 - self.beta1_t)
 
   # Raise β1^t and β2^t for next update
   self.beta1_t *= self.beta1
@@ -92,20 +94,30 @@ proc update*(self: Adam) =
       apply2_inline(self.second_moments[i], v.grad):
         self.beta2 * x + (1 - self.beta2) * y * y
       # Adjust weight
-      apply2_inline(v.value, self.first_moments[i], self.second_moments[i]):
+      apply3_inline(v.value, self.first_moments[i], self.second_moments[i]):
         x - lr_t * y / (z.sqrt + self.epsilon)
 
       # Zero the gradient
       v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
 
-func optimizerAdam*[M, T](model: M, learning_rate: T): Adam[Tensor[T]] =
+func optimizerAdam*[M, T](
+        model: M,
+        learning_rate: T = T(0.001),
+        beta1 = T(0.9), beta2 = T(0.999),
+        eps = T(1e-8)
+      ): Adam[Tensor[T]] =
   ## Create a Adam optimizer that will update the model weight
 
   # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...
   # Pending https://github.com/nim-lang/Nim/issues/7734 and https://github.com/nim-lang/Nim/issues/7733
 
   result.params = @[]
-  result.lr = learning_rate
+  result.learning_rate = learning_rate
+  result.beta1 = beta1
+  result.beta1_t = beta1
+  result.beta2 = beta2
+  result.beta2_t = beta2
+  result.epsilon = eps
 
   for layer in fields(model):
     for field in fields(layer): # TODO recursive for any nesting depth of Model
@@ -121,7 +133,7 @@ func optimizerAdam*[M, T](model: M, learning_rate: T): Adam[Tensor[T]] =
 # ############################################################
 
 type
-  Optimizer[TT] = Sgd[TT]
+  Optimizer*[TT] = Sgd[TT] or Adam[TT]
 
 proc zeroGrads*(o: Optimizer) =
   # Reset the gradients of the optimized params

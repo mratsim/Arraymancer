@@ -53,9 +53,12 @@ func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
   result.lr = learning_rate
 
   for layer in fields(model):
-    for field in fields(layer): # TODO recursive for any nesting depth of Model
-      if field is Variable:
-        result.params.add field
+    when layer is Variable:
+      result.params.add layer
+    else:
+      for field in fields(layer): # TODO recursive for any nesting depth of Model
+        when field is Variable:
+          result.params.add field
 
 # ############################################################
 #
@@ -120,11 +123,16 @@ func optimizerAdam*[M, T](
   result.epsilon = eps
 
   for layer in fields(model):
-    for field in fields(layer): # TODO recursive for any nesting depth of Model
-      if field is Variable:
-        result.params.add field
-        result.first_moments.add field.grad.zeros_like
-        result.second_moments.add field.grad.zeros_like
+    when layer is Variable:
+      result.params.add layer
+      result.first_moments.add layer.grad.zeros_like
+      result.second_moments.add layer.grad.zeros_like
+    else:
+      for field in fields(layer): # TODO recursive for any nesting depth of Model
+        when field is Variable:
+          result.params.add field
+          result.first_moments.add field.grad.zeros_like
+          result.second_moments.add field.grad.zeros_like
 
 # ############################################################
 #

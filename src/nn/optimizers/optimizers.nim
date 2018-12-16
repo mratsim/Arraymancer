@@ -14,22 +14,14 @@
 
 import  ../../tensor/[tensor, higher_order_applymap],
         ../../autograd/autograd,
-        ../../private/ast_utils
+        ../../private/ast_utils,
+        math
 
 # ############################################################
 #
 #             SGD: Stochastic Gradient Descent
 #
 # ############################################################
-
-# TODO: the following completely wrecks Nim
-# with a worse case of https://github.com/mratsim/Arraymancer/issues/327
-
-# type
-#   Sgd*[T] = object
-#     ## Stochastic gradient descent
-#     params: seq[Variable[Tensor[T]]]
-#     lr: T # Learning rate.
 
 type
   Sgd*[TT] = object
@@ -77,9 +69,50 @@ type
     params: seq[Variable[TT]]       ## Learnable weights
     learning_rate: TT.T
     beta1, beta2: TT.T              ## Decays on first and second moment
+    beta1_t, beta2_t: TT.T          ## Current decay
     first_moments: seq[TT]          ## Exponential moving averages (mean estimation)
     second_moments: seq[TT]         ## Exponential moving averages squared (uncentered variance)
+    epsilon: TT.T                   ## Epsilon for numerical stability when dividing
 
+proc update*(self: Adam) =
+  # We use the second formulation of Adam from Kingma et al similar to Tensorflow
+  let lr_t = lr * sqrt(1 - self.beta2_t) / (1 - self.beta1_t)
+
+  # Raise β1^t and β2^t for next update
+  self.beta1_t *= self.beta1
+  self.beta2_t *= self.beta2
+
+  for i in 0 ..< self.params.len:
+    let v = self.params[i]
+    if v.requires_grad:
+      # Update biaised first moment estimate
+      apply2_inline(self.first_moments[i], v.grad):
+        self.beta1 * x + (1 - self.beta1) * y
+      # Update biaised second moment estimate
+      apply2_inline(self.second_moments[i], v.grad):
+        self.beta2 * x + (1 - self.beta2) * y * y
+      # Adjust weight
+      apply2_inline(v.value, self.first_moments[i], self.second_moments[i]):
+        x - lr_t * y / (z.sqrt + self.epsilon)
+
+      # Zero the gradient
+      v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
+
+func optimizerAdam*[M, T](model: M, learning_rate: T): Adam[Tensor[T]] =
+  ## Create a Adam optimizer that will update the model weight
+
+  # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...
+  # Pending https://github.com/nim-lang/Nim/issues/7734 and https://github.com/nim-lang/Nim/issues/7733
+
+  result.params = @[]
+  result.lr = learning_rate
+
+  for layer in fields(model):
+    for field in fields(layer): # TODO recursive for any nesting depth of Model
+      if field is Variable:
+        result.params.add field
+        result.first_moments.add field.grad.zeros_like
+        result.second_moments.add field.grad.zeros_like
 
 # ############################################################
 #

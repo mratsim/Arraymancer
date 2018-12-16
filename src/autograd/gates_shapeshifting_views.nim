@@ -40,10 +40,12 @@ template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
   result.requires_grad = z.requires_grad
   when S is AnyTensor:
     result.value = z.value[args]
-    result.grad = z.grad[args]
+    if result.requires_grad:
+      result.grad = z.grad[args]
   else: # Not sure how to backprop that
     result.value = [z.value[args]].toTensor
-    result.grad = [z.grad[args]].toTensor
+    if result.requires_grad:
+      result.grad = [z.grad[args]].toTensor
 
   result
 

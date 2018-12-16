@@ -152,12 +152,12 @@ func newContext*(TT: typedesc): Context[TT] =
 func variable*[TT](ctx: Context[TT], value: TT, requires_grad = false): Variable[TT] =
   ## Wrap a variable to the context
   ## T is a Tensor[T, CudaTensor[T] or scalar T
-  # TODO make the grad initialization optional to optimize memory use
   new result
   result.context = ctx
   result.value = value
-  result.grad = value.zeros_like
-  result.requires_grad = requires_grad
+  if requires_grad:
+    result.requires_grad = true
+    result.grad = value.zeros_like
 
 template len[TT](ctx: Context[TT]): int =
   ## Returns the number of operations applied in the context

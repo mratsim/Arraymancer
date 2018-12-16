@@ -16,18 +16,26 @@ import  ../../tensor/[tensor, higher_order_applymap],
         ../../autograd/autograd,
         ../../private/ast_utils
 
+# ############################################################
+#
+#             SGD: Stochastic Gradient Descent
+#
+# ############################################################
+
+# TODO: the following completely wrecks Nim
+# with a worse case of https://github.com/mratsim/Arraymancer/issues/327
+
+# type
+#   Sgd*[T] = object
+#     ## Stochastic gradient descent
+#     params: seq[Variable[Tensor[T]]]
+#     lr: T # Learning rate.
+
 type
   Sgd*[TT] = object
     ## Stochastic gradient descent
     params*: seq[Variable[TT]]
     lr*: TT.T # Learning rate. T is the generic parameter of Tensor[T]
-
-  Optimizer[TT] = Sgd[TT]
-
-proc zeroGrads*(o: Optimizer) =
-  # Reset the gradients of the optimized params
-  for v in o.params:
-    v.grad = v.value.zeros_like
 
 proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[Tensor[T]] {.deprecated: "Use the optimizer macro instead".}=
   SGD[Tensor[T]](params: @params, lr: learning_rate)
@@ -40,7 +48,8 @@ proc update*(self: Sgd) =
     if v.requires_grad:
       apply2_inline(v.value, v.grad):
         x - self.lr * y
-      v.grad = v.value.zeros_like
+      # Zero the gradient
+      v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
 
 func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
   ## Create a SGD optimizer that will update the model weight
@@ -55,3 +64,34 @@ func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
     for field in fields(layer): # TODO recursive for any nesting depth of Model
       if field is Variable:
         result.params.add field
+
+# ############################################################
+#
+#             Adam: Adaptative Moment Estimation
+#
+# ############################################################
+
+type
+  Adam*[TT] = object
+    ## Adaptative Moment Estimation
+    params: seq[Variable[TT]]       ## Learnable weights
+    learning_rate: TT.T
+    beta1, beta2: TT.T              ## Decays on first and second moment
+    first_moments: seq[TT]          ## Exponential moving averages (mean estimation)
+    second_moments: seq[TT]         ## Exponential moving averages squared (uncentered variance)
+
+
+# ############################################################
+#
+#                 Generic optimizers
+#
+# ############################################################
+
+type
+  Optimizer[TT] = Sgd[TT]
+
+proc zeroGrads*(o: Optimizer) =
+  # Reset the gradients of the optimized params
+  # TODO setZero instead of allocating.
+  for v in o.params:
+    v.grad = v.value.zeros_like

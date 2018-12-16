@@ -17,11 +17,13 @@ import  ./autograd_common,
         ./gates_blas,
         ./gates_reduce,
         ./gates_shapeshifting_views,
-        ./gates_shapeshifting_concat_split
+        ./gates_shapeshifting_concat_split,
+        ./gates_hadamard
 
 export  autograd_common,
         gates_basic,
         gates_blas,
         gates_reduce,
         gates_shapeshifting_views,
-        gates_shapeshifting_concat_split
+        gates_shapeshifting_concat_split,
+        gates_hadamard

@@ -159,18 +159,18 @@ func variable*[TT](ctx: Context[TT], value: TT, requires_grad = false): Variable
   result.grad = value.zeros_like
   result.requires_grad = requires_grad
 
-func len[TT](ctx: Context[TT]): int {.inline.}=
+template len[TT](ctx: Context[TT]): int =
   ## Returns the number of operations applied in the context
   ctx.nodes.len
 
-func push[TT](ctx: Context[TT], node: Node[TT]) {.inline.}=
+template push[TT](ctx: Context[TT], node: Node[TT]) =
   ## Append a new operation to the context
   ctx.nodes.add(node)
 
-func peek[TT](ctx: Context[TT]): Node[TT] {.inline.}=
+template peek[TT](ctx: Context[TT]): Node[TT] =
   ctx.nodes[ctx.len - 1]
 
-func pop[TT](ctx: Context[TT]): Node[TT] {.inline.}=
+template pop[TT](ctx: Context[TT]): Node[TT] =
   ctx.nodes.pop
 
 func register_node*[TT](

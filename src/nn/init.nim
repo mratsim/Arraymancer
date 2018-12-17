@@ -99,7 +99,7 @@ func variance_scaled(
 proc kaiming_uniform*(shape: varargs[int], T: type): Tensor[T] =
   ## Kaiming He initialisation for trainable layers
   ## preceding a ReLU activation.
-  ## Kaiming initialization is recommended for relu activated layers only.
+  ## Kaiming initialization is recommended for relu activated layers.
   ##
   ## Weight is sampled from an uniform distribution
   ## of range [-√3 * √(2/fan_in), √3 * √(2/fan_in)]
@@ -116,7 +116,7 @@ proc kaiming_uniform*(shape: varargs[int], T: type): Tensor[T] =
 proc kaiming_normal*(shape: varargs[int], T: type): Tensor[T] =
   ## Kaiming He initialisation for trainable layers
   ## preceding a ReLU activation.
-  ## Kaiming initialization is recommended for relu activated layers only.
+  ## Kaiming initialization is recommended for relu activated layers.
   ##
   ## Weight is sampled from a normal distribution
   ## of mean 0 and standard deviation √(2/fan_in)
@@ -144,7 +144,7 @@ proc xavier_uniform*(shape: varargs[int], T: type): Tensor[T] =
   ## Xavier Glorot initialisation for trainable layers
   ## preceding a linear activation (sigmoid, tanh).
   ## Xavier initialization is recommended for sigmoid, tanh
-  ## and softsign activated layers. It is not recommended for relu activated layers.
+  ## and softsign activated layers.
   ##
   ## Weight is sampled from an uniform distribution
   ## of range [-√3 * √(2/(fan_in+fan_out)), √3 * √(2/(fan_in+fan_out))]
@@ -166,7 +166,7 @@ proc xavier_normal*(shape: varargs[int], T: type): Tensor[T] =
   ## Xavier Glorot initialisation for trainable layers
   ## preceding a linear activation (sigmoid, tanh).
   ## Xavier initialization is recommended for sigmoid, tanh
-  ## and softsign activated layers. It is not recommended for relu activated layers.
+  ## and softsign activated layers.
   ##
   ## Weight is sampled from a normal distribution
   ## of mean 0 and standard deviation √(2/(fan_in+fan_out))
@@ -184,7 +184,6 @@ proc xavier_normal*(shape: varargs[int], T: type): Tensor[T] =
   ##     networks](http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf)
   result = variance_scaled(shape, T, scale = 2.T, mode = FanAvg, distribution = Normal)
 
-
 # ############################################################
 #
 #                      Lecun initialisation
@@ -198,6 +197,34 @@ proc xavier_normal*(shape: varargs[int], T: type): Tensor[T] =
 # Self-Normalizing Neural Networks
 #     2017, Klambauer et al, https://arxiv.org/abs/1706.02515
 
+proc yann_uniform*(shape: varargs[int], T: type): Tensor[T] =
+  ## Yann Lecun initialisation for trainable layers
+  ##
+  ## Weight is sampled from an uniform distribution
+  ## of range [√(3/fan_in), √(3/fan_in)]
+  ## with fan_in the number of input unit in the forward pass.
+  ##
+  ## This preserves the magnitude of the variance of the weight
+  ## during the forward pass
+  ##
+  ## Paper:
+  ##   - [Efficient BackProp](http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf)
+  result = variance_scaled(shape, T, scale = 1.T, mode = FanIn, distribution = Uniform)
+
+proc yann_normal*(shape: varargs[int], T: type): Tensor[T] =
+  ## Yann Lecun initialisation for trainable layers
+  ##
+  ## Weight is sampled from a normal distribution
+  ## of mean 0 and standard deviation √(1/fan_in)
+  ## with fan_in the number of input unit in the forward pass.
+  ##
+  ## This preserves the magnitude of the variance of the weight
+  ## during the forward pass
+  ##
+  ## Paper:
+  ##   - [Efficient BackProp](http://yann.lecun.com/exdb/publis/pdf/lecun-98b.pdf)
+  result = variance_scaled(shape, T, scale = 1.T, mode = FanIn, distribution = Normal)
+
 # ############################################################
 #
 #                    Orthogonal initialisation
@@ -207,3 +234,5 @@ proc xavier_normal*(shape: varargs[int], T: type): Tensor[T] =
 # Initialisations from
 # Exact solutions to the nonlinear dynamics of learning in deep linear neural networks
 #     2013, Saxe et al, https://arxiv.org/abs/1312.6120
+
+# TODO

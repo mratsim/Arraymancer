@@ -55,10 +55,10 @@ const
   Mappings = genCharsMapping()
   VocabSize = PrintableChars.card # Cardinality of the set of PrintableChars
   BatchSize = 32
-  Epochs = 10_000
+  Epochs = 100_000    # This take a long long time, I'm not even sure it converges
   Layers = 2
   HiddenSize = 128
-  LearningRate = 0.001'f32
+  LearningRate = 0.01'f32
   EmbedSize = 100
   SeqLen = 200        # Characters sequences will be split in chunks of 200
   StatusReport = 200  # Report training status every x batches
@@ -278,7 +278,7 @@ proc gen_training_set(
 proc train[TT](
         ctx: Context[TT],
         model: ShakespeareNet[TT],
-        optimiser: Sgd[TT],
+        optimiser: var Optimizer[TT],
         input, target: Tensor[PrintableIdx]): float32 =
   ## Train a model with an input and the corresponding characters to predict.
   ## Return the loss after the training session
@@ -389,8 +389,9 @@ proc main() =
   # Build our model and initialize its weights
   let model = ctx.newShakespeareNet()
 
-  # Stochastic Gradient Descent (API will change)
-  let optim = model.optimizerSGD(learning_rate = LearningRate)
+  # Optimizer
+  # let optim = model.optimizerSGD(learning_rate = LearningRate)
+  var optim = model.optimizerAdam(learning_rate = LearningRate)
 
   # We use a different RNG for seq split
   var split_rng = initRand(42)
@@ -411,15 +412,15 @@ proc main() =
 main()
 
 # ##################################################
-# Output
+# Output - Adam, learning rate 0.01 - Gradients exploded ...
 
 # Checking the first hundred characters of your file
 # First Citizen:
 # Before we proceed any further, hear me speak.
-#
+
 # All:
 # Speak, speak.
-#
+
 # First Citizen:
 # You
 
@@ -428,371 +429,395 @@ main()
 
 
 # ####
-# Time: 0.5717 s, Epoch: 0/10000, Loss: 5.1517
+# Time: 0.5359 s, Epoch: 0/100000, Loss: 5.1517
 # Sample:
-# Wh605tnnPsv8/brrrrTI6IA#8[88rrrrrjrr>;\I\\uqj0qM4MqMW,j4Uu:5:nr*TjHwo4bn>g8>mXrj.Atja4aaig|d?3TT[[[[Wt
+# WhIGTuuuerwH:rrrrD=I;edI;***Z\D8trrrNjjII-uti8rD6DWD\8d3\}22Ps|D^kZzf6[tttttt[kr6nkkkkkkkbzkd5\IqqJq.r
 
 # ####
-# Time: 90.0758 s, Epoch: 200/10000, Loss: 2.6763
+# Time: 82.5663 s, Epoch: 200/100000, Loss: 2.4458
 # Sample:
-# Wheaase dswtinnssI fd atatarrearusIordDrrnIII;;;a;aodoot[innartta snrrrrdruIt yrruurrrrII ayrrrruurrrr
+# Wheaata ttyyootyr eur iufyoorssay  oif rioooootrvanyaott urteryto s?iatoonyfsotoiurrror eaitrrusotitre
 
 # ####
-# Time: 187.3876 s, Epoch: 400/10000, Loss: 2.6028
+# Time: 158.4338 s, Epoch: 400/100000, Loss: 2.4572
 # Sample:
-# Wheeeatd,tt ,attri.art??yarrdeddtrrirsIIeDUt?ut;usrdes.X?yItead8ari?routttuitrri.trairurrtrearyrrder.t
+# Wheeaatenrt aarto? ory ay ttorneteeatt, antt ttrytt, t  sy t tr tut ttheaty ttte utennt?nt   't s si t
 
 # ####
-# Time: 285.6617 s, Epoch: 600/10000, Loss: 2.5498
+# Time: 234.2593 s, Epoch: 600/100000, Loss: 2.4647
 # Sample:
-# Wheaiy:sistood.ssisi.sosssiirdeImf ftr atrt;
-# o;`dooormiu;??tAsutu!rrsdd?akIetioddrrrurduyrsdodoAdmimar
+# Wheaivatstytraatrrioeyirsttrt eatttryy otrr  oarryrirorureotrrrrd rrriraorervotontrosoirtrrarne, adait
 
 # ####
-# Time: 367.2997 s, Epoch: 800/10000, Loss: 2.5789
+# Time: 310.1731 s, Epoch: 800/100000, Loss: 2.4936
 # Sample:
-# Wheataiiders,et, ttatttteatn etditro artEyoirooooiorr;II?rrry;moirreroIord??rr;?airiruisbpaiomrtrurrrr
+# Whe eaaiasstatt  ttatstheaisaotortro aouirriveiitnirrandadrry eiarresoattreryf aroottyot renootrttrrrr
 
 # ####
-# Time: 450.9833 s, Epoch: 1000/10000, Loss: 2.5497
+# Time: 386.0483 s, Epoch: 1000/100000, Loss: 2.5014
 # Sample:
-# Wh ayy e Isiourtrrosryuerterssarc potrrassIire??[;;siairrlo:odoiisdsmIet?trudes? fTorrdos?iddmmtrtat?r
+# Wh aiwar  tiotetooowotwartertvaia rottrerreoildaoddvyaeoriaarldees riaotiyrrarroaoirrsess iairnttr rar
 
 # ####
-# Time: 538.6711 s, Epoch: 1200/10000, Loss: 2.5168
+# Time: 460.4311 s, Epoch: 1200/100000, Loss: 2.4683
 # Sample:
-# Wheetae;evetai??tredrrnn?add rsiauspiidrrdoddIiroo??i?sy!ttrrtt?atty?ruutuyyrdurrrrI?r syineatrtartaur
+# Wheitee eteeaa  wcsatteeaiarsttr ttotoatroyaratrrr ae ty rtrrtrarrry ottrtyyo'toooo eoatyrrrayoraryaye
 
 # ####
-# Time: 617.2467 s, Epoch: 1400/10000, Loss: 2.4899
+# Time: 533.2700 s, Epoch: 1400/100000, Loss: 2.4537
 # Sample:
-# Whaitweeissateeedids.eirpesatmdedvimsaPrrtdottr;?uir?rrdsdiirdtrtr?terrr??rdtetaiuuitrlttttttrrtmdreri
+# Whaeitioostiotioeuat rroretriraievoiuoarrssssss atoo rrotososatats s oooonoiootoottorrrrtrerrrororrari
 
 # ####
-# Time: 694.5187 s, Epoch: 1600/10000, Loss: 2.4839
+# Time: 606.2192 s, Epoch: 1600/100000, Loss: 2.4590
 # Sample:
-# Wheadaissicw.rcpe,??;ooopoo??or?ruutarttearsriraurdss?isdiu.ddurrrdrrdrrrtcyrirorr;eraitrsrtusodo??r?r
+# Whe   anoiay nas, a ata t
+#  si tttuitttaioutstetfestatofft ofstouateea itatsstost ataitstttuteeiarsat
 
 # ####
-# Time: 777.1259 s, Epoch: 1800/10000, Loss: 2.4962
+# Time: 679.5429 s, Epoch: 1800/100000, Loss: 2.4710
 # Sample:
-# Whtiaids, oorsio?p5;crer,geIitIssiueee
-# rs aand`t ttttuurryirrrartrtyierirurradturrrrrsr?rdtrrtrtutttt?
+# Whtoea o  oorofa r  feas saatarroetane meafat  oetae,rt ,y aot ttottref nyoo  suofisfto rfoootofyofoo
 
 # ####
-# Time: 859.6361 s, Epoch: 2000/10000, Loss: 2.4913
+# Time: 752.2276 s, Epoch: 2000/100000, Loss: 2.4679
 # Sample:
-# Whiatsth! I'ttu at?t
-#
-#
-#
-#
-# ?Xr
-# BOBourrtrrar?rdet?rtat?tlutrairtriredretkdd;erurrrrt??rrrdrrdterrdiitrier
+# Whi ofua e  ntratn ooroa nks , aiwtnutono naiteotan s so ceetehaaasaueaa sstsso s atseaoaasaosaf wfaaa
 
 # ####
-# Time: 940.7449 s, Epoch: 2200/10000, Loss: 2.4965
+# Time: 824.9055 s, Epoch: 2200/100000, Loss: 2.4722
 # Sample:
-# Whesispietiwodissdissir??fiisfosoiyrdemmddotsuklttfutyutt?tukreetiaastertutuitrti?irdrrdmairrr?t??tsu?
+# Whetieeeartt  ern etoesaoamat esaftt  tuitttttrerrareyset taot, tra rtrottsuas ss sse trsartosms otsua
 
 # ####
-# Time: 1022.9619 s, Epoch: 2400/10000, Loss: 2.4786
+# Time: 897.6905 s, Epoch: 2400/100000, Loss: 2.4571
 # Sample:
-# Whes,idtub!a
-# ctttratart
-#
-# airrrriuicrerrrtr?iussssimmsbeeaaatttut.;ia6ov6t?`riurriedi??urrriscdrrrttrii
+# Wheo iett  e atorteo  .   iasositaalalllrianyootokfen oe a stmoe  ta tt t astuto  at  tooest  sseotse
 
 # ####
-# Time: 1109.9007 s, Epoch: 2600/10000, Loss: 2.4947
+# Time: 970.3663 s, Epoch: 2600/100000, Loss: 2.4791
 # Sample:
-# Whoayt,urt aturrttutarrriredirrrrtirired?rrr?;arrirusr??gtuattrttuttttut??ttttrttttttt?err;arradirtrur
+# Who ur seo aet  e so a iaiicesiolteeeeea koea erieeroeeeeisaasetasasnlte  ssasfmeseost  ee eoteaaeeasn
 
 # ####
-# Time: 1197.0158 s, Epoch: 2800/10000, Loss: 2.4666
+# Time: 1043.0339 s, Epoch: 2800/100000, Loss: 2.4477
 # Sample:
-# Whiemaeeetseisiaty?eederut?
-#
-# u
-# dtwssddrolkd addddtr8crrtrrryirmriredicrrrrertt??errrirrrueirdedd?tsw,a
+# Whiae eetroorri oosotirruo,  s etoise toe a    , ti othooosuiantalaito'ienasooaaloosooots,ooo oo'utt
 
 # ####
-# Time: 1276.9473 s, Epoch: 3000/10000, Loss: 2.4868
+# Time: 1115.7065 s, Epoch: 3000/100000, Loss: 2.4734
 # Sample:
-# Whi athoitoovootnoonyyeeste!seeadtt?
-# ta;?itattt?eiastss
-# !!idooko daivtlly tttutttoorotoorror?ituatt?ir
+# Whi aooocoertaereeeayte esaaoea ate  e   aoateraea ireo  ae eaat aanttceyeea't  tstt o eitot  tteloar,
 
 # ####
-# Time: 1428.7132 s, Epoch: 3200/10000, Loss: 2.4850
+# Time: 1188.4677 s, Epoch: 3200/100000, Loss: 2.4743
 # Sample:
-# Whigtr,ath.
-#
-# Whpeoik,,tt.faosri?atrtutdurri??rtairrrett?errty?rrreru??urrerarrdt????ru.y rseirrdeddedd
+# Whiaur  tcaeireoaealaitrelleoio mrorrlereee anreaoorrrreroerwioarrotaiseair inerasenir eessaettee eean
 
 # ####
-# Time: 1642.4389 s, Epoch: 3400/10000, Loss: 2.4520
+# Time: 1261.3639 s, Epoch: 3400/100000, Loss: 2.4448
 # Sample:
-# Whea
-# siohosibreere,dedttearttstt.iitist?att
-# e
-#
-# btsoutttyu.tt.eius?rtraetererrrdratirderr;,rrettefi?tuu
+# Whea aio mi  seceaarlekole'erlts slsaos tie t, rttet, 'st ie rott rtreet eatoeares,   ss  trirshaiotsu
 
 # ####
-# Time: 1768.0808 s, Epoch: 3600/10000, Loss: 2.4733
+# Time: 1333.9971 s, Epoch: 3600/100000, Loss: 2.4636
 # Sample:
-# Wh ay hiereeet
-#
-# dddstsn,adidisstlett??Xitrr,.turrri?at;so??artttuuty.urrdrderurr?turtutrtt?tutiyoa??su
+# Wh ao  a rt oo  oo -t n   '  m saeooo aauin  fl eta  a ssi s tsitstt u   t lttr, s  otiooueuuseusf, at
 
 # ####
-# Time: 1897.5193 s, Epoch: 3800/10000, Loss: 2.4753
+# Time: 1406.7137 s, Epoch: 3800/100000, Loss: 2.4666
 # Sample:
-# WheausireeetaIltsorssaidst???t?knrw.??sllulupfthattttttatuttttruttttttuttwetttrt????uru?asbedrs?.tuite
+# Whe o arieao  it eanado ore os seou e seeeeot ook esnti stle   tt asostcty iet,     tes e  tats  tnhs'
 
 # ####
-# Time: 1980.7799 s, Epoch: 4000/10000, Loss: 2.4961
+# Time: 1479.4245 s, Epoch: 4000/100000, Loss: 2.4885
 # Sample:
-# Whaayisssioooossoooeroirrrirsssidr.?rsiirtI?irarrd?tcurrrdrs?t;dditrtirrierrred?
-# ?
-# ustroatntd?,rtt?i;r
+# Wha yeoee  a  ilear ss e , eieoe i eselaot sst  oo tluose mo w n mserawoa msmi aimammmmm siyal eooes e
 
 # ####
-# Time: 2067.5314 s, Epoch: 4200/10000, Loss: 2.4826
+# Time: 1552.1464 s, Epoch: 4200/100000, Loss: 2.4736
 # Sample:
-# Wheeted,t,tttyyrurrd rutrr?ior?rriu??tthutyor??urr?rustt.?aureaatttt?si?cosrpaitutueatstt,ttttatuttutt
+# Wheeoee i soltveseea ssses,e a,e  t  e  site   heieseiis eceaiaaseeiataanstitciosetaat isatastettiatlo
 
 # ####
-# Time: 2151.6148 s, Epoch: 4400/10000, Loss: 2.4774
+# Time: 1624.8478 s, Epoch: 4400/100000, Loss: 2.4688
 # Sample:
-# Whaisbbesti
-#
-# CI att utt
-# houteasoo?atttuutt?utustu.uirtr;?erdirrdr??ud
-# dddderd;r??rdtuty?e?.; t
-# uireddd
+# Wha;a alorae  e  oa oer riwiaernoenoonotss oem ,t n  tt  ooote otoete ssfoote o'eseeeoulsa,  t sst t
 
 # ####
-# Time: 2246.4050 s, Epoch: 4600/10000, Loss: 2.4725
+# Time: 1697.5983 s, Epoch: 4600/100000, Loss: 2.4671
 # Sample:
-# Whidtc
-# utbtertyeetoetteretriitraerut?cordi?
-# urtcrirordigtiirecassttthesi?seiadittcurrdirderortriter??r
+# Whiata tr r oroo toeor o tooooo oouo oieaia ortmomeeaaoouoano aaaoroofss sas, ,oo ooa'soaooooooosnnaoo
 
 # ####
-# Time: 2341.8143 s, Epoch: 4800/10000, Loss: 2.4691
+# Time: 1770.3448 s, Epoch: 4800/100000, Loss: 2.4674
 # Sample:
-# Whea,atshatweanct
-#
-# r
-# 9Iterea,ttuistt??;?
-# ut
-# aoorrt??cutrrrutth?ttttatttrriuttuutu?suy?atsuet?eaatlrduu
+# Whe.  iee au  ils  t   t t   rsofirteeai ssalsst t aiteefittee e      i ssttttufl est  istit'aset ofoo
 
 # ####
-# Time: 2423.0604 s, Epoch: 5000/10000, Loss: 2.4635
+# Time: 1843.0177 s, Epoch: 5000/100000, Loss: 2.4602
 # Sample:
-# Wheiraeelse,!adtt rutrtttuttautuhetutr;ura?ossoutrreededttiurvutt??id??suiratattetuitr?uuisst?eiu
-# iatd
+# Wheie-lense  l e  as  tnoos  t t  soee oo  eooosoenogalasigteysatie   'ssssss ,  te   ltt t sgiet  ,s
 
 # ####
-# Time: 2504.9325 s, Epoch: 5200/10000, Loss: 2.4572
+# Time: 1916.1867 s, Epoch: 5200/100000, Loss: 2.4519
 # Sample:
-# Whotiaioviaeta
-# sitpeiidss.,!irr prrtt?ur???ru?rsuateadthoirtreerdw?tutrat?er?cusedtt?tuui?tuX??u?
-# Ayr:
+# Whoieeastt, o
+# aea  a  oraoasos ie,   e    ,   eo ioiosmoamtea a y oee  a ia osoaitt oone oo'  sea ut
 
 # ####
-# Time: 2583.1865 s, Epoch: 5400/10000, Loss: 2.4627
+# Time: 1988.8650 s, Epoch: 5400/100000, Loss: 2.4603
 # Sample:
-# Wh sissbbuew.?rturiatthrustaeerssadicrounrierr???crurrirrrerrtrderte??utt?
-# s
-# {aittt?ut??turiyry?yuiss?
+# Wh iarte oeweeoooeoeroetroo   oooeeenkooeoe oo,  iat'oedoe  noo aooia toofoo yeeofo ooafefoeootaoo s
 
 # ####
-# Time: 2665.0941 s, Epoch: 5600/10000, Loss: 2.4524
+# Time: 2061.4777 s, Epoch: 5600/100000, Loss: 2.4519
 # Sample:
-# Whoyoioyardrssettidnds,tt
-# p
-# haruttttottuar?uurrdierdrlidatrdt,rtutrti,erreta?tssd???iuuaterrerddeti?do
+# Whoyi ceeaarooittoauaucteateeeeteettcettac lsee.ecea  acctleo eateele eeeeeaeteteeeelerateceeeeeeeeaee
 
 # ####
-# Time: 2744.3063 s, Epoch: 5800/10000, Loss: 2.4640
+# Time: 2134.1670 s, Epoch: 5800/100000, Loss: 2.4581
 # Sample:
-# Wheeeatk?,ust
-#
-#
-#
-#
-#
-#
-# W
-# /cyk ondrenirted,??dsr?miirr?i.abyttuirurrrd?iu?rrddddrrdrc?attttuiirtusirri?I?u
+# Wheieaeeafreieeeeeeeeaaese, aeialiiril e  oieoootoloailoumn iooooooooaoronaaooooieoeonoromoooooooo aan
 
 # ####
-# Time: 2835.9202 s, Epoch: 6000/10000, Loss: 2.4993
+# Time: 2206.8956 s, Epoch: 6000/100000, Loss: 2.5014
 # Sample:
-# Wheisalitl
-# e
-# c
-# PPeres?!,eteetatre?v???;uor?etssattieteltraatrt?tuiutiedrtrriaryradtt?turyrirtrrtereirt
+# Wheio leoaan d   ,eero looeeaei e y e, oio drotioscathaou  seiawsauiaa aseea essaatl hoctiantloo oacau
 
 # ####
-# Time: 2918.5590 s, Epoch: 6200/10000, Loss: 2.5049
+# Time: 2279.5939 s, Epoch: 6200/100000, Loss: 2.4951
 # Sample:
-# Wheeeadts?itissac
-# c!!!!a!o!t'!iarssue itte?uatturrrr.iirirauy?autrr.urssiaoytru.
-# urrcrrtrrttrruttrtutr
+# Wheeea ie ol,'e   ear eo o o  nawonsa ee   s aeieeee aaeaa tu   ne  o oe  aus n  e caaeteeheaetteactoe
 
 # ####
-# Time: 3004.4479 s, Epoch: 6400/10000, Loss: 2.4494
+# Time: 2352.2956 s, Epoch: 6400/100000, Loss: 2.4517
 # Sample:
-# Wheeeetdeatt; prndsatart??ttusu?!s
-# b!uees!tt!illiluatteherataterdiaitsst?irrr;urirrrddier??d?t
-# u??y?ud
+# Wha ieledaen  orooteonou fe oes  eoe oa o so oe  mteou   e e e e a  toss uosn usosmoeemeo,   s o  umue
 
 # ####
-# Time: 3084.9506 s, Epoch: 6600/10000, Loss: 2.4409
+# Time: 2424.9952 s, Epoch: 6600/100000, Loss: 2.4409
 # Sample:
-# Whes
-# s
-# bilTubaiwotwas, ssjllututututr tsautrttututrty?utuerrrsutdeudiartetardeatt?ilutoriridt;at?trrad
+# Wheo o eniate nreooar  orioooooooooooooootoooororoerrooooooorrroootoooorooooooeororooooooroormorioao'a
 
 # ####
-# Time: 3191.8401 s, Epoch: 6800/10000, Loss: 2.4778
+# Time: 2497.9720 s, Epoch: 6800/100000, Loss: 2.4797
 # Sample:
-# Whaissbbborteirede,?tt?-tuateec;eradirdirttu??rsisste?eri?uatrettt;reirodouanst.;ttrtt?attututty?urssu
+# Wha !iee meo:e ea   se  aw i     ieelmanosro  eoenesm noo saonnoso oammia n  as eseee: asotooonyanieao
 
 # ####
-# Time: 3286.5917 s, Epoch: 7000/10000, Loss: 2.4408
+# Time: 2572.7135 s, Epoch: 7000/100000, Loss: 2.4406
 # Sample:
-# Whiesseeilatt itt
-# uitrrrtyrerertiderri?tututtusucrres?r?ddt
-#
-#
-# d
-#
-# tspplouyicopew.letltittorerep,tttt?ot
+# Whiartratrltr  co u rr rtti e ieeelsea eostssscuhao t o e t   rootaeeanru eor u e r s ou   ta  t     t
 
 # ####
-# Time: 3368.9405 s, Epoch: 7200/10000, Loss: 2.4774
+# Time: 2645.4656 s, Epoch: 7200/100000, Loss: 2.4820
 # Sample:
-# Wheist;
+# Wheieoa r non ndar  ioe'ssssas ssesses sssst ssstt
+# en sst otsttstt steetssate ststu mn  sn tsssts slas
+
+# ####
+# Time: 2718.2670 s, Epoch: 7400/100000, Loss: 2.4529
+# Sample:
+# Wh e meee eas easeiaoemsloaaamumiooioeeaaaanelalaelooaieloaou eioooooaaoaonooooaoooneaeoooe oeaaaaaiee
+
+# ####
+# Time: 2791.0363 s, Epoch: 7600/100000, Loss: 2.4604
+# Sample:
+# Wh o iattsst'sst s etsee  os  gsesaaststa's t sstte   es t thees s tstet eass   s et ss t etss se tsts
+
+# ####
+# Time: 2863.8652 s, Epoch: 7800/100000, Loss: 2.4646
+# Sample:
+# Wheae,       e     i ' a  tl e   t   ,       m
+#       s      e               e,   e           s
+
+# ####
+# Time: 2936.6419 s, Epoch: 8000/100000, Loss: 2.4862
+# Sample:
+# Whe; a y e a  e o iooo aanomoneooiooiemmtemaeuoae ciaioiiiei seiiniiiiooeaitouo tocooouaeeaeaaaioa  ie
+
+# ####
+# Time: 3009.3742 s, Epoch: 8200/100000, Loss: 2.4467
+# Sample:
+# Whyioo oaamnn,o   ,   ms i    mam's       memseea maseioo eo sd eieiaant  t   o ciaiiises ss ssseciai
+
+# ####
+# Time: 3082.3433 s, Epoch: 8400/100000, Loss: 2.4806
+# Sample:
+# Wh ee e o       y eowerae ieneaoooooloonooarieneooooaounaoeragete  ass s o ssots ceae eaottys ottoaoao
+
+# ####
+# Time: 3155.1481 s, Epoch: 8600/100000, Loss: 2.4881
+# Sample:
+# Wheeeileerrr
+# ieiooosuoeeeacaaeeaaeeaee oeaee leeaioeaaa a eaa aiaaeoteaea a ea aal ieaaieeaeaeaaaaita
+
+# ####
+# Time: 3227.9119 s, Epoch: 8800/100000, Loss: 2.4599
+# Sample:
+# Whear se      ,    i   ae yoi  n auen ateemy   t  t      n s        n   ec eeeaaeta ataiaoot o minusau
+
+# ####
+# Time: 3300.6949 s, Epoch: 9000/100000, Loss: 2.4538
+# Sample:
+# Wheeao  o i arr iao ad,avayeieeioaiaaaiamyoeeaya eeao eaooteloeoe. 'y a'  oea      eo  ie e oaa oo o
+
+# ####
+# Time: 3373.4095 s, Epoch: 9200/100000, Loss: 2.4557
+# Sample:
+# Whaioame,     oieoaa aoa ua sm yy  aoe'ssma  seseweea ema ae aods a esa o esmat otls    s s  oa a smos
+
+# ####
+# Time: 3446.1548 s, Epoch: 9400/100000, Loss: 2.4801
+# Sample:
+# Whot oo-aiai utntnnsnmnmnnmitia  m s      afae   itss maa  iee t e  aaa ol i aeoe i,   e s i  n   aioo
+
+# ####
+# Time: 3518.8856 s, Epoch: 9600/100000, Loss: 2.4468
+# Sample:
+# Wheeon w   eoo,  oe    e aamo  i one  e aeiiar s ienneaasneeaeeeo nsnasea   ngaana,    noie a  ,a na
+
+# ####
+# Time: 3591.7374 s, Epoch: 9800/100000, Loss: 2.4835
+# Sample:
+# Whe aaaeatae ae ee,, o iptea toe
+# aooe;te
+# is
+# .
+# ,a e cooeat  aa
+#  ierit eoo, iaeaaraaeeaiesaiaaaaar elr
+
+# ####
+# Time: 3665.4201 s, Epoch: 10000/100000, Loss: 2.4707
+# Sample:
+# Wheea  ieamr ,e s     s   fey .o   e   e' e,  , d o    e  i  too '  e  s     te   t,     '      e
+
+# ####
+# Time: 3739.4768 s, Epoch: 10200/100000, Loss: 2.4598
+# Sample:
+# Whor e.      irerurrr e eeer  e  rrei e   eetairri,eua orleo oosoeaooeliee e  e    i  o e um   e  e  n
+
+# ####
+# Time: 3816.7557 s, Epoch: 10400/100000, Loss: 2.4374
+# Sample:
+# Whieea r oaere orir i rd teoa  r    ,  i  e    l e          ,        ,    y            a o  ri
+
+# ####
+# Time: 3897.0216 s, Epoch: 10600/100000, Loss: 2.4507
+# Sample:
+# Wh ooiroo oie aaaioeoearr anoeaa  a    oaaaaan osoeaea e o   e     ,      a ane n oinoaronnnsaas nawoo
+
+# ####
+# Time: 3976.0119 s, Epoch: 10800/100000, Loss: 2.4592
+# Sample:
+# Whim  eeeee e aaanooaooaeieaa,atlaro erooesuonal etera alarere  aioao naaiaoeaoeaoeoioeeaou aalieaelel
+
+# ####
+# Time: 4054.5111 s, Epoch: 11000/100000, Loss: 2.4444
+# Sample:
+# Wha ti o use , ,  tir  et   u   t  ? r u ,  ,  cts
+
+
+# o o
+
+
+
+
+# o
+
+
+
+
+# '
+
+
 # i
-# ooooooooooooddrrrrdrIIyetn?s;ssirsecisuu
-# itmootaitthortririreididsrattttyotttryritrertw?attt
+# u
+# s
+# t
+
+# uoistsotattt
+# tttctst
 
 # ####
-# Time: 3460.0559 s, Epoch: 7400/10000, Loss: 2.4525
+# Time: 4131.4897 s, Epoch: 11200/100000, Loss: 2.4708
 # Sample:
-# Wh oiyere
-# edvattu?teu?itsse??ittutust??cucrruodrerrri??drr.uu?rrsuorrderdirursd?ttutttuuutr?uts??iurrr
+# Wh'yi ;t e ii uroou e al'o amusstlts sn    s e  rst s      os  ss? sl s
+# s  ye  et  e   so o     e i
 
 # ####
-# Time: 3578.3554 s, Epoch: 7600/10000, Loss: 2.4628
+# Time: 4205.3146 s, Epoch: 11400/100000, Loss: 2.4721
 # Sample:
-# Wh thiauthet
-# ucuirbrrrrre?rr irirtarrtutr?tutrruutr?c?ruitdyrrrdaectrriradctt??iurrtiut?ucryur?urdrrrr
+# Whak  ,, i snts' i seiel iseleeesiiesiesi issseisss  sssstu ss'esseissstssssssss
+# e  sesss
+# ssisses tie
 
 # ####
-# Time: 3750.5076 s, Epoch: 7800/10000, Loss: 2.4641
+# Time: 4279.8948 s, Epoch: 11600/100000, Loss: 2.4738
 # Sample:
-# Wheelsatt
-# ichtoibres!aailswi.iucbyripyiooooooooderr!?ir??;y??u rererded?ts?iitrrdutucruerr??utt.udt.?i
+# Wheeee  eae, ss tw ieio ouue
+# ,ee, taaiosu uosesuusuyuyneyuo ust ot toy no iue o  o
+# ea       s tnanut
 
 # ####
-# Time: 3845.2033 s, Epoch: 8000/10000, Loss: 2.4915
+# Time: 4354.7046 s, Epoch: 11800/100000, Loss: 2.4381
 # Sample:
-# Wheard,wcttsainsttttut..autetrsyiatthaityor?ius
-# eees
-# eee?eee
-# tarosssoosuacctttr,utattryerriradirtreatr
+# Wheaieoto e.  w  yi i o in orr.'s  ss a iegs  osoeteeoaeooetia   f  a  usn wwa  nslesecawtoutyal
+# yi ,s
 
 # ####
-# Time: 4001.9944 s, Epoch: 8200/10000, Loss: 2.4465
+# Time: 4430.0820 s, Epoch: 12000/100000, Loss: 2.4448
 # Sample:
-# Whyosuboorourivporru?etu?uir;?adsdt??ut?utyssuirpos?ooowrartirrerrrt??surcucrrrrruor??puu
-# tr??uustt?o?
+# Whatton oo rtoot
+# crorurrytrrrrrr r curscttouyorsoctrerkcocirtttterrtrrcrirrrrercrrrrrrrcrcr rtcrrrrcrr
 
 # ####
-# Time: 4118.3223 s, Epoch: 8400/10000, Loss: 2.4796
+# Time: 4505.4830 s, Epoch: 12200/100000, Loss: 2.4558
 # Sample:
-# Wh ay
-# pet
-#
-# phooowonotourrnrrrratrrirdirirt?si??drrru?rutturtsuryer!irtdt???uyrum
-# aper?iasowviasttt?sir
+# Wheaity,       , e   i   t  u te o ee  s   eo         -   u             e    s        oi  f
 
 # ####
-# Time: 4248.9856 s, Epoch: 8600/10000, Loss: 2.4863
+# Time: 4580.7898 s, Epoch: 12400/100000, Loss: 2.4399
 # Sample:
-# Wheeestt?uuy?
-# uussoouspscoooeeeecfttett
-# riatr,uoyoryrerr-?
-# prr??u.
-# msomamdeo;v??iss
-# rdd
-# rttusiuteitty?
+# Whamoorueyoo u ea  lo eye e  ee'lml   s ,,   ,      ,    ,,ae e  a e   e ee     aeioeeeo aoaoo aeeeloe
 
 # ####
-# Time: 4353.1152 s, Epoch: 8800/10000, Loss: 2.4595
+# Time: 4656.9998 s, Epoch: 12600/100000, Loss: 2.4364
 # Sample:
-# Wheesett,,
-# ttttahttt,
-# eet?tutt?ucryrriryirrsiadtrirr??.ucuruirdrdccrri?ius
-# lummmmmmmowrrasdr,tttttuttt
+# Wh
 
 # ####
-# Time: 4439.8329 s, Epoch: 9000/10000, Loss: 2.4557
+# Time: 4736.2755 s, Epoch: 12800/100000, Loss: 2.4532
 # Sample:
-# Wheedsatwitiarr
-# c
-# e
-# ??XIrdrrrratrat???rirrrod?yrirrir?orurrrrrrtrrrrurrrr?utyirr??utu? uthietouttu?tru
+# Wh
 
 # ####
-# Time: 4538.1685 s, Epoch: 9200/10000, Loss: 2.4540
+# Time: 4816.0056 s, Epoch: 13000/100000, Loss: 2.4373
 # Sample:
-# Whast,itt
-#
-#
-#
-#
-#
-# M
-# t!'
-# Oladw fr ayy.,?ynsusiei?usymyooooooo??oittau?t
-# uy!
-# t,Eoory.??AssooAuat att
-# ??tust
+# Wh
 
 # ####
-# Time: 4646.3338 s, Epoch: 9400/10000, Loss: 2.4801
+# Time: 4895.6147 s, Epoch: 13200/100000, Loss: 2.4710
 # Sample:
-# Whouayeeeicretvetttirosisspiureeeidtcaut4Eorrirodowrt?iircnttr?urs;!edecrt.????ru.i.'beedideddt?I?erii
+# Wh
 
 # ####
-# Time: 4738.8091 s, Epoch: 9600/10000, Loss: 2.4492
+# Time: 4975.5689 s, Epoch: 13400/100000, Loss: 2.4768
 # Sample:
-# Whastiiubeestt?
-# uus
-#
-#
-#
-#
-#
-#
-#
-# bu by wooooooooooow,tputttuirutss? iitirurrrdd
-# c?rrrrrrardenutrrererrr?us?!
+# Wh
 
 # ####
-# Time: 4829.7292 s, Epoch: 9800/10000, Loss: 2.4655
+# Time: 5055.6982 s, Epoch: 13600/100000, Loss: 2.4454
 # Sample:
-# Wheaeafisw,sst?
-# t??tuu?yuyoeessee
-# cipe,ut
-# qy
-# rrderrrerriiewreed
-# crtrrtettut?tsrartrinicrruttaaarouttyt
+# Wh
+
+# ####
+# Time: 5136.1495 s, Epoch: 13800/100000, Loss: 2.4547
+# Sample:
+# Wh
+
+# ####
+# Time: 5216.3171 s, Epoch: 14000/100000, Loss: 2.4263
+# Sample:
+# Wh

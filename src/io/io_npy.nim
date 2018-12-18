@@ -176,7 +176,7 @@ proc write_npy*[T: SomeNumber](t: Tensor[T], npyPath: string) =
     littleEndian16(le_len.addr, h_len.addr)
     stream.write le_len
   else:
-    stream.write 0x01.byte
+    stream.write 0x02.byte
     stream.write 0x00.byte
     var le_len: uint32
     var h_len = header.len.uint32

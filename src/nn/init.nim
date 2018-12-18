@@ -23,6 +23,7 @@ import
 # ############################################################
 
 # TODO: random seed
+# TODO: Test variance and mean
 
 type FanMode = enum
   FanAvg,
@@ -65,7 +66,7 @@ func compute_fans(shape: varargs[int]): tuple[fan_in, fan_out: int] =
   result.fan_out *= receptive_field_size
   result.fan_in *= receptive_field_size
 
-func variance_scaled(
+proc variance_scaled(
         shape: varargs[int],
         T: type,
         scale: static[T] = 1,
@@ -74,14 +75,14 @@ func variance_scaled(
       ): Tensor[T] =
   let (fan_in, fan_out) = shape.compute_fans
   when mode == FanIn:
-    const std = sqrt(scale / fan_in.T)
+    let std = sqrt(scale / fan_in.T)
   elif mode == FanOut:
-    const std = sqrt(scale / fan_out.T)
+    let std = sqrt(scale / fan_out.T)
   else:
-    const std = sqrt(scale * 2.T / T(fan_in + fan_out))
+    let std = sqrt(scale * 2.T / T(fan_in + fan_out))
 
   when distribution == Uniform:
-    const limit = sqrt(3.T) * std
+    let limit = sqrt(3.T) * std
     result = randomTensor(shape, -limit .. limit)
   else:
     result = randomNormalTensor(shape, 0'f32, std)
@@ -234,5 +235,3 @@ proc yann_normal*(shape: varargs[int], T: type): Tensor[T] =
 # Initialisations from
 # Exact solutions to the nonlinear dynamics of learning in deep linear neural networks
 #     2013, Saxe et al, https://arxiv.org/abs/1312.6120
-
-# TODO

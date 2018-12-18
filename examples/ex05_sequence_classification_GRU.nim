@@ -41,7 +41,9 @@ var dataset_y = newTensor[SeqKind](DataSize)
 for i in 0 ..< DataSize:
   dataset_y[i] = classify(dataset_X, i)
 
+echo "Example dataset"
 echo dataset_X[0 ..< 10, _]
+echo "Corresponding labels"
 echo dataset_y[0 ..< 10]
 echo "\n"
 
@@ -88,7 +90,7 @@ network ctx, TheGreatSequencer:
 
 # Allocate the model
 let model = ctx.init(TheGreatSequencer)
-let optim = model.optimizerSGD(0.01'f32)
+var optim = model.optimizerAdam(0.01'f32)
 
 # And let's start training the network
 for epoch in 0 ..< Epochs:
@@ -127,29 +129,31 @@ for epoch in 0 ..< Epochs:
 ###################
 # Output
 
+# Example dataset
 # Tensor[system.float32] of shape [10, 3] of type "float32" on backend "Cpu"
-# |0.08715851604938507    0.6252052187919617      0.8734603524208069|
-# |0.4635309278964996     0.1152218133211136      0.6088221073150635|
-# |0.4754987359046936     0.7151913642883301      0.7708750367164612|
-# |0.3764243125915527     0.3795507848262787      0.9351327419281006|
-# |0.6993147730827332     0.733343780040741       0.8100541830062866|
-# |0.4297148883342743     0.09527183324098587     0.01486776024103165|
-# |0.875207245349884      0.2490521669387817      0.1578131020069122|
-# |0.02143412455916405    0.0222312156111002      0.7928663492202759|
-# |0.07909850776195526    0.1905942112207413      0.4293616414070129|
-# |0.04384680092334747    0.7198637723922729      0.2911368310451508|
+# |0.08715851604938507	0.6252052187919617	0.8734603524208069|
+# |0.4635309278964996	0.1152218133211136	0.6088221073150635|
+# |0.4754987359046936	0.7151913642883301	0.7708750367164612|
+# |0.3764243125915527	0.3795507848262787	0.9351327419281006|
+# |0.6993147730827332	0.733343780040741	0.8100541830062866|
+# |0.4297148883342743	0.09527183324098587	0.01486776024103165|
+# |0.875207245349884	0.2490521669387817	0.1578131020069122|
+# |0.02143412455916405	0.0222312156111002	0.7928663492202759|
+# |0.07909850776195526	0.1905942112207413	0.4293616414070129|
+# |0.04384680092334747	0.7198637723922729	0.2911368310451508|
 
+# Corresponding labels
 # Tensor[ex05_sequence_classification_GRU.SeqKind] of shape [10] of type "SeqKind" on backend "Cpu"
-#         Increasing      NonMonotonic    Increasing      Increasing      Increasing      Decreasing      Decreasing      Increasing      Increasing      NonMonotonic
+# 	Increasing	NonMonotonic	Increasing	Increasing	Increasing	Decreasing	Decreasing	Increasing	Increasing	NonMonotonic
 
-# Epoch # 000. Accuracy: 72.717%
-# Epoch # 001. Accuracy: 86.037%
-# Epoch # 002. Accuracy: 88.763%
-# Epoch # 003. Accuracy: 90.177%
-# Epoch # 004. Accuracy: 92.937%
-# Epoch # 005. Accuracy: 95.677%
-# Epoch # 006. Accuracy: 95.910%
-# Epoch # 007. Accuracy: 95.867%
+# Epoch # 000. Accuracy: 95.163%
+# Epoch # 001. Accuracy: 97.377%
+# Epoch # 002. Accuracy: 97.740%
+# Epoch # 003. Accuracy: 96.940%
+# Epoch # 004. Accuracy: 97.380%
+# Epoch # 005. Accuracy: 98.010%
+# Epoch # 006. Accuracy: 98.700%
+# Epoch # 007. Accuracy: 98.370%
 
 
 ###################
@@ -176,16 +180,19 @@ block:
                 .squeeze
                 .astype(SeqKind)
 
+  echo "\nTesting the model with:"
+  echo exam.value.squeeze(2).transpose()
+  echo "Answers:"
   echo answer.unsqueeze(1)
   # Tensor[ex05_sequence_classification_GRU.SeqKind] of shape [8, 1] of type "SeqKind" on backend "Cpu"
-  #         Increasing|
-  #         Increasing|
-  #         Increasing|
-  #         NonMonotonic|
-  #         NonMonotonic|
-  #         Increasing| <----- Wrong!
-  #         Decreasing|
-  #         Decreasing| <----- Wrong!
+  # 	  Increasing|
+  # 	  Increasing|
+  # 	  Increasing|
+  # 	  NonMonotonic|
+  # 	  NonMonotonic|
+  # 	  Increasing| <----- Wrong!
+  # 	  Decreasing|
+  # 	  NonMonotonic|
 
-  # Maybe we need more data with very large or narrow difference.
+  # Almost there!
   # Next step: financial markets, let's collar those bears.

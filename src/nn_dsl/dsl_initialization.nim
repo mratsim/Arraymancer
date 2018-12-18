@@ -158,3 +158,10 @@ proc genModelFieldInit*(self: Neuromancer) =
     of lkGRU: self.trainParamsGRU(k, v)
     else:
       discard
+
+# TODO: Embedding layer initialisation
+# - A bag of Useful Tricks for Practical Neural Machine Translation
+#   Embedding Layer Initialization and Large batch Size
+#   Heishi et al, http://www.aclweb.org/anthology/W17-5708
+# - An Exploration of Word Embedding Initialization in deep learning tasks
+#   Kocmi et al, https://arxiv.org/pdf/1711.09160.pdf

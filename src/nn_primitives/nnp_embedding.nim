@@ -74,7 +74,6 @@ proc embedding_backward*[T; Idx: byte or char or SomeNumber](
 
   # We assume that dWeight is zero initialized with shape
   # [vocabulary_size, embedding_size] for us.
-  let size = vocab_id.size()
   let flat_vocab_id = vocab_id.flatten_idx()
   let flat_dOutput = dOutput.flatten_idx()
 

@@ -136,7 +136,7 @@ proc gru*[TT](
   ##     `hidden` contains the hidden state for timestep T == sequence/timesteps length of `input`
 
   # Checks - TODO more checks
-  doAssert hidden0.value.shape[1] == input.value.shape[1], "Initial hidden state - hidden0: " & $hidden0.value.shape[1] & ", batch_size: " & $input.value.shape[1]
+  doAssert hidden0.value.shape[1] == input.value.shape[1], "input batch_size: " & $input.value.shape[1] & " - hidden0 batch_size: " & $hidden0.value.shape[1]
 
   # initializing result
   new result.output

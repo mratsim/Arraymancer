@@ -172,13 +172,6 @@ template weightInit(shape: varargs[int], init_kind: untyped): Variable =
     requires_grad = true
   )
 
-template gruInit(shape: varargs[int]): Variable =
-  let std = 1'f32 / sqrt(HiddenSize.float32)
-  ctx.variable(
-    randomTensor(shape, -std .. std),
-    requires_grad = true
-  )
-
 proc newShakespeareNet[TT](ctx: Context[TT]): ShakespeareNet[TT] =
   ## Initialise a model with random weights.
   ## Normally this is done for you with the `network` macro
@@ -203,9 +196,9 @@ proc newShakespeareNet[TT](ctx: Context[TT]): ShakespeareNet[TT] =
 
   # GRU have 5 weights/biases that can be trained.
   # This initialisation is normally hidden from you.
-  result.gru.W3s0 = gruInit(            3 * HiddenSize,      EmbedSize)
-  result.gru.W3sN = gruInit(Layers - 1, 3 * HiddenSize,     HiddenSize)
-  result.gru.U3s  = gruInit(    Layers, 3 * HiddenSize,     HiddenSize)
+  result.gru.W3s0 = weightInit(            3 * HiddenSize,      EmbedSize, xavier_uniform)
+  result.gru.W3sN = weightInit(Layers - 1, 3 * HiddenSize,     HiddenSize, xavier_uniform)
+  result.gru.U3s  = weightInit(    Layers, 3 * HiddenSize,     HiddenSize, yann_normal)
 
   result.gru.bW3s = ctx.variable(zeros[float32](Layers, 1, 3 * HiddenSize), requires_grad = true)
   result.gru.bU3s = ctx.variable(zeros[float32](Layers, 1, 3 * HiddenSize), requires_grad = true)
@@ -286,8 +279,7 @@ proc train[TT](
   let seq_len = input.shape[0]
   var hidden = ctx.variable zeros[float32](Layers, BatchSize, HiddenSize)
 
-  # We will cumulate the loss before backpropping at once
-  # to avoid teacher forcing bias. (Adjusting weights just before the next char)
+  # We will cumulate the loss on the whole seq before backpropping at once.
   var seq_loss = ctx.variable(zeros[float32](1), requires_grad = true)
 
   for char_pos in 0 ..< seq_len:
@@ -425,230 +417,214 @@ main()
 # First Citizen:
 # You
 
-# ####
+# #################
 # Starting training
 
 
 # ####
-# Time: 0.8500 s, Epoch: 0/2000, Loss: 4.6268
+# Time: 0.9528 s, Epoch: 0/2000, Loss: 4.6075
 # Sample:
-# Whwno\<^,[
-# [;c@HmN,FMf-DMZd7rSTM|C'PfuMlW7
-#               Hhy;
-# dM<v
-# |8Z<%}Sv/X[\6sA.>GSNSB
-#                       TReNt<>%>x`
+# Whxpq[<],@
+# \;d@JmO.JQg-DN!e7tUXO{D(PftMkX7
+#               Hhz;
+# dN<w
+# {9Z<&}Sw/Y\\6vE/>ISOUF
+#                       URfPy=>&>z`
 
 # ####
-# Time: 150.7535 s, Epoch: 200/2000, Loss: 1.5315
+# Time: 162.7714 s, Epoch: 200/2000, Loss: 1.5452
 # Sample:
-# Whess! and
-# Whily cannamed in the lastider, you good
-# this think
-# What, ere to you? To me alfatio' worst
+# Whe coman:
+# You will occse is not
+# this bright in the deny,
+# Doth
+# What, he do not on the malding wouth th
 
 # ####
-# Time: 313.9455 s, Epoch: 400/2000, Loss: 1.4023
+# Time: 318.5498 s, Epoch: 400/2000, Loss: 1.4075
 # Sample:
-# Whe in joy
-# call hears an arring,
-# For the depart:
-# Whilst dye find that the while a thou here, a heartio
+# Whis fortunable face,
+# And specians for the thought to beeF the air are to your jat,
+# To must be in that
 
 # ####
-# Time: 467.2250 s, Epoch: 600/2000, Loss: 1.4058
+# Time: 483.7722 s, Epoch: 600/2000, Loss: 1.4117
 # Sample:
-# Wheer and words thence to sir,
-# Even I do notgices the numbers to awe of him?
+# Whfor as to the soons
+# Of wish'd us o' this banes.
 #
-# PETRUCHIO:
-# Moor of our l
+# KING HENRY VI:
+# So places you do not sweet heart, bi
 
 # ####
-# Time: 625.6501 s, Epoch: 800/2000, Loss: 1.4030
+# Time: 644.9014 s, Epoch: 800/2000, Loss: 1.3998
 # Sample:
-# Whic deglinnes; as fings old,
-# Whilstress.
+# Whee, hence is bastard repose where and
+# grie for likelical o'er his stating.
 #
-# CURTIS:
-# Some, company, though of God's heart breath.
+# ANGELO:
+# O comfort world:
+
+# ####
+# Time: 812.3859 s, Epoch: 1000/2000, Loss: 1.3498
+# Sample:
+# Whall foectiove of Lord:
+# Why Hastand Boisely.
+
+# First Citizen:
+# Good-shappets and all the secares Homedi
+
+# ####
+# Time: 969.4953 s, Epoch: 1200/2000, Loss: 1.3605
+# Sample:
+# Whou judgty injurity sorrow's quarrel conmioner?
 #
-# Sheph
+# BAPTISTA:
+# No fetcom up, I say with one more of time
 
 # ####
-# Time: 772.9566 s, Epoch: 1000/2000, Loss: 1.3489
+# Time: 1138.4985 s, Epoch: 1400/2000, Loss: 1.3145
 # Sample:
-# Whang hild, pult, my two thou
-# diecin-started leave to-morroved: my might,
-# For Fonce; who change you ar
+# Whe sweet Citying
+# A bloody though yourson to the Duke of Hereford are:
+# My life in Dost to be so on? He
 
 # ####
-# Time: 919.4623 s, Epoch: 1200/2000, Loss: 1.3602
+# Time: 1303.5912 s, Epoch: 1600/2000, Loss: 1.3774
 # Sample:
-# Whis mole: then,
-# I know her, soul to report in souls, transporther:
-# As with thy other coyll'd speak't.
+# Whemselves,
+# And hates in a accides whilst my state,
+# She dival wrough not unto this, see to your lander
 
 # ####
-# Time: 1071.9547 s, Epoch: 1400/2000, Loss: 1.3084
+# Time: 1470.3374 s, Epoch: 1800/2000, Loss: 1.3561
 # Sample:
-# Wher I have stand
-# hod untires for thy brother that many unmoon?
-#
-# Nurse:
-# Gentle live, the temple of fig
-
-# ####
-# Time: 1238.2013 s, Epoch: 1600/2000, Loss: 1.3803
-# Sample:
-# When, but hollow been he, ladoming
-# Whinks my state to noth'd it o' the hist:
-# I snoos be to your master
-
-# ####
-# Time: 1394.6621 s, Epoch: 1800/2000, Loss: 1.3630
-# Sample:
-# Wh were cannot caniders are well him:
-# he half and light: Thank you will my sea;
-# Lest you do know you a
+# Wh your banished, after but the only ignorland.
+# O, must it close out lies
+# To courtious are quiet upon,
 
 # ##########
 # Training end. Generating 4000 characters Shakespeare masterpiece in 3. 2. 1...
 
 
-# Whollever: and forbid shall be dew
-# Gto coffents untendred foul charge.
+# Whter!
+# Take's servant seal'd, making uponweed but rascally guess-boot,
+# Bare them be that been all ingal to me;
+# Your play to the see's wife the wrong-pars
+# With child of queer wretchless dreadful cold
+# Cursters will how your part? I prince!
+# This is time not in a without a tands:
+# You are but foul to this.
+# I talk and fellows break my revenges, so, and of the hisod
+# As you lords them or trues salt of the poort.
 #
-# AUFIDIUS:
-# But forgher; an heart to seizing to suppose,
-# I can hown to provide's of your daughter,
-# Whink Richard me, good heard why too furthen,
-# To stay and considents?
+# ROMEO:
+# Thou hast facted to keep thee, and am speak
+# Of them; she's murder'd of your galla?
 #
-# PERDITA:
-# Let him fee of children and England's good father
-# Town's crowling-contigns call with his king:
-# Alas, in sound against the majesty.
+# ANTES:
+# Nay, I hear i' the day, bie in half exorcheqous again.
+# Cockin Tinved: I is wont? Who be youth friends
+# In our beauty of one raised me in all me;
+# This will recour castle appelied is:
+# I thank you, lords.
+# Who, I have not offer, the shipp'd, shalt it is Isabels
+# We will be with my keepons of your witfers.
+# I was as you have perfited to give car.
+#
+# SICINE:
+# In a sisterexber his record to my turn
+# Made you dishonour's, if they have so yean
+# Reportistiful viel offs, which we will prayed
+# By merry the nightly to find them:
+# The fiery to: and she double last speak it,
+# For I will resian, he, mark for the air:
+# O did thy mustable lodge! Nen't, my mosts!
+# I greet before,--hath age-tinent or breath?
+#  I would your firms it be new-was 'scape. Is he shall choice,
+# Were our husband, in what here twenties and forly,
+# Althess to bries are time and senses, and dead-hear themselves
+# Having, and this brother is they had'd is; I have a captive:
+# My grains! a scarl doing of true forth, some trutis
+# As Paduition, by this till us, as you teever
+# Whething those baintious plague honour of gentleman,
+# Through God lies,
+# conunsel, to dishanging can for that men will well were my rasped me
+# As well'd as the way off than her wairs with Lancaster show.
+# Ah, will you forgot, and good lies of woman
+# With a
+# feshie:
+# Good my Lord.
+#
+# AUTOLYCUS:
+# Whit!
+# Grave ta'en my lord, I'ld their names. The are mored of sorrow hath those
+# soon weep'st his eyes. My horrcowns, bone, I kindness:
+# How idle were which mean nothing cannot weep
+# To rescockingly that hasting the sorrow,
+# A good to grow'd of our hate how--
+# Hear thee your tempest provided: I never confirm,
+# Let's a brackful wife calms; they are instyef,
+# Shall make thee, but my love.
+#
+# LADY ANNE:
+# Methinks to him:
+# But O, have it become ingly stand; think,
+# And told the sringer'd againny, Pito:
+# Ay, sir; answer'd awe! methink-'Ge is good hour!
+# I pray you casquen not hear my form.
+# Your unmanding them friends and barth halber,
+# More words should not; and to a daughter'd and poor strop'd
+# By one as we prove a cursed would not now:
+# For thus in a flate death the heaven'd:
+# And lies before I hapk or were.
+#
+# Nurse:
+# Fearlwellare, confiarly Marciusbson,
+# Were I how stop poiring to no more,
+# To worser body to me and die clots, and out
+# Their correction defimbry's truth.
+#
+# BRUTUS:
+# Prother to be deadly of gold to be yet,
+# Witholesfair than your complished, thus
+# wearing triumph that live thyse toes a noble queen:
+# I will yet, let him friends to given: take all
+# Clease them a slain: our hours and saw Richmes,
+# 'Foren thou straight whet it for your treis.
+# First is, for you to cousosa thus I'll make weed.
+#
+# QUEEN:
+# I thrive, and how all thy comes?
+#
+# PRINCE EDWARD:
+# Why, the day of all spoil'd nor unsure?
+# Come, but never my love is mine,
+# To she he himself prevone one it eag.
+# Holdis true, bid got I am will not to titteat?
 #
 # SICINIUS:
-# No; and proud all the villain of Yorket,
-# With a thing bear obey, thou canst it comes:
-# Let me not underneme usested old country.
-# Sy in Bament, your face honour'd up all begetake you,
-# For I her very truth, I shall comes falm only;
-# And not shield to him of priless to the Tower:
-# Yes in the honour.
-#
-# First Murderer:
-# Hark. Now, if you conseings they do? O, come;
-# Or shall pack?
-#
-# BRUTUS:
-# It one noble:
-# That mother Trobleing! O, the seet, for else
-# But then speak mistaked the court-tray'd,
-# Course to strike.
-#
-# RATCLIFF:
-# A divide gatler, for there he such sorrow from strong.
-#
-# KATHARINA:
-# Whether will go well, no doubt is English heart:
-# But seem to thigh is my soul, nigh, that loir,
-# Who will possessed sore homeft things with a powry
-# Of a wretched the heart sullaff, do your faired all.
-# Ah, whose power cord hither is the chemies, of the holy Roman:
-# But no ream, else carries me deteet! Bold Neassens,
-# Tybals, I'll come are, we are raven their newsion
-# The cancation, even swear amanother:
-# Aso faithly married sorrow.
-#
-# GONZALO:
-# I post caseditities to so feard that I said
-# My lord. They little to your voice:
-# I do bid love me on the condition to
-# me a fathers sacred still death,
-# Dusty fair, therefore whom I loves hober it hang the father's dear house:
-# I say for he speak on the old duiting.
-# I have det-both a shall give, this dost from this?
-#
-# LUCENTIO:
-# Nay, how'' mine pardon.
-#
-# ISABELLA:
-# Who mea her of Lancaster from say
-# That have put a criptest me no thinghofs of their face;
-# Was this all in sum seen such a fled under some father,
-# That accusate.
-# Where imend rare, senall's obey.
-#
-# First Senator:
-# Good most or this addle they have anquer tell me in:
-# A heart the writ't think honour durinder;
-# Farewell and Some strange,
-# He hath some hilless watched from one facts:
-# Thereboes, a Roman: but seem thine; one wife
-# Couts from his hearthd.
-#
-# LUCIO:
-# Good my lord,
-# Hath say; and to me, we gosted to a posfrlought'st aigess agre mouded poison:
-# Grom father! while Blifts he look as good father's
-# hear not hear him; go; if he done! let me resign sold they
-# condead good provides for she say.
-#
-# KING RICHARD III:
-# How now!
-#
-# TRANIO:
-# Her save just that due we would, my lord,
-# I would in bring from us these twife free;
-# For I be gone! the mortal both, in last,--
-# That's enmitation here yares my greets
-# Which when me to Henry what thou shalt contempling.
-# Some orly, and to the call of the sufficer
-# Yet worthins, surned to give the geneing of death.
-#
-# BUCKINGHAM:
-# Farecch, you title consumion, like Plantage!
-#
-# GREMIO:
-# He is a ratch that a more to high loved it,
-# And I am be good unpleasune, all all
-# From from him to his mother and protest
-# How call as offer spit amazemore should sught.
-#
-# ELBOW:
-# They nature to thus now ye,
-# And Oxford, and farm to epther it is sagly:
-# Inch, thus ready strengthen sure' to consul,
-# You am whifty queel the thing affections. Is Let why many gaunt
-# The good many mother honour,
-# Inch whom his woman! and you are regard strike
-# What to to the fear the slipe passate no offence bear
-# And your chargaretion; who should run but uncarreless?
-# If thou shalt I the most devil in a grefence!
-# Though I'll know it out of the king lie?
-#
-# TRANIO:
-# She! hear?
-#
-# LEONTES:
-# Break the masters awn is grief I live to perfectic is fright at me;
-# And dear worthy food carnat in the still not
-# will seal bite fier match shuk're and were.
-#
-# DUCHESS OF YORK:
-# A Norfolk; thou wilt thy spirit; which I do not
-# Happiness.
-#
-# POLINE:
-# Inkence it, and gentleman number veil thankty on
-# Did to fails of your hotsed to go.
-#
-# BRUTUS:
-# Bear me last, I would help obedient--ondery to long your timber
-# Thy as a valling to know'scall.
+# Consign nows this,
+# My turns and dead before they-that was me to thy deat?
 #
 # CORIOLANUS:
-# My lord stone's dest
+# Even earth,
+# Your churchister of Romeo, and grace is honest
+# and mine envyou.
+#
+# DUCHESS OF YORK:
+# Stand doth ceasians of Edward is time
+# Of those would hence I have stopp'd;
+# That is this parlest for all time and that eyes
+# -adey is remain twine, that can yield
+# Have I cursed and were they shouldst fire; I
+# privile to thy fair Richard quietlious.
+#
+# LADY CAPULEL:
+# No, but some bebarduched fight the so?
+# If I may shake one will't not find him be souls
+# They have you inkfender in death to give:
+# Soft! hast here and sister of yourmer shuts
+# Yet be it strike deabe; thy sures the while.
+#
+# WARWICK:

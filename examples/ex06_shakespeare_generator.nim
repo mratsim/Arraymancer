@@ -3,16 +3,12 @@
 # Inspired by Andrej Karpathy http://karpathy.github.io/2015/05/21/rnn-effectiveness/
 # and https://github.com/karpathy/char-rnn
 
-# Note: training is quite slow on CPU
-#       furthermore we probably need a better optimizer than SGD
-# I guess time to implement GPU RNNs and Adam/RMSprop
+# This can learn anything text based, including code and LaTe paper ;).
+
+# Note: training is quite slow on CPU, 30 min for my i5-5257U (2.7GHz dual-core Broadwell from 2015)
 #
 # Also parallelizing via OpenMP will slow down computation so don't use it.
 # there is probably false sharing in the GRU layer, reshape layer or flatten_idx from Embedding.
-
-# Also I didn't have the patience to tune the parameters so I'm not sure it converges.
-# There are plenty of reports of people struggling
-# to make Tensorflow and PyTorch char-rnn converge so TODO
 
 # Remember that the network
 #   - must learn, not to use !?;. everywhere
@@ -23,7 +19,7 @@
 # TODO: save/reload trained weights
 
 import
-  streams, os, random, times, strformat, algorithm, sequtils,
+  streams, os, random, times, strformat, algorithm, sequtils, tables,
   ../src/arraymancer
 
 # ################################################################
@@ -32,36 +28,26 @@ import
 #
 # ################################################################
 
-# Printable chars are \n (ASCII code 10)
-# and Space (ASCII code 32) to tilde (ASCII code 126)
-const PrintableChars = {'\n'} + {' ' .. '~'}
+# Printable chars - from Python: import string; string.printable
+const IxToChar = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n\r\x0b\x0c"
 type PrintableIdx = uint8
 
-func genCharsMapping(): tuple[
-          charToIx: array[char, PrintableIdx],
-          ixToChar: array[PrintableChars.card, char]
-        ] =
-
-  # For debug we put ¿ (ASCII code 168) character as default value in charToIx
-  result.charToIx.fill(168)
-
-  var idx = 0'u8
-  for ch in PrintableChars:
-    result.charToIx[ch] = idx
-    result.ixToChar[idx] = ch
-    inc idx
+func genCharToIx(): Table[char, PrintableIdx] =
+  result = initTable[char, PrintableIdx]()
+  for idx, ch in IxToChar:
+    result[ch] = PrintableIdx idx
 
 const
-  Mappings = genCharsMapping()
-  VocabSize = PrintableChars.card # Cardinality of the set of PrintableChars
-  BatchSize = 32
-  Epochs = 100_000    # This take a long long time, I'm not even sure it converges
+  CharToIx = genCharToIx()
+  VocabSize = IxToChar.len # Cardinality of the set of PrintableChars
+  BatchSize = 100
+  Epochs = 2000            # This take a long long time, I'm not even sure it converges
   Layers = 2
-  HiddenSize = 128
+  HiddenSize = 100
   LearningRate = 0.01'f32
   EmbedSize = 100
-  SeqLen = 200        # Characters sequences will be split in chunks of 200
-  StatusReport = 200  # Report training status every x batches
+  SeqLen = 200             # Characters sequences will be split in chunks of 200
+  StatusReport = 200       # Report training status every x batches
 
 # ################################################################
 #
@@ -74,7 +60,7 @@ func strToTensor(str: string|TaintedString): Tensor[PrintableIdx] =
 
   # For each x in result, map the corresponding char index
   for i, val in result.menumerate:
-    val = Mappings.charToIx[str[i]]
+    val = CharToIx[str[i]]
 
 # Weighted random sampling / multinomial sampling
 #   Note: during text generation we only work with
@@ -178,11 +164,18 @@ type
     # Linear layer weight and bias = Decoder
     decoder: LinearLayer[TT]
 
-template weightInit(shape: varargs[int]): untyped {.dirty.} =
+template weightInit(shape: varargs[int], init_kind: untyped): Variable =
   ## Even though we need to do the initialisation manually
   ## let's not repeat ourself too much.
   ctx.variable(
-    randomTensor(shape, -0.5'f32 .. 0.5'f32),
+    init_kind(shape, float32),
+    requires_grad = true
+  )
+
+template gruInit(shape: varargs[int]): Variable =
+  let std = 1'f32 / sqrt(HiddenSize.float32)
+  ctx.variable(
+    randomTensor(shape, -std .. std),
     requires_grad = true
   )
 
@@ -193,7 +186,13 @@ proc newShakespeareNet[TT](ctx: Context[TT]): ShakespeareNet[TT] =
   # Embedding layer
   #   Input: [SeqLen, BatchSize, VocabSize]
   #   Output: [SeqLen, BatchSize, EmbedSize]
-  result.encoder.weight = weightInit(VocabSize, EmbedSize)
+  result.encoder.weight = ctx.variable(
+    # initialisation bench https://arxiv.org/pdf/1711.09160.pdf
+    # Convergence is **VERY** sensitive, I can't reproduce the paper.
+    # Best in our case is mean = 0, std = 1.
+    randomNormalTensor(VocabSize, EmbedSize, 0'f32, 1'f32),
+    requires_grad = true
+  )
 
   # GRU layer
   #   Input:   [SeqLen, BatchSize, EmbedSize]
@@ -204,17 +203,18 @@ proc newShakespeareNet[TT](ctx: Context[TT]): ShakespeareNet[TT] =
 
   # GRU have 5 weights/biases that can be trained.
   # This initialisation is normally hidden from you.
-  result.gru.W3s0 = weightInit(            3 * HiddenSize,     EmbedSize)
-  result.gru.W3sN = weightInit(Layers - 1, 3 * HiddenSize,     HiddenSize)
-  result.gru.U3s  = weightInit(    Layers, 3 * HiddenSize,     HiddenSize)
-  result.gru.bW3s = weightInit(    Layers,              1, 3 * HiddenSize)
-  result.gru.bU3s = weightInit(    Layers,              1, 3 * HiddenSize)
+  result.gru.W3s0 = gruInit(            3 * HiddenSize,      EmbedSize)
+  result.gru.W3sN = gruInit(Layers - 1, 3 * HiddenSize,     HiddenSize)
+  result.gru.U3s  = gruInit(    Layers, 3 * HiddenSize,     HiddenSize)
+
+  result.gru.bW3s = ctx.variable(zeros[float32](Layers, 1, 3 * HiddenSize), requires_grad = true)
+  result.gru.bU3s = ctx.variable(zeros[float32](Layers, 1, 3 * HiddenSize), requires_grad = true)
 
   # Linear layer
   #   Input: [BatchSize, HiddenSize]
   #   Output: [BatchSize, VocabSize]
-  result.decoder.weight = weightInit(VocabSize, HiddenSize)
-  result.decoder.bias   = weightInit(        1, VocabSize)
+  result.decoder.weight = weightInit(VocabSize, HiddenSize, kaiming_normal)
+  result.decoder.bias   = ctx.variable(zeros[float32](1, VocabSize), requires_grad = true)
 
 # Some wrappers to pass the layer weights
 proc encode[TT](model: ShakespeareNet[TT], x: Tensor[PrintableIdx]): Variable[TT] =
@@ -284,17 +284,17 @@ proc train[TT](
   ## Return the loss after the training session
 
   let seq_len = input.shape[0]
-  let hidden0 = ctx.variable zeros[float32](Layers, BatchSize, HiddenSize)
+  var hidden = ctx.variable zeros[float32](Layers, BatchSize, HiddenSize)
 
   # We will cumulate the loss before backpropping at once
   # to avoid teacher forcing bias. (Adjusting weights just before the next char)
   var seq_loss = ctx.variable(zeros[float32](1), requires_grad = true)
 
   for char_pos in 0 ..< seq_len:
-    let (output, hidden) = model.forward(input[char_pos, _], hidden0)
+    var output: Variable[TT]
+    (output, hidden) = model.forward(input[char_pos, _], hidden)
     let batch_loss = output.sparse_softmax_cross_entropy(target[char_pos, _].squeeze(0))
 
-    # Inplace `+=` is usually tricky with autograd
     seq_loss = seq_loss + batch_loss
 
   seq_loss.backprop()
@@ -346,9 +346,6 @@ proc gen_text[TT](
       # Go back in the tensor domain
       var preds = output.value
 
-      # Instead of softmaxing, we sample from the network
-      # as if it was a multinomial distribution.
-
       # We scale by the temperature first.
       preds ./= temperature
       # Get a probability distribution.
@@ -356,7 +353,7 @@ proc gen_text[TT](
 
       # Sample and append to the generated chars
       let ch_ix = probs.sample().PrintableIdx
-      result &= Mappings.ixToChar[ch_ix]
+      result &= IxToChar[ch_ix]
 
       # Next char
       input = newTensor[PrintableIdx](1, 1)
@@ -409,18 +406,22 @@ proc main() =
       echo "Sample: "
       echo ctx.gen_text(model, seq_len = 100)
 
+  echo "\n##########\nTraining end. Generating 4000 characters Shakespeare masterpiece in 3. 2. 1...\n\n"
+  echo ctx.gen_text(model, seq_len = 4000)
+
 main()
 
 # ##################################################
-# Output - Adam, learning rate 0.01 - Gradients exploded ...
+# Output
 
+# $  ./build/ex06 examples/ex06_shakespeare_input.txt
 # Checking the first hundred characters of your file
 # First Citizen:
 # Before we proceed any further, hear me speak.
-
+#
 # All:
 # Speak, speak.
-
+#
 # First Citizen:
 # You
 
@@ -429,395 +430,225 @@ main()
 
 
 # ####
-# Time: 0.5359 s, Epoch: 0/100000, Loss: 5.1517
+# Time: 0.8500 s, Epoch: 0/2000, Loss: 4.6268
 # Sample:
-# WhIGTuuuerwH:rrrrD=I;edI;***Z\D8trrrNjjII-uti8rD6DWD\8d3\}22Ps|D^kZzf6[tttttt[kr6nkkkkkkkbzkd5\IqqJq.r
+# Whwno\<^,[
+# [;c@HmN,FMf-DMZd7rSTM|C'PfuMlW7
+#               Hhy;
+# dM<v
+# |8Z<%}Sv/X[\6sA.>GSNSB
+#                       TReNt<>%>x`
 
 # ####
-# Time: 82.5663 s, Epoch: 200/100000, Loss: 2.4458
+# Time: 150.7535 s, Epoch: 200/2000, Loss: 1.5315
 # Sample:
-# Wheaata ttyyootyr eur iufyoorssay  oif rioooootrvanyaott urteryto s?iatoonyfsotoiurrror eaitrrusotitre
+# Whess! and
+# Whily cannamed in the lastider, you good
+# this think
+# What, ere to you? To me alfatio' worst
 
 # ####
-# Time: 158.4338 s, Epoch: 400/100000, Loss: 2.4572
+# Time: 313.9455 s, Epoch: 400/2000, Loss: 1.4023
 # Sample:
-# Wheeaatenrt aarto? ory ay ttorneteeatt, antt ttrytt, t  sy t tr tut ttheaty ttte utennt?nt   't s si t
+# Whe in joy
+# call hears an arring,
+# For the depart:
+# Whilst dye find that the while a thou here, a heartio
 
-# ####
-# Time: 234.2593 s, Epoch: 600/100000, Loss: 2.4647
-# Sample:
-# Wheaivatstytraatrrioeyirsttrt eatttryy otrr  oarryrirorureotrrrrd rrriraorervotontrosoirtrrarne, adait
-
-# ####
-# Time: 310.1731 s, Epoch: 800/100000, Loss: 2.4936
-# Sample:
-# Whe eaaiasstatt  ttatstheaisaotortro aouirriveiitnirrandadrry eiarresoattreryf aroottyot renootrttrrrr
-
-# ####
-# Time: 386.0483 s, Epoch: 1000/100000, Loss: 2.5014
-# Sample:
-# Wh aiwar  tiotetooowotwartertvaia rottrerreoildaoddvyaeoriaarldees riaotiyrrarroaoirrsess iairnttr rar
-
-# ####
-# Time: 460.4311 s, Epoch: 1200/100000, Loss: 2.4683
-# Sample:
-# Wheitee eteeaa  wcsatteeaiarsttr ttotoatroyaratrrr ae ty rtrrtrarrry ottrtyyo'toooo eoatyrrrayoraryaye
-
-# ####
-# Time: 533.2700 s, Epoch: 1400/100000, Loss: 2.4537
-# Sample:
-# Whaeitioostiotioeuat rroretriraievoiuoarrssssss atoo rrotososatats s oooonoiootoottorrrrtrerrrororrari
-
-# ####
-# Time: 606.2192 s, Epoch: 1600/100000, Loss: 2.4590
-# Sample:
-# Whe   anoiay nas, a ata t
-#  si tttuitttaioutstetfestatofft ofstouateea itatsstost ataitstttuteeiarsat
-
-# ####
-# Time: 679.5429 s, Epoch: 1800/100000, Loss: 2.4710
-# Sample:
-# Whtoea o  oorofa r  feas saatarroetane meafat  oetae,rt ,y aot ttottref nyoo  suofisfto rfoootofyofoo
-
-# ####
-# Time: 752.2276 s, Epoch: 2000/100000, Loss: 2.4679
-# Sample:
-# Whi ofua e  ntratn ooroa nks , aiwtnutono naiteotan s so ceetehaaasaueaa sstsso s atseaoaasaosaf wfaaa
-
-# ####
-# Time: 824.9055 s, Epoch: 2200/100000, Loss: 2.4722
-# Sample:
-# Whetieeeartt  ern etoesaoamat esaftt  tuitttttrerrareyset taot, tra rtrottsuas ss sse trsartosms otsua
-
-# ####
-# Time: 897.6905 s, Epoch: 2400/100000, Loss: 2.4571
-# Sample:
-# Wheo iett  e atorteo  .   iasositaalalllrianyootokfen oe a stmoe  ta tt t astuto  at  tooest  sseotse
-
-# ####
-# Time: 970.3663 s, Epoch: 2600/100000, Loss: 2.4791
-# Sample:
-# Who ur seo aet  e so a iaiicesiolteeeeea koea erieeroeeeeisaasetasasnlte  ssasfmeseost  ee eoteaaeeasn
-
-# ####
-# Time: 1043.0339 s, Epoch: 2800/100000, Loss: 2.4477
-# Sample:
-# Whiae eetroorri oosotirruo,  s etoise toe a    , ti othooosuiantalaito'ienasooaaloosooots,ooo oo'utt
-
-# ####
-# Time: 1115.7065 s, Epoch: 3000/100000, Loss: 2.4734
-# Sample:
-# Whi aooocoertaereeeayte esaaoea ate  e   aoateraea ireo  ae eaat aanttceyeea't  tstt o eitot  tteloar,
-
-# ####
-# Time: 1188.4677 s, Epoch: 3200/100000, Loss: 2.4743
-# Sample:
-# Whiaur  tcaeireoaealaitrelleoio mrorrlereee anreaoorrrreroerwioarrotaiseair inerasenir eessaettee eean
-
-# ####
-# Time: 1261.3639 s, Epoch: 3400/100000, Loss: 2.4448
-# Sample:
-# Whea aio mi  seceaarlekole'erlts slsaos tie t, rttet, 'st ie rott rtreet eatoeares,   ss  trirshaiotsu
-
-# ####
-# Time: 1333.9971 s, Epoch: 3600/100000, Loss: 2.4636
-# Sample:
-# Wh ao  a rt oo  oo -t n   '  m saeooo aauin  fl eta  a ssi s tsitstt u   t lttr, s  otiooueuuseusf, at
-
-# ####
-# Time: 1406.7137 s, Epoch: 3800/100000, Loss: 2.4666
-# Sample:
-# Whe o arieao  it eanado ore os seou e seeeeot ook esnti stle   tt asostcty iet,     tes e  tats  tnhs'
-
-# ####
-# Time: 1479.4245 s, Epoch: 4000/100000, Loss: 2.4885
-# Sample:
-# Wha yeoee  a  ilear ss e , eieoe i eselaot sst  oo tluose mo w n mserawoa msmi aimammmmm siyal eooes e
-
-# ####
-# Time: 1552.1464 s, Epoch: 4200/100000, Loss: 2.4736
-# Sample:
-# Wheeoee i soltveseea ssses,e a,e  t  e  site   heieseiis eceaiaaseeiataanstitciosetaat isatastettiatlo
-
-# ####
-# Time: 1624.8478 s, Epoch: 4400/100000, Loss: 2.4688
-# Sample:
-# Wha;a alorae  e  oa oer riwiaernoenoonotss oem ,t n  tt  ooote otoete ssfoote o'eseeeoulsa,  t sst t
-
-# ####
-# Time: 1697.5983 s, Epoch: 4600/100000, Loss: 2.4671
-# Sample:
-# Whiata tr r oroo toeor o tooooo oouo oieaia ortmomeeaaoouoano aaaoroofss sas, ,oo ooa'soaooooooosnnaoo
-
-# ####
-# Time: 1770.3448 s, Epoch: 4800/100000, Loss: 2.4674
-# Sample:
-# Whe.  iee au  ils  t   t t   rsofirteeai ssalsst t aiteefittee e      i ssttttufl est  istit'aset ofoo
-
-# ####
-# Time: 1843.0177 s, Epoch: 5000/100000, Loss: 2.4602
-# Sample:
-# Wheie-lense  l e  as  tnoos  t t  soee oo  eooosoenogalasigteysatie   'ssssss ,  te   ltt t sgiet  ,s
-
-# ####
-# Time: 1916.1867 s, Epoch: 5200/100000, Loss: 2.4519
-# Sample:
-# Whoieeastt, o
-# aea  a  oraoasos ie,   e    ,   eo ioiosmoamtea a y oee  a ia osoaitt oone oo'  sea ut
-
-# ####
-# Time: 1988.8650 s, Epoch: 5400/100000, Loss: 2.4603
-# Sample:
-# Wh iarte oeweeoooeoeroetroo   oooeeenkooeoe oo,  iat'oedoe  noo aooia toofoo yeeofo ooafefoeootaoo s
-
-# ####
-# Time: 2061.4777 s, Epoch: 5600/100000, Loss: 2.4519
-# Sample:
-# Whoyi ceeaarooittoauaucteateeeeteettcettac lsee.ecea  acctleo eateele eeeeeaeteteeeelerateceeeeeeeeaee
-
-# ####
-# Time: 2134.1670 s, Epoch: 5800/100000, Loss: 2.4581
-# Sample:
-# Wheieaeeafreieeeeeeeeaaese, aeialiiril e  oieoootoloailoumn iooooooooaoronaaooooieoeonoromoooooooo aan
-
-# ####
-# Time: 2206.8956 s, Epoch: 6000/100000, Loss: 2.5014
-# Sample:
-# Wheio leoaan d   ,eero looeeaei e y e, oio drotioscathaou  seiawsauiaa aseea essaatl hoctiantloo oacau
-
-# ####
-# Time: 2279.5939 s, Epoch: 6200/100000, Loss: 2.4951
-# Sample:
-# Wheeea ie ol,'e   ear eo o o  nawonsa ee   s aeieeee aaeaa tu   ne  o oe  aus n  e caaeteeheaetteactoe
-
-# ####
-# Time: 2352.2956 s, Epoch: 6400/100000, Loss: 2.4517
-# Sample:
-# Wha ieledaen  orooteonou fe oes  eoe oa o so oe  mteou   e e e e a  toss uosn usosmoeemeo,   s o  umue
-
-# ####
-# Time: 2424.9952 s, Epoch: 6600/100000, Loss: 2.4409
-# Sample:
-# Wheo o eniate nreooar  orioooooooooooooootoooororoerrooooooorrroootoooorooooooeororooooooroormorioao'a
-
-# ####
-# Time: 2497.9720 s, Epoch: 6800/100000, Loss: 2.4797
-# Sample:
-# Wha !iee meo:e ea   se  aw i     ieelmanosro  eoenesm noo saonnoso oammia n  as eseee: asotooonyanieao
-
-# ####
-# Time: 2572.7135 s, Epoch: 7000/100000, Loss: 2.4406
-# Sample:
-# Whiartratrltr  co u rr rtti e ieeelsea eostssscuhao t o e t   rootaeeanru eor u e r s ou   ta  t     t
-
-# ####
-# Time: 2645.4656 s, Epoch: 7200/100000, Loss: 2.4820
-# Sample:
-# Wheieoa r non ndar  ioe'ssssas ssesses sssst ssstt
-# en sst otsttstt steetssate ststu mn  sn tsssts slas
-
-# ####
-# Time: 2718.2670 s, Epoch: 7400/100000, Loss: 2.4529
-# Sample:
-# Wh e meee eas easeiaoemsloaaamumiooioeeaaaanelalaelooaieloaou eioooooaaoaonooooaoooneaeoooe oeaaaaaiee
-
-# ####
-# Time: 2791.0363 s, Epoch: 7600/100000, Loss: 2.4604
-# Sample:
-# Wh o iattsst'sst s etsee  os  gsesaaststa's t sstte   es t thees s tstet eass   s et ss t etss se tsts
-
-# ####
-# Time: 2863.8652 s, Epoch: 7800/100000, Loss: 2.4646
-# Sample:
-# Wheae,       e     i ' a  tl e   t   ,       m
-#       s      e               e,   e           s
-
-# ####
-# Time: 2936.6419 s, Epoch: 8000/100000, Loss: 2.4862
-# Sample:
-# Whe; a y e a  e o iooo aanomoneooiooiemmtemaeuoae ciaioiiiei seiiniiiiooeaitouo tocooouaeeaeaaaioa  ie
-
-# ####
-# Time: 3009.3742 s, Epoch: 8200/100000, Loss: 2.4467
-# Sample:
-# Whyioo oaamnn,o   ,   ms i    mam's       memseea maseioo eo sd eieiaant  t   o ciaiiises ss ssseciai
-
-# ####
-# Time: 3082.3433 s, Epoch: 8400/100000, Loss: 2.4806
-# Sample:
-# Wh ee e o       y eowerae ieneaoooooloonooarieneooooaounaoeragete  ass s o ssots ceae eaottys ottoaoao
-
-# ####
-# Time: 3155.1481 s, Epoch: 8600/100000, Loss: 2.4881
-# Sample:
-# Wheeeileerrr
-# ieiooosuoeeeacaaeeaaeeaee oeaee leeaioeaaa a eaa aiaaeoteaea a ea aal ieaaieeaeaeaaaaita
-
-# ####
-# Time: 3227.9119 s, Epoch: 8800/100000, Loss: 2.4599
-# Sample:
-# Whear se      ,    i   ae yoi  n auen ateemy   t  t      n s        n   ec eeeaaeta ataiaoot o minusau
-
-# ####
-# Time: 3300.6949 s, Epoch: 9000/100000, Loss: 2.4538
-# Sample:
-# Wheeao  o i arr iao ad,avayeieeioaiaaaiamyoeeaya eeao eaooteloeoe. 'y a'  oea      eo  ie e oaa oo o
-
-# ####
-# Time: 3373.4095 s, Epoch: 9200/100000, Loss: 2.4557
-# Sample:
-# Whaioame,     oieoaa aoa ua sm yy  aoe'ssma  seseweea ema ae aods a esa o esmat otls    s s  oa a smos
-
-# ####
-# Time: 3446.1548 s, Epoch: 9400/100000, Loss: 2.4801
-# Sample:
-# Whot oo-aiai utntnnsnmnmnnmitia  m s      afae   itss maa  iee t e  aaa ol i aeoe i,   e s i  n   aioo
-
-# ####
-# Time: 3518.8856 s, Epoch: 9600/100000, Loss: 2.4468
-# Sample:
-# Wheeon w   eoo,  oe    e aamo  i one  e aeiiar s ienneaasneeaeeeo nsnasea   ngaana,    noie a  ,a na
-
-# ####
-# Time: 3591.7374 s, Epoch: 9800/100000, Loss: 2.4835
-# Sample:
-# Whe aaaeatae ae ee,, o iptea toe
-# aooe;te
-# is
-# .
-# ,a e cooeat  aa
-#  ierit eoo, iaeaaraaeeaiesaiaaaaar elr
-
-# ####
-# Time: 3665.4201 s, Epoch: 10000/100000, Loss: 2.4707
-# Sample:
-# Wheea  ieamr ,e s     s   fey .o   e   e' e,  , d o    e  i  too '  e  s     te   t,     '      e
-
-# ####
-# Time: 3739.4768 s, Epoch: 10200/100000, Loss: 2.4598
-# Sample:
-# Whor e.      irerurrr e eeer  e  rrei e   eetairri,eua orleo oosoeaooeliee e  e    i  o e um   e  e  n
-
-# ####
-# Time: 3816.7557 s, Epoch: 10400/100000, Loss: 2.4374
-# Sample:
-# Whieea r oaere orir i rd teoa  r    ,  i  e    l e          ,        ,    y            a o  ri
-
-# ####
-# Time: 3897.0216 s, Epoch: 10600/100000, Loss: 2.4507
-# Sample:
-# Wh ooiroo oie aaaioeoearr anoeaa  a    oaaaaan osoeaea e o   e     ,      a ane n oinoaronnnsaas nawoo
-
-# ####
-# Time: 3976.0119 s, Epoch: 10800/100000, Loss: 2.4592
-# Sample:
-# Whim  eeeee e aaanooaooaeieaa,atlaro erooesuonal etera alarere  aioao naaiaoeaoeaoeoioeeaou aalieaelel
-
-# ####
-# Time: 4054.5111 s, Epoch: 11000/100000, Loss: 2.4444
-# Sample:
-# Wha ti o use , ,  tir  et   u   t  ? r u ,  ,  cts
-
-
-# o o
-
-
-
-
-# o
-
-
-
-
-# '
-
-
-# i
-# u
-# s
-# t
-
-# uoistsotattt
-# tttctst
-
-# ####
-# Time: 4131.4897 s, Epoch: 11200/100000, Loss: 2.4708
-# Sample:
-# Wh'yi ;t e ii uroou e al'o amusstlts sn    s e  rst s      os  ss? sl s
-# s  ye  et  e   so o     e i
-
-# ####
-# Time: 4205.3146 s, Epoch: 11400/100000, Loss: 2.4721
-# Sample:
-# Whak  ,, i snts' i seiel iseleeesiiesiesi issseisss  sssstu ss'esseissstssssssss
-# e  sesss
-# ssisses tie
-
-# ####
-# Time: 4279.8948 s, Epoch: 11600/100000, Loss: 2.4738
-# Sample:
-# Wheeee  eae, ss tw ieio ouue
-# ,ee, taaiosu uosesuusuyuyneyuo ust ot toy no iue o  o
-# ea       s tnanut
-
-# ####
-# Time: 4354.7046 s, Epoch: 11800/100000, Loss: 2.4381
-# Sample:
-# Wheaieoto e.  w  yi i o in orr.'s  ss a iegs  osoeteeoaeooetia   f  a  usn wwa  nslesecawtoutyal
-# yi ,s
-
-# ####
-# Time: 4430.0820 s, Epoch: 12000/100000, Loss: 2.4448
-# Sample:
-# Whatton oo rtoot
-# crorurrytrrrrrr r curscttouyorsoctrerkcocirtttterrtrrcrirrrrercrrrrrrrcrcr rtcrrrrcrr
-
-# ####
-# Time: 4505.4830 s, Epoch: 12200/100000, Loss: 2.4558
-# Sample:
-# Wheaity,       , e   i   t  u te o ee  s   eo         -   u             e    s        oi  f
-
-# ####
-# Time: 4580.7898 s, Epoch: 12400/100000, Loss: 2.4399
-# Sample:
-# Whamoorueyoo u ea  lo eye e  ee'lml   s ,,   ,      ,    ,,ae e  a e   e ee     aeioeeeo aoaoo aeeeloe
-
-# ####
-# Time: 4656.9998 s, Epoch: 12600/100000, Loss: 2.4364
-# Sample:
-# Wh
-
-# ####
-# Time: 4736.2755 s, Epoch: 12800/100000, Loss: 2.4532
-# Sample:
-# Wh
-
-# ####
-# Time: 4816.0056 s, Epoch: 13000/100000, Loss: 2.4373
-# Sample:
-# Wh
-
-# ####
-# Time: 4895.6147 s, Epoch: 13200/100000, Loss: 2.4710
-# Sample:
-# Wh
-
-# ####
-# Time: 4975.5689 s, Epoch: 13400/100000, Loss: 2.4768
-# Sample:
-# Wh
-
-# ####
-# Time: 5055.6982 s, Epoch: 13600/100000, Loss: 2.4454
-# Sample:
-# Wh
-
-# ####
-# Time: 5136.1495 s, Epoch: 13800/100000, Loss: 2.4547
-# Sample:
-# Wh
-
-# ####
-# Time: 5216.3171 s, Epoch: 14000/100000, Loss: 2.4263
-# Sample:
-# Wh
+# ####
+# Time: 467.2250 s, Epoch: 600/2000, Loss: 1.4058
+# Sample:
+# Wheer and words thence to sir,
+# Even I do notgices the numbers to awe of him?
+#
+# PETRUCHIO:
+# Moor of our l
+
+# ####
+# Time: 625.6501 s, Epoch: 800/2000, Loss: 1.4030
+# Sample:
+# Whic deglinnes; as fings old,
+# Whilstress.
+#
+# CURTIS:
+# Some, company, though of God's heart breath.
+#
+# Sheph
+
+# ####
+# Time: 772.9566 s, Epoch: 1000/2000, Loss: 1.3489
+# Sample:
+# Whang hild, pult, my two thou
+# diecin-started leave to-morroved: my might,
+# For Fonce; who change you ar
+
+# ####
+# Time: 919.4623 s, Epoch: 1200/2000, Loss: 1.3602
+# Sample:
+# Whis mole: then,
+# I know her, soul to report in souls, transporther:
+# As with thy other coyll'd speak't.
+
+# ####
+# Time: 1071.9547 s, Epoch: 1400/2000, Loss: 1.3084
+# Sample:
+# Wher I have stand
+# hod untires for thy brother that many unmoon?
+#
+# Nurse:
+# Gentle live, the temple of fig
+
+# ####
+# Time: 1238.2013 s, Epoch: 1600/2000, Loss: 1.3803
+# Sample:
+# When, but hollow been he, ladoming
+# Whinks my state to noth'd it o' the hist:
+# I snoos be to your master
+
+# ####
+# Time: 1394.6621 s, Epoch: 1800/2000, Loss: 1.3630
+# Sample:
+# Wh were cannot caniders are well him:
+# he half and light: Thank you will my sea;
+# Lest you do know you a
+
+# ##########
+# Training end. Generating 4000 characters Shakespeare masterpiece in 3. 2. 1...
+
+
+# Whollever: and forbid shall be dew
+# Gto coffents untendred foul charge.
+#
+# AUFIDIUS:
+# But forgher; an heart to seizing to suppose,
+# I can hown to provide's of your daughter,
+# Whink Richard me, good heard why too furthen,
+# To stay and considents?
+#
+# PERDITA:
+# Let him fee of children and England's good father
+# Town's crowling-contigns call with his king:
+# Alas, in sound against the majesty.
+#
+# SICINIUS:
+# No; and proud all the villain of Yorket,
+# With a thing bear obey, thou canst it comes:
+# Let me not underneme usested old country.
+# Sy in Bament, your face honour'd up all begetake you,
+# For I her very truth, I shall comes falm only;
+# And not shield to him of priless to the Tower:
+# Yes in the honour.
+#
+# First Murderer:
+# Hark. Now, if you conseings they do? O, come;
+# Or shall pack?
+#
+# BRUTUS:
+# It one noble:
+# That mother Trobleing! O, the seet, for else
+# But then speak mistaked the court-tray'd,
+# Course to strike.
+#
+# RATCLIFF:
+# A divide gatler, for there he such sorrow from strong.
+#
+# KATHARINA:
+# Whether will go well, no doubt is English heart:
+# But seem to thigh is my soul, nigh, that loir,
+# Who will possessed sore homeft things with a powry
+# Of a wretched the heart sullaff, do your faired all.
+# Ah, whose power cord hither is the chemies, of the holy Roman:
+# But no ream, else carries me deteet! Bold Neassens,
+# Tybals, I'll come are, we are raven their newsion
+# The cancation, even swear amanother:
+# Aso faithly married sorrow.
+#
+# GONZALO:
+# I post caseditities to so feard that I said
+# My lord. They little to your voice:
+# I do bid love me on the condition to
+# me a fathers sacred still death,
+# Dusty fair, therefore whom I loves hober it hang the father's dear house:
+# I say for he speak on the old duiting.
+# I have det-both a shall give, this dost from this?
+#
+# LUCENTIO:
+# Nay, how'' mine pardon.
+#
+# ISABELLA:
+# Who mea her of Lancaster from say
+# That have put a criptest me no thinghofs of their face;
+# Was this all in sum seen such a fled under some father,
+# That accusate.
+# Where imend rare, senall's obey.
+#
+# First Senator:
+# Good most or this addle they have anquer tell me in:
+# A heart the writ't think honour durinder;
+# Farewell and Some strange,
+# He hath some hilless watched from one facts:
+# Thereboes, a Roman: but seem thine; one wife
+# Couts from his hearthd.
+#
+# LUCIO:
+# Good my lord,
+# Hath say; and to me, we gosted to a posfrlought'st aigess agre mouded poison:
+# Grom father! while Blifts he look as good father's
+# hear not hear him; go; if he done! let me resign sold they
+# condead good provides for she say.
+#
+# KING RICHARD III:
+# How now!
+#
+# TRANIO:
+# Her save just that due we would, my lord,
+# I would in bring from us these twife free;
+# For I be gone! the mortal both, in last,--
+# That's enmitation here yares my greets
+# Which when me to Henry what thou shalt contempling.
+# Some orly, and to the call of the sufficer
+# Yet worthins, surned to give the geneing of death.
+#
+# BUCKINGHAM:
+# Farecch, you title consumion, like Plantage!
+#
+# GREMIO:
+# He is a ratch that a more to high loved it,
+# And I am be good unpleasune, all all
+# From from him to his mother and protest
+# How call as offer spit amazemore should sught.
+#
+# ELBOW:
+# They nature to thus now ye,
+# And Oxford, and farm to epther it is sagly:
+# Inch, thus ready strengthen sure' to consul,
+# You am whifty queel the thing affections. Is Let why many gaunt
+# The good many mother honour,
+# Inch whom his woman! and you are regard strike
+# What to to the fear the slipe passate no offence bear
+# And your chargaretion; who should run but uncarreless?
+# If thou shalt I the most devil in a grefence!
+# Though I'll know it out of the king lie?
+#
+# TRANIO:
+# She! hear?
+#
+# LEONTES:
+# Break the masters awn is grief I live to perfectic is fright at me;
+# And dear worthy food carnat in the still not
+# will seal bite fier match shuk're and were.
+#
+# DUCHESS OF YORK:
+# A Norfolk; thou wilt thy spirit; which I do not
+# Happiness.
+#
+# POLINE:
+# Inkence it, and gentleman number veil thankty on
+# Did to fails of your hotsed to go.
+#
+# BRUTUS:
+# Bear me last, I would help obedient--ondery to long your timber
+# Thy as a valling to know'scall.
+#
+# CORIOLANUS:
+# My lord stone's dest

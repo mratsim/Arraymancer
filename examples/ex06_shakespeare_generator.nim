@@ -30,6 +30,7 @@ import
 
 # Printable chars - from Python: import string; string.printable
 const IxToChar = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ \t\n\r\x0b\x0c"
+const UnkCharIx = IxToChar.len # Unknown characters will be replaced by this
 type PrintableIdx = uint8
 
 func genCharToIx(): Table[char, PrintableIdx] =
@@ -39,15 +40,15 @@ func genCharToIx(): Table[char, PrintableIdx] =
 
 const
   CharToIx = genCharToIx()
-  VocabSize = IxToChar.len # Cardinality of the set of PrintableChars
+  VocabSize = IxToChar.len + 1 # Cardinality of the set of PrintableChars. There is an extra 1 for the "UnknownChar"
   BatchSize = 100
-  Epochs = 2000            # This take a long long time, I'm not even sure it converges
+  Epochs = 2000                # This take a long long time, I'm not even sure it converges
   Layers = 2
   HiddenSize = 100
   LearningRate = 0.01'f32
   EmbedSize = 100
-  SeqLen = 200             # Characters sequences will be split in chunks of 200
-  StatusReport = 200       # Report training status every x batches
+  SeqLen = 200                 # Characters sequences will be split in chunks of 200
+  StatusReport = 200           # Report training status every x batches
 
 # ################################################################
 #
@@ -60,7 +61,12 @@ func strToTensor(str: string|TaintedString): Tensor[PrintableIdx] =
 
   # For each x in result, map the corresponding char index
   for i, val in result.menumerate:
-    val = CharToIx[str[i]]
+    if str[i] in CharToIx:
+      val = CharToIx[str[i]]
+    else:
+      # otherwise skip - this will be a padding index
+      val = UnkCharIx
+
 
 # Weighted random sampling / multinomial sampling
 #   Note: during text generation we only work with
@@ -186,6 +192,8 @@ proc newShakespeareNet[TT](ctx: Context[TT]): ShakespeareNet[TT] =
     randomNormalTensor(VocabSize, EmbedSize, 0'f32, 1'f32),
     requires_grad = true
   )
+  # Fill the padding/unknown character mapping with 0
+  result.encoder.weight.value[UnkCharIx, _] = 0
 
   # GRU layer
   #   Input:   [SeqLen, BatchSize, EmbedSize]
@@ -211,7 +219,7 @@ proc newShakespeareNet[TT](ctx: Context[TT]): ShakespeareNet[TT] =
 
 # Some wrappers to pass the layer weights
 proc encode[TT](model: ShakespeareNet[TT], x: Tensor[PrintableIdx]): Variable[TT] =
-  embedding(x, model.encoder.weight)
+  embedding(x, model.encoder.weight, padding_idx = UnkCharIx)
 
 proc gru_forward(model: ShakespeareNet, x, hidden0: Variable): tuple[output, hiddenN: Variable] =
   gru(
@@ -403,8 +411,11 @@ proc main() =
 
 main()
 
-# ##################################################
-# Output
+# ###########################################################################################
+#
+#                          Text generation - Shakespeare
+#
+# ###########################################################################################
 
 # $  ./build/ex06 examples/ex06_shakespeare_input.txt
 # Checking the first hundred characters of your file
@@ -628,3 +639,173 @@ main()
 # Yet be it strike deabe; thy sures the while.
 #
 # WARWICK:
+
+
+# ###########################################################################################
+#
+#                 Text generation - Pride and Prejudice, Jane Austen
+#
+# ###########################################################################################
+
+# $  ./build/ex06 build/pride_and_prejudice.txt
+# Checking the first hundred characters of your file
+# PRIDE AND PREJUDICE
+#
+# By Jane Austen
+#
+#
+#
+# Chapter 1
+#
+#
+# It is a truth universally acknowledged, that a sin
+
+# ####
+# Starting training
+
+
+# ####
+# Time: 0.8692 s, Epoch: 0/2000, Loss: 4.6137
+# Sample:
+# A8T+ ^Cyvd&Ep<"e8tVXO{C(PftLlY7
+#                                ^=d[KmP.IQg,DN
+# {9!=&~Sw/Y]]6uD/?HSOUEVSgPy=>&?y{            Hiy;
+
+# ####
+# Time: 153.5895 s, Epoch: 200/2000, Loss: 1.3105
+# Sample:
+# Whereince you trood object. She Elizabeth; she gratise her Lyday's like no;
+# in the manies.
+#
+#
+#
+# Ve
+
+# ####
+# Time: 301.1851 s, Epoch: 400/2000, Loss: 1.2050
+# Sample:
+# Whe had evident heard an
+# apporing? Do her long luditure, he alsoment on it?
+#
+# STreeapen
+# had get
+
+# ####
+# Time: 458.2439 s, Epoch: 600/2000, Loss: 1.1570
+# Sample:
+# Wher was to recommend on where his own; she are explain her for; and that he
+# town to her
+# feative her l
+
+# ####
+# Time: 609.7807 s, Epoch: 800/2000, Loss: 1.1460
+# Sample:
+# Wheir false of advice with which which was complimented. But
+# as he had once towards the belief of
+# spir
+
+# ####
+# Time: 768.7109 s, Epoch: 1000/2000, Loss: 1.1374
+# Sample:
+# Whall
+# following
+# oof
+# those
+# is
+# very, it was disgrace, was soon engaged as his affected the common women
+
+# ####
+# Time: 915.6025 s, Epoch: 1200/2000, Loss: 1.1079
+# Sample:
+# Whis
+# indiFforth, she added Darcy too, it may longed I suppose, over the
+# you, there is
+# in do?
+#
+#
+
+# ####
+# Time: 1063.1721 s, Epoch: 1400/2000, Loss: 1.1095
+# Sample:
+# Wher with which him at least the visitors to see Mr. Collins. We me all in friend who mistaken to temp
+
+# ####
+# Time: 1209.6270 s, Epoch: 1600/2000, Loss: 1.1141
+# Sample:
+# Whement reason! and at him all be view to him to give mine
+# and
+# Lydia, he was not understoom would hard
+
+# ####
+# Time: 1354.8098 s, Epoch: 1800/2000, Loss: 1.1236
+# Sample:
+# Wh them again, ageable.
+# Even she knowsifience, entering to find the sense
+# of course of assures how lon
+
+# ##########
+# Training end. Generating 4000 characters Shakespeare masterpiece in 3. 2. 1...
+
+
+# Which you all temper, that I had Mr.
+# Longbourn, Lizzy! that Miss de Jane! she cannot be anxious fair propose
+# that it
+# was she thought he was true, not you are often county
+# tto disagreeing. They are you are willing to the best, the idea of her own neither eam since never and Mr. Bennet, he has love a cprovember for Hunsford, except of imaginable new more wanted there said before them, observation to have still every kingded, and received against as possition for the evensing--hortness toward too, and saying, which
+# Mlay
+# else has daugement to her sister, one again
+# he
+# ever deson its restance of her tone of protessed with his always congratulation.
+#
+# Ortrutes without entering; and her sister did nothing of a little beneach of attention. But so much twenting you perverseness were stairs.
+#
+# Lydy!
+# Uflect as for good immediately to clother to you, as she thoughth indole young ladyship will be more feelings, that she did not
+# and sister's good to do ill! Where were time before he has night; but
+# without considered him to says, indeed, were a great heavance of Jane, she feeling at Roshe thing out colour Mr. Darcy is. Her favourously certain proved in acquaintance of listened.
+#
+# But who live forward more equacity, suitated, for Jane had satisfied there was early outs chance yourself, more buined
+# their reason which she beg there imaginary gone with animation was seeing their being here; and air ran the weated with a still encomined to tell me to indifferent, however in Maria much compliments to see him. The
+# supportation; belonged looking in this
+# which gate of the housematy.
+#
+#
+#
+# Chance now. Elizabeth took denoring was not upon the room. Not at preserving eqiadly leaving that her family, and everything in love all the morning. They may joy iming any fact remil in ought to set you could
+# not be--His won conviction to time was, then indeed, where considables for Jane; and if he evielver, and hoped soon face than she had alacrity from another, who had a very speech: 'Oh being in tear of both directly or bour into three more. Why must have both.
+#
+# I must turn was not out of declared, has been begged a comfort openly. A good repaired a Sir William. He
+# was assured the eviven to her sisters' without warmity and of her, satisfied with a great child. The autuit and paid, and Mr. Darcy too happiness at his little chance? Oh, Lointhing entrowed
+# heart, however, he has disanyonded, he is now.
+#
+# In the way, acconduch surprised himself, but them all, and once sound, with such an her sister daughter between them to be look except him freedom there worth home.
+#
+# There is attentive anybody.
+#
+# Mr. Bingley's discomposure of Maria, was no loss which her sorry to know
+# to Colonel Fitzwilliam; especially, and supportable of the two hour, and to discover the sooner shared. After schemnession because had affected to
+# kind disturbed; but
+# she continued; nor informed, an inconcludled to take to assure the
+# office he with some agoyced are
+# so asks to have here; though, was toler more. Have heard with their humbore she would stay; but it is, she rivery
+# twoo was such a daughter. Of her situation would always
+# feeling to
+# mention to be more than to come to say, whom Elizabeth added himself. Tto
+# feelings with the whole into a Mr. Collins, and was truth, he amges
+# Pemberley, it would
+# table to Mr. Collins; but I assured out I did, and be delivery and gave a plan, said Jine, strange, which had no
+# success of during determined him engaged.
+#
+# All aning out of the time of unknown to the whole, and
+# her minulsficent, she
+# keeps as without interrupted to encourable in such a good friendropy; yet. The
+# design
+# in the still out
+# of her agreeable as
+# saw more
+# could. In his sister were placed a young man with they house. He is now
+# trees. But his account attentions--and attended out? Upon my up. I shall insteems, replied Meryton of Kitty settling might pleasantly with her eyesoughter, said Elizabeth, have me
+# this!
+#
+# Pride of danger was till you have no
+# longer we wr

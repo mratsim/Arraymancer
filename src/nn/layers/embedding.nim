@@ -21,7 +21,7 @@ import  ../../private/ast_utils,
 type EmbeddingGate*{.final.}[TT; scaled: static bool; Idx: SomeNumber or byte or char or enum] = ref object of Gate[TT]
   cached_input_vocab_id: Tensor[Idx]
   weight: Variable[TT]
-  padding_idx: int
+  padding_idx: Idx
     # We special-case -1 to mean no padding. Ideally we should use an option,
     # and have a separate proc for padding and no padding (to avoid costly checks within a tight loop)
 
@@ -38,7 +38,7 @@ proc embedding_cache[TT, Idx](
       result: Variable[TT],
       input_vocab_id: Tensor[Idx],
       weight: Variable[TT],
-      padding_idx: int,
+      padding_idx: Idx,
       scale_grad_by_freq: static[bool]
     ) =
 
@@ -68,7 +68,7 @@ proc embedding_cache[TT, Idx](
 proc embedding*[TT; Idx: byte or char or SomeNumber](
         input_vocab_id: Tensor[Idx],
         weight: Variable[TT],
-        padding_idx = -1,
+        padding_idx: Idx = -1,
         scale_grad_by_freq: static[bool] = false
       ): Variable[TT] =
   ## Input:

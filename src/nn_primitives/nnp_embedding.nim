@@ -58,7 +58,7 @@ proc embedding_backward*[T; Idx: byte or char or SomeNumber](
       dWeight: var Tensor[T],
       vocab_id: Tensor[Idx],
       dOutput: Tensor[T],
-      padding_idx: int,
+      padding_idx: Idx,
       scale_grad_by_freq: static[bool] = false # scale by the inverse document frequency, i.e. divide by count in minibatch
     ) =
 
@@ -78,7 +78,7 @@ proc embedding_backward*[T; Idx: byte or char or SomeNumber](
   let flat_dOutput = dOutput.flatten_idx()
 
   for i, word_idx in enumerate(flat_vocab_id):
-    if int(word_idx) != padding_idx:
+    if word_idx != padding_idx:
       var grad_curr_word = dWeight[int(word_idx), _]
       when scale_grad_by_freq:
         # For speed don't respect IEEE-754 and avoid

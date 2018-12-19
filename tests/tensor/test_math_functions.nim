@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, future, math
+import unittest, sugar, math
 
 suite "Math functions":
   test "Reciprocal (element-wise 1/x)":

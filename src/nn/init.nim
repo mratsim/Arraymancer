@@ -73,7 +73,7 @@ proc variance_scaled(
         mode: static FanMode = FanIn,
         distribution: static Distribution = Normal
       ): Tensor[T] =
-  let (fan_in, fan_out) = shape.compute_fans
+  let (fan_in, fan_out{.used.}) = shape.compute_fans
   when mode == FanIn:
     let std = sqrt(scale / fan_in.T)
   elif mode == FanOut:

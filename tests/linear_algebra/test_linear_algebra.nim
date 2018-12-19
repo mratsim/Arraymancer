@@ -185,14 +185,5 @@ suite "Linear algebra":
                 [-1.06,  1.06,  0.11,  5.86, -0.98],
                 [ 0.46, -0.48,  1.10, -0.98,  3.54]].toTensor
 
-      let selected_val = [0.43, 0.24, 3.37].toTensor
-
-      let selected_vec = [[-0.98, -0.01, -0.08],
-                          [ 0.01,  0.02, -0.93],
-                          [ 0.04, -0.69, -0.07],
-                          [-0.18,  0.19,  0.31],
-                          [ 0.07,  0.69, -0.13]].toTensor
-
-      let (val, vec) = symeig(a, true, 0..2)
-
+      discard symeig(a, true, 0..2)
       check: a == b

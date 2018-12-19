@@ -27,9 +27,7 @@ suite "Testing specific issues from bug tracker":
     # Check that our solution, export '_' doesn't create compatibility issue
 
     # tuple destructuring
-    {.push hints: off.}  ## TODO replaced by XDeclaredButNotUsed when https://github.com/nim-lang/Nim/issues/4044
-    let (a, _, c) = (1, @[2,3],"hello")
-    {.pop.}
+    let (a{.used.}, _, c{.used.}) = (1, @[2,3],"hello")
 
   test "#61 Unable to use operator `_` in this example":
     block:
@@ -48,4 +46,4 @@ suite "Testing specific issues from bug tracker":
   test "#307 3D slicing with same shape: offset is off":
     let x = zeros[int]([1, 2, 3])
     expect(IndexError):
-      let y = x[1, _, _]
+      let y{.used.} = x[1, _, _]

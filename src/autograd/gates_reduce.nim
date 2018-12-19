@@ -57,7 +57,7 @@ proc mean*[TT](a: Variable[TT]): Variable[TT] =
 
   # Caching for backprop
   if a.is_grad_needed:
-    result.mean_register(a)
+    result.mean_cache(a)
 
 type SumGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C

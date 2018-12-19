@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Please compile with -d:cuda switch
+# Please compile with -d:opencl switch
+{.push warning[Spacing]: off.}
 import  ./tensor/test_init_opencl,
         ./tensor/test_operators_blas_opencl,
         ./tensor/test_broadcasting_opencl
+{.pop.}

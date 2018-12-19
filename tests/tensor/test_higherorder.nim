@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, math, future, sequtils
+import unittest, math, sugar, sequtils
 
 suite "[Core] Testing higher-order functions":
   let t = [[0, 1, 2],

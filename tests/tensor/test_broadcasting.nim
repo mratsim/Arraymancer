@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, future, sequtils
+import unittest, sugar, sequtils
 
 suite "Shapeshifting - broadcasting and non linear algebra elementwise operations":
   test "Tensor element-wise multiplication (Hadamard product) and division":

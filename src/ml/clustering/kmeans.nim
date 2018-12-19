@@ -220,9 +220,7 @@ proc kmeans*[T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0001, n
   ##    - Cluster labels : a matrix of shape [Nb of observations, 1]
   ##    - Centroid coordinates : a matrix of shape [n_clusters, Nb of features]
   ##    - Inertia: the sum of sq distances from each point to its centroid
-  let
-    n_rows = x.shape[0]
-    n_cols = x.shape[1]
+  let n_cols = x.shape[1]
   assert x.rank == 2
   assert n_clusters <= n_cols
   var

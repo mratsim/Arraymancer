@@ -365,7 +365,8 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
           result = h.sum
         else:
           result = output.sum + h.sum
-      proc gru_W3sN(W3sN: Tensor[float64]): float64 =
+      proc gru_W3sN(W3sN: Tensor[float64]): float64 {.used.}=
+        # Used only if Layers > 1
         var output: Tensor[float64]
         var h = hidden.clone()
         gru_inference(x,

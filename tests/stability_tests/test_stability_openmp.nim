@@ -31,9 +31,9 @@ suite "Load test - OpenMP":
     for _ in 0..<100:
 
       # Shape of the matrices
-      let M = random(2..100)
-      let N = random(2..100)
-      let K = random(2..100)
+      let M = rand(2..100)
+      let N = rand(2..100)
+      let K = rand(2..100)
 
       # We create the matrices from seq to test the GC/OpenMP interaction
       let a = newSeqWith(M*N, random(-100_000_000..100_000_000)).toTensor.reshape(M, N)

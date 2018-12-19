@@ -16,7 +16,7 @@ import  ./backend/openmp,
         ./backend/memory_optimization_hints,
         ./private/p_checks,
         ./data_structure, ./init_cpu, ./accessors,
-        future
+        sugar
 
 # ####################################################################
 # Mapping over tensors

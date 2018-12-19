@@ -14,7 +14,7 @@
 
 import  ../../private/functional,
         ../shapeshifting, ../data_structure,
-        future, sequtils
+        sugar, sequtils
 
 proc bounds_display(t: Tensor,
           idx_data: tuple[val: string, idx: int]

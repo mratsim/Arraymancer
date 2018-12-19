@@ -14,7 +14,7 @@
 
 
 import ../../src/arraymancer
-import unittest, math, future
+import unittest, math, sugar
 
 suite "Convolution 2D":
   block:

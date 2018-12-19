@@ -1,6 +1,6 @@
 # From: https://github.com/kostya/benchmarks
 
-import os, strutils, future
+import os, strutils, sugar
 import ../src/arraymancer
 
 proc matgen(n: int): auto =

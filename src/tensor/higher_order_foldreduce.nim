@@ -14,7 +14,7 @@
 
 import  ./backend/openmp,
         ./data_structure, ./init_cpu, ./init_copy_cpu, ./accessors,
-        future
+        sugar
 
 template reduce_inline*[T](t: Tensor[T], op: untyped): untyped =
   let z = t # ensure that if t is the result of a function it is not called multiple times

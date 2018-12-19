@@ -49,7 +49,7 @@
 # The labels values are 0 to 9.
 
 
-import  streams, endians, os, httpClient, strformat, future, sequtils, ospaths,
+import  streams, endians, os, httpClient, strformat, sugar, sequtils, ospaths,
         ../tensor/tensor, ../io/io_stream_readers, ./util,
         zip/gzipfiles
 

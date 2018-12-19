@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{.push warning[Spacing]: off.}
 import ../src/arraymancer,
         ./tensor/test_init,
         ./tensor/test_operators_comparison,
@@ -53,3 +54,4 @@ when not defined(no_lapack):
 import  ./stability_tests/test_stability_openmp,
         # /end_to_end/examples_compile
         ./end_to_end/examples_run
+{.pop.}

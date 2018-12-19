@@ -13,6 +13,7 @@
 # limitations under the License.
 
 # Please compile with -d:cuda switch
+{.push warning[Spacing]: off.}
 import ../src/arraymancer,
         ./tensor/test_init_cuda,
         ./tensor/test_operators_blas_cuda,
@@ -25,3 +26,4 @@ when not defined(cudnn):
   echo "CuDNN tests skipped, please pass -d:cudnn flag if you want to enable cudnn tests after cuda tests."
 else:
   import ./nn_primitives/test_nnp_convolution_cudnn
+{.pop.}

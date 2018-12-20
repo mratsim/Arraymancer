@@ -20,6 +20,13 @@ import  ../private/ast_utils,
 type MeanGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
   cached_input_shape: MetadataArray
+  axis: int
+
+proc shape_product(m: MeanGate): int {.inline.} =
+  result = 1
+  for i, v in m.cached_input_shape:
+    if i != m.axis:
+      result *= v
 
 proc mean_backward_ag[TT](self: MeanGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
@@ -29,6 +36,11 @@ proc mean_backward_ag[TT](self: MeanGate[TT], payload: Payload[TT]): SmallDiffs[
   # We create a shape of 1 dimension that we will expand with broadcast
   let z_shape = newSeqWith(self.cached_input_shape.len, 1)
   result[0] = result[0].reshape(z_shape).broadcast(self.cached_input_shape)
+
+proc mean_with_axis_backward_ag[TT](self: MeanGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let gradient = payload.variable.grad
+  result = newDiffs[TT](1)
+  result[0] = (gradient / getSubType(TT)(self.shape_product)).broadcast(self.cached_input_shape)
 
 proc mean_cache[TT](result: Variable[TT], a: Variable[TT]) =
   # Gate
@@ -49,6 +61,26 @@ proc mean_cache[TT](result: Variable[TT], a: Variable[TT]) =
     a
   )
 
+proc mean_cache[TT](result: Variable[TT], a: Variable[TT], axis: Natural) =
+  # Gate
+  var gate: MeanGate[TT]
+  new gate
+  gate.cached_input_shape = a.value.shape
+  gate.axis = axis
+
+  # Result setup
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
+  # Caching for backprop
+  register_node(
+    "Mean",
+    gate,
+    mean_with_axis_backward_ag[TT],
+    result,
+    a
+  )
+
 proc mean*[TT](a: Variable[TT]): Variable[TT] =
   # Resulting var
   new result
@@ -58,6 +90,16 @@ proc mean*[TT](a: Variable[TT]): Variable[TT] =
   # Caching for backprop
   if a.is_grad_needed:
     result.mean_cache(a)
+
+proc mean*[TT](a: Variable[TT], axis: Natural): Variable[TT] =
+  # Resulting var
+  new result
+  result.context = a.context
+  result.value = a.value.mean(axis)
+
+  # Caching for backprop
+  if a.is_grad_needed:
+    result.mean_cache(a, axis)
 
 type SumGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C

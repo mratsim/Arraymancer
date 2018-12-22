@@ -1,6 +1,9 @@
-Arraymancer contributors (sorted alphabetically)
+Main Arraymancer contributors (sorted alphabetically)
 
-### Eduardo Bart
+### Andrea Ferretti (andreaferetti)
+  - Autograd of mean along an axis
+
+### Eduardo Bart (@edubart)
   - OpenMP
   - Several performance optimizations and fix including
     - Strided iterators
@@ -8,5 +11,16 @@ Arraymancer contributors (sorted alphabetically)
   - Shapeshifting procs
   - Developing the ecosystem with [arraymancer-vision](https://github.com/edubart/arraymancer-vision) and [arraymancer-demos](https://github.com/edubart/arraymancer-demos)
 
-### Mamy Ratsimbazafy
+### Mamy Ratsimbazafy (@mratsim)
   - Lead dev
+
+### Manguluka (@manguluka)
+  - tanh activation
+
+### Xander Johnson (@metasyn)
+  - Kmeans clustering
+  - Automation of MNIST download, caching and reading from compressed gzip
+  - IMDB dataset loader
+
+### Vindaar (@vindaar)
+  - HDF5

@@ -34,3 +34,38 @@ suite "Autograd of basic operations":
 
     check: va.grad == onesTensor
     check: vb.grad == onesTensor
+
+  test "Gradient of mean":
+
+    let a = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
+
+    let ctx = newContext Tensor[float32]
+
+    let va = ctx.variable(a, requires_grad = true)
+    let m = va.mean()
+
+    m.backprop()
+
+    let constantTensor = ones[float32](2, 4) / 8.0
+
+    check: va.grad == constantTensor
+
+  test "Gradient of mean along one axis":
+
+    let a = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
+
+    let ctx = newContext Tensor[float32]
+
+    let va = ctx.variable(a, requires_grad = true)
+
+    let m0 = va.mean(axis=0)
+    m0.backprop()
+    let constantTensor0 = ones[float32](2, 4) / 4.0
+    check: va.grad == constantTensor0
+
+    va.grad = zeros_like(va.grad)
+
+    let m = va.mean(axis=1)
+    m.backprop()
+    let constantTensor1 = ones[float32](2, 4) / 2.0
+    check: va.grad == constantTensor1

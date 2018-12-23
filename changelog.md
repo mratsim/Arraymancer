@@ -55,6 +55,10 @@ Ecosystem:
     ![](http://vega.github.io/images/vega-lite.png)
     ![](http://vega.github.io/images/vg.png)
     and compatibility with the Vega ecosystem, especially the Tableau-like [Voyager](https://github.com/vega/voyager)
+  - [Agent Smith](https://github.com/numforge/agent-smith), reinforcement learning framework.
+    Currently it wraps the `Arcade Learning Environment` for practicing reinforcement learning on Atari games.
+    In the future it will wrap Starcraft 2 AI bindings
+    and provides a high-level interface and examples to reinforcement learning algorithms.
   - [Laser](https://github.com/numforge/laser), the future Arraymancer backend
     which provides:
       - SIMD intrinsics
@@ -73,6 +77,8 @@ Ecosystem:
           and epilogue (relu, tanh, sigmoid, bias addition) operation fusion
           to avoid looping an extra time with a memory bandwidth bound pass.
       - Convolutions will be optimised with a preprocessing pass fused into matrix multiplication. Traditional `im2col` solutions can only reach 16% of matrix multiplication efficiency on the common deep learning filter sizes
+      - State-of-the art random distributions and random sampling implementations
+        for stochastic algorithms, text generation and reinforcement learning.
 
 Future breaking changes.
 
@@ -85,7 +91,7 @@ Future breaking changes.
         The future [type is already implemented in Laser](https://github.com/numforge/laser/blob/553497e1193725522ab7a5540ed824509424992f/laser/tensor/datatypes.nim#L12-L30).
       - Tensors of GC-allocated types like seq, string and references will keep using Nim seqs.
       - While it was possible to use the Javascript backend by modifying the iteration scheme
-        this will not be possible at all. Use JS-> C FFI or WebAssembly compilation instead.
+        this will not be possible at all. Use JS->C FFI or WebAssembly compilation instead.
       - The inline iteration **templates** `map_inline`, `map2_inline`, `map3_inline`, `apply_inline`, `apply2_inline`, `apply3_inline`, `reduce_inline`, `fold_inline`, `fold_axis_inline` will be removed and replace by `forEach` and `forEachStaged` with the following syntax:
       ```Nim
       forEach x in a, y in b, z in c:

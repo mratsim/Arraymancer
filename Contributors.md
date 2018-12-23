@@ -11,6 +11,11 @@ Main Arraymancer contributors (sorted alphabetically)
   - Shapeshifting procs
   - Developing the ecosystem with [arraymancer-vision](https://github.com/edubart/arraymancer-vision) and [arraymancer-demos](https://github.com/edubart/arraymancer-demos)
 
+### Fabian Keller (bluenote10)
+  - CSV and toSeq exports
+  - Tensor plotting tool
+  - several fixes
+
 ### Mamy Ratsimbazafy (@mratsim)
   - Lead dev
 

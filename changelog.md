@@ -1,3 +1,110 @@
+Arraymancer v0.5.0 December XX 2018 "To be codenamed"
+
+Changes affecting backward compatibility:
+  - PCA has been split into 2
+    - The old PCA with input `pca(x: Tensor, nb_components: int)` now returns a tuple
+      of result and principal components tensors in descending order instead of just a result
+    - A new PCA `pca(x: Tensor, principal_axes: Tensor)` will project the input x
+      on the principal axe supplied
+
+Changes:
+  - Datasets:
+    - MNIST is now autodownloaded and cached
+    - Added IMDB Movie Reviews dataset
+  - IO:
+    - Numpy file format support
+    - Image reading and writing support (jpg, bmp, png, tga)
+    - HDF5 reading and writing
+  - Machine learning
+    - Kmeans clustering
+  - Neural network and autograd:
+    - Support substraction, sum and stacking in neural networks
+    - Recurrent NN: GRUCell, GRU and Fused Stacked GRU support
+    - The NN declarative lang now supports GRU
+    - Added Embedding layer with up to 3D input tensors [batch_size, sequence_length, features] or [sequence_length, batch_size, features]. Indexing can be done with any sized integers, byte or chars and enums.
+    - Sparse softmax cross-entropy now supports target tensors with indices of type: any size integers, byte, chars or enums.
+    - Added ADAM optimiser (Adaptative Moment Estimation)
+    - Added Hadamard product backpropagation (Elementwise matrix multiply)
+    - Added Xavier Glorot, Kaiming He and Yann Lecun weight initialisations
+    - The NN declarative lang automatically initialises weights with the following scheme:
+      - Linear and Convolution: Kaiming (suitable for Relu activation)
+      - GRU: Xavier (suitable for the internal tanh and sigmoid)
+      - Embedding: Not supported in declarative lang at the moment
+  - Tensors:
+    - Add tensor splitting and chunking
+    - Fancy indexing via `index_select`
+    - division broadcasting
+    - scalar division and multiplication broadcasting
+    - High-dimensional `toSeq` exports
+  - End-to-end Examples:
+    - Sequence/mini time-series classification example using RNN
+    - Training and text generation example with Shakespeare and Jane Austen work. This can be applied to any text-based dataset. It should contain at least 700k characters (0.7 MB), this is considered small already.
+
+- Important fixes:
+  - Convolution shape inference on non-unit strided convolutions
+  - Support the future OpenMP changes from nim#devel
+  - GRU: inference was squeezing all singleton dimensions instead of just the "layer" dimension.
+  - Autograd: remove pointers to avoid pointing to wrong memory when the garbage collector moves it under pressure. This unfortunately comes at the cost of more GC pressure, this will be addressed in the future.
+  - Autograd: remove all methods. They caused issues with generic instantiation and object variants.
+
+Ecosystem:
+  - Using Arraymancer + Plotly for NNtraining visualisation:
+    https://github.com/Vindaar/NeuralNetworkLiveDemo
+    ![](https://github.com/Vindaar/NeuralNetworkLiveDemo/raw/master/media/demo.gif)
+  - [Monocle](https://github.com/numforge/monocle), proof-of-concept data visualisation using [Vega](http://vega.github.io/). Hopefully allowing this kind of visualisation in the future:
+    ![](http://vega.github.io/images/vega-lite.png)
+    ![](http://vega.github.io/images/vg.png)
+    and compatibility with the Vega ecosystem, especially the Tableau-like [Voyager](https://github.com/vega/voyager)
+  - [Laser](https://github.com/numforge/laser), the future Arraymancer backend
+    which provides:
+      - SIMD intrinsics
+      - OpenMP templates with fine-grained control
+      - Runtime CPU features detection for ARM and x86
+      - A proof-of-concept JIT Assembler
+      - A raw minimal tensor type which can work as a view to arbitrary buffers
+      - Loop fusion macros for iteration on an arbitrary number of tensors.
+        As far as I know it should provide the fastest multi-threaded
+        iteration scheme on strided tensors all languages and libraries included.
+      - Optimized reductions, exponential and logarithm functions reaching
+        4x to 10x the speed of naively compiled for loops
+      - Optimised parallel strided matrix multiplication reaching 98% of OpenBLAS performance
+        - This is a generic implementation that can also be used for integers
+        - It will support preprocessing (relu_backward, tanh_backward, sigmoid_backward)
+          and epilogue (relu, tanh, sigmoid, bias addition) operation fusion
+          to avoid looping an extra time with a memory bandwidth bound pass.
+      - Convolutions will be optimised with a preprocessing pass fused into matrix multiplication. Traditional `im2col` solutions can only reach 16% of matrix multiplication efficiency on the common deep learning filter sizes
+
+Future breaking changes.
+
+1.  Arraymancer backend will switch to `Laser` for next version.
+    Impact:
+      - At a low-level CPU tensors will become a view on top of a pointer+len
+        fon old data types instead of using the default Nim seqs. This will enable plenty of no-copy use cases
+        and even using memory-mapped tensors for out-of-core processing.
+        However libraries relying on teh very low-level representation of tensors will break.
+        The future [type is already implemented in Laser](https://github.com/numforge/laser/blob/553497e1193725522ab7a5540ed824509424992f/laser/tensor/datatypes.nim#L12-L30).
+      - Tensors of GC-allocated types like seq, string and references will keep using Nim seqs.
+      - While it was possible to use the Javascript backend by modifying the iteration scheme
+        this will not be possible at all. Use JS-> C FFI or WebAssembly compilation instead.
+      - The inline iteration **templates** `map_inline`, `map2_inline`, `map3_inline`, `apply_inline`, `apply2_inline`, `apply3_inline`, `reduce_inline`, `fold_inline`, `fold_axis_inline` will be removed and replace by `forEach` and `forEachStaged` with the following syntax:
+      ```Nim
+      forEach x in a, y in b, z in c:
+        x += y * z
+      ```
+      Both will work with an arbitrary number of tensors and will generate 2x to 3x more compact code wile being about 30% more efficient for strided iteration. Furthermore `forEachStaged` will allow precise control of the parallelisation strategy including pre-loop and post-loop synchronisation with thread-local variables, locks, atomics and barriers.
+      The existing higer-order **functions** `map`, `map2`, `apply`, `apply2`, `fold`, `reduce` will not be impacted. For small inlinable functions it will be recommended to use the `forEach` macro to remove function call overhead (Yyou can't inline a proc parameter).
+
+2. The neural network domain specific language will use less magic
+    for the `forward` proc.
+    Currently the neural net domain specific language only allows the type
+    `Variable[T]` for inputs and the result.
+    This prevents its use with embedding layers which also requires an index input.
+    Furthermore this prevents using `tuple[output, hidden: Variable]` result type
+    which is very useful to pass RNNs hidden state for generative neural networks (for example text sequence or time-series).
+    So unfortunately the syntax will go from the current
+    `forward x, y:` shortcut to classic Nim `proc forward[T](x, y: Variable[T]): Variable[T]`
+
+
 Arraymancer v0.4.0 May 05 2018 "The Name of the Wind"
 =====================================================
 

@@ -33,12 +33,11 @@ Changes:
   - Tensors:
     - Add tensor splitting and chunking
     - Fancy indexing via `index_select`
-    - division broadcasting
-    - scalar division and multiplication broadcasting
+    - division broadcasting, scalar division and multiplication broadcasting
     - High-dimensional `toSeq` exports
   - End-to-end Examples:
     - Sequence/mini time-series classification example using RNN
-    - Training and text generation example with Shakespeare and Jane Austen work. This can be applied to any text-based dataset. It should contain at least 700k characters (0.7 MB), this is considered small already.
+    - Training and text generation example with Shakespeare and Jane Austen work. This can be applied to any text-based dataset (including blog posts, Latex papers and code). It should contain at least 700k characters (0.7 MB), this is considered small already.
 
 - Important fixes:
   - Convolution shape inference on non-unit strided convolutions
@@ -48,7 +47,7 @@ Changes:
   - Autograd: remove all methods. They caused issues with generic instantiation and object variants.
 
 Ecosystem:
-  - Using Arraymancer + Plotly for NNtraining visualisation:
+  - Using Arraymancer + Plotly for NN training visualisation:
     https://github.com/Vindaar/NeuralNetworkLiveDemo
     ![](https://github.com/Vindaar/NeuralNetworkLiveDemo/raw/master/media/demo.gif)
   - [Monocle](https://github.com/numforge/monocle), proof-of-concept data visualisation using [Vega](http://vega.github.io/). Hopefully allowing this kind of visualisation in the future:

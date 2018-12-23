@@ -2,9 +2,15 @@
 
 # Arraymancer - A n-dimensional tensor (ndarray) library.
 
-Arraymancer is a tensor (N-dimensional array) project in Nim. The main focus is providing a fast and ergonomic CPU, Cuda and OpenCL ndarray library on which to build a scientific computing and in particular a deep learning ecosystem.
+Arraymancer is a tensor (N-dimensional array) project in Nim. The main focus is providing a fast and ergonomic CPU, Cuda and OpenCL ndarray library on which to build a scientific computing ecosystem.
 
-The library is inspired by Numpy and PyTorch. The library provides ergonomics very similar to Numpy, Julia and Matlab but is fully parallel and significantly faster than those libraries. It is also faster than C-based Torch.
+The library is inspired by Numpy and PyTorch and targets the following use-cases:
+  - N-dimensional arrays (tensors) for numerical computing
+  - machine learning algorithms (~Scikit-learn, like least squares solvers, PCA and dimensionality reduction, classifiers, regressors and clustering algorithms, cross-validation). (Note that dataframes are not supported)
+  - deep learning
+
+The ndarray component can be used without the machine learning and deep learning component.
+It can also use Cuda and OpenCL backend.
 
 Note: While Nim is compiled and does not offer an interactive REPL yet (like Jupyter), it allows much faster prototyping than C++ due to extremely fast compilation times. Arraymancer compiles in about 5 seconds on my dual-core MacBook.
 
@@ -156,6 +162,136 @@ for t in 0 ..< 500:
   optim.update()
 ```
 
+### A text generated with Arraymancer's recurrent neural network
+
+From [example 6](./examples/ex06_shakespeare_generator.nim).
+
+Trained 45 min on my laptop CPU on Shakespeare and producing 4000 characters
+
+```
+Whter!
+Take's servant seal'd, making uponweed but rascally guess-boot,
+Bare them be that been all ingal to me;
+Your play to the see's wife the wrong-pars
+With child of queer wretchless dreadful cold
+Cursters will how your part? I prince!
+This is time not in a without a tands:
+You are but foul to this.
+I talk and fellows break my revenges, so, and of the hisod
+As you lords them or trues salt of the poort.
+
+ROMEO:
+Thou hast facted to keep thee, and am speak
+Of them; she's murder'd of your galla?
+
+ANTES:
+Nay, I hear i' the day, bie in half exorcheqous again.
+Cockin Tinved: I is wont? Who be youth friends
+In our beauty of one raised me in all me;
+This will recour castle appelied is:
+I thank you, lords.
+Who, I have not offer, the shipp'd, shalt it is Isabels
+We will be with my keepons of your witfers.
+I was as you have perfited to give car.
+
+SICINE:
+In a sisterexber his record to my turn
+Made you dishonour's, if they have so yean
+Reportistiful viel offs, which we will prayed
+By merry the nightly to find them:
+The fiery to: and she double last speak it,
+For I will resian, he, mark for the air:
+O did thy mustable lodge! Nen't, my mosts!
+I greet before,--hath age-tinent or breath?
+ I would your firms it be new-was 'scape. Is he shall choice,
+Were our husband, in what here twenties and forly,
+Althess to bries are time and senses, and dead-hear themselves
+Having, and this brother is they had'd is; I have a captive:
+My grains! a scarl doing of true forth, some trutis
+As Paduition, by this till us, as you teever
+Whething those baintious plague honour of gentleman,
+Through God lies,
+conunsel, to dishanging can for that men will well were my rasped me
+As well'd as the way off than her wairs with Lancaster show.
+Ah, will you forgot, and good lies of woman
+With a
+feshie:
+Good my Lord.
+
+AUTOLYCUS:
+Whit!
+Grave ta'en my lord, I'ld their names. The are mored of sorrow hath those
+soon weep'st his eyes. My horrcowns, bone, I kindness:
+How idle were which mean nothing cannot weep
+To rescockingly that hasting the sorrow,
+A good to grow'd of our hate how--
+Hear thee your tempest provided: I never confirm,
+Let's a brackful wife calms; they are instyef,
+Shall make thee, but my love.
+
+LADY ANNE:
+Methinks to him:
+But O, have it become ingly stand; think,
+And told the sringer'd againny, Pito:
+Ay, sir; answer'd awe! methink-'Ge is good hour!
+I pray you casquen not hear my form.
+Your unmanding them friends and barth halber,
+More words should not; and to a daughter'd and poor strop'd
+By one as we prove a cursed would not now:
+For thus in a flate death the heaven'd:
+And lies before I hapk or were.
+
+Nurse:
+Fearlwellare, confiarly Marciusbson,
+Were I how stop poiring to no more,
+To worser body to me and die clots, and out
+Their correction defimbry's truth.
+
+BRUTUS:
+Prother to be deadly of gold to be yet,
+Witholesfair than your complished, thus
+wearing triumph that live thyse toes a noble queen:
+I will yet, let him friends to given: take all
+Clease them a slain: our hours and saw Richmes,
+'Foren thou straight whet it for your treis.
+First is, for you to cousosa thus I'll make weed.
+
+QUEEN:
+I thrive, and how all thy comes?
+
+PRINCE EDWARD:
+Why, the day of all spoil'd nor unsure?
+Come, but never my love is mine,
+To she he himself prevone one it eag.
+Holdis true, bid got I am will not to titteat?
+
+SICINIUS:
+Consign nows this,
+My turns and dead before they-that was me to thy deat?
+
+CORIOLANUS:
+Even earth,
+Your churchister of Romeo, and grace is honest
+and mine envyou.
+
+DUCHESS OF YORK:
+Stand doth ceasians of Edward is time
+Of those would hence I have stopp'd;
+That is this parlest for all time and that eyes
+-adey is remain twine, that can yield
+Have I cursed and were they shouldst fire; I
+privile to thy fair Richard quietlious.
+
+LADY CAPULEL:
+No, but some bebarduched fight the so?
+If I may shake one will't not find him be souls
+They have you inkfender in death to give:
+Soft! hast here and sister of yourmer shuts
+Yet be it strike deabe; thy sures the while.
+
+WARWICK:
+```
+
 ## Table of Contents
 <!-- TOC -->
 
@@ -165,6 +301,7 @@ for t in 0 ..< 500:
     - [Reshaping and concatenation](#reshaping-and-concatenation)
     - [Broadcasting](#broadcasting)
     - [A simple two layers neural network](#a-simple-two-layers-neural-network)
+    - [A text generated with Arraymancer's recurrent neural network](#a-text-generated-with-arraymancers-recurrent-neural-network)
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Full documentation](#full-documentation)
@@ -174,16 +311,13 @@ for t in 0 ..< 500:
       - [Handwritten digit recognition with convolutions](#handwritten-digit-recognition-with-convolutions)
       - [Sequence classification with stacked Recurrent Neural Networks](#sequence-classification-with-stacked-recurrent-neural-networks)
     - [Tensors on CPU, on Cuda and OpenCL](#tensors-on-cpu-on-cuda-and-opencl)
-    - [Speed](#speed)
-      - [Micro benchmark: Int64 matrix multiplication (October 2017)](#micro-benchmark-int64-matrix-multiplication-october-2017)
-      - [Logistic regression (October 2017)](#logistic-regression-october-2017)
-      - [DNN - 3 hidden layers (October 2017)](#dnn---3-hidden-layers-october-2017)
+  - [What's new in Arraymancer v0.5.0](#whats-new-in-arraymancer-v050)
   - [4 reasons why Arraymancer](#4-reasons-why-arraymancer)
     - [The Python community is struggling to bring Numpy up-to-speed](#the-python-community-is-struggling-to-bring-numpy-up-to-speed)
     - [A researcher workflow is a fight against inefficiencies](#a-researcher-workflow-is-a-fight-against-inefficiencies)
     - [Can be distributed almost dependency free](#can-be-distributed-almost-dependency-free)
     - [Bridging the gap between deep learning research and production](#bridging-the-gap-between-deep-learning-research-and-production)
-    - [So why Arraymancer ?](#so-why-arraymancer)
+    - [So why Arraymancer ?](#so-why-arraymancer-)
   - [Future ambitions](#future-ambitions)
 
 <!-- /TOC -->
@@ -385,85 +519,33 @@ Here is a comparative table of the core features.
 | Squeezing singleton dimension                     | [x]                         | [x]                        | []                         |
 | Slicing + squeezing                               | [x]                         | []                         | []                         |
 
-### Speed
+## What's new in Arraymancer v0.5.0
 
-Arraymancer is fast, how it achieves its speed under the hood is detailed [here](https://mratsim.github.io/Arraymancer/uth.speed.html). Slowness is a bug.
+The full changelog is available in [changelog.md](./changelog.md).
 
-#### Micro benchmark: Int64 matrix multiplication (October 2017)
-
-Integers seem to be the abandoned children of ndarrays and tensors libraries. Everyone is optimising the hell of floating points. Not so with Arraymancer:
-
-```
-Archlinux, E3-1230v5 (Skylake quad-core 3.4 GHz, turbo 3.8)
-Input 1500x1500 random large int64 matrix
-Arraymancer 0.2.90 (master branch 2017-10-10)
-```
-
-| Language | Speed | Memory |
-|---|---|---|
-| Nim 0.17.3 (devel) + OpenMP | **0.36s** | 55.5 MB |
-| Julia v0.6.0 | 3.11s | 207.6 MB |
-| Python 3.6.2 + Numpy 1.12 compiled from source | 8.03s | 58.9 MB |
-
-```
-MacOS + i5-5257U (Broadwell dual-core mobile 2.7GHz, turbo 3.1)
-Input 1500x1500 random large int64 matrix
-Arraymancer 0.2.90 (master branch 2017-10-31)
-
-no OpenMP compilation: nim c -d:native -d:release --out:build/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
-with OpenMP: nim c -d:openmp --cc:gcc --gcc.exe:"/usr/local/bin/gcc-6" --gcc.linkerexe:"/usr/local/bin/gcc-6"  -d:native -d:release --out:build/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
-```
-
-| Language | Speed | Memory |
-|---|---|---|
-| Nim 0.18.0 (devel) - GCC 6 + OpenMP | **0.95s** | 71.9 MB |
-| Nim 0.18.0 (devel) - Apple Clang 9 - no OpenMP | **1.73s** | 71.7 MB |
-| Julia v0.6.0 | 4.49s | 185.2 MB |
-| Python 3.5.2 + Numpy 1.12 | 9.49s | 55.8 MB |
-
-Benchmark setup is in the `./benchmarks` folder and similar to (stolen from) [Kostya's](https://github.com/kostya/benchmarks#matmul). Note: Arraymancer float matmul is as fast as `Julia Native Thread`.
-
-#### Logistic regression (October 2017)
-On the [demo benchmark](https://github.com/edubart/arraymancer-demos), Arraymancer is faster than Torch in v0.2.90.
-
-CPU
-
-| Framework | Backend | Forward+Backward Pass Time  |
-|---|---|---|
-| Arraymancer v0.2.90| OpenMP + MKL | **0.458ms**  |
-| Torch7 | MKL | 0.686ms  |
-| Numpy | MKL | 0.723ms  |
-
-GPU
-
-| Framework | Backend | Forward+Backward Pass Time  |
-|---|---|---|
-| Arraymancer v0.2.90| Cuda | WIP  |
-| Torch7 | Cuda | 0.286ms  |
-
-#### DNN - 3 hidden layers (October 2017)
-
-CPU
-
-| Framework | Backend | Forward+Backward Pass Time  |
-|---|---|---|
-| Arraymancer v0.2.90| OpenMP + MKL | **2.907ms**  |
-| PyTorch | MKL | 6.797ms  |
-
-GPU
-
-| Framework | Backend | Forward+Backward Pass Time  |
-|---|---|---|
-| Arraymancer v0.2.90| Cuda | WIP |
-| PyTorch | Cuda | 4.765ms  |
-
-
-```
-Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz, gcc 7.2.0, MKL 2017.17.0.4.4, OpenBLAS 0.2.20, Cuda 8.0.61, Geforce GTX 1080 Ti, Nim 0.18.0
-```
-
-In the future, Arraymancer will leverage Nim compiler to automatically fuse operations
-like `alpha A*B + beta C` or a combination of element-wise operations. This is already done to fuse `toTensor` and `reshape`.
+Here are the highlights:
+  - Backward incompatible: PCA now returns a tuple of the projected tensor and the principal components. An overloaded PCA can be used with the principal axes supplied by the user.
+  - Datasets:
+    - MNIST is now autodownloaded and cached
+    - Added IMDB Movie Reviews dataset
+  - IO:
+    - Numpy file format support
+    - Image reading and writing support (jpg, bmp, png, tga)
+    - HDF5 reading and writing
+  - Machine learning
+    - Kmeans clustering
+  - Deep Learning
+    - GRU support including fused stacked GRU layers with sequence/timesteps
+    - Embedding layer multiple timesteps support. Indexing can be done with integers, byte, chars or enums.
+    - Sparse softmax cross-entropy: the target tensor can now be integers, byte, chars or enums.
+    - Adam optimiser (Adaptative Moment Estimation)
+    - Xavier Glorot, Kaiming He and Yann Lecun weight initialisation schemes
+  - N-D arrays / tensors
+    - Splitting and chunking support
+    - Fancy indexing via `index_select`
+  - End-to-end examples:
+    - Sequence/time-series classification using RNN
+    - Text generation on Shakespeare and Jane Austen's Pride and Prejudice. This can be applied to any text-based dataset (including blog posts, Latex papers and code)
 
 ## 4 reasons why Arraymancer
 

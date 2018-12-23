@@ -1,6 +1,6 @@
 Main Arraymancer contributors (sorted alphabetically)
 
-### Andrea Ferretti (andreaferetti)
+### Andrea Ferretti (@andreaferetti)
   - Autograd of mean along an axis
 
 ### Eduardo Bart (@edubart)
@@ -11,7 +11,7 @@ Main Arraymancer contributors (sorted alphabetically)
   - Shapeshifting procs
   - Developing the ecosystem with [arraymancer-vision](https://github.com/edubart/arraymancer-vision) and [arraymancer-demos](https://github.com/edubart/arraymancer-demos)
 
-### Fabian Keller (bluenote10)
+### Fabian Keller (@bluenote10)
   - CSV and toSeq exports
   - Tensor plotting tool
   - several fixes

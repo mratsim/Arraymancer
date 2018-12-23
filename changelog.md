@@ -1,4 +1,6 @@
-Arraymancer v0.5.0 December XX 2018 "To be codenamed"
+Arraymancer v0.5.0 December 23 2018 "Sign of the Unicorn"
+
+> This release is named after "Sign of the Unicorn" (1975), the third book of Roger Zelazny masterpiece "The Chronicles of Amber".
 
 Changes affecting backward compatibility:
   - PCA has been split into 2
@@ -114,6 +116,8 @@ Future breaking changes.
 Arraymancer v0.4.0 May 05 2018 "The Name of the Wind"
 =====================================================
 
+> This release is named after "The Name of the Wind" (2007), the first book of Patrick Rothfuss masterpiece "The Kingkiller Chronicle".
+
 Changes:
 
 - Core:
@@ -159,6 +163,8 @@ Thanks:
 
 Arraymancer v0.3.0 Dec. 14 2017 "Wizard's First Rule"
 =====================================================
+
+> This release is named after "Wizard's First Rule" (1994), the first book of Terry Goodkind masterpiece "The Sword of Truth".
 
 I am very excited to announce the third release of Arraymancer which includes numerous improvements, features and (unfortunately!) breaking changes.
 Warning  ⚠: Deprecated ALL procs will be removed next release due to deprecated spam and to reduce maintenance burden.
@@ -226,8 +232,10 @@ Changes:
   - All `unsafe` proc are now default and deprecated.
 
 
-Arraymancer v0.2.0 Sept. 24, 2017 "The Color of Magic"
+Arraymancer v0.2.0 Sept. 24, 2017 "The Colour of Magic"
 ======================================================
+
+> This release is named after "The Colour of Magic" (1983), the first book of Terry Pratchett masterpiece "Discworld".
 
 I am very excited to announce the second release of Arraymancer which includes numerous improvements `blablabla` ...
 
@@ -266,6 +274,8 @@ Minor revisions v0.1.1 to v0.1.3
 
 Arraymancer v0.1.0 July 12, 2017 "Magician Apprentice"
 =======================================================
+
+> This release is named after "Magician: Apprentice" (1982), the first book of Raymond E. Feist masterpiece "The Riftwar Cycle".
 
 First public release.
 

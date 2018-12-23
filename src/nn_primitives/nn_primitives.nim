@@ -20,7 +20,7 @@ import  ./nnp_activation,
         ./nnp_maxpooling,
         ./nnp_softmax,
         ./nnp_numerical_gradient,
-        ./recurrent/nnp_gru,
+        ./nnp_gru,
         ./nnp_embedding.nim
 
 export  nnp_activation,

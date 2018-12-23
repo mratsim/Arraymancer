@@ -3,9 +3,9 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  ../../tensor/tensor,
-  ../private/p_activation, ../nnp_linear,
-  ../nnp_activation
+  ../tensor/tensor,
+  private/p_activation, ./nnp_linear,
+  nnp_activation
 
 # For compatibility with CuDNN and allow loading CPU/Cuda weights interchangeably,
 # we use the following equations,

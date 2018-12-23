@@ -196,7 +196,7 @@ Of them; she's murder'd of your galla?
     - [Reshaping and concatenation](#reshaping-and-concatenation)
     - [Broadcasting](#broadcasting)
     - [A simple two layers neural network](#a-simple-two-layers-neural-network)
-    - [A text generated with Arraymancer's recurrent neural network](#a-text-generated-with-arraymancers-recurrent-neural-network)
+    - [Teaser A text generated with Arraymancer's recurrent neural network](#teaser-a-text-generated-with-arraymancers-recurrent-neural-network)
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Full documentation](#full-documentation)
@@ -206,7 +206,7 @@ Of them; she's murder'd of your galla?
       - [Handwritten digit recognition with convolutions](#handwritten-digit-recognition-with-convolutions)
       - [Sequence classification with stacked Recurrent Neural Networks](#sequence-classification-with-stacked-recurrent-neural-networks)
     - [Tensors on CPU, on Cuda and OpenCL](#tensors-on-cpu-on-cuda-and-opencl)
-  - [What's new in Arraymancer v0.5.0](#whats-new-in-arraymancer-v050)
+  - [What's new in Arraymancer v0.5.0 - "Sign of the Unicorn" - December 2018](#whats-new-in-arraymancer-v050---sign-of-the-unicorn---december-2018)
   - [4 reasons why Arraymancer](#4-reasons-why-arraymancer)
     - [The Python community is struggling to bring Numpy up-to-speed](#the-python-community-is-struggling-to-bring-numpy-up-to-speed)
     - [A researcher workflow is a fight against inefficiencies](#a-researcher-workflow-is-a-fight-against-inefficiencies)
@@ -374,14 +374,14 @@ let exam = ctx.variable([
 # ...
 echo answer.unsqueeze(1)
 # Tensor[ex05_sequence_classification_GRU.SeqKind] of shape [8, 1] of type "SeqKind" on backend "Cpu"
-#         Increasing|
-#         Increasing|
-#         Increasing|
-#         NonMonotonic|
-#         NonMonotonic|
-#         Increasing| <----- Wrong!
-#         Decreasing|
-#         Decreasing| <----- Wrong!
+# 	  Increasing|
+# 	  Increasing|
+# 	  Increasing|
+# 	  NonMonotonic|
+# 	  NonMonotonic|
+# 	  Increasing| <----- Wrong!
+# 	  Decreasing|
+# 	  NonMonotonic|
 ```
 
 ### Tensors on CPU, on Cuda and OpenCL
@@ -414,7 +414,9 @@ Here is a comparative table of the core features.
 | Squeezing singleton dimension                     | [x]                         | [x]                        | []                         |
 | Slicing + squeezing                               | [x]                         | []                         | []                         |
 
-## What's new in Arraymancer v0.5.0 - "Sign of the Unicorn"
+## What's new in Arraymancer v0.5.0 - "Sign of the Unicorn" - December 2018
+
+> This release is named after "Sign of the Unicorn" (1975), the third book of Roger Zelazny masterpiece "The Chronicles of Amber".
 
 The full changelog is available in [changelog.md](./changelog.md).
 
@@ -430,9 +432,9 @@ Here are the highlights:
   - Machine learning
     - Kmeans clustering
   - Deep Learning
-    - GRU support including fused stacked GRU layers with sequence/timesteps
-    - Embedding layer multiple timesteps support. Indexing can be done with integers, byte, chars or enums.
-    - Sparse softmax cross-entropy: the target tensor can now be integers, byte, chars or enums.
+    - RNN: GRU support including fused stacked GRU layers with sequence/timesteps
+    - Embedding layer with multiple timesteps support. Indexing can be done with integers, byte, chars or enums.
+    - Sparse softmax cross-entropy: the target tensor subtype can now be integers, byte, chars or enums.
     - Adam optimiser (Adaptative Moment Estimation)
     - Xavier Glorot, Kaiming He and Yann Lecun weight initialisation schemes
   - N-D arrays / tensors

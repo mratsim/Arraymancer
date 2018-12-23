@@ -1,4 +1,4 @@
-Arraymancer v0.5.0 December 23 2018 "Sign of the Unicorn"
+# Arraymancer v0.5.0 Dec. 23 2018 "Sign of the Unicorn"
 
 > This release is named after "Sign of the Unicorn" (1975), the third book of Roger Zelazny masterpiece "The Chronicles of Amber".
 
@@ -52,10 +52,12 @@ Ecosystem:
   - Using Arraymancer + Plotly for NN training visualisation:
     https://github.com/Vindaar/NeuralNetworkLiveDemo
     ![](https://github.com/Vindaar/NeuralNetworkLiveDemo/raw/master/media/demo.gif)
-  - [Monocle](https://github.com/numforge/monocle), proof-of-concept data visualisation using [Vega](http://vega.github.io/). Hopefully allowing this kind of visualisation in the future:
-    ![](http://vega.github.io/images/vega-lite.png)
-    ![](http://vega.github.io/images/vg.png)
-    and compatibility with the Vega ecosystem, especially the Tableau-like [Voyager](https://github.com/vega/voyager)
+  - [Monocle](https://github.com/numforge/monocle), proof-of-concept data visualisation in Nim using [Vega](http://vega.github.io/). Hopefully allowing this kind of visualisation in the future:
+
+    ![](https://vega.github.io/images/vega-lite.png)
+    ![](https://vega.github.io/images/vg.png)
+
+    and compatibility with the Vega ecosystem, especially the Tableau-like [Voyager](https://github.com/vega/voyager).
   - [Agent Smith](https://github.com/numforge/agent-smith), reinforcement learning framework.
     Currently it wraps the `Arcade Learning Environment` for practicing reinforcement learning on Atari games.
     In the future it will wrap Starcraft 2 AI bindings

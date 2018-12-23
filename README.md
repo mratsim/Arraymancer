@@ -6,11 +6,11 @@ Arraymancer is a tensor (N-dimensional array) project in Nim. The main focus is 
 
 The library is inspired by Numpy and PyTorch and targets the following use-cases:
   - N-dimensional arrays (tensors) for numerical computing
-  - machine learning algorithms (~Scikit-learn, like least squares solvers, PCA and dimensionality reduction, classifiers, regressors and clustering algorithms, cross-validation). (Note that dataframes are not supported)
+  - machine learning algorithms (as in Scikit-learn: least squares solvers, PCA and dimensionality reduction, classifiers, regressors and clustering algorithms, cross-validation).
   - deep learning
 
 The ndarray component can be used without the machine learning and deep learning component.
-It can also use Cuda and OpenCL backend.
+It can also use the OpenMP, Cuda or OpenCL backends.
 
 Note: While Nim is compiled and does not offer an interactive REPL yet (like Jupyter), it allows much faster prototyping than C++ due to extremely fast compilation times. Arraymancer compiles in about 5 seconds on my dual-core MacBook.
 
@@ -162,7 +162,7 @@ for t in 0 ..< 500:
   optim.update()
 ```
 
-### A text generated with Arraymancer's recurrent neural network
+### Teaser A text generated with Arraymancer's recurrent neural network
 
 From [example 6](./examples/ex06_shakespeare_generator.nim).
 
@@ -184,112 +184,7 @@ ROMEO:
 Thou hast facted to keep thee, and am speak
 Of them; she's murder'd of your galla?
 
-ANTES:
-Nay, I hear i' the day, bie in half exorcheqous again.
-Cockin Tinved: I is wont? Who be youth friends
-In our beauty of one raised me in all me;
-This will recour castle appelied is:
-I thank you, lords.
-Who, I have not offer, the shipp'd, shalt it is Isabels
-We will be with my keepons of your witfers.
-I was as you have perfited to give car.
-
-SICINE:
-In a sisterexber his record to my turn
-Made you dishonour's, if they have so yean
-Reportistiful viel offs, which we will prayed
-By merry the nightly to find them:
-The fiery to: and she double last speak it,
-For I will resian, he, mark for the air:
-O did thy mustable lodge! Nen't, my mosts!
-I greet before,--hath age-tinent or breath?
- I would your firms it be new-was 'scape. Is he shall choice,
-Were our husband, in what here twenties and forly,
-Althess to bries are time and senses, and dead-hear themselves
-Having, and this brother is they had'd is; I have a captive:
-My grains! a scarl doing of true forth, some trutis
-As Paduition, by this till us, as you teever
-Whething those baintious plague honour of gentleman,
-Through God lies,
-conunsel, to dishanging can for that men will well were my rasped me
-As well'd as the way off than her wairs with Lancaster show.
-Ah, will you forgot, and good lies of woman
-With a
-feshie:
-Good my Lord.
-
-AUTOLYCUS:
-Whit!
-Grave ta'en my lord, I'ld their names. The are mored of sorrow hath those
-soon weep'st his eyes. My horrcowns, bone, I kindness:
-How idle were which mean nothing cannot weep
-To rescockingly that hasting the sorrow,
-A good to grow'd of our hate how--
-Hear thee your tempest provided: I never confirm,
-Let's a brackful wife calms; they are instyef,
-Shall make thee, but my love.
-
-LADY ANNE:
-Methinks to him:
-But O, have it become ingly stand; think,
-And told the sringer'd againny, Pito:
-Ay, sir; answer'd awe! methink-'Ge is good hour!
-I pray you casquen not hear my form.
-Your unmanding them friends and barth halber,
-More words should not; and to a daughter'd and poor strop'd
-By one as we prove a cursed would not now:
-For thus in a flate death the heaven'd:
-And lies before I hapk or were.
-
-Nurse:
-Fearlwellare, confiarly Marciusbson,
-Were I how stop poiring to no more,
-To worser body to me and die clots, and out
-Their correction defimbry's truth.
-
-BRUTUS:
-Prother to be deadly of gold to be yet,
-Witholesfair than your complished, thus
-wearing triumph that live thyse toes a noble queen:
-I will yet, let him friends to given: take all
-Clease them a slain: our hours and saw Richmes,
-'Foren thou straight whet it for your treis.
-First is, for you to cousosa thus I'll make weed.
-
-QUEEN:
-I thrive, and how all thy comes?
-
-PRINCE EDWARD:
-Why, the day of all spoil'd nor unsure?
-Come, but never my love is mine,
-To she he himself prevone one it eag.
-Holdis true, bid got I am will not to titteat?
-
-SICINIUS:
-Consign nows this,
-My turns and dead before they-that was me to thy deat?
-
-CORIOLANUS:
-Even earth,
-Your churchister of Romeo, and grace is honest
-and mine envyou.
-
-DUCHESS OF YORK:
-Stand doth ceasians of Edward is time
-Of those would hence I have stopp'd;
-That is this parlest for all time and that eyes
--adey is remain twine, that can yield
-Have I cursed and were they shouldst fire; I
-privile to thy fair Richard quietlious.
-
-LADY CAPULEL:
-No, but some bebarduched fight the so?
-If I may shake one will't not find him be souls
-They have you inkfender in death to give:
-Soft! hast here and sister of yourmer shuts
-Yet be it strike deabe; thy sures the while.
-
-WARWICK:
+# [...] See example 6 for full text generation samples
 ```
 
 ## Table of Contents
@@ -350,9 +245,9 @@ For now Arraymancer is mostly at the multidimensional array stage, in particular
 - No need to worry about "vectorized" operations.
 - Broadcasting support. Unlike Numpy it is explicit, you just need to use `.+` instead of `+`.
 - Plenty of reshaping operations: concat, reshape, split, chunk, permute, transpose.
-- Supports tensors of up to 7 dimensions for example a stack of 4 3D RGB minifilms of 10 seconds would be 6 dimensions:
+- Supports tensors of up to 6 dimensions. For example a stack of 4 3D RGB minifilms of 10 seconds would be 6 dimensions:
   `[4, 10, 3, 64, 1920, 1080]` for `[nb_movies, time, colors, depth, height, width]`
-- Can read and write .csv and Numpy (.npy) files. [HDF5 support](https://github.com/mratsim/Arraymancer/pull/257) coming soon.
+- Can read and write .csv, Numpy (.npy) and HDF5 files.
 - OpenCL and Cuda backed tensors (not as feature packed as CPU tensors at the moment).
 - Covariance matrices.
 - Eigenvalues and Eigenvectors decomposition.
@@ -519,7 +414,7 @@ Here is a comparative table of the core features.
 | Squeezing singleton dimension                     | [x]                         | [x]                        | []                         |
 | Slicing + squeezing                               | [x]                         | []                         | []                         |
 
-## What's new in Arraymancer v0.5.0
+## What's new in Arraymancer v0.5.0 - "Sign of the Unicorn"
 
 The full changelog is available in [changelog.md](./changelog.md).
 

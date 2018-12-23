@@ -48,6 +48,8 @@ Changes:
   - Autograd: remove pointers to avoid pointing to wrong memory when the garbage collector moves it under pressure. This unfortunately comes at the cost of more GC pressure, this will be addressed in the future.
   - Autograd: remove all methods. They caused issues with generic instantiation and object variants.
 
+Special thanks to [@metasyn](https://github.com/metasyn) (MNIST caching, IMDB dataset, Kmeans) and [@Vindaar](https://github.com/vindaar) (HDF5 support and the example of using Arraymancer + Plot.ly) for their large contributions on this release.
+
 Ecosystem:
   - Using Arraymancer + Plotly for NN training visualisation:
     https://github.com/Vindaar/NeuralNetworkLiveDemo
@@ -114,6 +116,14 @@ Future breaking changes.
     `forward x, y:` shortcut to classic Nim `proc forward[T](x, y: Variable[T]): Variable[T]`
 
 3. Once CuDNN GRU is implemented, the GRU layer might need some adjustments to give the same results on CPU and Nvidia's GPU and allow using GPU trained weights on CPU and vice-versa.
+
+Thanks:
+  - metasyn: Datasets and Kmeans clustering
+  - vindaar: HDF5 support and Plot.ly demo
+  - bluenote10: toSeq exports
+  - andreaferetti: Adding axis parameter to Mean layer autograd
+  - all the contributors of fixes in code and documentation
+  - the Nim community for the encouragements
 
 Arraymancer v0.4.0 May 05 2018 "The Name of the Wind"
 =====================================================

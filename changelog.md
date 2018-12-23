@@ -110,6 +110,7 @@ Future breaking changes.
     So unfortunately the syntax will go from the current
     `forward x, y:` shortcut to classic Nim `proc forward[T](x, y: Variable[T]): Variable[T]`
 
+3. Once CuDNN GRU is implemented, the GRU layer might need some adjustments to give the same results on CPU and Nvidia's GPU and allow using GPU trained weights on CPU and vice-versa.
 
 Arraymancer v0.4.0 May 05 2018 "The Name of the Wind"
 =====================================================

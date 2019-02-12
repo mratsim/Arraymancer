@@ -14,6 +14,7 @@
 
 import ../../src/arraymancer
 import unittest, sugar
+import complex except Complex64, Complex32
 
 import ../../src/tensor/private/p_init_cpu # needed for testing column major tensors
 
@@ -30,7 +31,12 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     let ab = [[ 58.0, 64],
               [139.0,154]].toTensor()
 
+    let a_c = a.astype(Complex[float64])
+    let b_c = b.astype(Complex[float64])
+    let ab_c = ab.astype(Complex[float64])
+
     check: a * b == ab
+    check: a_c * b_c == ab_c
 
     # example from http://www.intmath.com/matrices-determinants/matrix-multiplication-examples.php
     # (M x K) * (K x N) with M < N
@@ -44,6 +50,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
               [27, 7, 34,-19]].toTensor()
 
     check: u.astype(float32) * v.astype(float32) == uv.astype(float32)
+    check: u.astype(Complex[float32]) * v.astype(Complex[float32]) == uv.astype(Complex[float32])
 
     # from http://www.calcul.com/show/calculator/matrix-multiplication_;5;5;5;5?matrix1=[[%225%22,%226%22,%225%22,%228%22],[%228%22,%222%22,%228%22,%228%22],[%220%22,%225%22,%224%22,%220%22],[%224%22,%220%22,%225%22,%226%22],[%224%22,%225%22,%220%22,%223%22]]&matrix2=[[%225%22,%223%22,%226%22,%220%22],[%225%22,%222%22,%223%22,%223%22],[%228%22,%228%22,%222%22,%220%22],[%227%22,%227%22,%220%22,%220%22]]&operator=*
     # (M x K) * (K x N) with M > N and M > block-size (4x4)
@@ -64,6 +71,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
                 [ 66, 43,39,15]].toTensor()
 
     check: m1.astype(float) * m2.astype(float) == m1m2.astype(float)
+    check: m1.astype(Complex[float64]) * m2.astype(Complex[float64]) == m1m2.astype(Complex[float64])
 
     # from http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%222%22,%224%22,%223%22,%221%22,%223%22,%221%22,%223%22,%221%22],[%221%22,%222%22,%221%22,%221%22,%222%22,%220%22,%224%22,%223%22],[%222%22,%220%22,%220%22,%223%22,%220%22,%224%22,%224%22,%221%22],[%221%22,%221%22,%224%22,%220%22,%223%22,%221%22,%223%22,%220%22],[%223%22,%224%22,%221%22,%221%22,%224%22,%222%22,%223%22,%224%22],[%222%22,%224%22,%220%22,%222%22,%223%22,%223%22,%223%22,%224%22],[%223%22,%220%22,%220%22,%223%22,%221%22,%224%22,%223%22,%221%22],[%224%22,%223%22,%222%22,%224%22,%221%22,%220%22,%220%22,%220%22]]&matrix2=[[%222%22,%222%22,%220%22,%224%22,%220%22,%220%22,%224%22,%222%22],[%222%22,%220%22,%220%22,%221%22,%221%22,%221%22,%223%22,%221%22],[%220%22,%222%22,%222%22,%220%22,%222%22,%222%22,%223%22,%223%22],[%220%22,%220%22,%221%22,%220%22,%224%22,%222%22,%224%22,%221%22],[%220%22,%220%22,%221%22,%223%22,%224%22,%222%22,%224%22,%222%22],[%224%22,%223%22,%224%22,%221%22,%224%22,%224%22,%220%22,%223%22],[%223%22,%223%22,%220%22,%222%22,%221%22,%222%22,%223%22,%223%22],[%222%22,%221%22,%222%22,%221%22,%222%22,%224%22,%224%22,%221%22]]&operator=*
     # (N x N) * (N x N) with N multiple of block size
@@ -97,6 +105,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
                 [14,12, 9,22,27,17,51,23]].toTensor()
 
     check: n1.astype(float) * n2.astype(float) == n1n2.astype(float)
+    check: n1.astype(Complex[float64]) * n2.astype(Complex[float64]) == n1n2.astype(Complex[float64])
 
   when compileOption("boundChecks") and not defined(openmp):
     test "GEMM - Bounds checking":
@@ -130,6 +139,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     let expected = @[@[58.0,64],@[139.0,154]].toTensor()
 
     check: transpose(at) * b == expected
+    check: transpose(at.astype(Complex[float64])) * b.astype(Complex[float64]) == expected.astype(Complex[float64])
 
     let bt = @[@[7.0, 9, 11],@[8.0, 10, 12]].toTensor()
 
@@ -183,6 +193,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
     check:
       mean_absolute_error(expected, val) < 1e-9
+      abs(mean_absolute_error(expected.astype(Complex[float64]), val.astype(Complex[float64]))) < 1e-9
 
   test "Scalar/dot product":
     ## TODO: test with slices
@@ -207,6 +218,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
     let ufl_expected = @[2'f64, 6, -10].toTensor()
     check: ufl_expected / 2 == u_float
+    check: ufl_expected.astype(Complex[float64]) / 2 == u_float.astype(Complex[float64])
 
   test "Multiplication/division by scalar (inplace)":
     var u_int = @[1, 3, -5].toTensor()
@@ -219,6 +231,11 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     u_float *= 2.0'f64
     check: ufl_expected == u_float
 
+    var u_complex = @[1'f64, 3, -5].toTensor()
+    let ucl_expected = @[2'f64, 6, -10].toTensor()
+    u_complex *= 2.0'f64
+    check: ucl_expected == u_complex
+
     block:
       var u_int = @[1, 3, -6].toTensor()
       let u_expected = @[0, 1, -3].toTensor()
@@ -230,6 +247,11 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
       u_float /= 2.0'f64
       check: ufl_expected == u_float
 
+      var u_complex = @[1'f64, 3, -5].toTensor()
+      let ucl_expected = @[0.5'f64, 1.5, -2.5].toTensor()
+      u_complex /= 2.0'f64
+      check: ucl_expected == u_complex
+
   test "Tensor addition and substraction":
     let u_int = @[1, 3, -5].toTensor()
     let v_int = @[1, 1, 1].toTensor()
@@ -238,6 +260,8 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
     check: u_int + v_int == expected_add
     check: u_int - v_int == expected_sub
+    check: u_int.astype(Complex[float64]) + v_int.astype(Complex[float64]) == expected_add.astype(Complex[float64])
+    check: u_int.astype(Complex[float64]) - v_int.astype(Complex[float64]) == expected_sub.astype(Complex[float64])
 
   test "Tensor addition and substraction (inplace)":
     var u_int = @[1, 3, -5].toTensor()
@@ -251,6 +275,18 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
     u_int -= v_int
     u_int -= v_int
     check: u_int == expected_sub
+    block:
+      var u_complex = @[1, 3, -5].toTensor().astype(Complex[float64])
+      let v_complex = @[1, 1, 1].toTensor().astype(Complex[float64])
+      let expected_add = @[2, 4, -4].toTensor().astype(Complex[float64])
+      let expected_sub = @[0, 2, -6].toTensor().astype(Complex[float64])
+
+      u_complex += v_complex
+      check: u_complex == expected_add.astype(Complex[float64])
+
+      u_complex -= v_complex
+      u_complex -= v_complex
+      check: u_complex == expected_sub.astype(Complex[float64])
 
   test "Tensor negative":
     let u_int = @[-1, 0, 2].toTensor()
@@ -261,9 +297,13 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
   test "Addition-Substraction - slices":
     let a = @[@[1.0,2,3],@[4.0,5,6], @[7.0,8,9]].toTensor()
     let a_t = a.transpose()
+    let a_c = a.astype(Complex[float64])
+    let a_tc = a_t.astype(Complex[float64])
 
     check: a[0..1, 0..1] + a_t[0..1, 0..1] == [[2.0, 6], [6.0, 10]].toTensor()
     check: a[1..2, 1..2] - a_t[1..2, 1..2] == [[0.0, -2], [2.0, 0]].toTensor()
+    check: a_c[0..1, 0..1] + a_tc[0..1, 0..1] == [[2.0, 6], [6.0, 10]].toTensor().astype(Complex[float64])
+    check: a_c[1..2, 1..2] - a_tc[1..2, 1..2] == [[0.0, -2], [2.0, 0]].toTensor().astype(Complex[float64])
 
   when compileOption("boundChecks") and not defined(openmp):
     # OpenMP backend is crashing when exceptions are thrown due to GC alloc.

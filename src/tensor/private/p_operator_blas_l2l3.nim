@@ -20,6 +20,7 @@ import  ./p_checks,
         ../fallback/naive_l2_gemv,
         ../data_structure,
         nimblas
+from complex import Complex
 
 # #################################################
 # BLAS Level 2 (Matrix-Vector)
@@ -49,7 +50,7 @@ when defined(blis):
 
 # Note the fallback for non-real "naive_gemv_fallback" is called directly
 
-proc blasMV_y_eq_aAx_p_by*[T: SomeFloat](
+proc blasMV_y_eq_aAx_p_by*[T: SomeFloat|Complex[float32]|Complex[float64]](
   alpha: T, a, x: Tensor[T],
   beta: T, y: var Tensor[T]) =
   # Matrix-Vector: y = alpha A matvecmul x + beta y
@@ -70,11 +71,19 @@ proc blasMV_y_eq_aAx_p_by*[T: SomeFloat](
     lda =  if cont_A_is_rowMajor: N # leading dimension
             else: M
 
-  gemv( cont_A_order, noTranspose,
-        M, N,
-        alpha, cont_A.get_offset_ptr, lda,
-        x.get_offset_ptr, x.strides[0],
-        beta, y.get_offset_ptr, y.strides[0])
+  when type(alpha) is Complex:
+    gemv( cont_A_order, noTranspose,
+          M, N,
+          unsafeAddr(alpha), cont_A.get_offset_ptr, lda,
+          x.get_offset_ptr, x.strides[0],
+          unsafeAddr(beta), y.get_offset_ptr, y.strides[0])
+  else:
+    gemv( cont_A_order, noTranspose,
+          M, N,
+          alpha, cont_A.get_offset_ptr, lda,
+          x.get_offset_ptr, x.strides[0],
+          beta, y.get_offset_ptr, y.strides[0])
+
 
 
 # #################################################
@@ -118,7 +127,7 @@ proc fallbackMM_C_eq_aAB_p_bC*[T: SomeInteger](
                     c.data, c.offset,
                     c.strides[0], c.strides[1])
 
-proc blasMM_C_eq_aAB_p_bC*[T: SomeFloat](
+proc blasMM_C_eq_aAB_p_bC*[T: SomeFloat|Complex[float32]|Complex[float64]](
   alpha: T, a, b: Tensor[T],
   beta: T, c: var Tensor[T]) =
   # Matrix: C = alpha A matmul B + beta C
@@ -153,9 +162,17 @@ proc blasMM_C_eq_aAB_p_bC*[T: SomeFloat](
           else: M
 
   # General Matrix Multiply from nimblas.
-  gemm( order_C,
-        transpose_A, transpose_B,
-        M, N, K,
-        alpha, cont_A.get_offset_ptr, lda,
-        cont_B.get_offset_ptr, ldb,
-        beta, c.get_offset_ptr, ldc)
+  when type(alpha) is Complex:
+    gemm( order_C,
+          transpose_A, transpose_B,
+          M, N, K,
+          unsafeAddr(alpha), cont_A.get_offset_ptr, lda,
+          cont_B.get_offset_ptr, ldb,
+          unsafeAddr(beta), c.get_offset_ptr, ldc)
+  else:
+    gemm( order_C,
+          transpose_A, transpose_B,
+          M, N, K,
+          alpha, cont_A.get_offset_ptr, lda,
+          cont_B.get_offset_ptr, ldb,
+          beta, c.get_offset_ptr, ldc)

@@ -21,6 +21,7 @@ import  ../private/[functional, nested_containers, sequninit],
         sequtils,
         random,
         math
+include ./private/p_complex
 
 proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
@@ -108,7 +109,7 @@ proc toTensor*(s:string): auto {.noSideEffect.} =
   ## This proc handles string specifically as otherwise they are interpreted as a sequence of char
   toTensorCpu(s)
 
-proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect, inline.} =
+proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -119,7 +120,7 @@ proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect
   tensorCpu(shape, result)
   result.storage.Fdata = newSeq[T](result.size)
 
-proc zeros*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit,noSideEffect, inline.} =
+proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArray): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -130,7 +131,7 @@ proc zeros*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit,noSideEffec
   tensorCpu(shape, result)
   result.storage.Fdata = newSeq[T](result.size)
 
-proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, inline.} =
+proc zeros_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
   ## Input:
   ##      - Shape of the Tensor
@@ -139,7 +140,7 @@ proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, 
   ##      - A zero-ed Tensor of the same shape
   result = zeros[T](t.shape)
 
-proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit, inline, noSideEffect.} =
+proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -148,7 +149,7 @@ proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit, inline, noSi
   ##      - A one-ed Tensor of the same shape
   newTensorWith[T](shape, 1.T)
 
-proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit, inline, noSideEffect.} =
+proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArray): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -157,7 +158,7 @@ proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit, inline, noS
   ##      - A one-ed Tensor of the same shape
   newTensorWith[T](shape, 1.T)
 
-proc ones_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit, inline, noSideEffect.} =
+proc ones_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1 with the same shape as the input
   ## and filled with 1
   ## Input:

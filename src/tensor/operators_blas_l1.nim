@@ -16,6 +16,7 @@ import  ./private/p_checks,
         ./data_structure,
         ./accessors, ./higher_order_applymap,
         nimblas
+import complex except Complex32, Complex64
 
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)
@@ -25,6 +26,7 @@ import  ./private/p_checks,
 
 proc dot*[T: SomeFloat](a, b: Tensor[T]): T {.noSideEffect.} =
   ## Vector to Vector dot (scalar) product
+  # TODO: blas's complex vector dot only support dotu and dotc
   when compileOption("boundChecks"): check_dot_prod(a,b)
   return dot(a.shape[0], a.get_offset_ptr, a.strides[0], b.get_offset_ptr, b.strides[0])
 
@@ -39,37 +41,37 @@ proc dot*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
 # # Tensor-Tensor linear algebra
 # # shape checks are done in map2 proc
 
-proc `+`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
+proc `+`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Tensor addition
   map2_inline(a, b, x + y)
 
-proc `-`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
+proc `-`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Tensor substraction
   map2_inline(a, b, x - y)
 
 # #########################################################
 # # Tensor-Tensor in-place linear algebra
 
-proc `+=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
+proc `+=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor in-place addition
   a.apply2_inline(b, x + y)
 
-proc `-=`*[T: SomeNumber](a: var Tensor[T], b: Tensor[T]) =
+proc `-=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor in-place substraction
   a.apply2_inline(b, x - y)
 
 # #########################################################
 # # Tensor-scalar linear algebra
 
-proc `*`*[T: SomeNumber](a: T, t: Tensor[T]): Tensor[T] {.noInit.} =
+proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: T, t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Element-wise multiplication by a scalar
   t.map_inline(x * a)
 
-proc `*`*[T: SomeNumber](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
+proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
   ## Element-wise multiplication by a scalar
   a * t
 
-proc `/`*[T: SomeFloat](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
+proc `/`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
   ## Element-wise division by a float scalar
   t.map_inline(x / a)
 
@@ -80,11 +82,11 @@ proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
 # #########################################################
 # # Tensor-scalar in-place linear algebra
 
-proc `*=`*[T: SomeNumber](t: var Tensor[T], a: T) =
+proc `*=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], a: T) =
   ## Element-wise multiplication by a scalar (in-place)
   t.apply_inline(x * a)
 
-proc `/=`*[T: SomeFloat](t: var Tensor[T], a: T) =
+proc `/=`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: var Tensor[T], a: T) =
   ## Element-wise division by a scalar (in-place)
   t.apply_inline(x / a)
 

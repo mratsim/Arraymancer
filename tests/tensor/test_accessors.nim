@@ -14,6 +14,7 @@
 
 import ../../src/arraymancer
 import unittest, math
+import complex except Complex64, Complex32
 
 
 suite "Accessing and setting tensor values":
@@ -30,6 +31,9 @@ suite "Accessing and setting tensor values":
     b[2,3] = 111
     check: b[2,3] == 111
 
+    var c = zeros[Complex[float64]](@[3,4])
+    c[1,2] = complex64(12.0, 0.0)
+    check: c[1,2].re - 12.0 <= 1e9
 
   when compileOption("boundChecks") and not defined(openmp):
     test "Out of bounds checking":

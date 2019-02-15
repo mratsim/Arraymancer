@@ -447,3 +447,15 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
                 [14,12, 9,22,27,17,51,23]].toTensor()
 
     check: n1 * n2 == n1n2
+
+  test "complex matrix product":
+    # [[1.+1.j, 2.+2.j, 3.+3.j]    [[1.+1.j, 4.+4.j],     [[0. +28.j, 0. +64.j],
+    #  [4.+4.j, 5.+5.j, 6.+6.j]] *  [2.+2.j, 5.+5.j],  ==  [0. +64.j, 0.+154.j]
+    #                               [3.+3.j, 6.+6.j]]
+    let m1 = [[1,2,3],[4,5,6]].toTensor().astype(Complex[float64])
+    let m2 = m1 * complex64(0,1)
+    let m3 = m1+m2
+    let m4 = m3.transpose()
+    let m5 = m3 * m4
+    let m6 = [[28,64],[64,154]].toTensor().astype(Complex[float64])
+    check: m5 == m6 * complex64(0,1)

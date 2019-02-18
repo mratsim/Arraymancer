@@ -62,7 +62,9 @@ proc softmax_cross_entropy*[T](input, target: Tensor[T]): T =
 
   result = (sum_logsumexp - result) / T(batch_size)
 
-proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T =
+proc sparse_softmax_cross_entropy*[T; Idx: SomeNumber or byte or char or enum](
+        input: Tensor[T],
+        target: Tensor[Idx]): T =
   ## Softmax function + Cross-Entropy loss fused in one layer.
   ##
   ## Input:
@@ -100,9 +102,9 @@ proc sparse_softmax_cross_entropy*[T](input: Tensor[T], target: Tensor[int]): T 
     let lse = input[i,_].logsumexp
 
     when not declared(openmp):
-      result += lse - input[i, target[i]]
+      result += lse - input[i, int(target[i])]
     else:
-      let tmp = lse - input[i, target[i]]
+      let tmp = lse - input[i, int(target[i])]
       {.emit:"#pragma omp atomic".}
       {.emit:"`result` += `tmp`;".}
 
@@ -147,10 +149,10 @@ proc softmax_cross_entropy_backward*[T](
       grad * (stable_softmax(y, max, sumexp) - z) / T(batch_size)
 
 
-proc sparse_softmax_cross_entropy_backward*[T](
+proc sparse_softmax_cross_entropy_backward*[T; Idx: SomeNumber or byte or char or enum](
         gradient: Tensor[T] or T,
         cached_tensor: Tensor[T],
-        target: Tensor[int]
+        target: Tensor[Idx]
         ): Tensor[T] {.noInit.}=
   ## Derivatives of sparse_softmax_cross_entropy
   ## Input:
@@ -175,7 +177,7 @@ proc sparse_softmax_cross_entropy_backward*[T](
   #   - "grad * (softmax - 1)" for the truth labels
   #   - "grad * softmax for the wrong labels
   for i, truth_idx in enumerate(target):
-    result[i, truth_idx] = -1
+    result[i, int(truth_idx)] = -1
 
   for i in 0||(batch_size-1):
     let (max, sumexp) = cached_tensor[i, _].streaming_max_sumexp

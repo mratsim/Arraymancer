@@ -5,11 +5,11 @@
 import
   ../tensor/tensor, tables, math
 
-func flatten_idx(t: Tensor): Tensor {.inline.}=
+proc flatten_idx(t: Tensor): Tensor {.inline.}=
   t.reshape(t.size)
 
-func embedding*[T](
-      vocab_id: Tensor[int],
+proc embedding*[T; Idx: byte or char or SomeNumber](
+      vocab_id: Tensor[Idx],
       weight: Tensor[T]
     ): Tensor[T] =
   ## Returns embeddings from a `weight` embedding matrix and `vocab_id`
@@ -54,11 +54,11 @@ func embedding*[T](
   let shape = vocab_id.shape & weight.shape[1]
   result = weight.index_select(0, vocab_id.flatten_idx).reshape(shape)
 
-proc embedding_backward*[T](
+proc embedding_backward*[T; Idx: byte or char or SomeNumber](
       dWeight: var Tensor[T],
-      vocab_id: Tensor[int],
+      vocab_id: Tensor[Idx],
       dOutput: Tensor[T],
-      padding_idx: int,
+      padding_idx: Idx,
       scale_grad_by_freq: static[bool] = false # scale by the inverse document frequency, i.e. divide by count in minibatch
     ) =
 
@@ -74,13 +74,12 @@ proc embedding_backward*[T](
 
   # We assume that dWeight is zero initialized with shape
   # [vocabulary_size, embedding_size] for us.
-  let size = vocab_id.size()
   let flat_vocab_id = vocab_id.flatten_idx()
   let flat_dOutput = dOutput.flatten_idx()
 
   for i, word_idx in enumerate(flat_vocab_id):
     if word_idx != padding_idx:
-      var grad_curr_word = dWeight[word_idx, _]
+      var grad_curr_word = dWeight[int(word_idx), _]
       when scale_grad_by_freq:
         # For speed don't respect IEEE-754 and avoid
         # division in tight loop by multiplying by the inverse

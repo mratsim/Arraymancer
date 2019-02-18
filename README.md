@@ -2,9 +2,15 @@
 
 # Arraymancer - A n-dimensional tensor (ndarray) library.
 
-Arraymancer is a tensor (N-dimensional array) project in Nim. The main focus is providing a fast and ergonomic CPU, Cuda and OpenCL ndarray library on which to build a scientific computing and in particular a deep learning ecosystem.
+Arraymancer is a tensor (N-dimensional array) project in Nim. The main focus is providing a fast and ergonomic CPU, Cuda and OpenCL ndarray library on which to build a scientific computing ecosystem.
 
-The library is inspired by Numpy and PyTorch. The library provides ergonomics very similar to Numpy, Julia and Matlab but is fully parallel and significantly faster than those libraries. It is also faster than C-based Torch.
+The library is inspired by Numpy and PyTorch and targets the following use-cases:
+  - N-dimensional arrays (tensors) for numerical computing
+  - machine learning algorithms (as in Scikit-learn: least squares solvers, PCA and dimensionality reduction, classifiers, regressors and clustering algorithms, cross-validation).
+  - deep learning
+
+The ndarray component can be used without the machine learning and deep learning component.
+It can also use the OpenMP, Cuda or OpenCL backends.
 
 Note: While Nim is compiled and does not offer an interactive REPL yet (like Jupyter), it allows much faster prototyping than C++ due to extremely fast compilation times. Arraymancer compiles in about 5 seconds on my dual-core MacBook.
 
@@ -16,7 +22,7 @@ Here is a preview of Arraymancer syntax.
 
 ### Tensor creation and slicing
 ```Nim
-import math, arraymancer, sugar
+import math, arraymancer
 
 const
     x = @[1, 2, 3, 4, 5]
@@ -156,6 +162,31 @@ for t in 0 ..< 500:
   optim.update()
 ```
 
+### Teaser A text generated with Arraymancer's recurrent neural network
+
+From [example 6](./examples/ex06_shakespeare_generator.nim).
+
+Trained 45 min on my laptop CPU on Shakespeare and producing 4000 characters
+
+```
+Whter!
+Take's servant seal'd, making uponweed but rascally guess-boot,
+Bare them be that been all ingal to me;
+Your play to the see's wife the wrong-pars
+With child of queer wretchless dreadful cold
+Cursters will how your part? I prince!
+This is time not in a without a tands:
+You are but foul to this.
+I talk and fellows break my revenges, so, and of the hisod
+As you lords them or trues salt of the poort.
+
+ROMEO:
+Thou hast facted to keep thee, and am speak
+Of them; she's murder'd of your galla?
+
+# [...] See example 6 for full text generation samples
+```
+
 ## Table of Contents
 <!-- TOC -->
 
@@ -165,6 +196,7 @@ for t in 0 ..< 500:
     - [Reshaping and concatenation](#reshaping-and-concatenation)
     - [Broadcasting](#broadcasting)
     - [A simple two layers neural network](#a-simple-two-layers-neural-network)
+    - [Teaser A text generated with Arraymancer's recurrent neural network](#teaser-a-text-generated-with-arraymancers-recurrent-neural-network)
   - [Table of Contents](#table-of-contents)
   - [Installation](#installation)
   - [Full documentation](#full-documentation)
@@ -174,16 +206,13 @@ for t in 0 ..< 500:
       - [Handwritten digit recognition with convolutions](#handwritten-digit-recognition-with-convolutions)
       - [Sequence classification with stacked Recurrent Neural Networks](#sequence-classification-with-stacked-recurrent-neural-networks)
     - [Tensors on CPU, on Cuda and OpenCL](#tensors-on-cpu-on-cuda-and-opencl)
-    - [Speed](#speed)
-      - [Micro benchmark: Int64 matrix multiplication (October 2017)](#micro-benchmark-int64-matrix-multiplication-october-2017)
-      - [Logistic regression (October 2017)](#logistic-regression-october-2017)
-      - [DNN - 3 hidden layers (October 2017)](#dnn---3-hidden-layers-october-2017)
+  - [What's new in Arraymancer v0.5.0 - "Sign of the Unicorn" - December 2018](#whats-new-in-arraymancer-v050---sign-of-the-unicorn---december-2018)
   - [4 reasons why Arraymancer](#4-reasons-why-arraymancer)
     - [The Python community is struggling to bring Numpy up-to-speed](#the-python-community-is-struggling-to-bring-numpy-up-to-speed)
     - [A researcher workflow is a fight against inefficiencies](#a-researcher-workflow-is-a-fight-against-inefficiencies)
     - [Can be distributed almost dependency free](#can-be-distributed-almost-dependency-free)
     - [Bridging the gap between deep learning research and production](#bridging-the-gap-between-deep-learning-research-and-production)
-    - [So why Arraymancer ?](#so-why-arraymancer)
+    - [So why Arraymancer ?](#so-why-arraymancer-)
   - [Future ambitions](#future-ambitions)
 
 <!-- /TOC -->
@@ -216,9 +245,9 @@ For now Arraymancer is mostly at the multidimensional array stage, in particular
 - No need to worry about "vectorized" operations.
 - Broadcasting support. Unlike Numpy it is explicit, you just need to use `.+` instead of `+`.
 - Plenty of reshaping operations: concat, reshape, split, chunk, permute, transpose.
-- Supports tensors of up to 7 dimensions for example a stack of 4 3D RGB minifilms of 10 seconds would be 6 dimensions:
+- Supports tensors of up to 6 dimensions. For example a stack of 4 3D RGB minifilms of 10 seconds would be 6 dimensions:
   `[4, 10, 3, 64, 1920, 1080]` for `[nb_movies, time, colors, depth, height, width]`
-- Can read and write .csv and Numpy (.npy) files. [HDF5 support](https://github.com/mratsim/Arraymancer/pull/257) coming soon.
+- Can read and write .csv, Numpy (.npy) and HDF5 files.
 - OpenCL and Cuda backed tensors (not as feature packed as CPU tensors at the moment).
 - Covariance matrices.
 - Eigenvalues and Eigenvectors decomposition.
@@ -345,14 +374,14 @@ let exam = ctx.variable([
 # ...
 echo answer.unsqueeze(1)
 # Tensor[ex05_sequence_classification_GRU.SeqKind] of shape [8, 1] of type "SeqKind" on backend "Cpu"
-#         Increasing|
-#         Increasing|
-#         Increasing|
-#         NonMonotonic|
-#         NonMonotonic|
-#         Increasing| <----- Wrong!
-#         Decreasing|
-#         Decreasing| <----- Wrong!
+# 	  Increasing|
+# 	  Increasing|
+# 	  Increasing|
+# 	  NonMonotonic|
+# 	  NonMonotonic|
+# 	  Increasing| <----- Wrong!
+# 	  Decreasing|
+# 	  NonMonotonic|
 ```
 
 ### Tensors on CPU, on Cuda and OpenCL
@@ -385,85 +414,35 @@ Here is a comparative table of the core features.
 | Squeezing singleton dimension                     | [x]                         | [x]                        | []                         |
 | Slicing + squeezing                               | [x]                         | []                         | []                         |
 
-### Speed
+## What's new in Arraymancer v0.5.0 - "Sign of the Unicorn" - December 2018
 
-Arraymancer is fast, how it achieves its speed under the hood is detailed [here](https://mratsim.github.io/Arraymancer/uth.speed.html). Slowness is a bug.
+> This release is named after "Sign of the Unicorn" (1975), the third book of Roger Zelazny masterpiece "The Chronicles of Amber".
 
-#### Micro benchmark: Int64 matrix multiplication (October 2017)
+The full changelog is available in [changelog.md](./changelog.md).
 
-Integers seem to be the abandoned children of ndarrays and tensors libraries. Everyone is optimising the hell of floating points. Not so with Arraymancer:
-
-```
-Archlinux, E3-1230v5 (Skylake quad-core 3.4 GHz, turbo 3.8)
-Input 1500x1500 random large int64 matrix
-Arraymancer 0.2.90 (master branch 2017-10-10)
-```
-
-| Language | Speed | Memory |
-|---|---|---|
-| Nim 0.17.3 (devel) + OpenMP | **0.36s** | 55.5 MB |
-| Julia v0.6.0 | 3.11s | 207.6 MB |
-| Python 3.6.2 + Numpy 1.12 compiled from source | 8.03s | 58.9 MB |
-
-```
-MacOS + i5-5257U (Broadwell dual-core mobile 2.7GHz, turbo 3.1)
-Input 1500x1500 random large int64 matrix
-Arraymancer 0.2.90 (master branch 2017-10-31)
-
-no OpenMP compilation: nim c -d:native -d:release --out:build/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
-with OpenMP: nim c -d:openmp --cc:gcc --gcc.exe:"/usr/local/bin/gcc-6" --gcc.linkerexe:"/usr/local/bin/gcc-6"  -d:native -d:release --out:build/integer_matmul --nimcache:./nimcache benchmarks/integer_matmul.nim
-```
-
-| Language | Speed | Memory |
-|---|---|---|
-| Nim 0.18.0 (devel) - GCC 6 + OpenMP | **0.95s** | 71.9 MB |
-| Nim 0.18.0 (devel) - Apple Clang 9 - no OpenMP | **1.73s** | 71.7 MB |
-| Julia v0.6.0 | 4.49s | 185.2 MB |
-| Python 3.5.2 + Numpy 1.12 | 9.49s | 55.8 MB |
-
-Benchmark setup is in the `./benchmarks` folder and similar to (stolen from) [Kostya's](https://github.com/kostya/benchmarks#matmul). Note: Arraymancer float matmul is as fast as `Julia Native Thread`.
-
-#### Logistic regression (October 2017)
-On the [demo benchmark](https://github.com/edubart/arraymancer-demos), Arraymancer is faster than Torch in v0.2.90.
-
-CPU
-
-| Framework | Backend | Forward+Backward Pass Time  |
-|---|---|---|
-| Arraymancer v0.2.90| OpenMP + MKL | **0.458ms**  |
-| Torch7 | MKL | 0.686ms  |
-| Numpy | MKL | 0.723ms  |
-
-GPU
-
-| Framework | Backend | Forward+Backward Pass Time  |
-|---|---|---|
-| Arraymancer v0.2.90| Cuda | WIP  |
-| Torch7 | Cuda | 0.286ms  |
-
-#### DNN - 3 hidden layers (October 2017)
-
-CPU
-
-| Framework | Backend | Forward+Backward Pass Time  |
-|---|---|---|
-| Arraymancer v0.2.90| OpenMP + MKL | **2.907ms**  |
-| PyTorch | MKL | 6.797ms  |
-
-GPU
-
-| Framework | Backend | Forward+Backward Pass Time  |
-|---|---|---|
-| Arraymancer v0.2.90| Cuda | WIP |
-| PyTorch | Cuda | 4.765ms  |
-
-
-```
-Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz, gcc 7.2.0, MKL 2017.17.0.4.4, OpenBLAS 0.2.20, Cuda 8.0.61, Geforce GTX 1080 Ti, Nim 0.18.0
-```
-
-In the future, Arraymancer will leverage Nim compiler to automatically fuse operations
-like `alpha A*B + beta C` or a combination of element-wise operations. This is already done to fuse `toTensor` and `reshape`.
+Here are the highlights:
+  - Backward incompatible: PCA now returns a tuple of the projected tensor and the principal components. An overloaded PCA can be used with the principal axes supplied by the user.
+  - Datasets:
+    - MNIST is now autodownloaded and cached
+    - Added IMDB Movie Reviews dataset
+  - IO:
+    - Numpy file format support
+    - Image reading and writing support (jpg, bmp, png, tga)
+    - HDF5 reading and writing
+  - Machine learning
+    - Kmeans clustering
+  - Deep Learning
+    - RNN: GRU support including fused stacked GRU layers with sequence/timesteps
+    - Embedding layer with multiple timesteps support. Indexing can be done with integers, byte, chars or enums.
+    - Sparse softmax cross-entropy: the target tensor subtype can now be integers, byte, chars or enums.
+    - Adam optimiser (Adaptative Moment Estimation)
+    - Xavier Glorot, Kaiming He and Yann Lecun weight initialisation schemes
+  - N-D arrays / tensors
+    - Splitting and chunking support
+    - Fancy indexing via `index_select`
+  - End-to-end examples:
+    - Sequence/time-series classification using RNN
+    - Text generation on Shakespeare and Jane Austen's Pride and Prejudice. This can be applied to any text-based dataset (including blog posts, Latex papers and code)
 
 ## 4 reasons why Arraymancer
 

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, future, sequtils
+import unittest, sugar, sequtils
 
 suite "CUDA: Shapeshifting":
   ## Note: by default (momentarily), CudaTensors are column-major

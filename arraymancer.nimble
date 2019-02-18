@@ -1,5 +1,5 @@
 ### Package
-version       = "0.4.0"
+version       = "0.5.0"
 author        = "Mamy André-Ratsimbazafy"
 description   = "A n-dimensional tensor (ndarray) library"
 license       = "Apache License 2.0"
@@ -12,7 +12,8 @@ requires "nim >= 0.19.0",
   "nimcl >= 0.1.3",
   "clblast",
   "stb_image",
-  "zip"
+  "zip",
+  "untar"
 
 ## Install files
 srcDir = "src"
@@ -221,10 +222,6 @@ task gen_doc, "Generate Arraymancer documentation":
     let modName = filePath[18..^5]
     exec r"nim doc -o:docs/build/nn_optimizers." & modName & ".html " & filePath
 
-  for filePath in listFiles("src/nn/shapeshifting/"):
-    let modName = filePath[21..^5]
-    exec r"nim doc -o:docs/build/nn_optimizers." & modName & ".html " & filePath
-
   for filePath in listFiles("src/nn_dsl/"):
     let modName = filePath[11..^5]
     exec r"nim doc -o:docs/build/nn_dsl." & modName & ".html " & filePath
@@ -236,6 +233,10 @@ task gen_doc, "Generate Arraymancer documentation":
   for filePath in listFiles("src/stats/"):
     let modName = filePath[10..^5]
     exec r"nim doc -o:docs/build/stats." & modName & ".html " & filePath
+
+  for filePath in listFiles("src/ml/clustering/"):
+    let modName = filePath[18..^5]
+    exec r"nim doc -o:docs/build/ml." & modName & ".html " & filePath
 
   for filePath in listFiles("src/ml/dimensionality_reduction/"):
     let modName = filePath[32..^5]

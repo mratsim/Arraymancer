@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{.push warning[Spacing]: off.}
 import ../src/arraymancer,
         ./tensor/test_init,
         ./tensor/test_operators_comparison,
@@ -31,13 +32,16 @@ import ../src/arraymancer,
         ./io/test_csv,
         ./io/test_numpy,
         ./datasets/test_mnist,
+        ./datasets/test_imdb,
         ./nn_primitives/test_nnp_numerical_gradient,
         ./nn_primitives/test_nnp_convolution,
         ./nn_primitives/test_nnp_loss,
         ./nn_primitives/test_nnp_maxpool,
         ./nn_primitives/test_nnp_gru,
         ./nn_primitives/test_nnp_embedding,
+        ./autograd/test_gate_basic,
         ./autograd/test_gate_blas,
+        ./autograd/test_gate_hadamard,
         ./autograd/test_gate_shapeshifting,
         ./ml/test_metrics,
         ./test_bugtracker
@@ -48,4 +52,6 @@ when not defined(no_lapack):
         ./ml/test_clustering
 
 import  ./stability_tests/test_stability_openmp,
-        ./end_to_end/examples
+        # /end_to_end/examples_compile
+        ./end_to_end/examples_run
+{.pop.}

@@ -14,7 +14,7 @@
 
 # Please compile with -d:cuda switch
 import ../../src/arraymancer
-import unittest, future
+import unittest, sugar
 
 suite "CUDNN: Convolution 2D":
   test "Conv2d Forward":

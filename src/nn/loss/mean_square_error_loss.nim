@@ -12,26 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../../tensor/tensor,
+import  ../../tensor/tensor,
         ../../ml/ml,
-        ../../autograd/autograd,
-        ./loss
+        ../../autograd/autograd
 
-type MSELoss*{.final.}[TT] = ref object of Loss[TT]
+type MSELoss*{.final.}[TT] = ref object of Gate[TT]
+  target: TT
   cache: Variable[TT]
-  # nb_grads, from Gate
-  # target, from Loss
 
-proc forward[TT](self: MSELoss[TT], input: Variable[TT], target: TT): Variable[TT] {.inline.}=
-  # We expect input with shape [batch_size, features]
-  new result
-  result.context = input.context
-
-  # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
-  result.value = [mean_squared_error(input.value, target)].toTensor
-
-method backward*[TT](self: MSELoss[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc mse_backward_ag[TT](self: MSELoss[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
   # Gradient is a tensor of shape 1
   assert gradient.shape == [1]
@@ -40,9 +29,31 @@ method backward*[TT](self: MSELoss[TT], payload: Payload[TT]): SmallDiffs[TT] {.
   let norm = grad * 2'f32 / gradient.size.float32 # TODO divide by total number of elements or by batch size? https://github.com/pytorch/pytorch/issues/3322
                                                   # See also Stanford course: http://theory.stanford.edu/~tim/s15/l/l15.pdf
 
-  result = newSeqUninit[TT](1)
+  result = newDiffs[TT](1)
   result[0] = map2_inline(self.cache.value, self.target):
     norm * (x - y)
+
+proc mse_cache[TT](result: Variable[TT], input: Variable[TT], target: TT) =
+  ## We expect input with shape [batch_size, features]
+
+  # Gate
+  var gate: MSEloss[TT]
+  new gate
+  gate.cache = input
+  gate.target = target
+
+  # Result setup
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+
+  # Add to graph
+  register_node(
+    "Mean Squared Error",
+    gate,
+    mse_backward_ag[TT],
+    result,
+    input
+  )
 
 proc mse_loss*[TT](input: Variable[TT], target: TT): Variable[TT] =
   ## Mean square error loss function.
@@ -50,28 +61,12 @@ proc mse_loss*[TT](input: Variable[TT], target: TT): Variable[TT] =
   ##   - An input variable of predicted values of shape [batch_size, features]
   ##   - The ground truth of the same shape
 
-  # Gate
-  var gate: MSEloss[TT]
-  new gate
-
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](1)
-  node.parents[0] = input.weakRef
-
-  input.context.push(node)
-
   # Resulting var
-  result = gate.forward(input, target)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  new result
+  result.context = input.context
+  # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
+  result.value = [mean_squared_error(input.value, target)].toTensor
 
   # Caching for backprop
   if input.is_grad_needed:
-    result.grad = zeros_like result.value
-    result.requires_grad = true
-
-    gate.cache = input
-    gate.target = target
+    result.mse_cache(input, target)

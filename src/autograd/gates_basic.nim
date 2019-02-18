@@ -15,90 +15,83 @@
 # By convention a is the LHS (left-hand side)
 # b is the rhs (right-hand side)
 
-import  ../private/sequninit,
-        ../tensor/tensor,
-        ./ag_data_structure
+import  ../tensor/tensor,
+        ./autograd_common
 
 type AddGate* {.final.} [TT] = ref object of Gate[TT]
 
-proc forward[TT](self: AddGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-
-  result.context = a.context
-  result.value = a.value + b.value
-
-method backward*[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc add_backward_ag[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
   result = newSeq[TT](2)
   result[0] = gradient
   result[1] = gradient
 
-proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
-  when compileOption("boundChecks"):
-    check_ctx(a, b)
-
+proc add_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
   # Gate
   var gate: AddGate[TT]
   new gate
 
-  # Node
-  var node: Node[TT]
-  new node
+  # Result setup
+  result.grad = zeros_like result.value
+  result.requires_grad = true
 
-  node.gate = gate
-  node.parents = newSeq[VariablePtr[TT]](2)
-  node.parents[0] = a.weakRef
-  node.parents[1] = b.weakRef
+  # Add to graph
+  register_node(
+    "Add",
+    gate,
+    add_backward_ag[TT],
+    result,
+    a, b
+  )
 
-  a.context.push(node)
+proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
+  when compileOption("boundChecks"):
+    check_ctx(a, b)
 
   # Resulting var
-  result = gate.forward(a, b)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  new result
+  result.context = a.context
+  result.value = a.value + b.value
 
   # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:
-    result.grad = zeros_like result.value
-    result.requires_grad = true
+    result.add_cache(a, b)
 
 type SubGate* {.final.} [TT] = ref object of Gate[TT]
 
-proc forward[TT](self: SubGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-
-  result.context = a.context
-  result.value = a.value - b.value
-
-method backward*[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc sub_backward_ag[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
-  result = newSeqUninit[TT](2)
+  result = newSeq[TT](2)
   result[0] = gradient
   result[1] = -gradient
+
+proc sub_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
+  # Gate
+  var gate: AddGate[TT]
+  new gate
+
+  # Result setup
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+
+  # Caching for backprop
+  register_node(
+    "Sub",
+    gate,
+    sub_backward_ag[TT],
+    result,
+    a, b
+  )
 
 proc `-`*[TT](a, b: Variable[TT]): Variable[TT] =
   when compileOption("boundChecks"):
     check_ctx(a, b)
 
-  # Gate
-  var gate: SubGate[TT]
-  new gate
-
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](2)
-  node.parents[0] = a.weakRef
-  node.parents[1] = b.weakRef
-
-  a.context.push(node)
-
   # Resulting var
-  result = gate.forward(a, b)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  new result
+  result.context = a.context
+  result.value = a.value - b.value
 
   # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:
-    result.grad = zeros_like result.value
-    result.requires_grad = true
+    result.sub_cache(a, b)

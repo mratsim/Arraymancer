@@ -12,50 +12,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../../tensor/tensor,
+import  ../../tensor/tensor,
         ../../nn_primitives/nn_primitives,
         ../../autograd/autograd
 
 type ReluActivation* {.final.} [TT] = ref object of Gate[TT]
   cache: TT
 
-proc forward[TT](self: ReluActivation[TT], a: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-
-  result.context = a.context
-  result.value = relu a.value
-
-method backward*[TT](self: ReluActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc relu_backward_ag[TT](self: ReluActivation[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
-  result = newSeqUninit[TT](1)
+  result = newDiffs[TT](1)
   result[0] = gradient.relu_backward(self.cache)
+
+proc relu_cache[TT](result: Variable[TT], a: Variable[TT]) =
+  # Gate
+  var gate: ReluActivation[TT]
+  new gate
+  gate.cache = result.value
+
+  # Result setup
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
+  # Add to graph
+  register_node(
+    "Relu",
+    gate,
+    relu_backward_ag[TT],
+    result,
+    a
+  )
 
 proc relu*[TT](a: Variable[TT]): Variable[TT] =
   ## Input:
   ##   - A variable
 
-  # Gate
-  var gate: ReluActivation[TT]
-  new gate
-
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](1)
-  node.parents[0] = a.weakRef
-
-  a.context.push(node)
-
   # Resulting var
-  result = gate.forward(a)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  new result
+  result.context = a.context
+  result.value = relu a.value
 
   # Caching for backprop
   if a.is_grad_needed:
-    result.grad = zeros_like(result.value)
-    result.requires_grad = true
+    result.relu_cache(a)
 
-    gate.cache = result.value
+
+
+

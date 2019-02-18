@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/sequninit,
+import  typetraits,
         ../tensor/tensor,
-        ./ag_data_structure
+        ./autograd_common
 
 template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
   ## Slice the tensor contained by the dynamic graph Variable
@@ -40,10 +40,12 @@ template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
   result.requires_grad = z.requires_grad
   when S is AnyTensor:
     result.value = z.value[args]
-    result.grad = z.grad[args]
+    if result.requires_grad:
+      result.grad = z.grad[args]
   else: # Not sure how to backprop that
     result.value = [z.value[args]].toTensor
-    result.grad = [z.grad[args]].toTensor
+    if result.requires_grad:
+      result.grad = [z.grad[args]].toTensor
 
   result
 
@@ -54,41 +56,39 @@ template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
 type ReshapeGate*{.final.}[TT] = ref object of Gate[TT]
   cached_input_shape: MetadataArray
 
-proc forward_reshape[TT](self: ReshapeGate[TT], a: Variable[TT], shape: MetadataArray): Variable[TT] {.inline.}=
-  new result
-
-  result.context = a.context
-  result.value = a.value.reshape(shape)
-
-method backward*[TT](self: ReshapeGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc reshape_backward_ag[TT](self: ReshapeGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
-  result = newSeqUninit[TT](1)
+  result = newDiffs[TT](1)
   result[0] = gradient.reshape(self.cached_input_shape)
 
-proc reshapeImpl[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
+proc reshape_cache[TT](result: Variable[TT], a: Variable[TT]) =
   # Gate
   var gate: ReshapeGate[TT]
   new gate
+  gate.cached_input_shape = a.value.shape
 
-  # Node
-  var node: Node[TT]
-  new node
+  # Result setup
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
 
-  node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](1)
-  node.parents[0] = a.weakRef
+  # Add to graph
+  register_node(
+    "Reshape",
+    gate,
+    reshape_backward_ag[TT],
+    result,
+    a
+  )
 
-  a.context.push(node)
-
+proc reshapeImpl[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
   # Resulting var
-  result = gate.forward_reshape(a, shape)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  new result
+  result.context = a.context
+  result.value = a.value.reshape(shape)
 
   # Caching for backprop
   if a.is_grad_needed:
-    result.grad = zeros_like(result.value)
-    result.requires_grad = true
-    gate.cached_input_shape = a.value.shape
+    result.reshape_cache(a)
 
 proc reshape*[TT](a: Variable[TT], shape: varargs[int]): Variable[TT] =
   ## Input:
@@ -107,45 +107,47 @@ proc flatten*[TT](a: Variable[TT]): Variable[TT] =
   ##   - A variable
   reshapeImpl(a, [a.value.shape[0], a.value.size div a.value.shape[0]].toMetadataArray)
 
-# #############################################
+# ############################################################
+#
+#                   Squeeze / Unsqueeze
+#
+# ############################################################
 
 template squeezeUnsqueeze(GateName, forward_proc, backward_proc: untyped): untyped =
 
   type GateName{.final.}[TT] = ref object of Gate[TT]
     axis: int
 
-  proc `forward _ forward_proc`[TT](self: GateName[TT], x: Variable[TT]): Variable[TT] {.inline.}=
-    new result
-    result.context = x.context
-    result.value = forward_proc(x.value, self.axis)
-
-  method backward[TT](self: GateName[TT], payload: Payload[TT]): SmallDiffs[TT] =
-    result = newSeqUninit[TT](1)
+  proc `forward_proc _ backward _ ag`[TT](self: GateName[TT], payload: Payload[TT]): SmallDiffs[TT] =
+    result = newDiffs[TT](1)
     result[0] = payload.variable.grad.backward_proc(self.axis)
 
-  proc forward_proc*[TT](v: Variable[TT], axis: Natural): Variable[TT] =
+  proc `forward_proc _ cache`[TT](result: Variable[TT], x: Variable[TT], axis: Natural) =
+    result.requires_grad = true
+    result.grad = zeros_like result.value
+
     # Gate
     var gate: GateName[TT]
     new gate
     gate.axis = axis
 
-    # Node
-    var node: Node[TT]
-    new node
+    register_node(
+      GateName.name,
+      gate,
+      `forward_proc _ backward _ ag`[TT],
+      result,
+      x
+    )
 
-    node.gate = gate
-    node.parents = newSeqUninit[VariablePtr[TT]](1)
-    node.parents[0] = v.weakRef
-    v.context.push node
-
+  proc forward_proc*[TT](v: Variable[TT], axis: Natural): Variable[TT] =
     # Resulting var
-    result = gate.`forward _ forward_proc`(v)
-    node.payload = Payload[TT](kind: pkVar, variable: result)
+    new result
+    result.context = v.context
+    result.value = forward_proc(v.value, axis)
 
     # Caching for backprop
     if v.requires_grad:
-      result.requires_grad = true
-      result.grad = zeros_like result.value
+      result.`forward_proc _ cache`(v, axis)
 
 squeezeUnsqueeze(SqueezeGate, squeeze, unsqueeze)
 squeezeUnsqueeze(UnsqueezeGate, unsqueeze, squeeze)

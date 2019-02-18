@@ -12,50 +12,46 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../../autograd/autograd,
+import  ../../autograd/autograd,
         ../../tensor/tensor,
         ../../nn_primitives/nn_primitives
 
 type TanhActivation* {.final.} [TT] = ref object of Gate[TT]
   cache: TT
 
-proc forward[TT](self: TanhActivation[TT], a: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-
-  result.context = a.context
-  result.value = tanh a.value
-
-method backward*[TT](self: TanhActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc tanh_backward_ag[TT](self: TanhActivation[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
-  result = newSequninit[TT](1)
+  result = newDiffs[TT](1)
   result[0] = gradient.tanh_backward(self.cache)
+
+proc tanh_cache[TT](result: Variable[TT], a: Variable[TT]) =
+  # Gate
+  var gate: TanhActivation[TT]
+  new gate
+  gate.cache = result.value
+
+  # Result setup
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
+  # Add to graph
+  register_node(
+    "Tanh",
+    gate,
+    tanh_backward_ag[TT],
+    result,
+    a
+  )
 
 proc tanh*[TT](a: Variable[TT]): Variable[TT] =
   ## Input:
   ##   - A variable
 
-  # Gate
-  var gate: TanhActivation[TT]
-  new gate
-
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](1)
-  node.parents[0] = a.weakRef
-
-  a.context.push(node)
-
   # Resulting var
-  result = gate.forward(a)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  new result
+  result.context = a.context
+  result.value = tanh a.value
 
   # Caching for backprop
   if a.is_grad_needed:
-    result.grad = zeros_like(result.value)
-    result.requires_grad = true
-
-    gate.cache = result.value
+    result.tanh_cache(a)

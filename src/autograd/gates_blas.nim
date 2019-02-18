@@ -12,53 +12,47 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/sequninit,
-        ../tensor/tensor,
-        ./ag_data_structure
+import  ../tensor/tensor,
+        ./autograd_common
 
 type MatMulGate* {.final.} [TT] = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
   a: Variable[TT]
   b: Variable[TT]
 
-proc forward[TT](self: MatMulGate[TT], a, b: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-
-  result.context = a.context
-  result.value = a.value * b.value
-
-method backward*[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc matmul_backward_ag[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
-  result = newSeqUninit[TT](2)
+  result = newDiffs[TT](2)
   result[0] = gradient * self.b.value.transpose
   result[1] = self.a.value.transpose * gradient
+
+proc matmul_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
+  # Gate
+  var gate: MatMulGate[TT]
+  new gate
+  gate.a = a
+  gate.b = b
+
+  # Result setup
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+
+  # Add to graph
+  register_node(
+    "MatMul",
+    gate,
+    matmul_backward_ag[TT],
+    result,
+    a, b
+  )
 
 proc `*`*[TT](a, b: Variable[TT]): Variable[TT] =
   when compileOption("boundChecks"):
     check_ctx(a, b)
 
-  # Gate
-  var gate: MatMulGate[TT]
-  new gate
-
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](2)
-  node.parents[0] = a.weakRef
-  node.parents[1] = b.weakRef
-
-  a.context.push(node)
-
-  # Resulting var
-  result = gate.forward(a, b)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  new result
+  result.context = a.context
+  result.value = a.value * b.value
 
   if a.is_grad_needed or b.is_grad_needed:
-    result.grad = zeros_like result.value
-    result.requires_grad = true
-
-    gate.a = a
-    gate.b = b
+    result.matmul_cache(a, b)

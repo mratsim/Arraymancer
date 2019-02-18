@@ -1,4 +1,4 @@
-# Copyright 2017 the Arraymancer contributors
+# Copyright 2018 the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../tensor/tensor,
-        ../../autograd/autograd,
-        typetraits
+import os
 
+proc get_cache_home(): string =
+    result = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache").string
 
-type Loss* [TT] = ref object of Gate[TT]
-  target*: TT
+proc get_cache_dir*(): string =
+    result = get_cache_home() / "arraymancer"
 
-type SparseLoss* [TT] = ref object of Gate[TT]
-  target*: Tensor[int]
+proc create_cache_dirs_if_necessary*() =
+    discard existsOrCreateDir(get_cache_home())
+    discard existsOrCreateDir(get_cache_dir())

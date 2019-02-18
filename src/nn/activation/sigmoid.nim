@@ -12,50 +12,48 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../../autograd/autograd,
+import  ../../autograd/autograd,
         ../../tensor/tensor,
         ../../nn_primitives/nn_primitives
 
 type SigmoidActivation* {.final.} [TT] = ref object of Gate[TT]
   cache: TT
 
-proc forward[TT](self: SigmoidActivation[TT], a: Variable[TT]): Variable[TT] {.inline.}=
-  new result
-
-  result.context = a.context
-  result.value = sigmoid a.value
-
-method backward*[TT](self: SigmoidActivation[TT], payload: Payload[TT]): SmallDiffs[TT] {.noInit, inline.}=
+proc sigmoid_backward_ag[TT](self: SigmoidActivation[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
-  result = newSeqUninit[TT](1)
+  result = newDiffs[TT](1)
   result[0] = gradient.sigmoid_backward(self.cache)
+
+proc sigmoid_cache[TT](result: Variable[TT], a: Variable[TT]) =
+  # Gate
+  var gate: SigmoidActivation[TT]
+  new gate
+  gate.cache = result.value
+
+  # Result setup
+  result.grad = zeros_like(result.value)
+  result.requires_grad = true
+
+  # Add to graph
+  register_node(
+    "Sigmoid",
+    gate,
+    sigmoid_backward_ag[TT],
+    result,
+    a
+  )
 
 proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
   ## Input:
   ##   - A variable
 
-  # Gate
-  var gate: SigmoidActivation[TT]
-  new gate
-
-  # Node
-  var node: Node[TT]
-  new node
-
-  node.gate = gate
-  node.parents = newSeqUninit[VariablePtr[TT]](1)
-  node.parents[0] = a.weakRef
-
-  a.context.push(node)
-
   # Resulting var
-  result = gate.forward(a)
-  node.payload = Payload[TT](kind: pkVar, variable: result)
+  new result
+  result.context = a.context
+  result.value = sigmoid a.value
 
   # Caching for backprop
   if a.is_grad_needed:
-    result.grad = zeros_like(result.value)
-    result.requires_grad = true
+    result.sigmoid_cache(a)
 
-    gate.cache = result.value
+

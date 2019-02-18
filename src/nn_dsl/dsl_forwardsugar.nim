@@ -7,9 +7,7 @@ import
   ./dsl_types
 
 proc shortcutConv2D(self: Neuromancer, field_name: NimNode, topo: LayerTopology) =
-
   # TODO: Add padding and strides
-
   let shortcut = quote do:
     template `field_name`(x: Variable): Variable =
       x.conv2d(self.`field_name`.weight, self.`field_name`.bias)
@@ -17,7 +15,6 @@ proc shortcutConv2D(self: Neuromancer, field_name: NimNode, topo: LayerTopology)
   self.forward_templates.add shortcut
 
 proc shortcutMaxPool2D(self: Neuromancer, field_name: NimNode, topo: LayerTopology) =
-
   let
     topo = self.topoTable.getOrDefault(field_name)
     kernel = topo.m2d_kernel
@@ -31,7 +28,6 @@ proc shortcutMaxPool2D(self: Neuromancer, field_name: NimNode, topo: LayerTopolo
   self.forward_templates.add shortcut
 
 proc shortcutLinear(self: Neuromancer, field_name: NimNode, topo: LayerTopology) =
-
   let shortcut = quote do:
     template `field_name`(x: Variable): Variable =
       x.linear(self.`field_name`.weight, self.`field_name`.bias)
@@ -39,7 +35,6 @@ proc shortcutLinear(self: Neuromancer, field_name: NimNode, topo: LayerTopology)
   self.forward_templates.add shortcut
 
 proc shortcutFlatten(self: Neuromancer, field_name: NimNode, topo: LayerTopology) =
-
   let shortcut = quote do:
     template `field_name`(x: Variable): Variable =
       x.flatten
@@ -47,15 +42,10 @@ proc shortcutFlatten(self: Neuromancer, field_name: NimNode, topo: LayerTopology
   self.forward_templates.add shortcut
 
 proc shortcutGRU(self: Neuromancer, field_name: NimNode, topo: LayerTopology) =
-
-  let
-    topo = self.topoTable.getOrDefault(field_name)
-    layers = topo.gru_nb_layers
-
   let shortcut = quote do:
     template `field_name`(input, hidden0: Variable): tuple[output, hiddenN: Variable] =
       input.gru(
-        hidden0, `layers`,
+        hidden0,
         self.`field_name`.W3s0, self.`field_name`.W3sN,
         self.`field_name`.U3s,
         self.`field_name`.bW3s, self.`field_name`.bU3s
@@ -64,9 +54,7 @@ proc shortcutGRU(self: Neuromancer, field_name: NimNode, topo: LayerTopology) =
   self.forward_templates.add shortcut
 
 proc genTemplateShortcuts*(self: Neuromancer) =
-
   self.forward_templates = @[]
-
   for k, v in pairs(self.topoTable):
     case v.kind:
     of lkConv2D: self.shortcutConv2D(k, v)

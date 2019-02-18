@@ -14,7 +14,7 @@
 
 
 import ../../src/arraymancer
-import unittest, math, future, sequtils
+import unittest, math, sugar, sequtils
 
 
 suite "Testing miscellaneous data functions":

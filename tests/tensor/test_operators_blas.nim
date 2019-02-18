@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, future
+import unittest, sugar
 
 import ../../src/tensor/private/p_init_cpu # needed for testing column major tensors
 

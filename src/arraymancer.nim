@@ -1,4 +1,4 @@
-# Copyright 2017 the Arraymancer contributors
+# Copyright 2017-Present Mamy André-Ratsimbazafy & the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sequtils, strutils, future, algorithm, nimblas, math, typetraits, macros, random
-
 import  ./tensor/tensor,
         ./nn_primitives/nn_primitives,
         ./autograd/autograd,
         ./nn/nn,
         ./nn_dsl/nn_dsl,
         ./datasets/mnist,
+        ./datasets/imdb,
         ./io/io,
         ./ml/ml,
         ./stats/stats
@@ -30,6 +29,7 @@ export  tensor,
         nn,
         nn_dsl,
         mnist,
+        imdb,
         io,
         ml,
         stats

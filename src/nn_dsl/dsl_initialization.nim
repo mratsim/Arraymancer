@@ -26,8 +26,8 @@ proc trainParamsConv2D(self: Neuromancer, field_name: NimNode, topo: LayerTopolo
     w_shape = kshape
     b_shape = quote do: [`kshape`[0], 1, 1]
 
-    w = quote do: randomTensor(`w_shape`, `sst`(1)) .- `sst`(0.5)
-    b = quote do: randomTensor(`b_shape`, `sst`(1)) .- `sst`(0.5)
+    w = quote do: kaiming_normal(`w_shape`, `sst`)
+    b = quote do: zeros[`sst`](`b_shape`)
 
   convConfig.init_call = newStmtList()
 
@@ -65,9 +65,8 @@ proc trainParamsLinear(self: Neuromancer, field_name: NimNode, topo: LayerTopolo
     w_shape = quote do: [`out_shape`, `in_shape`]
     b_shape = quote do: [1, `out_shape`]
 
-    w = quote do: randomTensor(`w_shape`, `sst`(1)) .- `sst`(0.5)
-    b = quote do: randomTensor(`b_shape`, `sst`(1)) .- `sst`(0.5)
-
+    w = quote do: kaiming_normal(`w_shape`, `sst`)
+    b = quote do: zeros[`sst`](`b_shape`)
   linearConfig.init_call = newStmtList()
 
   let ctx = self.context
@@ -108,11 +107,13 @@ proc trainParamsGRU(self: Neuromancer, field_name: NimNode, topo: LayerTopology)
     U3s_shape = quote do: [`nb_layers`, 3 * `hidden_size`, `hidden_size`]
     biases_shape = quote do: [`nb_layers`, 1, 3 * `hidden_size`]
 
-    W3s0 = quote do: randomTensor(`W3s0_shape`, `sst`(1)) .- `sst`(0.5)
-    W3sN = quote do: randomTensor(`W3sN_shape`, `sst`(1)) .- `sst`(0.5)
-    U3s = quote do: randomTensor(`U3s_shape`, `sst`(1)) .- `sst`(0.5)
-    bW3s = quote do: randomTensor(`biases_shape`, `sst`(1)) .- `sst`(0.5)
-    bU3s = quote do: randomTensor(`biases_shape`, `sst`(1)) .- `sst`(0.5)
+    W3s0 = quote do: xavier_uniform(`W3s0_shape`, `sst`)
+    W3sN = quote do: xavier_uniform(`W3sN_shape`, `sst`)
+    # TODO U3s, hidden state weight: orthogonal initialization
+    # https://github.com/mratsim/Arraymancer/issues/339
+    U3s = quote do: yann_normal(`U3s_shape`, `sst`)
+    bW3s = quote do: zeros[`sst`](`biases_shape`)
+    bU3s = quote do: zeros[`sst`](`biases_shape`)
 
   GRUConfig.init_call = newStmtList()
 
@@ -129,8 +130,8 @@ proc trainParamsGRU(self: Neuromancer, field_name: NimNode, topo: LayerTopology)
             `W3sN`, requires_grad = true # TODO allow freezing
           )
       else:
-        # Empty variable, we stille needed it initialized to allow `requires_grad`
-        Variable[Tensor[`sst`]](context: `ctx`.weakRef)
+        # Empty variable, we still need it initialised to allow `requires_grad`
+        Variable[Tensor[`sst`]](context: `ctx`)
 
     result.`field_name`.U3s = `ctx`.variable(
       `U3s`, requires_grad = true # TODO allow freezing
@@ -157,3 +158,10 @@ proc genModelFieldInit*(self: Neuromancer) =
     of lkGRU: self.trainParamsGRU(k, v)
     else:
       discard
+
+# TODO: Embedding layer initialisation
+# - A bag of Useful Tricks for Practical Neural Machine Translation
+#   Embedding Layer Initialization and Large batch Size
+#   Heishi et al, http://www.aclweb.org/anthology/W17-5708
+# - An Exploration of Word Embedding Initialization in deep learning tasks
+#   Kocmi et al, https://arxiv.org/pdf/1711.09160.pdf

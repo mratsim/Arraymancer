@@ -27,7 +27,7 @@ suite "[IO] Reading and writing images":
     img.write_png(outpng)
     img.write_jpg(outjpg, quality = 70)
 
-  test "[IO] Reading and Wriging images are equal":
+  test "[IO] Reading and Writing images are equal":
     let
         gray_1_6_8 = @[
                   [

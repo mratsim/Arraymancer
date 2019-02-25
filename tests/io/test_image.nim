@@ -10,6 +10,7 @@ suite "[IO] Reading and writing images":
     imgpath = "./tests/io/images/nim_in_action_cover.jpg"
     outpng = "./build/test_img_out.png"
     outjpg = "./build/test_img_out.jpg"
+    rwpng = "./build/test_img_read_write.png"
 
   test "[IO] Reading images":
     let img = read_image(imgpath)
@@ -26,3 +27,21 @@ suite "[IO] Reading and writing images":
     img.write_png(outpng)
     img.write_jpg(outjpg, quality = 70)
 
+  test "[IO] Reading and Writing images are equal":
+    let
+        gray_1_6_8 = @[
+                  [
+                    [0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,0,0,0],
+                    [255,255,255,255,255,255,255,255],
+                    [255,255,255,255,255,255,255,255],
+                    [255,255,255,255,255,255,255,255],
+                  ],
+                ].toTensor.astype(uint8)
+    check: gray_1_6_8.shape == @[1,6,8]
+
+    gray_1_6_8.write_png(rwpng)
+    let rwimg = read_image(rwpng)
+
+    check: gray_1_6_8 == rwimg

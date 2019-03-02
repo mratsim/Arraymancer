@@ -30,6 +30,7 @@ matrix:
     # On OSX we only test against clang (gcc is mapped to clang by default)
     # Note: for OpenMP, Homebrew will build flame/blis with GCC-5
     - os: osx
+      osx_image: xcode10.1
       env: CHANNEL=stable BLIS=true
       compiler: clang
 

@@ -32,7 +32,7 @@ suite "Tokenizers":
 
     var minWps = 400_000
     when defined(release):
-        minwps = 4_000_000
+        miWps = 4_000_000
     
     check:
         len(tokenized[0]) == size * words

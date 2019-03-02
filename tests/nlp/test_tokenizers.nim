@@ -38,5 +38,5 @@ suite "Tokenizers":
         len(tokenized[0]) == size * words
         # See bottom of https://nlp.stanford.edu/software/tokenizer.shtml
         # for a good comparison between stanford NLP (Java) and spaCy (cython)
-        # performance comparisons
+        # performance on words tokenized per second 
         wordsPerSecond > minWps.toFloat

@@ -22,7 +22,8 @@ import  ./tensor/tensor,
         ./datasets/mnist,
         ./io/io,
         ./ml/ml,
-        ./stats/stats
+        ./stats/stats,
+        ./nlp/nlp
 
 export  tensor,
         nn_primitives,
@@ -32,7 +33,8 @@ export  tensor,
         mnist,
         io,
         ml,
-        stats
+        stats,
+        nlp
 
 when not defined(no_lapack):
   # THe ml module also does not export everything is LAPACK is not available

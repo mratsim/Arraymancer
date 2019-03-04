@@ -53,9 +53,15 @@ addons:
       - liblapack-dev
 
 before_install:
-  # On MacOS flame/blis can be tested as it is an homebrew package
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update          ; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install brewsci/science/blis; fi
+  # Build blis from source on osx since bottles are very old/broken on homebrew
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      export CORES=$(sysctl -n hw.ncpu);
+      git clone https://github.com/flame/blis --depth 1;
+      cd blis &&  git fetch --tags && git checkout tags/0.5.1;
+      ./configure auto && make -j $CORES ;
+      make -j $CORES test && make -j $CORES install;
+      cd .. ;
+    fi
 
 install:
   - export CHOOSENIM_NO_ANALYTICS=1

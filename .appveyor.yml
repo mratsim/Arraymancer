@@ -9,6 +9,7 @@ environment:
       NIM_DIR: nim-0.20.0
       NIM_URL: https://nim-lang.org/download/nim-0.20.0_x64.zip
       MINGW_PATH: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64\bin
+      LAPACK_URL: http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win64/liblapack.dll
       BLAS_PLATFORM: x64
       platform: x64
 
@@ -16,6 +17,7 @@ environment:
       NIM_DIR: nim-0.20.0
       NIM_URL: https://nim-lang.org/download/nim-0.20.0_x32.zip
       MINGW_PATH: C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32\bin
+      LAPACK_URL: http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win32/liblapack.dll
       BLAS_PLATFORM: win32
       platform: x86
 
@@ -27,12 +29,15 @@ install:
   # use the newest versions documented here: https://www.appveyor.com/docs/windows-images-software/#mingw-msys-cygwin
   - SET PATH=%MINGW_PATH%;%PATH%
 
+  # Install Nim
   - MKDIR %CD%\tools_tmp
   - IF not exist "%NIM_ARCHIVE%" appveyor DownloadFile "%NIM_URL%" -FileName "%NIM_ARCHIVE%"
   - 7z x -y "%NIM_ARCHIVE%" -o"%CD%\tools_tmp"> nul
   - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%PATH%
 
+  # Additional libraries
   - MKDIR %CD%\dlls
+  - SET PATH=%PATH%;%CD%\dlls
 
   - nuget install OpenBLAS -o "%APPVEYOR_BUILD_FOLDER%"
   - copy OpenBLAS.0.2.14.1\lib\native\bin\%BLAS_PLATFORM%\libopenblas.dll dlls\blas.dll
@@ -40,13 +45,12 @@ install:
   - nuget install zlib-msvc14-%PLATFORM% -o "%APPVEYOR_BUILD_FOLDER%"
   - copy zlib-msvc14-%PLATFORM%.1.2.11.7795\build\native\bin_release\zlib.dll dlls\zlib1.dll
 
-  # - ps: Start-FileDownload http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win64/liblapack.dll lapack.dll # This does not work, why?
-  - SET PATH=%PATH%;%CD%\dlls
+  - appveyor DownloadFile %LAPACK_URL% dlls\lapack.dll
 
 build_script:
   - nimble.exe refresh
 
 test_script:
-  - nimble.exe test_no_lapack
+  - nimble.exe test
 
 deploy: off

@@ -50,6 +50,8 @@ build_script:
   - nimble.exe refresh
 
 test_script:
+  - dir
+  - dir build
   - nimble.exe test_no_lapack
 
 deploy: off

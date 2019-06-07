@@ -19,8 +19,7 @@ environment:
 
 install:
   # use the newest versions documented here: https://www.appveyor.com/docs/windows-images-software/#mingw-msys-cygwin
-  - SET PATH=MINGW_PATH;%PATH%
-  - dir %MINGW_PATH%
+  - SET PATH=%MINGW_PATH%;%PATH%
 
   - MKDIR %CD%\tools_tmp
   - IF not exist "%NIM_ARCHIVE%" appveyor DownloadFile "%NIM_URL%" -FileName "%NIM_ARCHIVE%"

@@ -14,6 +14,7 @@
 
 import ../../src/arraymancer
 import unittest, math
+import complex except Complex64, Complex32
 
 
 suite "Testing indexing and slice syntax":
@@ -43,6 +44,7 @@ suite "Testing indexing and slice syntax":
   # |5      25      125     625     3125|
   test "Basic indexing - foo[2, 3]":
     check: t_van[2, 3] == 81
+    check: t_van.astype(Complex[float64])[2, 3] == 81.Complex64
 
   test "Basic indexing - foo[1+1, 2*2*1]":
     check: t_van[1+1, 2*2*1] == 243

@@ -20,6 +20,7 @@ import  ./backend/memory_optimization_hints,
         ./math_functions,
         ./accessors,
         math
+import complex except Complex64, Complex32
 
 # ### Standard aggregate functions
 # TODO consider using stats from Nim standard lib: https://nim-lang.org/docs/stats.html#standardDeviation,RunningStat
@@ -56,11 +57,11 @@ proc mean*[T: SomeInteger](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}
   ## Warning ⚠: Since input is integer, output will also be integer (using integer division)
   t.sum(axis) div t.shape[axis].T
 
-proc mean*[T: SomeFloat](t: Tensor[T]): T {.inline.}=
+proc mean*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T]): T {.inline.}=
   ## Compute the mean of all elements
   t.sum / t.size.T
 
-proc mean*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
+proc mean*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
   ## Compute the mean along an axis
   t.sum(axis) / t.shape[axis].T
 

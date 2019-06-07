@@ -20,8 +20,9 @@ import  ./private/p_checks,
         ./fallback/naive_l2_gemv,
         ./data_structure,
         ./init_cpu
+from complex import Complex
 
-proc gemv*[T: SomeFloat](
+proc gemv*[T: SomeFloat|Complex](
           alpha: T,
           A: Tensor[T],
           x: Tensor[T],
@@ -55,7 +56,7 @@ proc gemv*[T: SomeInteger](
 
   naive_gemv_fallback(alpha, A, x, beta, y)
 
-proc gemm*[T: SomeFloat](
+proc gemm*[T: SomeFloat|Complex](
   alpha: T, A, B: Tensor[T],
   beta: T, C: var Tensor[T]) {.inline.}=
   # Matrix: C = alpha A matmul B + beta C
@@ -85,10 +86,10 @@ proc gemm*[T: SomeNumber](
   C: var Tensor[T]) {.inline.}=
   gemm(1.T, A, B, 0.T, C)
 
-proc `*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
+proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
   ##
-  ## Float operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.
+  ## Float and complex operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.
 
   if a.rank == 2 and b.rank == 2:
     result = newTensorUninit[T](a.shape[0], b.shape[1])

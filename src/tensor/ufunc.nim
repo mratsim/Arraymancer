@@ -15,7 +15,7 @@
 import  ./data_structure,
         ./higher_order_applymap,
         sugar, math
-
+ 
 proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noInit.} =
   ## Apply type conversion on the whole tensor
   result = t.map(x => x.U)

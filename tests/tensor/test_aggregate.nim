@@ -14,15 +14,18 @@
 
 import ../../src/arraymancer
 import unittest, math
+import complex except Complex64, Complex32
 
 suite "[Core] Testing aggregation functions":
   let t = [[0, 1, 2],
           [3, 4, 5],
           [6, 7, 8],
           [9, 10, 11]].toTensor()
+  let t_c = t.astype(Complex[float64])
 
   test "Sum":
     check: t.sum == 66
+    check: t_c.sum == 66
     let row_sum = [[18, 22, 26]].toTensor()
     let col_sum = [[3],
                    [12],
@@ -30,9 +33,12 @@ suite "[Core] Testing aggregation functions":
                    [30]].toTensor()
     check: t.sum(axis=0) == row_sum
     check: t.sum(axis=1) == col_sum
+    check: t_c.sum(axis=0) == row_sum.astype(Complex[float64])
+    check: t_c.sum(axis=1) == col_sum.astype(Complex[float64])
 
   test "Mean":
     check: t.astype(float).mean == 5.5 # Note: may fail due to float rounding
+    check: t_c.mean == 5.5 # Note: may fail due to float rounding
 
     let row_mean = [[4.5, 5.5, 6.5]].toTensor()
     let col_mean = [[1.0],
@@ -41,14 +47,21 @@ suite "[Core] Testing aggregation functions":
                     [10.0]].toTensor()
     check: t.astype(float).mean(axis=0) == row_mean
     check: t.astype(float).mean(axis=1) == col_mean
+    check: t_c.mean(axis=0) == row_mean.astype(Complex[float64])
+    check: t_c.mean(axis=1) == col_mean.astype(Complex[float64])
 
   test "Product":
     let a = [[1,2,4],[8,16,32]].toTensor()
+    let a_c = a.astype(Complex[float64])
     check: t.product() == 0
     check: a.product() == 32768
     check: a.astype(float).product() == 32768.0
     check: a.product(0) == [[8,32,128]].toTensor()
     check: a.product(1) == [[8],[4096]].toTensor()
+    check: t_c.product() == 0
+    check: a_c.product() == 32768.0
+    check: a_c.product(0) == [[8,32,128]].toTensor().astype(Complex[float64])
+    check: a_c.product(1) == [[8],[4096]].toTensor().astype(Complex[float64])
 
   test "Min":
     let a = [2,-1,3,-3,5,0].toTensor()

@@ -34,13 +34,15 @@ install:
   - MKDIR %CD%\tools_tmp
   - IF not exist "%NIM_ARCHIVE%" appveyor DownloadFile "%NIM_URL%" -FileName "%NIM_ARCHIVE%"
   - 7z x -y "%NIM_ARCHIVE%" -o"%CD%\tools_tmp"> nul
-  - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%CD%\tools_tmp\%MINGW_DIR%\bin;%PATH%
+  - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%PATH%
+
+  - MKDIR %CD%\build
   - ps: |
         nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}"
-        cp -Force OpenBLAS.0.2.14.1/lib/native/bin/"${env:BLAS_PLATFORM}"/libopenblas.dll blas.dll
+        cp -Force OpenBLAS.0.2.14.1/lib/native/bin/"${env:BLAS_PLATFORM}"/libopenblas.dll build/blas.dll
   - ps: |
         nuget install zlib-msvc14-"${env:PLATFORM}" -o "${env:APPVEYOR_BUILD_FOLDER}"
-        cp -Force zlib-msvc14-"${env:PLATFORM}".1.2.11.7795/build/native/bin_release/zlib.dll zlib1.dll
+        cp -Force zlib-msvc14-"${env:PLATFORM}".1.2.11.7795/build/native/bin_release/zlib.dll build/zlib1.dll
   # - ps: Start-FileDownload http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win64/liblapack.dll lapack.dll # This does not work, why?
   - SET PATH=%PATH%;%CD%
 

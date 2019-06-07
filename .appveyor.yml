@@ -2,10 +2,11 @@ version: '{build}'
 
 cache:
 - nim-0.20.0_x64.zip -> .appveyor.yml
-- x86_64-4.9.2-release-win32-seh-rt_v4-rev4.7z -> .appveyor.yml
 - .cache -> .appveyor.yml
-- blas.dll -> .appveyor.yml
-- zlib1.dll -> .appveyor.yml
+
+# Can't cache the DLL as they are different for x86 and x86_64
+# - blas.dll -> .appveyor.yml
+# - zlib1.dll -> .appveyor.yml
 
 matrix:
   fast_finish: true
@@ -35,15 +36,11 @@ install:
   - 7z x -y "%NIM_ARCHIVE%" -o"%CD%\tools_tmp"> nul
   - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%CD%\tools_tmp\%MINGW_DIR%\bin;%PATH%
   - ps: |
-      IF (![System.IO.File]::Exists("blas.dll")){
         nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}"
-        cp OpenBLAS.0.2.14.1/lib/native/bin/"${env:BLAS_PLATFORM}"/libopenblas.dll blas.dll
-      }
+        cp -Force OpenBLAS.0.2.14.1/lib/native/bin/"${env:BLAS_PLATFORM}"/libopenblas.dll blas.dll
   - ps: |
-      IF (![System.IO.File]::Exists("zlib1.dll")){
         nuget install zlib-msvc14-"${env:PLATFORM}" -o "${env:APPVEYOR_BUILD_FOLDER}"
-        cp zlib-msvc14-"${env:PLATFORM}".1.2.11.7795/build/native/bin_release/zlib.dll zlib1.dll
-      }
+        cp -Force zlib-msvc14-"${env:PLATFORM}".1.2.11.7795/build/native/bin_release/zlib.dll zlib1.dll
   # - ps: Start-FileDownload http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win64/liblapack.dll lapack.dll # This does not work, why?
   - SET PATH=%PATH%;%CD%
 

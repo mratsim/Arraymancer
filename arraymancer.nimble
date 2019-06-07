@@ -5,8 +5,8 @@ description   = "A n-dimensional tensor (ndarray) library"
 license       = "Apache License 2.0"
 
 ### Dependencies
-requires "nim >= 0.19.0",
-  "nimblas 0.2.1",
+requires "nim >= 0.20.0",
+  "nimblas >= 0.2.2",
   "nimlapack >= 0.1.1",
   "nimcuda >= 0.1.4",
   "nimcl >= 0.1.3",

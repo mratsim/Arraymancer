@@ -12,31 +12,36 @@ matrix:
 
 environment:
   matrix:
-    - MINGW_ARCHIVE: x86_64-4.9.2-release-win32-seh-rt_v4-rev4.7z
-      MINGW_DIR: mingw64
-      # We need to hardcode a mirror otherwise the download fails
-      MINGW_URL: https://ayera.dl.sourceforge.net/project/mingw-w64/Toolchains%20targetting%20Win64/Personal%20Builds/mingw-builds/4.9.2/threads-win32/seh/x86_64-4.9.2-release-win32-seh-rt_v4-rev4.7z
-      NIM_ARCHIVE: nim-0.20.0_x64.zip
+    - NIM_ARCHIVE: nim-0.20.0_x64.zip
       NIM_DIR: nim-0.20.0
       NIM_URL: https://nim-lang.org/download/nim-0.20.0_x64.zip
       platform: x64
+      blas_platform: x64
+
+    - NIM_ARCHIVE: nim-0.20.0_x32.zip
+      NIM_DIR: nim-0.20.0
+      NIM_URL: https://nim-lang.org/download/nim-0.20.0_x32.zip
+      platform: x86
+      blas_platform: win32
 
 install:
+  # use the newest versions documented here: https://www.appveyor.com/docs/windows-images-software/#mingw-msys-cygwin
+  - IF "%PLATFORM%" == "x86" SET PATH=C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32\bin;%PATH%
+  - IF "%PLATFORM%" == "x64" SET PATH=C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin;%PATH%
+
   - MKDIR %CD%\tools_tmp
-  - IF not exist "%MINGW_ARCHIVE%" appveyor DownloadFile "%MINGW_URL%" -FileName "%MINGW_ARCHIVE%"
-  - 7z x -y "%MINGW_ARCHIVE%" -o"%CD%\tools_tmp"> nul
   - IF not exist "%NIM_ARCHIVE%" appveyor DownloadFile "%NIM_URL%" -FileName "%NIM_ARCHIVE%"
   - 7z x -y "%NIM_ARCHIVE%" -o"%CD%\tools_tmp"> nul
   - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%CD%\tools_tmp\%MINGW_DIR%\bin;%PATH%
   - ps: |
       IF (![System.IO.File]::Exists("blas.dll")){
         nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}"
-        cp OpenBLAS.0.2.14.1/lib/native/bin/x64/libopenblas.dll blas.dll
+        cp OpenBLAS.0.2.14.1/lib/native/bin/%blas_platform%/libopenblas.dll blas.dll
       }
   - ps: |
       IF (![System.IO.File]::Exists("zlib1.dll")){
-        nuget install zlib-msvc14-x64 -o "${env:APPVEYOR_BUILD_FOLDER}"
-        cp zlib-msvc14-x64.1.2.11.7795/build/native/bin_release/zlib.dll zlib1.dll
+        nuget install zlib-msvc14-%PLATFORM% -o "${env:APPVEYOR_BUILD_FOLDER}"
+        cp zlib-msvc14-%PLATFORM%.1.2.11.7795/build/native/bin_release/zlib.dll zlib1.dll
       }
   # - ps: Start-FileDownload http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win64/liblapack.dll lapack.dll # This does not work, why?
   - SET PATH=%PATH%;%CD%

@@ -16,13 +16,15 @@ environment:
       NIM_DIR: nim-0.20.0
       NIM_URL: https://nim-lang.org/download/nim-0.20.0_x64.zip
       platform: x64
-      blas_platform: x64
+      BLAS_PLATFORM: x64
+      fast_finish: false
 
     - NIM_ARCHIVE: nim-0.20.0_x32.zip
       NIM_DIR: nim-0.20.0
       NIM_URL: https://nim-lang.org/download/nim-0.20.0_x32.zip
       platform: x86
-      blas_platform: win32
+      BLAS_PLATFORM: win32
+      fast_finish: false
 
 install:
   # use the newest versions documented here: https://www.appveyor.com/docs/windows-images-software/#mingw-msys-cygwin
@@ -36,7 +38,7 @@ install:
   - ps: |
       IF (![System.IO.File]::Exists("blas.dll")){
         nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}"
-        cp OpenBLAS.0.2.14.1/lib/native/bin/%blas_platform%/libopenblas.dll blas.dll
+        cp OpenBLAS.0.2.14.1/lib/native/bin/%BLAS_PLATFORM%/libopenblas.dll blas.dll
       }
   - ps: |
       IF (![System.IO.File]::Exists("zlib1.dll")){

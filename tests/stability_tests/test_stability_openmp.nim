@@ -36,8 +36,8 @@ suite "Load test - OpenMP":
       let K = rand(2..100)
 
       # We create the matrices from seq to test the GC/OpenMP interaction
-      let a = newSeqWith(M*N, rand(-100_000_000..100_000_000)).toTensor.reshape(M, N)
-      let b = newSeqWith(N*K, rand(-100_000_000..100_000_000)).toTensor.reshape(N, K)
+      let a = newSeqWith(M*N, rand(-1_000..1_000)).toTensor.reshape(M, N)
+      let b = newSeqWith(N*K, rand(-1_000..1_000)).toTensor.reshape(N, K)
 
       # Create a c and test some computation
       var c = a*b - randomTensor(M,K, 100)

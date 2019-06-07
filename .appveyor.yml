@@ -15,12 +15,12 @@ environment:
     - NIM_ARCHIVE: nim-0.20.0_x64.zip
       NIM_DIR: nim-0.20.0
       NIM_URL: https://nim-lang.org/download/nim-0.20.0_x64.zip
+      MINGW_PATH: C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin
       platform: x64
 
 install:
   # use the newest versions documented here: https://www.appveyor.com/docs/windows-images-software/#mingw-msys-cygwin
-  - IF "%PLATFORM%" == "x86" SET PATH=C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32\bin;%PATH%
-  - IF "%PLATFORM%" == "x64" SET PATH=C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin;%PATH%
+  - SET PATH=%MINGW_PATH%;%PATH%
 
   - MKDIR %CD%\tools_tmp
   - IF not exist "%NIM_ARCHIVE%" appveyor DownloadFile "%NIM_URL%" -FileName "%NIM_ARCHIVE%"

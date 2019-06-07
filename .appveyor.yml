@@ -36,13 +36,14 @@ install:
   - 7z x -y "%NIM_ARCHIVE%" -o"%CD%\tools_tmp"> nul
   - SET PATH=%CD%\tools_tmp\%NIM_DIR%\bin;%PATH%
 
-  - MKDIR %CD%\build
+  - MKDIR %CD%\lib
+  - SET PATH=%CD%\lib;%PATH%
   - ps: |
         nuget install OpenBLAS -o "${env:APPVEYOR_BUILD_FOLDER}"
-        cp -Force OpenBLAS.0.2.14.1/lib/native/bin/"${env:BLAS_PLATFORM}"/libopenblas.dll build/blas.dll
+        cp -Force OpenBLAS.0.2.14.1/lib/native/bin/"${env:BLAS_PLATFORM}"/libopenblas.dll lib/blas.dll
   - ps: |
         nuget install zlib-msvc14-"${env:PLATFORM}" -o "${env:APPVEYOR_BUILD_FOLDER}"
-        cp -Force zlib-msvc14-"${env:PLATFORM}".1.2.11.7795/build/native/bin_release/zlib.dll build/zlib1.dll
+        cp -Force zlib-msvc14-"${env:PLATFORM}".1.2.11.7795/build/native/bin_release/zlib.dll lib/zlib1.dll
   # - ps: Start-FileDownload http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win64/liblapack.dll lapack.dll # This does not work, why?
   - SET PATH=%PATH%;%CD%
 

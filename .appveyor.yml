@@ -45,12 +45,13 @@ install:
   - nuget install zlib-msvc14-%PLATFORM% -o "%APPVEYOR_BUILD_FOLDER%"
   - copy zlib-msvc14-%PLATFORM%.1.2.11.7795\build\native\bin_release\zlib.dll dlls\zlib1.dll
 
-  - appveyor DownloadFile %LAPACK_URL% dlls\lapack.dll
+  # TODO Does not work "could not load: lapack.dll "
+  # - appveyor DownloadFile %LAPACK_URL% dlls\lapack.dll
 
 build_script:
   - nimble.exe refresh
 
 test_script:
-  - nimble.exe test
+  - nimble.exe test_no_lapack
 
 deploy: off

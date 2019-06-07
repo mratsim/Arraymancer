@@ -31,7 +31,6 @@ import ../src/arraymancer,
         ./tensor/test_exporting,
         ./io/test_csv,
         ./io/test_numpy,
-        ./io/test_image,
         ./datasets/test_mnist,
         ./datasets/test_imdb,
         ./nn_primitives/test_nnp_numerical_gradient,
@@ -46,6 +45,10 @@ import ../src/arraymancer,
         ./autograd/test_gate_shapeshifting,
         ./ml/test_metrics,
         ./test_bugtracker
+
+when not defined(windows) and not sizeof(int) == 4:
+  # STB image does not work on windows 32-bit, https://github.com/mratsim/Arraymancer/issues/358
+  import ./io/test_image
 
 when not defined(no_lapack):
   import ./linear_algebra/test_linear_algebra,

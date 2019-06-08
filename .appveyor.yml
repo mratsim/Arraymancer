@@ -49,7 +49,7 @@ install:
   # - appveyor DownloadFile %LAPACK_URL% dlls\lapack.dll
 
 build_script:
-  - nimble.exe refresh
+  - nimble.exe install -y
 
 test_script:
   - nimble.exe test_no_lapack

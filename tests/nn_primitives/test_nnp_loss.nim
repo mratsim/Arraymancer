@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer, unittest
+import ../../src/arraymancer, unittest, random
 
+# Fix random seed for reproducibility
+randomize(1234)
 
 suite "[NN primitives] Loss functions":
   proc `~=`[T: SomeFloat](a, b: T): bool =

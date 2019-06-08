@@ -40,55 +40,52 @@ srcDir = "src"
 ## TODO: auto detection or at least check in common directories
 ## Note: It is import to gate compiler flags like -march=native  behind Xcompiler "-Xcompiler -march=native"
 
-template cudaSwitches() =
-  switch("cincludes", "/opt/cuda/include")
-  switch("cc", "gcc") # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
-  switch("gcc.exe", "/opt/cuda/bin/nvcc")
-  switch("gcc.linkerexe", "/opt/cuda/bin/nvcc")
-  switch("gcc.cpp.exe", "/opt/cuda/bin/nvcc")
-  switch("gcc.cpp.linkerexe", "/opt/cuda/bin/nvcc")
+template cudaSwitches(switches: var string) =
+  switches.add " --cincludes:/opt/cuda/include"
+  switches.add " --cc:gcc" # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
+  switches.add " --gcc.exe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.cpp.exe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.cpp.linkerexe:/opt/cuda/bin/nvcc"
   # Due to the __ldg intrinsics in kernels
   # we only support compute capabilities 3.5+
   # See here: http://docs.nvidia.com/cuda/pascal-compatibility-guide/index.html
   # And wikipedia for GPU capabilities: https://en.wikipedia.org/wiki/CUDA
-  switch("gcc.options.always", "-arch=sm_61 --x cu") # Interpret .c files as .cu
-  switch("gcc.cpp.options.always", "-arch=sm_61 --x cu -Xcompiler -fpermissive") # Interpret .c files as .cu, gate fpermissive behind Xcompiler
-  switch("define", "cudnn")
+  switches.add " --gcc.options.always:\"-arch=sm_61 --x cu\"" # Interpret .c files as .cu
+  switches.add " --gcc.cpp.options.always:\"-arch=sm_61 --x cu -Xcompiler -fpermissive\"" # Interpret .c files as .cu, gate fpermissive behind Xcompiler
+  switches.add " -d:cudnn"
 
-when defined(cuda):
-  cudaSwitches
+template mkl_threadedSwitches(switches: var string) =
+  switches.add " --d:openmp"
+  switches.add " --stackTrace:off"
+  switches.add " --d:blas=mkl_intel_lp64"
+  switches.add " --d:lapack=mkl_intel_lp64"
+  switches.add " --clibdir:/opt/intel/mkl/lib/intel64"
+  switches.add " --passl:/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a"
+  switches.add " --passl:-lmkl_core"
+  switches.add " --passl:-lmkl_gnu_thread"
+  switches.add " --passl:-lgomp"
+  switches.add " --dynlibOverride:mkl_intel_lp64"
 
-template mkl_threadedSwitches() =
-  switch("define","openmp")
-  switch("stackTrace","off")
-  switch("define","blas=mkl_intel_lp64")
-  switch("define","lapack=mkl_intel_lp64")
-  switch("clibdir", "/opt/intel/mkl/lib/intel64")
-  switch("passl", "/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a")
-  switch("passl", "-lmkl_core")
-  switch("passl", "-lmkl_gnu_thread")
-  switch("passl", "-lgomp")
-  switch("dynlibOverride","mkl_intel_lp64")
+template mkl_singleSwitches(switches: var string) =
+  switches.add " --d:blas=mkl_intel_lp64"
+  switches.add " --d:lapack=mkl_intel_lp64"
+  switches.add " --clibdir:/opt/intel/mkl/lib/intel64"
+  switches.add " --passl:/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a"
+  switches.add " --passl:-lmkl_core"
+  switches.add " --passl:-lmkl_sequential"
+  switches.add " --dynlibOverride:mkl_intel_lp64"
 
-template mkl_singleSwitches() =
-  switch("define","blas=mkl_intel_lp64")
-  switch("define","lapack=mkl_intel_lp64")
-  switch("clibdir", "/opt/intel/mkl/lib/intel64")
-  switch("passl", "/opt/intel/mkl/lib/intel64/libmkl_intel_lp64.a")
-  switch("passl", "-lmkl_core")
-  switch("passl", "-lmkl_sequential")
-  switch("dynlibOverride","mkl_intel_lp64")
-
-template cuda_mkl_openmp() =
-  mkl_threadedSwitches()
-  switch("cincludes", "/opt/cuda/include")
-  switch("cc", "gcc") # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
-  switch("gcc.exe", "/opt/cuda/bin/nvcc")
-  switch("gcc.linkerexe", "/opt/cuda/bin/nvcc")
-  switch("gcc.cpp.exe", "/opt/cuda/bin/nvcc")
-  switch("gcc.cpp.linkerexe", "/opt/cuda/bin/nvcc")
-  switch("gcc.options.always", "-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native")
-  switch("gcc.cpp.options.always", "-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native")
+template cuda_mkl_openmp(switches: var string) =
+  switches.mkl_threadedSwitches()
+  switches.add " --cincludes:/opt/cuda/include"
+  switches.add " --cc:gcc" # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
+  switches.add " --gcc.exe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.cpp.exe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.cpp.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.options.always:\"-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native\""
+  switches.add " --gcc.cpp.options.always:\"-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native\""
 
 ########################################################
 # Optimization
@@ -105,83 +102,86 @@ template cuda_mkl_openmp() =
 ##########################################################################
 ## Testing tasks
 
-proc test(name: string, lang: string = "c") =
+proc test(name, switches = "", split = false, lang = "c") =
   if not dirExists "build":
     mkDir "build"
-  if not dirExists "nimcache":
-    mkDir "nimcache"
-  --run
-  switch("out", ("./build/" & name))
-  setCommand lang, "tests/" & name & ".nim"
+  if not split:
+    exec "nim " & lang & " -o:build/" & name & switches & " -r tests/" & name & ".nim"
+  else:
+    exec "nim " & lang & " -o:build/" & name & switches & " -r tests/_split_tests/" & name & ".nim"
 
 task all_tests, "Run all tests - Intel MKL + OpenMP + Cuda + march=native + release":
-  switch("define","cuda")
-  cuda_mkl_openmp
-  test "full_test_suite", "cpp"
+  var switches = " -d:cuda"
+  switches.cuda_mkl_openmp()
+  test "full_test_suite", switches, split=false, lang="cpp"
 
 task test, "Run all tests - Default BLAS & Lapack":
-  test "tests_cpu"
+  test "tests_tensor_part01", "", split = true
+  test "tests_tensor_part02", "", split = true
+  test "tests_tensor_part03", "", split = true
+  test "tests_tensor_part04", "", split = true
+  test "tests_tensor_part05", "", split = true
+  test "tests_cpu_remainder", "", split = true
 
 task test_no_lapack, "Run all tests - Default BLAS without lapack":
-  switch("define", "no_lapack")
-  test "tests_cpu"
+  let switch = " -d:no_lapack"
+  test "tests_tensor_part01", switch, split = true
+  test "tests_tensor_part02", switch, split = true
+  test "tests_tensor_part03", switch, split = true
+  test "tests_tensor_part04", switch, split = true
+  test "tests_tensor_part05", switch, split = true
+  test "tests_cpu_remainder", switch, split = true
 
 task test_cpp, "Run all tests - Cpp codegen":
-  test "tests_cpu", "cpp"
+  test "tests_cpu", "", split = false, "cpp"
 
 task test_cuda, "Run all tests - Cuda backend with CUBLAS and CuDNN":
-  switch("define","cuda")
-  switch("define","cudnn")
-  cudaSwitches  # Unfortunately the "switch" line doesn't also trigger
-                # the "when defined(cuda)" part of this nimble file
-                # hence the need to call cudaSwitches explicitly
-  test "tests_cuda", "cpp"
+  var switches = " -d:cuda -d:cudnn"
+  switches.cudaSwitches()
+  test "tests_cuda", switches, split = false, "cpp"
 
 task test_opencl, "Run all OpenCL backend tests":
-  switch("define", "opencl")
-  test "tests_opencl"
+  test "tests_opencl", " -d:opencl"
 
 # task test_deprecated, "Run all tests on deprecated procs":
 #  test "tests_cpu_deprecated"
 
 task test_openblas, "Run all tests - OpenBLAS":
-  switch("define","blas=openblas")
-  switch("define","lapack=openblas")
+  var switches = " -d:blas=openblas -d:lapack=openblas"
   when defined(macosx):
     ## Should work but somehow Nim doesn't find libopenblas.dylib on MacOS
-    switch("clibdir", "/usr/local/opt/openblas/lib")
-    switch("cincludes", "/usr/local/opt/openblas/include")
-  test "tests_cpu"
+    switches.add " --clibdir:/usr/local/opt/openblas/lib"
+    switches.add " --cincludes:/usr/local/opt/openblas/include"
+  test "tests_cpu", switches
 
 task test_blis, "Run all tests - BLIS":
-  switch("define","blis")
-  test "tests_cpu"
+  test "tests_cpu", " -d:blis"
 
 task test_native, "Run all tests - march=native":
-  switch("define","native")
-  test "tests_cpu"
+  test "tests_cpu", " -d:native"
 
 task test_openmp, "Run all tests - OpenMP":
-  switch("define","openmp")
-  switch("stackTrace","off") # stacktraces interfere with OpenMP
+  var switches = " -d:openmp"
+  switches.add " --stackTrace:off" # stacktraces interfere with OpenMP
   when defined(macosx): # Default compiler on Mac is clang without OpenMP and gcc is an alias to clang.
                         # Use Homebrew GCC instead for OpenMP support. GCC (v7), must be properly linked via `brew link gcc`
-    switch("cc", "gcc")
-    switch("gcc.exe", "/usr/local/bin/gcc-7")
-    switch("gcc.linkerexe", "/usr/local/bin/gcc-7")
-  test "tests_cpu"
+    switches.add " --cc:gcc"
+    switches.add " --gcc.exe:/usr/local/bin/gcc-7"
+    switches.add " --gcc.linkerexe:/usr/local/bin/gcc-7"
+  test "tests_cpu", switches
 
 task test_mkl, "Run all tests - Intel MKL - single threaded":
-  mkl_singleSwitches
-  test "tests_cpu"
+  var switches: string
+  switches.mkl_singleSwitches()
+  test "tests_cpu", switches
 
 task test_mkl_omp, "Run all tests - Intel MKL + OpenMP":
-  mkl_threadedSwitches
-  test "tests_cpu"
+  var switches: string
+  switches.mkl_threadedSwitches()
+  test "tests_cpu", switches
 
 task test_release, "Run all tests - Release mode":
-  switch("define","release")
-  test "tests_cpu"
+  test "tests_cpu", " -d:release"
 
 task gen_doc, "Generate Arraymancer documentation":
   # TODO: Industrialize: something more robust that only check nim files (and not .DS_Store ...)

@@ -72,7 +72,7 @@ install:
   - choosenim $CHANNEL
 
 script:
-    - nimble refresh
+    - nimble install -y
     - if [[$BLIS]];
         then nimble test_blis;
         else nimble test;

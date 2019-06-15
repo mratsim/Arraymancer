@@ -155,6 +155,8 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
       idxLHS = toSet(slice(lhsStmt, 1 .. ^1).mapIt($it))
     else:
       error("Unsupported kind for `einsum` LHS statement " & $lhsStmt.kind)
+  else:
+    rhsStmt = stmts[0]
 
   # TODO: allow nested infix w/ more than 2 tensors
   let tensorIdxPairs = getTensorSeq(rhsStmt, ts)
@@ -197,9 +199,11 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
   if stmtKind == skAssign:
 
     # if we have an assignment, we take the LHS for fact
-    # Thus `idxContr` then is actually the `symmetricDifference` of the LHS, idxRes
-
-    idxContr = symmetricDifference(idxRes, toSet(slice(lhsStmt, 1 .. ^1).mapIt($it)))
+    # Thus `idxContr` then is actually the `symmetricDifference` of the LHS and the
+    # union of `idxRes` u `idxContr` (i.e. all indices on the RHS)
+    idxContr = symmetricDifference(
+      union(idxRes, idxContr),
+      toSet(slice(lhsStmt, 1 .. ^1).mapIt($it)))
     # `idxRes` thus has to get rid of the indices in `idxContr`
     idxRes = difference(idxRes, idxContr)
 

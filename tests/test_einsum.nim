@@ -29,3 +29,27 @@ suite "Einsum":
     let res = [3.0, 5.0, 7.0].toTensor
     echo b
     doAssert res == b
+
+  test "Contraction of a row":
+    let a = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
+    let b = einsum(a):
+      res[i] = a[i,j]
+    let res = [3.0, 12.0].toTensor
+    echo b
+    doAssert res == b
+
+  test "Matrix vector multiplication ~ implicit":
+    let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
+    let v = toSeq(0 .. 2).toTensor.asType(float)
+    let b = einsum(m, v):
+      m[i,k] * v[k]
+    let res = [5.0, 14.0].toTensor
+    doAssert res == b
+
+  test "Matrix vector multiplication ~ explicit":
+    let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
+    let v = toSeq(0 .. 2).toTensor.asType(float)
+    let b = einsum(m, v):
+      res[i] = m[i,k] * v[k]
+    let res = [5.0, 14.0].toTensor
+    doAssert res == b

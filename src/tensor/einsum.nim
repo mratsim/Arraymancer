@@ -195,21 +195,29 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
 
   # compare `idxContr` deduced from the RHS with the indices of LHS, if assignment
   if stmtKind == skAssign:
-    if idxContr.len == 0 and idxLHS.len == 0:
-      # If both are empty, we have to fix the contraction indices. This means we
-      # have a scalar assignment, so no IDX on the LHS is correct. However, on the
-      # RHS we ``must`` only have a single tensor, which is to be fully contracted
-      # TODO: Theoretically we could allow any number of tensors, meaning a scalar
-      # on the LHS implies we want to perform full contraction of the /resulting/
-      # tensor after normal Einstein summation
-      if true:
-        echo  rhsStmt.treeRepr
-      doAssert rhsStmt.kind == nnkBracketExpr, "there must only be a single " &
-        "tensor on the RHS to do full contraction of the tensor!"
-      # thus swap `idxContr` and `idxRes`
-      let tmp = idxRes
-      idxRes = idxContr
-      idxContr = tmp
+
+    # if we have an assignment, we take the LHS for fact
+    # Thus `idxContr` then is actually the `symmetricDifference` of the LHS, idxRes
+
+    idxContr = symmetricDifference(idxRes, toSet(slice(lhsStmt, 1 .. ^1).mapIt($it)))
+    # `idxRes` thus has to get rid of the indices in `idxContr`
+    idxRes = difference(idxRes, idxContr)
+
+    #if idxContr.len == 0 and idxLHS.len == 0:
+    #  # If both are empty, we have to fix the contraction indices. This means we
+    #  # have a scalar assignment, so no IDX on the LHS is correct. However, on the
+    #  # RHS we ``must`` only have a single tensor, which is to be fully contracted
+    #  # TODO: Theoretically we could allow any number of tensors, meaning a scalar
+    #  # on the LHS implies we want to perform full contraction of the /resulting/
+    #  # tensor after normal Einstein summation
+    #  if true:
+    #    echo  rhsStmt.treeRepr
+    #  doAssert rhsStmt.kind == nnkBracketExpr, "there must only be a single " &
+    #    "tensor on the RHS to do full contraction of the tensor!"
+    #  # thus swap `idxContr` and `idxRes`
+    #  let tmp = idxRes
+    #  idxRes = idxContr
+    #  idxContr = tmp
 
   # now we can safely calculate the rank of the tensor
   let rank = idxRes.card
@@ -303,6 +311,8 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
                                     idxContr,
                                     shapeContrIdents,
                                     innerStmt)
+    contractionLoops.add quote do:
+      `asgnTo` = `contrRes`
   else:
     # in this case we have no contraction. Use variable for inner
     # stamtent

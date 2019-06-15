@@ -21,3 +21,11 @@ suite "Einsum":
     let res = 15.0
     echo b
     doAssert res == b
+
+  test "Contraction of a column":
+    let a = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
+    let b = einsum(a):
+      res[j] = a[i,j]
+    let res = [3.0, 5.0, 7.0].toTensor
+    echo b
+    doAssert res == b

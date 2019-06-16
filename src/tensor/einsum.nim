@@ -1,4 +1,4 @@
-import macros, sequtils, sets
+import macros, sequtils, sets, algorithm
 import arraymancer
 
 proc getEinsumIdx(n: NimNode): seq[NimNode] =
@@ -21,16 +21,18 @@ proc slice[T, U](n: NimNode, s: HSlice[T, U]): seq[NimNode] =
   for i in a .. b:
     result.add n[i]
 
-proc buildLoops(rank: int, idxRes: HashSet[string],
+proc buildLoops(rank: int,
+                idxIdentPairs: seq[(string, int)], #idxRes: HashSet[string],
                 shapeIdent: NimNode, innerStatement: NimNode): NimNode =
   # generate the for loops
   var forLoops = nnkForStmt.newTree()
-  let idxResSeq = toSeq(idxRes)
+  #let idxResSeq = toSeq(idxRes)
   var stmtInLoop = newNimNode(nnkNilLit)
   for i in 0 ..< rank:
-    let forIdx = ident(idxResSeq[i])
+    let shapeIdx = idxIdentPairs[i][1]  #rank - i - 1
+    let forIdx = ident(idxIdentPairs[i][0]) #ident(idxResSeq[i])
     let toIdx = quote do:
-      `shapeIdent`[`i`]
+      `shapeIdent`[`shapeIdx`]
     var loop = nnkForStmt.newTree(
       forIdx,
       nnkInfix.newTree(
@@ -39,7 +41,7 @@ proc buildLoops(rank: int, idxRes: HashSet[string],
         toIdx
       )
     )
-    let idxI = ident(idxResSeq[i])
+    #let idxI = ident(idxResSeq[i])
     if stmtInLoop.kind == nnkNilLit:
       #stmtInLoop = quote do:
       #  echo `resIdent`[`idxI`, `idxI`]
@@ -121,6 +123,7 @@ proc findAxes(idxRes: HashSet[string], tensors: seq[(NimNode, seq[NimNode])]): s
         result.add (i, at)
         # found this index, can break from search
         break
+  #result = result.reversed
 
 macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
   echo tensorInput.treeRepr
@@ -139,7 +142,7 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
   let stmtKind = checkStatement(stmts)
   var rhsStmt: NimNode
   var lhsStmt: NimNode
-  var idxLHS: HashSet[string]
+  var idxLHS: OrderedSet[string]
   echo stmtKind
   if stmtKind == skAssign:
     # in case of assign, slice off the infix part
@@ -150,9 +153,9 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
     case lhsStmt.kind
     of nnkIdent:
       # left is an ident, so result supposed to be a scalar. Indidces empty set
-      idxLHS = initHashSet[string]()
+      idxLHS = initOrderedSet[string]()
     of nnkBracketExpr:
-      idxLHS = toSet(slice(lhsStmt, 1 .. ^1).mapIt($it))
+      idxLHS = toOrderedSet(slice(lhsStmt, 1 .. ^1).mapIt($it))
     else:
       error("Unsupported kind for `einsum` LHS statement " & $lhsStmt.kind)
   else:
@@ -203,7 +206,8 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
     # union of `idxRes` u `idxContr` (i.e. all indices on the RHS)
     idxContr = symmetricDifference(
       union(idxRes, idxContr),
-      toSet(slice(lhsStmt, 1 .. ^1).mapIt($it)))
+      toSet(toSeq(idxLHS))
+    )
     # `idxRes` thus has to get rid of the indices in `idxContr`
     idxRes = difference(idxRes, idxContr)
 
@@ -226,7 +230,6 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
   # now we can safely calculate the rank of the tensor
   let rank = idxRes.card
 
-
   # find each axis of each tensor, which will surive
   # seq of tuples of `tensor`, `axis` pairs
   let tensorAxes = findAxes(idxRes, tensorIdxPairs)
@@ -234,13 +237,82 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
 
   # generate the code to get the shape of the resulting tensor
   let shapeIdents = ident"shapes"
+
+  # the sequence storing the NimNode for the `i`, `j`,... einstein index
+  # and corresponding it to the correct index for the `shape*Idents` sequence
+  var idxIdentPairs = newSeq[(string, int)]()
   result.add quote do:
     var `shapeIdents` = newSeq[int](`rank`)
-  for i, ax in tensorAxes:
-    let t = tensorIdxPairs[ax[0]][0]
-    let idx = ax[1]
-    result.add quote do:
-      `shapeIdents`[`i`] = `t`.shape[`idx`]
+
+  case stmtKind
+  of skAssign:
+    for i, idx in idxLhs:
+    #for i, ax in tensorAxes:
+      # since `shapeIdents` corresponds to the shape of the resulting
+      # tensor, use the `LHS` (if skAssign) to order them in the
+      # correct way
+      #doAssert
+      echo "LHS ", idxLhs
+      #echo "IDX PAIRS ", ax[1]
+      echo tensorAxes
+      echo tensorIdxPairs
+      #echo ax
+
+      # TODO: `i` should not be the index, but rather the
+      # index of `idxLhs` for the index that corresponds to
+      # ax
+      var idxArg: int
+      var t: NimNode
+      for tIdx, ax in tensorAxes:
+        echo "I ", i, ax
+        if $tensorIdxPairs[ax[0]][1][ax[1]] == idx:
+          idxArg = ax[1]
+          t = tensorIdxPairs[ax[0]][0]
+          echo "IDX ARG ", idxArg
+          echo "TENSOR ", t
+          echo "IDX ", idx
+          idxIdentPairs.add (idx, i) #idxArg)
+          break
+      #let t = tensorIdxPairs[ax[0]][0]
+      #let idx = ax[1]
+      result.add quote do:
+        `shapeIdents`[`i`] = `t`.shape[`idxArg`]
+  of skAuto:
+    echo "*#*&#*&#&*#*&#&*#*&#&*"
+    for i, idx in toSeq(idxRes):
+      # since `shapeIdents` corresponds to the shape of the resulting
+      # tensor, use the `LHS` (if skAssign) to order them in the
+      # correct way
+      #doAssert
+      echo "LHS ", idxLhs
+      #echo "IDX PAIRS ", ax[1]
+      echo tensorAxes
+      echo tensorIdxPairs
+      #echo ax
+
+      # TODO: `i` should not be the index, but rather the
+      # index of `idxLhs` for the index that corresponds to
+      # ax
+      var idxArg: int
+      var t: NimNode
+      for tIdx, ax in tensorAxes:
+        if $tensorIdxPairs[ax[0]][1][ax[1]] == idx:
+          idxArg = ax[1]
+          t = tensorIdxPairs[ax[0]][0]
+          idxIdentPairs.add (idx, i) #idxArg)
+          break
+      #let t = tensorIdxPairs[ax[0]][0]
+      #let idx = ax[1]
+      result.add quote do:
+        `shapeIdents`[`i`] = `t`.shape[`idxArg`]
+
+  var idxIdentContrPairs = newSeq[(string, int)]()
+  for i, idx in toSeq(idxContr):
+    for tIdx, ax in contractionAxes:
+      if $tensorIdxPairs[ax[0]][1][ax[1]] == idx:
+        idxIdentContrPairs.add (idx, i) #ax[1])
+        break
+
 
   # generate the code to get the shape of the contraction
   let shapeContrIdents = ident"shapesContr"
@@ -312,7 +384,7 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
     contractionLoops.add quote do:
       var `contrRes`: float
     contractionLoops.add buildLoops(rankContr,
-                                    idxContr,
+                                    idxIdentContrPairs,#idxContr,
                                     shapeContrIdents,
                                     innerStmt)
     contractionLoops.add quote do:
@@ -325,7 +397,9 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
   echo "Contr loops ", contractionLoops.repr
 
   if rank > 0:
-    let forLoops = buildLoops(rank, idxRes, shapeIdents, contractionLoops)
+    let forLoops = buildLoops(rank,
+                              idxIdentPairs,#idxRes,
+                              shapeIdents, contractionLoops)
     echo "FOR LOOPS ", forLoops.repr
     result.add forLoops
   else:

@@ -1,5 +1,5 @@
 import macros, sequtils, sets, algorithm
-import arraymancer
+import tensor
 
 template `^^`(s, i: untyped): untyped =
   (when i is BackwardsIndex: s.len - int(i) else: int(i))

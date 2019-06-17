@@ -63,7 +63,7 @@ suite "Einsum":
       m[i,k] * n[k, j]
     let res = [[  25.0,   28.0,   31.0,   34.0,   37.0],
                [  70.0,   82.0,   94.0,  106.0,  118.0]].toTensor
-    doAssert res == b.transpose
+    doAssert res == b
 
   test "Matrix-matrix multiplication ~ explicit":
     let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)

@@ -163,6 +163,11 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
 
   # TODO: allow nested infix w/ more than 2 tensors
   let tensorIdxPairs = getTensorSeq(rhsStmt, ts)
+  echo "TENSOR IDX PAIRS ", tensorIDxPairs
+
+  let inputOrderIdents = toOrderedSet(
+    concat(tensorIdxPairs.mapIt(it[1])).mapIt($it)
+  )
 
   let resIdent = ident"tmp"
 
@@ -279,38 +284,40 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
         `shapeIdents`[`i`] = `t`.shape[`idxArg`]
   of skAuto:
     echo "*#*&#*&#&*#*&#&*#*&#&*"
-    for i, idx in toSeq(idxRes):
-      # since `shapeIdents` corresponds to the shape of the resulting
-      # tensor, use the `LHS` (if skAssign) to order them in the
-      # correct way
-      #doAssert
-      echo "LHS ", idxLhs
-      #echo "IDX PAIRS ", ax[1]
-      echo tensorAxes
-      echo tensorIdxPairs
-      #echo ax
+    var i = 0
+    for idx in inputOrderIdents:
+      if idx in idxRes:
+        # since `shapeIdents` corresponds to the shape of the resulting
+        # tensor, use the `LHS` (if skAssign) to order them in the
+        # correct way
+        #doAssert
+        echo "LHS ", idxLhs
+        #echo "IDX PAIRS ", ax[1]
+        echo tensorAxes
+        echo tensorIdxPairs
+        #echo ax
 
-      # TODO: `i` should not be the index, but rather the
-      # index of `idxLhs` for the index that corresponds to
-      # ax
-      var idxArg: int
-      var t: NimNode
-      for tIdx, ax in tensorAxes:
-        if $tensorIdxPairs[ax[0]][1][ax[1]] == idx:
-          idxArg = ax[1]
-          t = tensorIdxPairs[ax[0]][0]
-          idxIdentPairs.add (idx, i) #idxArg)
-          break
-      #let t = tensorIdxPairs[ax[0]][0]
-      #let idx = ax[1]
-      result.add quote do:
-        `shapeIdents`[`i`] = `t`.shape[`idxArg`]
+        # TODO: `i` should not be the index, but rather the
+        # index of `idxLhs` for the index that corresponds to
+        # ax
+        var idxArg: int
+        var t: NimNode
+        for tIdx, ax in tensorAxes:
+          if $tensorIdxPairs[ax[0]][1][ax[1]] == idx:
+            idxArg = ax[1]
+            t = tensorIdxPairs[ax[0]][0]
+            idxIdentPairs.add (idx, i)
+            break
+        result.add quote do:
+          `shapeIdents`[`i`] = `t`.shape[`idxArg`]
+
+        inc i
 
   var idxIdentContrPairs = newSeq[(string, int)]()
   for i, idx in toSeq(idxContr):
     for tIdx, ax in contractionAxes:
       if $tensorIdxPairs[ax[0]][1][ax[1]] == idx:
-        idxIdentContrPairs.add (idx, i) #ax[1])
+        idxIdentContrPairs.add (idx, i)
         break
 
 
@@ -361,8 +368,11 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
     echo "Or not?!"
     # generate bracket to acceess element
     asgnTo = nnkBracketExpr.newTree(resIdent)
-    for x in idxRes:
-      asgnTo.add ident(x)
+    # now assign the indices we access by the order in which they appear
+    # in the input statement
+    for x in inputOrderIdents:
+      if x in idxRes:
+        asgnTo.add ident(x)
 
   echo "Asgn to is ", asgnTo.repr
 

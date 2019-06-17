@@ -29,6 +29,7 @@ proc buildLoops(rank: int,
   #let idxResSeq = toSeq(idxRes)
   var stmtInLoop = newNimNode(nnkNilLit)
   for i in 0 ..< rank:
+    echo "idxIdentPairs, ", idxIdentPairs
     let shapeIdx = idxIdentPairs[i][1]  #rank - i - 1
     let forIdx = ident(idxIdentPairs[i][0]) #ident(idxResSeq[i])
     let toIdx = quote do:
@@ -43,12 +44,11 @@ proc buildLoops(rank: int,
     )
     #let idxI = ident(idxResSeq[i])
     if stmtInLoop.kind == nnkNilLit:
-      #stmtInLoop = quote do:
       #  echo `resIdent`[`idxI`, `idxI`]
       stmtInLoop = innerStatement
-
     else:
       stmtInLoop = forLoops
+
     loop.add stmtInLoop
     forLoops = loop
   result = forLoops
@@ -109,10 +109,20 @@ proc getTensorSeq(tensors: NimNode, tensorArgument: seq[NimNode]): seq[(NimNode,
     doAssert tensors[0].ident == toNimIdent"*"
     #doAssert tensors.len == tensorArgument.len, "Every tensor given as an argument " &
     #  "to `einsum` must be used in the statement in the body! "
-    for i in 1 ..< tensors.len:
-      result.add getTensorSeq(tensors[i], @[tensorArgument[i - 1]])
+    if tensors[1].kind == nnkInfix:
+      result.add getTensorSeq(tensors[1], tensorArgument)
+      result.add getTensorSeq(tensors[2], @[tensorArgument[^1]])
+    else:
+      result.add getTensorSeq(tensors[1], @[tensorArgument[0]])
+      result.add getTensorSeq(tensors[2], @[tensorArgument[1]])
+    #for i in 1 ..< tensors.len:
+    #  echo "Index ", i, " at "
+    #  echo tensors[i].repr
+    #  echo " and ", tensorArgument[i - 1].repr
+    #  result.add getTensorSeq(tensors[i], @[tensorArgument[i - 1]])
   else:
     error("Unsupported kind " & $tensors.kind)
+  echo "Result ", result
 
 proc findAxes(idxRes: HashSet[string], tensors: seq[(NimNode, seq[NimNode])]): seq[(int, int)] =
   for idx in idxRes:
@@ -124,6 +134,26 @@ proc findAxes(idxRes: HashSet[string], tensors: seq[(NimNode, seq[NimNode])]): s
         # found this index, can break from search
         break
   #result = result.reversed
+
+proc toDuplicates[T](s: seq[T]): HashSet[T] =
+  ## creates a set of elements ``only`` consisting of the duplicate elements
+  ## in `s`. Unique elements will ``not`` show up in the resulting set.
+  var tmp = initHashSet[T]()
+  for x in s:
+    if x notin tmp:
+      tmp.incl x
+    else:
+      # already in `tmp`, so it's a duplicate. Add it to result
+      result.incl x
+
+proc toUnique[T](s: seq[T]): HashSet[T] =
+  ## creates a set of elements, which ``only`` contains the unique
+  ## elements of `s`. Any duplicate will ``not`` appear in the resulting
+  ## set.
+  let duplicates = toDuplicates(s)
+  for x in s:
+    if x notin duplicates:
+      result.incl x
 
 macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
   echo tensorInput.treeRepr
@@ -190,31 +220,58 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
   # Init both with the first tensor
   # TODO: how to keep order sane? Walk the actual statements again
   # after extracting the set? Do we even need it?
-  var idxRes = toSet(tensorIdxPairs[0][1].mapIt($it))
-  var idxContr = toSet(tensorIdxPairs[0][1].mapIt($it))
-  if tensorIdxPairs.len == 1:
-    # `idxRes` is unchanged, all indices are the resulting indices
-    # for `idxContr` there cannot be contracted indices in case of a single argument
-    idxContr = initHashSet[string]()
-  for i in 1 ..< tensorIdxPairs.len:
-    let otherSet = toSet(tensorIdxPairs[i][1].mapIt($it))
-    idxRes = idxRes.symmetricDifference(otherSet)
-    idxContr = idxContr.intersection(otherSet)
+  #var idxRes = toSet(tensorIdxPairs[0][1].mapIt($it))
+  #var idxContr = toSet(tensorIdxPairs[0][1].mapIt($it))
+  #if tensorIdxPairs.len == 1:
+  #  # `idxRes` is unchanged, all indices are the resulting indices
+  #  # for `idxContr` there cannot be contracted indices in case of a single argument
+  #  idxContr = initHashSet[string]()
+
+  # first build a union of all indices
+  let idxAllSeq = concat(tensorIdxPairs.mapIt(it[1])).mapIt($it)
+  var idxRes = toUnique(idxAllSeq)
+  var idxContr = toDuplicates(idxAllSeq)
+
   echo "Idx Res ", idxRes
   echo "Idx Contr ", idxContr
 
   # compare `idxContr` deduced from the RHS with the indices of LHS, if assignment
   if stmtKind == skAssign:
+    # for the assignment case we may have to modify the `idxRes` and `idxContr` based on what
+    # `idxLHS` shows. Any index that still appears in `idxLHS` must be taken out of
+    # `idxContr` and added to `idxRes`, because this means the user wishes to exclude
+    # contraction of that index. I.e. the case for the `Hadamard product`:
+    # res[i,j] = m[i,j] * n[i,j]
+    # product wise multiplication
+    for idx in idxLhs:
+      if idx in idxContr:
+        idxContr.excl idx
+        idxRes.incl idx
+    # on the other hand for any index in union(`idxRes`, `idxContr`), but not
+    # in `idxLhs`, must be removed from `idxRes` and added to `idxContr`
+    for idx in union(idxRes, idxContr):
+      if idx notin idxLhs:
+        idxContr.incl idx
+        idxRes.excl idx
 
-    # if we have an assignment, we take the LHS for fact
-    # Thus `idxContr` then is actually the `symmetricDifference` of the LHS and the
-    # union of `idxRes` u `idxContr` (i.e. all indices on the RHS)
-    idxContr = symmetricDifference(
-      union(idxRes, idxContr),
-      toSet(toSeq(idxLHS))
-    )
-    # `idxRes` thus has to get rid of the indices in `idxContr`
-    idxRes = difference(idxRes, idxContr)
+    # special case, Hadamard product, LHS indices exactly the same as RHS indices:
+    # TODO: is it a good idea to introduce special cases like this? Is this actually
+    # a special case?
+    #if toSet(toSeq(idxLhs)) == union(idxRes, idxContr):
+    #  # Means that idxRes must be union of those
+    #  idxRes = union(idxRes, idxContr)
+    #  idxContr = initHashSet[string]()
+    #else:
+    #  # if we have an assignment, we take the LHS for fact
+    #  # Thus `idxContr` then is actually the `symmetricDifference` of the LHS and the
+    #  # union of `idxRes` u `idxContr` (i.e. all indices on the RHS)
+    #  idxContr = symmetricDifference(
+    #    union(idxRes, idxContr),
+    #    toSet(toSeq(idxLHS))
+    #  )
+    #  # `idxRes` thus has to get rid of the indices in `idxContr`
+    #  idxRes = difference(idxRes, idxContr)
+
 
     #if idxContr.len == 0 and idxLHS.len == 0:
     #  # If both are empty, we have to fix the contraction indices. This means we
@@ -234,20 +291,27 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
 
   # now we can safely calculate the rank of the tensor
   let rank = idxRes.card
+  echo "rank ", rank, " idx rhs ", idxRes
+
+
+
 
   # find each axis of each tensor, which will surive
   # seq of tuples of `tensor`, `axis` pairs
+  echo "Finding tensors ", idxRes, " from ", tensorIdxPairs
   let tensorAxes = findAxes(idxRes, tensorIdxPairs)
   let contractionAxes = findAxes(idxContr, tensorIdxPairs)
-
-  # generate the code to get the shape of the resulting tensor
-  let shapeIdents = ident"shapes"
 
   # the sequence storing the NimNode for the `i`, `j`,... einstein index
   # and corresponding it to the correct index for the `shape*Idents` sequence
   var idxIdentPairs = newSeq[(string, int)]()
-  result.add quote do:
-    var `shapeIdents` = newSeq[int](`rank`)
+
+  # generate the code to get the shape of the resulting tensor
+  let shapeIdents = ident"shapes"
+  if rank > 0:
+    # add a `shapes` variable, only if the resulting shape is
+    result.add quote do:
+      var `shapeIdents` = newSeq[int](`rank`)
 
   case stmtKind
   of skAssign:
@@ -269,7 +333,7 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
       var idxArg: int
       var t: NimNode
       for tIdx, ax in tensorAxes:
-        echo "I ", i, ax
+        echo "iter i ", i, " ", ax, "tensor ", tIdx, " looking for ", idx
         if $tensorIdxPairs[ax[0]][1][ax[1]] == idx:
           idxArg = ax[1]
           t = tensorIdxPairs[ax[0]][0]
@@ -278,10 +342,15 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
           echo "IDX ", idx
           idxIdentPairs.add (idx, i) #idxArg)
           break
+      if t.kind == nnkNilLit:
+        echo "DId not find " , idx, " in ", tensorAxes
+        echo "tensor idx pairs ", tensorIdxPairs
       #let t = tensorIdxPairs[ax[0]][0]
       #let idx = ax[1]
-      result.add quote do:
-        `shapeIdents`[`i`] = `t`.shape[`idxArg`]
+      if rank > 0:
+        # only add to `shapes` variable, if rank > 0
+        result.add quote do:
+          `shapeIdents`[`i`] = `t`.shape[`idxArg`]
   of skAuto:
     echo "*#*&#*&#&*#*&#&*#*&#&*"
     var i = 0
@@ -320,10 +389,10 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
         idxIdentContrPairs.add (idx, i)
         break
 
-
   # generate the code to get the shape of the contraction
   let shapeContrIdents = ident"shapesContr"
   let rankContr = idxContr.card
+  echo "rankContr ", rankContr, " idx contr ", idxContr
   result.add quote do:
     var `shapeContrIdents` = newSeq[int](`rankContr`)
     echo "Rank contr ", `rankContr`
@@ -341,8 +410,9 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
   else:
     result.add quote do:
       var `resIdent` = newTensor[float](`shapeIdents`)
-      echo `shapeIdents`.len
-      echo `resIdent`.shape
+      echo "Shapes ", `shapeIdents`.len
+      echo "Shapes ", `shapeIdents`
+      echo "Tmp ", `resIdent`.shape
 
   # now either get the assignment from the user or build it from
   # `idxRes`
@@ -366,13 +436,17 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
       error("Unsupported kind for assignment " & $asgnTo.kind)
   else:
     echo "Or not?!"
-    # generate bracket to acceess element
-    asgnTo = nnkBracketExpr.newTree(resIdent)
-    # now assign the indices we access by the order in which they appear
-    # in the input statement
-    for x in inputOrderIdents:
-      if x in idxRes:
-        asgnTo.add ident(x)
+    if rank > 0:
+      # generate bracket to acceess element
+      asgnTo = nnkBracketExpr.newTree(resIdent)
+      # now assign the indices we access by the order in which they appear
+      # in the input statement
+      for x in inputOrderIdents:
+        if x in idxRes:
+          asgnTo.add ident(x)
+    else:
+      # scalar result from implicit call
+      asgnTo = resIdent
 
   echo "Asgn to is ", asgnTo.repr
 

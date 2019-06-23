@@ -239,7 +239,7 @@ proc genAssignTo(resIdent: NimNode,
   ##                   of `idxRes` or `lhsStmt` depending on `stmtKind`
   case stmtKind
   of skAssign:
-    result = lhsStmt
+    result = copyNimTree(lhsStmt)
     # replace the identifier, use the `tmp` instead of user defined LHS ident
     case result.kind
     of nnkIdent:
@@ -297,6 +297,17 @@ proc genResContrIndices(
 macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   ## Performs Einstein summation of the given `tensors` defined by the
   ## `stmt`.
+  ## TODO: more docs
+  ## Depending on whether Einstein summation is used explicitly or implicitly
+  ## the semantics of this macro change. In the implicit case, the result will
+  ## be a `block` returning a `Tensor[T]` or `T` (latter if result is a scalar).
+  ## In the explicit case (see above), the user given explicit identifier will
+  ## be returned in a `let` section.
+  ## TODO: this is bad, if user wants to assign to a var tensor.
+  ## NOTE:
+  ## einsum(a):
+  ##   let b[j,i] = a[i,j]
+  ## is invalid Nim syntax!
   doAssert stmt.len == 1, "There may only be a single statement in `einsum`!"
   result = newStmtList()
   # extract all tensors by checking if they are all symbols
@@ -404,10 +415,24 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
       `asgnTo` = `contrRes`
 
   # put everything into a block and return tmp tensor
-  result = quote do:
-    block:
-      `result`
-      `resIdent`
+  case stmtKind
+  of skAssign:
+    var userResult: NimNode
+    case lhsStmt.kind
+    of nnkIdent:
+      userResult = lhsStmt
+    else:
+      userResult = lhsStmt[0]
+    result = quote do:
+      let `userResult` = block:
+        `result`
+        `resIdent`
+  of skAuto:
+    result = quote do:
+      block:
+        `result`
+        `resIdent`
+  echo result.repr
 
 when isMainModule:
   let c0 = toSeq(11..34).toTensor.astype(float)

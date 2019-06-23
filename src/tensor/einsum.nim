@@ -129,17 +129,20 @@ proc toUnique[T](s: seq[T]): HashSet[T] =
     if x notin duplicates:
       result.incl x
 
-macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
-  let ts = getTensors(tensorInput)
-
-  let stmtKind = checkStatement(stmts)
+proc splitLhsRhs(stmtKind: StatementKind,
+                 stmt: NimNode): (NimNode, OrderedSet[string], NimNode) =
+  ## Returns the einsum statement of the LHS, the LHS indices in an ordered set
+  ## and the RHS statements. If `stmtKind` is `skAuto` however, `lhsStmt` will
+  ## be a nnkNilLit and the OrderedSet the empty set.
+  # node holding RHS of `stmt`
   var rhsStmt: NimNode
+  # node of LHS, ``iff`` `stmtKind` is `skAssign`
   var lhsStmt: NimNode
   var idxLHS: OrderedSet[string]
   if stmtKind == skAssign:
     # in case of assign, slice off the infix part
-    rhsStmt = stmts[0][1]
-    lhsStmt = stmts[0][0]
+    rhsStmt = stmt[0][1]
+    lhsStmt = stmt[0][0]
 
     case lhsStmt.kind
     of nnkIdent:
@@ -150,7 +153,20 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
     else:
       error("Unsupported kind for `einsum` LHS statement " & $lhsStmt.kind)
   else:
-    rhsStmt = stmts[0]
+    rhsStmt = stmt[0]
+  result = (lhsStmt, idxLhs, rhsStmt)
+
+
+macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
+  let ts = getTensors(tensors)
+
+  # determine what kind of statement is given, e.g.
+  # skAssign: res[i,j] = a[i,j] * b[i,j]
+  # skAuto: a[i,j] * b[i,j]
+  let stmtKind = checkStatement(stmt)
+
+
+  let (lhsStmt, idxLhs, rhsStmt) = splitLhsRhs(stmtKind, stmt)
 
   let tensorIdxPairs = getTensorSeq(rhsStmt, ts)
   let inputOrderIdents = toOrderedSet(
@@ -178,7 +194,7 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
   # compare `idxContr` deduced from the RHS with the indices of LHS, if assignment
   if stmtKind == skAssign:
     # for the assignment case we may have to modify the `idxRes` and `idxContr` based on what
-    # `idxLHS` shows. Any index that still appears in `idxLHS` must be taken out of
+    # `idxLhs` shows. Any index that still appears in `idxLhs` must be taken out of
     # `idxContr` and added to `idxRes`, because this means the user wishes to exclude
     # contraction of that index. I.e. the case for the `Hadamard product`:
     # res[i,j] = m[i,j] * n[i,j]
@@ -335,7 +351,7 @@ macro einsum*(tensorInput: varargs[typed], stmts: untyped): untyped =
     # in this case we have no contraction. Use variable for inner
     # stamtent
     contractionLoops = quote do:
-      `asgnTo` = `rhsStmt` # we could just assign `stmts`, but this for clarity
+      `asgnTo` = `rhsStmt` # we could just assign `stmt`, but this for clarity
 
   if rank > 0:
     let forLoops = buildLoops(rank,

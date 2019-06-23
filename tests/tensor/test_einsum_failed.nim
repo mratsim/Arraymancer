@@ -27,5 +27,3 @@ toRun(false):
     c[i] = a[i, j] * b[j, j]
     a[i, j] * b[j, k]
   discard "einsum.nim(137, 12) `stmt.len == 1` There may only be a single statement in `einsum`!"
-
-toRun(true):

@@ -130,7 +130,16 @@ proc findAxes(idxSet: HashSet[string], tensors: seq[TensorIdx]): seq[(int, int)]
         # found this index, can break from search
         break
 
-proc toDuplicates[T](s: seq[T]): HashSet[T] =
+proc findIdx(tensorSeq: seq[TensorIdx], idx: string): (NimNode, int) =
+  ## returns a tensor ident NimNode and the corresponding axis index that
+  ## the string index `idx` corresponds to
+  for tIdx in tensorSeq:
+    let idxStr = tIdx.idx.mapIt($it)
+    let resIdx = find(idxStr, idx)
+    if resIdx >= 0:
+      result = (tIdx.t, resIdx)
+
+proc toDuplicates[T](s: seq[T]): OrderedSet[T] =
   ## creates a set of elements ``only`` consisting of the duplicate elements
   ## in `s`. Unique elements will ``not`` show up in the resulting set.
   var tmp = initHashSet[T]()
@@ -141,7 +150,7 @@ proc toDuplicates[T](s: seq[T]): HashSet[T] =
       # already in `tmp`, so it's a duplicate. Add it to result
       result.incl x
 
-proc toUnique[T](s: seq[T]): HashSet[T] =
+proc toUnique[T](s: seq[T]): OrderedSet[T] =
   ## creates a set of elements, which ``only`` contains the unique
   ## elements of `s`. Any duplicate will ``not`` appear in the resulting
   ## set.
@@ -149,6 +158,14 @@ proc toUnique[T](s: seq[T]): HashSet[T] =
   for x in s:
     if x notin duplicates:
       result.incl x
+
+proc union[T](s1, s2: OrderedSet[T]): OrderedSet[T] =
+  ## returns the union of two OrderedSets. The first arguments order
+  ## will be the dominant order. We iterate both and incl each element.
+  for x in s1:
+    result.incl x
+  for x in s2:
+    result.incl x
 
 proc splitLhsRhs(stmtKind: StatementKind,
                  stmt: NimNode): (NimNode, OrderedSet[string], NimNode) =
@@ -193,32 +210,70 @@ iterator enumerateIdx(s: seq[TensorIdx]): string =
     for idx in t.idx:
       yield $idx
 
-macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
-  ## Performs Einstein summation of the given `tensors` defined by the
-  ## `stmt`.
-  doAssert stmt.len == 1, "There may only be a single statement in `einsum`!"
+proc genShapes(idxIdentPairs: var seq[(string, int)],
+               idxSet: OrderedSet[string],
+               shapeIdent: NimNode,
+               tensorSeq: seq[TensorIdx]): NimNode =
+  ## Generates the tensor shape assignment statements, to assign the
+  ## correct tensor axis dimensions to the shape and contraction shape
+  ## sequences.
+  ## Also fills  the `idxIdentPairs` sequence, which maps the Einstein
+  ## index identifier to the correct axis to generate the for loops later.
   result = newStmtList()
-  # extract all tensors by checking if they are all symbols
-  let ts = getTensors(tensors)
+  for i, idx in idxSet:
+    let (t, idxArg) = findIdx(tensorSeq, idx)
+    idxIdentPairs.add (idx, i)
+    result.add quote do:
+      `shapeIdent`[`i`] = `t`.shape[`idxArg`]
 
-  # determine what kind of statement is given, e.g.
-  # skAssign: res[i,j] = a[i,j] * b[i,j]
-  # skAuto: a[i,j] * b[i,j]
-  let stmtKind = checkStatement(stmt)
-  # get LHS, RHS statements, possible LHS indices
-  let (lhsStmt, idxLhs, rhsStmt) = splitLhsRhs(stmtKind, stmt)
+proc genAssignTo(resIdent: NimNode,
+                 stmtKind: StatementKind,
+                 lhsStmt: NimNode,
+                 idxRes: OrderedSet[string]): NimNode =
+  ## generates the correct assignment for the `resIdent` variable (the temporary
+  ## result variable) based on the `stmtKind` (assign / auto), the potential
+  ## `lhsStmt` and the indices of the resulting tensor `idxRes`.
+  ## Either:
+  ## `tmp` <- our `resIdent` for a scalar result
+  ## `tmp[i,j,...]` <- our `resIdent` for a tensor result. Indices in `[]` those
+  ##                   of `idxRes` or `lhsStmt` depending on `stmtKind`
+  case stmtKind
+  of skAssign:
+    result = lhsStmt
+    # replace the identifier, use the `tmp` instead of user defined LHS ident
+    case result.kind
+    of nnkIdent:
+      # case of scalar result, use `resIdent` as total result
+      result = resIdent
+    of nnkBracketExpr:
+      # result is a tensor, replace identifier before `[]`
+      result[0] = resIdent
+    else:
+      error("Unsupported kind for assignment " & $result.kind)
+  else:
+    if idxRes.card > 0:
+      # generate bracket to access element
+      result = nnkBracketExpr.newTree(resIdent)
+      # now assign the indices we access by the order in which they appear
+      # in the input statement
+      for idx in idxRes:
+        result.add ident(idx)
+    else:
+      # scalar result from implicit call
+      result = resIdent
 
-  let tensorIdxSeq = getTensorIdx(rhsStmt, ts)
-  # first build a union of all indices
-  let idxAllSeq = concat(tensorIdxSeq.mapIt(it.idx)).mapIt($it)
-
-  # add shape assertion statements
-  result.add shapeAssertions(tensorIdxSeq)
-
-  # use to create sets of resulting and contracting indices
+proc genResContrIndices(
+  stmtKind: StatementKind,
+  tensorSeq: seq[TensorIdx],
+  idxLhs: OrderedSet[string]): (OrderedSet[string], OrderedSet[string]) =
+  ## generates the OrderedSets for the indices of the contraction and result
+  ## indices based on the `stmtKind` and all indices on the RHS and LHS
+  # extract all indices from `tensorSeq`
+  let idxAllSeq = concat(tensorSeq.mapIt(it.idx)).mapIt($it)
+  # starting point for result indices: all unique indices
   var idxRes = toUnique(idxAllSeq)
+  # starting point for contraction indices: all duplicate indices
   var idxContr = toDuplicates(idxAllSeq)
-
   # compare `idxContr` deduced from the RHS with the indices of LHS, if assignment
   if stmtKind == skAssign:
     # for the assignment case we may have to modify the `idxRes` and `idxContr` based on what
@@ -237,85 +292,64 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
       if idx notin idxLhs:
         idxContr.incl idx
         idxRes.excl idx
+  result = (idxRes, idxContr)
 
+macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
+  ## Performs Einstein summation of the given `tensors` defined by the
+  ## `stmt`.
+  doAssert stmt.len == 1, "There may only be a single statement in `einsum`!"
+  result = newStmtList()
+  # extract all tensors by checking if they are all symbols
+  let ts = getTensors(tensors)
+
+  # determine what kind of statement is given, e.g.
+  # skAssign: res[i,j] = a[i,j] * b[i,j]
+  # skAuto: a[i,j] * b[i,j]
+  let stmtKind = checkStatement(stmt)
+  # get LHS, RHS statements, possible LHS indices
+  let (lhsStmt, idxLhs, rhsStmt) = splitLhsRhs(stmtKind, stmt)
+
+  let tensorIdxSeq = getTensorIdx(rhsStmt, ts)
+  # add shape assertion statements
+  result.add shapeAssertions(tensorIdxSeq)
+
+  # use to create sets of resulting and contracting indices
+  let (idxRes, idxContr) = genResContrIndices(stmtKind, tensorIdxSeq, idxLhs)
   # now we can safely calculate the rank of the tensor
   let rank = idxRes.card
-
-  # find each axis of each tensor, which will surive
-  # seq of tuples of `tensor`, `axis` pairs
-  let tensorAxes = findAxes(idxRes, tensorIdxSeq)
-  let contractionAxes = findAxes(idxContr, tensorIdxSeq)
 
   # the sequence storing the NimNode for the `i`, `j`,... einstein index
   # and corresponding it to the correct index for the `shape*Idents` sequence
   var idxIdentPairs = newSeq[(string, int)]()
-
-
   # generate the code to get the shape of the resulting tensor
   let shapeIdents = ident"shapes"
   if rank > 0:
     # add a `shapes` variable, only if the resulting shape is
     result.add quote do:
       var `shapeIdents` = newSeq[int](`rank`)
-
   case stmtKind
   of skAssign:
-    for i, idx in idxLhs:
-      # since `shapeIdents` corresponds to the shape of the resulting
-      # tensor, use the `LHS` (if skAssign) to order them in the
-      # correct way
-      var idxArg: int
-      var t: NimNode
-      for ax in tensorAxes:
-        if $tensorIdxSeq[ax[0]].idx[ax[1]] == idx:
-          idxArg = ax[1]
-          t = tensorIdxSeq[ax[0]].t
-          idxIdentPairs.add (idx, i)
-          break
-      doAssert t.kind != nnkNilLit, "Something went wrong, could not find tensor!"
-      if rank > 0:
-        # only add to `shapes` variable, if rank > 0
-        result.add quote do:
-          `shapeIdents`[`i`] = `t`.shape[`idxArg`]
+    result.add genShapes(idxIdentPairs,
+                         idxLhs,
+                         shapeIdents,
+                         tensorIdxSeq)
   of skAuto:
-    var i = 0
-    for idx in enumerateIdx(tensorIdxSeq):
-      if idx in idxRes:
-        # since `shapeIdents` corresponds to the shape of the resulting
-        # tensor, use the `LHS` (if skAssign) to order them in the
-        # correct way
-        var idxArg: int
-        var t: NimNode
-        for ax in tensorAxes:
-          if $tensorIdxSeq[ax[0]].idx[ax[1]] == idx:
-            idxArg = ax[1]
-            t = tensorIdxSeq[ax[0]].t
-            idxIdentPairs.add (idx, i)
-            break
-        result.add quote do:
-          `shapeIdents`[`i`] = `t`.shape[`idxArg`]
-        inc i
+    result.add genShapes(idxIdentPairs,
+                         idxRes,
+                         shapeIdents,
+                         tensorIdxSeq)
 
   var idxIdentContrPairs = newSeq[(string, int)]()
-  for i, idx in toSeq(idxContr):
-    for ax in contractionAxes:
-      if $tensorIdxSeq[ax[0]].idx[ax[1]] == idx:
-        idxIdentContrPairs.add (idx, i)
-        break
-
   # generate the code to get the shape of the contraction
   let shapeContrIdents = ident"shapesContr"
   let rankContr = idxContr.card
   if rankContr > 0:
     result.add quote do:
       var `shapeContrIdents` = newSeq[int](`rankContr`)
-      echo "Rank contr ", `rankContr`
-    for i, ax in contractionAxes:
-      let t = tensorIdxSeq[ax[0]].t
-      let idx = ax[1]
-      result.add quote do:
-        `shapeContrIdents`[`i`] = `t`.shape[`idx`]
-
+    result.add genShapes(idxIdentContrPairs,
+                         idxContr,
+                         shapeContrIdents,
+                         tensorIdxSeq)
 
   # identifier for the variable storing the temporary result (tensor / scalar),
   # which will be the result of the macro's `block`
@@ -323,50 +357,19 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   # generate the result tensor
   if rank == 0:
     result.add quote do:
-      echo `shapeContrIdents`
       var `resIdent` = 0.0
   else:
     result.add quote do:
       var `resIdent` = newTensor[float](`shapeIdents`)
-      echo "Shapes ", `shapeIdents`.len
-      echo "Shapes ", `shapeIdents`
-      echo "Tmp ", `resIdent`.shape
 
-  # now either get the assignment from the user or build it from
-  # `idxRes`
-  # TODO: Check whether user's indices in the assignment are the same
-  # as our `idxRes` calculation
-  var asgnTo: NimNode
-  case stmtKind
-  of skAssign:
-    asgnTo = lhsStmt
-    # replace the identifier, use the `tmp` instead of the actual `a`
-    # TODO: have an inplace version?
-    case asgnTo.kind
-    of nnkIdent:
-      # case of scalar result, use `resIdent` as total result
-      asgnTo = resIdent
-    of nnkBracketExpr:
-      # result is a tensor
-      asgnTo[0] = resIdent
-    else:
-      error("Unsupported kind for assignment " & $asgnTo.kind)
-  else:
-    if rank > 0:
-      # generate bracket to acceess element
-      asgnTo = nnkBracketExpr.newTree(resIdent)
-      # now assign the indices we access by the order in which they appear
-      # in the input statement
-      for idx in enumerateIdx(tensorIdxSeq):
-        if idx in idxRes:
-          asgnTo.add ident(idx)
-    else:
-      # scalar result from implicit call
-      asgnTo = resIdent
+  # generate the LHS of the variable assignment after contraction, e.g.
+  # `tmp[i, j]`
+  let asgnTo = genAssignTo(resIdent, stmtKind, lhsStmt, idxRes)
 
+  # now build the for loops. Starting with the inner loops performing the
+  # tensor contraction
   let prod = rhsStmt
   let contrRes = ident"res"
-
   var contractionLoops: NimNode
   if rankContr > 0:
     let innerStmt = quote do:
@@ -386,10 +389,11 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
     # stamtent
     contractionLoops = quote do:
       `asgnTo` = `rhsStmt` # we could just assign `stmt`, but this for clarity
-
+  # then build the outer non contracting for loops, using the `contractionLoops`
+  # as the inner loop body
   if rank > 0:
     let forLoops = buildLoops(rank,
-                              idxIdentPairs,#idxRes,
+                              idxIdentPairs,
                               shapeIdents, contractionLoops)
     result.add forLoops
   else:
@@ -404,8 +408,6 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
     block:
       `result`
       `resIdent`
-
-  echo "Result ", result.repr
 
 when isMainModule:
   let c0 = toSeq(11..34).toTensor.astype(float)

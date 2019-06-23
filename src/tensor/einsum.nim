@@ -44,6 +44,8 @@ proc buildLoops(rank: int,
 proc getTensors(tensors: NimNode): seq[NimNode] =
   ## extracts all tensors from the `tensors: varargs[typed]` argument of
   ## the macro and checks if they are symbols. Returns them as a seq.
+  # NOTE: if an argument to `einsum` contains an undefined identifier, the
+  # compiler will error out with `undeclared identifier` before we get here
   for t in tensors:
     if t.kind == nnkSym:
       result.add t

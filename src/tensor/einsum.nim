@@ -306,14 +306,15 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   # generate the code to get the shape of the contraction
   let shapeContrIdents = ident"shapesContr"
   let rankContr = idxContr.card
-  result.add quote do:
-    var `shapeContrIdents` = newSeq[int](`rankContr`)
-    echo "Rank contr ", `rankContr`
-  for i, ax in contractionAxes:
-    let t = tensorIdxSeq[ax[0]].t
-    let idx = ax[1]
+  if rankContr > 0:
     result.add quote do:
-      `shapeContrIdents`[`i`] = `t`.shape[`idx`]
+      var `shapeContrIdents` = newSeq[int](`rankContr`)
+      echo "Rank contr ", `rankContr`
+    for i, ax in contractionAxes:
+      let t = tensorIdxSeq[ax[0]].t
+      let idx = ax[1]
+      result.add quote do:
+        `shapeContrIdents`[`i`] = `t`.shape[`idx`]
 
 
   # identifier for the variable storing the temporary result (tensor / scalar),

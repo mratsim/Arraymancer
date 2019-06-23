@@ -108,28 +108,6 @@ proc getTensorIdx(tensors: NimNode, tensorArgument: seq[NimNode]): seq[TensorIdx
   else:
     error("Unsupported kind " & $tensors.kind)
 
-proc findAxes(idxSet: HashSet[string], tensors: seq[TensorIdx]): seq[(int, int)] =
-  ## Find the first axis in which each index in `idxSet` appears in the
-  ## tensors. E.g.
-  ## idxSet = {i, j, k}
-  ## tensors: @[(t: a, idx: @[i, j]]), (t: b, idx: @[j, k])]
-  ## index i: a contains i, is at position 0 in `tensors`. `i` itself is
-  ##          index 0 of `a.idx`
-  ## index j: a contains j, is at position 0 in `tensors`. `j` itself is
-  ##          index 1 of `a.idx`. `b` contains `j` too, but since a's axis 1 and
-  ##          b's axis 0 ``must`` match in length anyways, we can ignore b.
-  ## index i: a contains i, is at position 0 in `tensors`. `i` itself is
-  ##          index 0 of `a.idx`
-  ## -> @[(0, 0), (0, 1), (1, 0)]
-  for idx in idxSet:
-    for i, tIdx in tensors:
-      let idxStr = tIdx.idx.mapIt($it)
-      let at = find(idxStr, $idx)
-      if at >= 0:
-        result.add (i, at)
-        # found this index, can break from search
-        break
-
 proc findIdx(tensorSeq: seq[TensorIdx], idx: string): (NimNode, int) =
   ## returns a tensor ident NimNode and the corresponding axis index that
   ## the string index `idx` corresponds to

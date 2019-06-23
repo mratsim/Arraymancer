@@ -187,6 +187,12 @@ proc shapeAssertions(tensorIdxSeq: seq[TensorIdx]): NimNode =
     result = quote do:
       doAssert `t`.rank == `nIdx`
 
+iterator enumerateIdx(s: seq[TensorIdx]): string =
+  ## enumerates all indices of the tensors in `s` as strings
+  for t in s:
+    for idx in t.idx:
+      yield $idx
+
 macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   ## Performs Einstein summation of the given `tensors` defined by the
   ## `stmt`.
@@ -205,8 +211,6 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   let tensorIdxSeq = getTensorIdx(rhsStmt, ts)
   # first build a union of all indices
   let idxAllSeq = concat(tensorIdxSeq.mapIt(it.idx)).mapIt($it)
-  # and generate an ordered set from all RHS input indices
-  let inputOrderIdents = toOrderedSet(idxAllSeq)
 
   # add shape assertion statements
   result.add shapeAssertions(tensorIdxSeq)
@@ -246,6 +250,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   # and corresponding it to the correct index for the `shape*Idents` sequence
   var idxIdentPairs = newSeq[(string, int)]()
 
+
   # generate the code to get the shape of the resulting tensor
   let shapeIdents = ident"shapes"
   if rank > 0:
@@ -274,7 +279,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
           `shapeIdents`[`i`] = `t`.shape[`idxArg`]
   of skAuto:
     var i = 0
-    for idx in inputOrderIdents:
+    for idx in enumerateIdx(tensorIdxSeq):
       if idx in idxRes:
         # since `shapeIdents` corresponds to the shape of the resulting
         # tensor, use the `LHS` (if skAssign) to order them in the
@@ -351,9 +356,9 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
       asgnTo = nnkBracketExpr.newTree(resIdent)
       # now assign the indices we access by the order in which they appear
       # in the input statement
-      for x in inputOrderIdents:
-        if x in idxRes:
-          asgnTo.add ident(x)
+      for idx in enumerateIdx(tensorIdxSeq):
+        if idx in idxRes:
+          asgnTo.add ident(idx)
     else:
       # scalar result from implicit call
       asgnTo = resIdent

@@ -261,7 +261,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
       # correct way
       var idxArg: int
       var t: NimNode
-      for tIdx, ax in tensorAxes:
+      for ax in tensorAxes:
         if $tensorIdxSeq[ax[0]].idx[ax[1]] == idx:
           idxArg = ax[1]
           t = tensorIdxSeq[ax[0]].t
@@ -281,7 +281,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
         # correct way
         var idxArg: int
         var t: NimNode
-        for tIdx, ax in tensorAxes:
+        for ax in tensorAxes:
           if $tensorIdxSeq[ax[0]].idx[ax[1]] == idx:
             idxArg = ax[1]
             t = tensorIdxSeq[ax[0]].t
@@ -293,7 +293,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
 
   var idxIdentContrPairs = newSeq[(string, int)]()
   for i, idx in toSeq(idxContr):
-    for tIdx, ax in contractionAxes:
+    for ax in contractionAxes:
       if $tensorIdxSeq[ax[0]].idx[ax[1]] == idx:
         idxIdentContrPairs.add (idx, i)
         break

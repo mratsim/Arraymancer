@@ -75,15 +75,22 @@ proc checkStatement(stmts: NimNode): StatementKind =
   else:
     error("`einsum` statement must not be of kind `" & $stmt.kind & "`!")
 
-proc getTensorSeq(tensors: NimNode, tensorArgument: seq[NimNode]): seq[(NimNode, seq[NimNode])] =
+type
+  TensorIdx = object
+    t: NimNode # the tensor ident
+    idx: seq[NimNode] # the corresponding indices
+
+proc getTensorIdx(tensors: NimNode, tensorArgument: seq[NimNode]): seq[TensorIdx] =
   ## Iterate over the `nnkInfix` RHS of the `einsum` statement.
   ## Also compares the tensors in the statement to the tensors the user gave
   ## as the `typed` argument to the macro.
-  proc extractIdentIdx(n: NimNode, compare: NimNode): (NimNode, seq[NimNode]) =
+  ## Returns a sequence of TensorIdx objects, i.e. a tensor ident together with the
+  ## associated indices.
+  proc extractIdentIdx(n: NimNode, compare: NimNode): TensorIdx =
     let tC = n[0]
     doAssert $tC == $compare
     let tIdx = slice(n, 1 .. ^1)
-    result = (tC, tIdx)
+    result = TensorIdx(t: tC, idx: tIdx)
   case tensors.kind
   of nnkBracketExpr:
     # only a single tensor, probably in an `skAssign` statement
@@ -93,19 +100,31 @@ proc getTensorSeq(tensors: NimNode, tensorArgument: seq[NimNode]): seq[(NimNode,
   of nnkInfix:
     doAssert tensors[0].ident == toNimIdent"*"
     if tensors[1].kind == nnkInfix:
-      result.add getTensorSeq(tensors[1], tensorArgument)
-      result.add getTensorSeq(tensors[2], @[tensorArgument[^1]])
+      result.add getTensorIdx(tensors[1], tensorArgument)
+      result.add getTensorIdx(tensors[2], @[tensorArgument[^1]])
     else:
-      result.add getTensorSeq(tensors[1], @[tensorArgument[0]])
-      result.add getTensorSeq(tensors[2], @[tensorArgument[1]])
+      result.add getTensorIdx(tensors[1], @[tensorArgument[0]])
+      result.add getTensorIdx(tensors[2], @[tensorArgument[1]])
   else:
     error("Unsupported kind " & $tensors.kind)
 
-proc findAxes(idxRes: HashSet[string], tensors: seq[(NimNode, seq[NimNode])]): seq[(int, int)] =
-  for idx in idxRes:
-    for i, tup in tensors:
-      let tIdx = tup[1].mapIt($it)
-      let at = find(tIdx, $idx)
+proc findAxes(idxSet: HashSet[string], tensors: seq[TensorIdx]): seq[(int, int)] =
+  ## Find the first axis in which each index in `idxSet` appears in the
+  ## tensors. E.g.
+  ## idxSet = {i, j, k}
+  ## tensors: @[(t: a, idx: @[i, j]]), (t: b, idx: @[j, k])]
+  ## index i: a contains i, is at position 0 in `tensors`. `i` itself is
+  ##          index 0 of `a.idx`
+  ## index j: a contains j, is at position 0 in `tensors`. `j` itself is
+  ##          index 1 of `a.idx`. `b` contains `j` too, but since a's axis 1 and
+  ##          b's axis 0 ``must`` match in length anyways, we can ignore b.
+  ## index i: a contains i, is at position 0 in `tensors`. `i` itself is
+  ##          index 0 of `a.idx`
+  ## -> @[(0, 0), (0, 1), (1, 0)]
+  for idx in idxSet:
+    for i, tIdx in tensors:
+      let idxStr = tIdx.idx.mapIt($it)
+      let at = find(idxStr, $idx)
       if at >= 0:
         result.add (i, at)
         # found this index, can break from search
@@ -145,7 +164,6 @@ proc splitLhsRhs(stmtKind: StatementKind,
     # in case of assign, slice off the infix part
     rhsStmt = stmt[0][1]
     lhsStmt = stmt[0][0]
-
     case lhsStmt.kind
     of nnkIdent:
       # left is an ident, so result supposed to be a scalar. Indidces empty set
@@ -158,11 +176,22 @@ proc splitLhsRhs(stmtKind: StatementKind,
     rhsStmt = stmt[0]
   result = (lhsStmt, idxLhs, rhsStmt)
 
+proc shapeAssertions(tensorIdxSeq: seq[TensorIdx]): NimNode =
+  ## generates the shape assertions for the tensor ranks that are required,
+  ## i.e. that the number of supplied indices corresponds to the rank of the
+  ## input tensors.
+  for tIdx in tensorIdxSeq:
+    let t = tIdx.t
+    let idx = tIdx.idx
+    let nIdx = idx.len
+    result = quote do:
+      doAssert `t`.rank == `nIdx`
 
 macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   ## Performs Einstein summation of the given `tensors` defined by the
   ## `stmt`.
   doAssert stmt.len == 1, "There may only be a single statement in `einsum`!"
+  result = newStmtList()
   # extract all tensors by checking if they are all symbols
   let ts = getTensors(tensors)
 
@@ -170,29 +199,18 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   # skAssign: res[i,j] = a[i,j] * b[i,j]
   # skAuto: a[i,j] * b[i,j]
   let stmtKind = checkStatement(stmt)
-
-
+  # get LHS, RHS statements, possible LHS indices
   let (lhsStmt, idxLhs, rhsStmt) = splitLhsRhs(stmtKind, stmt)
 
-  let tensorIdxPairs = getTensorSeq(rhsStmt, ts)
-  let inputOrderIdents = toOrderedSet(
-    concat(tensorIdxPairs.mapIt(it[1])).mapIt($it)
-  )
-
-  let resIdent = ident"tmp"
-
-  result = newStmtList()
-
-  # generate shape assertion statements
-  for tup in tensorIdxPairs:
-    let t = tup[0]
-    let idx = tup[1]
-    let nIdx = idx.len
-    result.add quote do:
-      doAssert `t`.rank == `nIdx`
-
+  let tensorIdxSeq = getTensorIdx(rhsStmt, ts)
   # first build a union of all indices
-  let idxAllSeq = concat(tensorIdxPairs.mapIt(it[1])).mapIt($it)
+  let idxAllSeq = concat(tensorIdxSeq.mapIt(it.idx)).mapIt($it)
+  # and generate an ordered set from all RHS input indices
+  let inputOrderIdents = toOrderedSet(idxAllSeq)
+
+  # add shape assertion statements
+  result.add shapeAssertions(tensorIdxSeq)
+
   # use to create sets of resulting and contracting indices
   var idxRes = toUnique(idxAllSeq)
   var idxContr = toDuplicates(idxAllSeq)
@@ -221,8 +239,8 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
 
   # find each axis of each tensor, which will surive
   # seq of tuples of `tensor`, `axis` pairs
-  let tensorAxes = findAxes(idxRes, tensorIdxPairs)
-  let contractionAxes = findAxes(idxContr, tensorIdxPairs)
+  let tensorAxes = findAxes(idxRes, tensorIdxSeq)
+  let contractionAxes = findAxes(idxContr, tensorIdxSeq)
 
   # the sequence storing the NimNode for the `i`, `j`,... einstein index
   # and corresponding it to the correct index for the `shape*Idents` sequence
@@ -244,9 +262,9 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
       var idxArg: int
       var t: NimNode
       for tIdx, ax in tensorAxes:
-        if $tensorIdxPairs[ax[0]][1][ax[1]] == idx:
+        if $tensorIdxSeq[ax[0]].idx[ax[1]] == idx:
           idxArg = ax[1]
-          t = tensorIdxPairs[ax[0]][0]
+          t = tensorIdxSeq[ax[0]].t
           idxIdentPairs.add (idx, i)
           break
       doAssert t.kind != nnkNilLit, "Something went wrong, could not find tensor!"
@@ -264,9 +282,9 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
         var idxArg: int
         var t: NimNode
         for tIdx, ax in tensorAxes:
-          if $tensorIdxPairs[ax[0]][1][ax[1]] == idx:
+          if $tensorIdxSeq[ax[0]].idx[ax[1]] == idx:
             idxArg = ax[1]
-            t = tensorIdxPairs[ax[0]][0]
+            t = tensorIdxSeq[ax[0]].t
             idxIdentPairs.add (idx, i)
             break
         result.add quote do:
@@ -276,7 +294,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   var idxIdentContrPairs = newSeq[(string, int)]()
   for i, idx in toSeq(idxContr):
     for tIdx, ax in contractionAxes:
-      if $tensorIdxPairs[ax[0]][1][ax[1]] == idx:
+      if $tensorIdxSeq[ax[0]].idx[ax[1]] == idx:
         idxIdentContrPairs.add (idx, i)
         break
 
@@ -287,11 +305,15 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
     var `shapeContrIdents` = newSeq[int](`rankContr`)
     echo "Rank contr ", `rankContr`
   for i, ax in contractionAxes:
-    let t = tensorIdxPairs[ax[0]][0]
+    let t = tensorIdxSeq[ax[0]].t
     let idx = ax[1]
     result.add quote do:
       `shapeContrIdents`[`i`] = `t`.shape[`idx`]
 
+
+  # identifier for the variable storing the temporary result (tensor / scalar),
+  # which will be the result of the macro's `block`
+  let resIdent = ident"tmp"
   # generate the result tensor
   if rank == 0:
     result.add quote do:

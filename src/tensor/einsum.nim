@@ -160,6 +160,10 @@ proc splitLhsRhs(stmtKind: StatementKind,
 
 
 macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
+  ## Performs Einstein summation of the given `tensors` defined by the
+  ## `stmt`.
+  doAssert stmt.len == 1, "There may only be a single statement in `einsum`!"
+  # extract all tensors by checking if they are all symbols
   let ts = getTensors(tensors)
 
   # determine what kind of statement is given, e.g.

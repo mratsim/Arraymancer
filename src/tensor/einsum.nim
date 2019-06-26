@@ -1,5 +1,6 @@
 import macros, sequtils, sets, algorithm
 import tensor
+import private / ast_utils
 
 template `^^`(s, i: untyped): untyped =
   (when i is BackwardsIndex: s.len - int(i) else: int(i))
@@ -272,6 +273,44 @@ proc genResContrIndices(
         idxRes.excl idx
   result = (idxRes, idxContr)
 
+macro typeName(x: typed): untyped =
+  let str = x.getTypeInst[1].repr
+  result = quote do:
+    `str`
+
+proc extractType(ts: seq[NimNode]): (NimNode, NimNode) =
+  ## first of all checks whether all tensors in `ts` have the same
+  ## data type. If so, returns the type. If not stops compilation.
+  var res = newStmtList()
+  let t0 = ts[0]
+  let t0IdentStr = t0.strVal
+  let typeInst = quote do:
+    type(`t0`)
+  # TODO: use mangling scheme of arraymancer!
+  let t0Ident = ident"T0Mangle"
+  let t0SubType = quote do:
+    getSubType(`typeInst`)
+  res.add quote do:
+    type `t0Ident` = `t0SubType`
+  var whenStmt = nnkWhenStmt.newTree()
+  for t in ts:
+    let tIdentStr = t.strVal
+    let typeCurrent = quote do:
+      type(`t`)
+    let subType = quote do:
+      getSubType(`typeCurrent`)
+    var elifBranch = nnkElifBranch.newTree()
+    elifBranch.add quote do:
+      `t0Ident` isnot `subType`
+    elifBranch.add quote do:
+      {.error: "All tensors must be of the same type! " & $`t0IdentStr` & " is of " &
+        "type " & $typeName(`t0SubType`) & " while " & $`tIdentStr` & " is of type " &
+        $typeName(`subType`) & "!".}
+    whenStmt.add elifBranch
+  res.add whenStmt
+  echo res.treeRepr
+  result = (t0SubType, res)
+
 macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   ## Performs Einstein summation of the given `tensors` defined by the
   ## `stmt`.
@@ -290,6 +329,9 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   result = newStmtList()
   # extract all tensors by checking if they are all symbols
   let ts = getTensors(tensors)
+  # generate the type check code and extract the subtype of all tensors
+  let (typeIdent, typeGen) = extractType(ts)
+  result.add typeGen
 
   # determine what kind of statement is given, e.g.
   # skAssign: res[i,j] = a[i,j] * b[i,j]
@@ -349,7 +391,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
       var `resIdent` = 0.0
   else:
     result.add quote do:
-      var `resIdent` = newTensor[float](`shapeIdents`)
+      var `resIdent` = newTensor[`typeIdent`](`shapeIdents`)
 
   # generate the LHS of the variable assignment after contraction, e.g.
   # `tmp[i, j]`
@@ -366,7 +408,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
 
     contractionLoops = newStmtList()
     contractionLoops.add quote do:
-      var `contrRes`: float
+      var `contrRes`: `typeIdent`
     contractionLoops.add buildLoops(rankContr,
                                     idxIdentContrPairs,
                                     shapeContrIdents,

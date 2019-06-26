@@ -27,3 +27,10 @@ toRun(false):
     c[i] = a[i, j] * b[j, j]
     a[i, j] * b[j, k]
   discard "einsum.nim(137, 12) `stmt.len == 1` There may only be a single statement in `einsum`!"
+
+toRun(false):
+  let a = zeros[float](5)
+  let b = zeros[int](5)
+  let c = einsum(a, b):
+    res[i,j] = a[i] * b[j]
+  discard "einsum.nim(305, 14) Error: All tensors must be of the same type! a is of type float64 while b is of type int!"

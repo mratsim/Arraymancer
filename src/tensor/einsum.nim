@@ -386,6 +386,9 @@ proc genShapes(idxIdentPairs: var seq[(string, int)],
     idxIdentPairs.add (idx, i)
     result.add quote do:
       `shapeIdent`[`i`] = `t`.shape[`idxArg`]
+  # Reverse the `idxIdentPairs` so that the inner most loops
+  # cover the right most indices
+  idxIdentPairs.reverse
 
 proc genAssignTo(resIdent: NimNode,
                  stmtKind: StatementKind,

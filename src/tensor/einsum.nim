@@ -352,19 +352,19 @@ proc genContiguous(ts: seq[NimNode]): (seq[NimNode], NimNode) =
   echo res.treeRepr
 
 macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
-  ## Performs Einstein summation of the given `tensors` defined by the
-  ## `stmt`.
-  ## TODO: more docs
-  ## Depending on whether Einstein summation is used explicitly or implicitly
-  ## the semantics of this macro change. In the implicit case, the result will
-  ## be a `block` returning a `Tensor[T]` or `T` (latter if result is a scalar).
-  ## In the explicit case (see above), the user given explicit identifier will
-  ## be returned in a `let` section.
-  ## TODO: this is bad, if user wants to assign to a var tensor.
-  ## NOTE:
-  ## einsum(a):
-  ##   let b[j,i] = a[i,j]
-  ## is invalid Nim syntax!
+  ## Performs Einstein summation of the given `tensors` defined by the `stmt`.
+  ## See the top of the module for an explanation on Einstein summation.
+  ##
+  ## Let `a`, `b` some 2D tensors (matrices), then the usage to perform
+  ## matrix multiplication of the two might look like:
+  ##    .. code:: nim
+  ##       # implicit Einstein summation
+  ##       let c = einsum(a, b):
+  ##         a[i,j] * b[j,k]
+  ##       # explicit Einstein summation. Note that identifier `d` in statement
+  ##       # is arbitrary and need not match what will be assigned to.
+  ##       let d = einsum(a, b):
+  ##         d[i,k] = a[i,j] * b[j,k] # explicit Einstein summation
   doAssert stmt.len == 1, "There may only be a single statement in `einsum`!"
   result = newStmtList()
   # extract all tensors by checking if they are all symbols

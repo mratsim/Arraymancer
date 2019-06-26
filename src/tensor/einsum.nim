@@ -89,7 +89,7 @@ proc getTensorIdx(tensors: NimNode, tensorArgument: seq[NimNode]): seq[TensorIdx
   ## associated indices.
   proc extractIdentIdx(n: NimNode, compare: NimNode): TensorIdx =
     let tC = n[0]
-    doAssert $tC == $compare
+    doAssert $tC == $compare, " was " & $tC & " and "  & $compare
     let tIdx = slice(n, 1 .. ^1)
     result = TensorIdx(t: tC, idx: tIdx)
   case tensors.kind
@@ -146,11 +146,37 @@ proc union[T](s1, s2: OrderedSet[T]): OrderedSet[T] =
   for x in s2:
     result.incl x
 
+proc makeContigIdent(x: NimNode): NimNode =
+  doAssert x.kind == nnkSym or x.kind == nnkIdent
+  result = ident(x.strVal & "Cont")
+
+proc replaceRhsByContig(rhs: NimNode): NimNode =
+  ## Replaces the tensor identifiers of the RHS statement by those
+  ## of the local contiguous tensors.
+  result = rhs
+  case result.kind
+  of nnkInfix:
+    for i in 0 ..< result.len:
+      case result[i].kind
+      of nnkIdent: discard
+      of nnkInfix:
+        result[i] = replaceRhsByContig(result[i])
+      of nnkBracketExpr:
+        result[i][0] = makeContigIdent(result[i][0])
+      else:
+        error("Unsupported kind for `einsum` RHS statement " & $result[i].kind)
+  of nnkBracketExpr:
+    result[0] = makeContigIdent(result[0])
+  else:
+    error("Unsupported kind for `einsum` RHS statement " & $result.kind)
+
 proc splitLhsRhs(stmtKind: StatementKind,
                  stmt: NimNode): (NimNode, OrderedSet[string], NimNode) =
   ## Returns the einsum statement of the LHS, the LHS indices in an ordered set
   ## and the RHS statements. If `stmtKind` is `skAuto` however, `lhsStmt` will
   ## be a nnkNilLit and the OrderedSet the empty set.
+  ## In addition the `rhsStmt` tensor identifiers will be replaced by the
+  ## local contiguous tensors (identifier & "Cont").
   # node holding RHS of `stmt`
   var rhsStmt: NimNode
   # node of LHS, ``iff`` `stmtKind` is `skAssign`
@@ -170,6 +196,8 @@ proc splitLhsRhs(stmtKind: StatementKind,
       error("Unsupported kind for `einsum` LHS statement " & $lhsStmt.kind)
   else:
     rhsStmt = stmt[0]
+  # now patch `rhsStmt` to use the local contiguous tensors
+  rhsStmt = replaceRhsByContig(rhsStmt)
   result = (lhsStmt, idxLhs, rhsStmt)
 
 proc shapeAssertions(tensorIdxSeq: seq[TensorIdx]): NimNode =
@@ -310,6 +338,19 @@ proc extractType(ts: seq[NimNode]): (NimNode, NimNode) =
   res.add whenStmt
   result = (t0SubType, res)
 
+proc genContiguous(ts: seq[NimNode]): (seq[NimNode], NimNode) =
+  var res = newStmtList()
+  var tsCont: seq[NimNode]
+  for t in ts:
+    let tCIdent = makeContigIdent(t)
+    let subType = quote do:
+      getSubType(type(`t`))
+    res.add quote do:
+      let `tcIdent` = asContiguous[`subType`](`t`, layout = rowMajor, force = true)
+    tsCont.add tcIdent
+  result = (tsCont, res)
+  echo res.treeRepr
+
 macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   ## Performs Einstein summation of the given `tensors` defined by the
   ## `stmt`.
@@ -327,10 +368,14 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   doAssert stmt.len == 1, "There may only be a single statement in `einsum`!"
   result = newStmtList()
   # extract all tensors by checking if they are all symbols
-  let ts = getTensors(tensors)
+  let tsRaw = getTensors(tensors)
   # generate the type check code and extract the subtype of all tensors
-  let (typeIdent, typeGen) = extractType(ts)
+  let (typeIdent, typeGen) = extractType(tsRaw)
   result.add typeGen
+
+  # create contiguous, row ordered versions of the tensors
+  let (ts, contiguousTensors) = genContiguous(tsRaw)
+  result.add contiguousTensors
 
   # determine what kind of statement is given, e.g.
   # skAssign: res[i,j] = a[i,j] * b[i,j]
@@ -398,12 +443,11 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
 
   # now build the for loops. Starting with the inner loops performing the
   # tensor contraction
-  let prod = rhsStmt
   let contrRes = ident"res"
   var contractionLoops: NimNode
   if rankContr > 0:
     let innerStmt = quote do:
-      `contrRes` += `prod`
+      `contrRes` += `rhsStmt`
 
     contractionLoops = newStmtList()
     contractionLoops.add quote do:

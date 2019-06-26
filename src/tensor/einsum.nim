@@ -308,7 +308,6 @@ proc extractType(ts: seq[NimNode]): (NimNode, NimNode) =
         $typeName(`subType`) & "!".}
     whenStmt.add elifBranch
   res.add whenStmt
-  echo res.treeRepr
   result = (t0SubType, res)
 
 macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
@@ -435,24 +434,11 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
       `asgnTo` = `contrRes`
 
   # put everything into a block and return tmp tensor
-  case stmtKind
-  of skAssign:
-    var userResult: NimNode
-    case lhsStmt.kind
-    of nnkIdent:
-      userResult = lhsStmt
-    else:
-      userResult = lhsStmt[0]
-    result = quote do:
-      let `userResult` = block:
-        `result`
-        `resIdent`
-  of skAuto:
-    result = quote do:
-      block:
-        `result`
-        `resIdent`
-  echo result.repr
+  result = quote do:
+    block:
+      `result`
+      `resIdent`
+  # echo result.repr
 
 when isMainModule:
   let c0 = toSeq(11..34).toTensor.astype(float)

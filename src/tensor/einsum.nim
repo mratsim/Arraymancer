@@ -55,7 +55,7 @@ Cross-product of two vectors
 ----------------------------
 
 The cross product of two 3 vectors ``v``, ``w`` can be conveniently defined using
-the `Levi-Civita symbol <https://en.wikipedia.org/wiki/Levi-Civita_symbol#Three_dimensions>_
+the `Levi-Civita symbol <https://en.wikipedia.org/wiki/Levi-Civita_symbol#Three_dimensions>`_
 `\epsilon_{ijk}`:
 
 `a[i] = \epsilon_{ijk} v[j] * w[k]`,
@@ -140,7 +140,7 @@ A few things must be noted here for the explicit case:
   dimensions.
 
 For many more examples for typical applications, take a look at the test case
-`<../../tests/tensor/test_einsum.nim`_.
+`<../../tests/tensor/test_einsum.nim>`_.
 
 Implementation details
 ----------------------

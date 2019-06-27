@@ -590,7 +590,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   # generate the result tensor
   if rank == 0:
     result.add quote do:
-      var `resIdent` = 0.0
+      var `resIdent` = `typeIdent`(0)
   else:
     result.add quote do:
       var `resIdent` = newTensor[`typeIdent`](`shapeIdents`)

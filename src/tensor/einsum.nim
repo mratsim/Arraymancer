@@ -472,9 +472,9 @@ proc extractType(ts: seq[NimNode]): (NimNode, NimNode) =
   let typeInst = quote do:
     type(`t0`)
   # TODO: use mangling scheme of arraymancer!
-  let t0Ident = ident"T0Mangle"
   let t0SubType = quote do:
     getSubType(`typeInst`)
+  let t0Ident = genSym(nskType, "T0Type")
   res.add quote do:
     type `t0Ident` = `t0SubType`
   var whenStmt = nnkWhenStmt.newTree()
@@ -554,7 +554,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   # and corresponding it to the correct index for the `shape*Idents` sequence
   var idxIdentPairs = newSeq[(string, int)]()
   # generate the code to get the shape of the resulting tensor
-  let shapeIdents = ident"shapes"
+  let shapeIdents = genSym(nskVar, "shapes")
   if rank > 0:
     # add a `shapes` variable, only if the resulting shape is
     result.add quote do:
@@ -573,7 +573,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
 
   var idxIdentContrPairs = newSeq[(string, int)]()
   # generate the code to get the shape of the contraction
-  let shapeContrIdents = ident"shapesContr"
+  let shapeContrIdents = genSym(nskVar, "shapesContr")
   let rankContr = idxContr.card
   if rankContr > 0:
     result.add quote do:
@@ -585,7 +585,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
 
   # identifier for the variable storing the temporary result (tensor / scalar),
   # which will be the result of the macro's `block`
-  let resIdent = ident"tmp"
+  let resIdent = genSym(nskVar, "tmp")
   # generate the result tensor
   if rank == 0:
     result.add quote do:
@@ -600,7 +600,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
 
   # now build the for loops. Starting with the inner loops performing the
   # tensor contraction
-  let contrRes = ident"res"
+  let contrRes = genSym(nskVar, "res")
   var contractionLoops: NimNode
   if rankContr > 0:
     let innerStmt = quote do:

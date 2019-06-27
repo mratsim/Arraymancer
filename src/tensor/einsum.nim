@@ -469,24 +469,24 @@ macro typeName(x: typed): untyped =
 proc extractType(ts: seq[NimNode]): (NimNode, NimNode) =
   ## first of all checks whether all tensors in `ts` have the same
   ## data type. If so, returns the type. If not stops compilation.
-  var res = newStmtList()
+  proc genSubTypeNode(t: NimNode): NimNode =
+    result = quote do:
+      getSubType(type(`t`))
+
   let t0 = ts[0]
+  # get string value for error message
   let t0IdentStr = t0.strVal
-  let typeInst = quote do:
-    type(`t0`)
-  # TODO: use mangling scheme of arraymancer!
-  let t0SubType = quote do:
-    getSubType(`typeInst`)
   let t0Ident = genSym(nskType, "T0Type")
+  let t0SubType = genSubTypeNode(t0)
+  # res will contain the `when` statement plus type declaration
+  var res = newStmtList()
   res.add quote do:
     type `t0Ident` = `t0SubType`
   var whenStmt = nnkWhenStmt.newTree()
   for t in ts:
+    # string value for error message
     let tIdentStr = t.strVal
-    let typeCurrent = quote do:
-      type(`t`)
-    let subType = quote do:
-      getSubType(`typeCurrent`)
+    let subType = genSubTypeNode(t)
     var elifBranch = nnkElifBranch.newTree()
     elifBranch.add quote do:
       `t0Ident` isnot `subType`
@@ -496,15 +496,13 @@ proc extractType(ts: seq[NimNode]): (NimNode, NimNode) =
         $typeName(`subType`) & "!".}
     whenStmt.add elifBranch
   res.add whenStmt
-  result = (t0SubType, res)
+  result = (t0Ident, res)
 
-proc genContiguous(ts: seq[NimNode]): (seq[NimNode], NimNode) =
+proc genContiguous(ts: seq[NimNode], subType: NimNode): (seq[NimNode], NimNode) =
   var res = newStmtList()
   var tsCont: seq[NimNode]
   for t in ts:
     let tCIdent = makeContigIdent(t)
-    let subType = quote do:
-      getSubType(type(`t`))
     res.add quote do:
       let `tcIdent` = asContiguous[`subType`](`t`, layout = rowMajor, force = true)
     tsCont.add tcIdent
@@ -534,7 +532,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   result.add typeGen
 
   # create contiguous, row ordered versions of the tensors
-  let (ts, contiguousTensors) = genContiguous(tsRaw)
+  let (ts, contiguousTensors) = genContiguous(tsRaw, typeIdent)
   result.add contiguousTensors
 
   # determine what kind of statement is given, e.g.

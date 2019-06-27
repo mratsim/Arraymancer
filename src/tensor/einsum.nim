@@ -156,6 +156,19 @@ It also forces the tensors into contiguous, row major form by creating
 local copies with `asContiguous`.
 ]#
 
+type
+  # enum which stores whether an `einsum` call is explicit `skAssign` (statement
+  # contains an nnkAsgn node) or implicit `skAuto` (statement is purely nnkIndix
+  # nodes)
+  StatementKind = enum
+    skAssign, # specific assignment of summation to an existing tensor
+    skAuto # automatic deduction of the resulting tensor
+  # a helper object, which stores a tensor ident node together with the applied
+  # indices
+  TensorIdx = object
+    t: NimNode # the tensor ident
+    idx: seq[NimNode] # the corresponding indices
+
 template `^^`(s, i: untyped): untyped =
   (when i is BackwardsIndex: s.len - int(i) else: int(i))
 
@@ -207,11 +220,6 @@ proc getTensors(tensors: NimNode): seq[NimNode] =
     else:
       error("Argument to `einsum` must be a number of defined tensors!")
 
-type
-  StatementKind = enum
-    skAssign, # specific assignment of summation to an existing tensor
-    skAuto # automatic deduction of the resulting tensor
-
 proc checkStatement(stmts: NimNode): StatementKind =
   ## checks what kind of statement `einsum` was given. Either a simple product
   ## of `nnkInfix` using `*` without assignment (deduce resulting tensor
@@ -229,11 +237,6 @@ proc checkStatement(stmts: NimNode): StatementKind =
     result = skAssign
   else:
     error("`einsum` statement must not be of kind `" & $stmt.kind & "`!")
-
-type
-  TensorIdx = object
-    t: NimNode # the tensor ident
-    idx: seq[NimNode] # the corresponding indices
 
 proc getTensorIdx(tensors: NimNode, tensorArgument: seq[NimNode]): seq[TensorIdx] =
   ## Iterate over the `nnkInfix` RHS of the `einsum` statement.

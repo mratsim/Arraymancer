@@ -107,9 +107,11 @@ The `einsum` macro provides two different usage paradigms.
 * implicit <- normal Einstein summation
 * explicit <- potential extended Einstein summation
 
-The macro takes a `varargs[Tensor]` and a single statement. It always
+The macro takes a `varargs[Tensor]` and a single statement. It
 returns a `Tensor[T]`, where `T` is deduced from the subtype of the
-given tensors. Note that the type of all given tensors must match!
+given tensors, if the result is not a scalar. For a scalar result
+the return value is of type `T`. Note that the type of all given tensors
+must match!
 
 The statement given to the macro is just a single line making use of
 Einstein summation as in all the examples above. As a matter of fact
@@ -138,6 +140,8 @@ A few things must be noted here for the explicit case:
   will ``not`` be summed over.
 * the order on the LHS is taken into account, allowing for transposing
   dimensions.
+* the identifier used on the LHS is arbitrary. It can match what the user assigns
+  to, but need not.
 
 For many more examples for typical applications, take a look at the test case
 `<../../tests/tensor/test_einsum.nim>`_.

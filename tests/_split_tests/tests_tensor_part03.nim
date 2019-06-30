@@ -18,4 +18,5 @@
 import
   ../tensor/test_math_functions,
   ../tensor/test_higherorder,
-  ../tensor/test_aggregate
+  ../tensor/test_aggregate,
+  ../tensor/test_einsum

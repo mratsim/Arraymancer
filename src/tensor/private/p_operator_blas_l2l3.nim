@@ -16,7 +16,8 @@ when defined(blis):
   import ../backend/blis
 
 import  ./p_checks,
-        ../fallback/blas_l3_gemm,
+        # ../fallback/legacy/blas_l3_gemm, # Replaced by laser
+        ../../laser/primitives/matrix_multiplication/gemm,
         ../fallback/naive_l2_gemv,
         ../data_structure,
         nimblas
@@ -117,15 +118,27 @@ proc fallbackMM_C_eq_aAB_p_bC*[T: SomeInteger](
     K = a.shape[1] # = b.shape[0]
     N = b.shape[1]
 
-  gemm_nn_fallback( M, N, K,
-                    alpha,
-                    a.data, a.offset,
-                    a.strides[0], a.strides[1],
-                    b.data, b.offset,
-                    b.strides[0], b.strides[1],
-                    beta,
-                    c.data, c.offset,
-                    c.strides[0], c.strides[1])
+  # Legacy fallback
+  # gemm_nn_fallback( M, N, K,
+  #                   alpha,
+  #                   a.data, a.offset,
+  #                   a.strides[0], a.strides[1],
+  #                   b.data, b.offset,
+  #                   b.strides[0], b.strides[1],
+  #                   beta,
+  #                   c.data, c.offset,
+  #                   c.strides[0], c.strides[1])
+
+  # Laser backend
+  gemm_strided(M, N, K,
+               alpha,
+               a.get_offset_ptr(),
+               a.strides[0], a.strides[1],
+               b.get_offset_ptr(),
+               b.strides[0], b.strides[1],
+               beta,
+               c.get_offset_ptr(),
+               c.strides[0], c.strides[1])
 
 proc blasMM_C_eq_aAB_p_bC*[T: SomeFloat|Complex[float32]|Complex[float64]](
   alpha: T, a, b: Tensor[T],

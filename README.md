@@ -14,6 +14,24 @@ It can also use the OpenMP, Cuda or OpenCL backends.
 
 Note: While Nim is compiled and does not offer an interactive REPL yet (like Jupyter), it allows much faster prototyping than C++ due to extremely fast compilation times. Arraymancer compiles in about 5 seconds on my dual-core MacBook.
 
+## Performance notice on Nim 0.20 & compilation flags
+
+In Nim 0.20, the `-d:release` flag does not disable runtime checks like array bounds-checking anymore. This has a signigicant performance impact (5x slowdown in tight loop).
+
+Compile with `-d:release -d:danger` to get the same performance as in 0.19.x.
+
+Reminder of supported compilation flags:
+- `-d:release`: Nim release mode (no stacktraces and debugging information)
+- `-d:danger`: No runtime checks like array bound checking
+- `-d:openmp`: Multithreaded compilation
+- `-d:blas=mkl`: Use MKL, implies `openmp`
+- `-d:blas=openblas`: Use OpenBLAS
+- by default Arraymancer will try to use your default `blas.so/blas.dll`
+  Archlinux user may have to specify `-d:blas=cblas`.
+  See [nimblas](https://github.com/unicredit/nimblas) for further configuration.
+- `-d:cuda`: Build with Cuda support
+- `-d:cudnn`: Build with CuDNN support, implies `cuda`.
+
 ## Show me some code
 
 Arraymancer tutorial is available [here](https://mratsim.github.io/Arraymancer/tuto.first_steps.html).
@@ -190,30 +208,31 @@ Of them; she's murder'd of your galla?
 ## Table of Contents
 <!-- TOC -->
 
-- [Arraymancer - A n-dimensional tensor (ndarray) library.](#arraymancer---a-n-dimensional-tensor-ndarray-library)
-  - [Show me some code](#show-me-some-code)
-    - [Tensor creation and slicing](#tensor-creation-and-slicing)
-    - [Reshaping and concatenation](#reshaping-and-concatenation)
-    - [Broadcasting](#broadcasting)
-    - [A simple two layers neural network](#a-simple-two-layers-neural-network)
-    - [Teaser A text generated with Arraymancer's recurrent neural network](#teaser-a-text-generated-with-arraymancers-recurrent-neural-network)
-  - [Table of Contents](#table-of-contents)
-  - [Installation](#installation)
-  - [Full documentation](#full-documentation)
-  - [Features](#features)
-    - [Arraymancer as a Deep Learning library](#arraymancer-as-a-deep-learning-library)
-      - [Fizzbuzz with fully-connected layers (also called Dense, Affine or Linear layers)](#fizzbuzz-with-fully-connected-layers-also-called-dense-affine-or-linear-layers)
-      - [Handwritten digit recognition with convolutions](#handwritten-digit-recognition-with-convolutions)
-      - [Sequence classification with stacked Recurrent Neural Networks](#sequence-classification-with-stacked-recurrent-neural-networks)
-    - [Tensors on CPU, on Cuda and OpenCL](#tensors-on-cpu-on-cuda-and-opencl)
-  - [What's new in Arraymancer v0.5.0 - "Sign of the Unicorn" - December 2018](#whats-new-in-arraymancer-v050---sign-of-the-unicorn---december-2018)
-  - [4 reasons why Arraymancer](#4-reasons-why-arraymancer)
-    - [The Python community is struggling to bring Numpy up-to-speed](#the-python-community-is-struggling-to-bring-numpy-up-to-speed)
-    - [A researcher workflow is a fight against inefficiencies](#a-researcher-workflow-is-a-fight-against-inefficiencies)
-    - [Can be distributed almost dependency free](#can-be-distributed-almost-dependency-free)
-    - [Bridging the gap between deep learning research and production](#bridging-the-gap-between-deep-learning-research-and-production)
-    - [So why Arraymancer ?](#so-why-arraymancer-)
-  - [Future ambitions](#future-ambitions)
+- [Arraymancer - A n-dimensional tensor (ndarray) library.](#Arraymancer---A-n-dimensional-tensor-ndarray-library)
+  - [Performance notice on Nim 0.20 & compilation flags](#Performance-notice-on-Nim-020--compilation-flags)
+  - [Show me some code](#Show-me-some-code)
+    - [Tensor creation and slicing](#Tensor-creation-and-slicing)
+    - [Reshaping and concatenation](#Reshaping-and-concatenation)
+    - [Broadcasting](#Broadcasting)
+    - [A simple two layers neural network](#A-simple-two-layers-neural-network)
+    - [Teaser A text generated with Arraymancer's recurrent neural network](#Teaser-A-text-generated-with-Arraymancers-recurrent-neural-network)
+  - [Table of Contents](#Table-of-Contents)
+  - [Installation](#Installation)
+  - [Full documentation](#Full-documentation)
+  - [Features](#Features)
+    - [Arraymancer as a Deep Learning library](#Arraymancer-as-a-Deep-Learning-library)
+      - [Fizzbuzz with fully-connected layers (also called Dense, Affine or Linear layers)](#Fizzbuzz-with-fully-connected-layers-also-called-Dense-Affine-or-Linear-layers)
+      - [Handwritten digit recognition with convolutions](#Handwritten-digit-recognition-with-convolutions)
+      - [Sequence classification with stacked Recurrent Neural Networks](#Sequence-classification-with-stacked-Recurrent-Neural-Networks)
+    - [Tensors on CPU, on Cuda and OpenCL](#Tensors-on-CPU-on-Cuda-and-OpenCL)
+  - [What's new in Arraymancer v0.5.0 - "Sign of the Unicorn" - December 2018](#Whats-new-in-Arraymancer-v050---%22Sign-of-the-Unicorn%22---December-2018)
+  - [4 reasons why Arraymancer](#4-reasons-why-Arraymancer)
+    - [The Python community is struggling to bring Numpy up-to-speed](#The-Python-community-is-struggling-to-bring-Numpy-up-to-speed)
+    - [A researcher workflow is a fight against inefficiencies](#A-researcher-workflow-is-a-fight-against-inefficiencies)
+    - [Can be distributed almost dependency free](#Can-be-distributed-almost-dependency-free)
+    - [Bridging the gap between deep learning research and production](#Bridging-the-gap-between-deep-learning-research-and-production)
+    - [So why Arraymancer ?](#So-why-Arraymancer)
+  - [Future ambitions](#Future-ambitions)
 
 <!-- /TOC -->
 

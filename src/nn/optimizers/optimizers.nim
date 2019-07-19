@@ -44,13 +44,13 @@ proc update*(self: var Sgd) =
     let v = self.params[i]
     # v.value -= learning rate * grad
     if v.requires_grad:
-      # When momentum = 0 this acts identically to SGD without momentum.
-      apply3_inline(v.value, v.grad, self.moments[i]):
-        x - self.lr * y + self.momentum * z
-
       # Update the moments with the previous update.
       apply2_inline(self.moments[i], v.grad):
         self.momentum * x - self.lr * y
+
+      # When momentum = 0 this acts identically to SGD without momentum.
+      apply2_inline(v.value, self.moments[i]):
+        x + y
 
       # Zero the gradient
       v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation

@@ -28,32 +28,12 @@ type
     ## Stochastic gradient descent
     params*: seq[Variable[TT]]
     lr*: TT.T # Learning rate. T is the generic parameter of Tensor[T]
-    momentum*: TT.T
-    moments: seq[TT]          # Moments for momentum
 
 proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[Tensor[T]] {.deprecated: "Use the optimizer macro instead".}=
   var moments: seq[Tensor[T]] = @[]
   for param in params:
     moments.add param.grad.zeros_like
-  SGD[Tensor[T]](params: @params, lr: learning_rate, momentum: T(0.0), moments: moments)
-
-proc update*(self: var Sgd) =
-  # Update the params with formula Value = value - lr * gradient + momentum * moment
-  # Note: SGD expects gradient to be scaled by batchsize (done by default in Arraymancer)
-  for i in 0 ..< self.params.len:
-    let v = self.params[i]
-    # v.value -= learning rate * grad
-    if v.requires_grad:
-      # Update the moments with the previous update.
-      apply2_inline(self.moments[i], v.grad):
-        self.momentum * x - self.lr * y
-
-      # When momentum = 0 this acts identically to SGD without momentum.
-      apply2_inline(v.value, self.moments[i]):
-        x + y
-
-      # Zero the gradient
-      v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
+  SGD[Tensor[T]](params: @params, lr: learning_rate)
 
 proc update*(self: Sgd) =
   # Update the params with formula Value -= lr * gradient
@@ -66,8 +46,55 @@ proc update*(self: Sgd) =
       # Zero the gradient
       v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
 
-func optimizerSGD*[M, T](model: M, learning_rate: T, momentum = T(0.0)): Sgd[Tensor[T]] =
+func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
   ## Create a SGD optimizer that will update the model weight
+
+  # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...
+  # Pending https://github.com/nim-lang/Nim/issues/7734 and https://github.com/nim-lang/Nim/issues/7733
+
+  result.params = @[]
+  result.lr = learning_rate
+
+  for layer in fields(model):
+    when layer is Variable:
+      result.params.add layer
+    else:
+      for field in fields(layer): # TODO recursive for any nesting depth of Model
+        when field is Variable:
+          result.params.add field
+
+# ############################################################
+#
+#    SGDMomentum: Stochastic Gradient Descent with Momentum
+#
+# ############################################################
+
+type
+  SgdMomentum*[TT] = object
+    ## Stochastic gradient descent
+    params*: seq[Variable[TT]]
+    lr*: TT.T # Learning rate. T is the generic parameter of Tensor[T]
+    momentum*: TT.T
+    moments: seq[TT]          # Moments for momentum
+
+proc update*(self: var SgdMomentum) =
+  for i in 0 ..< self.params.len:
+    let v = self.params[i]
+    if v.requires_grad:
+      # Update the moments with the previous update.
+      apply2_inline(self.moments[i], v.grad):
+        self.momentum * x - self.lr * y
+
+      # When momentum = 0 this acts identically to SGD without momentum.
+      # Update the params with formula Value = value - lr * gradient + momentum * moment
+      apply2_inline(v.value, self.moments[i]):
+        x + y
+
+      # Zero the gradient
+      v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
+
+func optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0)): SgdMomentum[Tensor[T]] =
+  ## Create a SGD optimizer with momentum that will update the model weight
 
   # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...
   # Pending https://github.com/nim-lang/Nim/issues/7734 and https://github.com/nim-lang/Nim/issues/7733

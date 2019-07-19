@@ -28,9 +28,32 @@ type
     ## Stochastic gradient descent
     params*: seq[Variable[TT]]
     lr*: TT.T # Learning rate. T is the generic parameter of Tensor[T]
+    momentum*: TT.T
+    moments: seq[TT]          # Moments for momentum
 
 proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[Tensor[T]] {.deprecated: "Use the optimizer macro instead".}=
-  SGD[Tensor[T]](params: @params, lr: learning_rate)
+  var moments: seq[Tensor[T]] = @[]
+  for param in params:
+    moments.add param.grad.zeros_like
+  SGD[Tensor[T]](params: @params, lr: learning_rate, momentum: T(0.0), moments: moments)
+
+proc update*(self: var Sgd) =
+  # Update the params with formula Value = value - lr * gradient + momentum * moment
+  # Note: SGD expects gradient to be scaled by batchsize (done by default in Arraymancer)
+  for i in 0 ..< self.params.len:
+    let v = self.params[i]
+    # v.value -= learning rate * grad
+    if v.requires_grad:
+      # When momentum = 0 this acts identically to SGD without momentum.
+      apply3_inline(v.value, v.grad, self.moments[i]):
+        x - self.lr * y + self.momentum * z
+
+      # Update the moments with the previous update.
+      apply2_inline(self.moments[i], v.grad):
+        self.momentum * x - self.lr * y
+
+      # Zero the gradient
+      v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
 
 proc update*(self: Sgd) =
   # Update the params with formula Value -= lr * gradient
@@ -43,7 +66,7 @@ proc update*(self: Sgd) =
       # Zero the gradient
       v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
 
-func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
+func optimizerSGD*[M, T](model: M, learning_rate: T, momentum = T(0.0)): Sgd[Tensor[T]] =
   ## Create a SGD optimizer that will update the model weight
 
   # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...
@@ -51,14 +74,17 @@ func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
 
   result.params = @[]
   result.lr = learning_rate
+  result.momentum = momentum
 
   for layer in fields(model):
     when layer is Variable:
       result.params.add layer
+      result.moments.add layer.grad.zeros_like
     else:
       for field in fields(layer): # TODO recursive for any nesting depth of Model
         when field is Variable:
           result.params.add field
+          result.moments.add field.grad.zeros_like
 
 # ############################################################
 #

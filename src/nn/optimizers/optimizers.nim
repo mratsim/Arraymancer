@@ -76,6 +76,7 @@ type
     lr*: TT.T # Learning rate. T is the generic parameter of Tensor[T]
     momentum*: TT.T
     moments: seq[TT]          # Moments for momentum
+    nesterov: bool            # Whether or not to use nesterov momentum instead
 
 proc update*(self: var SgdMomentum) =
   for i in 0 ..< self.params.len:
@@ -86,14 +87,20 @@ proc update*(self: var SgdMomentum) =
         self.momentum * x - self.lr * y
 
       # When momentum = 0 this acts identically to SGD without momentum.
-      # Update the params with formula Value = value - lr * gradient + momentum * moment
-      apply2_inline(v.value, self.moments[i]):
-        x + y
+      if self.nesterov:
+        # Update the params with formula Value = value - lr * gradient + momentum * v
+        # where v = - lr * gradient + momentum * moment
+        apply3_inline(v.value, v.grad, self.moments[i]):
+          x - self.lr * y + self.momentum * z
+      else:
+        # Update the params with formula Value = value - lr * gradient + momentum * moment
+        apply2_inline(v.value, self.moments[i]):
+          x + y
 
       # Zero the gradient
       v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
 
-func optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0)): SgdMomentum[Tensor[T]] =
+func optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0), nesterov = false): SgdMomentum[Tensor[T]] =
   ## Create a SGD optimizer with momentum that will update the model weight
 
   # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...
@@ -102,6 +109,7 @@ func optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0)):
   result.params = @[]
   result.lr = learning_rate
   result.momentum = momentum
+  result.nesterov = nesterov
 
   for layer in fields(model):
     when layer is Variable:

@@ -225,7 +225,7 @@ Of them; she's murder'd of your galla?
       - [Handwritten digit recognition with convolutions](#Handwritten-digit-recognition-with-convolutions)
       - [Sequence classification with stacked Recurrent Neural Networks](#Sequence-classification-with-stacked-Recurrent-Neural-Networks)
     - [Tensors on CPU, on Cuda and OpenCL](#Tensors-on-CPU-on-Cuda-and-OpenCL)
-  - [What's new in Arraymancer v0.5.0 - "Sign of the Unicorn" - December 2018](#Whats-new-in-Arraymancer-v050---%22Sign-of-the-Unicorn%22---December-2018)
+  - [What's new in Arraymancer v0.5.1 - July 2019](#Whats-new-in-Arraymancer-v051---July-2019)
   - [4 reasons why Arraymancer](#4-reasons-why-Arraymancer)
     - [The Python community is struggling to bring Numpy up-to-speed](#The-Python-community-is-struggling-to-bring-Numpy-up-to-speed)
     - [A researcher workflow is a fight against inefficiencies](#A-researcher-workflow-is-a-fight-against-inefficiencies)
@@ -433,35 +433,17 @@ Here is a comparative table of the core features.
 | Squeezing singleton dimension                     | [x]                         | [x]                        | []                         |
 | Slicing + squeezing                               | [x]                         | []                         | []                         |
 
-## What's new in Arraymancer v0.5.0 - "Sign of the Unicorn" - December 2018
-
-> This release is named after "Sign of the Unicorn" (1975), the third book of Roger Zelazny masterpiece "The Chronicles of Amber".
+## What's new in Arraymancer v0.5.1 - July 2019
 
 The full changelog is available in [changelog.md](./changelog.md).
 
 Here are the highlights:
-  - Backward incompatible: PCA now returns a tuple of the projected tensor and the principal components. An overloaded PCA can be used with the principal axes supplied by the user.
-  - Datasets:
-    - MNIST is now autodownloaded and cached
-    - Added IMDB Movie Reviews dataset
-  - IO:
-    - Numpy file format support
-    - Image reading and writing support (jpg, bmp, png, tga)
-    - HDF5 reading and writing
-  - Machine learning
-    - Kmeans clustering
-  - Deep Learning
-    - RNN: GRU support including fused stacked GRU layers with sequence/timesteps
-    - Embedding layer with multiple timesteps support. Indexing can be done with integers, byte, chars or enums.
-    - Sparse softmax cross-entropy: the target tensor subtype can now be integers, byte, chars or enums.
-    - Adam optimiser (Adaptative Moment Estimation)
-    - Xavier Glorot, Kaiming He and Yann Lecun weight initialisation schemes
-  - N-D arrays / tensors
-    - Splitting and chunking support
-    - Fancy indexing via `index_select`
-  - End-to-end examples:
-    - Sequence/time-series classification using RNN
-    - Text generation on Shakespeare and Jane Austen's Pride and Prejudice. This can be applied to any text-based dataset (including blog posts, Latex papers and code)
+  - 0.20.x compatibility
+  - Complex support
+  - `Einsum`
+  - Naive whitespace tokenizer for NLP
+  - Fix height/width order when reading an image in tensor
+  - Preview of Laser backend for matrix multiplication without SIMD autodetection (already 5x faster on integer matrix multiplication)
 
 ## 4 reasons why Arraymancer
 

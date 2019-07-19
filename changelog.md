@@ -1,4 +1,23 @@
-# Arraymancer v0.5.0 Dec. 23 2018 "Sign of the Unicorn"
+Arraymancer v0.5.1 Jul. 19 2019
+=====================================================
+Changes affecting backward compatibility:
+  - None
+
+Changes:
+  - 0.20.x compatibility (commit 0921190)
+  - Complex support
+  - `Einsum`
+  - Naive whitespace tokenizer for NLP
+  - Preview of Laser backend for matrix multiplication without SIMD autodetection (already 5x faster on integer matrix multiplication)
+
+Fix:
+  - Fix height/width order when reading an image in tensor
+
+Thanks to @chimez for the complex support and updating for 0.20, @metasyn for the tokenizer,
+@xcokazaki for the image dimension fix and @Vindaar for the einsum implemention
+
+Arraymancer v0.5.0 Dec. 23 2018 "Sign of the Unicorn"
+=====================================================
 
 > This release is named after "Sign of the Unicorn" (1975), the third book of Roger Zelazny masterpiece "The Chronicles of Amber".
 

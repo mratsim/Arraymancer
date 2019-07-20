@@ -76,12 +76,20 @@ type
     lr*: TT.T # Learning rate. T is the generic parameter of Tensor[T]
     momentum*: TT.T
     moments: seq[TT]          # Moments for momentum
+    decay: TT.T               # Learning rate decay
     nesterov: bool            # Whether or not to use nesterov momentum instead
 
 proc update*(self: var SgdMomentum) =
+  # Decay of the learning rate.
+  self.lr *= 1 / (self.decay + 1)
+  # Keeps track of decay without having to keep track of iterations.
+  # Each update call is counted as one iteration.
+  self.decay += self.decay
   for i in 0 ..< self.params.len:
     let v = self.params[i]
     if v.requires_grad:
+      # This implementation of both kinds of momentum follows that of Tensorflow
+      # and closely mirrors the formulation of Sustkever et. al.
       # Update the moments with the previous update.
       apply2_inline(self.moments[i], v.grad):
         self.momentum * x - self.lr * y
@@ -100,7 +108,8 @@ proc update*(self: var SgdMomentum) =
       # Zero the gradient
       v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
 
-func optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0), nesterov = false): SgdMomentum[Tensor[T]] =
+func optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0),
+                                 decay = T(0.0), nesterov = false): SgdMomentum[Tensor[T]] =
   ## Create a SGD optimizer with momentum that will update the model weight
 
   # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...
@@ -109,6 +118,7 @@ func optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0), 
   result.params = @[]
   result.lr = learning_rate
   result.momentum = momentum
+  result.decay = decay
   result.nesterov = nesterov
 
   for layer in fields(model):

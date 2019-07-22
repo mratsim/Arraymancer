@@ -25,7 +25,7 @@ import  ../../tensor/[tensor, higher_order_applymap],
 
 type
   Sgd*[TT] = object
-    ## Stochastic gradient descent
+    ## Stochastic gradient descent without momentum.
     params*: seq[Variable[TT]]
     lr*: TT.T # Learning rate. T is the generic parameter of Tensor[T]
 
@@ -36,6 +36,15 @@ proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[Ten
   SGD[Tensor[T]](params: @params, lr: learning_rate)
 
 proc update*(self: Sgd) =
+  ## Performs an optimization update.
+  ##
+  ## Parameters:
+  ## - ``self`` A SGD optimizer to update.
+  ##
+  ## This proc will update the weights in the model associated with the input
+  ## optimizer according to the following rule:
+  ##    `w = w - lr * gradient`
+
   # Update the params with formula Value -= lr * gradient
   # Note: SGD expects gradient to be scaled by batchsize (done by default in Arraymancer)
   for v in self.params:
@@ -48,6 +57,16 @@ proc update*(self: Sgd) =
 
 func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
   ## Create a SGD optimizer that will update the model weight
+  ##
+  ## Parameters:
+  ## - ``model`` Model to optimize.
+  ## - ``learning_rate`` Learning rate.
+  ##
+  ## Returns:
+  ## - A SGD optimizer with the given learning rate.
+  ##
+  ## Future TODO:
+  ##   Rename to ``optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat):``
 
   # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...
   # Pending https://github.com/nim-lang/Nim/issues/7734 and https://github.com/nim-lang/Nim/issues/7733
@@ -71,15 +90,36 @@ func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
 
 type
   SgdMomentum*[TT] = object
-    ## Stochastic gradient descent
+    ## Stochastic gradient descent with momentum.
+    ## Details on Nesterov momentum can be found in
+    ## `Sutskever et. al. 2013<http://www.cs.toronto.edu/%7Ehinton/absps/momentum.pdf>`_
     params*: seq[Variable[TT]]
-    lr*: TT.T # Learning rate. T is the generic parameter of Tensor[T]
-    momentum*: TT.T
-    moments: seq[TT]          # Moments for momentum
-    decay: TT.T               # Learning rate decay
-    nesterov: bool            # Whether or not to use nesterov momentum instead
+    lr*: TT.T                ## Learning rate
+    momentum*: TT.T          ## Value of the momentum
+    moments: seq[TT]         ## Moments for momentum
+    decay: TT.T              ## Learning rate decay
+    nesterov: bool           ## Flag for Nesterov momentum
 
 proc update*(self: var SgdMomentum) =
+  ## Performs an optimization update.
+  ##
+  ## Parameters:
+  ## - ``self`` A SGDMomentum optimizer to update.
+  ##
+  ## This proc will update the weights in the model associated with the input
+  ## optimizer according to the following rule:
+  ##    `w = w - lr * gradient + m * moment`
+  ## If nesterov is set to true then the following rule is applied instead:
+  ##    `w = w - lr * gradient + m * v`
+  ##
+  ##    `v = - lr * gradient + m * moment`
+  ## Where in both cases the `moment` is the gradient change applied in the
+  ## previous update step and `m` is the momentum.
+  ##
+  ## If `decay` is greater than 0, the learning rate will be modified each
+  ## call according to the following:
+  ##      `lr = lr * 1/(1 + decay)`
+
   # Decay of the learning rate.
   self.lr *= 1 / (self.decay + 1)
   # Keeps track of decay without having to keep track of iterations.
@@ -110,7 +150,20 @@ proc update*(self: var SgdMomentum) =
 
 func optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0),
                                  decay = T(0.0), nesterov = false): SgdMomentum[Tensor[T]] =
-  ## Create a SGD optimizer with momentum that will update the model weight
+  ## Create a SGD optimizer with optional momentum that will update the model weight
+  ##
+  ## Parameters:
+  ## - ``model`` Model to optimize.
+  ## - ``learning_rate`` Learning rate.
+  ## - ``momentum`` Momentum.
+  ## - ``decay`` How much the learning rate will decay each update.
+  ## - ``nesterov`` Whether to use Nesterov momentum or not.
+  ##
+  ## Returns:
+  ## - A SGD optimizer with momentum with the given parameters.
+  ##
+  ## Future TODO:
+  ##   Rename to ``optimize[M](model: M, OptimizerKind: typedesc[SGDMomentum], learning_rate: SomeFloat):``
 
   # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...
   # Pending https://github.com/nim-lang/Nim/issues/7734 and https://github.com/nim-lang/Nim/issues/7733

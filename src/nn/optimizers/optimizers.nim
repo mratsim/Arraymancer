@@ -30,9 +30,6 @@ type
     lr*: TT.T # Learning rate. T is the generic parameter of Tensor[T]
 
 proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[Tensor[T]] {.deprecated: "Use the optimizer macro instead".}=
-  var moments: seq[Tensor[T]] = @[]
-  for param in params:
-    moments.add param.grad.zeros_like
   SGD[Tensor[T]](params: @params, lr: learning_rate)
 
 proc update*(self: Sgd) =

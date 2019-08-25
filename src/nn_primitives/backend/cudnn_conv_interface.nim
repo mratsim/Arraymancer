@@ -76,7 +76,7 @@ proc newConv2dDesc*[T: SomeFloat](padding, strides, dilation: SizeHW): cudnnConv
 proc newCudnnConvKernelDesc*[T: SomeFloat](
   convKernel: CudaTensor[T]): cudnnFilterDescriptor_t {.inline, noInit.}=
   # TODO: destroy descriptor automatically
-  check cudnnCreateFilterDescriptor addr result
+  check cudnnCreateFilterDescriptor(result.addr)
 
   var filters = [ convKernel.shape[0].cint, # out features (for example 16 feature maps)
                   convKernel.shape[1].cint, # in features (for example 3 color channels)

@@ -76,7 +76,7 @@ proc newConv2dDesc*[T: SomeFloat](padding, strides, dilation: SizeHW): cudnnConv
 proc newCudnnConvKernelDesc*[T: SomeFloat](
   convKernel: CudaTensor[T]): cudnnFilterDescriptor_t {.inline, noInit.}=
   # TODO: destroy descriptor automatically
-  check cudnnCreateFilterDescriptor addr result
+  check cudnnCreateFilterDescriptor(result.addr)
 
   var filters = [ convKernel.shape[0].cint, # out features (for example 16 feature maps)
                   convKernel.shape[1].cint, # in features (for example 3 color channels)
@@ -131,7 +131,7 @@ proc convOutDims*(input, kernel: CudaTensor, padding, strides, dilation: SizeHW)
 # ###############################################################
 # Forward convolution: Algorithm and Worksize space
 
-proc conv_algo_workspace*[T: SomeFloat](
+proc newConvAlgoSpace*[T: SomeFloat](
   srcTensorDesc: cudnnTensorDescriptor_t,
   kernelDesc: cudnnFilterDescriptor_t,
   convDesc: cudnnConvolutionDescriptor_t,

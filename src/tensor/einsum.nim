@@ -1,6 +1,8 @@
 import macros, sequtils, sets, algorithm
-import tensor
 import ../private/ast_utils
+import ./shapeshifting
+  # Note: importing shapeshifting_cuda will trigger a Nim inference bug
+  #       in genContiguous with no workaround
 
 #[
 This module provides Einstein summation for an arbitrary number of tensors.
@@ -508,10 +510,11 @@ proc genContiguous(ts: seq[NimNode], subType: NimNode): (seq[NimNode], NimNode) 
   for t in ts:
     let tCIdent = makeContigIdent(t)
     res.add quote do:
+      # TODO: Nim inference bug that require the subtype
       let `tcIdent` = asContiguous[`subType`](`t`, layout = rowMajor, force = true)
     tsCont.add tcIdent
   result = (tsCont, res)
-  echo res.treeRepr
+  # echo res.treeRepr
 
 macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   ## Performs Einstein summation of the given `tensors` defined by the `stmt`.

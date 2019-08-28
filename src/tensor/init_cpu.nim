@@ -207,6 +207,18 @@ proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] {.noInit.
   ##      - A tensor of the input shape filled with random value in the slice range
   randomTensorCpu(result, shape, slice)
 
+proc randomTensor*[T](shape: varargs[int], sample_source: openarray[T]): Tensor[T] {.noInit.} =
+  ## Creates a new Tensor filled with values uniformly sampled from ``sample_source``
+  ##
+  ## Random seed can be set by importing ``random`` and ``randomize(seed)``
+  ## Input:
+  ##      - a shape
+  ##      - a sample_source
+  ## Result:
+  ##      - A tensor of the input shape filled with random values from ``sample_source``
+  tensorCpu(shape, result)
+  result.storage.Fdata = newSeqWith(result.size, sample(sample_source))
+
 proc randomNormal(mean = 0.0, std = 1.0): float =
   ## Random number in the normal distribution using Box-Muller method
   ## See https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform

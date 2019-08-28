@@ -136,7 +136,14 @@ suite "Creating a new Tensor":
 
     check: a[0,0] is float32
   # TODO add tests for randomTensor
-   
+
+  test "Random sampled tensors":
+    let source = [1, 3, 7, 15, 31]
+    let t = randomTensor([10, 10], sample_source = source)
+
+    for val in t:
+      check(val in source)
+
   test "Random normal tensor":
     for i in 0..<4:
       let t = randomNormalTensor[float32](1000)

@@ -131,7 +131,7 @@ proc convOutDims*(input, kernel: CudaTensor, padding, strides, dilation: SizeHW)
 # ###############################################################
 # Forward convolution: Algorithm and Worksize space
 
-proc conv_algo_workspace*[T: SomeFloat](
+proc newConvAlgoSpace*[T: SomeFloat](
   srcTensorDesc: cudnnTensorDescriptor_t,
   kernelDesc: cudnnFilterDescriptor_t,
   convDesc: cudnnConvolutionDescriptor_t,

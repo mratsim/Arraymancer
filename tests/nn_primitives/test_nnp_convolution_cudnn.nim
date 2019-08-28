@@ -16,35 +16,35 @@
 import ../../src/arraymancer
 import unittest, sugar
 
-suite "CUDNN: Convolution 2D":
-  test "Conv2d Forward":
+template test_conv(T: typedesc[SomeFloat]) =
+  test "Conv2d Forward [" & $T & ']':
     let input = [
       [1, 2, 0, 0],
       [5, 3, 0, 4],
       [0, 0, 0, 7],
-      [9, 3, 0, 0]].toTensor().reshape(1,1,4,4).astype(float32).cuda
+      [9, 3, 0, 0]].toTensor().reshape(1,1,4,4).astype(T).cuda
     let kernel = [
       [1, 1, 1],
       [1, 1, 0],
-      [1, 0, 0]].toTensor().reshape(1,1,3,3).astype(float32).cuda
+      [1, 0, 0]].toTensor().reshape(1,1,3,3).astype(T).cuda
     let target = [
       [1,  8,  5,  0],
       [8, 11,  5,  4],
       [8, 17, 10, 11],
-      [9, 12, 10,  7]].toTensor().reshape(1,1,4,4).astype(float32)
-    let bias = [0].toTensor().reshape(1,1,1).astype(float32).cuda
+      [9, 12, 10,  7]].toTensor().reshape(1,1,4,4).astype(T)
+    let bias = [0].toTensor().reshape(1,1,1).astype(T).cuda
 
     # TODO: padding should accept a tuple (i.e. unify Size2D and SizeHW)
     check: mean_absolute_error(
       input.conv2d(kernel, bias, padding=[1,1]).cpu,
-      target) <= 1e-7'f32
+      target) <= T(1e-7)
 
-  test "Conv2D Forward + Backward":
+  test "Conv2D Forward + Backward [" & $T & ']':
 
     let # Note: cudnn backward works only with float32, it segfauts with float64
-      input = randomTensor([10,3,4,5], 1'f32).cuda
-      kernel = randomTensor([16,3,3,3], 1'f32).cuda
-      bias = randomTensor([16,1,1], 1'f32).cuda
+      input = randomTensor([10,3,4,5], T(1)).cuda
+      kernel = randomTensor([16,3,3,3], T(1)).cuda
+      bias = randomTensor([16,1,1], T(1)).cuda
       padding = [1,1]
       stride = [1,1]
       dilation = [1,1]
@@ -82,9 +82,9 @@ suite "CUDNN: Convolution 2D":
     # Ideally we would need a Cuda numerical_gradient
     # In practice it is not relevant as we can use low precision (float16) without issue in deep learning
 
-    check: mean_relative_error(target_grad_bias.astype(float32), grad_bias.cpu) < 1e-6
-    check: mean_relative_error(target_grad_kernel.astype(float32), grad_kernel.cpu) < 0.2
-    check: mean_relative_error(target_grad_input.astype(float32), grad_input.cpu) < 0.2
+    check: mean_relative_error(target_grad_bias.astype(T), grad_bias.cpu) < 1e-6
+    check: mean_relative_error(target_grad_kernel.astype(T), grad_kernel.cpu) < 0.2
+    check: mean_relative_error(target_grad_input.astype(T), grad_input.cpu) < 0.2
 
     # echo "output"
     # echo output
@@ -97,3 +97,7 @@ suite "CUDNN: Convolution 2D":
     # echo "grad_input"
     # echo target_grad_input
     # echo grad_input
+
+suite "CUDNN: Convolution 2D":
+  test_conv(float32)
+  test_conv(float64)

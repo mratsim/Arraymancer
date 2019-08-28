@@ -39,13 +39,21 @@ proc conv2d*[T: SomeFloat](input, kernel, bias: CudaTensor[T],
   let dstTensorDesc = newCudnn4DTensorDesc result
 
   # Getting the convolution algorithm, shared memory workspace and its size.
-  let algo_workspace = conv_algo_workspace[T](srcTensorDesc, kernelDesc, convDesc, dstTensorDesc)
+  let algo_workspace = newConvAlgoSpace[T](srcTensorDesc, kernelDesc, convDesc, dstTensorDesc)
 
   # Scaling factors
   var alpha: T = 1
   var beta: T = 0
 
-  check cudnnConvolutionForward(
+  # Pointer to workspace buffer
+  # Pass nil if no workspace need to be allocated
+  let pworkspace = block:
+    if algo_workspace.sizeInBytes == 0:
+      nil
+    else:
+      algo_workspace.workspace[]
+
+  discard cudnnConvolutionForward(
     cudnnHandle0,
     addr alpha,
     srcTensorDesc,
@@ -54,7 +62,7 @@ proc conv2d*[T: SomeFloat](input, kernel, bias: CudaTensor[T],
     kernel.get_offset_ptr,
     convDesc,
     algo_workspace.algo,
-    algo_workspace.workspace[],
+    pworkspace,
     algo_workspace.sizeInBytes,
     addr beta,
     dstTensorDesc,
@@ -63,7 +71,7 @@ proc conv2d*[T: SomeFloat](input, kernel, bias: CudaTensor[T],
 
   result .+= bias.unsqueeze(0)
 
-proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
+proc conv2d_backward*[T: SomeFloat](input, kernel, bias: CudaTensor[T],
                          padding: SizeHW = [0,0],
                          strides, dilation: SizeHW = [1,1],
                          grad_output: CudaTensor[T],
@@ -86,10 +94,6 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
   ## Note:
   ##   ``grad_input``, ``grad_kernel`` and ``grad_bias`` will be overwritten. They must have the same shape
   ##    as the corresponding ``input``, ``kernel`` and ``bias``
-  ##
-  ## Limitation:
-  ##   This is restricted to float32 input for now. CuDNN segfaults with float64 for unknown reason
-
   const rank: cint = 4
 
   # CuDNN requires grad_output to be C contiguous. (It is undocumented as of CuDNN v7)
@@ -134,8 +138,15 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
   when defined(debug):
     echo "Launching conv2D backward for kernel"
 
+  # Pointer to workspace buffer
+  # Pass nil if no workspace need to be allocated
+  let k_pworkspace = block:
+    if kernel_algo_workspace.sizeInBytes == 0:
+      nil
+    else:
+      kernel_algo_workspace.workspace[]
+
   # Kernel gradient
-  # Note: this segfaults with illegal storage access for float64
   check cudnnConvolutionBackwardFilter(
     cudnnHandle0,
     addr alpha,
@@ -145,7 +156,7 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
     gOutput.get_offset_ptr,
     convDesc,
     kernel_algo_workspace.algo,
-    kernel_algo_workspace.workspace[],
+    k_pworkspace,
     kernel_algo_workspace.sizeInBytes,
     addr beta,
     gradKernelDesc,
@@ -167,8 +178,15 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
   when defined(debug):
     echo "Launching conv2D backward for input"
 
+  # Pointer to workspace buffer
+  # Pass nil if no workspace need to be allocated
+  let g_pworkspace = block:
+    if gradInput_algo_workspace.sizeInBytes == 0:
+      nil
+    else:
+      gradInput_algo_workspace.workspace[]
+
   # Input gradient
-  # Note: this segfaults with illegal storage access for float64
   check cudnnConvolutionBackwardData(
     cudnnHandle0,
     addr alpha,
@@ -178,7 +196,7 @@ proc conv2d_backward*[T: float32](input, kernel, bias: CudaTensor[T],
     gOutput.get_offset_ptr,
     convDesc,
     gradInput_algo_workspace.algo,
-    gradInput_algo_workspace.workspace[],
+    g_pworkspace,
     gradInput_algo_workspace.sizeInBytes,
     addr beta,
     gradInputTensorDesc,

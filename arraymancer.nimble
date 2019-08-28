@@ -27,6 +27,10 @@ srcDir = "src"
 # switch("clibdir", "/usr/local/opt/openblas/lib")
 # switch("cincludes", "/usr/local/opt/openblas/include")
 
+## Archlinux
+# Contrary to Debian-based distro, blas.dll doesn't supply the cblas interface
+# so "-d:blas=cblas" must be passed
+
 ### BLIS support
 # switch("define","blis")
 
@@ -55,60 +59,64 @@ template mkl_singleSwitches(switches: var string) =
   switches.add " --dynlibOverride:mkl_intel_lp64"
 
 # ### Cuda configuration
-# See https://github.com/mratsim/Arraymancer/issues/371
-# Nvidia NVCC cannot be used with the new Nim times module
-# as it seems to redefine "nanosecond"
-#
-# We use Clang/LLVM instead
-# but this is also problematic due months lag between latest Cuda
-# and its LLVM support
-
 ## Pass -d:cuda to build arraymancer with cuda support
 ## Use the cuda switches below
 ## Replace /opt/cuda by your own path
 ## TODO: auto detection or at least check in common directories
 ## Note: It is import to gate compiler flags like -march=native  behind Xcompiler "-Xcompiler -march=native"
 
-# template cudaSwitches(switches: var string) =
-#   switches.add " --cincludes:/opt/cuda/include"
-#   switches.add " --cc:gcc" # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
-#   switches.add " --gcc.exe:/opt/cuda/bin/nvcc"
-#   switches.add " --gcc.linkerexe:/opt/cuda/bin/nvcc"
-#   switches.add " --gcc.cpp.exe:/opt/cuda/bin/nvcc"
-#   switches.add " --gcc.cpp.linkerexe:/opt/cuda/bin/nvcc"
-#   # Due to the __ldg intrinsics in kernels
-#   # we only support compute capabilities 3.5+
-#   # See here: http://docs.nvidia.com/cuda/pascal-compatibility-guide/index.html
-#   # And wikipedia for GPU capabilities: https://en.wikipedia.org/wiki/CUDA
-#   switches.add " --gcc.options.always:\"-arch=sm_61 --x cu\"" # Interpret .c files as .cu
-#   switches.add " --gcc.cpp.options.always:\"-arch=sm_61 --x cu -Xcompiler -fpermissive\"" # Interpret .c files as .cu, gate fpermissive behind Xcompiler
-#   switches.add " -d:cudnn"
-
-# template cuda_mkl_openmp(switches: var string) =
-#   switches.mkl_threadedSwitches()
-#   switches.add " --cincludes:/opt/cuda/include"
-#   switches.add " --cc:gcc" # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
-#   switches.add " --gcc.exe:/opt/cuda/bin/nvcc"
-#   switches.add " --gcc.linkerexe:/opt/cuda/bin/nvcc"
-#   switches.add " --gcc.cpp.exe:/opt/cuda/bin/nvcc"
-#   switches.add " --gcc.cpp.linkerexe:/opt/cuda/bin/nvcc"
-#   switches.add " --gcc.options.always:\"-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native\""
-#   switches.add " --gcc.cpp.options.always:\"-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native\""
-
+# NVCC config
 template cudaSwitches(switches: var string) =
   switches.add " --cincludes:/opt/cuda/include"
-  switches.add " --clibdir:/opt/cuda/lib"
-  switches.add " --cc:clang"
-  switches.add " --clang.cpp.options.always:\"--cuda-path=/opt/cuda -lcudart_static -x cuda --cuda-gpu-arch=sm_61 --cuda-gpu-arch=sm_75\""
+  switches.add " --cc:gcc" # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
+  switches.add " --gcc.exe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.cpp.exe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.cpp.linkerexe:/opt/cuda/bin/nvcc"
+  # Due to the __ldg intrinsics in kernels
+  # we only support compute capabilities 3.5+
+  # See here: http://docs.nvidia.com/cuda/pascal-compatibility-guide/index.html
+  # And wikipedia for GPU capabilities: https://en.wikipedia.org/wiki/CUDA
+  switches.add " --gcc.options.always:\"-arch=sm_61 --x cu\"" # Interpret .c files as .cu
+  switches.add " --gcc.cpp.options.always:\"-arch=sm_61 --x cu -Xcompiler -fpermissive\"" # Interpret .c files as .cu, gate fpermissive behind Xcompiler
   switches.add " -d:cudnn"
 
 template cuda_mkl_openmp(switches: var string) =
   switches.mkl_threadedSwitches()
   switches.add " --cincludes:/opt/cuda/include"
-  switches.add " --clibdir:/opt/cuda/lib"
-  switches.add " --cc:clang"
-  switches.add " --clang.cpp.options.always:\"--cuda-path=/opt/cuda -lcudart_static -x cuda --cuda-gpu-arch=sm_61 --cuda-gpu-arch=sm_75 -fopenmp -march=native\""
-  switches.add " -d:cudnn"
+  switches.add " --cc:gcc" # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
+  switches.add " --gcc.exe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.cpp.exe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.cpp.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --gcc.options.always:\"-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native\""
+  switches.add " --gcc.cpp.options.always:\"-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native\""
+
+# Clang config - make sure Clang supports your CUDA SDK version
+# https://gist.github.com/ax3l/9489132
+# https://llvm.org/docs/CompileCudaWithLLVM.html
+# | clang++ | supported CUDA release | supported SMs |
+# | ------- | ---------------------- | ------------- |
+# | 3.9-5.0 | 7.0-8.0                | 2.0-(5.0)6.0  |
+# | 6.0     | [7.0-9.0](https://github.com/llvm-mirror/clang/blob/release_60/include/clang/Basic/Cuda.h) | [(2.0)3.0-7.0](https://github.com/llvm-mirror/clang/blob/release_60/lib/Basic/Targets/NVPTX.cpp#L163-L188) |
+# | 7.0     | [7.0-9.2](https://github.com/llvm-mirror/clang/blob/release_70/include/clang/Basic/Cuda.h) | [(2.0)3.0-7.2](https://github.com/llvm-mirror/clang/blob/release_70/lib/Basic/Targets/NVPTX.cpp#L196-L223) |
+# | 8.0     | [7.0-10.0](https://github.com/llvm-mirror/clang/blob/release_80/include/clang/Basic/Cuda.h) | [(2.0)3.0-7.5](https://github.com/llvm-mirror/clang/blob/release_70/lib/Basic/Targets/NVPTX.cpp#L199-L228) |
+# | trunk   | [7.0-10.1](https://github.com/llvm-mirror/clang/blob/master/include/clang/Basic/Cuda.h) | [(2.0)3.0-7.5](https://github.com/llvm-mirror/clang/blob/master/lib/Basic/Targets/NVPTX.cpp#L200-L229) |
+#
+# template cudaSwitches(switches: var string) =
+#   switches.add " --cincludes:/opt/cuda/include"
+#   switches.add " --clibdir:/opt/cuda/lib"
+#   switches.add " --cc:clang"
+#   switches.add " --clang.cpp.options.always:\"--cuda-path=/opt/cuda -lcudart_static -x cuda --cuda-gpu-arch=sm_61 --cuda-gpu-arch=sm_75\""
+#   switches.add " -d:cudnn"
+
+# template cuda_mkl_openmp(switches: var string) =
+#   switches.mkl_threadedSwitches()
+#   switches.add " --cincludes:/opt/cuda/include"
+#   switches.add " --clibdir:/opt/cuda/lib"
+#   switches.add " --cc:clang"
+#   switches.add " --clang.cpp.options.always:\"--cuda-path=/opt/cuda -lcudart_static -x cuda --cuda-gpu-arch=sm_61 --cuda-gpu-arch=sm_75 -fopenmp -march=native\""
+#   switches.add " -d:cudnn"
 
 ########################################################
 # Optimization
@@ -160,11 +168,14 @@ task test_cpp, "Run all tests - Cpp codegen":
 
 task test_cuda, "Run all tests - Cuda backend with CUBLAS and CuDNN":
   var switches = " -d:cuda -d:cudnn"
+  switches.add " -d:blas=cblas" # Archlinux, comment out on Debian/Ubuntu
   switches.cudaSwitches()
   test "tests_cuda", switches, split = false, "cpp"
 
 task test_opencl, "Run all OpenCL backend tests":
-  test "tests_opencl", " -d:opencl"
+  var switches = " -d:opencl"
+  switches.add " -d:blas=cblas" # Archlinux, comment out on Debian/Ubuntu
+  test "tests_opencl", switches, split = false, "cpp"
 
 # task test_deprecated, "Run all tests on deprecated procs":
 #  test "tests_cpu_deprecated"

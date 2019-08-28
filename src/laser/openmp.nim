@@ -28,8 +28,9 @@ proc omp_suffix*(genNew: static bool = false): string {.compileTime.} =
 # Tuning
 
 when defined(openmp):
-  {.passC: "-fopenmp".}
-  {.passL: "-fopenmp".}
+  when not defined(cuda):
+    {.passC: "-fopenmp".}
+    {.passL: "-fopenmp".}
 
   {.pragma: omp, header:"omp.h".}
 
@@ -120,7 +121,7 @@ template omp_parallel*(body: untyped): untyped =
 
 template omp_parallel_if*(condition: bool, body: untyped) =
   let predicate = condition # Make symbol valid and ensure it's lvalue
-  {.emit: "#pragma omp parallel if (`predicate`)".}
+  {.emit: ["#pragma omp parallel if (", predicate, ")"].}
   block: body
 
 template omp_for*(

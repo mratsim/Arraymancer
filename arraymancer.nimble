@@ -38,7 +38,6 @@ srcDir = "src"
 # Check the mkl switches in the test file for single-threaded and openp version
 
 template mkl_threadedSwitches(switches: var string) =
-  switches.add " --d:openmp"
   switches.add " --stackTrace:off"
   switches.add " --d:blas=mkl_intel_lp64"
   switches.add " --d:lapack=mkl_intel_lp64"
@@ -141,8 +140,8 @@ proc test(name, switches = "", split = false, lang = "c") =
   else:
     exec "nim " & lang & " -o:build/" & name & switches & " -r tests/_split_tests/" & name & ".nim"
 
-task all_tests, "Run all tests - Intel MKL + OpenMP + Cuda + march=native + release":
-  var switches = " -d:cuda"
+task all_tests, "Run all tests - Intel MKL + Cuda + OpenCL + OpenMP":
+  var switches = " -d:cuda -d:opencl -d:openmp"
   switches.cuda_mkl_openmp()
   test "full_test_suite", switches, split=false, lang="cpp"
 
@@ -198,10 +197,10 @@ task test_openmp, "Run all tests - OpenMP":
   var switches = " -d:openmp"
   switches.add " --stackTrace:off" # stacktraces interfere with OpenMP
   when defined(macosx): # Default compiler on Mac is clang without OpenMP and gcc is an alias to clang.
-                        # Use Homebrew GCC instead for OpenMP support. GCC (v7), must be properly linked via `brew link gcc`
+                        # Use Homebrew GCC instead for OpenMP support. GCC (v8), must be properly linked via `brew link gcc`
     switches.add " --cc:gcc"
-    switches.add " --gcc.exe:/usr/local/bin/gcc-7"
-    switches.add " --gcc.linkerexe:/usr/local/bin/gcc-7"
+    switches.add " --gcc.exe:/usr/local/bin/gcc-8"
+    switches.add " --gcc.linkerexe:/usr/local/bin/gcc-8"
   test "tests_cpu", switches
 
 task test_mkl, "Run all tests - Intel MKL - single threaded":
@@ -210,7 +209,7 @@ task test_mkl, "Run all tests - Intel MKL - single threaded":
   test "tests_cpu", switches
 
 task test_mkl_omp, "Run all tests - Intel MKL + OpenMP":
-  var switches: string
+  var switches = " -d:openmp"
   switches.mkl_threadedSwitches()
   test "tests_cpu", switches
 

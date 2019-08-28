@@ -1,6 +1,6 @@
 import macros, sequtils, sets, algorithm
 import tensor
-import private / ast_utils
+import ../private/ast_utils
 
 #[
 This module provides Einstein summation for an arbitrary number of tensors.

@@ -3,10 +3,10 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  macros,
-  ../private/sequninit,
-  ../tensor/tensor, nimlapack,
-  ../tensor/private/p_init_cpu # TODO: can't call newTensorUninit with optional colMajor, varargs breaks it
+  macros, nimlapack,
+  ../../private/sequninit,
+  ../../tensor/tensor,
+  ../../tensor/private/p_init_cpu # TODO: can't call newTensorUninit with optional colMajor, varargs breaks it
 
 # Wrappers for Fortran LAPACK
 # We don't use the C interface LAPACKE that
@@ -40,7 +40,7 @@ macro overload(overloaded_name: untyped, lapack_name: typed{nkSym}): untyped =
     pragmas = nnkPragma.newTree(ident"inline")
   )
 
-  when true:
+  when false:
     # View proc signature.
     # Some procs like syevr have over 20 parameters
     echo result.toStrLit
@@ -142,17 +142,19 @@ proc syevr*[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
 # QR decomposition
 # --------------------------------------------------------------------------------------
 
+# TODO: Batch QR decomposition to lower overhead of intermediates?
+
 overload(geqrf, sgeqrf)
 overload(geqrf, dgeqrf)
 
-proc geqrf[T: SomeFloat](a: Tensor[T], r_v, tau: var Tensor[T]) =
+proc geqrf*[T: SomeFloat](a: Tensor[T], r_v: var Tensor[T], tau: var seq[T]) =
   ## Wrapper for LAPACK geqrf routine (GEneral QR Factorization)
   ## Decomposition is done through Householder Reflection
   ##
   ## Parameters:
-  ##   - a: Input - matrix to factorize
+  ##   - a: Input - MxN matrix to factorize
   ##   - tau: Output - Scalar factors of elementary Householder Reflectors
-  ##   - r_v: Output -
+  ##   - r_v: Output - MxN matrix
   ##       - R upper-trapezoidal matrix
   ##       - and v vector factors of elementary Householder Reflectors
   ##
@@ -171,26 +173,75 @@ proc geqrf[T: SomeFloat](a: Tensor[T], r_v, tau: var Tensor[T]) =
 
   # Outputs
   r_v = a.clone(colMajor)
-  tau = zeros[T](min(r_v.shape[0], r_v.shape[1]))
+  tau = newSeqUninit[T](min(r_v.shape[0], r_v.shape[1]))
 
   # Temporaries
-  var
+  let
     m, lda = r_v.shape[0].int32 # colMajor for Fortran
     n = r_v.shape[1].int32
+  var
     # LAPACK stores optimal scratchspace size in the first element of a float array ...
     work_size: T
     lwork = -1'i32 # size query
     info: int32
 
   # Querying workspace size
-  geqrf(m.addr, n.addr, r_v.get_data_ptr, lda.addr, tau.get_data_ptr, work_size.addr, lwork.addr, info.addr)
+  geqrf(m.unsafeAddr, n.unsafeAddr, r_v.get_data_ptr, lda.unsafeAddr,
+        tau[0].addr, work_size.addr, lwork.addr, info.addr)
   if unlikely(info < 0):
     raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
 
   # Allocating workspace
   lwork = work_size.int32
-  var work = newSeq[T](lwork)
-  geqrf(m.addr, n.addr, r_v.get_data_ptr, lda.addr, tau.get_data_ptr, work[0].addr, lwork.addr, info.addr)
+  var work = newSeqUninit[T](lwork)
+  geqrf(m.unsafeAddr, n.unsafeAddr, r_v.get_data_ptr, lda.unsafeAddr,
+        tau[0].addr, work[0].addr, lwork.addr, info.addr)
+  if unlikely(info < 0):
+    raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
+
+overload(orgqr, sorgqr)
+overload(orgqr, dorgqr)
+
+proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: seq[T]) =
+  ## Wrapper for LAPACK orgqr routine
+  ## Generates the orthonormal Q matrix from
+  ## elementary Householder reflectors
+  ##
+  ## Inputs **must** come from a previous geqrf
+  ##   - rv_q: contains r_v on input. A column-major vector factors of elementary reflectors
+  ##   - tau: Scalar factors of elementary reflectors
+  ##
+  ## Outputs
+  ##   - rv_q: overwritten by Q
+  ##
+  ## Spec: https://www.nag.co.uk/numeric/fl/nagdoc_fl24/pdf/f08/f08aff.pdf
+  ## API: http://www.netlib.org/lapack/explore-html/da/dba/group__double_o_t_h_e_rcomputational_ga14b45f7374dc8654073aa06879c1c459.html
+  assert rv_q.rank == 2
+  assert rv_q.is_F_contiguous()
+
+  let
+    m, lda = rv_q.shape[0]                # Order of the orthonormal matrix Q
+    n = min(rv_q.shape[0], rv_q.shape[1]) # Number of columns of Q
+    k = n                                 # The number of elementary reflectors whose product defines the matrix Q
+  var
+    # LAPACK stores optimal scratchspace size in the first element of a float array ...
+    work_size: T
+    lwork = -1'i32 # size query
+    info: int32
+
+  assert k == tau.len
+
+  # Querying workspace size
+  orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, lda.unsafeAddr,
+        tau[0].addr, work_size[0].addr, lwork.addr, info.addr)
+  if unlikely(info < 0):
+    raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
+
+  # Allocating workspace
+  lwork = work_size.int32
+  var work = newSeqUninit[T](lwork)
+  orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, lda.unsafeAddr,
+        tau[0].addr, work[0].addr, lwork.addr, info.addr)
   if unlikely(info < 0):
     raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
 
@@ -198,7 +249,7 @@ proc geqrf[T: SomeFloat](a: Tensor[T], r_v, tau: var Tensor[T]) =
 # --------------------------------------------------------------------------------------
 
 when isMainModule:
-  import ../ml/metrics/common_error_functions
+  import ../../ml/metrics/common_error_functions
   # Adapted from: https://www.ibm.com/support/knowledgecenter/en/SSFHY8_6.2/reference/am5gr_hdgeqrf.html
 
   # --- Input ---------------------
@@ -233,8 +284,9 @@ when isMainModule:
                      [  0.5, 0.285714]].toTensor()
   let expected_tau = [1.0, 1.4].toTensor()
 
-  var tau, r_v: Tensor[float64]
+  var tau: seq[float64]
+  var r_v: Tensor[float64]
   geqrf(a, r_v, tau)
 
   doAssert mean_absolute_error(r_v, expected_rv) < 1e-6
-  doAssert mean_absolute_error(tau, expected_tau) < 1e-15
+  doAssert mean_absolute_error(tau.toTensor, expected_tau) < 1e-15

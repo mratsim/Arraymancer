@@ -4,7 +4,7 @@
 
 import
   ../tensor/tensor,
-  ./decomposition_lapack
+  ./helpers/decomposition_lapack
 
 template `^^`(s, i: untyped): untyped =
   (when i is BackwardsIndex: s.shape[0] - int(i) else: int(i))

@@ -40,7 +40,7 @@ macro overload(overloaded_name: untyped, lapack_name: typed{nkSym}): untyped =
     pragmas = nnkPragma.newTree(ident"inline")
   )
 
-  when false:
+  when true:
     # View proc signature.
     # Some procs like syevr have over 20 parameters
     echo result.toStrLit
@@ -138,3 +138,103 @@ proc syevr*[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
 
   if unlikely(info < 0):
     raise newException(ValueError, "Illegal parameter in symeig: " & $(-info))
+
+# QR decomposition
+# --------------------------------------------------------------------------------------
+
+overload(geqrf, sgeqrf)
+overload(geqrf, dgeqrf)
+
+proc geqrf[T: SomeFloat](a: Tensor[T], r_v, tau: var Tensor[T]) =
+  ## Wrapper for LAPACK geqrf routine (GEneral QR Factorization)
+  ## Decomposition is done through Householder Reflection
+  ##
+  ## Parameters:
+  ##   - a: Input - matrix to factorize
+  ##   - tau: Output - Scalar factors of elementary Householder Reflectors
+  ##   - r_v: Output -
+  ##       - R upper-trapezoidal matrix
+  ##       - and v vector factors of elementary Householder Reflectors
+  ##
+  ## Further processing is needed:
+  ## - You can extract Q with `orgqr`
+  ## - or multiply any matrix by Q without materializing Q with `ormqr`
+
+  assert a.rank == 2, "Input is not a matrix"
+
+  # Lapack overwrites the input
+  #   - contains R above the diagonal
+  #     - min(M,N)-by-N upper trapezoidal matrix
+  #     - if M > N, R is upper triangular
+  #   - contains V, a vector that needs to be multiplied
+  #     to TAU to reconstruct Q
+
+  # Outputs
+  r_v = a.clone(colMajor)
+  tau = zeros[T](min(r_v.shape[0], r_v.shape[1]))
+
+  # Temporaries
+  var
+    m, lda = r_v.shape[0].int32 # colMajor for Fortran
+    n = r_v.shape[1].int32
+    # LAPACK stores optimal scratchspace size in the first element of a float array ...
+    work_size: T
+    lwork = -1'i32 # size query
+    info: int32
+
+  # Querying workspace size
+  geqrf(m.addr, n.addr, r_v.get_data_ptr, lda.addr, tau.get_data_ptr, work_size.addr, lwork.addr, info.addr)
+  if unlikely(info < 0):
+    raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
+
+  # Allocating workspace
+  lwork = work_size.int32
+  var work = newSeq[T](lwork)
+  geqrf(m.addr, n.addr, r_v.get_data_ptr, lda.addr, tau.get_data_ptr, work[0].addr, lwork.addr, info.addr)
+  if unlikely(info < 0):
+    raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
+
+# Sanity checks
+# --------------------------------------------------------------------------------------
+
+when isMainModule:
+  import ../ml/metrics/common_error_functions
+  # Adapted from: https://www.ibm.com/support/knowledgecenter/en/SSFHY8_6.2/reference/am5gr_hdgeqrf.html
+
+  # --- Input ---------------------
+  #         |   .000000  2.000000 |
+  #         |  2.000000 -1.000000 |
+  # A    =  |  2.000000 -1.000000 |
+  #         |   .000000  1.500000 |
+  #         |  2.000000 -1.000000 |
+  #         |  2.000000 -1.000000 |
+  # --- Output ---------------------
+  #         | -4.000000  2.000000 |
+  #         |   .500000  2.500000 |
+  # A    =  |   .500000   .285714 |
+  #         |   .000000  -.428571 |
+  #         |   .500000   .285714 |
+  #         |   .500000   .285714 |
+  #
+  # TAU  =  |  1.000000  1.400000 |
+
+  let a = [[ 0.0,  2.0],
+           [ 2.0, -1.0],
+           [ 2.0, -1.0],
+           [ 0.0,  1.5],
+           [ 2.0, -1.0],
+           [ 2.0, -1.0]].toTensor()
+
+  let expected_rv = [[ -4.0, 2.0],
+                     [  0.5, 2.5],
+                     [  0.5, 0.285714],
+                     [  0.0,-0.428571],
+                     [  0.5, 0.285714],
+                     [  0.5, 0.285714]].toTensor()
+  let expected_tau = [1.0, 1.4].toTensor()
+
+  var tau, r_v: Tensor[float64]
+  geqrf(a, r_v, tau)
+
+  doAssert mean_absolute_error(r_v, expected_rv) < 1e-6
+  doAssert mean_absolute_error(tau, expected_tau) < 1e-15

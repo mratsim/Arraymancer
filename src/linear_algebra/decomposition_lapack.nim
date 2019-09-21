@@ -3,6 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
+  macros,
   ../private/sequninit,
   ../tensor/tensor, nimlapack,
   ../tensor/private/p_init_cpu # TODO: can't call newTensorUninit with optional colMajor, varargs breaks it
@@ -13,33 +14,42 @@ import
 #   - it's yet another dependency
 #   - it cannot deal with strided arrays
 
+# Alias / overload generator
+# --------------------------------------------------------------------------------------
+macro overload(overloaded_name: untyped, lapack_name: typed{nkSym}): untyped =
+  let impl = lapack_name.getImpl()
+  impl.expectKind {nnkProcDef, nnkFuncDef}
+
+  # We can't just `result[0] = overloaded_name`
+  # as libName (lapack library) is not defined in this scope
+
+  var
+    params = @[newEmptyNode()] # No return value for all Lapack proc
+    body = newCall(lapack_name)
+
+  impl[3].expectKind nnkFormalParams
+  for idx in 1 ..< impl[3].len:
+    # Skip arg 0, the return type which is always empty
+    params.add impl[3][idx]
+    body.add impl[3][idx][0]
+
+  result = newProc(
+    name = overloaded_name,
+    params = params,
+    body = body,
+    pragmas = nnkPragma.newTree(ident"inline")
+  )
+
+  when false:
+    # View proc signature.
+    # Some procs like syevr have over 20 parameters
+    echo result.toStrLit
+
 # SVD and Eigenvalues/eigenvectors decomposition
 # --------------------------------------------------------------------------------------
 
-proc syevr(jobz: cstring; range: cstring; uplo: cstring; n: ptr int32; a: ptr float32;
-            lda: ptr int32; vl: ptr float32; vu: ptr float32; il: ptr int32; iu: ptr int32;
-            abstol: ptr float32; m: ptr int32; w: ptr float32; z: ptr float32; ldz: ptr int32;
-            isuppz: ptr int32; work: ptr float32; lwork: ptr int32; iwork: ptr int32;
-            liwork: ptr int32; info: ptr int32) {.inline.} =
-
-  ssyevr(jobz, range, uplo, n, a,
-          lda, vl, vu, il, iu,
-          abstol, m, w, z, ldz,
-          isuppz, work, lwork, iwork,
-          liwork, info)
-
-proc syevr(jobz: cstring; range: cstring; uplo: cstring; n: ptr int32; a: ptr float64;
-            lda: ptr int32; vl: ptr float64; vu: ptr float64; il: ptr int32; iu: ptr int32;
-            abstol: ptr float64; m: ptr int32; w: ptr float64; z: ptr float64; ldz: ptr int32;
-            isuppz: ptr int32; work: ptr float64; lwork: ptr int32; iwork: ptr int32;
-            liwork: ptr int32; info: ptr int32) {.inline.} =
-
-  dsyevr(jobz, range, uplo, n, a,
-          lda, vl, vu, il, iu,
-          abstol, m, w, z, ldz,
-          isuppz, work, lwork, iwork,
-          liwork, info)
-
+overload(syevr, ssyevr)
+overload(syevr, dsyevr)
 
 proc syevr*[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
   low_idx: int, high_idx: int, result: var tuple[eigenval, eigenvec: Tensor[T]]) =

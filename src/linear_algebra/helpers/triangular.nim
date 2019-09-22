@@ -7,27 +7,26 @@ import
   ../../tensor/tensor
 
 # TODO: - don't use assert
-#       - accept strided input
 #       - move as a public proc
 
-proc triu*[T](a: Tensor[T], diag_offset: static int = 0): Tensor[T] =
-  ## Creates an upper-triangular matrix from a
-  ## possible by offsetting the diagonal
+proc triu*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
+  ## Returns a matrix with elements below the k-th diagonal zero-ed
 
   assert a.rank == 2
-  assert a.is_F_contiguous()
 
   result = newTensorUninit[T](a.shape)
 
   let
     nrows = a.shape[0]
     ncols = a.shape[1]
+    aRowStride = a.strides[0]
+    aColStride = a.strides[1]
     dst = result.get_data_ptr()
     src = a.get_data_ptr()
 
   const
-    k = diag_offset
-    tile = 32
+    k = k     # for emit interpolation. TODO: not the proper way see:
+    tile = 32 # https://github.com/nim-lang/Nim/issues/12036#issuecomment-524890898
 
   # We use loop-tiling to deal with row/col imbalances
   # with tile size of 32
@@ -45,7 +44,7 @@ proc triu*[T](a: Tensor[T], diag_offset: static int = 0): Tensor[T] =
             if (jj < ii + `k`) {
               dst[ii * `ncols` + jj] = 0;
             } else {
-              dst[ii * `ncols` + jj] = src[ii + jj * `nrows`];
+              dst[ii * `ncols` + jj] = src[ii * `aRowStride` + jj * `aColStride`];
             }
   """.}
 

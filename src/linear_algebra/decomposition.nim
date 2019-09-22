@@ -4,7 +4,7 @@
 
 import
   ../tensor/tensor,
-  ./helpers/decomposition_lapack
+  ./helpers/[decomposition_lapack, triangular]
 
 template `^^`(s, i: untyped): untyped =
   (when i is BackwardsIndex: s.shape[0] - int(i) else: int(i))
@@ -43,3 +43,26 @@ proc symeig*[T: SomeFloat](a: Tensor[T], eigenvectors = false,
   ## Implementation is done through the Multiple Relatively Robust Representations
 
   syevr(a, eigenvectors, a ^^ slice.a, a ^^ slice.b, result)
+
+proc qr*[T: SomeFloat](a: Tensor[T]): tuple[Q, R: Tensor[T]] =
+  ## Compute the QR decomposition of an input matrix ``a``
+  ## Decomposition is done through the Householder method
+  ##
+  ## Input:
+  ##   - ``a``, matrix of shape [M, N]
+  ##
+  ## We note K = min(M, N)
+  ##
+  ## Returns:
+  ##   - Q orthonormal matrix of shape [M, K]
+  ##   - R upper-triangular matrix of shape [K, N]
+
+  let k = min(a.shape[0], a.shape[1])
+
+  var tau: seq[T]
+
+  geqrf(a, result.Q, tau)
+  result.R = triu(result.Q[0..<k, _])
+
+  orgqr(result.Q, tau)
+  result.Q = result.Q[_, 0..<k]

@@ -187,3 +187,95 @@ suite "Linear algebra":
 
       discard symeig(a, true, 0..2)
       check: a == b
+
+  test "QR Decomposition":
+    block: # From wikipedia https://en.wikipedia.org/wiki/QR_decomposition
+      let a = [[12.0, -51.0, 4.0],
+              [ 6.0, 167.0, -68.0],
+              [-4.0,  24.0, -41.0]].toTensor()
+
+      let (q, r) = qr(a)
+
+      block: # Sanity checks
+        # A = QR
+        let qr = q * r
+        check: mean_absolute_error(a, qr) < 1e-8
+        # TODO: r is triangular
+
+      block: # vs NumPy implementation. Note that
+             # decomposition are not unique, there can be a factor +1/-1.
+        # import numpy as np
+        # a = np.array([[12,-51,4],[6,167,-68],[-4,24,-41]])
+        # q, r = np.linalg.qr(a)
+        # print(q)
+        # print(r)
+        let np_q = [[-0.85714286,  0.39428571,  0.33142857],
+                   [-0.42857143, -0.90285714, -0.03428571],
+                   [ 0.28571429, -0.17142857,  0.94285714]].toTensor()
+        let np_r = [[ -14.0,  -21.0,   14.0],
+                    [   0.0, -175.0,   70.0],
+                    [   0.0,    0.0,  -35.0]].toTensor()
+
+        check:
+          mean_absolute_error(q, np_q) < 1e-8
+          mean_absolute_error(r, np_r) < 1e-8
+
+    block: # M > N, from Numpy https://docs.scipy.org/doc/numpy-1.15.1/reference/generated/numpy.linalg.qr.html
+      let a = [[0.0, 1.0],
+               [1.0, 1.0],
+               [1.0, 1.0],
+               [2.0, 1.0]].toTensor()
+
+      let (q, r) = qr(a)
+
+      block: # Sanity checks
+        # A = QR
+        let qr = q * r
+        check: mean_absolute_error(a, qr) < 1e-8
+        # TODO: r is triangular
+
+      block: # vs NumPy implementation. Note that
+             # decomposition are not unique, there can be a factor +1/-1.
+        # import numpy as np
+        # a = np.array([[0, 1], [1, 1], [1, 1], [2, 1]])
+        # q, r = np.linalg.qr(a)
+        # print(q)
+        # print(r)
+        let np_q = [[ 0.0       ,  0.8660254 ],
+                    [-0.40824829,  0.28867513],
+                    [-0.40824829,  0.28867513],
+                    [-0.81649658, -0.28867513]].toTensor()
+        let np_r = [[-2.44948974, -1.63299316],
+                    [ 0.0       ,  1.15470054]].toTensor()
+
+        check:
+          mean_absolute_error(q, np_q) < 1e-8
+          mean_absolute_error(r, np_r) < 1e-8
+
+    block: # M < N
+      let a = [[0.0, 1.0, 1.0, 1.0],
+               [1.0, 1.0, 2.0, 1.0]].toTensor()
+
+      let (q, r) = qr(a)
+
+      block: # Sanity checks
+        # A = QR
+        let qr = q * r
+        check: mean_absolute_error(a, qr) < 1e-8
+        # TODO: r is triangular
+
+      block: # vs NumPy implementation. Note that
+             # decomposition are not unique, there can be a factor +1/-1.
+        # import numpy as np
+        # a = np.array([[0, 1, 1, 1], [1, 1, 2, 1]])
+        # q, r = np.linalg.qr(a)
+        # print(q)
+        # print(r)
+        let np_q = [[ 0.0, -1.0],
+                    [-1.0,  0.0]].toTensor()
+        let np_r = [[-1.0, -1.0, -2.0, -1.0],
+                    [ 0.0, -1.0, -1.0, -1.0]].toTensor()
+
+        check:
+          mean_absolute_error(q, np_q) < 1e-8
+          mean_absolute_error(r, np_r) < 1e-8

@@ -39,9 +39,6 @@ proc triu*[T](a: Tensor[T], diag_offset: static int = 0): Tensor[T] =
     for (int i = 0; i < `nrows`; i+=`tile`)
       for (int j = 0; j < `ncols`; j+=`tile`)
         for (int ii = i; ii<min(i+`tile`, `nrows`); ++ii)
-          // The compiler will probably not manage to vectorize
-          // into a "SIMD select" due to if statement
-          #pragma omp simd
           for (int jj = j; jj<min(j+`tile`,`ncols`); ++jj)
             // dst is row-major
             // src is col-major

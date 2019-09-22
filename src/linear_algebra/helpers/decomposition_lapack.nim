@@ -14,6 +14,13 @@ import
 #   - it's yet another dependency
 #   - it cannot deal with strided arrays
 
+# TODO: we have to use seq[cint] instead of seq[int32]
+#       in several places due to nimlapack using cint
+#       and bad C++ codegen of seq[int32]
+#       - https://github.com/nim-lang/Nim/issues/5905
+#       - https://github.com/nim-lang/Nim/issues/7308
+#       - https://github.com/nim-lang/Nim/issues/11797
+
 # Alias / overload generator
 # --------------------------------------------------------------------------------------
 macro overload(overloaded_name: untyped, lapack_name: typed{nkSym}): untyped =
@@ -75,7 +82,7 @@ proc syevr*[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
     work: seq[T]
     wkopt: T
     liwork: int32 = -1 # dimension of a second workspace array
-    iwork: seq[int32]
+    iwork: seq[cint]
     iwkopt: int32
     info: int32
 
@@ -89,7 +96,7 @@ proc syevr*[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
 
   # Setting up output
   var
-    isuppz: seq[int32] # unused
+    isuppz: seq[cint] # unused
     isuppz_ptr: ptr int32
     z: ptr T
 

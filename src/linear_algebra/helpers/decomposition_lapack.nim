@@ -214,15 +214,21 @@ proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: seq[T]) =
   ## Outputs
   ##   - rv_q: overwritten by Q
   ##
+  ## Note that while rv_q is MxN on input
+  ## on output the shape is M x min(M,N)
+  ##
+  ## ⚠️: Output must be sliced by [M, min(M,N)]
+  ##    if M>N as the rest contains garbage
+  ##
   ## Spec: https://www.nag.co.uk/numeric/fl/nagdoc_fl24/pdf/f08/f08aff.pdf
   ## API: http://www.netlib.org/lapack/explore-html/da/dba/group__double_o_t_h_e_rcomputational_ga14b45f7374dc8654073aa06879c1c459.html
   assert rv_q.rank == 2
   assert rv_q.is_F_contiguous()
 
   let
-    m, lda = rv_q.shape[0]                # Order of the orthonormal matrix Q
-    n = min(rv_q.shape[0], rv_q.shape[1]) # Number of columns of Q
-    k = n                                 # The number of elementary reflectors whose product defines the matrix Q
+    m, lda = rv_q.shape[0].int32                # Order of the orthonormal matrix Q
+    n = int32 min(rv_q.shape[0], rv_q.shape[1]) # Number of columns of Q
+    k = n                                       # The number of elementary reflectors whose product defines the matrix Q
   var
     # LAPACK stores optimal scratchspace size in the first element of a float array ...
     work_size: T
@@ -233,7 +239,7 @@ proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: seq[T]) =
 
   # Querying workspace size
   orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, lda.unsafeAddr,
-        tau[0].addr, work_size[0].addr, lwork.addr, info.addr)
+        tau[0].unsafeAddr, work_size.addr, lwork.addr, info.addr)
   if unlikely(info < 0):
     raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
 
@@ -241,7 +247,7 @@ proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: seq[T]) =
   lwork = work_size.int32
   var work = newSeqUninit[T](lwork)
   orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, lda.unsafeAddr,
-        tau[0].addr, work[0].addr, lwork.addr, info.addr)
+        tau[0].unsafeAddr, work[0].addr, lwork.addr, info.addr)
   if unlikely(info < 0):
     raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
 

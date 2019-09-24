@@ -235,7 +235,7 @@ proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: seq[T]) =
 overload(gesdd, sgesdd)
 overload(gesdd, dgesdd)
 
-proc gesdd[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
+proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
   ## Wrapper for LAPACK gesdd routine
   ## (GEneral Singular value Decomposition by Divide & conquer)
   ##
@@ -247,9 +247,13 @@ proc gesdd[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
   ##
   ## SVD solves the equation:
   ## A = U S V.h
-  ## with V being the right singular vectors and
-  ## V.h being the hermitian conjugate of V
-  ## for real matrices, thi is equivalent to V.t (transpose)
+  ##
+  ## - with S being a diagonal matrix of singular values
+  ## - with V being the right singular vectors and
+  ##   V.h being the hermitian conjugate of V
+  ##   for real matrices, this is equivalent to V.t (transpose)
+  ##
+  ## ⚠️: Input must not contain NaN
 
   # - https://software.intel.com/en-us/node/469238
   # - http://www.netlib.org/lapack/explore-html/d4/dca/group__real_g_esing_gac2cd4f1079370ac908186d77efcd5ea8.html
@@ -262,13 +266,19 @@ proc gesdd[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
   let
     m, lda = a.shape[0].int32 # colMajor in Fortran
     n = a.shape[1].int32
-    # Returns all columns in U (shape MxM)
-    # and all rows in Vh (shape NxN)
-    jobz = cstring"A"
+    # Returns reduced columns in U (shape Mxk)
+    # and reduced rows in Vh (shape kxN)
+    # Numpy default to full_matrices is
+    # - confusing for docs
+    # - hurts reconstruction
+    # - often not used (for example for PCA/randomized PCA)
+    # - memory inefficient
+    # thread: https://mail.python.org/pipermail/numpy-discussion/2011-January/054685.html
+    jobz = cstring"S"
     k = min(m, n)
     ldu = m # depends on jobz
-    ucol = m
-    ldvt = n # depends on jobz
+    ucol = k # depends on jobz
+    ldvt = k # depends on jobz
   var
     # LAPACK stores optimal scratchspace size in the first element of a float array ...
     work_size: T

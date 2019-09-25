@@ -9,8 +9,15 @@ import
 # TODO: - don't use assert
 #       - move as a public proc
 
-proc triu*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
-  ## Returns a matrix with elements below the k-th diagonal zero-ed
+# Triangular matrix implementation
+# ---------------------------------
+
+proc tri_impl[T](a: Tensor[T], upper: static bool, k: static int): Tensor[T] {.inline.}=
+  ## Returns a matrix with elements:
+  ## if upper:
+  ##   below the k-th diagonal zero-ed
+  ## if lower:
+  ##   above the k-th diagonal zero-ed
 
   assert a.rank == 2
 
@@ -27,6 +34,8 @@ proc triu*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
   const
     k = k     # for emit interpolation. TODO: not the proper way see:
     tile = 32 # https://github.com/nim-lang/Nim/issues/12036#issuecomment-524890898
+    cmp = when upper: "<"
+          else: ">"
 
   # We use loop-tiling to deal with row/col imbalances
   # with tile size of 32
@@ -41,25 +50,33 @@ proc triu*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
           for (int jj = j; jj<min(j+`tile`,`ncols`); ++jj)
             // dst is row-major
             // src is col-major
-            if (jj < ii + `k`) {
+            if (jj `cmp` ii + `k`) {
               dst[ii * `ncols` + jj] = 0;
             } else {
               dst[ii * `ncols` + jj] = src[ii * `aRowStride` + jj * `aColStride`];
             }
   """.}
 
-when isMainModule:
+proc triu*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
+  tri_impl(a, upper = true, k)
 
+proc tril*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
+  tri_impl(a, upper = false, k)
+
+# Sanity checks
+# ---------------------------------
+
+when isMainModule:
   block:
     let a = [[1, 2, 3],
              [4, 5, 6],
              [7, 8, 9]].toTensor().asContiguous(colMajor, force=true)
 
-    let t_a = [[1, 2, 3],
+    let ua = [[1, 2, 3],
                [0, 5, 6],
                [0, 0, 9]].toTensor()
 
-    doAssert triu(a) == t_a
+    doAssert triu(a) == ua
 
   block: # From numpy doc
     let a = [[ 1, 2, 3],
@@ -67,9 +84,33 @@ when isMainModule:
              [ 7, 8, 9],
              [10,11,12]].toTensor().asContiguous(colMajor, force=true)
 
-    let t_a = [[ 1, 2, 3],
+    let ua = [[ 1, 2, 3],
                [ 4, 5, 6],
                [ 0, 8, 9],
                [ 0, 0,12]].toTensor()
 
-    doAssert triu(a, -1) == t_a
+    doAssert triu(a, -1) == ua
+
+  block:
+    let a = [[1, 2, 3],
+             [4, 5, 6],
+             [7, 8, 9]].toTensor().asContiguous(colMajor, force=true)
+
+    let la = [[1, 0, 0],
+              [4, 5, 0],
+              [7, 8, 9]].toTensor()
+
+    doAssert tril(a) == la
+
+  block: # From numpy doc
+    let a = [[ 1, 2, 3],
+             [ 4, 5, 6],
+             [ 7, 8, 9],
+             [10,11,12]].toTensor().asContiguous(colMajor, force=true)
+
+    let la = [[ 0, 0, 0],
+              [ 4, 0, 0],
+              [ 7, 8, 0],
+              [10,11,12]].toTensor()
+
+    doAssert tril(a, -1) == la

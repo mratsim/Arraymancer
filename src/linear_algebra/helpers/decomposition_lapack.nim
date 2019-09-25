@@ -98,6 +98,7 @@ proc syevr*[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
   liwork = iwkopt.int32
   iwork = newSeqUninit[int32](liwork)
 
+  # Decompose matrix
   syevr(jobz, interval, uplo, n.addr, a.get_data_ptr, lda.addr, vl.addr, vu.addr, il.addr, iu.addr,
         abstol.addr, m.addr, w, z, ldz.addr, isuppz_ptr, work[0].addr, lwork.addr, iwork[0].addr, liwork.addr, info.addr)
 
@@ -165,12 +166,12 @@ proc geqrf*[T: SomeFloat](a: Tensor[T], r_v: var Tensor[T], tau: var seq[T]) =
   # Querying workspace size
   geqrf(m.unsafeAddr, n.unsafeAddr, r_v.get_data_ptr, lda.unsafeAddr,
         tau[0].addr, work_size.addr, lwork.addr, info.addr)
-  if unlikely(info < 0):
-    raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
 
   # Allocating workspace
   lwork = work_size.int32
   var work = newSeqUninit[T](lwork)
+
+  # Decompose matrix
   geqrf(m.unsafeAddr, n.unsafeAddr, r_v.get_data_ptr, lda.unsafeAddr,
         tau[0].addr, work[0].addr, lwork.addr, info.addr)
   if unlikely(info < 0):
@@ -217,59 +218,160 @@ proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: seq[T]) =
   # Querying workspace size
   orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, lda.unsafeAddr,
         tau[0].unsafeAddr, work_size.addr, lwork.addr, info.addr)
-  if unlikely(info < 0):
-    raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
 
   # Allocating workspace
   lwork = work_size.int32
   var work = newSeqUninit[T](lwork)
+
+  # Extract Q from Householder reflectors
   orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, lda.unsafeAddr,
         tau[0].unsafeAddr, work[0].addr, lwork.addr, info.addr)
   if unlikely(info < 0):
     raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
+
+# Singular Value decomposition
+# --------------------------------------------------------------------------------------
+
+overload(gesdd, sgesdd)
+overload(gesdd, dgesdd)
+
+proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
+  ## Wrapper for LAPACK gesdd routine
+  ## (GEneral Singular value Decomposition by Divide & conquer)
+  ##
+  ## Parameters:
+  ##   - a: Input - MxN matrix to factorize
+  ##   - U: Output - Unitary matrix containing the left singular vectors as columns
+  ##   - S: Output - Singular values sorted in decreasing order
+  ##   - Vh: Output - Unitary matrix containing the right singular vectors as rows
+  ##
+  ## SVD solves the equation:
+  ## A = U S V.h
+  ##
+  ## - with S being a diagonal matrix of singular values
+  ## - with V being the right singular vectors and
+  ##   V.h being the hermitian conjugate of V
+  ##   for real matrices, this is equivalent to V.t (transpose)
+  ##
+  ## ⚠️: Input must not contain NaN
+
+  # - https://software.intel.com/en-us/node/469238
+  # - http://www.netlib.org/lapack/explore-html/d4/dca/group__real_g_esing_gac2cd4f1079370ac908186d77efcd5ea8.html
+  # - https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/sgesdd_ex.c.htm
+
+  assert a.rank == 2
+  let a = a.clone(colMajor) # Lapack destroys the input. TODO newruntime sink if possible
+
+  # Temporaries
+  let
+    m, lda = a.shape[0].int32 # colMajor in Fortran
+    n = a.shape[1].int32
+    # Returns reduced columns in U (shape Mxk)
+    # and reduced rows in Vh (shape kxN)
+    # Numpy default to full_matrices is
+    # - confusing for docs
+    # - hurts reconstruction
+    # - often not used (for example for PCA/randomized PCA)
+    # - memory inefficient
+    # thread: https://mail.python.org/pipermail/numpy-discussion/2011-January/054685.html
+    jobz = cstring"S"
+    k = min(m, n)
+    ldu = m # depends on jobz
+    ucol = k # depends on jobz
+    ldvt = k # depends on jobz
+  var
+    # LAPACK stores optimal scratchspace size in the first element of a float array ...
+    work_size: T
+    lwork = -1'i32 # size query
+    info: int32
+    iwork = newSeqUninit[cint](8 * k)
+
+  # newTensorUninit: Varargs + optional colMajor argument issue, must resort to low level proc at the moment
+  # U
+  tensorCpu([ldu.int, ucol.int], U, colMajor)
+  U.storage.Fdata = newSeqUninit[T](U.size)
+  # S
+  S = newTensorUninit[T](k.int)
+  # V.H
+  tensorCpu([ldvt.int, n.int], Vh, colMajor)
+  Vh.storage.Fdata = newSeqUninit[T](Vh.size)
+
+  # Querying workspace size
+  gesdd(jobz, m.unsafeAddr, n.unsafeAddr,
+        a.get_data_ptr, lda.unsafeAddr,
+        S.get_data_ptr,
+        U.get_data_ptr, ldu.unsafeAddr,
+        Vh.get_data_ptr, ldvt.unsafeAddr,
+        work_size.addr, lwork.addr, iwork[0].addr,
+        info.addr
+        )
+
+  # Allocating workspace
+  lwork = work_size.int32
+  var work = newSeqUninit[T](lwork)
+
+  # Decompose matrix
+  gesdd(jobz, m.unsafeAddr, n.unsafeAddr,
+        a.get_data_ptr, lda.unsafeAddr,
+        S.get_data_ptr,
+        U.get_data_ptr, ldu.unsafeAddr,
+        Vh.get_data_ptr, ldvt.unsafeAddr,
+        work_size.addr, lwork.addr, iwork[0].addr,
+        info.addr
+        )
+
+  if info > 0:
+    # TODO, this should not be an exception, not converging is something that can happen and should
+    # not interrupt the program. Alternative. Fill the result with Inf?
+    # Though scipy / sklearn seems to use LinAlgError exceptions
+    raise newException(ValueError, "the algorithm for computing the SVD failed to converge")
+  if info < 0:
+    raise newException(ValueError, "Illegal parameter in singular value decomposition gesdd: " & $(-info))
 
 # Sanity checks
 # --------------------------------------------------------------------------------------
 
 when isMainModule:
   import ../../ml/metrics/common_error_functions
-  # Adapted from: https://www.ibm.com/support/knowledgecenter/en/SSFHY8_6.2/reference/am5gr_hdgeqrf.html
 
-  # --- Input ---------------------
-  #         |   .000000  2.000000 |
-  #         |  2.000000 -1.000000 |
-  # A    =  |  2.000000 -1.000000 |
-  #         |   .000000  1.500000 |
-  #         |  2.000000 -1.000000 |
-  #         |  2.000000 -1.000000 |
-  # --- Output ---------------------
-  #         | -4.000000  2.000000 |
-  #         |   .500000  2.500000 |
-  # A    =  |   .500000   .285714 |
-  #         |   .000000  -.428571 |
-  #         |   .500000   .285714 |
-  #         |   .500000   .285714 |
-  #
-  # TAU  =  |  1.000000  1.400000 |
+  block: # QR decompositions
+    # Adapted from: https://www.ibm.com/support/knowledgecenter/en/SSFHY8_6.2/reference/am5gr_hdgeqrf.html
 
-  let a = [[ 0.0,  2.0],
-           [ 2.0, -1.0],
-           [ 2.0, -1.0],
-           [ 0.0,  1.5],
-           [ 2.0, -1.0],
-           [ 2.0, -1.0]].toTensor()
+    # --- Input ---------------------
+    #         |   .000000  2.000000 |
+    #         |  2.000000 -1.000000 |
+    # A    =  |  2.000000 -1.000000 |
+    #         |   .000000  1.500000 |
+    #         |  2.000000 -1.000000 |
+    #         |  2.000000 -1.000000 |
+    # --- Output ---------------------
+    #         | -4.000000  2.000000 |
+    #         |   .500000  2.500000 |
+    # A    =  |   .500000   .285714 |
+    #         |   .000000  -.428571 |
+    #         |   .500000   .285714 |
+    #         |   .500000   .285714 |
+    #
+    # TAU  =  |  1.000000  1.400000 |
 
-  let expected_rv = [[ -4.0, 2.0],
-                     [  0.5, 2.5],
-                     [  0.5, 0.285714],
-                     [  0.0,-0.428571],
-                     [  0.5, 0.285714],
-                     [  0.5, 0.285714]].toTensor()
-  let expected_tau = [1.0, 1.4].toTensor()
+    let a = [[ 0.0,  2.0],
+            [ 2.0, -1.0],
+            [ 2.0, -1.0],
+            [ 0.0,  1.5],
+            [ 2.0, -1.0],
+            [ 2.0, -1.0]].toTensor()
 
-  var tau: seq[float64]
-  var r_v: Tensor[float64]
-  geqrf(a, r_v, tau)
+    let expected_rv = [[ -4.0, 2.0],
+                      [  0.5, 2.5],
+                      [  0.5, 0.285714],
+                      [  0.0,-0.428571],
+                      [  0.5, 0.285714],
+                      [  0.5, 0.285714]].toTensor()
+    let expected_tau = [1.0, 1.4].toTensor()
 
-  doAssert mean_absolute_error(r_v, expected_rv) < 1e-6
-  doAssert mean_absolute_error(tau.toTensor, expected_tau) < 1e-15
+    var tau: seq[float64]
+    var r_v: Tensor[float64]
+    geqrf(a, r_v, tau)
+
+    doAssert mean_absolute_error(r_v, expected_rv) < 1e-6
+    doAssert mean_absolute_error(tau.toTensor, expected_tau) < 1e-15

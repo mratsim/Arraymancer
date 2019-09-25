@@ -23,7 +23,8 @@ macro overload*(overloaded_name: untyped, lapack_name: typed{nkSym}): untyped =
     name = overloaded_name,
     params = params,
     body = body,
-    pragmas = nnkPragma.newTree(ident"inline")
+    procType = nnkTemplateDef
+    # pragmas = nnkPragma.newTree(ident"inline")
   )
 
   when false:

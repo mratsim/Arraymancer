@@ -13,14 +13,14 @@ import
 overload(laswp, slaswp)
 overload(laswp, dlaswp)
 
-proc laswp*(a: var Tensor, pivot_indices: openarray[int32]) =
+proc laswp*(a: var Tensor, pivot_indices: openarray[int32], pivot_from: static int32) =
   ## Apply A = P * A
   ## where P is a permutation matrix, represented by sparse pivot_indices.
   ##   | 1 0 0 0 |
   ##   | 0 0 1 0 |
   ##   | 0 0 0 1 |
   ##   | 0 1 0 0 |
-  ## would be @[0, 2, 3, 1]
+  ## would be @[1, 3, 4, 2] (Fortran index from 1)
   ##
   ## A is a matrix of shape MxN.
   ## A is permuted in-place
@@ -33,10 +33,11 @@ proc laswp*(a: var Tensor, pivot_indices: openarray[int32]) =
   let
     k = min(a.shape[0], a.shape[1]).int32
     n = k
-    lda = a.shape[0].int32 # Assumes colMajor
-    k1 = 1'i32             # First element of pivot_indices that will be used for row interchange
-    k2 = k                 # Last element of pivot_indices that will be used for row interchanged
-    incx = -1'i32          # Apply pivot in reverse order
+    lda = a.shape[0].int32  # Assumes colMajor
+    k1 = 1'i32              # First element of pivot_indices that will be used for row interchange
+    k2 = k                  # Last element of pivot_indices that will be used for row interchanged
+    incx = pivot_from.int32 # 1: multiply by Permutation on the right
+                            # -1: multiply by permutation on the left
 
   assert k == pivot_indices.len
 

@@ -132,4 +132,4 @@ proc lu_permuted*[T: SomeFloat](a: Tensor[T]): tuple[PL, U: Tensor[T]] =
 
   result.U = triu(lu[0..<k, _])
   result.PL = tril_unit_diag(lu[_, 0..<k])
-  laswp(result.PL, pivot_indices)
+  laswp(result.PL, pivot_indices, pivot_from = -1)

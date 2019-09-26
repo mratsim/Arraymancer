@@ -132,7 +132,7 @@ proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T]) =
   ## In-place version, this will overwrite Q and tau
   assert Q.rank == 2, "Input is not a matrix."
   assert Q.is_F_contiguous, "Input must be column-major."
-  assert tau.len == min(Q.shape[0], Q.shape[1])
+  assert tau.len == min(Q.shape[0], Q.shape[1]), "tau should have the size of min(Q.shape[0], Q.shape[1])"
 
   # Temporaries
   let
@@ -344,6 +344,32 @@ proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
 overload(getrf, sgetrf)
 overload(getrf, dgetrf)
 
+proc getrf*[T: SomeFloat](lu: var Tensor[T], pivot_indices: var seq[int32]) =
+  ## Wrapper for LAPACK getrf routine
+  ## (GEneral ??? Pivoted LU Factorization)
+  ##
+  ## In-place version, this will overwrite LU and tau
+  assert lu.rank == 2, "Input is not a matrix"
+  assert lu.is_F_contiguous, "Input must be column-major"
+  assert pivot_indices.len == min(lu.shape[0], lu.shape[1]), "pivot_indices should have the size of min(Q.shape[0], Q.shape[1])"
+
+  # Temporaries
+  let
+    m, lda = lu.shape[0].int32 # colMajor in Fortran
+    n = lu.shape[1].int32
+  var info: int32
+
+  # Decompose matrix
+  getrf(m.unsafeAddr, n.unsafeAddr, lu.get_data_ptr, lda.unsafeAddr,
+        pivot_indices[0].addr, info.addr)
+  if info < 0:
+    raise newException(ValueError, "Illegal parameter in lu factorization getrf: " & $(-info))
+  if info > 0:
+    # TODO: warning framework
+    let cinfo = $(info - 1) # Fortran arrays are indexed by 1
+    echo "Warning: in LU factorization, diagonal U[" & cinfo & "," & cinfo & "] is zero. Matrix is singular/non-invertible.\n" &
+      "Division-by-zero will occur if used to solve a system of equations."
+
 proc getrf*[T: SomeFloat](a: Tensor[T], lu: var Tensor[T], pivot_indices: var seq[int32]) =
   ## Wrapper for LAPACK getrf routine
   ## (GEneral ??? Pivoted LU Factorization)
@@ -365,28 +391,13 @@ proc getrf*[T: SomeFloat](a: Tensor[T], lu: var Tensor[T], pivot_indices: var se
   ## A = P L U
 
   assert a.rank == 2
-
-  # Temporaries
-  let
-    m, lda = a.shape[0].int32 # colMajor in Fortran
-    n = a.shape[1].int32
-    k = min(m, n).int
-  var info: int32
+  let k = min(a.shape[0], a.shape[1]).int
 
   # Outputs
   lu = a.clone(colMajor) # Lapack destroys the input. TODO newruntime sink if possible
   pivot_indices = newSeqUninit[int32](k)
-
-  # Decompose matrix
-  getrf(m.unsafeAddr, n.unsafeAddr, lu.get_data_ptr, lda.unsafeAddr,
-        pivot_indices[0].addr, info.addr)
-  if info < 0:
-    raise newException(ValueError, "Illegal parameter in lu factorization getrf: " & $(-info))
-  if info > 0:
-    # TODO: warning framework
-    let cinfo = $(info - 1) # Fortran arrays are indexed by 1
-    echo "Warning: in LU factorization, diagonal U[" & cinfo & "," & cinfo & "] is zero. Matrix is singular/non-invertible.\n" &
-      "Division-by-zero will occur if used to solve a system of equations."
+  
+  getrf(lu, pivot_indices)
 
 # Sanity checks
 # --------------------------------------------------------------------------------------

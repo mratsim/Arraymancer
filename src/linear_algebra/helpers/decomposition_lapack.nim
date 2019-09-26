@@ -354,7 +354,6 @@ proc getrf*[T: SomeFloat](a: Tensor[T], lu: var Tensor[T], pivot_indices: var se
   ## A = P L U
 
   assert a.rank == 2
-  let a = a.clone(colMajor) # Lapack destroys the input. TODO newruntime sink if possible
 
   # Temporaries
   let
@@ -363,17 +362,19 @@ proc getrf*[T: SomeFloat](a: Tensor[T], lu: var Tensor[T], pivot_indices: var se
     k = min(m, n).int
   var info: int32
 
-  # Output
+  # Outputs
+  lu = a.clone(colMajor) # Lapack destroys the input. TODO newruntime sink if possible
   pivot_indices = newSeqUninit[int32](k)
 
   # Decompose matrix
-  getrf(m.unsafeAddr, n.unsafeAddr, a.get_data_ptr, lda.unsafeAddr,
+  getrf(m.unsafeAddr, n.unsafeAddr, lu.get_data_ptr, lda.unsafeAddr,
         pivot_indices[0].addr, info.addr)
   if info < 0:
     raise newException(ValueError, "Illegal parameter in lu factorization getrf: " & $(-info))
   if info > 0:
     # TODO: warning framework
-    echo "Warning: in LU factorization, diagonal U[" & $info & "," & $info & "] is zero. Matrix is singular/non-invertible.\n" &
+    let cinfo = $(info - 1) # Fortran arrays are indexed by 1
+    echo "Warning: in LU factorization, diagonal U[" & cinfo & "," & cinfo & "] is zero. Matrix is singular/non-invertible.\n" &
       "Division-by-zero will occur if used to solve a system of equations."
 
 # Sanity checks

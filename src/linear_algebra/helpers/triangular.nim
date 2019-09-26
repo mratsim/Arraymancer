@@ -4,7 +4,10 @@
 
 # Helpers on column-major triangular matrices
 import
-  ../../tensor/tensor
+  ../../tensor/tensor,
+  # TODO: can't call newTensorUninit with optional colMajor, varargs breaks it
+  ../../private/sequninit,
+  ../../tensor/private/p_init_cpu
 
 # TODO: - don't use assert
 #       - move as a public proc
@@ -63,14 +66,17 @@ proc triu*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
 proc tril*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
   tri_impl(a, upper = false, k)
 
-proc tril_unit_diag[T](a: Tensor[T]): Tensor[T] =
+proc tril_unit_diag*[T](a: Tensor[T]): Tensor[T] =
   ## Lower-triangular matrix with unit diagonal
   ## For use with getrf which returns L\U matrices
   ## with L a unit diagonal (not returned) and U a non-unit diagonal (present)
 
   assert a.rank == 2
 
-  result = newTensorUninit[T](a.shape)
+  # We return as colMajor for further Fortran processing
+  # We need to use low-level tensorCpu to work around Varargs + optional colMajor argument
+  tensorCpu(a.shape, result, colMajor)
+  result.storage.Fdata = newSeqUninit[T](result.size)
 
   let
     nrows = a.shape[0]
@@ -90,18 +96,18 @@ proc tril_unit_diag[T](a: Tensor[T]): Tensor[T] =
     #define min(a,b) (((a)<(b))?(a):(b))
 
     #pragma omp parallel for collapse(2)
-    for (int i = 0; i < `nrows`; i+=`tile`)
-      for (int j = 0; j < `ncols`; j+=`tile`)
-        for (int ii = i; ii<min(i+`tile`, `nrows`); ++ii)
-          for (int jj = j; jj<min(j+`tile`,`ncols`); ++jj)
-            // dst is row-major
+    for (int j = 0; j < `ncols`; j+=`tile`)
+      for (int i = 0; i < `nrows`; i+=`tile`)
+        for (int jj = j; jj<min(j+`tile`,`ncols`); ++jj)
+          for (int ii = i; ii<min(i+`tile`, `nrows`); ++ii)
+            // dst is col-major
             // src is col-major
             if (jj > ii) {
-              dst[ii * `ncols` + jj] = 0;
+              dst[jj * `nrows` + ii] = 0;
             } else if (jj == ii) {
-              dst[ii * `ncols` + jj] = 1;
+              dst[jj * `nrows` + ii] = 1;
             } else {
-              dst[ii * `ncols` + jj] = src[ii * `aRowStride` + jj * `aColStride`];
+              dst[jj * `nrows` + ii] = src[ii * `aRowStride` + jj * `aColStride`];
             }
   """.}
 

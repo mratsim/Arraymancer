@@ -136,7 +136,7 @@ proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T]) =
 
   # Temporaries
   let
-    m, lda = Q.shape[0].int32 # colMajor for Fortran
+    m = Q.shape[0].int32 # colMajor for Fortran
     n = Q.shape[1].int32
   var
     # LAPACK stores optimal scratchspace size in the first element of a float array ...
@@ -145,7 +145,7 @@ proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T]) =
     info: int32
 
   # Querying workspace size
-  geqrf(m.unsafeAddr, n.unsafeAddr, Q.get_data_ptr, lda.unsafeAddr,
+  geqrf(m.unsafeAddr, n.unsafeAddr, Q.get_data_ptr, m.unsafeAddr, # lda
         tau[0].addr, work_size.addr, lwork.addr, info.addr)
 
   # Allocating workspace
@@ -153,7 +153,7 @@ proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T]) =
   var work = newSeqUninit[T](lwork)
 
   # Decompose matrix
-  geqrf(m.unsafeAddr, n.unsafeAddr, Q.get_data_ptr, lda.unsafeAddr,
+  geqrf(m.unsafeAddr, n.unsafeAddr, Q.get_data_ptr, m.unsafeAddr, # lda
         tau[0].addr, work[0].addr, lwork.addr, info.addr)
   if unlikely(info < 0):
     raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
@@ -215,7 +215,7 @@ proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: openarray[T]) =
   assert rv_q.is_F_contiguous()
 
   let
-    m, lda = rv_q.shape[0].int32                # Order of the orthonormal matrix Q
+    m = rv_q.shape[0].int32                     # Order of the orthonormal matrix Q
     n = int32 min(rv_q.shape[0], rv_q.shape[1]) # Number of columns of Q
     k = n                                       # The number of elementary reflectors whose product defines the matrix Q
   var
@@ -227,7 +227,7 @@ proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: openarray[T]) =
   assert k == tau.len
 
   # Querying workspace size
-  orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, lda.unsafeAddr,
+  orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, m.unsafeAddr, # lda
         tau[0].unsafeAddr, work_size.addr, lwork.addr, info.addr)
 
   # Allocating workspace
@@ -235,7 +235,7 @@ proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: openarray[T]) =
   var work = newSeqUninit[T](lwork)
 
   # Extract Q from Householder reflectors
-  orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, lda.unsafeAddr,
+  orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, m.unsafeAddr, # lda
         tau[0].unsafeAddr, work[0].addr, lwork.addr, info.addr)
   if unlikely(info < 0):
     raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
@@ -275,7 +275,7 @@ proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
 
   # Temporaries
   let
-    m, lda = a.shape[0].int32 # colMajor in Fortran
+    m = a.shape[0].int32 # colMajor in Fortran
     n = a.shape[1].int32
     # Returns reduced columns in U (shape Mxk)
     # and reduced rows in Vh (shape kxN)
@@ -309,7 +309,7 @@ proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
 
   # Querying workspace size
   gesdd(jobz, m.unsafeAddr, n.unsafeAddr,
-        a.get_data_ptr, lda.unsafeAddr,
+        a.get_data_ptr, m.unsafeAddr, # lda
         S.get_data_ptr,
         U.get_data_ptr, ldu.unsafeAddr,
         Vh.get_data_ptr, ldvt.unsafeAddr,
@@ -323,7 +323,7 @@ proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
 
   # Decompose matrix
   gesdd(jobz, m.unsafeAddr, n.unsafeAddr,
-        a.get_data_ptr, lda.unsafeAddr,
+        a.get_data_ptr, m.unsafeAddr, # lda
         S.get_data_ptr,
         U.get_data_ptr, ldu.unsafeAddr,
         Vh.get_data_ptr, ldvt.unsafeAddr,
@@ -355,12 +355,12 @@ proc getrf*[T: SomeFloat](lu: var Tensor[T], pivot_indices: var seq[int32]) =
 
   # Temporaries
   let
-    m, lda = lu.shape[0].int32 # colMajor in Fortran
+    m = lu.shape[0].int32 # colMajor in Fortran
     n = lu.shape[1].int32
   var info: int32
 
   # Decompose matrix
-  getrf(m.unsafeAddr, n.unsafeAddr, lu.get_data_ptr, lda.unsafeAddr,
+  getrf(m.unsafeAddr, n.unsafeAddr, lu.get_data_ptr, m.unsafeAddr, # lda
         pivot_indices[0].addr, info.addr)
   if info < 0:
     raise newException(ValueError, "Illegal parameter in lu factorization getrf: " & $(-info))
@@ -396,7 +396,7 @@ proc getrf*[T: SomeFloat](a: Tensor[T], lu: var Tensor[T], pivot_indices: var se
   # Outputs
   lu = a.clone(colMajor) # Lapack destroys the input. TODO newruntime sink if possible
   pivot_indices = newSeqUninit[int32](k)
-  
+
   getrf(lu, pivot_indices)
 
 # Sanity checks

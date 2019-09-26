@@ -312,3 +312,56 @@ suite "Linear algebra":
         mean_absolute_error(U, expected_U) < 1e-2
         mean_absolute_error(S, expected_S) < 1e-2
         mean_absolute_error(Vh, expected_Vh) < 1e-2
+
+  test "LU Factorization":
+    block: # M > N
+      # import numpy as np
+      # from scipy.linalg import lu
+      # np.set_printoptions(suppress=True) # Don't use scientific notation
+      # a = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]])
+      # pl, u = lu(a, permute_l = True)
+      # print(pl)
+      # print(u)
+
+      let a = [[ 1.0, 2, 3],
+              [ 4.0, 5, 6],
+              [ 7.0, 8, 9],
+              [10.0,11,12]].toTensor()
+
+      let expected_pl = [[0.1, 1         , 0],
+                         [0.4, 0.66666667, 0],
+                         [0.7, 0.33333333, 1],
+                         [1.0, 0         , 0]].toTensor()
+      let expected_u  = [[10.0, 11.0, 12.0],
+                         [ 0.0,  0.9,  1.8],
+                         [ 0.0,  0.0,  0.0]].toTensor()
+
+      let (PL, U) = lu_permuted(a)
+      check:
+        mean_absolute_error(PL, expected_pl) < 1e-8
+        mean_absolute_error(U, expected_u) < 1e-8
+
+    block: # M < N
+      # import numpy as np
+      # from scipy.linalg import lu
+      # np.set_printoptions(suppress=True) # Don't use scientific notation
+      # a = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+      # pl, u = lu(a, permute_l = True)
+      # print(pl)
+      # print(u)
+
+      let a = [[ 1.0,  2,  3,  4],
+               [ 5.0,  6,  7,  8],
+               [ 9.0, 10, 11, 12]].toTensor()
+
+      let expected_pl = [[0.11111111, 1.0, 0],
+                         [0.55555555, 0.5, 1],
+                         [1.0, 0         , 0]].toTensor()
+      let expected_u  = [[ 9.0, 10.0       , 11.0       , 12.0       ],
+                         [ 0.0,  0.88888889,  1.77777778,  2.66666667],
+                         [ 0.0,  0.0       , -0.0       , -0.0       ]].toTensor()
+
+      let (PL, U) = lu_permuted(a)
+      check:
+        mean_absolute_error(PL, expected_pl) < 1e-8
+        mean_absolute_error(U, expected_u) < 1e-8

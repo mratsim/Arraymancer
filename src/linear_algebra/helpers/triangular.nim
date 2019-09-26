@@ -4,13 +4,23 @@
 
 # Helpers on column-major triangular matrices
 import
-  ../../tensor/tensor
+  ../../tensor/tensor,
+  # TODO: can't call newTensorUninit with optional colMajor, varargs breaks it
+  ../../private/sequninit,
+  ../../tensor/private/p_init_cpu
 
 # TODO: - don't use assert
 #       - move as a public proc
 
-proc triu*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
-  ## Returns a matrix with elements below the k-th diagonal zero-ed
+# Triangular matrix implementation
+# ---------------------------------
+
+proc tri_impl[T](a: Tensor[T], upper: static bool, k: static int): Tensor[T] {.inline.}=
+  ## Returns a matrix with elements:
+  ## if upper:
+  ##   below the k-th diagonal zero-ed
+  ## if lower:
+  ##   above the k-th diagonal zero-ed
 
   assert a.rank == 2
 
@@ -27,6 +37,8 @@ proc triu*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
   const
     k = k     # for emit interpolation. TODO: not the proper way see:
     tile = 32 # https://github.com/nim-lang/Nim/issues/12036#issuecomment-524890898
+    cmp = when upper: "<"
+          else: ">"
 
   # We use loop-tiling to deal with row/col imbalances
   # with tile size of 32
@@ -41,25 +53,79 @@ proc triu*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
           for (int jj = j; jj<min(j+`tile`,`ncols`); ++jj)
             // dst is row-major
             // src is col-major
-            if (jj < ii + `k`) {
+            if (jj `cmp` ii + `k`) {
               dst[ii * `ncols` + jj] = 0;
             } else {
               dst[ii * `ncols` + jj] = src[ii * `aRowStride` + jj * `aColStride`];
             }
   """.}
 
-when isMainModule:
+proc triu*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
+  tri_impl(a, upper = true, k)
 
+proc tril*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
+  tri_impl(a, upper = false, k)
+
+proc tril_unit_diag*[T](a: Tensor[T]): Tensor[T] =
+  ## Lower-triangular matrix with unit diagonal
+  ## For use with getrf which returns L\U matrices
+  ## with L a unit diagonal (not returned) and U a non-unit diagonal (present)
+
+  assert a.rank == 2
+
+  # We return as colMajor for further Fortran processing
+  # We need to use low-level tensorCpu to work around Varargs + optional colMajor argument
+  tensorCpu(a.shape, result, colMajor)
+  result.storage.Fdata = newSeqUninit[T](result.size)
+
+  let
+    nrows = a.shape[0]
+    ncols = a.shape[1]
+    aRowStride = a.strides[0]
+    aColStride = a.strides[1]
+    dst = result.get_data_ptr()
+    src = a.get_data_ptr()
+
+  const
+    tile = 32 # https://github.com/nim-lang/Nim/issues/12036#issuecomment-524890898
+
+  # We use loop-tiling to deal with row/col imbalances
+  # with tile size of 32
+
+  {.emit: """
+    #define min(a,b) (((a)<(b))?(a):(b))
+
+    #pragma omp parallel for collapse(2)
+    for (int j = 0; j < `ncols`; j+=`tile`)
+      for (int i = 0; i < `nrows`; i+=`tile`)
+        for (int jj = j; jj<min(j+`tile`,`ncols`); ++jj)
+          for (int ii = i; ii<min(i+`tile`, `nrows`); ++ii)
+            // dst is col-major
+            // src is col-major
+            if (jj > ii) {
+              dst[jj * `nrows` + ii] = 0;
+            } else if (jj == ii) {
+              dst[jj * `nrows` + ii] = 1;
+            } else {
+              dst[jj * `nrows` + ii] = src[ii * `aRowStride` + jj * `aColStride`];
+            }
+  """.}
+
+# Sanity checks
+# ---------------------------------
+
+when isMainModule:
+  # Upper triangular
   block:
     let a = [[1, 2, 3],
              [4, 5, 6],
              [7, 8, 9]].toTensor().asContiguous(colMajor, force=true)
 
-    let t_a = [[1, 2, 3],
+    let ua = [[1, 2, 3],
                [0, 5, 6],
                [0, 0, 9]].toTensor()
 
-    doAssert triu(a) == t_a
+    doAssert triu(a) == ua
 
   block: # From numpy doc
     let a = [[ 1, 2, 3],
@@ -67,9 +133,59 @@ when isMainModule:
              [ 7, 8, 9],
              [10,11,12]].toTensor().asContiguous(colMajor, force=true)
 
-    let t_a = [[ 1, 2, 3],
+    let ua = [[ 1, 2, 3],
                [ 4, 5, 6],
                [ 0, 8, 9],
                [ 0, 0,12]].toTensor()
 
-    doAssert triu(a, -1) == t_a
+    doAssert triu(a, -1) == ua
+
+  # Lower triangular
+  block:
+    let a = [[1, 2, 3],
+             [4, 5, 6],
+             [7, 8, 9]].toTensor().asContiguous(colMajor, force=true)
+
+    let la = [[1, 0, 0],
+              [4, 5, 0],
+              [7, 8, 9]].toTensor()
+
+    doAssert tril(a) == la
+
+  block: # From numpy doc
+    let a = [[ 1, 2, 3],
+             [ 4, 5, 6],
+             [ 7, 8, 9],
+             [10,11,12]].toTensor().asContiguous(colMajor, force=true)
+
+    let la = [[ 0, 0, 0],
+              [ 4, 0, 0],
+              [ 7, 8, 0],
+              [10,11,12]].toTensor()
+
+    doAssert tril(a, -1) == la
+
+  # Lower triangular with unit diagonal
+  block:
+    let a = [[1, 2, 3],
+             [4, 5, 6],
+             [7, 8, 9]].toTensor().asContiguous(colMajor, force=true)
+
+    let la = [[1, 0, 0],
+              [4, 1, 0],
+              [7, 8, 1]].toTensor()
+
+    doAssert tril_unit_diag(a) == la
+
+  block:
+    let a = [[ 1, 2, 3],
+             [ 4, 5, 6],
+             [ 7, 8, 9],
+             [10,11,12]].toTensor().asContiguous(colMajor, force=true)
+
+    let la = [[ 1, 0, 0],
+              [ 4, 1, 0],
+              [ 7, 8, 1],
+              [10,11,12]].toTensor()
+
+    doAssert tril_unit_diag(a) == la

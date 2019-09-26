@@ -180,7 +180,7 @@ proc geqrf*[T: SomeFloat](a: Tensor[T], r_v: var Tensor[T], tau: var seq[T]) =
 overload(orgqr, sorgqr)
 overload(orgqr, dorgqr)
 
-proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: seq[T]) =
+proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: openarray[T]) =
   ## Wrapper for LAPACK orgqr routine
   ## Generates the orthonormal Q matrix from
   ## elementary Householder reflectors
@@ -327,6 +327,55 @@ proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
     raise newException(ValueError, "the algorithm for computing the SVD failed to converge")
   if info < 0:
     raise newException(ValueError, "Illegal parameter in singular value decomposition gesdd: " & $(-info))
+
+# Pivoted LU Factorization
+# --------------------------------------------------------------------------------------
+overload(getrf, sgetrf)
+overload(getrf, dgetrf)
+
+proc getrf*[T: SomeFloat](a: Tensor[T], lu: var Tensor[T], pivot_indices: var seq[int32]) =
+  ## Wrapper for LAPACK getrf routine
+  ## (GEneral ??? Pivoted LU Factorization)
+  ##
+  ## Input:
+  ##   - a: MxN matrix to factorize
+  ##   - lu: MxN matrix:
+  ##       - Upper triangle including diagonal contains U
+  ##       - Lower triangle contains L, L has an unit diagonal that needs to be reconstructed
+  ##   - pivot_indices: indices of the permutation matrix P
+  ##                    sparse representation:
+  ##                    | 1 0 0 0 |
+  ##                    | 0 0 1 0 |
+  ##                    | 0 0 0 1 |
+  ##                    | 0 1 0 0 |
+  ##                    would be @[0, 2, 3, 1]
+  ##
+  ## The inputs and outputs solve the equation
+  ## A = P L U
+
+  assert a.rank == 2
+
+  # Temporaries
+  let
+    m, lda = a.shape[0].int32 # colMajor in Fortran
+    n = a.shape[1].int32
+    k = min(m, n).int
+  var info: int32
+
+  # Outputs
+  lu = a.clone(colMajor) # Lapack destroys the input. TODO newruntime sink if possible
+  pivot_indices = newSeqUninit[int32](k)
+
+  # Decompose matrix
+  getrf(m.unsafeAddr, n.unsafeAddr, lu.get_data_ptr, lda.unsafeAddr,
+        pivot_indices[0].addr, info.addr)
+  if info < 0:
+    raise newException(ValueError, "Illegal parameter in lu factorization getrf: " & $(-info))
+  if info > 0:
+    # TODO: warning framework
+    let cinfo = $(info - 1) # Fortran arrays are indexed by 1
+    echo "Warning: in LU factorization, diagonal U[" & cinfo & "," & cinfo & "] is zero. Matrix is singular/non-invertible.\n" &
+      "Division-by-zero will occur if used to solve a system of equations."
 
 # Sanity checks
 # --------------------------------------------------------------------------------------

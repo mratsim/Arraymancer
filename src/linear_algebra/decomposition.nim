@@ -4,7 +4,7 @@
 
 import
   ../tensor/tensor,
-  ./helpers/[decomposition_lapack, triangular]
+  ./helpers/[decomposition_lapack, triangular, auxiliary_lapack]
 
 template `^^`(s, i: untyped): untyped =
   (when i is BackwardsIndex: s.shape[0] - int(i) else: int(i))
@@ -102,3 +102,34 @@ proc svd*[T: SomeFloat](a: Tensor[T]): tuple[U, S, Vh: Tensor[T]] =
   # - memory inefficient
   # thread: https://mail.python.org/pipermail/numpy-discussion/2011-January/054685.html
   gesdd(a, result.U, result.S, result.Vh)
+
+proc lu_permuted*[T: SomeFloat](a: Tensor[T]): tuple[PL, U: Tensor[T]] =
+  ## Compute the pivoted LU decomposition of an input matrix ``a``.
+  ##
+  ## The decomposition solves the equation:
+  ## A = P L U
+  ##
+  ## where:
+  ##   - P is a permutation matrix
+  ##   - L is a lower-triangular matrix with unit diagonal
+  ##   - U is an upper-triangular matrix
+  ##
+  ## Input:
+  ##   - ``a``, a MxN matrix
+  ##
+  ## Output:
+  ##   with K = min(M, N)
+  ##   - PL, the product of P and L, of shape [M, K]
+  ##   - U, upper-triangular matrix of shape [K, N]
+  assert a.rank == 2
+
+  var lu: Tensor[T]
+  var pivot_indices: seq[int32]
+
+  getrf(a, lu, pivot_indices)
+
+  let k = min(a.shape[0], a.shape[1])
+
+  result.U = triu(lu[0..<k, _])
+  result.PL = tril_unit_diag(lu[_, 0..<k])
+  laswp(result.PL, pivot_indices)

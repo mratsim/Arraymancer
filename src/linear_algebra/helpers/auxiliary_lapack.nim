@@ -15,12 +15,7 @@ overload(laswp, dlaswp)
 
 proc laswp*(a: var Tensor, pivot_indices: openarray[int32], pivot_from: static int32) =
   ## Apply A = P * A
-  ## where P is a permutation matrix, represented by sparse pivot_indices.
-  ##   | 1 0 0 0 |
-  ##   | 0 0 1 0 |
-  ##   | 0 0 0 1 |
-  ##   | 0 1 0 0 |
-  ## would be @[1, 3, 4, 2] (Fortran index from 1)
+  ## where P is a permutation matrix, represented pivot_indices of rows.
   ##
   ## A is a matrix of shape MxN.
   ## A is permuted in-place

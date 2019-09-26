@@ -5,7 +5,8 @@
 import
   nimlapack,
   ./overload,
-  ../../tensor/tensor
+  ../../tensor/tensor,
+  ../../private/sequninit
 
 # Auxiliary functions from Lapack
 # ----------------------------------
@@ -38,3 +39,56 @@ proc laswp*(a: var Tensor, pivot_indices: openarray[int32], pivot_from: static i
 
   laswp(n.unsafeAddr, a.get_data_ptr, lda.unsafeAddr, k1.unsafeAddr, k2.unsafeAddr,
         pivot_indices[0].unsafeAddr, incx.unsafeAddr)
+
+
+overload(orgqr, sorgqr)
+overload(orgqr, dorgqr)
+
+proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: openarray[T]) =
+  ## Wrapper for LAPACK orgqr routine
+  ## Generates the orthonormal Q matrix from
+  ## elementary Householder reflectors
+  ##
+  ## Inputs **must** come from a previous geqrf
+  ##   - rv_q: contains r_v on input. A column-major vector factors of elementary reflectors
+  ##   - tau: Scalar factors of elementary reflectors
+  ##
+  ## Outputs
+  ##   - rv_q: overwritten by Q
+  ##
+  ## Note that while rv_q is MxN on input
+  ## on output the shape is M x min(M,N)
+  ##
+  ## ⚠️: Output must be sliced by [M, min(M,N)]
+  ##    if M>N as the rest contains garbage
+  ##
+  ## Spec: https://www.nag.co.uk/numeric/fl/nagdoc_fl24/pdf/f08/f08aff.pdf
+  ## API: http://www.netlib.org/lapack/explore-html/da/dba/group__double_o_t_h_e_rcomputational_ga14b45f7374dc8654073aa06879c1c459.html
+  assert rv_q.rank == 2
+  assert rv_q.is_F_contiguous()
+
+  let
+    m = rv_q.shape[0].int32                     # Order of the orthonormal matrix Q
+    n = int32 min(rv_q.shape[0], rv_q.shape[1]) # Number of columns of Q
+    k = n                                       # The number of elementary reflectors whose product defines the matrix Q
+  var
+    # LAPACK stores optimal scratchspace size in the first element of a float array ...
+    work_size: T
+    lwork = -1'i32 # size query
+    info: int32
+
+  assert k == tau.len
+
+  # Querying workspace size
+  orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, m.unsafeAddr, # lda
+        tau[0].unsafeAddr, work_size.addr, lwork.addr, info.addr)
+
+  # Allocating workspace
+  lwork = work_size.int32
+  var work = newSeqUninit[T](lwork)
+
+  # Extract Q from Householder reflectors
+  orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, m.unsafeAddr, # lda
+        tau[0].unsafeAddr, work[0].addr, lwork.addr, info.addr)
+  if unlikely(info < 0):
+    raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))

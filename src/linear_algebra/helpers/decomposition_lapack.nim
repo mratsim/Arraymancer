@@ -327,7 +327,7 @@ proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
         S.get_data_ptr,
         U.get_data_ptr, ldu.unsafeAddr,
         Vh.get_data_ptr, ldvt.unsafeAddr,
-        work_size.addr, lwork.addr, iwork[0].addr,
+        work[0].addr, lwork.addr, iwork[0].addr,
         info.addr
         )
 

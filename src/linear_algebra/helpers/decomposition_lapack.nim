@@ -125,6 +125,39 @@ proc syevr*[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
 overload(geqrf, sgeqrf)
 overload(geqrf, dgeqrf)
 
+proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T]) =
+  ## Wrapper for LAPACK geqrf routine (GEneral QR Factorization)
+  ## Decomposition is done through Householder Reflection
+  ##
+  ## In-place version, this will overwrite Q and tau
+  assert Q.rank == 2, "Input is not a matrix."
+  assert Q.is_F_contiguous, "Input must be column-major."
+  assert tau.len == min(Q.shape[0], Q.shape[1])
+
+  # Temporaries
+  let
+    m, lda = Q.shape[0].int32 # colMajor for Fortran
+    n = Q.shape[1].int32
+  var
+    # LAPACK stores optimal scratchspace size in the first element of a float array ...
+    work_size: T
+    lwork = -1'i32 # size query
+    info: int32
+
+  # Querying workspace size
+  geqrf(m.unsafeAddr, n.unsafeAddr, Q.get_data_ptr, lda.unsafeAddr,
+        tau[0].addr, work_size.addr, lwork.addr, info.addr)
+
+  # Allocating workspace
+  lwork = work_size.int32
+  var work = newSeqUninit[T](lwork)
+
+  # Decompose matrix
+  geqrf(m.unsafeAddr, n.unsafeAddr, Q.get_data_ptr, lda.unsafeAddr,
+        tau[0].addr, work[0].addr, lwork.addr, info.addr)
+  if unlikely(info < 0):
+    raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
+
 proc geqrf*[T: SomeFloat](a: Tensor[T], r_v: var Tensor[T], tau: var seq[T]) =
   ## Wrapper for LAPACK geqrf routine (GEneral QR Factorization)
   ## Decomposition is done through Householder Reflection
@@ -153,29 +186,7 @@ proc geqrf*[T: SomeFloat](a: Tensor[T], r_v: var Tensor[T], tau: var seq[T]) =
   r_v = a.clone(colMajor)
   tau = newSeqUninit[T](min(r_v.shape[0], r_v.shape[1]))
 
-  # Temporaries
-  let
-    m, lda = r_v.shape[0].int32 # colMajor for Fortran
-    n = r_v.shape[1].int32
-  var
-    # LAPACK stores optimal scratchspace size in the first element of a float array ...
-    work_size: T
-    lwork = -1'i32 # size query
-    info: int32
-
-  # Querying workspace size
-  geqrf(m.unsafeAddr, n.unsafeAddr, r_v.get_data_ptr, lda.unsafeAddr,
-        tau[0].addr, work_size.addr, lwork.addr, info.addr)
-
-  # Allocating workspace
-  lwork = work_size.int32
-  var work = newSeqUninit[T](lwork)
-
-  # Decompose matrix
-  geqrf(m.unsafeAddr, n.unsafeAddr, r_v.get_data_ptr, lda.unsafeAddr,
-        tau[0].addr, work[0].addr, lwork.addr, info.addr)
-  if unlikely(info < 0):
-    raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
+  geqrf(r_v, tau)
 
 overload(orgqr, sorgqr)
 overload(orgqr, dorgqr)

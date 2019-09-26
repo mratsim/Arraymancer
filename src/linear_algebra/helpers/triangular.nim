@@ -43,7 +43,9 @@ proc tri_impl[T](a: Tensor[T], upper: static bool, k: static int): Tensor[T] {.i
   # We use loop-tiling to deal with row/col imbalances
   # with tile size of 32
 
+  # Extra line after define to avoid codegen bug with --debugger:native
   {.emit: """
+
     #define min(a,b) (((a)<(b))?(a):(b))
 
     #pragma omp parallel for collapse(2)
@@ -92,7 +94,9 @@ proc tril_unit_diag*[T](a: Tensor[T]): Tensor[T] =
   # We use loop-tiling to deal with row/col imbalances
   # with tile size of 32
 
+  # Extra line after define to avoid codegen bug with --debugger:native
   {.emit: """
+
     #define min(a,b) (((a)<(b))?(a):(b))
 
     #pragma omp parallel for collapse(2)

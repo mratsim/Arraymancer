@@ -280,39 +280,6 @@ suite "Linear algebra":
           mean_absolute_error(q, np_q) < 1e-8
           mean_absolute_error(r, np_r) < 1e-8
 
-  test "Singular Value Decomposition":
-    block: # From https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/sgesdd_ex.c.htm
-      let a = [[  7.52, -1.10, -7.95,  1.08],
-               [ -0.76,  0.62,  9.34, -7.10],
-               [  5.13,  6.62, -5.66,  0.87],
-               [ -4.75,  8.52,  5.75,  5.30],
-               [  1.33,  4.91, -5.49, -3.52],
-               [ -2.40, -6.77,  2.34,  3.95]].toTensor()
-
-      let expected_U =  [[-0.57,  0.18,  0.01,  0.53],
-                         [ 0.46, -0.11, -0.72,  0.42],
-                         [-0.45, -0.41,  0.00,  0.36],
-                         [ 0.33, -0.69,  0.49,  0.19],
-                         [-0.32, -0.31, -0.28, -0.61],
-                         [ 0.21,  0.46,  0.39,  0.09]].toTensor()
-
-      let expected_S = [18.37, 13.63, 10.85, 4.49].toTensor()
-
-      let expected_Vh = [[-0.52, -0.12,  0.85, -0.03],
-                         [ 0.08, -0.99, -0.09, -0.01],
-                         [-0.28, -0.02, -0.14,  0.95],
-                         [ 0.81,  0.01,  0.50,  0.31]].toTensor()
-
-      let (U, S, Vh) = svd(a)
-
-      # Note - Intel example asks for partial matrices
-      let k = min(a.shape[0], a.shape[1])
-
-      check:
-        mean_absolute_error(U, expected_U) < 1e-2
-        mean_absolute_error(S, expected_S) < 1e-2
-        mean_absolute_error(Vh, expected_Vh) < 1e-2
-
   test "LU Factorization":
     block: # M > N
       # import numpy as np
@@ -365,3 +332,36 @@ suite "Linear algebra":
       check:
         mean_absolute_error(PL, expected_pl) < 1e-8
         mean_absolute_error(U, expected_u) < 1e-8
+
+  test "Singular Value Decomposition":
+    block: # From https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/sgesdd_ex.c.htm
+      let a = [[  7.52, -1.10, -7.95,  1.08],
+               [ -0.76,  0.62,  9.34, -7.10],
+               [  5.13,  6.62, -5.66,  0.87],
+               [ -4.75,  8.52,  5.75,  5.30],
+               [  1.33,  4.91, -5.49, -3.52],
+               [ -2.40, -6.77,  2.34,  3.95]].toTensor()
+
+      let expected_U =  [[-0.57,  0.18,  0.01,  0.53],
+                         [ 0.46, -0.11, -0.72,  0.42],
+                         [-0.45, -0.41,  0.00,  0.36],
+                         [ 0.33, -0.69,  0.49,  0.19],
+                         [-0.32, -0.31, -0.28, -0.61],
+                         [ 0.21,  0.46,  0.39,  0.09]].toTensor()
+
+      let expected_S = [18.37, 13.63, 10.85, 4.49].toTensor()
+
+      let expected_Vh = [[-0.52, -0.12,  0.85, -0.03],
+                         [ 0.08, -0.99, -0.09, -0.01],
+                         [-0.28, -0.02, -0.14,  0.95],
+                         [ 0.81,  0.01,  0.50,  0.31]].toTensor()
+
+      let (U, S, Vh) = svd(a)
+
+      # Note - Intel example asks for partial matrices
+      let k = min(a.shape[0], a.shape[1])
+
+      check:
+        mean_absolute_error(U, expected_U) < 1e-2
+        mean_absolute_error(S, expected_S) < 1e-2
+        mean_absolute_error(Vh, expected_Vh) < 1e-2

@@ -50,7 +50,8 @@ proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: openarray[T]) =
   ## elementary Householder reflectors
   ##
   ## Inputs **must** come from a previous geqrf
-  ##   - rv_q: contains r_v on input. A column-major vector factors of elementary reflectors
+  ##   - rv_q: contains r_v (reflector vector) on input.
+  ##          A column-major vector factors of elementary reflectors
   ##   - tau: Scalar factors of elementary reflectors
   ##
   ## Outputs
@@ -92,3 +93,120 @@ proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: openarray[T]) =
         tau[0].unsafeAddr, work[0].addr, lwork.addr, info.addr)
   if unlikely(info < 0):
     raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
+
+overload(ormqr, sormqr)
+overload(ormqr, dormqr)
+
+proc ormqr*[T: SomeFloat](C: var Tensor[T], Q: Tensor[T], tau: openarray[T], side, trans: static char) =
+  ## Wrapper for LAPACK ormqr routine
+  ## Multiply the orthonormal Q matrix from geqrf
+  ## with another matrix C without materializing Q
+  ##
+  ## C is a matrix of shae [M, N] and will be overwritten by
+  ##
+  ##                SIDE = 'L'     SIDE = 'R'
+  ## TRANS = 'N':      Q * C          C * Q
+  ## TRANS = 'T':      Q**T * C       C * Q**T
+
+  assert C.rank == 2
+  assert C.is_F_contiguous()
+  assert Q.rank == 2
+  assert Q.is_F_contiguous()
+
+  let
+    m = C.shape[0].int32 # number of rows of C
+    n = C.shape[1].int32 # number of columns of C
+    k = Q.shape[1].int32 # The number of elementary reflectors whose product defines the matrix Q
+
+    lda = Q.shape[0].int32
+    sside = cstring($side)
+    strans = cstring($trans)
+
+  assert k == tau.len
+  when side == 'L':
+    assert lda == m
+  elif side == 'R':
+    assert lda == n
+  else:
+    {.error: "Only L(eft) and R(ight) are valid inputs for side".}
+
+  var
+    work_size: T
+    lwork = -1'i32 # size query
+    info: int32
+
+  # Querying workspace size
+  ormqr(sside, strans, m.unsafeAddr, n.unsafeAddr, k.unsafeAddr,
+        Q.get_data_ptr, lda.unsafeAddr, tau[0].unsafeAddr,
+        C.get_data_ptr, m.unsafeAddr, # ldc
+        work_size.addr,
+        lwork.addr, info.addr
+      )
+
+  # Allocating workspace
+  lwork = work_size.int32
+  var work = newSeqUninit[T](lwork)
+
+  # Matrix multiplication
+  ormqr(sside, strans, m.unsafeAddr, n.unsafeAddr, k.unsafeAddr,
+        Q.get_data_ptr, lda.unsafeAddr, tau[0].unsafeAddr,
+        C.get_data_ptr, m.unsafeAddr, # ldc
+        work[0].addr,
+        lwork.addr, info.addr
+      )
+  if unlikely(info < 0):
+    raise newException(ValueError, "Illegal parameter in ormqr: " & $(-info))
+
+
+# Sanity checks
+# -----------------------------------------------
+
+when isMainModule:
+  import ./decomposition_lapack
+  import ../../ml/metrics/common_error_functions
+
+  let a = [[12.0, -51.0, 4.0],
+          [ 6.0, 167.0, -68.0],
+          [-4.0,  24.0, -41.0]].toTensor()
+
+  # From numpy
+  let np_q = [[-0.85714286,  0.39428571,  0.33142857],
+              [-0.42857143, -0.90285714, -0.03428571],
+              [ 0.28571429, -0.17142857,  0.94285714]].toTensor()
+
+  var Q_reflectors: Tensor[float64]
+  var tau: seq[float64]
+
+
+  # QR decomposition
+  geqrf(a, Q_reflectors, tau)
+
+  # Materialize Q
+  var Q = Q_reflectors.clone(colMajor)
+  orgqr(Q, tau)
+  doAssert mean_absolute_error(Q, np_q) < 1e-8
+
+  # Check multiplication
+  let Msrc = [[1.0, 2, 3],
+           [4.0, 5, 6],
+           [7.0, 8, 9]].toTensor()
+
+  block: # M*Q
+    var M = Msrc.clone(colMajor)
+    ormqr(M, Q_reflectors, tau, side = 'R', trans = 'N')
+    doAssert mean_absolute_error(M, Msrc * Q) < 1e-8
+
+  block: # Q*M
+    var M = Msrc.clone(colMajor)
+    ormqr(M, Q_reflectors, tau, side = 'L', trans = 'N')
+    doAssert mean_absolute_error(M, Q * Msrc) < 1e-8
+
+  block: # M*Q.T
+    var M = Msrc.clone(colMajor)
+    ormqr(M, Q_reflectors, tau, side = 'R', trans = 'T')
+    doAssert mean_absolute_error(M, Msrc * Q.transpose()) < 1e-8
+
+  block: # Q.T * M
+    var M = Msrc.clone(colMajor)
+    ormqr(M, Q_reflectors, tau, side = 'L', trans = 'T')
+    doAssert mean_absolute_error(M, Q.transpose() * Msrc) < 1e-8

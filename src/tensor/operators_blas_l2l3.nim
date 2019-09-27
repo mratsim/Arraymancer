@@ -83,7 +83,7 @@ proc gemm*[T: SomeInteger](
 
 proc gemm*[T: SomeNumber](
   A, B: Tensor[T],
-  C: var Tensor[T]) {.inline.}=
+  C: var Tensor[T]) {.deprecated: "Use explicit gemm(1, A, B, 0, C) instead".}=
   gemm(1.T, A, B, 0.T, C)
 
 proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noInit.} =

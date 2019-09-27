@@ -102,7 +102,7 @@ proc im2colgemm_conv2d*[T](input, kernel, bias: Tensor[T],
     im2col(input.atAxisIndex(0, i).squeeze(0), kernel_size, padding, stride, input_col)
     # The following must be done without copy: GEMM will directly write in the result tensor
     output = result.atAxisIndex(0, i).reshape(kernel_col.shape[0], input_col.shape[1])
-    gemm(kernel_col, input_col, output)
+    gemm(1.T, kernel_col, input_col, 0.T, output)
 
   if bias.rank > 0:
     result .+= bias.unsqueeze(0)

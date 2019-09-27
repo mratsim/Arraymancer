@@ -156,4 +156,6 @@ proc svd*[T: SomeFloat](a: Tensor[T]): tuple[U, S, Vh: Tensor[T]] =
 # Randomized decompositions
 # -------------------------------------------
 
+import ./helpers/decomposition_rand
 
+export svd_randomized

@@ -44,7 +44,7 @@ proc laswp*(a: var Tensor, pivot_indices: openarray[int32], pivot_from: static i
 overload(orgqr, sorgqr)
 overload(orgqr, dorgqr)
 
-proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: openarray[T]) =
+proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: openarray[T], scratchspace: var seq[T]) =
   ## Wrapper for LAPACK orgqr routine
   ## Generates the orthonormal Q matrix from
   ## elementary Householder reflectors
@@ -82,22 +82,24 @@ proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: openarray[T]) =
 
   # Querying workspace size
   orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, m.unsafeAddr, # lda
-        tau[0].unsafeAddr, work_size.addr, lwork.addr, info.addr)
+        tau[0].unsafeAddr, work_size.addr,
+        lwork.addr, info.addr)
 
   # Allocating workspace
   lwork = work_size.int32
-  var work = newSeqUninit[T](lwork)
+  scratchspace.setLen(lwork)
 
   # Extract Q from Householder reflectors
   orgqr(m.unsafeAddr, n.unsafeAddr, k.unsafeAddr, rv_q.get_data_ptr, m.unsafeAddr, # lda
-        tau[0].unsafeAddr, work[0].addr, lwork.addr, info.addr)
+        tau[0].unsafeAddr, scratchspace[0].addr,
+        lwork.addr, info.addr)
   if unlikely(info < 0):
     raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
 
 overload(ormqr, sormqr)
 overload(ormqr, dormqr)
 
-proc ormqr*[T: SomeFloat](C: var Tensor[T], Q: Tensor[T], tau: openarray[T], side, trans: static char) =
+proc ormqr*[T: SomeFloat](C: var Tensor[T], Q: Tensor[T], tau: openarray[T], side, trans: static char, scratchspace: var seq[T]) =
   ## Wrapper for LAPACK ormqr routine
   ## Multiply the orthonormal Q matrix from geqrf
   ## with another matrix C without materializing Q
@@ -145,13 +147,13 @@ proc ormqr*[T: SomeFloat](C: var Tensor[T], Q: Tensor[T], tau: openarray[T], sid
 
   # Allocating workspace
   lwork = work_size.int32
-  var work = newSeqUninit[T](lwork)
+  scratchspace.setLen(lwork)
 
   # Matrix multiplication
   ormqr(sside, strans, m.unsafeAddr, n.unsafeAddr, k.unsafeAddr,
         Q.get_data_ptr, lda.unsafeAddr, tau[0].unsafeAddr,
         C.get_data_ptr, m.unsafeAddr, # ldc
-        work[0].addr,
+        scratchspace[0].addr,
         lwork.addr, info.addr
       )
   if unlikely(info < 0):
@@ -174,16 +176,18 @@ when isMainModule:
               [-0.42857143, -0.90285714, -0.03428571],
               [ 0.28571429, -0.17142857,  0.94285714]].toTensor()
 
+  let k = min(a.shape[0], a.shape[1])
   var Q_reflectors: Tensor[float64]
-  var tau: seq[float64]
-
+  var tau = newSeqUninit[float64](k)
+  var scratchspace: seq[float64]
 
   # QR decomposition
-  geqrf(a, Q_reflectors, tau)
+  Q_reflectors = a.clone(colMajor)
+  geqrf(Q_reflectors, tau, scratchspace)
 
   # Materialize Q
   var Q = Q_reflectors.clone(colMajor)
-  orgqr(Q, tau)
+  orgqr(Q, tau, scratchspace)
   doAssert mean_absolute_error(Q, np_q) < 1e-8
 
   # Check multiplication
@@ -193,20 +197,20 @@ when isMainModule:
 
   block: # M*Q
     var M = Msrc.clone(colMajor)
-    ormqr(M, Q_reflectors, tau, side = 'R', trans = 'N')
+    ormqr(M, Q_reflectors, tau, side = 'R', trans = 'N', scratchspace)
     doAssert mean_absolute_error(M, Msrc * Q) < 1e-8
 
   block: # Q*M
     var M = Msrc.clone(colMajor)
-    ormqr(M, Q_reflectors, tau, side = 'L', trans = 'N')
+    ormqr(M, Q_reflectors, tau, side = 'L', trans = 'N', scratchspace)
     doAssert mean_absolute_error(M, Q * Msrc) < 1e-8
 
   block: # M*Q.T
     var M = Msrc.clone(colMajor)
-    ormqr(M, Q_reflectors, tau, side = 'R', trans = 'T')
+    ormqr(M, Q_reflectors, tau, side = 'R', trans = 'T', scratchspace)
     doAssert mean_absolute_error(M, Msrc * Q.transpose()) < 1e-8
 
   block: # Q.T * M
     var M = Msrc.clone(colMajor)
-    ormqr(M, Q_reflectors, tau, side = 'L', trans = 'T')
+    ormqr(M, Q_reflectors, tau, side = 'L', trans = 'T', scratchspace)
     doAssert mean_absolute_error(M, Q.transpose() * Msrc) < 1e-8

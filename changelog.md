@@ -1,3 +1,11 @@
+Arraymancer v0.x.x
+=====================================================
+
+Deprecation:
+  - The syntax gemm(A, B, C) is now deprecated.
+    Use explicit "gemm(1.0, A, B, 0.0, C)" instead.
+    Arguably not zero-ing C could also be a reasonable default.
+
 Arraymancer v0.5.1 Jul. 19 2019
 =====================================================
 Changes affecting backward compatibility:

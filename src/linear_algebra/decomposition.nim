@@ -130,10 +130,11 @@ proc lu_permuted*[T: SomeFloat](a: Tensor[T]): tuple[PL, U: Tensor[T]] =
 
   let k = min(a.shape[0], a.shape[1])
   var pivot_indices = newSeqUninit[int32](k)
-  var lu = a.clone(colMajor)
+  result.PL = a.clone(colMajor)
 
-  getrf(lu, pivot_indices)
+  getrf(result.PL, pivot_indices)
 
-  result.U = triu(lu[0..<k, _])
-  result.PL = tril_unit_diag(lu[_, 0..<k])
+  result.U = triu(result.PL[0..<k, _])
+  result.PL = result.PL[_, 0..<k]
+  tril_unit_diag_mut(result.PL)
   laswp(result.PL, pivot_indices, pivot_from = -1)

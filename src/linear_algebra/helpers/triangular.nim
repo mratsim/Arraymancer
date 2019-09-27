@@ -43,6 +43,7 @@ proc tri_impl[T](a: Tensor[T], upper: static bool, k: static int): Tensor[T] {.i
   # We use loop-tiling to deal with row/col imbalances
   # with tile size of 32
 
+  # TODO: proper C interpolation
   # Extra line after define to avoid codegen bug with --debugger:native
   {.emit: """
 
@@ -56,9 +57,9 @@ proc tri_impl[T](a: Tensor[T], upper: static bool, k: static int): Tensor[T] {.i
             // dst is row-major
             // src is col-major
             if (jj `cmp` ii + `k`) {
-              dst[ii * `ncols` + jj] = 0;
+              `dst`[ii * `ncols` + jj] = 0;
             } else {
-              dst[ii * `ncols` + jj] = src[ii * `aRowStride` + jj * `aColStride`];
+              `dst`[ii * `ncols` + jj] = `src`[ii * `aRowStride` + jj * `aColStride`];
             }
   """.}
 
@@ -94,6 +95,7 @@ proc tril_unit_diag*[T](a: Tensor[T]): Tensor[T] =
   # We use loop-tiling to deal with row/col imbalances
   # with tile size of 32
 
+  # TODO: proper C interpolation
   # Extra line after define to avoid codegen bug with --debugger:native
   {.emit: """
 
@@ -107,13 +109,56 @@ proc tril_unit_diag*[T](a: Tensor[T]): Tensor[T] =
             // dst is col-major
             // src is col-major
             if (jj > ii) {
-              dst[jj * `nrows` + ii] = 0;
+              `dst`[jj * `nrows` + ii] = 0;
             } else if (jj == ii) {
-              dst[jj * `nrows` + ii] = 1;
+              `dst`[jj * `nrows` + ii] = 1;
             } else {
-              dst[jj * `nrows` + ii] = src[ii * `aRowStride` + jj * `aColStride`];
+              `dst`[jj * `nrows` + ii] = `src`[ii * `aRowStride` + jj * `aColStride`];
             }
   """.}
+
+proc tril_unit_diag_mut*[T](a: var Tensor[T]) =
+  ## Lower-triangular matrix with unit diagonal
+  ## For use with getrf which returns L\U matrices
+  ##
+  ## The input upper-half is overwritten with 0
+  ## The input diagonal is overwritten with 1
+  ## Input must be column major
+
+  assert a.rank == 2
+  assert a.is_F_contiguous, "Input must be column major"
+
+  let
+    nrows = a.shape[0]
+    ncols = a.shape[1]
+    A = a.get_data_ptr()
+
+  const
+    tile = 32 # https://github.com/nim-lang/Nim/issues/12036#issuecomment-524890898
+
+  # We use loop-tiling to deal with row/col imbalances
+  # with tile size of 32
+
+  # TODO: proper C interpolation
+  # Extra line after define to avoid codegen bug with --debugger:native
+  {.emit: """
+
+    #define min(a,b) (((a)<(b))?(a):(b))
+
+    #pragma omp parallel for collapse(2)
+    for (int j = 0; j < `ncols`; j+=`tile`)
+      for (int i = 0; i < `nrows`; i+=`tile`)
+        for (int jj = j; jj<min(j+`tile`,`ncols`); ++jj)
+          for (int ii = i; ii<min(i+`tile`, `nrows`); ++ii)
+            // A is col-major
+            if (jj > ii) {
+              `A`[jj * `nrows` + ii] = 0;
+            } else if (jj == ii) {
+              `A`[jj * `nrows` + ii] = 1;
+            }
+            // else keep value
+  """.}
+
 
 # Sanity checks
 # ---------------------------------
@@ -193,3 +238,30 @@ when isMainModule:
               [10,11,12]].toTensor()
 
     doAssert tril_unit_diag(a) == la
+
+  # Lower triangular with unit diagonal - in-place mutation
+  block:
+    var a = [[1, 2, 3],
+             [4, 5, 6],
+             [7, 8, 9]].toTensor().asContiguous(colMajor, force=true)
+
+    let la = [[1, 0, 0],
+              [4, 1, 0],
+              [7, 8, 1]].toTensor()
+
+    tril_unit_diag_mut(a)
+    doAssert a == la
+
+  block:
+    var a = [[ 1, 2, 3],
+             [ 4, 5, 6],
+             [ 7, 8, 9],
+             [10,11,12]].toTensor().asContiguous(colMajor, force=true)
+
+    let la = [[ 1, 0, 0],
+              [ 4, 1, 0],
+              [ 7, 8, 1],
+              [10,11,12]].toTensor()
+
+    tril_unit_diag_mut(a)
+    doAssert a == la

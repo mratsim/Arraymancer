@@ -167,6 +167,43 @@ proc ones_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): 
   ##      - A one-ed Tensor of the same shape
   return ones[T](t.shape)
 
+func arange*[T: SomeNumber](start, stop, step: T): Tensor[T] {.noInit.} =
+  ## Creates a new 1d-tensor with values evenly spaced by ``step``
+  ## in the half-open interval [start, stop)
+  ##
+  ## Resulting size is ceil((stop - start) / step)
+  ##
+  ## ⚠️ Warnings:
+  ## To limit floating point rounding issues, size is computed
+  ## by converting to float64.
+  ##
+  ## - It is recommended to add a small epsilon for non-integer steps
+  ## - float64 cannot represent exactly integers over 2^32 (~4.3 billions)
+  # TODO: proper exceptions
+  assert step != 0, "Step must be non-zero"
+  when T is SomeFloat:
+    assert start.classify() notin {fcNaN, fcInf, fcNegInf}
+    assert stop.classify() notin {fcNaN, fcInf, fcNegInf}
+  assert (step > 0 and stop >= start) or (step < 0 and stop <= start), "bounds inconsistent with step sign"
+
+  var size_f64 = ceil((stop.float64 - start.float64) / step.float64)
+  assert 0 <= size_f64 and size_f64 <= float64(high(int)), "Invalid size"
+
+  let size = int(size_f64)
+  tensorCpu([size], result)
+  result.storage.Fdata = newSeqUninit[T](size)
+
+  for i in 0 ..< size:
+    result.storage.Fdata[i] = start + i.T * step
+
+template arange*[T: SomeNumber](stop: T): Tensor[T] =
+  # Error messages of templates are very poor
+  arange(T(0), stop, T(1))
+
+template arange*[T: SomeNumber](start, stop: T): Tensor[T] =
+  # Error messages of templates are very poor
+  arange(start, stop, T(1))
+
 template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typed): untyped =
   tensorCpu(shape, t)
   result.storage.Fdata = newSeqWith(t.size, T(rand(max_or_range))) # Due to automatic converter (float32 -> float64), we must force T #68

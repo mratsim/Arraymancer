@@ -130,6 +130,25 @@ suite "Creating a new Tensor":
       for v in t.items:
         check v == complex64(2.0, 0.0)
 
+  test "arange - initialization from (start, stop, step)":
+    # From Numpy docs
+    block:
+      let t = arange(3)
+      check: t == [0,1,2].toTensor()
+    block:
+      let t = arange(3.0)
+      check: t == [float64 0,1,2].toTensor()
+    block:
+      let t = arange(3,7)
+      check: t == [3,4,5,6].toTensor()
+    block:
+      let t = arange(3,7,2)
+      check: t == [3,5].toTensor()
+    # From PyTorch docs
+    block:
+      let t = arange(1.0,2.5,0.5)
+      check: t == [1.0,1.5,2.0].toTensor()
+
   test "Random tensor":
     # Check that randomTensor doesn't silently convert float32 to float64
     let a = randomTensor([3, 4], 100'f32)

@@ -4,6 +4,7 @@
 
 import
   ../tensor/tensor,
+  ../private/sequninit,
   ./helpers/[decomposition_lapack, triangular, auxiliary_lapack]
 
 template `^^`(s, i: untyped): untyped =
@@ -59,12 +60,15 @@ proc qr*[T: SomeFloat](a: Tensor[T]): tuple[Q, R: Tensor[T]] =
 
   let k = min(a.shape[0], a.shape[1])
 
-  var tau: seq[T]
+  var scratchspace: seq[T]
+  var tau = newSeqUninit[T](k)
 
-  geqrf(a, result.Q, tau)
+  result.Q = a.clone(colMajor)
+
+  geqrf(result.Q, tau, scratchspace)
   result.R = triu(result.Q[0..<k, _])
 
-  orgqr(result.Q, tau)
+  orgqr(result.Q, tau, scratchspace)
   result.Q = result.Q[_, 0..<k]
 
 proc svd*[T: SomeFloat](a: Tensor[T]): tuple[U, S, Vh: Tensor[T]] =
@@ -101,7 +105,8 @@ proc svd*[T: SomeFloat](a: Tensor[T]): tuple[U, S, Vh: Tensor[T]] =
   # - often not used (for example for PCA/randomized PCA)
   # - memory inefficient
   # thread: https://mail.python.org/pipermail/numpy-discussion/2011-January/054685.html
-  gesdd(a, result.U, result.S, result.Vh)
+  var scratchspace: seq[T]
+  gesdd(a, result.U, result.S, result.Vh, scratchspace)
 
 proc lu_permuted*[T: SomeFloat](a: Tensor[T]): tuple[PL, U: Tensor[T]] =
   ## Compute the pivoted LU decomposition of an input matrix ``a``.
@@ -123,12 +128,11 @@ proc lu_permuted*[T: SomeFloat](a: Tensor[T]): tuple[PL, U: Tensor[T]] =
   ##   - U, upper-triangular matrix of shape [K, N]
   assert a.rank == 2
 
-  var lu: Tensor[T]
-  var pivot_indices: seq[int32]
-
-  getrf(a, lu, pivot_indices)
-
   let k = min(a.shape[0], a.shape[1])
+  var pivot_indices = newSeqUninit[int32](k)
+  var lu = a.clone(colMajor)
+
+  getrf(lu, pivot_indices)
 
   result.U = triu(lu[0..<k, _])
   result.PL = tril_unit_diag(lu[_, 0..<k])

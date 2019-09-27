@@ -28,6 +28,8 @@ import
 overload(syevr, ssyevr)
 overload(syevr, dsyevr)
 
+# TODO: refactor - in-place wrapper if LAPACK is in-place
+#                - expose scratchspace for reuse
 proc syevr*[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
   low_idx: int, high_idx: int, result: var tuple[eigenval, eigenvec: Tensor[T]]) =
   ## Wrapper for LAPACK syevr routine (Symmetric Recursive Eigenvalue Decomposition)
@@ -125,7 +127,7 @@ proc syevr*[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
 overload(geqrf, sgeqrf)
 overload(geqrf, dgeqrf)
 
-proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T]) =
+proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T], scratchspace: var seq[T]) =
   ## Wrapper for LAPACK geqrf routine (GEneral QR Factorization)
   ## Decomposition is done through Householder Reflection
   ##
@@ -150,43 +152,13 @@ proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T]) =
 
   # Allocating workspace
   lwork = work_size.int32
-  var work = newSeqUninit[T](lwork)
+  scratchspace.setLen(lwork)
 
   # Decompose matrix
   geqrf(m.unsafeAddr, n.unsafeAddr, Q.get_data_ptr, m.unsafeAddr, # lda
-        tau[0].addr, work[0].addr, lwork.addr, info.addr)
+        tau[0].addr, scratchspace[0].addr, lwork.addr, info.addr)
   if unlikely(info < 0):
     raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
-
-proc geqrf*[T: SomeFloat](a: Tensor[T], r_v: var Tensor[T], tau: var seq[T]) =
-  ## Wrapper for LAPACK geqrf routine (GEneral QR Factorization)
-  ## Decomposition is done through Householder Reflection
-  ##
-  ## Parameters:
-  ##   - a: Input - MxN matrix to factorize
-  ##   - tau: Output - Scalar factors of elementary Householder Reflectors
-  ##   - r_v: Output - MxN matrix
-  ##       - R upper-trapezoidal matrix
-  ##       - and v vector factors of elementary Householder Reflectors
-  ##
-  ## Further processing is needed:
-  ## - You can extract Q with `orgqr`
-  ## - or multiply any matrix by Q without materializing Q with `ormqr`
-
-  assert a.rank == 2, "Input is not a matrix"
-
-  # Lapack overwrites the input
-  #   - contains R above the diagonal
-  #     - min(M,N)-by-N upper trapezoidal matrix
-  #     - if M > N, R is upper triangular
-  #   - contains V, a vector that needs to be multiplied
-  #     to TAU to reconstruct Q
-
-  # Outputs
-  r_v = a.clone(colMajor)
-  tau = newSeqUninit[T](min(r_v.shape[0], r_v.shape[1]))
-
-  geqrf(r_v, tau)
 
 # Singular Value decomposition
 # --------------------------------------------------------------------------------------
@@ -194,7 +166,7 @@ proc geqrf*[T: SomeFloat](a: Tensor[T], r_v: var Tensor[T], tau: var seq[T]) =
 overload(gesdd, sgesdd)
 overload(gesdd, dgesdd)
 
-proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
+proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T], scratchspace: var seq[T]) =
   ## Wrapper for LAPACK gesdd routine
   ## (GEneral Singular value Decomposition by Divide & conquer)
   ##
@@ -261,13 +233,14 @@ proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
         S.get_data_ptr,
         U.get_data_ptr, ldu.unsafeAddr,
         Vh.get_data_ptr, ldvt.unsafeAddr,
-        work_size.addr, lwork.addr, iwork[0].addr,
+        work_size.addr,
+        lwork.addr, iwork[0].addr,
         info.addr
         )
 
   # Allocating workspace
   lwork = work_size.int32
-  var work = newSeqUninit[T](lwork)
+  scratchspace.setLen(lwork)
 
   # Decompose matrix
   gesdd(jobz, m.unsafeAddr, n.unsafeAddr,
@@ -275,7 +248,8 @@ proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T]) =
         S.get_data_ptr,
         U.get_data_ptr, ldu.unsafeAddr,
         Vh.get_data_ptr, ldvt.unsafeAddr,
-        work[0].addr, lwork.addr, iwork[0].addr,
+        scratchspace[0].addr,
+        lwork.addr, iwork[0].addr,
         info.addr
         )
 
@@ -318,35 +292,6 @@ proc getrf*[T: SomeFloat](lu: var Tensor[T], pivot_indices: var seq[int32]) =
     echo "Warning: in LU factorization, diagonal U[" & cinfo & "," & cinfo & "] is zero. Matrix is singular/non-invertible.\n" &
       "Division-by-zero will occur if used to solve a system of equations."
 
-proc getrf*[T: SomeFloat](a: Tensor[T], lu: var Tensor[T], pivot_indices: var seq[int32]) =
-  ## Wrapper for LAPACK getrf routine
-  ## (GEneral ??? Pivoted LU Factorization)
-  ##
-  ## Input:
-  ##   - a: MxN matrix to factorize
-  ##   - lu: MxN matrix:
-  ##       - Upper triangle including diagonal contains U
-  ##       - Lower triangle contains L, L has an unit diagonal that needs to be reconstructed
-  ##   - pivot_indices: indices of the permutation matrix P
-  ##                    sparse representation:
-  ##                    | 1 0 0 0 |
-  ##                    | 0 0 1 0 |
-  ##                    | 0 0 0 1 |
-  ##                    | 0 1 0 0 |
-  ##                    would be @[0, 2, 3, 1]
-  ##
-  ## The inputs and outputs solve the equation
-  ## A = P L U
-
-  assert a.rank == 2
-  let k = min(a.shape[0], a.shape[1]).int
-
-  # Outputs
-  lu = a.clone(colMajor) # Lapack destroys the input. TODO newruntime sink if possible
-  pivot_indices = newSeqUninit[int32](k)
-
-  getrf(lu, pivot_indices)
-
 # Sanity checks
 # --------------------------------------------------------------------------------------
 
@@ -388,9 +333,11 @@ when isMainModule:
                       [  0.5, 0.285714]].toTensor()
     let expected_tau = [1.0, 1.4].toTensor()
 
-    var tau: seq[float64]
-    var r_v: Tensor[float64]
-    geqrf(a, r_v, tau)
+    let k = min(a.shape[0], a.shape[1])
+    var tau = newSeqUninit[float64](k)
+    var r_v = a.clone(colMajor)
+    var scratchspace: seq[float64]
+    geqrf(r_v, tau, scratchspace)
 
     doAssert mean_absolute_error(r_v, expected_rv) < 1e-6
     doAssert mean_absolute_error(tau.toTensor, expected_tau) < 1e-15

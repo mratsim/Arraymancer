@@ -5,9 +5,7 @@
 # Helpers on column-major triangular matrices
 import
   ../../tensor/tensor,
-  # TODO: can't call newTensorUninit with optional colMajor, varargs breaks it
-  ../../private/sequninit,
-  ../../tensor/private/p_init_cpu
+  ./init_colmajor
 
 # TODO: - don't use assert
 #       - move as a public proc
@@ -76,14 +74,13 @@ proc tril_unit_diag*[T](a: Tensor[T]): Tensor[T] =
 
   assert a.rank == 2
 
-  # We return as colMajor for further Fortran processing
-  # We need to use low-level tensorCpu to work around Varargs + optional colMajor argument
-  tensorCpu(a.shape, result, colMajor)
-  result.storage.Fdata = newSeqUninit[T](result.size)
-
   let
     nrows = a.shape[0]
     ncols = a.shape[1]
+
+  result.newMatrixUninitColMajor(nrows, ncols)
+
+  let
     aRowStride = a.strides[0]
     aColStride = a.strides[1]
     dst = result.get_data_ptr()

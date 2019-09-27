@@ -5,9 +5,9 @@
 import
   nimlapack,
   ./overload,
+  ./init_colmajor,
   ../../private/sequninit,
-  ../../tensor/tensor,
-  ../../tensor/private/p_init_cpu # TODO: can't call newTensorUninit with optional colMajor, varargs breaks it
+  ../../tensor/tensor
 
 # Wrappers for Fortran LAPACK
 # We don't use the C interface LAPACKE that
@@ -76,11 +76,7 @@ proc syevr*[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
 
   if eigenvectors:
     jobz = "V"
-
-    # Varargs + optional colMajor argument issue, must resort to low level proc at the moment
-    tensorCpu(ldz.int, m.int, result.eigenvec, colMajor)
-    result.eigenvec.storage.Fdata = newSeqUninit[T](result.eigenvec.size)
-
+    result.eigenvec.newMatrixUninitColMajor(ldz, m)
     z = result.eigenvec.get_data_ptr
     if interval == "A": # or (il == 1 and iu == n): -> Already checked before
       isuppz = newSeqUninit[int32](2*m)
@@ -218,15 +214,9 @@ proc gesdd*[T: SomeFloat](a: var Tensor[T], U, S, Vh: var Tensor[T], scratchspac
     info: int32
     iwork = newSeqUninit[cint](8 * k)
 
-  # newTensorUninit: Varargs + optional colMajor argument issue, must resort to low level proc at the moment
-  # U
-  tensorCpu([ldu.int, ucol.int], U, colMajor)
-  U.storage.Fdata = newSeqUninit[T](U.size)
-  # S
+  U.newMatrixUninitColMajor(ldu, ucol)
   S = newTensorUninit[T](k.int)
-  # V.H
-  tensorCpu([ldvt.int, n.int], Vh, colMajor)
-  Vh.storage.Fdata = newSeqUninit[T](Vh.size)
+  Vh.newMatrixUninitColMajor(ldvt, n)
 
   # Querying workspace size
   gesdd(jobz, m.unsafeAddr, n.unsafeAddr,

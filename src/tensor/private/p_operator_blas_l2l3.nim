@@ -151,41 +151,68 @@ proc blasMM_C_eq_aAB_p_bC*[T: SomeFloat|Complex[float32]|Complex[float64]](
     K = a.shape[1] # b.shape[0]
     N = b.shape[1]
 
-    cont_A = a.asContiguous
-    cont_B = b.asContiguous
-    c = c.asContiguous
+    A = a.asContiguous()
+    B = b.asContiguous()
 
-    cont_A_is_rowMajor = cont_a.is_C_contiguous
-    cont_B_is_rowMajor = cont_b.is_C_contiguous
-    c_is_rowMajor = c.is_C_contiguous
+  assert c.isContiguous()
 
-    transpose_A = if cont_A_is_rowMajor: noTranspose
-                  else: transpose
-    lda = if cont_A_is_rowMajor: K
-          else: M
-
-    transpose_B = if cont_B_is_rowMajor: noTranspose
-                  else: transpose
-    ldb = if cont_B_is_rowMajor: N
-          else: K
-
-    order_C = if c_is_rowMajor: rowMajor
-              else: colMajor
-    ldc = if c_is_rowMajor: N
-          else: M
+  var lda, ldb: int
+  var tA, tb: TransposeType
 
   # General Matrix Multiply from nimblas.
-  when type(alpha) is Complex:
-    gemm( order_C,
-          transpose_A, transpose_B,
-          M, N, K,
-          unsafeAddr(alpha), cont_A.get_offset_ptr, lda,
-          cont_B.get_offset_ptr, ldb,
-          unsafeAddr(beta), c.get_offset_ptr, ldc)
-  else:
-    gemm( order_C,
-          transpose_A, transpose_B,
-          M, N, K,
-          alpha, cont_A.get_offset_ptr, lda,
-          cont_B.get_offset_ptr, ldb,
-          beta, c.get_offset_ptr, ldc)
+  if c.is_C_contiguous():   # [M, N]
+    if A.is_C_contiguous(): # [M, K]
+      lda = K
+      tA = noTranspose
+    else:
+      lda = M
+      tA = transpose
+    if B.is_C_contiguous(): # [K, N]
+      ldb = N
+      tB = noTranspose
+    else:
+      ldb = K
+      tB = transpose
+
+    when type(alpha) is Complex:
+      gemm(rowMajor,
+           tA, tB,
+           M, N, K,
+           unsafeAddr(alpha), A.get_offset_ptr, lda,
+                              B.get_offset_ptr, ldb,
+           unsafeAddr(beta),  c.get_offset_ptr, N)
+    else:
+      gemm(rowMajor,
+           tA, tB,
+           M, N, K,
+           alpha, A.get_offset_ptr, lda,
+                  B.get_offset_ptr, ldb,
+           beta,  c.get_offset_ptr, N)
+  else: # column major result [M, N] - TODO tests
+    if A.is_C_contiguous(): # [M, K]
+      lda = K
+      tA = transpose
+    else:
+      lda = M
+      tA = noTranspose
+    if B.is_C_contiguous(): # [K, N]
+      ldb = N
+      tB = transpose
+    else:
+      ldb = K
+      tB = noTranspose
+
+    when typeof(alpha) is Complex:
+      gemm(colMajor,
+           tA, tB,
+           M, N, K,
+           unsafeAddr(alpha), A.get_offset_ptr, lda,
+                              B.get_offset_ptr, ldb,
+           unsafeAddr(beta),  c.get_offset_ptr, M)
+    else:
+      gemm(colMajor,
+           tA, tB,
+           M, N, K,
+           alpha, A.get_offset_ptr, lda,
+                  B.get_offset_ptr, ldb,
+           beta,  c.get_offset_ptr, M)

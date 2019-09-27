@@ -48,6 +48,7 @@ proc symeig*[T: SomeFloat](a: Tensor[T], eigenvectors = false,
 proc qr*[T: SomeFloat](a: Tensor[T]): tuple[Q, R: Tensor[T]] =
   ## Compute the QR decomposition of an input matrix ``a``
   ## Decomposition is done through the Householder method
+  ## without pivoting.
   ##
   ## Input:
   ##   - ``a``, matrix of shape [M, N]
@@ -105,6 +106,7 @@ proc svd*[T: SomeFloat](a: Tensor[T]): tuple[U, S, Vh: Tensor[T]] =
   # - often not used (for example for PCA/randomized PCA)
   # - memory inefficient
   # thread: https://mail.python.org/pipermail/numpy-discussion/2011-January/054685.html
+  var a = a.clone(colMajor) # gesdd destroys its input
   var scratchspace: seq[T]
   gesdd(a, result.U, result.S, result.Vh, scratchspace)
 

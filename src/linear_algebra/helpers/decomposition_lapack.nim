@@ -130,6 +130,7 @@ overload(geqrf, dgeqrf)
 proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T], scratchspace: var seq[T]) =
   ## Wrapper for LAPACK geqrf routine (GEneral QR Factorization)
   ## Decomposition is done through Householder Reflection
+  ## and without pivoting
   ##
   ## In-place version, this will overwrite Q and tau
   assert Q.rank == 2, "Input is not a matrix."
@@ -166,7 +167,7 @@ proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T], scratchspace: var s
 overload(gesdd, sgesdd)
 overload(gesdd, dgesdd)
 
-proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T], scratchspace: var seq[T]) =
+proc gesdd*[T: SomeFloat](a: var Tensor[T], U, S, Vh: var Tensor[T], scratchspace: var seq[T]) =
   ## Wrapper for LAPACK gesdd routine
   ## (GEneral Singular value Decomposition by Divide & conquer)
   ##
@@ -191,7 +192,7 @@ proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T], scratchspace: v
   # - https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/sgesdd_ex.c.htm
 
   assert a.rank == 2
-  let a = a.clone(colMajor) # Lapack destroys the input. TODO newruntime sink if possible
+  assert a.is_F_contiguous()
 
   # Temporaries
   let
@@ -236,7 +237,7 @@ proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T], scratchspace: v
         work_size.addr,
         lwork.addr, iwork[0].addr,
         info.addr
-        )
+       )
 
   # Allocating workspace
   lwork = work_size.int32
@@ -251,7 +252,7 @@ proc gesdd*[T: SomeFloat](a: Tensor[T], U, S, Vh: var Tensor[T], scratchspace: v
         scratchspace[0].addr,
         lwork.addr, iwork[0].addr,
         info.addr
-        )
+       )
 
   if info > 0:
     # TODO, this should not be an exception, not converging is something that can happen and should

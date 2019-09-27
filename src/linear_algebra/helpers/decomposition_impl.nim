@@ -32,12 +32,11 @@ proc lu_permuted_inplace*(a: var Tensor) =
   assert a.rank == 2
   assert a.is_F_contiguous
 
-  var pivot_indices: seq[int32]
+  let k = min(a.shape[0], a.shape[1])
+  var pivot_indices = newSeqUninit[int32](k)
 
   getrf(a, pivot_indices)
 
-  let k = min(a.shape[0], a.shape[1])
-
-  # TODO: we can reuse the ``a`` buffer as slicing by col keeps it colMajor
-  a = tril_unit_diag(a[_, 0..<k])
+  a = a[_, 0..<k]
+  tril_unit_diag_mut(a)
   laswp(a, pivot_indices, pivot_from = -1)

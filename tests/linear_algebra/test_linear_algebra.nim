@@ -5,6 +5,22 @@ import ../../src/arraymancer
 import unittest, math, fenv
 
 suite "Linear algebra":
+  test "Hilbert matrix":
+    block:
+      const N = 3
+      let a = hilbert(N, float64)
+      for i in 1 .. N:
+        for j in 1 .. N:
+          check:
+            a[i-1, j-1] == 1 / (i.float64 + j.float64 - 1)
+    block:
+      const N = 100
+      let a = hilbert(N, float64)
+      for i in 1 .. N:
+        for j in 1 .. N:
+          check:
+            a[i-1, j-1] == 1 / (i.float64 + j.float64 - 1)
+
   test "Linear equation solver using least squares":
     block: # "Single equation"
            # Example from Numpy documentation

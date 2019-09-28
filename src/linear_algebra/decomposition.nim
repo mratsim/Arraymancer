@@ -152,10 +152,3 @@ proc svd*[T: SomeFloat](a: Tensor[T]): tuple[U, S, Vh: Tensor[T]] =
   var a = a.clone(colMajor) # gesdd destroys its input
   var scratchspace: seq[T]
   gesdd(a, result.U, result.S, result.Vh, scratchspace)
-
-# Randomized decompositions
-# -------------------------------------------
-
-import ./helpers/decomposition_rand
-
-export svd_randomized

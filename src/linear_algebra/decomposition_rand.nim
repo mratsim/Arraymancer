@@ -3,17 +3,14 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  ./decomposition_lapack,
-  ./auxiliary_lapack,
-  ./triangular,
-  ./init_colmajor,
-  ../../private/sequninit,
-  ../../tensor/tensor
+  ./helpers/[decomposition_lapack, auxiliary_lapack, triangular, init_colmajor],
+  ../private/sequninit,
+  ../tensor/tensor
 
 # LU Factorization - private implementations
 # -------------------------------------------
 
-proc lu_permuted_inplace*(a: var Tensor) =
+proc lu_permuted_inplace(a: var Tensor) =
   ## Compute the pivoted LU decomposition of an input matrix ``a``.
   ## This overwrites the input matrix with the pivoted lower triangular matrix
   ##

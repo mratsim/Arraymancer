@@ -349,7 +349,7 @@ suite "Linear algebra":
         mean_absolute_error(PL, expected_pl) < 1e-8
         mean_absolute_error(U, expected_u) < 1e-8
 
-  test "Singular Value Decomposition":
+  test "Singular Value Decomposition (SVD)":
     block: # From https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/sgesdd_ex.c.htm
       let a = [[  7.52, -1.10, -7.95,  1.08],
                [ -0.76,  0.62,  9.34, -7.10],
@@ -381,3 +381,20 @@ suite "Linear algebra":
         mean_absolute_error(U, expected_U) < 1e-2
         mean_absolute_error(S, expected_S) < 1e-2
         mean_absolute_error(Vh, expected_Vh) < 1e-2
+
+  test "Randomized SVD":
+    # TODO: tests using spectral norm, see fbpca python package
+    block: # Using Hilbert matrix, see ../manual_checks/randomized_svd.py
+      const
+        Observations = 10
+        Features = 4000
+        N = max(Observations, Features)
+        k = 7
+
+      let H = hilbert(N, float64)[0..<Observations, 0..<Features]
+      let (U, S, Vh) = svd_randomized(H, n_components=k, n_oversamples=5, n_power_iters=2)
+
+      let expected_S = [1.90675907e+00, 4.86476625e-01, 7.52734238e-02, 8.84829787e-03, 7.86824889e-04, 3.71028924e-05, 1.74631562e-06].toTensor()
+
+      check:
+        mean_absolute_error(S, expected_S) < 1.5e-5

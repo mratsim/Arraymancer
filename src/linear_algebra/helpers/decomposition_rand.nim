@@ -51,9 +51,9 @@ proc lu_permuted_inplace*(a: var Tensor) =
 
 proc svd_randomized*[T](
         A: Tensor[T],
-        nb_components: static int = 2,
-        nb_oversamples: static int = 5,
-        nb_power_iter: static int = 2
+        n_components: static int = 2,
+        n_oversamples: static int = 5,
+        n_power_iters: static int = 2
         # TODO: choose power iteration normalizer (QR, LU, none)
         # TODO: choose sample init between gaussian, uniform and Rademacher
         # TODO: seed and RNG overload
@@ -155,6 +155,7 @@ proc svd_randomized*[T](
   #     - https://arxiv.org/pdf/1502.05366.pdf
 
   # Checking correctness:
+  # - TODO: fbpca Spectral Norm
   # - https://software.intel.com/en-us/articles/checking-correctness-of-lapack-svd-eigenvalue-and-one-sided-decomposition-routines
 
   # Defaults:
@@ -171,7 +172,7 @@ proc svd_randomized*[T](
   #   - rSVD recommends 2 (page 14)
   #   - RSVDPACK recommends 2 (page 22)
 
-  const k = nb_components
+  const k = n_components
   let m = A.shape[0]
   let n = A.shape[1]
   assert k <= min(m, n)
@@ -222,7 +223,7 @@ proc svd_randomized*[T](
   var tau, scratchspace: seq[T]
   var Y, Z: Tensor[T]
 
-  const L = k + nb_oversamples                                   # Slight oversampling
+  const L = k + n_oversamples                                    # Slight oversampling
   Y.newMatrixUninitColMajor(m, L)                                # Sketch Matrix ~ range samples
   Z.newMatrixUninitColMajor(n, L)
   tau.setLen(min(m, L))
@@ -231,7 +232,7 @@ proc svd_randomized*[T](
   var Q = randomNormalTensor[T]([n, L])                          # Sampling matrix Ω of shape [N, L]
   gemm(1.T, A, Q, 0.T, Y)                                        # Y = A*Q
   # -- Power Iterations (Optional) --------------------------------------------------------------------------
-  for _ in 0 ..< nb_power_iter:                                  # perform optional subspace iterations
+  for _ in 0 ..< n_power_iters:                                  # perform optional subspace iterations
     lu_permuted_inplace(Y)                                       # Y = lu(Y)
     gemm(1.T, A.transpose(), Y, 0.T, Z)                          # Z = A.T * Q
     lu_permuted_inplace(Z)                                       # Z = lu(Z)

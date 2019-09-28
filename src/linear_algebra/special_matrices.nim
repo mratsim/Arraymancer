@@ -6,7 +6,7 @@ import ../tensor/tensor
 
 proc hilbert*(n: int, T: typedesc[SomeFloat]): Tensor[T] =
   ## Generates an Hilbert matrix of shape [N, N]
-  result = newTensorUninit[float64]([n, n])
+  result = newTensorUninit[T]([n, n])
   let R = result.dataArray
 
   # Reminder: The canonical Hilbert matrix

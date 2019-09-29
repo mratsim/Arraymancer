@@ -28,11 +28,16 @@ import
 overload(syevr, ssyevr)
 overload(syevr, dsyevr)
 
-# TODO: refactor - in-place wrapper if LAPACK is in-place
-#                - expose scratchspace for reuse
 proc syevr*[T: SomeFloat](a: var Tensor[T], uplo: static char, return_eigenvectors: static bool,
   low_idx: int, high_idx: int, eigenval, eigenvec: var Tensor[T], scratchspace: var seq[T]) =
   ## Wrapper for LAPACK syevr routine (Symmetric Recursive Eigenvalue Decomposition)
+  ##
+  ## eigenvalues are returned in ascending order
+  ## (from lower to upper)
+  ##
+  ## if uplo = 'L', the lower part of A is used
+  ## it is destroyed on exit (and upper part is untouched)
+  ## vice-versa if uplo = 'U' for the upper part of A
 
   assert a.rank == 2, "Input is not a matrix"
   assert a.shape[0] == a.shape[1], "Input should be a symmetric matrix"

@@ -17,8 +17,8 @@ type
 
 proc syrk[T: SomeFloat](
     alpha: T, A: Tensor[T],
-    uplo: static nimblas.UpLoType, mul_order: static SyrkKind,
-    beta: T, C: var Tensor[T]) =
+    mul_order: static SyrkKind,
+    beta: T, C: var Tensor[T], uplo: static nimblas.UpLoType) =
 
   let N = C.shape[0].int32
   let K = if mul_order == AAt: A.shape[1].int32
@@ -121,48 +121,48 @@ when isMainModule:
   block: # C col-major, A col-major, A*A.t
     let A = A.toTensor.asContiguous(colMajor, force = true)
     C.newMatrixUninitColMajor(3, 3)
-    syrk(1.0, A, upper, AAt, 0, C)
+    syrk(1.0, A, AAt, 0, C, upper)
     pttr(C, 'U')
     doAssert C == aat
   block: # C col-major, A col-major, A.t*A
     let A = A.toTensor.asContiguous(colMajor, force = true)
     C.newMatrixUninitColMajor(2, 2)
-    syrk(1.0, A, upper, AtA, 0, C)
+    syrk(1.0, A, AtA, 0, C, upper)
     pttr(C, 'U')
     doAssert C == ata
   block: # C col-major, A row-major, A*A.t
     let A = A.toTensor
     C.newMatrixUninitColMajor(3, 3)
-    syrk(1.0, A, upper, AAt, 0, C)
+    syrk(1.0, A, AAt, 0, C, upper)
     pttr(C, 'U')
     doAssert C == aat
   block: # C col-major, A row-major, A.t*A
     let A = A.toTensor
     C.newMatrixUninitColMajor(2, 2)
-    syrk(1.0, A, upper, AtA, 0, C)
+    syrk(1.0, A, AtA, 0, C, upper)
     pttr(C, 'U')
     doAssert C == ata
   block: # C row-major, A col-major, A*A.t
     let A = A.toTensor.asContiguous(colMajor, force = true)
     C = newTensorUninit[float64](3, 3)
-    syrk(1.0, A, upper, AAt, 0, C)
+    syrk(1.0, A, AAt, 0, C, upper)
     pttr(C, 'U')
     doAssert C == aat
   block: # C row-major, A col-major, A.t*A
     let A = A.toTensor.asContiguous(colMajor, force = true)
     C = newTensorUninit[float64](2, 2)
-    syrk(1.0, A, upper, AtA, 0, C)
+    syrk(1.0, A, AtA, 0, C, upper)
     pttr(C, 'U')
     doAssert C == ata
   block: # C row-major, A row-major, A*A.t
     let A = A.toTensor
     C = newTensorUninit[float64](3, 3)
-    syrk(1.0, A, upper, AAt, 0, C)
+    syrk(1.0, A, AAt, 0, C, upper)
     pttr(C, 'U')
     doAssert C == aat
   block: # C row-major, A row-major, A.t*A
     let A = A.toTensor
     C = newTensorUninit[float64](2, 2)
-    syrk(1.0, A, upper, AtA, 0, C)
+    syrk(1.0, A, AtA, 0, C, upper)
     pttr(C, 'U')
     doAssert C == ata

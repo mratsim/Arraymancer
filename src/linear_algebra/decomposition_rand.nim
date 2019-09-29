@@ -252,11 +252,11 @@ proc svd_randomized*[T](
     # -- Power Iterations -------------------------------------------------------------------------------------
     Q = Y                                                          #                          - [M, L]
     geqrf(Q, tau, scratchspace)                                    # Q = qr(Y) - orthonormal basis for samples
-    var B = A.clone(colMajor)                                      #           - project to low-dimensional space
-    ormqr(B, Q, tau, side = 'L', trans = 'T', scratchspace)        # B = Q.T * A              - [L,M]*[M,N] -> [L, N]
+    orgqr(Q, tau, scratchspace)                                    # extract Q; next line project to low-dimensional space
+    gemm(1.T, Q.transpose(), A, 0.T, Z)                            # B = Q.T * A              - [L,M]*[M,N] -> [L, N]
     # QB decomposition ----------------------------------------------------------------------------------------
-    gesdd(B, result.U, result.S, result.Vh, scratchspace)          # svd(B)
-    ormqr(result.U, Q, tau, side = 'L', trans = 'N', scratchspace) # U = Q * Û - Recover left singular vectors
+    gesdd(Z, result.U, result.S, result.Vh, scratchspace)          # U, S, Vh = svd(B)
+    result.U = Q * result.U                                        # U = Q * Û - Recover left singular vectors
 
     # Extract k components from oversampled L
     result.U = result.U[_, 0 ..< k]
@@ -267,7 +267,7 @@ proc svd_randomized*[T](
   # -----------------------------------------------------------------------------------------------------------
   else:
     Y.newMatrixUninitColMajor(n, L)                                # Sketch Matrix ~ range samples
-    Z.newMatrixUninitColMajor(m, L)
+    Z.newMatrixUninitColMajor(m, L)                                # Temp space for final B matrix and normalized power iterations
     tau.setLen(min(L, n))
 
     # QB decomposition ----------------------------------------------------------------------------------------
@@ -282,11 +282,11 @@ proc svd_randomized*[T](
     # -- Power Iterations -------------------------------------------------------------------------------------
     Q = Y                                                          #                    - [N, L]
     geqrf(Q, tau, scratchspace)                                    # Q = qr(Y)  - orthonormal basis for samples
-    var B = A.clone(colMajor)                                      #            - project to low-dimensional space
-    ormqr(B, Q, tau, side = 'R', trans = 'N', scratchspace)        # B = A * Q          - [M,N]*[N,L] -> [M, L]
+    orgqr(Q, tau, scratchspace)                                    # extract Q; next line project to low-dimensional space
+    gemm(1.T, A, Q, 0.T, Z)                                        # B = A * Q          - [M,N]*[N,L] -> [M, L]
     # QB decomposition ----------------------------------------------------------------------------------------
-    gesdd(B, result.U, result.S, result.Vh, scratchspace)          # svd(B)
-    ormqr(result.Vh, Q, tau, side='R', trans='T', scratchspace)    # Vh = V * Q.T - Recover right singular vectors
+    gesdd(Z, result.U, result.S, result.Vh, scratchspace)          # U, S, Vh = svd(B)
+    result.Vh = result.Vh * Q.transpose()                          # Vh = V * Q.T - Recover right singular vectors
 
     # Extract k components from oversampled L
     result.U = result.U[_, 0 ..< k]

@@ -30,51 +30,51 @@ proc bench(Observations, Features: static int) =
   echo "---------------------------------------------------------------------------------"
 
 bench(Observations = 20000, Features = 4000)
-# bench(Observations = 4000, Features = 20000)
+bench(Observations = 4000, Features = 20000)
 
 # i9-9980XE Overclocked at 4.1GHz, AVX 4.0GHz, AVX512 3.5GHz
 # BLAS / Lapack linked with OpenBLAS
 #
 # $  ./benchmarks/xtime.rb ./build/rsvd
-# Hilbert matrix creation took: 0.8634 seconds
+# Hilbert matrix creation took: 0.8458 seconds
 # Matrix of shape: [20000, 4000]
 # Target SVD: [20000, 40]
-# Randomized SVD took: 10.3517 seconds
+# Randomized SVD took: 2.7272 seconds
 # U: [20000, 40]
 # S: [40]
 # Vh: [40, 4000]
 # ---------------------------------------------------------------------------------
-# Hilbert matrix creation took: 0.8589 seconds
+# Hilbert matrix creation took: 0.8386 seconds
 # Matrix of shape: [4000, 20000]
 # Target SVD: [4000, 40]
-# Randomized SVD took: 11.0902 seconds
+# Randomized SVD took: 0.1279 seconds
 # U: [4000, 40]
 # S: [40]
-# Vh: [40, 20000]
+# Vh: [40, 45]
 # ---------------------------------------------------------------------------------
-# 11.73s, 3094.0Mb - xtime.rb
+# 4.68s, 4567.4Mb  -- xtime.rb
 
 # #################################################################################
 # i9-9980XE Overclocked at 4.1GHz, AVX 4.0GHz, AVX512 3.5GHz
 # BLAS / Lapack linked with Intel MKL
 #
-# $  ./benchmarks/xtime.rb ./build/rsvd
-# $  ./benchmarks/xtime.rb ./build/rsvdHilbert matrix creation took: 0.8598 seconds
+# $  ./benchmarks/xtime.rb build/rsvd
+# Hilbert matrix creation took: 0.8093 seconds
 # Matrix of shape: [20000, 4000]
 # Target SVD: [20000, 40]
-# Randomized SVD took: 10.9129 seconds
+# Randomized SVD took: 0.3683 seconds
 # U: [20000, 40]
 # S: [40]
 # Vh: [40, 4000]
 # ---------------------------------------------------------------------------------
-# Hilbert matrix creation took: 0.8590 seconds
+# Hilbert matrix creation took: 0.8181 seconds
 # Matrix of shape: [4000, 20000]
 # Target SVD: [4000, 40]
-# Randomized SVD took: 11.9225 seconds
+# Randomized SVD took: 0.1190 seconds
 # U: [4000, 40]
 # S: [40]
-# Vh: [40, 20000]
+# Vh: [40, 45]
 # ---------------------------------------------------------------------------------
-# 24.70s, 4538.0Mb
+# 2.26s, 4593.1Mb  -- xtime.rb
 
 # Mem usage with just the first SVD: 3.1GB

@@ -29,28 +29,28 @@ def bench(Observations, Features):
     print("---------------------------------------------------------------------------------")
 
 bench(Observations = 20000, Features = 4000)
-# bench(Observations = 4000, Features = 20000)
+bench(Observations = 4000, Features = 20000)
 
 # i9-9980XE Overclocked at 4.1GHz, AVX 4.0GHz, AVX512 3.5GHz
 # Numpy / Scipy built with MKL
 #
 # $  ./benchmarks/xtime.rb python benchmarks/randomized_svd_sklearn.py
-# Hilbert matrix creation too: 0.9479 seconds.
+# Hilbert matrix creation too: 0.9466 seconds.
 # Matrix of shape: [20000, 4000]
 # Target SVD: [20000, 40]
-# Randomized SVD took: 3.6055 seconds
+# Randomized SVD took: 3.5815 seconds
 # U:  (20000, 40)
 # S:  (40,)
 # Vh:  (40, 4000)
 # ---------------------------------------------------------------------------------
-# Hilbert matrix creation too: 0.9452 seconds.
+# Hilbert matrix creation too: 0.9484 seconds.
 # Matrix of shape: [4000, 20000]
 # Target SVD: [4000, 40]
-# Randomized SVD took: 0.2505 seconds
+# Randomized SVD took: 0.2052 seconds
 # U:  (4000, 40)
 # S:  (40,)
 # Vh:  (40, 20000)
 # ---------------------------------------------------------------------------------
-# 6.14s, 3733.8Mb  -- xtime.rb
+# 6.11s, 3751.0Mb  -- xtime.rb
 
 # mem usage with just the first SVD: 3.77GB

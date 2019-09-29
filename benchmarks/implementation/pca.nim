@@ -1,12 +1,13 @@
 import
   times, strformat,
-  ../../src/arraymancer
+  ../../src/arraymancer,
+  ../../src/linear_algebra/helpers/auxiliary_blas
 
 # Benchmarks of PCA implementations
 
 # Helpers
 # ---------------------------------------------------------------------------------
-proc diag[T](m, n: int, d: Tensor[T]): Tensor[T] {.noInit.}=
+proc diag[T](d: Tensor[T], m, n: int): Tensor[T] {.noInit.}=
   # Creates a rectangular diagonal matrix
   assert d.rank == 1
   result = zeros[T](m, n)
@@ -29,14 +30,9 @@ proc mul_diag[T](x, diag: Tensor[T], K, N: int): Tensor[T] {.noInit.}=
   # | x10 x11 x12|   ax10 bx11 cx12  0   0
   # | x20 x21 x22|   ax20 bx21 cx22  0   0
 
-  # We special case for SVD U*S multiplication
-  # which is in Fortran order (col major)
-  #
   # Result in C order (row major)
   let M = x.shape[0]
   assert x.shape[1] == K
-  assert x.is_F_contiguous()
-  assert diag.is_F_contiguous()
 
   result = zeros[T](M, N)
   let R = result.dataArray
@@ -47,14 +43,49 @@ proc mul_diag[T](x, diag: Tensor[T], K, N: int): Tensor[T] {.noInit.}=
   let nk = min(N, K)
 
   # TODO parallel
-  for i in countup(0, M-1, Tile):
-    for j in countup(0, nk-1, Tile):
-      for ii in i ..< min(i+Tile, M):
-        for jj in j ..< min(j+Tile, nk):
-          R[ii*N+jj] = X[jj*M+ii] * D[jj]
+  if x.is_F_contiguous:
+    for i in countup(0, M-1, Tile):
+      for j in countup(0, nk-1, Tile):
+        for ii in i ..< min(i+Tile, M):
+          for jj in j ..< min(j+Tile, nk):
+            R[ii*N+jj] = X[jj*M+ii] * D[jj]
+  elif x.is_C_contiguous:
+    for i in countup(0, M-1, Tile):
+      for j in countup(0, nk-1, Tile):
+        for ii in i ..< min(i+Tile, M):
+          for jj in j ..< min(j+Tile, nk):
+            R[ii*N+jj] = X[ii*K+jj] * D[jj]
 
-# Implementations
-# ---------------------------------------------------------------------------------
+let a = [[1, 2, 3],
+         [4, 5, 6],
+         [7, 8, 9],
+         [10, 11, 12]].toTensor()
+
+let d = [[1, 0, 0, 0],
+          [0, 2, 0, 0],
+          [0, 0, 3, 0]].toTensor()
+
+when false:
+  doAssert d == [1,2,3].toTensor().diag(3, 4)
+  doAssert a * d == a.mul_diag([1,2,3].toTensor().asContiguous(colMajor, force = true), 3, 4)
+  doAssert a * d == a.mul_diag([1,2,3].toTensor(), 3, 4)
+  # doAssert a * d == a .* [1,2,3].toTensor().unsqueeze(0)
+
+  echo a * d
+  # Tensor[system.int] of shape [4, 4]" on backend "Cpu"
+  # |1      4       9       0|
+  # |4      10      18      0|
+  # |7      16      27      0|
+  # |10     22      36      0|
+  echo a .* [1,2,3].toTensor().unsqueeze(0)
+  # Tensor[system.int] of shape [4, 3]" on backend "Cpu"
+  # |1      4       9|
+  # |4      10      18|
+  # |7      16      27|
+  # |10     22      36|
+
+# # Implementations
+# # ---------------------------------------------------------------------------------
 
 proc pca_cov[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}=
   # mean_centered
@@ -64,9 +95,9 @@ proc pca_cov[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}
 
   # Compute covariance matrix
   var cov_matrix = newTensorUninit[T]([n, n])
-  gemm(1.T / T(m-1), X.transpose, X, 0, cov_matrix)
+  syrk(1.T / T(m-1), X, AtA, 0, cov_matrix, 'U')
 
-  let (_, eigvecs) = cov_matrix.symeig(true, ^n_components .. ^1)
+  let (_, eigvecs) = cov_matrix.symeig(true, 'U', ^n_components .. ^1)
 
   let rotation_matrix = eigvecs[_, ^1..0|-1]
   result = X * rotation_matrix
@@ -74,21 +105,74 @@ proc pca_cov[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}
 proc pca_svd_tXU[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}=
   let X = X .- X.mean(axis=0)
 
-  let (U, S, Vh) = svd(X.transpose)
+  let (U, _, _) = svd(X.transpose)
   result = X * U[_, 0..<n_components]
-
-proc pca_svd_US[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}=
-  let X = X .- X.mean(axis=0)
-
-  let (U, S, Vh) = svd(X)
-
-  result = mul_diag(U[_, 0..<n_components], S[0..<n_components], n_components, n_components)
 
 proc pca_svd_XV[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}=
   let X = X .- X.mean(axis=0)
 
-  let (U, S, Vh) = svd(X)
+  let (_, _, Vh) = svd(X)
   result = X * Vh.transpose[_, 0..<n_components]
+
+proc pca_svd_US[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}=
+  let X = X .- X.mean(axis=0)
+
+  let (U, S, _) = svd(X)
+  result = U[_, 0..<n_components] .* S[0..<n_components].unsqueeze(0)
+
+proc pca_svd_tX_VhS[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}=
+  let X = X .- X.mean(axis=0)
+
+  let (_, S, Vh) = svd(X.transpose)
+  result = Vh.transpose[_, 0..<n_components] .* S[0..<n_components].unsqueeze(0)
+
+# Sanity checks
+# ---------------------------------------------------
+
+block:
+  let data = [[2.5, 2.4],
+              [0.5, 0.7],
+              [2.2, 2.9],
+              [1.9, 2.2],
+              [3.1, 3.0],
+              [2.3, 2.7],
+              [2.0, 1.6],
+              [1.0, 1.1],
+              [1.5, 1.6],
+              [1.1, 0.9]].toTensor
+
+  let expected = [[-0.827970186, -0.175115307],
+                  [ 1.77758033,   0.142857227],
+                  [-0.992197494,  0.384374989],
+                  [-0.274210416,  0.130417207],
+                  [-1.67580142,  -0.209498461],
+                  [-0.912949103,  0.175282444],
+                  [ 0.0991094375,-0.349824698],
+                  [ 1.14457216,   0.0464172582],
+                  [ 0.438046137,  0.0177646297],
+                  [ 1.22382056,  -0.162675287]].toTensor
+
+  let pca_cov = pca_cov(data, 2)
+  let pca_svd_tXU = pca_svd_tXU(data, 2)
+  let pca_svd_XV = pca_svd_XV(data, 2)
+  let pca_svd_US = pca_svd_US(data, 2)
+  let pca_svd_tX_VhS = pca_svd_tX_VhS(data, 2)
+
+  for col in 0..<2:
+    doAssert mean_absolute_error( pca_cov[_, col], expected[_, col]) < 1e-08 or
+             mean_absolute_error(-pca_cov[_, col], expected[_, col]) < 1e-08
+
+    doAssert mean_absolute_error( pca_svd_tXU[_, col], expected[_, col]) < 1e-08 or
+             mean_absolute_error(-pca_svd_tXU[_, col], expected[_, col]) < 1e-08
+
+    doAssert mean_absolute_error( pca_svd_XV[_, col], expected[_, col]) < 1e-08 or
+             mean_absolute_error(-pca_svd_XV[_, col], expected[_, col]) < 1e-08
+
+    doAssert mean_absolute_error( pca_svd_US[_, col], expected[_, col]) < 1e-08 or
+             mean_absolute_error(-pca_svd_US[_, col], expected[_, col]) < 1e-08
+
+    doAssert mean_absolute_error( pca_svd_tX_VhS[_, col], expected[_, col]) < 1e-08 or
+             mean_absolute_error(-pca_svd_tX_VhS[_, col], expected[_, col]) < 1e-08
 
 # Setup
 # ---------------------------------------------------------------------------------
@@ -124,7 +208,7 @@ for Observations in Sizes:
 
       # Note that signs are completely unstable so errors are not reliable
       # without a deterministic way to fix the signs
-      echo "mean_absolute_error(", xStr, ", ", yStr,") = ", err
+      echo "mean_absolute_error(", xStr, ", ", yStr,")  = ", err
       echo "mean_absolute_error(", xStr, ", -", yStr,") = ", err_negy
       echo "---------------------------------------------"
 
@@ -137,34 +221,40 @@ for Observations in Sizes:
 
     profile:
       let pca_cov = pca_cov(H, k)
-    echo &"pca_cov took:     {stop-start:>4.4f} seconds | [{n},{m}]*[{m},{n}] + symeig([{n},{n}])"
+    echo &"pca_cov        took: {stop-start:>4.4f} seconds | [{n},{m}]*[{m},{n}] + symeig([{n},{n}])"
 
     profile:
       let pca_svd_tXU = pca_svd_tXU(H, k)
-    echo &"pca_svd_tXU took: {stop-start:>4.4f} seconds | svd([{n},{m}]) + [{m},{n}]*[{n},{k}]"
-
-    profile:
-      let pca_svd_US = pca_svd_US(H, k)
-    echo &"pca_svd_US took:  {stop-start:>4.4f} seconds | svd([{m},{n}]) + [{m},{k}]*[{k}]"
+    echo &"pca_svd_tXU    took: {stop-start:>4.4f} seconds | svd([{n},{m}]) + [{m},{n}]*[{n},{k}]"
 
     profile:
       let pca_svd_XV = pca_svd_XV(H, k)
-    echo &"pca_svd_XV took:  {stop-start:>4.4f} seconds | svd([{m},{n}]) + [{m},{n}]*[{n},{k}]"
+    echo &"pca_svd_XV     took: {stop-start:>4.4f} seconds | svd([{m},{n}]) + [{m},{n}]*[{n},{k}]"
+
+    profile:
+      let pca_svd_US = pca_svd_US(H, k)
+    echo &"pca_svd_US     took: {stop-start:>4.4f} seconds | svd([{m},{n}]) + [{m},{k}]*[{k}]"
+
+    profile:
+      let pca_svd_tX_VhS = pca_svd_tX_VhS(H, k)
+    echo &"pca_svd_tX_VhS took: {stop-start:>4.4f} seconds | svd([{n},{m}]) + [{n},{k}]*[{k}]"
 
     echo &"\nChecking that we have the same results."
-    checkError(pca_cov, pca_svd_tXU)
-    checkError(pca_cov, pca_svd_US)
-    checkError(pca_cov, pca_svd_XV)
+    # We use pca_svd_US as a base as hilbert matrix is ill conditionned
+    checkError(pca_svd_US, pca_cov)
+    checkError(pca_svd_US, pca_svd_tXU)
+    checkError(pca_svd_US, pca_svd_XV)
+    checkError(pca_svd_US, pca_svd_tX_VhS)
 
     when Display:
       echo "\n--- pca_cov -------------------"
       echo pca_cov
       echo "\n--- pca_svd_tXU -------------------"
       echo pca_svd_tXU
-      echo "\n--- pca_svd_US -------------------"
-      echo pca_svd_US
       echo "\n--- pca_svd_XV -------------------"
       echo pca_svd_XV
+      echo "\n--- pca_svd_US -------------------"
+      echo pca_svd_tX_Vhs
 
 # ###########################
 # Starting a new experiment
@@ -173,20 +263,24 @@ for Observations in Sizes:
 # Target PCA:      [100, 10]
 
 # Hilbert matrix creation took: 0.0001 seconds
-# pca_cov took:     0.0048 seconds | [100,100]*[100,100] + symeig([100,100])
-# pca_svd_tXU took: 0.0026 seconds | svd([100,100]) + [100,100]*[100,10]
-# pca_svd_US took:  0.0022 seconds | svd([100,100]) + [100,10]*[10]
-# pca_svd_XV took:  0.0021 seconds | svd([100,100]) + [100,100]*[100,10]
+# pca_cov        took: 0.0021 seconds | [100,100]*[100,100] + symeig([100,100])
+# pca_svd_tXU    took: 0.0023 seconds | svd([100,100]) + [100,100]*[100,10]
+# pca_svd_XV     took: 0.0022 seconds | svd([100,100]) + [100,100]*[100,10]
+# pca_svd_US     took: 0.0022 seconds | svd([100,100]) + [100,10]*[10]
+# pca_svd_tX_VhS took: 0.0021 seconds | svd([100,100]) + [100,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.001932655651739894
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.02475863673565516
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001932655651739896
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.02475863673565516
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001932655651739896
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.02475863673565516
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 1.917320716572795e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.02669129238729377
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001932655651739905
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.02475863673565516
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 3.72577998266549e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.02669129238729376
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 2.911447131399173e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.02669129238729375
 # ---------------------------------------------
 
 # ###########################
@@ -195,21 +289,25 @@ for Observations in Sizes:
 # Matrix of shape: [100, 200]
 # Target PCA:      [100, 10]
 
-# Hilbert matrix creation took: 0.0002 seconds
-# pca_cov took:     0.0064 seconds | [200,100]*[100,200] + symeig([200,200])
-# pca_svd_tXU took: 0.0043 seconds | svd([200,100]) + [100,200]*[200,10]
-# pca_svd_US took:  0.0070 seconds | svd([100,200]) + [100,10]*[10]
-# pca_svd_XV took:  0.0063 seconds | svd([100,200]) + [100,200]*[200,10]
+# Hilbert matrix creation took: 0.0001 seconds
+# pca_cov        took: 0.0050 seconds | [200,100]*[100,200] + symeig([200,200])
+# pca_svd_tXU    took: 0.0301 seconds | svd([200,100]) + [100,200]*[200,10]
+# pca_svd_XV     took: 0.0060 seconds | svd([100,200]) + [100,200]*[200,10]
+# pca_svd_US     took: 0.0056 seconds | svd([100,200]) + [100,10]*[10]
+# pca_svd_tX_VhS took: 0.0050 seconds | svd([200,100]) + [200,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.006570897873960142
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.02033659411180166
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.002030719975565127
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.0248767720101967
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.002030719975565127
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.0248767720101967
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.008595519202340833
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.01831197278331903
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.002030719975565127
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.0248767720101967
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 2.845859912353192e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.02690749198565989
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.008595519202340834
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.01831197278331902
 # ---------------------------------------------
 
 # ###########################
@@ -218,21 +316,25 @@ for Observations in Sizes:
 # Matrix of shape: [100, 400]
 # Target PCA:      [100, 10]
 
-# Hilbert matrix creation took: 0.0006 seconds
-# pca_cov took:     0.0195 seconds | [400,100]*[100,400] + symeig([400,400])
-# pca_svd_tXU took: 0.0058 seconds | svd([400,100]) + [100,400]*[400,10]
-# pca_svd_US took:  0.0099 seconds | svd([100,400]) + [100,10]*[10]
-# pca_svd_XV took:  0.0084 seconds | svd([100,400]) + [100,400]*[400,10]
+# Hilbert matrix creation took: 0.0007 seconds
+# pca_cov        took: 0.0318 seconds | [400,100]*[100,400] + symeig([400,400])
+# pca_svd_tXU    took: 0.0058 seconds | svd([400,100]) + [100,400]*[400,10]
+# pca_svd_XV     took: 0.0092 seconds | svd([100,400]) + [100,400]*[400,10]
+# pca_svd_US     took: 0.0084 seconds | svd([100,400]) + [100,10]*[10]
+# pca_svd_tX_VhS took: 0.0053 seconds | svd([400,100]) + [400,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.006593310822730553
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.02037116569875735
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.002059295033802309
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.02490518148768566
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.002059295033802309
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.02490518148768566
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.008645474850949521
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.01831900167046272
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.002059295033802312
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.02490518148768567
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 3.297168629581948e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.02696447652141224
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.008645474850949516
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.01831900167046272
 # ---------------------------------------------
 
 # ###########################
@@ -241,21 +343,25 @@ for Observations in Sizes:
 # Matrix of shape: [100, 800]
 # Target PCA:      [100, 10]
 
-# Hilbert matrix creation took: 0.0025 seconds
-# pca_cov took:     0.0738 seconds | [800,100]*[100,800] + symeig([800,800])
-# pca_svd_tXU took: 0.0059 seconds | svd([800,100]) + [100,800]*[800,10]
-# pca_svd_US took:  0.0192 seconds | svd([100,800]) + [100,10]*[10]
-# pca_svd_XV took:  0.0165 seconds | svd([100,800]) + [100,800]*[800,10]
+# Hilbert matrix creation took: 0.0023 seconds
+# pca_cov        took: 0.0712 seconds | [800,100]*[100,800] + symeig([800,800])
+# pca_svd_tXU    took: 0.0060 seconds | svd([800,100]) + [100,800]*[800,10]
+# pca_svd_XV     took: 0.0239 seconds | svd([100,800]) + [100,800]*[800,10]
+# pca_svd_US     took: 0.0207 seconds | svd([100,800]) + [100,10]*[10]
+# pca_svd_tX_VhS took: 0.0058 seconds | svd([800,100]) + [800,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.006598181906149172
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.02037798022775394
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.002065366626663964
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.02491079550723915
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.002065366626663964
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.02491079550723915
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.008656026307183727
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.01832013582664856
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.002065366626663962
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.02491079550723916
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 3.882898581731306e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.02697616213383223
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.008656026307183718
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.01832013582664856
 # ---------------------------------------------
 
 # ###########################
@@ -264,21 +370,25 @@ for Observations in Sizes:
 # Matrix of shape: [100, 1600]
 # Target PCA:      [100, 10]
 
-# Hilbert matrix creation took: 0.0115 seconds
-# pca_cov took:     0.3029 seconds | [1600,100]*[100,1600] + symeig([1600,1600])
-# pca_svd_tXU took: 0.0083 seconds | svd([1600,100]) + [100,1600]*[1600,10]
-# pca_svd_US took:  0.0375 seconds | svd([100,1600]) + [100,10]*[10]
-# pca_svd_XV took:  0.0277 seconds | svd([100,1600]) + [100,1600]*[1600,10]
+# Hilbert matrix creation took: 0.0099 seconds
+# pca_cov        took: 0.2151 seconds | [1600,100]*[100,1600] + symeig([1600,1600])
+# pca_svd_tXU    took: 0.0078 seconds | svd([1600,100]) + [100,1600]*[1600,10]
+# pca_svd_XV     took: 0.0330 seconds | svd([100,1600]) + [100,1600]*[1600,10]
+# pca_svd_US     took: 0.0246 seconds | svd([100,1600]) + [100,10]*[10]
+# pca_svd_tX_VhS took: 0.0134 seconds | svd([1600,100]) + [1600,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.006599015429483075
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.02037911704756523
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.002066398351083621
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.02491173412596473
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.002066398351083621
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.02491173412596473
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.008657793701796309
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.01832033877518993
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.002066398351083619
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.02491173412596473
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 4.353824274989707e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.02697813247698625
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.008657793701796302
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.01832033877518993
 # ---------------------------------------------
 
 # ###########################
@@ -287,21 +397,25 @@ for Observations in Sizes:
 # Matrix of shape: [100, 3200]
 # Target PCA:      [100, 10]
 
-# Hilbert matrix creation took: 0.0477 seconds
-# pca_cov took:     1.0299 seconds | [3200,100]*[100,3200] + symeig([3200,3200])
-# pca_svd_tXU took: 0.0156 seconds | svd([3200,100]) + [100,3200]*[3200,10]
-# pca_svd_US took:  0.0460 seconds | svd([100,3200]) + [100,10]*[10]
-# pca_svd_XV took:  0.0386 seconds | svd([100,3200]) + [100,3200]*[3200,10]
+# Hilbert matrix creation took: 0.0413 seconds
+# pca_cov        took: 0.7771 seconds | [3200,100]*[100,3200] + symeig([3200,3200])
+# pca_svd_tXU    took: 0.0197 seconds | svd([3200,100]) + [100,3200]*[3200,10]
+# pca_svd_XV     took: 0.0377 seconds | svd([100,3200]) + [100,3200]*[3200,10]
+# pca_svd_US     took: 0.0409 seconds | svd([100,3200]) + [100,10]*[10]
+# pca_svd_tX_VhS took: 0.0224 seconds | svd([3200,100]) + [3200,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.006599142721329844
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.02037928176474993
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.002066551364076294
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.02491187312200345
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.002066551364076294
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.02491187312200345
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.008658055773879248
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.01832036871212876
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.002066551364076291
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.02491187312200346
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 4.767932554486612e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.02697842448600803
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.008658055773879257
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.01832036871212876
 # ---------------------------------------------
 
 # ###########################
@@ -310,21 +424,25 @@ for Observations in Sizes:
 # Matrix of shape: [200, 100]
 # Target PCA:      [200, 10]
 
-# Hilbert matrix creation took: 0.0001 seconds
-# pca_cov took:     0.0016 seconds | [100,200]*[200,100] + symeig([100,100])
-# pca_svd_tXU took: 0.0058 seconds | svd([100,200]) + [200,100]*[100,10]
-# pca_svd_US took:  0.0041 seconds | svd([200,100]) + [200,10]*[10]
-# pca_svd_XV took:  0.0051 seconds | svd([200,100]) + [200,100]*[100,10]
+# Hilbert matrix creation took: 0.0000 seconds
+# pca_cov        took: 0.0017 seconds | [100,200]*[200,100] + symeig([100,100])
+# pca_svd_tXU    took: 0.0061 seconds | svd([100,200]) + [200,100]*[100,10]
+# pca_svd_XV     took: 0.0046 seconds | svd([200,100]) + [200,100]*[100,10]
+# pca_svd_US     took: 0.0042 seconds | svd([200,100]) + [200,10]*[10]
+# pca_svd_tX_VhS took: 0.0056 seconds | svd([100,200]) + [100,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.00182185322894013
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.01822828086324626
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.005370049268789392
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01468008482339707
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.005370049268789392
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01468008482339707
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.007155425293366204
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.01289470879879414
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.005370049268789392
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01468008482339708
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 1.798122214986902e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.0200501340921603
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.007155425293366199
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.01289470879879414
 # ---------------------------------------------
 
 # ###########################
@@ -333,21 +451,25 @@ for Observations in Sizes:
 # Matrix of shape: [200, 200]
 # Target PCA:      [200, 10]
 
-# Hilbert matrix creation took: 0.0001 seconds
-# pca_cov took:     0.0054 seconds | [200,200]*[200,200] + symeig([200,200])
-# pca_svd_tXU took: 0.0090 seconds | svd([200,200]) + [200,200]*[200,10]
-# pca_svd_US took:  0.0246 seconds | svd([200,200]) + [200,10]*[10]
-# pca_svd_XV took:  0.0101 seconds | svd([200,200]) + [200,200]*[200,10]
+# Hilbert matrix creation took: 0.0000 seconds
+# pca_cov        took: 0.0052 seconds | [200,200]*[200,200] + symeig([200,200])
+# pca_svd_tXU    took: 0.0084 seconds | svd([200,200]) + [200,200]*[200,10]
+# pca_svd_XV     took: 0.0302 seconds | svd([200,200]) + [200,200]*[200,10]
+# pca_svd_US     took: 0.0080 seconds | svd([200,200]) + [200,10]*[10]
+# pca_svd_tX_VhS took: 0.0080 seconds | svd([200,200]) + [200,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.002012538895062469
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.01847800800226472
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.002012538895062467
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01847800800226472
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.002012538895062467
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01847800800226472
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 2.106376006293534e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.02049054689731615
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.002012538895062467
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01847800800226472
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 1.841540617916843e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.02049054689731615
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 1.965713397019082e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.02049054689731615
 # ---------------------------------------------
 
 # ###########################
@@ -357,20 +479,24 @@ for Observations in Sizes:
 # Target PCA:      [200, 10]
 
 # Hilbert matrix creation took: 0.0002 seconds
-# pca_cov took:     0.0133 seconds | [400,200]*[200,400] + symeig([400,400])
-# pca_svd_tXU took: 0.0150 seconds | svd([400,200]) + [200,400]*[400,10]
-# pca_svd_US took:  0.0177 seconds | svd([200,400]) + [200,10]*[10]
-# pca_svd_XV took:  0.0208 seconds | svd([200,400]) + [200,400]*[400,10]
+# pca_cov        took: 0.0350 seconds | [400,200]*[200,400] + symeig([400,400])
+# pca_svd_tXU    took: 0.0137 seconds | svd([400,200]) + [200,400]*[400,10]
+# pca_svd_XV     took: 0.0200 seconds | svd([200,400]) + [200,400]*[400,10]
+# pca_svd_US     took: 0.0206 seconds | svd([200,400]) + [200,10]*[10]
+# pca_svd_tX_VhS took: 0.0150 seconds | svd([400,200]) + [400,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.005609966351268989
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.01503513178897382
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001655813037479778
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01898928510276307
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001655813037479778
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01898928510276307
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.00719962326591146
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.01344547487432698
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001655813037479783
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01898928510276307
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 3.285345463476061e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.02064509814023848
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.007199623265911457
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.01344547487432698
 # ---------------------------------------------
 
 # ###########################
@@ -380,20 +506,24 @@ for Observations in Sizes:
 # Target PCA:      [200, 10]
 
 # Hilbert matrix creation took: 0.0010 seconds
-# pca_cov took:     0.0722 seconds | [800,200]*[200,800] + symeig([800,800])
-# pca_svd_tXU took: 0.0248 seconds | svd([800,200]) + [200,800]*[800,10]
-# pca_svd_US took:  0.0327 seconds | svd([200,800]) + [200,10]*[10]
-# pca_svd_XV took:  0.0339 seconds | svd([200,800]) + [200,800]*[800,10]
+# pca_cov        took: 0.0714 seconds | [800,200]*[200,800] + symeig([800,800])
+# pca_svd_tXU    took: 0.0177 seconds | svd([800,200]) + [200,800]*[800,10]
+# pca_svd_XV     took: 0.0357 seconds | svd([200,800]) + [200,800]*[800,10]
+# pca_svd_US     took: 0.0331 seconds | svd([200,800]) + [200,10]*[10]
+# pca_svd_tX_VhS took: 0.0221 seconds | svd([800,200]) + [800,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.005619494306026132
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.01506631465884791
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001669777155822621
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01901603180905142
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001669777155822621
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01901603180905142
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.007231722364766706
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.0134540866000991
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001669777155822629
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01901603180905143
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 4.452961897481056e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.02068580896486581
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.007231722364766708
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.0134540866000991
 # ---------------------------------------------
 
 # ###########################
@@ -402,21 +532,25 @@ for Observations in Sizes:
 # Matrix of shape: [200, 1600]
 # Target PCA:      [200, 10]
 
-# Hilbert matrix creation took: 0.0046 seconds
-# pca_cov took:     0.2697 seconds | [1600,200]*[200,1600] + symeig([1600,1600])
-# pca_svd_tXU took: 0.0512 seconds | svd([1600,200]) + [200,1600]*[1600,10]
-# pca_svd_US took:  0.0706 seconds | svd([200,1600]) + [200,10]*[10]
-# pca_svd_XV took:  0.0682 seconds | svd([200,1600]) + [200,1600]*[1600,10]
+# Hilbert matrix creation took: 0.0044 seconds
+# pca_cov        took: 0.1992 seconds | [1600,200]*[200,1600] + symeig([1600,1600])
+# pca_svd_tXU    took: 0.0379 seconds | svd([1600,200]) + [200,1600]*[1600,10]
+# pca_svd_XV     took: 0.0498 seconds | svd([200,1600]) + [200,1600]*[1600,10]
+# pca_svd_US     took: 0.0444 seconds | svd([200,1600]) + [200,10]*[10]
+# pca_svd_tX_VhS took: 0.0262 seconds | svd([1600,200]) + [1600,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.005622925577928753
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.01507125597044572
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001672761361514709
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01902142018685975
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001672761361514709
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01902142018685975
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.007236956723672422
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.01345722482469422
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001672761361514716
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01902142018685976
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 4.751903145156371e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.0206941815483666
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.007236956723672422
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.01345722482469421
 # ---------------------------------------------
 
 # ###########################
@@ -425,21 +559,25 @@ for Observations in Sizes:
 # Matrix of shape: [200, 3200]
 # Target PCA:      [200, 10]
 
-# Hilbert matrix creation took: 0.0253 seconds
-# pca_cov took:     0.8086 seconds | [3200,200]*[200,3200] + symeig([3200,3200])
-# pca_svd_tXU took: 0.0348 seconds | svd([3200,200]) + [200,3200]*[3200,10]
-# pca_svd_US took:  0.0729 seconds | svd([200,3200]) + [200,10]*[10]
-# pca_svd_XV took:  0.0718 seconds | svd([200,3200]) + [200,3200]*[3200,10]
+# Hilbert matrix creation took: 0.1137 seconds
+# pca_cov        took: 0.8398 seconds | [3200,200]*[200,3200] + symeig([3200,3200])
+# pca_svd_tXU    took: 0.0356 seconds | svd([3200,200]) + [200,3200]*[3200,10]
+# pca_svd_XV     took: 0.0683 seconds | svd([200,3200]) + [200,3200]*[3200,10]
+# pca_svd_US     took: 0.1462 seconds | svd([200,3200]) + [200,10]*[10]
+# pca_svd_tX_VhS took: 0.0359 seconds | svd([3200,200]) + [3200,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.005623524303021414
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.01507207142438875
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001673281525307154
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01902231420210297
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001673281525307154
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01902231420210297
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.007237829221379827
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.01345776650602605
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001673281525307154
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01902231420210297
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 5.270110067340357e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.02069559572740585
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.007237829221379825
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.01345776650602604
 # ---------------------------------------------
 
 # ###########################
@@ -448,21 +586,25 @@ for Observations in Sizes:
 # Matrix of shape: [400, 100]
 # Target PCA:      [400, 10]
 
-# Hilbert matrix creation took: 0.0002 seconds
-# pca_cov took:     0.0018 seconds | [100,400]*[400,100] + symeig([100,100])
-# pca_svd_tXU took: 0.0092 seconds | svd([100,400]) + [400,100]*[100,10]
-# pca_svd_US took:  0.0054 seconds | svd([400,100]) + [400,10]*[10]
-# pca_svd_XV took:  0.0054 seconds | svd([400,100]) + [400,100]*[100,10]
+# Hilbert matrix creation took: 0.0004 seconds
+# pca_cov        took: 0.0019 seconds | [100,400]*[400,100] + symeig([100,100])
+# pca_svd_tXU    took: 0.0086 seconds | svd([100,400]) + [400,100]*[100,10]
+# pca_svd_XV     took: 0.0055 seconds | svd([400,100]) + [400,100]*[100,10]
+# pca_svd_US     took: 0.0055 seconds | svd([400,100]) + [400,10]*[10]
+# pca_svd_tX_VhS took: 0.0085 seconds | svd([100,400]) + [100,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.001219225054894705
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.01327700819029944
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.004140240515741197
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01035599272945293
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.004140240515741197
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01035599272945293
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.005323374186186267
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.009172859058940585
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.004140240515741197
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01035599272945293
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 7.05585684725914e-18
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.01449623324512687
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.005323374186186267
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.009172859058940584
 # ---------------------------------------------
 
 # ###########################
@@ -472,20 +614,24 @@ for Observations in Sizes:
 # Target PCA:      [400, 10]
 
 # Hilbert matrix creation took: 0.0002 seconds
-# pca_cov took:     0.0053 seconds | [200,400]*[400,200] + symeig([200,200])
-# pca_svd_tXU took: 0.0432 seconds | svd([200,400]) + [400,200]*[200,10]
-# pca_svd_US took:  0.0299 seconds | svd([400,200]) + [400,10]*[10]
-# pca_svd_XV took:  0.0174 seconds | svd([400,200]) + [400,200]*[200,10]
+# pca_cov        took: 0.0060 seconds | [200,400]*[400,200] + symeig([200,200])
+# pca_svd_tXU    took: 0.0380 seconds | svd([200,400]) + [400,200]*[200,10]
+# pca_svd_XV     took: 0.0164 seconds | svd([400,200]) + [400,200]*[200,10]
+# pca_svd_US     took: 0.0282 seconds | svd([400,200]) + [400,10]*[10]
+# pca_svd_tX_VhS took: 0.0269 seconds | svd([200,400]) + [200,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.001403196435056738
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.0137776799636753
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.00441437668940445
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01076649970932751
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.00441437668940445
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01076649970932751
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.005769091577369347
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.009411784821342098
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.00441437668940445
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01076649970932751
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 1.035977586746714e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.01518087639871145
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.005769091577369343
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.009411784821342093
 # ---------------------------------------------
 
 # ###########################
@@ -495,20 +641,24 @@ for Observations in Sizes:
 # Target PCA:      [400, 10]
 
 # Hilbert matrix creation took: 0.0002 seconds
-# pca_cov took:     0.0162 seconds | [400,400]*[400,400] + symeig([400,400])
-# pca_svd_tXU took: 0.0507 seconds | svd([400,400]) + [400,400]*[400,10]
-# pca_svd_US took:  0.0460 seconds | svd([400,400]) + [400,10]*[10]
-# pca_svd_XV took:  0.0351 seconds | svd([400,400]) + [400,400]*[400,10]
+# pca_cov        took: 0.0289 seconds | [400,400]*[400,400] + symeig([400,400])
+# pca_svd_tXU    took: 0.0479 seconds | svd([400,400]) + [400,400]*[400,10]
+# pca_svd_XV     took: 0.0454 seconds | svd([400,400]) + [400,400]*[400,10]
+# pca_svd_US     took: 0.0335 seconds | svd([400,400]) + [400,10]*[10]
+# pca_svd_tX_VhS took: 0.0351 seconds | svd([400,400]) + [400,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.001500797345135287
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.01399845249749339
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001500797345135291
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01399845249749339
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001500797345135291
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01399845249749339
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 2.050789799018646e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.01549924984262063
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001500797345135288
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01399845249749339
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 1.962018239540985e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.01549924984262063
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 2.172027137967178e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.01549924984262063
 # ---------------------------------------------
 
 # ###########################
@@ -517,21 +667,25 @@ for Observations in Sizes:
 # Matrix of shape: [400, 800]
 # Target PCA:      [400, 10]
 
-# Hilbert matrix creation took: 0.0120 seconds
-# pca_cov took:     0.0916 seconds | [800,400]*[400,800] + symeig([800,800])
-# pca_svd_tXU took: 0.0577 seconds | svd([800,400]) + [400,800]*[800,10]
-# pca_svd_US took:  0.0853 seconds | svd([400,800]) + [400,10]*[10]
-# pca_svd_XV took:  0.0761 seconds | svd([400,800]) + [400,800]*[800,10]
+# Hilbert matrix creation took: 0.0010 seconds
+# pca_cov        took: 0.0860 seconds | [800,400]*[400,800] + symeig([800,800])
+# pca_svd_tXU    took: 0.0594 seconds | svd([800,400]) + [400,800]*[800,10]
+# pca_svd_XV     took: 0.0724 seconds | svd([400,800]) + [400,800]*[800,10]
+# pca_svd_US     took: 0.0765 seconds | svd([400,800]) + [400,10]*[10]
+# pca_svd_tX_VhS took: 0.0525 seconds | svd([800,400]) + [800,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.00454847652816162
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.01106192723874462
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001537648550348399
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01407275521655781
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001537648550348399
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01407275521655781
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.00608612507850304
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.009524278688396207
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001537648550348398
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01407275521655782
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 1.724823702007888e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.0156104037668993
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.006086125078503029
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.009524278688396205
 # ---------------------------------------------
 
 # ###########################
@@ -540,21 +694,25 @@ for Observations in Sizes:
 # Matrix of shape: [400, 1600]
 # Target PCA:      [400, 10]
 
-# Hilbert matrix creation took: 0.0044 seconds
-# pca_cov took:     0.2152 seconds | [1600,400]*[400,1600] + symeig([1600,1600])
-# pca_svd_tXU took: 0.0673 seconds | svd([1600,400]) + [400,1600]*[1600,10]
-# pca_svd_US took:  0.1047 seconds | svd([400,1600]) + [400,10]*[10]
-# pca_svd_XV took:  0.1018 seconds | svd([400,1600]) + [400,1600]*[1600,10]
+# Hilbert matrix creation took: 0.0043 seconds
+# pca_cov        took: 0.2015 seconds | [1600,400]*[400,1600] + symeig([1600,1600])
+# pca_svd_tXU    took: 0.0712 seconds | svd([1600,400]) + [400,1600]*[1600,10]
+# pca_svd_XV     took: 0.0937 seconds | svd([400,1600]) + [400,1600]*[1600,10]
+# pca_svd_US     took: 0.0957 seconds | svd([400,1600]) + [400,10]*[10]
+# pca_svd_tX_VhS took: 0.0602 seconds | svd([1600,400]) + [1600,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.00455862932996224
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.01108090556091188
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001547844608095407
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01409169028277872
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001547844608095407
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01409169028277872
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.006106473938051494
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.009533060952816532
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001547844608095405
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01409169028277873
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 2.543334743921779e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.01563953489086801
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.006106473938051486
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.009533060952816528
 # ---------------------------------------------
 
 # ###########################
@@ -563,21 +721,25 @@ for Observations in Sizes:
 # Matrix of shape: [400, 3200]
 # Target PCA:      [400, 10]
 
-# Hilbert matrix creation took: 0.0321 seconds
-# pca_cov took:     0.8728 seconds | [3200,400]*[400,3200] + symeig([3200,3200])
-# pca_svd_tXU took: 0.0827 seconds | svd([3200,400]) + [400,3200]*[3200,10]
-# pca_svd_US took:  0.1518 seconds | svd([400,3200]) + [400,10]*[10]
-# pca_svd_XV took:  0.1580 seconds | svd([400,3200]) + [400,3200]*[3200,10]
+# Hilbert matrix creation took: 0.0324 seconds
+# pca_cov        took: 0.7153 seconds | [3200,400]*[400,3200] + symeig([3200,3200])
+# pca_svd_tXU    took: 0.0822 seconds | svd([3200,400]) + [400,3200]*[3200,10]
+# pca_svd_XV     took: 0.1429 seconds | svd([400,3200]) + [400,3200]*[3200,10]
+# pca_svd_US     took: 0.1427 seconds | svd([400,3200]) + [400,10]*[10]
+# pca_svd_tX_VhS took: 0.0805 seconds | svd([3200,400]) + [3200,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.004560712501525559
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.01108479541317033
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001550019737760012
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01409548817693593
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001550019737760012
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01409548817693593
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.006110732239280143
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.009534775675410402
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001550019737760011
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01409548817693594
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 2.242829877892608e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.0156455079146906
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.006110732239280132
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.009534775675410397
 # ---------------------------------------------
 
 # ###########################
@@ -587,20 +749,24 @@ for Observations in Sizes:
 # Target PCA:      [800, 10]
 
 # Hilbert matrix creation took: 0.0010 seconds
-# pca_cov took:     0.0025 seconds | [100,800]*[800,100] + symeig([100,100])
-# pca_svd_tXU took: 0.0274 seconds | svd([100,800]) + [800,100]*[100,10]
-# pca_svd_US took:  0.0058 seconds | svd([800,100]) + [800,10]*[10]
-# pca_svd_XV took:  0.0060 seconds | svd([800,100]) + [800,100]*[100,10]
+# pca_cov        took: 0.0025 seconds | [100,800]*[800,100] + symeig([100,100])
+# pca_svd_tXU    took: 0.0333 seconds | svd([100,800]) + [800,100]*[100,10]
+# pca_svd_XV     took: 0.0070 seconds | svd([800,100]) + [800,100]*[100,10]
+# pca_svd_US     took: 0.0056 seconds | svd([800,100]) + [800,10]*[10]
+# pca_svd_tX_VhS took: 0.0229 seconds | svd([100,800]) + [100,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.000922000320210218
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.009147778431791761
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.003010258301095772
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.007059520450906202
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.003010258301095772
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.007059520450906202
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.003901973528120972
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.006167805223862379
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.003010258301095773
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.007059520450906201
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 7.286513129037402e-18
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.01006977875198341
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.00390197352812097
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.006167805223862385
 # ---------------------------------------------
 
 # ###########################
@@ -609,21 +775,25 @@ for Observations in Sizes:
 # Matrix of shape: [800, 200]
 # Target PCA:      [800, 10]
 
-# Hilbert matrix creation took: 0.0010 seconds
-# pca_cov took:     0.0064 seconds | [200,800]*[800,200] + symeig([200,200])
-# pca_svd_tXU took: 0.0453 seconds | svd([200,800]) + [800,200]*[200,10]
-# pca_svd_US took:  0.0281 seconds | svd([800,200]) + [800,10]*[10]
-# pca_svd_XV took:  0.0219 seconds | svd([800,200]) + [800,200]*[200,10]
+# Hilbert matrix creation took: 0.0011 seconds
+# pca_cov        took: 0.0125 seconds | [200,800]*[800,200] + symeig([200,200])
+# pca_svd_tXU    took: 0.0392 seconds | svd([200,800]) + [800,200]*[200,10]
+# pca_svd_XV     took: 0.0143 seconds | svd([800,200]) + [800,200]*[200,10]
+# pca_svd_US     took: 0.0158 seconds | svd([800,200]) + [800,10]*[10]
+# pca_svd_tX_VhS took: 0.0256 seconds | svd([200,800]) + [200,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.001122770528206383
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.009768721086172563
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.003336269680585353
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.007555221933793573
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.003336269680585353
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.007555221933793573
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.004414832142840589
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.006476659471528319
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.003336269680585351
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.007555221933793572
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 1.053456752967794e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.01089149161436891
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.004414832142840589
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.006476659471528319
 # ---------------------------------------------
 
 # ###########################
@@ -633,20 +803,24 @@ for Observations in Sizes:
 # Target PCA:      [800, 10]
 
 # Hilbert matrix creation took: 0.0010 seconds
-# pca_cov took:     0.0248 seconds | [400,800]*[800,400] + symeig([400,400])
-# pca_svd_tXU took: 0.1165 seconds | svd([400,800]) + [800,400]*[400,10]
-# pca_svd_US took:  0.0580 seconds | svd([800,400]) + [800,10]*[10]
-# pca_svd_XV took:  0.0576 seconds | svd([800,400]) + [800,400]*[400,10]
+# pca_cov        took: 0.0424 seconds | [400,800]*[800,400] + symeig([400,400])
+# pca_svd_tXU    took: 0.0846 seconds | svd([400,800]) + [800,400]*[400,10]
+# pca_svd_XV     took: 0.0482 seconds | svd([800,400]) + [800,400]*[400,10]
+# pca_svd_US     took: 0.0494 seconds | svd([800,400]) + [800,10]*[10]
+# pca_svd_tX_VhS took: 0.0763 seconds | svd([400,800]) + [400,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.001262551192843635
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.01012032163152244
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.0034998034813876
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.007883069342978328
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.0034998034813876
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.007883069342978328
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.00476235467422674
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.006620518150134859
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.0034998034813876
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.007883069342978328
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 1.360647785467498e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.01138287282436162
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.004762354674226725
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.006620518150134863
 # ---------------------------------------------
 
 # ###########################
@@ -655,21 +829,25 @@ for Observations in Sizes:
 # Matrix of shape: [800, 800]
 # Target PCA:      [800, 10]
 
-# Hilbert matrix creation took: 0.0009 seconds
-# pca_cov took:     0.0714 seconds | [800,800]*[800,800] + symeig([800,800])
-# pca_svd_tXU took: 0.1439 seconds | svd([800,800]) + [800,800]*[800,10]
-# pca_svd_US took:  0.1293 seconds | svd([800,800]) + [800,10]*[10]
-# pca_svd_XV took:  0.1699 seconds | svd([800,800]) + [800,800]*[800,10]
+# Hilbert matrix creation took: 0.0010 seconds
+# pca_cov        took: 0.0865 seconds | [800,800]*[800,800] + symeig([800,800])
+# pca_svd_tXU    took: 0.1420 seconds | svd([800,800]) + [800,800]*[800,10]
+# pca_svd_XV     took: 0.1279 seconds | svd([800,800]) + [800,800]*[800,10]
+# pca_svd_US     took: 0.1342 seconds | svd([800,800]) + [800,10]*[10]
+# pca_svd_tX_VhS took: 0.1289 seconds | svd([800,800]) + [800,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.001324183122544305
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.0102873384250499
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001324183122544304
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01028733842504989
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001324183122544304
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01028733842504989
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 2.27028088922561e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.01161152154759139
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001324183122544312
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01028733842504989
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 2.739215337757956e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.01161152154759139
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 2.544326209283469e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.01161152154759138
 # ---------------------------------------------
 
 # ###########################
@@ -678,21 +856,25 @@ for Observations in Sizes:
 # Matrix of shape: [800, 1600]
 # Target PCA:      [800, 10]
 
-# Hilbert matrix creation took: 0.0049 seconds
-# pca_cov took:     0.2097 seconds | [1600,800]*[800,1600] + symeig([1600,1600])
-# pca_svd_tXU took: 0.1924 seconds | svd([1600,800]) + [800,1600]*[1600,10]
-# pca_svd_US took:  0.2617 seconds | svd([800,1600]) + [800,10]*[10]
-# pca_svd_XV took:  0.2609 seconds | svd([800,1600]) + [800,1600]*[1600,10]
+# Hilbert matrix creation took: 0.0044 seconds
+# pca_cov        took: 0.1970 seconds | [1600,800]*[800,1600] + symeig([1600,1600])
+# pca_svd_tXU    took: 0.2077 seconds | svd([1600,800]) + [800,1600]*[1600,10]
+# pca_svd_XV     took: 0.2490 seconds | svd([800,1600]) + [800,1600]*[1600,10]
+# pca_svd_US     took: 0.2775 seconds | svd([800,1600]) + [800,10]*[10]
+# pca_svd_tX_VhS took: 0.1785 seconds | svd([1600,800]) + [1600,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.00361113118627248
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.008080572984267074
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001349796772436461
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01034190739810298
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001349796772436461
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01034190739810298
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.004957763307770388
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.00673394086276667
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.00134979677243646
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01034190739810298
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 1.719855696791456e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.01169170417053698
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.004957763307770376
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.006733940862766659
 # ---------------------------------------------
 
 # ###########################
@@ -701,21 +883,25 @@ for Observations in Sizes:
 # Matrix of shape: [800, 3200]
 # Target PCA:      [800, 10]
 
-# Hilbert matrix creation took: 0.0260 seconds
-# pca_cov took:     0.8001 seconds | [3200,800]*[800,3200] + symeig([3200,3200])
-# pca_svd_tXU took: 0.2643 seconds | svd([3200,800]) + [800,3200]*[3200,10]
-# pca_svd_US took:  0.3701 seconds | svd([800,3200]) + [800,10]*[10]
-# pca_svd_XV took:  0.3660 seconds | svd([800,3200]) + [800,3200]*[3200,10]
+# Hilbert matrix creation took: 0.0706 seconds
+# pca_cov        took: 0.8422 seconds | [3200,800]*[800,3200] + symeig([3200,3200])
+# pca_svd_tXU    took: 0.2789 seconds | svd([3200,800]) + [800,3200]*[3200,10]
+# pca_svd_XV     took: 0.3502 seconds | svd([800,3200]) + [800,3200]*[3200,10]
+# pca_svd_US     took: 0.3481 seconds | svd([800,3200]) + [800,10]*[10]
+# pca_svd_tX_VhS took: 0.2413 seconds | svd([3200,800]) + [3200,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.003618543419768159
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.008094208564516961
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001356658462838996
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.01035609352144603
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001356658462838996
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.01035609352144603
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.0049716254452656
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.006741126539017202
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001356658462838999
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.01035609352144604
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 1.863595858537189e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.01171275198428274
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.004971625445265589
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.006741126539017209
 # ---------------------------------------------
 
 # ###########################
@@ -725,20 +911,24 @@ for Observations in Sizes:
 # Target PCA:      [1600, 10]
 
 # Hilbert matrix creation took: 0.0044 seconds
-# pca_cov took:     0.0029 seconds | [100,1600]*[1600,100] + symeig([100,100])
-# pca_svd_tXU took: 0.0372 seconds | svd([100,1600]) + [1600,100]*[100,10]
-# pca_svd_US took:  0.0085 seconds | svd([1600,100]) + [1600,10]*[10]
-# pca_svd_XV took:  0.0078 seconds | svd([1600,100]) + [1600,100]*[100,10]
+# pca_cov        took: 0.0037 seconds | [100,1600]*[1600,100] + symeig([100,100])
+# pca_svd_tXU    took: 0.0430 seconds | svd([100,1600]) + [1600,100]*[100,10]
+# pca_svd_XV     took: 0.0079 seconds | svd([1600,100]) + [1600,100]*[100,10]
+# pca_svd_US     took: 0.0072 seconds | svd([1600,100]) + [1600,10]*[10]
+# pca_svd_tX_VhS took: 0.0493 seconds | svd([100,1600]) + [100,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.0006509043733245349
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.006056854218461889
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.002066378919370285
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.004641379672416099
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.002066378919370285
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.004641379672416099
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.002694527618820402
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.004013230972961333
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.002066378919370284
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.0046413796724161
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 7.897000931166144e-18
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.006707758591781758
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.002694527618820403
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.004013230972961332
 # ---------------------------------------------
 
 # ###########################
@@ -748,20 +938,24 @@ for Observations in Sizes:
 # Target PCA:      [1600, 10]
 
 # Hilbert matrix creation took: 0.0043 seconds
-# pca_cov took:     0.0069 seconds | [200,1600]*[1600,200] + symeig([200,200])
-# pca_svd_tXU took: 0.0682 seconds | svd([200,1600]) + [1600,200]*[200,10]
-# pca_svd_US took:  0.0375 seconds | svd([1600,200]) + [1600,10]*[10]
-# pca_svd_XV took:  0.0279 seconds | svd([1600,200]) + [1600,200]*[200,10]
+# pca_cov        took: 0.0096 seconds | [200,1600]*[1600,200] + symeig([200,200])
+# pca_svd_tXU    took: 0.0712 seconds | svd([200,1600]) + [1600,200]*[200,10]
+# pca_svd_XV     took: 0.0376 seconds | svd([1600,200]) + [1600,200]*[200,10]
+# pca_svd_US     took: 0.0267 seconds | svd([1600,200]) + [1600,10]*[10]
+# pca_svd_tX_VhS took: 0.0459 seconds | svd([200,1600]) + [200,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.00313243630469686
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.004388620736036966
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.002368933245577393
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.005152123795156442
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.002368933245577393
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.005152123795156442
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.0009006127381817561
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.006620444302550262
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.002368933245577393
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.005152123795156446
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 9.974110446214904e-18
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.007521057040732003
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.0009006127381817557
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.006620444302550263
 # ---------------------------------------------
 
 # ###########################
@@ -771,20 +965,24 @@ for Observations in Sizes:
 # Target PCA:      [1600, 10]
 
 # Hilbert matrix creation took: 0.0044 seconds
-# pca_cov took:     0.0330 seconds | [400,1600]*[1600,400] + symeig([400,400])
-# pca_svd_tXU took: 0.1580 seconds | svd([400,1600]) + [1600,400]*[400,10]
-# pca_svd_US took:  0.0609 seconds | svd([1600,400]) + [1600,10]*[10]
-# pca_svd_XV took:  0.0637 seconds | svd([1600,400]) + [1600,400]*[400,10]
+# pca_cov        took: 0.0455 seconds | [400,1600]*[1600,400] + symeig([400,400])
+# pca_svd_tXU    took: 0.0997 seconds | svd([400,1600]) + [1600,400]*[400,10]
+# pca_svd_XV     took: 0.0595 seconds | svd([1600,400]) + [1600,400]*[400,10]
+# pca_svd_US     took: 0.0594 seconds | svd([1600,400]) + [1600,10]*[10]
+# pca_svd_tX_VhS took: 0.0994 seconds | svd([400,1600]) + [400,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.003483627187178229
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.004632036089884324
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.00259588160522189
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.005519781671840757
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.00259588160522189
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.005519781671840757
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.001085057412495759
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.007030605864566003
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.002595881605221891
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.005519781671840767
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 1.622486000355446e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.00811566327706178
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.001085057412495758
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.007030605864566002
 # ---------------------------------------------
 
 # ###########################
@@ -793,21 +991,25 @@ for Observations in Sizes:
 # Matrix of shape: [1600, 800]
 # Target PCA:      [1600, 10]
 
-# Hilbert matrix creation took: 0.0043 seconds
-# pca_cov took:     0.0777 seconds | [800,1600]*[1600,800] + symeig([800,800])
-# pca_svd_tXU took: 0.2899 seconds | svd([800,1600]) + [1600,800]*[800,10]
-# pca_svd_US took:  0.1844 seconds | svd([1600,800]) + [1600,10]*[10]
-# pca_svd_XV took:  0.1851 seconds | svd([1600,800]) + [1600,800]*[800,10]
+# Hilbert matrix creation took: 0.0042 seconds
+# pca_cov        took: 0.0973 seconds | [800,1600]*[1600,800] + symeig([800,800])
+# pca_svd_tXU    took: 0.2499 seconds | svd([800,1600]) + [1600,800]*[800,10]
+# pca_svd_XV     took: 0.1789 seconds | svd([1600,800]) + [1600,800]*[800,10]
+# pca_svd_US     took: 0.1729 seconds | svd([1600,800]) + [1600,10]*[10]
+# pca_svd_tX_VhS took: 0.2554 seconds | svd([800,1600]) + [800,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.003681752052037469
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.004789062624228436
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.002604677527240927
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.005866137149025072
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.002604677527240927
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.005866137149025072
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.001084306894856181
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.007386507781409327
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.002604677527240928
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.00586613714902507
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 1.14792811005122e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.008470814676265481
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.001084306894856181
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.00738650778140933
 # ---------------------------------------------
 
 # ###########################
@@ -816,21 +1018,25 @@ for Observations in Sizes:
 # Matrix of shape: [1600, 1600]
 # Target PCA:      [1600, 10]
 
-# Hilbert matrix creation took: 0.0043 seconds
-# pca_cov took:     0.2235 seconds | [1600,1600]*[1600,1600] + symeig([1600,1600])
-# pca_svd_tXU took: 0.5845 seconds | svd([1600,1600]) + [1600,1600]*[1600,10]
-# pca_svd_US took:  0.5223 seconds | svd([1600,1600]) + [1600,10]*[10]
-# pca_svd_XV took:  0.5195 seconds | svd([1600,1600]) + [1600,1600]*[1600,10]
+# Hilbert matrix creation took: 0.0044 seconds
+# pca_cov        took: 0.2181 seconds | [1600,1600]*[1600,1600] + symeig([1600,1600])
+# pca_svd_tXU    took: 0.5143 seconds | svd([1600,1600]) + [1600,1600]*[1600,10]
+# pca_svd_XV     took: 0.5339 seconds | svd([1600,1600]) + [1600,1600]*[1600,10]
+# pca_svd_US     took: 0.4931 seconds | svd([1600,1600]) + [1600,10]*[10]
+# pca_svd_tX_VhS took: 0.5405 seconds | svd([1600,1600]) + [1600,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.001131684514799118
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.007504165663471745
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001131684514799117
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.007504165663471739
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001131684514799117
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.007504165663471739
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 1.643514106731121e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.00863585017827067
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001131684514799118
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.007504165663471743
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 1.838011199928455e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.008635850178270668
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 1.676757654717949e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.008635850178270661
 # ---------------------------------------------
 
 # ###########################
@@ -839,21 +1045,25 @@ for Observations in Sizes:
 # Matrix of shape: [1600, 3200]
 # Target PCA:      [1600, 10]
 
-# Hilbert matrix creation took: 0.0242 seconds
-# pca_cov took:     1.1154 seconds | [3200,1600]*[1600,3200] + symeig([3200,3200])
-# pca_svd_tXU took: 0.8394 seconds | svd([3200,1600]) + [1600,3200]*[3200,10]
-# pca_svd_US took:  1.1056 seconds | svd([1600,3200]) + [1600,10]*[10]
-# pca_svd_XV took:  1.2268 seconds | svd([1600,3200]) + [1600,3200]*[3200,10]
+# Hilbert matrix creation took: 0.0663 seconds
+# pca_cov        took: 0.9264 seconds | [3200,1600]*[1600,3200] + symeig([3200,3200])
+# pca_svd_tXU    took: 0.8017 seconds | svd([3200,1600]) + [1600,3200]*[3200,10]
+# pca_svd_XV     took: 0.9300 seconds | svd([1600,3200]) + [1600,3200]*[3200,10]
+# pca_svd_US     took: 1.1002 seconds | svd([1600,3200]) + [1600,10]*[10]
+# pca_svd_tX_VhS took: 0.7414 seconds | svd([3200,1600]) + [3200,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.002659151118196231
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.006034225017951067
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.003949205341181414
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.004744170794965908
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.003949205341181414
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.004744170794965908
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.00130286051830964
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.007390515617837583
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.003949205341181415
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.004744170794965908
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 2.043781586558689e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.008693376136147247
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.001302860518309638
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.007390515617837583
 # ---------------------------------------------
 
 # ###########################
@@ -862,21 +1072,25 @@ for Observations in Sizes:
 # Matrix of shape: [3200, 100]
 # Target PCA:      [3200, 10]
 
-# Hilbert matrix creation took: 0.0246 seconds
-# pca_cov took:     0.0059 seconds | [100,3200]*[3200,100] + symeig([100,100])
-# pca_svd_tXU took: 0.0511 seconds | svd([100,3200]) + [3200,100]*[100,10]
-# pca_svd_US took:  0.0185 seconds | svd([3200,100]) + [3200,10]*[10]
-# pca_svd_XV took:  0.0143 seconds | svd([3200,100]) + [3200,100]*[100,10]
+# Hilbert matrix creation took: 0.0277 seconds
+# pca_cov        took: 0.0070 seconds | [100,3200]*[3200,100] + symeig([100,100])
+# pca_svd_tXU    took: 0.0525 seconds | svd([100,3200]) + [3200,100]*[100,10]
+# pca_svd_XV     took: 0.0158 seconds | svd([3200,100]) + [3200,100]*[100,10]
+# pca_svd_US     took: 0.0147 seconds | svd([3200,100]) + [3200,10]*[10]
+# pca_svd_tX_VhS took: 0.0445 seconds | svd([100,3200]) + [100,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.001755656787152645
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.002547692323273126
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001354577406511764
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.002948771703913812
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001354577406511764
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.002948771703913812
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.0004584565433006567
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.003844892567124832
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001354577406511764
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.002948771703913811
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 4.242839604695877e-18
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.004303349110425491
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.0004584565433006563
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.003844892567124832
 # ---------------------------------------------
 
 # ###########################
@@ -885,21 +1099,25 @@ for Observations in Sizes:
 # Matrix of shape: [3200, 200]
 # Target PCA:      [3200, 10]
 
-# Hilbert matrix creation took: 0.0195 seconds
-# pca_cov took:     0.0108 seconds | [200,3200]*[3200,200] + symeig([200,200])
-# pca_svd_tXU took: 0.0787 seconds | svd([200,3200]) + [3200,200]*[200,10]
-# pca_svd_US took:  0.0350 seconds | svd([3200,200]) + [3200,10]*[10]
-# pca_svd_XV took:  0.0343 seconds | svd([3200,200]) + [3200,200]*[200,10]
+# Hilbert matrix creation took: 0.0273 seconds
+# pca_cov        took: 0.0339 seconds | [200,3200]*[3200,200] + symeig([200,200])
+# pca_svd_tXU    took: 0.0670 seconds | svd([200,3200]) + [3200,200]*[200,10]
+# pca_svd_XV     took: 0.0368 seconds | svd([3200,200]) + [3200,200]*[200,10]
+# pca_svd_US     took: 0.0359 seconds | svd([3200,200]) + [3200,10]*[10]
+# pca_svd_tX_VhS took: 0.0679 seconds | svd([200,3200]) + [200,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.002140043044663197
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.002852344617587259
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001609718988204654
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.003382668674045825
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001609718988204654
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.003382668674045825
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.000629127792539151
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.004363259869711024
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001609718988204654
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.003382668674045825
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 4.095806059385109e-18
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.004992387662250204
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.0006291277925391512
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.004363259869711023
 # ---------------------------------------------
 
 # ###########################
@@ -908,21 +1126,25 @@ for Observations in Sizes:
 # Matrix of shape: [3200, 400]
 # Target PCA:      [3200, 10]
 
-# Hilbert matrix creation took: 0.0196 seconds
-# pca_cov took:     0.0274 seconds | [400,3200]*[3200,400] + symeig([400,400])
-# pca_svd_tXU took: 0.1598 seconds | svd([400,3200]) + [3200,400]*[400,10]
-# pca_svd_US took:  0.0936 seconds | svd([3200,400]) + [3200,10]*[10]
-# pca_svd_XV took:  0.0830 seconds | svd([3200,400]) + [3200,400]*[400,10]
+# Hilbert matrix creation took: 0.0329 seconds
+# pca_cov        took: 0.0620 seconds | [400,3200]*[3200,400] + symeig([400,400])
+# pca_svd_tXU    took: 0.1513 seconds | svd([400,3200]) + [3200,400]*[400,10]
+# pca_svd_XV     took: 0.0875 seconds | svd([3200,400]) + [3200,400]*[400,10]
+# pca_svd_US     took: 0.0794 seconds | svd([3200,400]) + [3200,10]*[10]
+# pca_svd_tX_VhS took: 0.1543 seconds | svd([400,3200]) + [400,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.0024785049408249
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.00310201526963116
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.001833849422542441
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.003746670787913528
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.001833849422542441
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.003746670787913528
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.0007949433126909562
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.004785576897764567
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.00183384942254244
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.003746670787913525
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 5.468623858156532e-18
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.00558052021045553
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.0007949433126909548
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.004785576897764566
 # ---------------------------------------------
 
 # ###########################
@@ -931,21 +1153,25 @@ for Observations in Sizes:
 # Matrix of shape: [3200, 800]
 # Target PCA:      [3200, 10]
 
-# Hilbert matrix creation took: 0.0260 seconds
-# pca_cov took:     0.0857 seconds | [800,3200]*[3200,800] + symeig([800,800])
-# pca_svd_tXU took: 0.3944 seconds | svd([800,3200]) + [3200,800]*[800,10]
-# pca_svd_US took:  0.2348 seconds | svd([3200,800]) + [3200,10]*[10]
-# pca_svd_XV took:  0.2369 seconds | svd([3200,800]) + [3200,800]*[800,10]
+# Hilbert matrix creation took: 0.0432 seconds
+# pca_cov        took: 0.1803 seconds | [800,3200]*[3200,800] + symeig([800,800])
+# pca_svd_tXU    took: 0.3956 seconds | svd([800,3200]) + [3200,800]*[800,10]
+# pca_svd_XV     took: 0.2740 seconds | svd([3200,800]) + [3200,800]*[800,10]
+# pca_svd_US     took: 0.2271 seconds | svd([3200,800]) + [3200,10]*[10]
+# pca_svd_tX_VhS took: 0.4726 seconds | svd([800,3200]) + [800,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.002819157373369499
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.003191437907843597
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.00189604420097131
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.004114551080241789
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.00189604420097131
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.004114551080241789
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.0009301233088147818
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.005080471972398136
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.00189604420097131
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.004114551080241788
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 6.322924166703976e-18
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.006010595281212887
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.0009301233088147805
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.005080471972398136
 # ---------------------------------------------
 
 # ###########################
@@ -954,21 +1180,25 @@ for Observations in Sizes:
 # Matrix of shape: [3200, 1600]
 # Target PCA:      [3200, 10]
 
-# Hilbert matrix creation took: 0.0248 seconds
-# pca_cov took:     0.2430 seconds | [1600,3200]*[3200,1600] + symeig([1600,1600])
-# pca_svd_tXU took: 1.0530 seconds | svd([1600,3200]) + [3200,1600]*[1600,10]
-# pca_svd_US took:  0.8305 seconds | svd([3200,1600]) + [3200,10]*[10]
-# pca_svd_XV took:  0.7752 seconds | svd([3200,1600]) + [3200,1600]*[1600,10]
+# Hilbert matrix creation took: 0.0394 seconds
+# pca_cov        took: 0.2701 seconds | [1600,3200]*[3200,1600] + symeig([1600,1600])
+# pca_svd_tXU    took: 0.9893 seconds | svd([1600,3200]) + [3200,1600]*[1600,10]
+# pca_svd_XV     took: 0.7409 seconds | svd([3200,1600]) + [3200,1600]*[1600,10]
+# pca_svd_US     took: 0.7341 seconds | svd([3200,1600]) + [3200,10]*[10]
+# pca_svd_tX_VhS took: 1.0013 seconds | svd([1600,3200]) + [1600,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.002985712544431292
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.003281119841686649
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.00196786865454476
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.004298963731573183
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.00196786865454476
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.004298963731573183
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 0.00102855955585176
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.005238272830266028
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.001967868654544759
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.004298963731573184
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 6.535510861681479e-18
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.006266832386117771
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 0.001028559555851758
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.005238272830266031
 # ---------------------------------------------
 
 # ###########################
@@ -977,19 +1207,23 @@ for Observations in Sizes:
 # Matrix of shape: [3200, 3200]
 # Target PCA:      [3200, 10]
 
-# Hilbert matrix creation took: 0.0248 seconds
-# pca_cov took:     0.9378 seconds | [3200,3200]*[3200,3200] + symeig([3200,3200])
-# pca_svd_tXU took: 3.8584 seconds | svd([3200,3200]) + [3200,3200]*[3200,10]
-# pca_svd_US took:  5.4301 seconds | svd([3200,3200]) + [3200,10]*[10]
-# pca_svd_XV took:  4.7299 seconds | svd([3200,3200]) + [3200,3200]*[3200,10]
+# Hilbert matrix creation took: 0.0276 seconds
+# pca_cov        took: 0.8528 seconds | [3200,3200]*[3200,3200] + symeig([3200,3200])
+# pca_svd_tXU    took: 3.7662 seconds | svd([3200,3200]) + [3200,3200]*[3200,10]
+# pca_svd_XV     took: 3.7247 seconds | svd([3200,3200]) + [3200,3200]*[3200,10]
+# pca_svd_US     took: 3.4662 seconds | svd([3200,3200]) + [3200,10]*[10]
+# pca_svd_tX_VhS took: 3.8202 seconds | svd([3200,3200]) + [3200,10]*[10]
 
 # Checking that we have the same results.
-# mean_absolute_error(pca_cov, pca_svd_tXU) = 0.0009401260244585951
-# mean_absolute_error(pca_cov, -pca_svd_tXU) = 0.005445552585551723
+# mean_absolute_error(pca_svd_US, pca_cov)  = 0.0009401260244585959
+# mean_absolute_error(pca_svd_US, -pca_cov) = 0.005445552585551724
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_US) = 0.0009401260244585959
-# mean_absolute_error(pca_cov, -pca_svd_US) = 0.005445552585551724
+# mean_absolute_error(pca_svd_US, pca_svd_tXU)  = 1.293432812938107e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_tXU) = 0.00638567861001017
 # ---------------------------------------------
-# mean_absolute_error(pca_cov, pca_svd_XV) = 0.0009401260244585959
-# mean_absolute_error(pca_cov, -pca_svd_XV) = 0.005445552585551725
+# mean_absolute_error(pca_svd_US, pca_svd_XV)  = 1.260948448786824e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_XV) = 0.00638567861001017
+# ---------------------------------------------
+# mean_absolute_error(pca_svd_US, pca_svd_tX_VhS)  = 1.267763932055683e-17
+# mean_absolute_error(pca_svd_US, -pca_svd_tX_VhS) = 0.006385678610010167
 # ---------------------------------------------

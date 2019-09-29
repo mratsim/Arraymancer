@@ -16,11 +16,13 @@ template `^^`(s, i: untyped): untyped =
 # Full decompositions
 # -------------------------------------------
 
-proc symeig*[T: SomeFloat](a: Tensor[T], eigenvectors = false): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
+proc symeig*[T: SomeFloat](a: Tensor[T], return_eigenvectors: static bool = false, uplo: static char = 'U'): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
   ## Compute the eigenvalues and eigen vectors of a symmetric matrix
   ## Input:
   ##   - A symmetric matrix of shape [n x n]
   ##   - A boolean: true if you also want the eigenvectors, false otherwise
+  ##   - A char U for upper or L for lower
+  ##     This allows you to only fill half of the input symmetric matrix
   ## Returns:
   ##   - A tuple with:
   ##     - The eigenvalues sorted from lowest to highest. (shape [n])
@@ -30,14 +32,19 @@ proc symeig*[T: SomeFloat](a: Tensor[T], eigenvectors = false): tuple[eigenval, 
   ##
   ## Implementation is done through the Multiple Relatively Robust Representations
 
-  syevr(a, eigenvectors, 0, a.shape[0] - 1, result)
+  var scratchspace: seq[T]
+  var a = a.clone(colMajor)
+  syevr(a, uplo, return_eigenvectors, 0, a.shape[0] - 1, result.eigenval, result.eigenvec, scratchspace)
 
-proc symeig*[T: SomeFloat](a: Tensor[T], eigenvectors = false,
+proc symeig*[T: SomeFloat](a: Tensor[T], return_eigenvectors: static bool = false,
+  uplo: static char = 'U',
   slice: HSlice[int or BackwardsIndex, int or BackwardsIndex]): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
   ## Compute the eigenvalues and eigen vectors of a symmetric matrix
   ## Input:
   ##   - A symmetric matrix of shape [n, n]
   ##   - A boolean: true if you also want the eigenvectors, false otherwise
+  ##   - A char U for upper or L for lower
+  ##     This allows you to only fill half of the input symmetric matrix
   ##   - A slice of the rankings of eigenvalues you request. For example requesting
   ##     eigenvalues 2 and 3 would be done with 1..2.
   ## Returns:
@@ -49,7 +56,9 @@ proc symeig*[T: SomeFloat](a: Tensor[T], eigenvectors = false,
   ##
   ## Implementation is done through the Multiple Relatively Robust Representations
 
-  syevr(a, eigenvectors, a ^^ slice.a, a ^^ slice.b, result)
+  var scratchspace: seq[T]
+  var a = a.clone(colMajor)
+  syevr(a, uplo, return_eigenvectors, a ^^ slice.a, a ^^ slice.b, result.eigenval, result.eigenvec, scratchspace)
 
 proc qr*[T: SomeFloat](a: Tensor[T]): tuple[Q, R: Tensor[T]] =
   ## Compute the QR decomposition of an input matrix ``a``

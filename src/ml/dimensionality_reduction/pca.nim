@@ -23,7 +23,7 @@ proc pca*[T: SomeFloat](x: Tensor[T], nb_components = 2): tuple[results: Tensor[
   var cov_matrix = newTensorUninit[T]([x.shape[1], x.shape[1]])
   gemm(1.T / T(x.shape[0]-1), mean_centered.transpose, mean_centered, 0, cov_matrix)
 
-  let (_, eigvecs) = cov_matrix.symeig(true, ^nb_components .. ^1) # Note: eigvals/vecs are returned in ascending order
+  let (_, eigvecs) = cov_matrix.symeig(true, 'U', ^nb_components .. ^1) # Note: eigvals/vecs are returned in ascending order
 
   # [Nb_obs, Nb_feats] * [Nb_feats, Nb_components], don't forget to reorder component in descending order
   result.components = eigvecs[_, ^1..0|-1]

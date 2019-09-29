@@ -30,36 +30,47 @@ overload(syevr, dsyevr)
 
 # TODO: refactor - in-place wrapper if LAPACK is in-place
 #                - expose scratchspace for reuse
-proc syevr*[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
-  low_idx: int, high_idx: int, result: var tuple[eigenval, eigenvec: Tensor[T]]) =
+proc syevr*[T: SomeFloat](a: var Tensor[T], uplo: static char, return_eigenvectors: static bool,
+  low_idx: int, high_idx: int, eigenval, eigenvec: var Tensor[T], scratchspace: var seq[T]) =
   ## Wrapper for LAPACK syevr routine (Symmetric Recursive Eigenvalue Decomposition)
 
   assert a.rank == 2, "Input is not a matrix"
   assert a.shape[0] == a.shape[1], "Input should be a symmetric matrix"
-  # TODO, support "symmetric matrices" with only the upper or lower part filled.
-  # (Obviously, upper in Fortran is lower in C ...)
 
-  let a = a.clone(colMajor) # Lapack overwrites the input. TODO move optimization
+  static:
+    assert uplo in {'L', 'U'}
+
+  var uplo_layout: cstring
+  if a.is_F_contiguous:
+    uplo_layout = static(cstring($uplo))
+  elif a.is_C_contiguous:
+    # For row major layouts we take the opposite triangle from specified
+    when uplo == 'L':
+      uplo_layout = static(cstring"U")
+    else:
+      uplo_layout = static(cstring"L")
+  else:
+    raise newException(ValueError, "Input of syevr is not contiguous")
+
+  let n = a.shape[0].int32
+  var m: int32
 
   var
     jobz: cstring
     interval: cstring
-    n, lda: int32 = a.shape[0].int32
-    uplo: cstring = "U"
     vl, vu: T          # unused: min and max eigenvalue returned
     il, iu: int32      # ranking of the lowest and highest eigenvalues returned
     abstol: T = -1     # Use default. otherwise need to call LAPACK routine dlamch('S') or 2*dlamch('S')
-    m, ldz = n
     lwork: int32 = -1  # dimension of a workspace array
-    work: seq[T]
-    wkopt: T
+    work_size: T
     liwork: int32 = -1 # dimension of a second workspace array
     iwork: seq[cint]
-    iwkopt: int32
+    iwork_size: int32
     info: int32
 
   if low_idx == 0 and high_idx == a.shape[0] - 1:
     interval = "A"
+    m = n
   else:
     interval = "I"
     il = int32 low_idx + 1 # Fortran starts indexing with 1
@@ -70,42 +81,54 @@ proc syevr*[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
   var
     isuppz: seq[cint] # unused
     isuppz_ptr: ptr int32
-    z: ptr T
 
-  result.eigenval = newTensorUninit[T](a.shape[0]) # Even if less eigenval are selected Lapack requires this much workspace
+  eigenval = newTensorUninit[T](a.shape[0]) # Even if less eigenval are selected Lapack requires this much workspace
 
-  if eigenvectors:
+  if return_eigenvectors:
     jobz = "V"
-    result.eigenvec.newMatrixUninitColMajor(ldz, m)
-    z = result.eigenvec.get_data_ptr
+    eigenvec.newMatrixUninitColMajor(n, m) # ldz, m
     if interval == "A": # or (il == 1 and iu == n): -> Already checked before
       isuppz = newSeqUninit[int32](2*m)
       isuppz_ptr = isuppz[0].addr
   else:
     jobz = "N"
 
-  let w = result.eigenval.get_data_ptr
-
   # Querying workspaces sizes
-  syevr(jobz, interval, uplo, n.addr, a.get_data_ptr, lda.addr, vl.addr, vu.addr, il.addr, iu.addr,
-        abstol.addr, m.addr, w, z, ldz.addr, isuppz_ptr, wkopt.addr, lwork.addr, iwkopt.addr, liwork.addr, info.addr)
+  syevr(jobz, interval, uplo_layout,
+        n.unsafeAddr,
+        a.get_data_ptr, n.unsafeAddr, # lda
+        vl.addr, vu.addr, il.addr, iu.addr,
+        abstol.addr, m.addr,
+        eigenval.get_data_ptr,
+        eigenvec.get_data_ptr, n.unsafeAddr, # ldz
+        isuppz_ptr,
+        work_size.addr, lwork.addr,
+        iwork_size.addr, liwork.addr, info.addr)
 
   # Allocating workspace
-  lwork = wkopt.int32
-  work = newSeqUninit[T](lwork)
-  liwork = iwkopt.int32
+  lwork = work_size.int32
+  scratchspace.setLen(lwork)
+  liwork = iwork_size.int32
   iwork = newSeqUninit[int32](liwork)
 
   # Decompose matrix
-  syevr(jobz, interval, uplo, n.addr, a.get_data_ptr, lda.addr, vl.addr, vu.addr, il.addr, iu.addr,
-        abstol.addr, m.addr, w, z, ldz.addr, isuppz_ptr, work[0].addr, lwork.addr, iwork[0].addr, liwork.addr, info.addr)
+  syevr(jobz, interval, uplo_layout,
+        n.unsafeAddr,
+        a.get_data_ptr, n.unsafeAddr,
+        vl.addr, vu.addr, il.addr, iu.addr,
+        abstol.addr, m.addr,
+        eigenval.get_data_ptr,
+        eigenvec.get_data_ptr, n.unsafeAddr,
+        isuppz_ptr,
+        scratchspace[0].addr, lwork.addr,
+        iwork[0].addr, liwork.addr, info.addr)
 
   # Keep only the selected eigenvals
-  result.eigenval = result.eigenval[0 ..< m.int]
+  eigenval = eigenval[0 ..< m.int]
 
   when compileOption("boundChecks"):
-    if eigenvectors:
-      assert m.int == result.eigenvec.shape[1]
+    if return_eigenvectors:
+      assert m.int == eigenvec.shape[1]
 
   if unlikely(info > 0):
     # TODO, this should not be an exception, not converging is something that can happen and should

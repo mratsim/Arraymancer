@@ -118,7 +118,7 @@ suite "Linear algebra":
                           [-0.0036, -0.4467,  0.4553,  0.6204, -0.4564],
                           [-0.8041,  0.4480,  0.1725,  0.3108,  0.1622]].toTensor
 
-      let (val, vec) = symeig(a, true)
+      let (val, vec) = symeig(a, true, 'U')
 
       check: mean_absolute_error(val, expected_val) < 1e-4
 
@@ -137,7 +137,7 @@ suite "Linear algebra":
       let expected_vec = [[-0.735178656'f32, -0.677873399],
                           [ 0.677873399'f32, -0.735178656]].toTensor
 
-      let (val, vec) = symeig(a, true)
+      let (val, vec) = symeig(a, true, 'U')
 
       check: mean_absolute_error(val, expected_val) < 1e-7
 
@@ -161,7 +161,7 @@ suite "Linear algebra":
                           [-0.29, -0.59,  0.34,  0.31,  0.60],
                           [-0.19,  0.63,  0.44, -0.38,  0.48]].toTensor
 
-      let (val, vec) = symeig(a, true)
+      let (val, vec) = symeig(a, true, 'U')
 
       check: mean_absolute_error(val, expected_val) < 1e-2
 
@@ -185,7 +185,7 @@ suite "Linear algebra":
                           [-0.18,  0.19,  0.31],
                           [ 0.07,  0.69, -0.13]].toTensor
 
-      let (val, vec) = symeig(a, true, 0..2)
+      let (val, vec) = symeig(a, true, 'U', 0..2)
 
       check: mean_absolute_error(val, selected_val) < 1e-1
 
@@ -201,7 +201,7 @@ suite "Linear algebra":
                 [-1.06,  1.06,  0.11,  5.86, -0.98],
                 [ 0.46, -0.48,  1.10, -0.98,  3.54]].toTensor
 
-      discard symeig(a, true, 0..2)
+      discard symeig(a, true, 'U', 0..2)
       check: a == b
 
   test "QR Decomposition":

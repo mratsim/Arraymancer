@@ -1,6 +1,15 @@
 Arraymancer v0.x.x
 =====================================================
 
+Changes:
+  - The ``symeig`` proc to compute eigenvectors of a symmetric matrix
+    now accepts an "uplo" char parameter. This allows to fill only the Upper or Lower
+    part of the matrix, the other half is not used in computation.
+
+Breaking
+  - In ``symeig``, the ``eigenvectors`` argument is now called ``return_eigenvectors``.
+  - In ``symeig`` with slice, the new ``uplo`` precedes the slice argument
+
 Deprecation:
   - The syntax gemm(A, B, C) is now deprecated.
     Use explicit "gemm(1.0, A, B, 0.0, C)" instead.

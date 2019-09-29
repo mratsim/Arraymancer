@@ -114,6 +114,8 @@ proc ormqr*[T: SomeFloat](C: var Tensor[T], Q: Tensor[T], tau: openarray[T], sid
   assert C.is_F_contiguous()
   assert Q.rank == 2
   assert Q.is_F_contiguous()
+  static:
+    assert trans in {'N', 'T'}
 
   let
     m = C.shape[0].int32 # number of rows of C

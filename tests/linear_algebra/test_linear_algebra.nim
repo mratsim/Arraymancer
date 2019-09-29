@@ -398,3 +398,18 @@ suite "Linear algebra":
 
       check:
         mean_absolute_error(S, expected_S) < 1.5e-5
+
+    block: # Ensure that m > n / m < n logic is working fine
+      const
+        Observations = 4000
+        Features = 10
+        N = max(Observations, Features)
+        k = 7
+
+      let H = hilbert(N, float64)[0..<Observations, 0..<Features]
+      let (U, S, Vh) = svd_randomized(H, n_components=k, n_oversamples=5, n_power_iters=2)
+
+      let expected_S = [1.90675907e+00, 4.86476625e-01, 7.52734238e-02, 8.84829787e-03, 7.86824889e-04, 3.71028924e-05, 1.74631562e-06].toTensor()
+
+      check:
+        mean_absolute_error(S, expected_S) < 1.5e-5

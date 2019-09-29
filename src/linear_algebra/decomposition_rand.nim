@@ -221,32 +221,78 @@ proc svd_randomized*[T](
   var Y, Z: Tensor[T]
 
   const L = k + n_oversamples                                    # Slight oversampling
-  Y.newMatrixUninitColMajor(m, L)                                # Sketch Matrix ~ range samples
-  Z.newMatrixUninitColMajor(n, L)
-  tau.setLen(min(m, L))
 
-  # QB decomposition ----------------------------------------------------------------------------------------
-  var Q = randomNormalTensor[T]([n, L])                          # Sampling matrix Ω of shape [N, L]
-  gemm(1.T, A, Q, 0.T, Y)                                        # Y = A*Q
-  # -- Power Iterations (Optional) --------------------------------------------------------------------------
-  for _ in 0 ..< n_power_iters:                                  # perform optional subspace iterations
-    lu_permuted_inplace(Y)                                       # Y = lu(Y)
-    gemm(1.T, A.transpose(), Y, 0.T, Z)                          # Z = A.T * Q
-    lu_permuted_inplace(Z)                                       # Z = lu(Z)
-    gemm(1.T, A, Z, 0.T, Y)                                      # Y = A * Q
-  # -- Power Iterations -------------------------------------------------------------------------------------
-  Q = Y
-  geqrf(Q, tau, scratchspace)                                    # Y = qr(Q) - orthonormal basis for samples
-  var B = A.clone(colMajor)
-  ormqr(B, Q, tau, side = 'L', trans = 'T', scratchspace)        # Q.T * A - project to low-dimensional space
-  # QB decomposition ----------------------------------------------------------------------------------------
-  gesdd(B, result.U, result.S, result.Vh, scratchspace)          # svd(B)
-  ormqr(result.U, Q, tau, side = 'L', trans = 'N', scratchspace) # Q * U - Recover left singular vectors
+  # SVD directly if nb_components within number of 25% of input dimension
+  if L.float32 * 1.25 >= m.float32 or L.float32 * 1.25 >= n.float32:
+    var B = A.clone(colMajor)
+    gesdd(B, result.U, result.S, result.Vh, scratchspace)
+    result.U = result.U[_, 0 ..< k]
+    result.S = result.S[0 ..< k]
+    result.Vh = result.Vh[0 ..< k, _]
+    return
 
-  # Extract k components from oversampled L
-  result.U = result.U[_, 0 ..< k]
-  result.S = result.S[0 ..< k]
-  result.Vh = result.Vh[0 ..< k, _]
+  # We want to minimize the M or N dimension used in computation
+  # by transpose
+  # There is a 2x-3x speed gap compared to not transposing appropriately
+  # -----------------------------------------------------------------------------------------------------------
+  if m < n:
+    Y.newMatrixUninitColMajor(m, L)                                # Sketch Matrix ~ range samples
+    Z.newMatrixUninitColMajor(n, L)
+    tau.setLen(min(m, L))
+
+    # QB decomposition ----------------------------------------------------------------------------------------
+    var Q = randomTensor[T]([n, L], 1.T)                           # Sampling matrix Ω of shape [N, L]
+    gemm(1.T, A, Q, 0.T, Y)                                        # Y = A*Q                  - [M, L]
+    # -- Power Iterations (Optional) --------------------------------------------------------------------------
+    for _ in 0 ..< n_power_iters:                                  # perform optional subspace iterations
+      lu_permuted_inplace(Y)                                       # Y = lu(Y)
+      gemm(1.T, A.transpose(), Y, 0.T, Z)                          # Z = A.T * Y              - [N, L]
+      lu_permuted_inplace(Z)                                       # Z = lu(Z)
+      gemm(1.T, A, Z, 0.T, Y)                                      # Y = A * Z                - [M, L]
+    # -- Power Iterations -------------------------------------------------------------------------------------
+    Q = Y                                                          #                          - [M, L]
+    geqrf(Q, tau, scratchspace)                                    # Q = qr(Y) - orthonormal basis for samples
+    var B = A.clone(colMajor)                                      #           - project to low-dimensional space
+    ormqr(B, Q, tau, side = 'L', trans = 'T', scratchspace)        # B = Q.T * A              - [L,M]*[M,N] -> [L, N]
+    # QB decomposition ----------------------------------------------------------------------------------------
+    gesdd(B, result.U, result.S, result.Vh, scratchspace)          # svd(B)
+    ormqr(result.U, Q, tau, side = 'L', trans = 'N', scratchspace) # U = Q * Û - Recover left singular vectors
+
+    # Extract k components from oversampled L
+    result.U = result.U[_, 0 ..< k]
+    result.S = result.S[0 ..< k]
+    result.Vh = result.Vh[0 ..< k, _]
+    return
+
+  # -----------------------------------------------------------------------------------------------------------
+  else:
+    Y.newMatrixUninitColMajor(n, L)                                # Sketch Matrix ~ range samples
+    Z.newMatrixUninitColMajor(m, L)
+    tau.setLen(min(L, n))
+
+    # QB decomposition ----------------------------------------------------------------------------------------
+    var Q = randomTensor[T]([m, L], 1.T)                           # Sampling matrix Ω  - [M, L]
+    gemm(1.T, Q.transpose(), A, 0.T, Y)                            # Y = Q.T * A        - [N, L]
+    # -- Power Iterations (Optional) --------------------------------------------------------------------------
+    for _ in 0 ..< n_power_iters:                                  # perform optional subspace iterations
+      lu_permuted_inplace(Y)                                       # Y = lu(Y)
+      gemm(1.T, A, Y, 0.T, Z)                                      # Z = A.T * Y        - [M,N]*[N,L] -> [M, L]
+      lu_permuted_inplace(Z)                                       # Z = lu(Z)
+      gemm(1.T, A.transpose(), Z, 0.T, Y)                          # Y = A * Z          - [N,M]*[M,L] -> [N, L]
+    # -- Power Iterations -------------------------------------------------------------------------------------
+    Q = Y                                                          #                    - [N, L]
+    geqrf(Q, tau, scratchspace)                                    # Q = qr(Y)  - orthonormal basis for samples
+    var B = A.clone(colMajor)                                      #            - project to low-dimensional space
+    ormqr(B, Q, tau, side = 'R', trans = 'N', scratchspace)        # B = A * Q          - [M,N]*[N,L] -> [M, L]
+    # QB decomposition ----------------------------------------------------------------------------------------
+    gesdd(B, result.U, result.S, result.Vh, scratchspace)          # svd(B)
+    ormqr(result.Vh, Q, tau, side='R', trans='T', scratchspace)    # Vh = V * Q.T - Recover right singular vectors
+
+    # Extract k components from oversampled L
+    result.U = result.U[_, 0 ..< k]
+    result.S = result.S[0 ..< k]
+    result.Vh = result.Vh[0 ..< k, _]
+    return
 
 # TODO: auto-rank / rank revealing SVD
 # -------------------------------------------

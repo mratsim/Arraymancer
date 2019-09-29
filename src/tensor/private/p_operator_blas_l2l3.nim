@@ -144,7 +144,6 @@ proc blasMM_C_eq_aAB_p_bC*[T: SomeFloat|Complex[float32]|Complex[float64]](
   alpha: T, a, b: Tensor[T],
   beta: T, c: var Tensor[T]) =
   # Matrix: C = alpha A matmul B + beta C
-  # If needed, we trick BLAS to get a rowMajor result
 
   let
     M = a.shape[0]

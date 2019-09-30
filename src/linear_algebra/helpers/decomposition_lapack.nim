@@ -196,7 +196,7 @@ proc gesdd*[T: SomeFloat](a: var Tensor[T], U, S, Vh: var Tensor[T], scratchspac
   ## (GEneral Singular value Decomposition by Divide & conquer)
   ##
   ## Parameters:
-  ##   - a: Input - MxN matrix to factorize
+  ##   - a: Input - MxN matrix to factorize, in column major format
   ##   - U: Output - Unitary matrix containing the left singular vectors as columns
   ##   - S: Output - Singular values sorted in decreasing order
   ##   - Vh: Output - Unitary matrix containing the right singular vectors as rows
@@ -210,6 +210,12 @@ proc gesdd*[T: SomeFloat](a: var Tensor[T], U, S, Vh: var Tensor[T], scratchspac
   ##   for real matrices, this is equivalent to V.t (transpose)
   ##
   ## ⚠️: Input must not contain NaN
+  ##
+  ## Performance note:
+  ## - Lapack, especially with the OpenBLAS backend is much more optimized
+  ##   for input [M, N] where M > N versus N < M (2x - 3x speed difference)
+  ##   Transpose accordingly.
+  ##   Matrices must be column major.
 
   # - https://software.intel.com/en-us/node/469238
   # - http://www.netlib.org/lapack/explore-html/d4/dca/group__real_g_esing_gac2cd4f1079370ac908186d77efcd5ea8.html

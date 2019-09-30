@@ -5,10 +5,27 @@ Changes:
   - The ``symeig`` proc to compute eigenvectors of a symmetric matrix
     now accepts an "uplo" char parameter. This allows to fill only the Upper or Lower
     part of the matrix, the other half is not used in computation.
+  - Added ``svd_randomized``, a fast and accurate SVD approximation via random sampling.
+    This is the standard driver for large scale SVD applications as SVD on larg matrix is very slow.
+  - ``pca`` now uses the randomized SVD instead of computing the covariance matrix.
+    It can now efficiently deal with large scale problems.
+    It now accepts a ``center``, ``n_oversamples`` and ``n_power_iters`` arguments.
+    Note that ``pca`` without centering is equivalent to a truncated SVD.
+  - ``hilbert`` has been introduced. It creates the famous ill-conditioned Hilbert matrix.
+    The matrix is suitable to stress test decompositions.
+  - The ``arange`` procedure has been introduced. It creates evenly spaced value within a specified range
+    and step
+
+Bug fixes:
+  - ``gemm`` could crash when the result was column major
 
 Breaking
   - In ``symeig``, the ``eigenvectors`` argument is now called ``return_eigenvectors``.
-  - In ``symeig`` with slice, the new ``uplo`` precedes the slice argument
+  - In ``symeig`` with slice, the new ``uplo`` precedes the slice argument.
+  - pca input "nb_components" has been renamed "n_components".
+  - pca output tuple used the names (results, components). It has been renamed to (scores, loadings).
+  - A ``pca`` overload that projected a data matrix on already existing principal_axis
+    was removed. Simply multiply the data matrix with the loadings instead.
 
 Deprecation:
   - The syntax gemm(A, B, C) is now deprecated.

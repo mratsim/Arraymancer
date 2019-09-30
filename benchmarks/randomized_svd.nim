@@ -36,45 +36,45 @@ bench(Observations = 4000, Features = 20000)
 # BLAS / Lapack linked with OpenBLAS
 #
 # $  ./benchmarks/xtime.rb ./build/rsvd
-# Hilbert matrix creation took: 0.8350 seconds
+# Hilbert matrix creation took: 0.8593 seconds
 # Matrix of shape: [20000, 4000]
 # Target SVD: [20000, 40]
-# Randomized SVD took: 2.6865 seconds
+# Randomized SVD took: 0.3049 seconds
 # U: [20000, 40]
 # S: [40]
 # Vh: [40, 4000]
 # ---------------------------------------------------------------------------------
-# Hilbert matrix creation took: 0.8305 seconds
+# Hilbert matrix creation took: 0.8405 seconds
 # Matrix of shape: [4000, 20000]
 # Target SVD: [4000, 40]
-# Randomized SVD took: 0.1258 seconds
+# Randomized SVD took: 0.1249 seconds
 # U: [4000, 40]
 # S: [40]
 # Vh: [40, 20000]
 # ---------------------------------------------------------------------------------
-# 4.64s, 4489.0Mb  -- xtime.rb
+# 2.28s, 3244.0Mb  -- xtime.rb
 
 # #################################################################################
 # i9-9980XE Overclocked at 4.1GHz, AVX 4.0GHz, AVX512 3.5GHz
 # BLAS / Lapack linked with Intel MKL
 #
 # $  ./benchmarks/xtime.rb build/rsvd
-# Hilbert matrix creation took: 0.8025 seconds
+# Hilbert matrix creation took: 0.8275 seconds
 # Matrix of shape: [20000, 4000]
 # Target SVD: [20000, 40]
-# Randomized SVD took: 0.3518 seconds
+# Randomized SVD took: 0.1577 seconds
 # U: [20000, 40]
 # S: [40]
 # Vh: [40, 4000]
 # ---------------------------------------------------------------------------------
-# Hilbert matrix creation took: 0.8174 seconds
+# Hilbert matrix creation took: 0.8195 seconds
 # Matrix of shape: [4000, 20000]
 # Target SVD: [4000, 40]
-# Randomized SVD took: 0.0981 seconds
+# Randomized SVD took: 0.0945 seconds
 # U: [4000, 40]
 # S: [40]
 # Vh: [40, 20000]
 # ---------------------------------------------------------------------------------
-# 2.23s, 4544.5Mb  -- xtime.rb
+# 2.06s, 3331.5Mb  -- xtime.rb
 
-# Mem usage with just the first SVD: 3.1GB
+# Mem usage with just the first SVD: 1870.3Mb

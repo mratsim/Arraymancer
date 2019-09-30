@@ -23,9 +23,9 @@ Breaking
   - In ``symeig``, the ``eigenvectors`` argument is now called ``return_eigenvectors``.
   - In ``symeig`` with slice, the new ``uplo`` precedes the slice argument.
   - pca input "nb_components" has been renamed "n_components".
-  - pca output tuple used the names (results, components). It has been renamed to (scores, loadings).
-  - A ``pca`` overload that projected a data matrix on already existing principal_axis
-    was removed. Simply multiply the data matrix with the loadings instead.
+  - pca output tuple used the names (results, components). It has been renamed to (projected, components).
+  - A ``pca`` overload that projected a data matrix on already existing principal axes
+    was removed. Simply multiply the mean-centered data matrix with the loadings instead.
 
 Deprecation:
   - The syntax gemm(A, B, C) is now deprecated.

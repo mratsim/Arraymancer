@@ -397,7 +397,14 @@ suite "Linear algebra":
       let expected_S = [1.90675907e+00, 4.86476625e-01, 7.52734238e-02, 8.84829787e-03, 7.86824889e-04, 3.71028924e-05, 1.74631562e-06].toTensor()
 
       check:
+        U.shape[0] == H.shape[0]
+        U.shape[1] == k
         mean_absolute_error(S, expected_S) < 1.5e-5
+        Vh.shape[0] == k
+        Vh.shape[1] == H.shape[1]
+
+      let reconstructed = (U .* S.unsqueeze(0)) * Vh
+      check: mean_absolute_error(H, reconstructed) < 1e-2
 
     block: # Ensure that m > n / m < n logic is working fine
       const
@@ -412,4 +419,11 @@ suite "Linear algebra":
       let expected_S = [1.90675907e+00, 4.86476625e-01, 7.52734238e-02, 8.84829787e-03, 7.86824889e-04, 3.71028924e-05, 1.74631562e-06].toTensor()
 
       check:
+        U.shape[0] == H.shape[0]
+        U.shape[1] == k
         mean_absolute_error(S, expected_S) < 1.5e-5
+        Vh.shape[0] == k
+        Vh.shape[1] == H.shape[1]
+
+      let reconstructed = (U .* S.unsqueeze(0)) * Vh
+      check: mean_absolute_error(H, reconstructed) < 1e-2

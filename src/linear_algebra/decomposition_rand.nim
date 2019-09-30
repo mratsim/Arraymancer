@@ -228,6 +228,7 @@ proc svd_randomized*[T](
   if L.float32 * 1.25 >= m.float32 or L.float32 * 1.25 >= n.float32:
     (result.U, result.S, result.Vh) = svd(A)
     result.U = result.U[_, 0..<k]
+    result.S = result.S[0..<k]
     result.Vh = result.Vh[0..<k, _]
     return
 

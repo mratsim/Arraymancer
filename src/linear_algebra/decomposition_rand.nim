@@ -48,9 +48,9 @@ proc lu_permuted_inplace(a: var Tensor) =
 
 proc svd_randomized*[T](
         A: Tensor[T],
-        n_components: static int = 2,
-        n_oversamples: static int = 5,
-        n_power_iters: static int = 2
+        n_components = 2,
+        n_oversamples = 5,
+        n_power_iters = 2
         # TODO: choose power iteration normalizer (QR, LU, none)
         # TODO: choose sample init between gaussian, uniform and Rademacher
         # TODO: seed and RNG overload
@@ -169,7 +169,7 @@ proc svd_randomized*[T](
   #   - rSVD recommends 2 (page 14)
   #   - RSVDPACK recommends 2 (page 22)
 
-  const k = n_components
+  let k = n_components
   let m = A.shape[0]
   let n = A.shape[1]
   assert k <= min(m, n)
@@ -220,7 +220,7 @@ proc svd_randomized*[T](
   var tau, scratchspace: seq[T]
   var Y, Z: Tensor[T]
 
-  const L = k + n_oversamples                                    # Slight oversampling
+  let L = k + n_oversamples                                    # Slight oversampling
 
   # SVD directly if nb_components within number of 25% of input dimension
   if L.float32 * 1.25 >= m.float32 or L.float32 * 1.25 >= n.float32:

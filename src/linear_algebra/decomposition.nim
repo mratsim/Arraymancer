@@ -121,12 +121,12 @@ proc lu_permuted*[T: SomeFloat](a: Tensor[T]): tuple[PL, U: Tensor[T]] =
   tril_unit_diag_mut(result.PL)
   laswp(result.PL, pivot_indices, pivot_from = -1)
 
-proc svd*[T: SomeFloat](a: Tensor[T]): tuple[U, S, Vh: Tensor[T]] =
+proc svd*[T: SomeFloat](A: Tensor[T]): tuple[U, S, Vh: Tensor[T]] =
   ## Compute the Singular Value Decomposition of an input matrix ``a``
   ## Decomposition is done through recursive divide & conquer.
   ##
   ## Input:
-  ##   - ``a``, matrix of shape [M, N]
+  ##   - ``A``, matrix of shape [M, N]
   ##
   ## Returns:
   ##   with K = min(M, N)
@@ -158,6 +158,19 @@ proc svd*[T: SomeFloat](a: Tensor[T]): tuple[U, S, Vh: Tensor[T]] =
   # - often not used (for example for PCA/randomized PCA)
   # - memory inefficient
   # thread: https://mail.python.org/pipermail/numpy-discussion/2011-January/054685.html
-  var a = a.clone(colMajor) # gesdd destroys its input
   var scratchspace: seq[T]
-  gesdd(a, result.U, result.S, result.Vh, scratchspace)
+
+  # Lapack, especially OpenBLAS is much faster
+  # on SVD for input [M,N] when M > N than when N < M
+  # Transposing accordingly.
+  if A.shape[0] >= A.shape[1]:
+    var A = A.clone(colMajor)
+    gesdd(A, result.U, result.S, result.Vh, scratchspace)
+  else:
+    # Transposed
+    var At = A.clone(rowMajor).transpose() # transpose is colMajor
+    var V, Ut: Tensor[T]
+    gesdd(At, V, result.S, Ut, scratchspace)
+
+    result.Vh = V.transpose()
+    result.U = Ut.transpose()

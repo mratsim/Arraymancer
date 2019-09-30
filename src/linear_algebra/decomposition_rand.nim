@@ -7,6 +7,8 @@ import
   ../private/sequninit,
   ../tensor/tensor
 
+from ./decomposition import svd
+
 # LU Factorization - private implementations
 # -------------------------------------------
 
@@ -224,11 +226,9 @@ proc svd_randomized*[T](
 
   # SVD directly if nb_components within number of 25% of input dimension
   if L.float32 * 1.25 >= m.float32 or L.float32 * 1.25 >= n.float32:
-    var B = A.clone(colMajor)
-    gesdd(B, result.U, result.S, result.Vh, scratchspace)
-    result.U = result.U[_, 0 ..< k]
-    result.S = result.S[0 ..< k]
-    result.Vh = result.Vh[0 ..< k, _]
+    (result.U, result.S, result.Vh) = svd(A)
+    result.U = result.U[_, 0..<k]
+    result.Vh = result.Vh[0..<k, _]
     return
 
   # We want to minimize the M or N dimension used in computation

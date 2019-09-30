@@ -13,11 +13,14 @@ proc pca*[T: SomeFloat](
       ): tuple[scores: Tensor[T], loadings: Tensor[T]] {.noInit.} =
   ## Principal Component Analysis (PCA)
   ##
-  ## Project the input data ``x`` into a new coordinate system
-  ## where axis are in descending order of explained variance of the original ``x`` data
+  ## Project the input data ``X`` of shape [Observations, Features] into a new coordinate system
+  ## where axis are in descending order of explained variance of the original ``X`` data
   ##
   ## Projection is called ``scores`` and the project values are linearly uncorrelated.
-  ## The rotation matrix ``loadings`` can be used to project new observations onto the same base.
+  ## The rotation matrix ``loadings`` can be used to project new observations onto the same base:
+  ##   X' * loadings, with X' of shape [Observations', Features]
+  ## Its transposed can be use to reconstruct the original X:
+  ##   X ~= scores * loadings.transpose()
   ##
   ## PCA requires:
   ##   - mean-centered features. This procedure does the centering by default.

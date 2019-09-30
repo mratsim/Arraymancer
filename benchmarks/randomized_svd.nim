@@ -36,45 +36,45 @@ bench(Observations = 4000, Features = 20000)
 # BLAS / Lapack linked with OpenBLAS
 #
 # $  ./benchmarks/xtime.rb ./build/rsvd
-# Hilbert matrix creation took: 0.8458 seconds
+# Hilbert matrix creation took: 0.8350 seconds
 # Matrix of shape: [20000, 4000]
 # Target SVD: [20000, 40]
-# Randomized SVD took: 2.7272 seconds
+# Randomized SVD took: 2.6865 seconds
 # U: [20000, 40]
 # S: [40]
 # Vh: [40, 4000]
 # ---------------------------------------------------------------------------------
-# Hilbert matrix creation took: 0.8386 seconds
+# Hilbert matrix creation took: 0.8305 seconds
 # Matrix of shape: [4000, 20000]
 # Target SVD: [4000, 40]
-# Randomized SVD took: 0.1279 seconds
+# Randomized SVD took: 0.1258 seconds
 # U: [4000, 40]
 # S: [40]
-# Vh: [40, 45]
+# Vh: [40, 20000]
 # ---------------------------------------------------------------------------------
-# 4.68s, 4567.4Mb  -- xtime.rb
+# 4.64s, 4489.0Mb  -- xtime.rb
 
 # #################################################################################
 # i9-9980XE Overclocked at 4.1GHz, AVX 4.0GHz, AVX512 3.5GHz
 # BLAS / Lapack linked with Intel MKL
 #
 # $  ./benchmarks/xtime.rb build/rsvd
-# Hilbert matrix creation took: 0.8093 seconds
+# Hilbert matrix creation took: 0.8025 seconds
 # Matrix of shape: [20000, 4000]
 # Target SVD: [20000, 40]
-# Randomized SVD took: 0.3683 seconds
+# Randomized SVD took: 0.3518 seconds
 # U: [20000, 40]
 # S: [40]
 # Vh: [40, 4000]
 # ---------------------------------------------------------------------------------
-# Hilbert matrix creation took: 0.8181 seconds
+# Hilbert matrix creation took: 0.8174 seconds
 # Matrix of shape: [4000, 20000]
 # Target SVD: [4000, 40]
-# Randomized SVD took: 0.1190 seconds
+# Randomized SVD took: 0.0981 seconds
 # U: [4000, 40]
 # S: [40]
-# Vh: [40, 45]
+# Vh: [40, 20000]
 # ---------------------------------------------------------------------------------
-# 2.26s, 4593.1Mb  -- xtime.rb
+# 2.23s, 4544.5Mb  -- xtime.rb
 
 # Mem usage with just the first SVD: 3.1GB

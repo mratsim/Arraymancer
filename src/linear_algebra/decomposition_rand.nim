@@ -231,10 +231,11 @@ proc svd_randomized*[T](
     result.Vh = result.Vh[0..<k, _]
     return
 
-  # We want to minimize the M or N dimension used in computation
-  # by transpose
+  # We want to minimize the M or N dimension used in computation by transposing
   # There is a 2x-3x speed gap compared to not transposing appropriately
   # -----------------------------------------------------------------------------------------------------------
+  # Ensure that A is contiguous
+  let A = A.asContiguous(rowMajor, force=false)
   if m >= n:
     Y.newMatrixUninitColMajor(m, L)                                # Sketch Matrix ~ range samples
     Z.newMatrixUninitColMajor(n, L)

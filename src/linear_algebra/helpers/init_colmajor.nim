@@ -10,3 +10,5 @@ import
 func newMatrixUninitColMajor*[T](M: var Tensor[T], rows, cols: int) {.noInit, inline.} =
   tensorCpu(rows, cols, M, colMajor)
   M.storage.Fdata = newSeqUninit[T](rows*cols)
+
+export tensorCpu

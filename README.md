@@ -24,13 +24,15 @@ Reminder of supported compilation flags:
 - `-d:release`: Nim release mode (no stacktraces and debugging information)
 - `-d:danger`: No runtime checks like array bound checking
 - `-d:openmp`: Multithreaded compilation
-- `-d:blas=mkl`: Use MKL, implies `openmp`
-- `-d:blas=openblas`: Use OpenBLAS
+- `-d:mkl`: Use MKL, implies `openmp`
+- `-d:openblas`: Use OpenBLAS
 - by default Arraymancer will try to use your default `blas.so/blas.dll`
   Archlinux users may have to specify `-d:blas=cblas`.
   See [nimblas](https://github.com/unicredit/nimblas) for further configuration.
 - `-d:cuda`: Build with Cuda support
 - `-d:cudnn`: Build with CuDNN support, implies `cuda`.
+- You might want to tune library paths in [nim.cfg] after installation for OpenBLAS, MKL and Cuda compilation.
+  The current defaults should work on Mac and Linux.
 
 ## Show me some code
 

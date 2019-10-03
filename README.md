@@ -31,7 +31,7 @@ Reminder of supported compilation flags:
   See [nimblas](https://github.com/unicredit/nimblas) for further configuration.
 - `-d:cuda`: Build with Cuda support
 - `-d:cudnn`: Build with CuDNN support, implies `cuda`.
-- You might want to tune library paths in [](nim.cfg) after installation for OpenBLAS, MKL and Cuda compilation.
+- You might want to tune library paths in [nim.cfg](nim.cfg) after installation for OpenBLAS, MKL and Cuda compilation.
   The current defaults should work on Mac and Linux.
 
 ## Show me some code

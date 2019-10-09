@@ -163,4 +163,4 @@ proc `.*=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], v
 
 proc `./=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], val: T) =
   ## Tensor in-place division with a broadcasted scalar.
-  t.apply_inline(x - val)
+  t.apply_inline(x / val)

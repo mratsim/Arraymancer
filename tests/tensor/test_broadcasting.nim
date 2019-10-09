@@ -118,6 +118,15 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                         [10.0, 4, 2],
                         [15.0, 6, 3]].toTensor.astype(Complex[float64])
 
+    block: # Float division
+      var a = [100.0, 10, 20, 30].toTensor().reshape(4,1)
+      a ./= 10.0
+
+      check: a == [[10.0],
+                   [1.0],
+                   [2.0],
+                   [3.0]].toTensor
+
     block: # Float Exponentiation
       let a = [1.0, 10, 20, 30].toTensor().reshape(4,1)
 

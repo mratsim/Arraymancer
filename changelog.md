@@ -1,4 +1,57 @@
-# Arraymancer v0.5.0 Dec. 23 2018 "Sign of the Unicorn"
+Arraymancer v0.x.x
+=====================================================
+
+Changes:
+  - The ``symeig`` proc to compute eigenvectors of a symmetric matrix
+    now accepts an "uplo" char parameter. This allows to fill only the Upper or Lower
+    part of the matrix, the other half is not used in computation.
+  - Added ``svd_randomized``, a fast and accurate SVD approximation via random sampling.
+    This is the standard driver for large scale SVD applications as SVD on larg matrix is very slow.
+  - ``pca`` now uses the randomized SVD instead of computing the covariance matrix.
+    It can now efficiently deal with large scale problems.
+    It now accepts a ``center``, ``n_oversamples`` and ``n_power_iters`` arguments.
+    Note that ``pca`` without centering is equivalent to a truncated SVD.
+  - ``hilbert`` has been introduced. It creates the famous ill-conditioned Hilbert matrix.
+    The matrix is suitable to stress test decompositions.
+  - The ``arange`` procedure has been introduced. It creates evenly spaced value within a specified range
+    and step
+
+Bug fixes:
+  - ``gemm`` could crash when the result was column major
+
+Breaking
+  - In ``symeig``, the ``eigenvectors`` argument is now called ``return_eigenvectors``.
+  - In ``symeig`` with slice, the new ``uplo`` precedes the slice argument.
+  - pca input "nb_components" has been renamed "n_components".
+  - pca output tuple used the names (results, components). It has been renamed to (projected, components).
+  - A ``pca`` overload that projected a data matrix on already existing principal axes
+    was removed. Simply multiply the mean-centered data matrix with the loadings instead.
+
+Deprecation:
+  - The syntax gemm(A, B, C) is now deprecated.
+    Use explicit "gemm(1.0, A, B, 0.0, C)" instead.
+    Arguably not zero-ing C could also be a reasonable default.
+
+Arraymancer v0.5.1 Jul. 19 2019
+=====================================================
+Changes affecting backward compatibility:
+  - None
+
+Changes:
+  - 0.20.x compatibility (commit 0921190)
+  - Complex support
+  - `Einsum`
+  - Naive whitespace tokenizer for NLP
+  - Preview of Laser backend for matrix multiplication without SIMD autodetection (already 5x faster on integer matrix multiplication)
+
+Fix:
+  - Fix height/width order when reading an image in tensor
+
+Thanks to @chimez for the complex support and updating for 0.20, @metasyn for the tokenizer,
+@xcokazaki for the image dimension fix and @Vindaar for the einsum implemention
+
+Arraymancer v0.5.0 Dec. 23 2018 "Sign of the Unicorn"
+=====================================================
 
 > This release is named after "Sign of the Unicorn" (1975), the third book of Roger Zelazny masterpiece "The Chronicles of Amber".
 

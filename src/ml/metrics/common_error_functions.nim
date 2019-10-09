@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import ../../tensor/tensor
+import complex except Complex64, Complex32
 
 
 # ####################################################

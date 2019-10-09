@@ -16,10 +16,12 @@ when defined(blis):
   import ../backend/blis
 
 import  ./p_checks,
-        ../fallback/blas_l3_gemm,
+        # ../fallback/legacy/blas_l3_gemm, # Replaced by laser
+        ../../laser/primitives/matrix_multiplication/gemm,
         ../fallback/naive_l2_gemv,
         ../data_structure,
         nimblas
+from complex import Complex
 
 # #################################################
 # BLAS Level 2 (Matrix-Vector)
@@ -49,7 +51,7 @@ when defined(blis):
 
 # Note the fallback for non-real "naive_gemv_fallback" is called directly
 
-proc blasMV_y_eq_aAx_p_by*[T: SomeFloat](
+proc blasMV_y_eq_aAx_p_by*[T: SomeFloat|Complex[float32]|Complex[float64]](
   alpha: T, a, x: Tensor[T],
   beta: T, y: var Tensor[T]) =
   # Matrix-Vector: y = alpha A matvecmul x + beta y
@@ -70,11 +72,19 @@ proc blasMV_y_eq_aAx_p_by*[T: SomeFloat](
     lda =  if cont_A_is_rowMajor: N # leading dimension
             else: M
 
-  gemv( cont_A_order, noTranspose,
-        M, N,
-        alpha, cont_A.get_offset_ptr, lda,
-        x.get_offset_ptr, x.strides[0],
-        beta, y.get_offset_ptr, y.strides[0])
+  when type(alpha) is Complex:
+    gemv( cont_A_order, noTranspose,
+          M, N,
+          unsafeAddr(alpha), cont_A.get_offset_ptr, lda,
+          x.get_offset_ptr, x.strides[0],
+          unsafeAddr(beta), y.get_offset_ptr, y.strides[0])
+  else:
+    gemv( cont_A_order, noTranspose,
+          M, N,
+          alpha, cont_A.get_offset_ptr, lda,
+          x.get_offset_ptr, x.strides[0],
+          beta, y.get_offset_ptr, y.strides[0])
+
 
 
 # #################################################
@@ -108,54 +118,100 @@ proc fallbackMM_C_eq_aAB_p_bC*[T: SomeInteger](
     K = a.shape[1] # = b.shape[0]
     N = b.shape[1]
 
-  gemm_nn_fallback( M, N, K,
-                    alpha,
-                    a.data, a.offset,
-                    a.strides[0], a.strides[1],
-                    b.data, b.offset,
-                    b.strides[0], b.strides[1],
-                    beta,
-                    c.data, c.offset,
-                    c.strides[0], c.strides[1])
+  # Legacy fallback
+  # gemm_nn_fallback( M, N, K,
+  #                   alpha,
+  #                   a.data, a.offset,
+  #                   a.strides[0], a.strides[1],
+  #                   b.data, b.offset,
+  #                   b.strides[0], b.strides[1],
+  #                   beta,
+  #                   c.data, c.offset,
+  #                   c.strides[0], c.strides[1])
 
-proc blasMM_C_eq_aAB_p_bC*[T: SomeFloat](
+  # Laser backend
+  gemm_strided(M, N, K,
+               alpha,
+               a.get_offset_ptr(),
+               a.strides[0], a.strides[1],
+               b.get_offset_ptr(),
+               b.strides[0], b.strides[1],
+               beta,
+               c.get_offset_ptr(),
+               c.strides[0], c.strides[1])
+
+proc blasMM_C_eq_aAB_p_bC*[T: SomeFloat|Complex[float32]|Complex[float64]](
   alpha: T, a, b: Tensor[T],
   beta: T, c: var Tensor[T]) =
   # Matrix: C = alpha A matmul B + beta C
-  # If needed, we trick BLAS to get a rowMajor result
 
   let
     M = a.shape[0]
     K = a.shape[1] # b.shape[0]
     N = b.shape[1]
 
-    cont_A = a.asContiguous
-    cont_B = b.asContiguous
-    c = c.asContiguous
+    A = a.asContiguous()
+    B = b.asContiguous()
 
-    cont_A_is_rowMajor = cont_a.is_C_contiguous
-    cont_B_is_rowMajor = cont_b.is_C_contiguous
-    c_is_rowMajor = c.is_C_contiguous
+  assert c.isContiguous()
 
-    transpose_A = if cont_A_is_rowMajor: noTranspose
-                  else: transpose
-    lda = if cont_A_is_rowMajor: K
-          else: M
-
-    transpose_B = if cont_B_is_rowMajor: noTranspose
-                  else: transpose
-    ldb = if cont_B_is_rowMajor: N
-          else: K
-
-    order_C = if c_is_rowMajor: rowMajor
-              else: colMajor
-    ldc = if c_is_rowMajor: N
-          else: M
+  var lda, ldb: int
+  var tA, tb: TransposeType
 
   # General Matrix Multiply from nimblas.
-  gemm( order_C,
-        transpose_A, transpose_B,
-        M, N, K,
-        alpha, cont_A.get_offset_ptr, lda,
-        cont_B.get_offset_ptr, ldb,
-        beta, c.get_offset_ptr, ldc)
+  if c.is_C_contiguous():   # [M, N]
+    if A.is_C_contiguous(): # [M, K]
+      lda = K
+      tA = noTranspose
+    else:
+      lda = M
+      tA = transpose
+    if B.is_C_contiguous(): # [K, N]
+      ldb = N
+      tB = noTranspose
+    else:
+      ldb = K
+      tB = transpose
+
+    when type(alpha) is Complex:
+      gemm(rowMajor,
+           tA, tB,
+           M, N, K,
+           unsafeAddr(alpha), A.get_offset_ptr, lda,
+                              B.get_offset_ptr, ldb,
+           unsafeAddr(beta),  c.get_offset_ptr, N)
+    else:
+      gemm(rowMajor,
+           tA, tB,
+           M, N, K,
+           alpha, A.get_offset_ptr, lda,
+                  B.get_offset_ptr, ldb,
+           beta,  c.get_offset_ptr, N)
+  else: # column major result [M, N] - TODO tests
+    if A.is_C_contiguous(): # [M, K]
+      lda = K
+      tA = transpose
+    else:
+      lda = M
+      tA = noTranspose
+    if B.is_C_contiguous(): # [K, N]
+      ldb = N
+      tB = transpose
+    else:
+      ldb = K
+      tB = noTranspose
+
+    when typeof(alpha) is Complex:
+      gemm(colMajor,
+           tA, tB,
+           M, N, K,
+           unsafeAddr(alpha), A.get_offset_ptr, lda,
+                              B.get_offset_ptr, ldb,
+           unsafeAddr(beta),  c.get_offset_ptr, M)
+    else:
+      gemm(colMajor,
+           tA, tB,
+           M, N, K,
+           alpha, A.get_offset_ptr, lda,
+                  B.get_offset_ptr, ldb,
+           beta,  c.get_offset_ptr, M)

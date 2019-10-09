@@ -1,134 +1,28 @@
-# Copyright (c) 2018 Mamy André-Ratsimbazafy and the Arraymancer contributors
+# Copyright (c) 2018-Present Mamy André-Ratsimbazafy
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
+  ../tensor/tensor,
   ../private/sequninit,
-  ../tensor/tensor, nimlapack,
-  ../tensor/private/p_init_cpu # TODO: can't call newTensorUninit with optional colMajor, varargs breaks it
+  ./helpers/[decomposition_lapack, triangular, auxiliary_lapack]
 
-# SVD and Eigenvalues/eigenvectors decomposition
-
-proc syevr(jobz: cstring; range: cstring; uplo: cstring; n: ptr cint; a: ptr cfloat;
-            lda: ptr cint; vl: ptr cfloat; vu: ptr cfloat; il: ptr cint; iu: ptr cint;
-            abstol: ptr cfloat; m: ptr cint; w: ptr cfloat; z: ptr cfloat; ldz: ptr cint;
-            isuppz: ptr cint; work: ptr cfloat; lwork: ptr cint; iwork: ptr cint;
-            liwork: ptr cint; info: ptr cint) {.inline.} =
-
-  ssyevr(jobz, range, uplo, n, a,
-          lda, vl, vu, il, iu,
-          abstol, m, w, z, ldz,
-          isuppz, work, lwork, iwork,
-          liwork, info)
-
-proc syevr(jobz: cstring; range: cstring; uplo: cstring; n: ptr cint; a: ptr cdouble;
-            lda: ptr cint; vl: ptr cdouble; vu: ptr cdouble; il: ptr cint; iu: ptr cint;
-            abstol: ptr cdouble; m: ptr cint; w: ptr cdouble; z: ptr cdouble; ldz: ptr cint;
-            isuppz: ptr cint; work: ptr cdouble; lwork: ptr cint; iwork: ptr cint;
-            liwork: ptr cint; info: ptr cint) {.inline.} =
-
-  dsyevr(jobz, range, uplo, n, a,
-          lda, vl, vu, il, iu,
-          abstol, m, w, z, ldz,
-          isuppz, work, lwork, iwork,
-          liwork, info)
-
-
-proc symeigImpl[T: SomeFloat](a: Tensor[T], eigenvectors: bool,
-  low_idx: int, high_idx: int, result: var tuple[eigenval, eigenvec: Tensor[T]]) =
-
-  assert a.shape[0] == a.shape[1], "Input should be a symmetric matrix"
-  # TODO, support "symmetric matrices" with only the upper or lower part filled.
-  # (Obviously, upper in Fortran is lower in C ...)
-
-  let a = a.clone(colMajor) # Lapack overwrite the input. TODO move optimization
-
-  var
-    jobz: cstring
-    interval: cstring
-    n, lda: cint = a.shape[0].cint
-    uplo: cstring = "U"
-    vl, vu: T         # unused: min and max eigenvalue returned
-    il, iu: cint      # ranking of the lowest and highest eigenvalues returned
-    abstol: T = -1    # Use default. otherwise need to call LAPACK routine dlamch('S') or 2*dlamch('S')
-    m, ldz = n
-    lwork: cint = -1  # dimension of a workspace array
-    work: seq[T]
-    wkopt: T
-    liwork: cint = -1 # dimension of a second workspace array
-    iwork: seq[cint]
-    iwkopt: cint
-    info: cint
-
-  if low_idx == 0 and high_idx == a.shape[0] - 1:
-    interval = "A"
-  else:
-    interval = "I"
-    il = cint low_idx + 1 # Fortran starts indexing with 1
-    iu = cint high_idx + 1
-    m = iu - il + 1
-
-  # Setting up output
-  var
-    isuppz: seq[cint] # unused
-    isuppz_ptr: ptr cint
-    z: ptr T
-
-  result.eigenval = newTensorUninit[T](a.shape[0]) # Even if less eigenval are selected Lapack requires this much workspace
-
-  if eigenvectors:
-    jobz = "V"
-
-    # Varargs + optional colMajor argument issue, must resort to low level proc at the moment
-    tensorCpu(ldz.int, m.int, result.eigenvec, colMajor)
-    result.eigenvec.storage.Fdata = newSeqUninit[T](result.eigenvec.size)
-
-    z = result.eigenvec.get_data_ptr
-    if interval == "A": # or (il == 1 and iu == n): -> Already checked before
-      isuppz = newSeqUninit[cint](2*m)
-      isuppz_ptr = isuppz[0].addr
-  else:
-    jobz = "N"
-
-  let w = result.eigenval.get_data_ptr
-
-  # Querying workspaces sizes
-  syevr(jobz, interval, uplo, n.addr, a.get_data_ptr, lda.addr, vl.addr, vu.addr, il.addr, iu.addr,
-        abstol.addr, m.addr, w, z, ldz.addr, isuppz_ptr, wkopt.addr, lwork.addr, iwkopt.addr, liwork.addr, info.addr)
-
-  # Allocating workspace
-  lwork = wkopt.cint
-  work = newSeqUninit[T](lwork)
-  liwork = iwkopt.cint
-  iwork = newSeqUninit[cint](liwork)
-
-  syevr(jobz, interval, uplo, n.addr, a.get_data_ptr, lda.addr, vl.addr, vu.addr, il.addr, iu.addr,
-        abstol.addr, m.addr, w, z, ldz.addr, isuppz_ptr, work[0].addr, lwork.addr, iwork[0].addr, liwork.addr, info.addr)
-
-  # Keep only the selected eigenvals
-  result.eigenval = result.eigenval[0 ..< m.int]
-
-  when compileOption("boundChecks"):
-    if eigenvectors:
-      assert m.int == result.eigenvec.shape[1]
-
-  if unlikely(info > 0):
-    # TODO, this should not be an exception, not converging is something that can happen and should
-    # not interrupt the program. Alternative. Fill the result with Inf?
-    raise newException(ValueError, "the algorithm for computing eigenvalues failed to converge")
-
-  if unlikely(info < 0):
-    raise newException(ValueError, "Illegal parameter in symeig: " & $(-info))
-
+# Helpers
+# -------------------------------------------
 
 template `^^`(s, i: untyped): untyped =
   (when i is BackwardsIndex: s.shape[0] - int(i) else: int(i))
 
-proc symeig*[T: SomeFloat](a: Tensor[T], eigenvectors = false): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
+# Full decompositions
+# -------------------------------------------
+
+proc symeig*[T: SomeFloat](a: Tensor[T], return_eigenvectors: static bool = false, uplo: static char = 'U'): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
   ## Compute the eigenvalues and eigen vectors of a symmetric matrix
   ## Input:
   ##   - A symmetric matrix of shape [n x n]
   ##   - A boolean: true if you also want the eigenvectors, false otherwise
+  ##   - A char U for upper or L for lower
+  ##     This allows you to only fill half of the input symmetric matrix
   ## Returns:
   ##   - A tuple with:
   ##     - The eigenvalues sorted from lowest to highest. (shape [n])
@@ -138,14 +32,19 @@ proc symeig*[T: SomeFloat](a: Tensor[T], eigenvectors = false): tuple[eigenval, 
   ##
   ## Implementation is done through the Multiple Relatively Robust Representations
 
-  symeigImpl(a, eigenvectors, 0, a.shape[0] - 1, result)
+  var scratchspace: seq[T]
+  var a = a.clone(colMajor)
+  syevr(a, uplo, return_eigenvectors, 0, a.shape[0] - 1, result.eigenval, result.eigenvec, scratchspace)
 
-proc symeig*[T: SomeFloat](a: Tensor[T], eigenvectors = false,
+proc symeig*[T: SomeFloat](a: Tensor[T], return_eigenvectors: static bool = false,
+  uplo: static char = 'U',
   slice: HSlice[int or BackwardsIndex, int or BackwardsIndex]): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
   ## Compute the eigenvalues and eigen vectors of a symmetric matrix
   ## Input:
   ##   - A symmetric matrix of shape [n, n]
   ##   - A boolean: true if you also want the eigenvectors, false otherwise
+  ##   - A char U for upper or L for lower
+  ##     This allows you to only fill half of the input symmetric matrix
   ##   - A slice of the rankings of eigenvalues you request. For example requesting
   ##     eigenvalues 2 and 3 would be done with 1..2.
   ## Returns:
@@ -157,4 +56,121 @@ proc symeig*[T: SomeFloat](a: Tensor[T], eigenvectors = false,
   ##
   ## Implementation is done through the Multiple Relatively Robust Representations
 
-  symeigImpl(a, eigenvectors, a ^^ slice.a, a ^^ slice.b, result)
+  var scratchspace: seq[T]
+  var a = a.clone(colMajor)
+  syevr(a, uplo, return_eigenvectors, a ^^ slice.a, a ^^ slice.b, result.eigenval, result.eigenvec, scratchspace)
+
+proc qr*[T: SomeFloat](a: Tensor[T]): tuple[Q, R: Tensor[T]] =
+  ## Compute the QR decomposition of an input matrix ``a``
+  ## Decomposition is done through the Householder method
+  ## without pivoting.
+  ##
+  ## Input:
+  ##   - ``a``, matrix of shape [M, N]
+  ##
+  ## We note K = min(M, N)
+  ##
+  ## Returns:
+  ##   - Q orthonormal matrix of shape [M, K]
+  ##   - R upper-triangular matrix of shape [K, N]
+
+  # Checking correctness:
+  # - https://software.intel.com/en-us/articles/checking-correctness-of-lapack-svd-eigenvalue-and-one-sided-decomposition-routines
+
+  let k = min(a.shape[0], a.shape[1])
+
+  var scratchspace: seq[T]
+  var tau = newSeqUninit[T](k)
+
+  result.Q = a.clone(colMajor)
+
+  geqrf(result.Q, tau, scratchspace)
+  result.R = triu(result.Q[0..<k, _])
+
+  orgqr(result.Q, tau, scratchspace)
+  result.Q = result.Q[_, 0..<k]
+
+proc lu_permuted*[T: SomeFloat](a: Tensor[T]): tuple[PL, U: Tensor[T]] =
+  ## Compute the pivoted LU decomposition of an input matrix ``a``.
+  ##
+  ## The decomposition solves the equation:
+  ## A = P L U
+  ##
+  ## where:
+  ##   - P is a permutation matrix
+  ##   - L is a lower-triangular matrix with unit diagonal
+  ##   - U is an upper-triangular matrix
+  ##
+  ## Input:
+  ##   - ``a``, a MxN matrix
+  ##
+  ## Output:
+  ##   with K = min(M, N)
+  ##   - PL, the product of P and L, of shape [M, K]
+  ##   - U, upper-triangular matrix of shape [K, N]
+  assert a.rank == 2
+
+  let k = min(a.shape[0], a.shape[1])
+  var pivot_indices = newSeqUninit[int32](k)
+  result.PL = a.clone(colMajor)
+
+  getrf(result.PL, pivot_indices)
+
+  result.U = triu(result.PL[0..<k, _])
+  result.PL = result.PL[_, 0..<k]
+  tril_unit_diag_mut(result.PL)
+  laswp(result.PL, pivot_indices, pivot_from = -1)
+
+proc svd*[T: SomeFloat](A: Tensor[T]): tuple[U, S, Vh: Tensor[T]] =
+  ## Compute the Singular Value Decomposition of an input matrix ``a``
+  ## Decomposition is done through recursive divide & conquer.
+  ##
+  ## Input:
+  ##   - ``A``, matrix of shape [M, N]
+  ##
+  ## Returns:
+  ##   with K = min(M, N)
+  ##   - ``U``: Unitary matrix of shape [M, K] with left singular vectors as columns
+  ##   - ``S``: Singular values diagonal of length K in decreasing order
+  ##   - ``Vh``: Unitary matrix of shape [K, N] with right singular vectors as rows
+  ##
+  ## SVD solves the equation:
+  ## A = U S V.h
+  ##
+  ## - with S being a diagonal matrix of singular values
+  ## - with V being the right singular vectors and
+  ##   V.h being the hermitian conjugate of V
+  ##   for real matrices, this is equivalent to V.t (transpose)
+  ##
+  ## ⚠️: Input must not contain NaN
+  ##
+  ## Compared to Numpy svd procedure, we default to "full_matrices = false".
+  ##
+  ## Exception:
+  ##   - This can throw if the algorithm did not converge.
+
+  # Checking correctness:
+  # - https://software.intel.com/en-us/articles/checking-correctness-of-lapack-svd-eigenvalue-and-one-sided-decomposition-routines
+
+  # Numpy default to full_matrices is
+  # - confusing for docs
+  # - hurts reconstruction
+  # - often not used (for example for PCA/randomized PCA)
+  # - memory inefficient
+  # thread: https://mail.python.org/pipermail/numpy-discussion/2011-January/054685.html
+  var scratchspace: seq[T]
+
+  # Lapack, especially OpenBLAS is much faster
+  # on SVD for input [M,N] when M > N than when N < M
+  # Transposing accordingly.
+  if A.shape[0] >= A.shape[1]:
+    var A = A.clone(colMajor)
+    gesdd(A, result.U, result.S, result.Vh, scratchspace)
+  else:
+    # Transposed
+    var At = A.clone(rowMajor).transpose() # transpose is colMajor
+    var V, Ut: Tensor[T]
+    gesdd(At, V, result.S, Ut, scratchspace)
+
+    result.Vh = V.transpose()
+    result.U = Ut.transpose()

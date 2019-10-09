@@ -5,6 +5,22 @@ import ../../src/arraymancer
 import unittest, math, fenv
 
 suite "Linear algebra":
+  test "Hilbert matrix":
+    block:
+      const N = 3
+      let a = hilbert(N, float64)
+      for i in 1 .. N:
+        for j in 1 .. N:
+          check:
+            a[i-1, j-1] == 1 / (i.float64 + j.float64 - 1)
+    block:
+      const N = 100
+      let a = hilbert(N, float64)
+      for i in 1 .. N:
+        for j in 1 .. N:
+          check:
+            a[i-1, j-1] == 1 / (i.float64 + j.float64 - 1)
+
   test "Linear equation solver using least squares":
     block: # "Single equation"
            # Example from Numpy documentation
@@ -102,7 +118,7 @@ suite "Linear algebra":
                           [-0.0036, -0.4467,  0.4553,  0.6204, -0.4564],
                           [-0.8041,  0.4480,  0.1725,  0.3108,  0.1622]].toTensor
 
-      let (val, vec) = symeig(a, true)
+      let (val, vec) = symeig(a, true, 'U')
 
       check: mean_absolute_error(val, expected_val) < 1e-4
 
@@ -121,7 +137,7 @@ suite "Linear algebra":
       let expected_vec = [[-0.735178656'f32, -0.677873399],
                           [ 0.677873399'f32, -0.735178656]].toTensor
 
-      let (val, vec) = symeig(a, true)
+      let (val, vec) = symeig(a, true, 'U')
 
       check: mean_absolute_error(val, expected_val) < 1e-7
 
@@ -145,7 +161,7 @@ suite "Linear algebra":
                           [-0.29, -0.59,  0.34,  0.31,  0.60],
                           [-0.19,  0.63,  0.44, -0.38,  0.48]].toTensor
 
-      let (val, vec) = symeig(a, true)
+      let (val, vec) = symeig(a, true, 'U')
 
       check: mean_absolute_error(val, expected_val) < 1e-2
 
@@ -169,7 +185,7 @@ suite "Linear algebra":
                           [-0.18,  0.19,  0.31],
                           [ 0.07,  0.69, -0.13]].toTensor
 
-      let (val, vec) = symeig(a, true, 0..2)
+      let (val, vec) = symeig(a, true, 'U', 0..2)
 
       check: mean_absolute_error(val, selected_val) < 1e-1
 
@@ -185,5 +201,229 @@ suite "Linear algebra":
                 [-1.06,  1.06,  0.11,  5.86, -0.98],
                 [ 0.46, -0.48,  1.10, -0.98,  3.54]].toTensor
 
-      discard symeig(a, true, 0..2)
+      discard symeig(a, true, 'U', 0..2)
       check: a == b
+
+  test "QR Decomposition":
+    block: # From wikipedia https://en.wikipedia.org/wiki/QR_decomposition
+      let a = [[12.0, -51.0, 4.0],
+              [ 6.0, 167.0, -68.0],
+              [-4.0,  24.0, -41.0]].toTensor()
+
+      let (q, r) = qr(a)
+
+      block: # Sanity checks
+        # A = QR
+        let qr = q * r
+        check: mean_absolute_error(a, qr) < 1e-8
+        # TODO: r is triangular
+
+      block: # vs NumPy implementation. Note that
+             # decomposition are not unique, there can be a factor +1/-1.
+        # import numpy as np
+        # a = np.array([[12,-51,4],[6,167,-68],[-4,24,-41]])
+        # q, r = np.linalg.qr(a)
+        # print(q)
+        # print(r)
+        let np_q = [[-0.85714286,  0.39428571,  0.33142857],
+                   [-0.42857143, -0.90285714, -0.03428571],
+                   [ 0.28571429, -0.17142857,  0.94285714]].toTensor()
+        let np_r = [[ -14.0,  -21.0,   14.0],
+                    [   0.0, -175.0,   70.0],
+                    [   0.0,    0.0,  -35.0]].toTensor()
+
+        check:
+          mean_absolute_error(q, np_q) < 1e-8
+          mean_absolute_error(r, np_r) < 1e-8
+
+    block: # M > N, from Numpy https://docs.scipy.org/doc/numpy-1.15.1/reference/generated/numpy.linalg.qr.html
+      let a = [[0.0, 1.0],
+               [1.0, 1.0],
+               [1.0, 1.0],
+               [2.0, 1.0]].toTensor()
+
+      let (q, r) = qr(a)
+
+      block: # Sanity checks
+        # A = QR
+        let qr = q * r
+        check: mean_absolute_error(a, qr) < 1e-8
+        # TODO: r is triangular
+
+      block: # vs NumPy implementation. Note that
+             # decomposition are not unique, there can be a factor +1/-1.
+        # import numpy as np
+        # a = np.array([[0, 1], [1, 1], [1, 1], [2, 1]])
+        # q, r = np.linalg.qr(a)
+        # print(q)
+        # print(r)
+        let np_q = [[ 0.0       ,  0.8660254 ],
+                    [-0.40824829,  0.28867513],
+                    [-0.40824829,  0.28867513],
+                    [-0.81649658, -0.28867513]].toTensor()
+        let np_r = [[-2.44948974, -1.63299316],
+                    [ 0.0       ,  1.15470054]].toTensor()
+
+        check:
+          mean_absolute_error(q, np_q) < 1e-8
+          mean_absolute_error(r, np_r) < 1e-8
+
+    block: # M < N
+      let a = [[0.0, 1.0, 1.0, 1.0],
+               [1.0, 1.0, 2.0, 1.0]].toTensor()
+
+      let (q, r) = qr(a)
+
+      block: # Sanity checks
+        # A = QR
+        let qr = q * r
+        check: mean_absolute_error(a, qr) < 1e-8
+        # TODO: r is triangular
+
+      block: # vs NumPy implementation. Note that
+             # decomposition are not unique, there can be a factor +1/-1.
+        # import numpy as np
+        # a = np.array([[0, 1, 1, 1], [1, 1, 2, 1]])
+        # q, r = np.linalg.qr(a)
+        # print(q)
+        # print(r)
+        let np_q = [[ 0.0, -1.0],
+                    [-1.0,  0.0]].toTensor()
+        let np_r = [[-1.0, -1.0, -2.0, -1.0],
+                    [ 0.0, -1.0, -1.0, -1.0]].toTensor()
+
+        check:
+          mean_absolute_error(q, np_q) < 1e-8
+          mean_absolute_error(r, np_r) < 1e-8
+
+  test "LU Factorization":
+    block: # M > N
+      # import numpy as np
+      # from scipy.linalg import lu
+      # np.set_printoptions(suppress=True) # Don't use scientific notation
+      # a = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]])
+      # pl, u = lu(a, permute_l = True)
+      # print(pl)
+      # print(u)
+
+      let a = [[ 1.0, 2, 3],
+              [ 4.0, 5, 6],
+              [ 7.0, 8, 9],
+              [10.0,11,12]].toTensor()
+
+      let expected_pl = [[0.1, 1         , 0],
+                         [0.4, 0.66666667, 0],
+                         [0.7, 0.33333333, 1],
+                         [1.0, 0         , 0]].toTensor()
+      let expected_u  = [[10.0, 11.0, 12.0],
+                         [ 0.0,  0.9,  1.8],
+                         [ 0.0,  0.0,  0.0]].toTensor()
+
+      let (PL, U) = lu_permuted(a)
+      check:
+        mean_absolute_error(PL, expected_pl) < 1e-8
+        mean_absolute_error(U, expected_u) < 1e-8
+
+    block: # M < N
+      # import numpy as np
+      # from scipy.linalg import lu
+      # np.set_printoptions(suppress=True) # Don't use scientific notation
+      # a = np.array([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]])
+      # pl, u = lu(a, permute_l = True)
+      # print(pl)
+      # print(u)
+
+      let a = [[ 1.0,  2,  3,  4],
+               [ 5.0,  6,  7,  8],
+               [ 9.0, 10, 11, 12]].toTensor()
+
+      let expected_pl = [[0.11111111, 1.0, 0],
+                         [0.55555555, 0.5, 1],
+                         [1.0, 0         , 0]].toTensor()
+      let expected_u  = [[ 9.0, 10.0       , 11.0       , 12.0       ],
+                         [ 0.0,  0.88888889,  1.77777778,  2.66666667],
+                         [ 0.0,  0.0       , -0.0       , -0.0       ]].toTensor()
+
+      let (PL, U) = lu_permuted(a)
+      check:
+        mean_absolute_error(PL, expected_pl) < 1e-8
+        mean_absolute_error(U, expected_u) < 1e-8
+
+  test "Singular Value Decomposition (SVD)":
+    block: # From https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/sgesdd_ex.c.htm
+      let a = [[  7.52, -1.10, -7.95,  1.08],
+               [ -0.76,  0.62,  9.34, -7.10],
+               [  5.13,  6.62, -5.66,  0.87],
+               [ -4.75,  8.52,  5.75,  5.30],
+               [  1.33,  4.91, -5.49, -3.52],
+               [ -2.40, -6.77,  2.34,  3.95]].toTensor()
+
+      let expected_U =  [[-0.57,  0.18,  0.01,  0.53],
+                         [ 0.46, -0.11, -0.72,  0.42],
+                         [-0.45, -0.41,  0.00,  0.36],
+                         [ 0.33, -0.69,  0.49,  0.19],
+                         [-0.32, -0.31, -0.28, -0.61],
+                         [ 0.21,  0.46,  0.39,  0.09]].toTensor()
+
+      let expected_S = [18.37, 13.63, 10.85, 4.49].toTensor()
+
+      let expected_Vh = [[-0.52, -0.12,  0.85, -0.03],
+                         [ 0.08, -0.99, -0.09, -0.01],
+                         [-0.28, -0.02, -0.14,  0.95],
+                         [ 0.81,  0.01,  0.50,  0.31]].toTensor()
+
+      let (U, S, Vh) = svd(a)
+
+      # Note - Intel example asks for partial matrices
+      let k = min(a.shape[0], a.shape[1])
+
+      check:
+        mean_absolute_error(U, expected_U) < 1e-2
+        mean_absolute_error(S, expected_S) < 1e-2
+        mean_absolute_error(Vh, expected_Vh) < 1e-2
+
+  test "Randomized SVD":
+    # TODO: tests using spectral norm, see fbpca python package
+    block: # Using Hilbert matrix, see ../manual_checks/randomized_svd.py
+      const
+        Observations = 10
+        Features = 4000
+        N = max(Observations, Features)
+        k = 7
+
+      let H = hilbert(N, float64)[0..<Observations, 0..<Features]
+      let (U, S, Vh) = svd_randomized(H, n_components=k, n_oversamples=5, n_power_iters=2)
+
+      let expected_S = [1.90675907e+00, 4.86476625e-01, 7.52734238e-02, 8.84829787e-03, 7.86824889e-04, 3.71028924e-05, 1.74631562e-06].toTensor()
+
+      check:
+        U.shape[0] == H.shape[0]
+        U.shape[1] == k
+        mean_absolute_error(S, expected_S) < 1.5e-5
+        Vh.shape[0] == k
+        Vh.shape[1] == H.shape[1]
+
+      let reconstructed = (U .* S.unsqueeze(0)) * Vh
+      check: mean_absolute_error(H, reconstructed) < 1e-2
+
+    block: # Ensure that m > n / m < n logic is working fine
+      const
+        Observations = 4000
+        Features = 10
+        N = max(Observations, Features)
+        k = 7
+
+      let H = hilbert(N, float64)[0..<Observations, 0..<Features]
+      let (U, S, Vh) = svd_randomized(H, n_components=k, n_oversamples=5, n_power_iters=2)
+
+      let expected_S = [1.90675907e+00, 4.86476625e-01, 7.52734238e-02, 8.84829787e-03, 7.86824889e-04, 3.71028924e-05, 1.74631562e-06].toTensor()
+
+      check:
+        U.shape[0] == H.shape[0]
+        U.shape[1] == k
+        mean_absolute_error(S, expected_S) < 1.5e-5
+        Vh.shape[0] == k
+        Vh.shape[1] == H.shape[1]
+
+      let reconstructed = (U .* S.unsqueeze(0)) * Vh
+      check: mean_absolute_error(H, reconstructed) < 1e-2

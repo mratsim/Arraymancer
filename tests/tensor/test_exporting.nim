@@ -14,6 +14,7 @@
 
 import ../../src/arraymancer
 import unittest, sequtils
+import complex except Complex64, Complex32
 
 suite "Exporting":
   test "Raw sequence exporting":
@@ -23,6 +24,10 @@ suite "Exporting":
   test "Nested sequence exporting":
     block:
       let s = @[@[1, 2, 3], @[4, 5, 6]]
+      check s.toTensor().toSeq2D() == s
+    block:
+      let s = @[@[complex64(1'f64,0.0), complex64(2'f64,0.0), complex64(3'f64,0.0)],
+                @[complex64(4'f64,0.0), complex64(5'f64,0.0), complex64(6'f64,0.0)]]
       check s.toTensor().toSeq2D() == s
     block:
       let t = toSeq(1..24).toTensor().reshape(2, 3, 4)

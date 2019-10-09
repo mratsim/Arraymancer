@@ -14,11 +14,13 @@
 
 import ../../src/arraymancer
 import unittest, sugar, sequtils
+import complex except Complex64, Complex32
 
 suite "Shapeshifting":
   test "Contiguous conversion":
     block:
       let a = [7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0].toTensor.reshape([3,6])
+      let a_c = [7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0].toTensor.reshape([3,6]).astype(Complex[float64])
 
       # Tensor of shape 3x6 of type "int" on backend "Cpu"
       # |7      4       3       1       8       6|
@@ -26,7 +28,9 @@ suite "Shapeshifting":
       # |2      0       4       3       2       0|
 
       let b = a.asContiguous()
+      let b_c = a_c.asContiguous()
       check: b.toRawSeq == @[7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0]
+      check: b_c.toRawSeq == @[complex64(7'f64,0.0), complex64(4'f64,0.0), complex64(3'f64,0.0), complex64(1'f64,0.0), complex64(8'f64,0.0), complex64(6'f64,0.0), complex64(8'f64,0.0), complex64(1'f64,0.0), complex64(6'f64,0.0), complex64(2'f64,0.0), complex64(6'f64,0.0), complex64(6'f64,0.0), complex64(2'f64,0.0), complex64(0'f64,0.0), complex64(4'f64,0.0), complex64(3'f64,0.0), complex64(2'f64,0.0), complex64(0'f64,0.0)]
 
       # a is already contiguous, even if wrong layout.
       # Nothing should be done

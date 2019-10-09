@@ -14,6 +14,26 @@ It can also use the OpenMP, Cuda or OpenCL backends.
 
 Note: While Nim is compiled and does not offer an interactive REPL yet (like Jupyter), it allows much faster prototyping than C++ due to extremely fast compilation times. Arraymancer compiles in about 5 seconds on my dual-core MacBook.
 
+## Performance notice on Nim 0.20 & compilation flags
+
+In Nim 0.20, the `-d:release` flag does not disable runtime checks like array bounds-checking anymore. This has a signigicant performance impact (5x slowdown in tight loop).
+
+Compile with `-d:release -d:danger` to get the same performance as in 0.19.x.
+
+Reminder of supported compilation flags:
+- `-d:release`: Nim release mode (no stacktraces and debugging information)
+- `-d:danger`: No runtime checks like array bound checking
+- `-d:openmp`: Multithreaded compilation
+- `-d:mkl`: Use MKL, implies `openmp`
+- `-d:openblas`: Use OpenBLAS
+- by default Arraymancer will try to use your default `blas.so/blas.dll`
+  Archlinux users may have to specify `-d:blas=cblas`.
+  See [nimblas](https://github.com/unicredit/nimblas) for further configuration.
+- `-d:cuda`: Build with Cuda support
+- `-d:cudnn`: Build with CuDNN support, implies `cuda`.
+- You might want to tune library paths in [nim.cfg](nim.cfg) after installation for OpenBLAS, MKL and Cuda compilation.
+  The current defaults should work on Mac and Linux.
+
 ## Show me some code
 
 Arraymancer tutorial is available [here](https://mratsim.github.io/Arraymancer/tuto.first_steps.html).
@@ -191,6 +211,7 @@ Of them; she's murder'd of your galla?
 <!-- TOC -->
 
 - [Arraymancer - A n-dimensional tensor (ndarray) library.](#arraymancer---a-n-dimensional-tensor-ndarray-library)
+  - [Performance notice on Nim 0.20 & compilation flags](#performance-notice-on-nim-020--compilation-flags)
   - [Show me some code](#show-me-some-code)
     - [Tensor creation and slicing](#tensor-creation-and-slicing)
     - [Reshaping and concatenation](#reshaping-and-concatenation)
@@ -206,13 +227,13 @@ Of them; she's murder'd of your galla?
       - [Handwritten digit recognition with convolutions](#handwritten-digit-recognition-with-convolutions)
       - [Sequence classification with stacked Recurrent Neural Networks](#sequence-classification-with-stacked-recurrent-neural-networks)
     - [Tensors on CPU, on Cuda and OpenCL](#tensors-on-cpu-on-cuda-and-opencl)
-  - [What's new in Arraymancer v0.5.0 - "Sign of the Unicorn" - December 2018](#whats-new-in-arraymancer-v050---sign-of-the-unicorn---december-2018)
+  - [What's new in Arraymancer v0.5.1 - July 2019](#whats-new-in-arraymancer-v051---july-2019)
   - [4 reasons why Arraymancer](#4-reasons-why-arraymancer)
     - [The Python community is struggling to bring Numpy up-to-speed](#the-python-community-is-struggling-to-bring-numpy-up-to-speed)
     - [A researcher workflow is a fight against inefficiencies](#a-researcher-workflow-is-a-fight-against-inefficiencies)
     - [Can be distributed almost dependency free](#can-be-distributed-almost-dependency-free)
     - [Bridging the gap between deep learning research and production](#bridging-the-gap-between-deep-learning-research-and-production)
-    - [So why Arraymancer ?](#so-why-arraymancer-)
+    - [So why Arraymancer ?](#so-why-arraymancer)
   - [Future ambitions](#future-ambitions)
 
 <!-- /TOC -->
@@ -414,35 +435,17 @@ Here is a comparative table of the core features.
 | Squeezing singleton dimension                     | [x]                         | [x]                        | []                         |
 | Slicing + squeezing                               | [x]                         | []                         | []                         |
 
-## What's new in Arraymancer v0.5.0 - "Sign of the Unicorn" - December 2018
-
-> This release is named after "Sign of the Unicorn" (1975), the third book of Roger Zelazny masterpiece "The Chronicles of Amber".
+## What's new in Arraymancer v0.5.1 - July 2019
 
 The full changelog is available in [changelog.md](./changelog.md).
 
 Here are the highlights:
-  - Backward incompatible: PCA now returns a tuple of the projected tensor and the principal components. An overloaded PCA can be used with the principal axes supplied by the user.
-  - Datasets:
-    - MNIST is now autodownloaded and cached
-    - Added IMDB Movie Reviews dataset
-  - IO:
-    - Numpy file format support
-    - Image reading and writing support (jpg, bmp, png, tga)
-    - HDF5 reading and writing
-  - Machine learning
-    - Kmeans clustering
-  - Deep Learning
-    - RNN: GRU support including fused stacked GRU layers with sequence/timesteps
-    - Embedding layer with multiple timesteps support. Indexing can be done with integers, byte, chars or enums.
-    - Sparse softmax cross-entropy: the target tensor subtype can now be integers, byte, chars or enums.
-    - Adam optimiser (Adaptative Moment Estimation)
-    - Xavier Glorot, Kaiming He and Yann Lecun weight initialisation schemes
-  - N-D arrays / tensors
-    - Splitting and chunking support
-    - Fancy indexing via `index_select`
-  - End-to-end examples:
-    - Sequence/time-series classification using RNN
-    - Text generation on Shakespeare and Jane Austen's Pride and Prejudice. This can be applied to any text-based dataset (including blog posts, Latex papers and code)
+  - 0.20.x compatibility
+  - Complex support
+  - `Einsum`
+  - Naive whitespace tokenizer for NLP
+  - Fix height/width order when reading an image in tensor
+  - Preview of Laser backend for matrix multiplication without SIMD autodetection (already 5x faster on integer matrix multiplication)
 
 ## 4 reasons why Arraymancer
 

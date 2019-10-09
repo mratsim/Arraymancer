@@ -21,6 +21,7 @@ import  ../private/[functional, nested_containers, sequninit],
         sequtils,
         random,
         math
+include ./private/p_complex
 
 proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
@@ -108,7 +109,7 @@ proc toTensor*(s:string): auto {.noSideEffect.} =
   ## This proc handles string specifically as otherwise they are interpreted as a sequence of char
   toTensorCpu(s)
 
-proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect, inline.} =
+proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -119,7 +120,7 @@ proc zeros*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect
   tensorCpu(shape, result)
   result.storage.Fdata = newSeq[T](result.size)
 
-proc zeros*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit,noSideEffect, inline.} =
+proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArray): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -130,7 +131,7 @@ proc zeros*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit,noSideEffec
   tensorCpu(shape, result)
   result.storage.Fdata = newSeq[T](result.size)
 
-proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, inline.} =
+proc zeros_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
   ## Input:
   ##      - Shape of the Tensor
@@ -139,7 +140,7 @@ proc zeros_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, 
   ##      - A zero-ed Tensor of the same shape
   result = zeros[T](t.shape)
 
-proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit, inline, noSideEffect.} =
+proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -148,7 +149,7 @@ proc ones*[T: SomeNumber](shape: varargs[int]): Tensor[T] {.noInit, inline, noSi
   ##      - A one-ed Tensor of the same shape
   newTensorWith[T](shape, 1.T)
 
-proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit, inline, noSideEffect.} =
+proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArray): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -157,7 +158,7 @@ proc ones*[T: SomeNumber](shape: MetadataArray): Tensor[T] {.noInit, inline, noS
   ##      - A one-ed Tensor of the same shape
   newTensorWith[T](shape, 1.T)
 
-proc ones_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit, inline, noSideEffect.} =
+proc ones_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1 with the same shape as the input
   ## and filled with 1
   ## Input:
@@ -165,6 +166,43 @@ proc ones_like*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit, inline, noSide
   ## Result:
   ##      - A one-ed Tensor of the same shape
   return ones[T](t.shape)
+
+func arange*[T: SomeNumber](start, stop, step: T): Tensor[T] {.noInit.} =
+  ## Creates a new 1d-tensor with values evenly spaced by ``step``
+  ## in the half-open interval [start, stop)
+  ##
+  ## Resulting size is ceil((stop - start) / step)
+  ##
+  ## ⚠️ Warnings:
+  ## To limit floating point rounding issues, size is computed
+  ## by converting to float64.
+  ##
+  ## - It is recommended to add a small epsilon for non-integer steps
+  ## - float64 cannot represent exactly integers over 2^32 (~4.3 billions)
+  # TODO: proper exceptions
+  assert step != 0, "Step must be non-zero"
+  when T is SomeFloat:
+    assert start.classify() notin {fcNaN, fcInf, fcNegInf}
+    assert stop.classify() notin {fcNaN, fcInf, fcNegInf}
+  assert (step > 0 and stop >= start) or (step < 0 and stop <= start), "bounds inconsistent with step sign"
+
+  var size_f64 = ceil((stop.float64 - start.float64) / step.float64)
+  assert 0 <= size_f64 and size_f64 <= float64(high(int)), "Invalid size"
+
+  let size = int(size_f64)
+  tensorCpu([size], result)
+  result.storage.Fdata = newSeqUninit[T](size)
+
+  for i in 0 ..< size:
+    result.storage.Fdata[i] = start + i.T * step
+
+template arange*[T: SomeNumber](stop: T): Tensor[T] =
+  # Error messages of templates are very poor
+  arange(T(0), stop, T(1))
+
+template arange*[T: SomeNumber](start, stop: T): Tensor[T] =
+  # Error messages of templates are very poor
+  arange(start, stop, T(1))
 
 template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typed): untyped =
   tensorCpu(shape, t)
@@ -205,6 +243,18 @@ proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] {.noInit.
   ## Result:
   ##      - A tensor of the input shape filled with random value in the slice range
   randomTensorCpu(result, shape, slice)
+
+proc randomTensor*[T](shape: varargs[int], sample_source: openarray[T]): Tensor[T] {.noInit.} =
+  ## Creates a new Tensor filled with values uniformly sampled from ``sample_source``
+  ##
+  ## Random seed can be set by importing ``random`` and ``randomize(seed)``
+  ## Input:
+  ##      - a shape
+  ##      - a sample_source
+  ## Result:
+  ##      - A tensor of the input shape filled with random values from ``sample_source``
+  tensorCpu(shape, result)
+  result.storage.Fdata = newSeqWith(result.size, sample(sample_source))
 
 proc randomNormal(mean = 0.0, std = 1.0): float =
   ## Random number in the normal distribution using Box-Muller method

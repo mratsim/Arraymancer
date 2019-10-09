@@ -16,7 +16,7 @@ import  ./global_config,
         ./memory_optimization_hints
 
 when defined(openmp):
-  when not defined(cuda): # For cuda, OpenMP flags must be passeed
+  when not defined(cuda): # For cuda, OpenMP flags must be passed
     {.passC: "-fopenmp".} # behind -Xcompiler -fopenmp
     {.passL: "-fopenmp".}
 
@@ -39,12 +39,12 @@ else:
   const OMP_FOR_ANNOTATION = "parallel for simd if(ompsize > " & $OMP_FOR_THRESHOLD & ")"
 
 template omp_parallel_countup*(i: untyped, size: Natural, body: untyped): untyped =
-  let ompsize = size # ensure that if size is computed it is only called once
+  let ompsize{.exportc:"ompsize".} = size # ensure that if size is computed it is only called once
   for i in `||`(0, ompsize, OMP_FOR_ANNOTATION):
     body
 
 template omp_parallel_forup*(i: untyped, start, size: Natural, body: untyped): untyped =
-  let ompsize = size # ensure that if size is computed it is only called once
+  let ompsize{.exportc:"ompsize".} = size # ensure that if size is computed it is only called once
   for i in `||`(start, ompsize, OMP_FOR_ANNOTATION):
     body
 

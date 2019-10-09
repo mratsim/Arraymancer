@@ -16,6 +16,7 @@ import  ./data_structure,
         ./init_cpu,
         ./higher_order_applymap,
         ./ufunc
+import complex except Complex64, Complex32
 
 # Non-operator math functions
 
@@ -43,11 +44,11 @@ proc melwise_div*[T: SomeFloat](a: var Tensor[T], b: Tensor[T]) =
   ## Element-wise division (in-place)
   a.apply2_inline(b, x / y)
 
-proc reciprocal*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.} =
+proc reciprocal*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Return a tensor with the reciprocal 1/x of all elements
   t.map_inline(1.T/x)
 
-proc mreciprocal*[T: SomeFloat](t: var Tensor[T]) =
+proc mreciprocal*[T: SomeFloat|Complex[float32]|Complex[float64]](t: var Tensor[T]) =
   ## Apply the reciprocal 1/x in-place to all elements of the Tensor
   t.apply_inline(1.T/x)
 
@@ -64,12 +65,22 @@ proc `-`*[T: SomeNumber](t: Tensor[T]): Tensor[T] {.noInit.} =
   t.map_inline(-x)
 
 # Built-in nim function that doesn't work with makeUniversal
-proc abs*[T](t: Tensor[T]): Tensor[T] {.noInit.} =
+proc abs*[T:SomeNumber](t: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Return a Tensor with absolute values of all elements
+  t.map_inline(abs(x))
+
+# complex abs -> float
+proc abs*(t: Tensor[Complex[float64]]): Tensor[float64] {.noInit.} =
+  ## Return a Tensor with absolute values of all elements
+  t.map_inline(abs(x))
+
+proc abs*(t: Tensor[Complex[float32]]): Tensor[float32] {.noInit.} =
   ## Return a Tensor with absolute values of all elements
   t.map_inline(abs(x))
 
 proc mabs*[T](t: var Tensor[T]) =
   ## Return a Tensor with absolute values of all elements
+  # FIXME: how to inplace convert Tensor[Complex] to Tensor[float]
   t.apply_inline(abs(x))
 
 proc clamp*[T](t: Tensor[T], min, max: T): Tensor[T] {.noInit.} =

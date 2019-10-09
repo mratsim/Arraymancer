@@ -20,11 +20,7 @@ suite "[ML] Dimensionality reduction":
                   [1.5, 1.6],
                   [1.1, 0.9]].toTensor
 
-      let
-        (val, components) = data.pca(2)
-        transformed = data.pca(components)
-
-      check: transformed == val
+      let (projected, components) = data.pca(2)
 
       let expected = [[-0.827970186, -0.175115307],
                       [ 1.77758033,   0.142857227],
@@ -38,24 +34,28 @@ suite "[ML] Dimensionality reduction":
                       [ 1.22382056,  -0.162675287]].toTensor
 
       for col in 0..<2:
-        check:  mean_absolute_error( val[_, col], expected[_, col]) < 1e-08 or
-                mean_absolute_error(-val[_, col], expected[_, col]) < 1e-08
+        check:  mean_absolute_error( projected[_, col], expected[_, col]) < 1e-08 or
+                mean_absolute_error(-projected[_, col], expected[_, col]) < 1e-08
+
+      # Projecting the original data with the axes matrix
+      let centered = data .- data.mean(axis=0)
+      check: mean_absolute_error(projected, centered * components) < 1e-08
 
     block: # https://www.cgg.com/technicaldocuments/cggv_0000014063.pdf
-      let x =  [[ 1.0, -1.0],
+      let data =  [[ 1.0, -1.0],
                 [ 0.0,  1.0],
                 [-1.0, 0.0]].toTensor
 
-      let 
-        (val, components) = x.pca(2)
-        transformed = x.pca(components)
-
-      check: transformed == val
+      let (projected, components) = data.pca(2)
 
       let expected = [[ 2.0,  0.0],
                       [-1.0,  1.0],
                       [-1.0, -1.0]].toTensor / sqrt(2.0)
 
       for col in 0..<2:
-        check:  mean_absolute_error( val[_, col], expected[_, col]) < 1e-10 or
-                mean_absolute_error(-val[_, col], expected[_, col]) < 1e-10
+        check:  mean_absolute_error( projected[_, col], expected[_, col]) < 1e-10 or
+                mean_absolute_error(-projected[_, col], expected[_, col]) < 1e-10
+
+      # Projecting the original data with the components matrix
+      let centered = data .- data.mean(axis=0)
+      check: mean_absolute_error(projected, centered * components) < 1e-08

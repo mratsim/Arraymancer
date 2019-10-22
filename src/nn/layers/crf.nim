@@ -18,10 +18,11 @@ import options
 
 import  ../../tensor/tensor,
         ../../nn_primitives/nn_primitives,
+        ../../nn/init,
         ../../autograd/autograd
 
 
-type Idx* = SomeInteger or SomeOrdinal
+type Idx* = SomeInteger
 
 type CRFGate* [TT; Idx] {.final.} = ref object of Gate[TT]
   ## CRF (Linear) Gate for sequence prediction.
@@ -31,6 +32,30 @@ type CRFGate* [TT; Idx] {.final.} = ref object of Gate[TT]
   # Special values for 
   bos_tag: Idx
   eos_tag: Idx
+
+
+proc init_transitions_matrix*[T: SomeFloat](num_tags: Idx, range_val: T = T(0.1)): Tensor[T] =
+  ## Create emissions matrix within bounds [-range, range], uniformly
+  ## distributed.  The special transitions from [any, start] and [end, any] are
+  ## set to be an arbitrarily low value to prevent prohibited transitions.
+  ##
+  ## Input:
+  ##   The `num_tags` indicating how many real (non-special) tag values there are.
+  ##   The `range_val` giving the scale to initialize transition values.
+  ##
+  ## Returns 
+  ##   The initialized transitions matrix of shape [num_tags + 2, num_tags + 2]
+
+  # TODO: In future, allow for rules prohibiting / mandating certain transitions.
+  let bos_tag, eos_tag = (num_tags, num_tags + 1)
+  result = xavier_uniform(num_tags + 2, num_tags + 2, T) * range_val
+
+  # Scale for a disallowed transition relative to the range value
+  const disallowed_transition_scale = 100_000
+
+  result[_, bos_tag] = disallowed_transition_scale * -1.0 * abs(range_val)
+  result[eos_tag, _] = disallowed_transition_scale * -1.0 * abs(range_val)
+
 
 proc crf_forward[TT, Idx](
   result: var Variable[TT],
@@ -56,11 +81,15 @@ proc crf_forward[TT, Idx](
     timesteps = input.value.shape[0]
     batch_size = input.value.shape[1]
     hidden_dim = input.value.shape[2]
-
-  #[crf_forward(
+  
+  crf_forward(
+    result.value,
     input.value,
-
-  )]#
+    mask.value,
+    transitions.value,
+    tags,
+    reduce = reduce
+  )
 
 proc crf_viterbi*[TT]() = discard
 
@@ -81,7 +110,7 @@ proc crf*[TT](
   ##   - A `tags` tensor of shape [timesteps, batch_size, num_tags + 2] - only needed if
   ##     doing training.  If not training, then this can be nil.
   ## 
-  ## Return:
+  ## Returns:
   ##   - Negative log likelihood Tensor [batch_size, ]
   ##   - Logits for tag prediction of shape [batch_size, sequence_length, num_tags]
   when compileOption("boundChecks"):

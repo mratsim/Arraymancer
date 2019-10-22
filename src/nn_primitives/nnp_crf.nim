@@ -15,7 +15,7 @@
 import ../tensor/tensor,
         math
 
-type Idx = SomeInteger or SomeOrdinal
+type Idx = SomeInteger
 
 proc crf_forward*[T: SomeFloat](
   result: var Tensor[T],

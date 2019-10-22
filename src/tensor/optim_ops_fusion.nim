@@ -29,8 +29,7 @@ import  ../private/[nested_containers, ast_utils],
 proc tensor_multiplyAdd[T](
   A, B: Tensor[T],
   C: Tensor[T]): Tensor[T] =
-
-  result = C
+  result = C.clone()
 
   if C.rank == 2:
     gemm(1.T, A, B, 1.T, result)
@@ -111,4 +110,3 @@ template rewriteToTensorReshape*{reshape(toTensor(oa, dummy_bugfix), shape)}(
   ##
   ## Operation fusion leverage the Nim compiler and should not be called explicitly.
   toTensorReshape(oa, shape, dummy_bugfix)
-

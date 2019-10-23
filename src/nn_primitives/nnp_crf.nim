@@ -15,14 +15,42 @@
 import ../tensor/tensor,
         math
 
+# Needed for the partition function
+from private/p_logsumexp import logsumexp
+
+
 type Idx = SomeInteger
+
+
+proc compute_scores[T](
+  input: Tensor[T],
+  mask: Tensor[T],
+  transitions: Tensor[T],
+  tags: Tensor[Idx]
+): Tensor[T] =
+  ## Computes the un-normalized log probabilities (combination of emissions and
+  ## transition scores at each timestep).
+  ##
+  ## Returns:
+  ##  - A Tensor[T] of non-normalized emission scores of shape [batch_size, ]
+  discard
+
+
+proc compute_log_partition_function[T](): Tensor[T] =
+  ## Compute the partition function by using the forward algorithm to avoid
+  ## explicitly calculating probabilties for all possible sequence
+  ## configurations.
+  discard
+
 
 proc crf_forward*[T: SomeFloat](
   result: var Tensor[T],
   input: Tensor[T],
   mask: Tensor[T],
   transitions: Tensor[T],
-  tags: Tensor[Idx]
+  tags: Tensor[Idx],
+  reduce: bool
 ) =
-  ##
+  ## Computes the log likelihood of input given transitions (emissions) matrix.
+  ## Loss should be *negative* log likelihood.
   discard

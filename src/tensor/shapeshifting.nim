@@ -329,10 +329,10 @@ proc index_select*[T; Idx: byte or char or SomeNumber](t: Tensor[T], axis: int, 
 
   if (select_shape != result.shape):
     ## FIXME: Better way of resizing the result when necessary
-    if (select_shape.size == result.shape):
-      result.reshape(select_shape)
+    if (select_shape.product() == result.size()):
+      result = result.reshape(select_shape)
     else:
-      result = newTensorUninit(select_shape)
+      result = newTensorUninit[T](select_shape)
   
   for i, index in enumerate(indices):
     var r_slice = result.atAxisIndex(axis, i)

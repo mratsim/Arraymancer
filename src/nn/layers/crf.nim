@@ -87,7 +87,7 @@ proc crf_forward[TT, Idx](
 
   gate.dims = (timesteps: timesteps, batch_size: batch_size,
                hidden_dim: hidden_dim)
-
+  
   crf_forward(
     result.value,
     input.value,
@@ -122,9 +122,9 @@ proc crf*[TT](
   ##   - Logits for tag prediction of shape [batch_size, sequence_length, num_tags]
   when compileOption("boundChecks"):
     doAssert input.value.shape.len == 3, fmt"Expected input variable of rank 3" &
-      ", got shape of {input.value.shape}"
+      fmt", got shape of {input.value.shape}"
     doAssert input.value.shape[2] == num_tags, fmt"Expected input variable to" &
-      " emit {num_tags}, emitted {input.value.shape[2]}"
+      fmt" emit {num_tags}, emitted {input.value.shape[2]}"
     doAssert mask.value.shape[0..1] == input.value.shape[0..1],
         fmt"Mask and input shapes do not match:" &
         fmt"got {mask.value.shape[0..2]} and {input.value.shape[0..2]}"
@@ -142,9 +142,12 @@ proc crf*[TT](
   if doing_training:
     if tags.isNone:
       raise newException(ValueError, "Tags must be non-nil when training")
+    else:
+      let tags_tensor = tags.get()
+      result.crf_forward(input, mask, transitions, tags_tensor, num_tags)
   else:
-    let tags_tensor = tags.get()
-    result.crf_forward(input, mask, transitions, tags_tensor, num_tags)
+    # TODO: Inference time
+    discard
 
 
 when isMainModule:
@@ -152,27 +155,25 @@ when isMainModule:
 
   let ctx = newContext Tensor[float32]
 
-  let (timesteps, batch_size, hidden_dim) = (8, 30, 10)
+  let (timesteps, batch_size, num_tags) = (8, 30, 10)
 
   let
     input = ctx.variable(
-      randomTensor[float32](timesteps, batch_size, hidden_dim, max = 1.1),
+      randomTensor[float32](timesteps, batch_size, num_tags, max = 1.1),
       requires_grad = true
     )
 
     mask = ctx.variable(ones[float32](timesteps, batch_size))
 
-    num_tags: int = 5
-
     transitions = ctx.variable(
       (randomTensor(num_tags + 2, num_tags + 2, max = 2.0'f32) .- 1.0'f32),
       requires_grad = false
     )
-
+    
   suite "Basic CRF tests":
 
     test "When pass in some(Tensor[int]) can call CRF":
-      var tags = option(randomTensor(timesteps, batch_size, max = num_tags))
+      var tags = option(randomTensor(timesteps, batch_size, max = num_tags - 1))
       let output = crf(input, mask, transitions, tags, num_tags)
       assert output.value.shape == [batch_size, ],
         fmt"Got output shape {output.value.shape}"

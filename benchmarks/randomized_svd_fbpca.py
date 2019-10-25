@@ -32,7 +32,7 @@ bench(Observations = 20000, Features = 4000)
 bench(Observations = 4000, Features = 20000)
 
 # i9-9980XE Overclocked at 4.1GHz, AVX 4.0GHz, AVX512 3.5GHz
-# Numpy / Scipy built with MKL
+# Numpy / Scipy built with OpenBLAS
 #
 # Hilbert matrix creation too: 0.9500 seconds.
 # Matrix of shape: [20000, 4000]
@@ -53,3 +53,23 @@ bench(Observations = 4000, Features = 20000)
 # 4.81s, 3742.4Mb  -- xtime.rb
 
 # mem usage with just the first SVD: 3.77GB
+
+# Numpy / Scipy built with MKL
+#
+# Hilbert matrix creation too: 0.9380 seconds.
+# Matrix of shape: [20000, 4000]
+# Target SVD: [20000, 40]
+# Randomized SVD took: 2.1632 seconds
+# U:  (20000, 40)
+# S:  (40,)
+# Vh:  (40, 4000)
+# ---------------------------------------------------------------------------------
+# Hilbert matrix creation too: 0.9698 seconds.
+# Matrix of shape: [4000, 20000]
+# Target SVD: [4000, 40]
+# Randomized SVD took: 0.3566 seconds
+# U:  (4000, 40)
+# S:  (40,)
+# Vh:  (40, 20000)
+# ---------------------------------------------------------------------------------
+# 4.78s, 3742.7Mb

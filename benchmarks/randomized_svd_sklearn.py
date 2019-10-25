@@ -32,7 +32,7 @@ bench(Observations = 20000, Features = 4000)
 bench(Observations = 4000, Features = 20000)
 
 # i9-9980XE Overclocked at 4.1GHz, AVX 4.0GHz, AVX512 3.5GHz
-# Numpy / Scipy built with MKL
+# Numpy / Scipy built with OpenBLAS
 #
 # $  ./benchmarks/xtime.rb python benchmarks/randomized_svd_sklearn.py
 # Hilbert matrix creation too: 0.9466 seconds.
@@ -54,3 +54,23 @@ bench(Observations = 4000, Features = 20000)
 # 6.11s, 3751.0Mb  -- xtime.rb
 
 # mem usage with just the first SVD: 3.77GB
+
+# Numpy / Scipy built with MKL
+#
+# Hilbert matrix creation too: 0.9739 seconds.
+# Matrix of shape: [20000, 4000]
+# Target SVD: [20000, 40]
+# Randomized SVD took: 3.6438 seconds
+# U:  (20000, 40)
+# S:  (40,)
+# Vh:  (40, 4000)
+# ---------------------------------------------------------------------------------
+# Hilbert matrix creation too: 0.9686 seconds.
+# Matrix of shape: [4000, 20000]
+# Target SVD: [4000, 40]
+# Randomized SVD took: 0.1217 seconds
+# U:  (4000, 40)
+# S:  (40,)
+# Vh:  (40, 20000)
+# ---------------------------------------------------------------------------------
+# 6.21s, 3754.6Mb

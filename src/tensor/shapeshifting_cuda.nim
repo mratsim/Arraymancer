@@ -58,9 +58,9 @@ proc asContiguous*[T: SomeFloat](t: CudaTensor[T], layout: OrderType = colMajor,
 proc reshape*(t: CudaTensor, new_shape: varargs[int]): CudaTensor =
   ## Reshape a CudaTensor without copy.
   ##
-  ## ⚠ Reshaping without copy is only possible on contiguous Tensors
+  ## ⚠ Reshaping without copy is only possible on contiguous rowMajor Tensors
 
-  t.reshape_no_copy(new_shape, result)
+  t.reshape_no_copy(new_shape, result, rowMajor)
   result.storage = t.storage
 
 proc broadcast*(t: CudaTensor, shape: varargs[int]): CudaTensor {.noSideEffect.}=

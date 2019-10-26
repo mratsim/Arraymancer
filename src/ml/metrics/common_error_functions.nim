@@ -13,8 +13,6 @@
 # limitations under the License.
 
 import ../../tensor/tensor
-import complex except Complex64, Complex32
-
 
 # ####################################################
 
@@ -34,11 +32,12 @@ proc mean_squared_error*[T](y_true, y: Tensor[T]): T =
 
 # ####################################################
 
-proc relative_error*[T](y_true, y: T): T {.inline.} =
+proc relative_error*[T: SomeFloat](y_true, y: T): T {.inline.} =
   ## Relative error, |y_true - y|/max(|y_true|, |y|)
   ## Normally the relative error is defined as |y_true - y| / |y_true|,
   ## but here max is used to make it symmetric and to prevent dividing by zero,
   ## guaranteed to return zero in the case when both values are zero.
+  # We require float (and not complex as complex.abs will cause issue)
   let denom = max(abs(y_true), abs(y))
   if denom == 0.T:
     return 0.T
@@ -61,8 +60,9 @@ proc mean_relative_error*[T](y_true, y: Tensor[T]): T =
 
 # ####################################################
 
-proc absolute_error*[T](y_true, y: T): T {.inline.} =
+proc absolute_error*[T: SomeFloat](y_true, y: T): T {.inline.} =
   ## Absolute error for a single value, |y_true - y|
+  # We require float (and not complex as complex.abs will cause issue)
   result = abs(y_true - y)
 
 proc absolute_error*[T](y_true, y: Tensor[T]): Tensor[T] {.noInit.} =

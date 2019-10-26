@@ -21,7 +21,6 @@ import  ../private/[functional, nested_containers, sequninit],
         sequtils,
         random,
         math
-include ./private/p_complex
 
 proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
@@ -147,7 +146,11 @@ proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int])
   ##      - Type of its elements
   ## Result:
   ##      - A one-ed Tensor of the same shape
-  newTensorWith[T](shape, 1.T)
+  when T is SomeNumber:
+    newTensorWith[T](shape, 1.T)
+  else:
+    type F = T.T # Get the float subtype of Complex[T]
+    newTensorWith[T](shape, complex(1.F, 0.F))
 
 proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArray): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1
@@ -156,7 +159,11 @@ proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArray
   ##      - Type of its elements
   ## Result:
   ##      - A one-ed Tensor of the same shape
-  newTensorWith[T](shape, 1.T)
+  when T is SomeNumber:
+    newTensorWith[T](shape, 1.T)
+  else:
+    type F = T.T
+    newTensorWith[T](shape, complex(1.F, 0.F))
 
 proc ones_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1 with the same shape as the input

@@ -44,13 +44,23 @@ proc melwise_div*[T: SomeFloat](a: var Tensor[T], b: Tensor[T]) =
   ## Element-wise division (in-place)
   a.apply2_inline(b, x / y)
 
-proc reciprocal*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noInit.} =
+proc reciprocal*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Return a tensor with the reciprocal 1/x of all elements
   t.map_inline(1.T/x)
 
-proc mreciprocal*[T: SomeFloat|Complex[float32]|Complex[float64]](t: var Tensor[T]) =
+proc mreciprocal*[T: SomeFloat](t: var Tensor[T]) =
   ## Apply the reciprocal 1/x in-place to all elements of the Tensor
   t.apply_inline(1.T/x)
+
+proc reciprocal*[T: Complex[float32] or Complex[float64]](t: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Return a tensor with the reciprocal 1/x of all elements
+  type F = T.T # Get float subtype of Complex[T]
+  t.map_inline(complex(1.F, 0.F)/x)
+
+proc mreciprocal*[T: Complex[float32] or Complex[float64]](t: var Tensor[T]) =
+  ## Apply the reciprocal 1/x in-place to all elements of the Tensor
+  type F = T.T # Get float subtype of Complex[T]
+  t.apply_inline(complex(1.F, 0.F)/x)
 
 proc negate*[T: SomeSignedInt|SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Return a tensor with all elements negated (10 -> -10)

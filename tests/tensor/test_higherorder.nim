@@ -52,14 +52,15 @@ suite "[Core] Testing higher-order functions":
     tmp2.apply(plus_one) # in-place
     check: tmp2 == t2[_,2]
 
+    proc plus_one_complex[T](x: var T) = x += complex(1'f64)
     var tmp2_c = t[_,2].clone.astype(Complex[float64])
-    tmp2_c.apply(plus_one) # in-place
+    tmp2_c.apply(plus_one_complex) # in-place
     check: tmp2_c == t2_c[_,2]
 
 
   test "Reduce function":
     check: t.reduce(customAdd) == 66
-    check: t_c.reduce(customAdd) == 66.Complex64
+    check: t_c.reduce(customAdd) == complex(66'f64)
 
     proc customConcat(x, y: string): string = x & y
 

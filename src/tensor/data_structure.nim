@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import  ./backend/metadataArray,
-        nimblas
+        nimblas, complex
 
-export nimblas.OrderType
+export nimblas.OrderType, complex
 
 type
   CpuStorage* {.shallow.} [T] = object

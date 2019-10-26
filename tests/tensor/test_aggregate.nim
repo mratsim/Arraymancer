@@ -25,7 +25,7 @@ suite "[Core] Testing aggregation functions":
 
   test "Sum":
     check: t.sum == 66
-    check: t_c.sum == 66
+    check: t_c.sum == complex(66'f64)
     let row_sum = [[18, 22, 26]].toTensor()
     let col_sum = [[3],
                    [12],
@@ -38,7 +38,7 @@ suite "[Core] Testing aggregation functions":
 
   test "Mean":
     check: t.astype(float).mean == 5.5 # Note: may fail due to float rounding
-    check: t_c.mean == 5.5 # Note: may fail due to float rounding
+    check: t_c.mean == complex(5.5) # Note: may fail due to float rounding
 
     let row_mean = [[4.5, 5.5, 6.5]].toTensor()
     let col_mean = [[1.0],
@@ -58,8 +58,8 @@ suite "[Core] Testing aggregation functions":
     check: a.astype(float).product() == 32768.0
     check: a.product(0) == [[8,32,128]].toTensor()
     check: a.product(1) == [[8],[4096]].toTensor()
-    check: t_c.product() == 0
-    check: a_c.product() == 32768.0
+    check: t_c.product() == complex(0.0)
+    check: a_c.product() == complex(32768.0)
     check: a_c.product(0) == [[8,32,128]].toTensor().astype(Complex[float64])
     check: a_c.product(1) == [[8],[4096]].toTensor().astype(Complex[float64])
 

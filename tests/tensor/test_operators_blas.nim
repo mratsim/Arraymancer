@@ -193,7 +193,6 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
     check:
       mean_absolute_error(expected, val) < 1e-9
-      abs(mean_absolute_error(expected.astype(Complex[float64]), val.astype(Complex[float64]))) < 1e-9
 
   test "Scalar/dot product":
     ## TODO: test with slices
@@ -218,7 +217,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
 
     let ufl_expected = @[2'f64, 6, -10].toTensor()
     check: ufl_expected / 2 == u_float
-    check: ufl_expected.astype(Complex[float64]) / 2 == u_float.astype(Complex[float64])
+    check: ufl_expected.astype(Complex[float64]) / complex(2'f64) == u_float.astype(Complex[float64])
 
   test "Multiplication/division by scalar (inplace)":
     var u_int = @[1, 3, -5].toTensor()
@@ -282,11 +281,11 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
       let expected_sub = @[0, 2, -6].toTensor().astype(Complex[float64])
 
       u_complex += v_complex
-      check: u_complex == expected_add.astype(Complex[float64])
+      check: u_complex == expected_add
 
       u_complex -= v_complex
       u_complex -= v_complex
-      check: u_complex == expected_sub.astype(Complex[float64])
+      check: u_complex == expected_sub
 
   test "Tensor negative":
     let u_int = @[-1, 0, 2].toTensor()

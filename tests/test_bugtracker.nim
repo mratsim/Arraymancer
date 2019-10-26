@@ -47,3 +47,18 @@ suite "Testing specific issues from bug tracker":
     let x = zeros[int]([1, 2, 3])
     expect(IndexError):
       let y{.used.} = x[1, _, _]
+
+  test "#386 Reshaping a contiguous permuted tensor":
+    # https://github.com/mratsim/Arraymancer/issues/386
+    block: # row-major
+      let x = [[0, 1], [2, 3]].toTensor
+      let expected = [[0, 2], [1, 3]].toTensor
+      check:
+        x.permute(1, 0) == expected
+        x.permute(1, 0).reshape(2, 2) == expected
+    block: # col-major
+      let x = [[0, 1], [2, 3]].toTensor.clone(colMajor)
+      let expected = [[0, 2], [1, 3]].toTensor
+      check:
+        x.permute(1, 0) == expected
+        x.permute(1, 0).reshape(2, 2) == expected

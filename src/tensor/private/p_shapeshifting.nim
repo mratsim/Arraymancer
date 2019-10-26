@@ -33,9 +33,9 @@ proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray, 
   result = newTensorUninit[T](new_shape)
   result.apply2_inline(t,y)
 
-proc reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) {.noSideEffect.}=
+proc reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor, layout: OrderType) {.noSideEffect.}=
   result.shape.copyFrom(new_shape)
-  shape_to_strides(result.shape, rowMajor, result.strides)
+  shape_to_strides(result.shape, layout, result.strides)
   result.offset = t.offset
 
 proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
@@ -45,12 +45,14 @@ proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: v
     else:
       check_reshape(t, new_shape.toMetadataArray)
 
-  if t.isContiguous:
-    reshape_no_copy(t, new_shape, result)
+  if t.is_C_contiguous:
+    reshape_no_copy(t, new_shape, result, rowMajor)
     result.storage = t.storage
-    return
-
-  reshape_with_copy(t, new_shape, result)
+  elif t.is_F_contiguous:
+    reshape_no_copy(t, new_shape, result, colMajor)
+    result.storage = t.storage
+  else:
+    reshape_with_copy(t, new_shape, result)
 
 proc broadcastImpl*(t: var AnyTensor, shape: varargs[int]|MetadataArray) {.noSideEffect.}=
   when compileOption("boundChecks"):

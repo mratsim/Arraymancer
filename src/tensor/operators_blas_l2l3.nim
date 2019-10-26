@@ -19,8 +19,8 @@ import  ./private/p_checks,
         ./private/p_operator_blas_l2l3,
         ./fallback/naive_l2_gemv,
         ./data_structure,
-        ./init_cpu
-from complex import Complex
+        ./init_cpu,
+        ../private/ast_utils
 
 proc gemv*[T: SomeFloat|Complex](
           alpha: T,
@@ -86,7 +86,7 @@ proc gemm*[T: SomeNumber](
   C: var Tensor[T]) {.deprecated: "Use explicit gemm(1, A, B, 0, C) instead".}=
   gemm(1.T, A, B, 0.T, C)
 
-proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noInit.} =
+proc `*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
   ##
   ## Float and complex operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.
@@ -97,5 +97,24 @@ proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Ten
   elif a.rank == 2 and b.rank == 1:
     result = newTensorUninit[T](a.shape[0])
     gemv(1.T, a, b, 0.T, result)
+  else:
+    raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+
+proc `*`*[T: Complex[float32] or Complex[float64]](
+      a, b: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
+  ##
+  ## Float and complex operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.
+
+  type F = T.T # Get float subtype of Complex[T]
+  # We need to workaround https://github.com/nim-lang/Nim/issues/12525
+  # and not use the default parameter
+
+  if a.rank == 2 and b.rank == 2:
+    result = newTensorUninit[T](a.shape[0], b.shape[1])
+    gemm(complex(1.F, 0.F), a, b, complex(0.F, 0.F), result)
+  elif a.rank == 2 and b.rank == 1:
+    result = newTensorUninit[T](a.shape[0])
+    gemv(complex(1.F, 0.F), a, b, complex(0.F, 0.F), result)
   else:
     raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")

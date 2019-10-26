@@ -57,13 +57,23 @@ proc mean*[T: SomeInteger](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}
   ## Warning ⚠: Since input is integer, output will also be integer (using integer division)
   t.sum(axis) div t.shape[axis].T
 
-proc mean*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T]): T {.inline.}=
+proc mean*[T: SomeFloat](t: Tensor[T]): T {.inline.}=
   ## Compute the mean of all elements
   t.sum / t.size.T
 
-proc mean*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
+proc mean*[T: Complex[float32] or Complex[float64]](t: Tensor[T]): T {.inline.}=
+  ## Compute the mean of all elements
+  type F = T.T # Get float subtype of Complex[T]
+  t.sum / complex(t.size.F, 0.F)
+
+proc mean*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
   ## Compute the mean along an axis
   t.sum(axis) / t.shape[axis].T
+
+proc mean*[T: Complex[float32] or Complex[float64]](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
+  ## Compute the mean along an axis
+  type F = T.T # Get float subtype of Complex[T]
+  t.sum(axis) / complex(t.shape[axis].F, 0.F)
 
 proc min*[T](t: Tensor[T]): T =
   ## Compute the min of all elements

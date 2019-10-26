@@ -14,11 +14,21 @@
 
 import  ./data_structure,
         ./higher_order_applymap,
-        sugar, math
- 
-proc astype*[T, U](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noInit.} =
+        sugar, math, complex,
+        ../private/ast_utils
+
+proc astype*[T; U: not Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noInit.} =
   ## Apply type conversion on the whole tensor
   result = t.map(x => x.U)
+
+proc astype*[T: SomeNumber, U: Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noInit.} =
+  ## Apply type conversion on the whole tensor
+  when T is SomeNumber and U is Complex[float32]:
+    result = t.map(x => complex32(x.float32))
+  elif T is SomeNumber and U is Complex[float64]:
+    result = t.map(x => complex64(x.float64))
+  else:
+    {.error: "Unreachable".}
 
 # #############################################################
 # Autogen universal functions

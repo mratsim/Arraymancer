@@ -264,7 +264,7 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       var b_c = b.clone.astype(Complex[float64])
 
       a .^= 2.0
-      a_c .^= 2.0
+      a_c .^= complex(2.0)
       check: a == [[1.0],
                     [100.0],
                     [400.0],
@@ -275,7 +275,7 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                     [900.0]].toTensor.astype(Complex[float64])
 
       b .^= -1
-      b_c .^= -1
+      b_c .^= complex(-1.0)
       check: b == [[1.0],
                     [1.0/10.0],
                     [1.0/20.0],
@@ -287,8 +287,11 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
 
   test "Implicit broadcasting - Sigmoid 1 ./ (1 .+ exp(-x)":
     block:
-      proc sigmoid[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T]=
+      proc sigmoid[T: SomeFloat](t: Tensor[T]): Tensor[T]=
         1.T ./ (1.T .+ exp(0.T .- t))
+
+      proc sigmoid(t: Tensor[Complex32]): Tensor[Complex32]=
+        complex32(1) ./ (complex32(1) .+ exp(complex32(0) .- t))
 
       let a = newTensor[float32]([2,2])
       check: sigmoid(a) == [[0.5'f32, 0.5],[0.5'f32, 0.5]].toTensor

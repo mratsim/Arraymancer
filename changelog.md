@@ -18,6 +18,8 @@ Changes:
 
 Bug fixes:
   - ``gemm`` could crash when the result was column major
+  - Complex converters do not pollute the global namespace and do not
+    prevent string covnersion via `$` of number types due to ambiguous call.
 
 Breaking
   - In ``symeig``, the ``eigenvectors`` argument is now called ``return_eigenvectors``.
@@ -26,6 +28,9 @@ Breaking
   - pca output tuple used the names (results, components). It has been renamed to (projected, components).
   - A ``pca`` overload that projected a data matrix on already existing principal axes
     was removed. Simply multiply the mean-centered data matrix with the loadings instead.
+  - Complex converters were removed. This prevents hard to debug and workaround implicit conversion bug in downstream library.
+    If necessary, users can reimplement converters themselves.
+    This also provides a 20% boost in Arraymancer compilation times
 
 Deprecation:
   - The syntax gemm(A, B, C) is now deprecated.

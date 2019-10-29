@@ -39,6 +39,7 @@ proc compute_scores[T](
   ## Returns:
   ##  - A Tensor[T] of non-normalized emission scores of shape [batch_size, ]
 
+  # DEBUG
   echo (timesteps, batch_size, hidden_dim)
   echo input.shape
 
@@ -53,12 +54,12 @@ proc compute_scores[T](
       fmt" should be of shape {batch_size} but got {transition_scores.shape}"
 
   # Emission scores for tag at t = 0 for all in batch
-  # FIXME: This is giving a value of wrong shape below
-  var emission_scores = input[0, _, _]
-                          .squeeze()
-                          .index_select(axis = 1, indices = tags[0, _].squeeze())
-                          .squeeze(axis=1)
+  # Unoptimized - simple loop
+  var emission_scores = newTensorUninit[input.T](batch_size)
 
+  for i in 0 ..< batch_size:
+    emission_scores[i] = input[0, i, tags[0, i]]
+  
   when compileOption("boundChecks"): 
     doAssert emission_scores.shape == [batch_size], "Emission scores should" &
       fmt" be of shape {batch_size} but got {emission_scores.shape}"
@@ -68,7 +69,7 @@ proc compute_scores[T](
   result += transition_scores + emission_scores
 
   # TODO: Optimize?
-  for i in 1 ..< timesteps:
+  for i in 1 ..< timesteps - 1:
     let 
       old_tags = tags[i - 1, _].squeeze(1)
       new_tags = tags[i, _].squeeze(1)
@@ -76,9 +77,9 @@ proc compute_scores[T](
       old_mask = mask[i, _].squeeze()
       new_mask = mask[i + 1, _].squeeze()
 
-    # New emission scores
-    input[i, _, _].squeeze().index_select(axis=1, tags[i, _].squeeze(),
-                                          result = emission_scores)
+    # New emission scores are the emission at time i for batch j to tag [i, j]
+    for j in 0 ..< batch_size:
+      emission_scores[i] = input[i, j, tags[i, j]]
 
     # New transition scores
     # This is applying transtion from old -> new tag across batch
@@ -88,12 +89,16 @@ proc compute_scores[T](
     transition_scores.apply3_inline(old_tags, new_tags):
       transitions[y, z]
 
-    result += transition_scores * new_mask + emission_scores * old_mask
+    result += (transition_scores .* new_mask) + (emission_scores .* old_mask)
+  
+  # TODO: Make sure that last transition handled correctly 
   
   # Assume that masked when == 0
   let last_time_inds = (mask.sum(axis=0).squeeze() .- 1).astype(int)
-  let last_tags = tags.index_select(axis=0, indices=last_time_inds).squeeze()
-  # let last_transitions = transitions[_, eos_tag].squeeze()
+  var last_tags = newTensorUninit[tags.T](batch_size)
+
+  for i in 0 ..< batch_size:
+    last_tags[i] = tags[last_time_inds[i], i]
 
   # Set transition scores to last_real_tag -> EOS_TAG across batch
   transitions[_, eos_tag].squeeze().index_select(axis=0, indices=last_tags, result=transition_scores)

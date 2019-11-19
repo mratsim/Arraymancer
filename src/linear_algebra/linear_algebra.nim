@@ -4,8 +4,8 @@
 
 import
   ./least_squares, ./special_matrices,
-  ./decomposition, ./decomposition_rand
+  ./decomposition, ./decomposition_rand, ./linear_systems
 
 export
   least_squares, special_matrices,
-  decomposition, decomposition_rand
+  decomposition, decomposition_rand, linear_systems

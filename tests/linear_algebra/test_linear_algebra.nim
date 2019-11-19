@@ -427,3 +427,27 @@ suite "Linear algebra":
 
       let reconstructed = (U .* S.unsqueeze(0)) * Vh
       check: mean_absolute_error(H, reconstructed) < 1e-2
+
+  test "Solve linear equations general matrix":
+    block:
+      # From: https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/dgesv_ex.c.htm
+      let a = [[ 6.80, -6.05, -0.45,  8.32, -9.67],
+               [-2.11, -3.30,  2.58,  2.71, -5.14],
+               [ 5.66,  5.36, -2.70,  4.35, -7.26],
+               [ 5.97, -4.44,  0.27, -7.17,  6.08],
+               [ 8.23,  1.08,  9.04,  2.14, -6.87]].toTensor
+
+      let b = [[ 4.02, -1.56,  9.81],
+               [ 6.19,  4.00, -4.09],
+               [-8.22, -8.67, -4.57],
+               [-7.57,  1.75, -8.61],
+               [-3.03,  2.86,  8.99]].toTensor
+
+      let x_known = [[-0.80, -0.39,  0.96],
+                     [-0.70, -0.55,  0.22],
+                     [ 0.59,  0.84,  1.90],
+                     [ 1.32, -0.10,  5.36],
+                     [ 0.57,  0.11,  4.04]].toTensor
+
+      let x = solve(a, b)
+      check mean_absolute_error(x, x_known) < 0.01

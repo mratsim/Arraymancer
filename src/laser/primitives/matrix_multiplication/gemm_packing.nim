@@ -75,13 +75,18 @@ proc pack_B_kc_nc*[T; ukernel: static MicroKernel](
   let unroll_stop = nc.round_step_down(NR)
 
   # 1. Pack n matrices of size kc*nr, n = nc/nr
+  {.push stacktrace:off.}
+  {.push linedir:off.}
   {.emit:"""
+
       #pragma omp parallel for
       for (int j = 0; j < `unroll_stop`; j+=`NR`)
         for (int k = 0; k < `kc`; k++)
           for (int jj = 0; jj < `NR`; jj++)
             `buffer`[j*`kc`+k*`NR`+jj] = `B`.buffer[k*`B`.rowStride + (j+jj)*`B`.colStride];
   """.}
+  {.pop.}
+  {.pop.}
 
   # 2. Process the tail
   let remainder = nc - unroll_stop

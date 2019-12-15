@@ -99,6 +99,7 @@ proc sparse_softmax_cross_entropy*[T; Idx: SomeNumber or byte or char or enum](
   # ∑i(- ti * yi) is either -yi or 0 in the sparse case.
   # Since target holds coordinates: ∑i(- ti * yi) = - yi[ti]
   {.push stacktrace:off.}
+  {.push linedir:off.}
   for i in 0||(input.shape[0]-1):
     let lse = input[i,_].logsumexp
 
@@ -106,10 +107,11 @@ proc sparse_softmax_cross_entropy*[T; Idx: SomeNumber or byte or char or enum](
       result += lse - input[i, int(target[i])]
     else:
       let tmp = lse - input[i, int(target[i])]
-      {.push linedir:off.}
-      {.emit:"#pragma omp atomic".}
+      # The new line is intentional or Nim inserts its frame on the line of the omp pragma
+      {.emit:"""
+      #pragma omp atomic""".}
       {.emit:"`result` += `tmp`;".}
-      {.pop.}
+  {.pop.}
   {.pop.}
 
   result /= T(batch_size)

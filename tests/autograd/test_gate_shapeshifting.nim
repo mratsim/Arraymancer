@@ -130,7 +130,7 @@ suite "Autograd of shapeshifting operations":
               )
 
     loss.backprop()
-    check: vx.grad.mean_relative_error(vx.expected) < 1e-07
+    check: vx.grad.mean_relative_error(expected) < 1e-07
 
   test "Gradient of squeeze operation (+ chunking)":
 

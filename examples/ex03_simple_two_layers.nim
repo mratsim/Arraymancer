@@ -42,7 +42,7 @@ let
 for t in 0 ..< 500:
   let
     y_pred = model.forward(x)
-    loss = mse_loss(y_pred, y)
+    loss = y_pred.mse_loss(y)
 
   echo &"Epoch {t}: loss {loss.value[0]}"
 

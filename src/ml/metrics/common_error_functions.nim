@@ -67,10 +67,10 @@ proc absolute_error*[T: SomeFloat](y, y_true: T): T {.inline.} =
 
 proc absolute_error*[T](y, y_true: Tensor[T]): Tensor[T] {.noInit.} =
   ## Element-wise absolute error for a tensor
-  result = map2_inline(y_true, y, absolute_error(x,y))
+  result = map2_inline(y_true, y, y.absolute_error(x))
 
 proc mean_absolute_error*[T](y, y_true: Tensor[T]): T =
   ## Also known as L1 loss, absolute error between elements:
   ## sum(|y_true - y|)/m
   ## where m is the number of elements
-  result = map2_inline(y_true, y, absolute_error(x,y)).mean()
+  result = map2_inline(y_true, y, y.absolute_error(x)).mean()

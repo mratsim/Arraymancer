@@ -18,7 +18,7 @@ import unittest
 suite "Test the numerical gradient proc":
   test "Numerical gradient":
     proc f(x: float): float = x*x + x + 1.0
-    check: relative_error(numerical_gradient(2.0, f), 5.0) < 1e-8
+    check: numerical_gradient(2.0, f).relative_error(5.0) < 1e-8
 
     proc g(t: Tensor[float]): float =
       let x = t[0]

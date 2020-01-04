@@ -35,9 +35,8 @@ template test_conv(T: typedesc[SomeFloat]) =
     let bias = [0].toTensor().reshape(1,1,1).astype(T).cuda
 
     # TODO: padding should accept a tuple (i.e. unify Size2D and SizeHW)
-    check: mean_absolute_error(
-      input.conv2d(kernel, bias, padding=[1,1]).cpu,
-      target) <= T(1e-7)
+    check: input.conv2d(kernel, bias, padding=[1,1]).cpu
+             .mean_absolute_error(target) <= T(1e-7)
 
   test "Conv2D Forward + Backward [" & $T & ']':
 

@@ -192,7 +192,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
                     [-1.22382056,  -0.162675287]].toTensor
 
     check:
-      mean_absolute_error(expected, val) < 1e-9
+      expected.mean_absolute_error(val) < 1e-9
 
   test "Scalar/dot product":
     ## TODO: test with slices

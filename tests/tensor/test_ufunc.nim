@@ -40,7 +40,7 @@ suite "Universal functions":
     let expected_c = @[@[cos(complex64(1'f64,0.0)),cos(complex64(2'f64,0.0)),cos(complex64(3'f64,0.0))],
                        @[cos(complex64(4'f64,0.0)),cos(complex64(5'f64,0.0)),cos(complex64(6'f64,0.0))]]
 
-    check: mean_absolute_error(cos(ta), expected_a.toTensor()) <= 1e-15 # We have slight precision loss with OpenMP
+    check: cos(ta).mean_absolute_error(expected_a.toTensor()) <= 1e-15 # We have slight precision loss with OpenMP
     check: ln(tb) == expected_b.toTensor()
 
     # TODO - complex errors

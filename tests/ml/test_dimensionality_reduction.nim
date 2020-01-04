@@ -39,7 +39,7 @@ suite "[ML] Dimensionality reduction":
 
       # Projecting the original data with the axes matrix
       let centered = data .- data.mean(axis=0)
-      check: mean_absolute_error(projected, centered * components) < 1e-08
+      check: projected.mean_absolute_error(centered * components) < 1e-08
 
     block: # https://www.cgg.com/technicaldocuments/cggv_0000014063.pdf
       let data =  [[ 1.0, -1.0],
@@ -58,4 +58,4 @@ suite "[ML] Dimensionality reduction":
 
       # Projecting the original data with the components matrix
       let centered = data .- data.mean(axis=0)
-      check: mean_absolute_error(projected, centered * components) < 1e-08
+      check: projected.mean_absolute_error(centered * components) < 1e-08

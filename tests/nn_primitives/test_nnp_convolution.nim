@@ -162,15 +162,15 @@ suite "Convolution 2D":
     test "Conv2D Forward + Backward [Im2ColGEMM]":
       conv2d_backward(input, kernel, bias, padding, stride,
                       grad_output, grad_input, grad_weight, grad_bias)
-      check: mean_relative_error(target_grad_bias, grad_bias.astype(float)) < 1e-6
-      check: mean_relative_error(target_grad_weight, grad_weight.astype(float)) < 1e-6
-      check: mean_relative_error(target_grad_input, grad_input.astype(float)) < 1e-6
+      check: grad_bias.astype(float).mean_relative_error(target_grad_bias) < 1e-6
+      check: grad_weight.astype(float).mean_relative_error(target_grad_weight) < 1e-6
+      check: grad_input.astype(float).mean_relative_error(target_grad_input) < 1e-6
 
     when defined(nnpack):
       test "Conv2D Forward + Backward [NNPack]":
         conv2d_backward(input, kernel, bias, padding, stride,
                         grad_output, grad_input, grad_weight, grad_bias,
                         algorithm=Conv2DAlgorithm.NNPackAuto)
-        check: mean_relative_error(target_grad_bias, grad_bias.astype(float)) < 1e-6
-        check: mean_relative_error(target_grad_weight, grad_weight.astype(float)) < 1e-6
-        check: mean_relative_error(target_grad_input, grad_input.astype(float)) < 1e-6
+        check: grad_bias.astype(float).mean_relative_error(target_grad_bias) < 1e-6
+        check: grad_weight.astype(float).mean_relative_error(target_grad_weight) < 1e-6
+        check: grad_input.astype(float).mean_relative_error(target_grad_input) < 1e-6

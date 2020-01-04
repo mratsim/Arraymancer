@@ -43,10 +43,10 @@ suite "Linear algebra":
         expected_sv = [ 4.10003045f,  1.09075677].toTensor
 
       check:
-        mean_relative_error(solution, expected_sol) < 1e-6
-        mean_relative_error(residuals, expected_residuals) < 2e-6 # Due to parallelism hazards this sometimes go over 1e-6 on Travis
+        solution.mean_relative_error(expected_sol) < 1e-6
+        residuals.mean_relative_error(expected_residuals) < 2e-6 # Due to parallelism hazards this sometimes go over 1e-6 on Travis
         matrix_rank == expected_matrix_rank
-        mean_relative_error(singular_values, expected_sv) < 1e-6
+        singular_values.mean_relative_error(expected_sv) < 1e-6
 
     block: # Example from Eigen
            # https://eigen.tuxfamily.org/dox/group__LeastSquares.html
@@ -58,7 +58,7 @@ suite "Linear algebra":
       let (solution, _, _, _) = least_squares_solver(A, b)
       let expected_sol = [-0.67, 0.314].toTensor
 
-      check: mean_relative_error(solution, expected_sol) < 1e-3
+      check: solution.mean_relative_error(expected_sol) < 1e-3
 
     block: # "Multiple independant equations"
            # Example from Intel documentation:
@@ -90,10 +90,10 @@ suite "Linear algebra":
       let expected_sv = [ 18.66, 15.99, 10.01, 8.51].toTensor
 
       check:
-        mean_relative_error(solution, expected_sol) < 0.015
+        solution.mean_relative_error(expected_sol) < 0.015
         residuals.rank == 0 and residuals.shape[0] == 0 and residuals.strides[0] == 0
         matrix_rank == expected_matrix_rank
-        mean_relative_error(singular_values, expected_sv) < 1e-03
+        singular_values.mean_relative_error(expected_sv) < 1e-03
 
   test "Eigenvalues and eigenvector of symmetric matrices":
     # Note: Functions should return a unit vector (norm == 1).

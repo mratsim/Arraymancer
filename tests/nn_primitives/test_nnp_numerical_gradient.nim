@@ -26,4 +26,4 @@ suite "Test the numerical gradient proc":
       x*x + y*y + x*y + x + y + 1.0
     let input = [2.0, 3.0].toTensor()
     let grad = [8.0, 9.0].toTensor()
-    check: mean_relative_error(numerical_gradient(input, g), grad) < 1e-8
+    check: numerical_gradient(input, g).mean_relative_error(grad) < 1e-8

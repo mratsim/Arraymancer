@@ -54,7 +54,7 @@ suite "[NN Primitives - Gated Recurrent Unit - Cell]":
                         bW3, bU3,
                         h)
 
-      check: mean_relative_error(pytorch_expected, h) < 1e-8
+      check: h.mean_relative_error(pytorch_expected) < 1e-8
 
     test "GRU Cell forward - equivalent to PyTorch/CuDNN":
 
@@ -70,7 +70,7 @@ suite "[NN Primitives - Gated Recurrent Unit - Cell]":
                       r, z, n, Uh,
                       h)
 
-      check: mean_relative_error(pytorch_expected, h) < 1e-8
+      check: h.mean_relative_error(pytorch_expected) < 1e-8
 
   ################################
 
@@ -278,8 +278,8 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
                   output, h)
 
     check:
-      mean_relative_error(py_expected_output, output) < 1e-8
-      mean_relative_error(py_expected_hiddenN, h) < 1e-8
+      output.mean_relative_error(py_expected_output) < 1e-8
+      h.mean_relative_error(py_expected_hiddenN) < 1e-8
 
   test "GRU forward - equivalent to PyTorch/CuDNN":
     # 1 direction hence `hidden.shape[0] * 1`
@@ -300,8 +300,8 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
                 cached_inputs, cached_hidden)
 
     check:
-      mean_relative_error(py_expected_output, output) < 1e-8
-      mean_relative_error(py_expected_hiddenN, h) < 1e-8
+      output.mean_relative_error(py_expected_output) < 1e-8
+      h.mean_relative_error(py_expected_hiddenN) < 1e-8
 
   type GradKind = enum
     HiddenN, Output, Both

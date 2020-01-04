@@ -278,14 +278,14 @@ let pred = randomTensor(nb_classes, batch_size, -1.0..1.0)
 # echo labels
 
 echo "### Reference"
-let sce_loss = softmax_cross_entropy1(pred, labels)
+let sce_loss = pred.softmax_cross_entropy1(labels)
 echo sce_loss
 echo "### Challenger"
-echo softmax_cross_entropy2(pred, labels)
+echo pred.softmax_cross_entropy2(labels)
 echo "### Sparse reference"
-echo sparse_softmax_cross_entropy1(pred, sparse_labels)
+echo pred.sparse_softmax_cross_entropy1(sparse_labels)
 echo "### Sparse challenger"
-echo sparse_softmax_cross_entropy2(pred, sparse_labels) # Warning it's only accurate at 1e-3 and precision is at 1e-2 with OpenMP
+echo pred.sparse_softmax_cross_entropy2(sparse_labels) # Warning it's only accurate at 1e-3 and precision is at 1e-2 with OpenMP
 
 ## Warmup for OpenMP threadpool and CPU on "on-demand" governor
 discard pred .* pred
@@ -294,24 +294,24 @@ var start = epochTime()
 
 start = epochTime()
 for i in 0..<20:
-  discard softmax_cross_entropy1(pred, labels)
+  discard pred.softmax_cross_entropy1(labels)
 echo "Softmax xentropy zipAxis, mean(sum <- map2): ", epochTime() - start
 
 
 start = epochTime()
 for i in 0..<20:
-  discard softmax_cross_entropy2(pred, labels)
+  discard pred.softmax_cross_entropy2(labels)
 echo "Softmax xentropy Frobenius fold: ", epochTime() - start
 
 
 start = epochTime()
 for i in 0..<20:
-  discard sparse_softmax_cross_entropy1(pred, sparse_labels)
+  discard pred.sparse_softmax_cross_entropy1(sparse_labels)
 echo "Sparse softmax naive loop: ", epochTime() - start
 
 start = epochTime()
 for i in 0..<20:
-  discard sparse_softmax_cross_entropy2(pred, sparse_labels)
+  discard pred.sparse_softmax_cross_entropy2(sparse_labels)
 echo "Sparse softmax simplified loop + fold: ", epochTime() - start
 
 

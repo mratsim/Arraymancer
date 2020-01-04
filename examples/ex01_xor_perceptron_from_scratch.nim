@@ -47,7 +47,7 @@ for epoch in 0..5:
     let output = model.forward(x)
 
     # Computing the loss
-    let loss = sigmoid_cross_entropy(output, target)
+    let loss = output.sigmoid_cross_entropy(target)
 
     echo "Epoch is:" & $epoch
     echo "Batch id:" & $batch_id

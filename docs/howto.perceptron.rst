@@ -56,7 +56,7 @@ Spellbook: How to do a multilayer perceptron
         # Building the network
         let n1 = relu linear(x, layer_3neurons)
         let n2 = linear(n1, classifier_layer)
-        let loss = sigmoid_cross_entropy(n2, target)
+        let loss = n2.sigmoid_cross_entropy(target)
 
         echo "Epoch is:" & $epoch
         echo "Batch id:" & $batch_id

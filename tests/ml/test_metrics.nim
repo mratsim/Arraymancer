@@ -21,7 +21,7 @@ suite "[ML] Metrics":
       y_pred = [0, 2, 1, 3].toTensor
       y_true = [0, 1, 2, 3].toTensor
 
-    check: accuracy_score(y_true, y_pred) == 0.5
+    check: y_pred.accuracy_score(y_true) == 0.5
 
   test "Mean absolute error":
     var y_true = [0.9, 0.2, 0.1, 0.4, 0.9].toTensor()

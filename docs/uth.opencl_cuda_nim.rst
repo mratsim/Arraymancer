@@ -214,7 +214,7 @@ Oh, and for those who wants to see real Nim code for neural networks, here is a 
                       .argmax(axis = 1)
                       .squeeze
 
-        let score = accuracy_score(y_train, y_pred)
+        let score = y_pred.accuracy_score(y_train)
         echo &"Accuracy: {score:.3f}%"
         echo "\n"
 

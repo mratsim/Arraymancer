@@ -109,8 +109,9 @@ proc sparse_softmax_cross_entropy*[T; Idx: SomeNumber or byte or char or enum](
       let tmp = lse - input[i, int(target[i])]
       # The new line is intentional or Nim inserts its frame on the line of the omp pragma
       {.emit:"""
-      #pragma omp atomic""".}
-      {.emit:"`result` += `tmp`;".}
+
+      #pragma omp atomic
+      `result` += `tmp`;""".}
   {.pop.}
   {.pop.}
 

@@ -6,22 +6,34 @@ Changes:
     now accepts an "uplo" char parameter. This allows to fill only the Upper or Lower
     part of the matrix, the other half is not used in computation.
   - Added ``svd_randomized``, a fast and accurate SVD approximation via random sampling.
-    This is the standard driver for large scale SVD applications as SVD on larg matrix is very slow.
+    This is the standard driver for large scale SVD applications as SVD on large matrices is very slow.
   - ``pca`` now uses the randomized SVD instead of computing the covariance matrix.
     It can now efficiently deal with large scale problems.
     It now accepts a ``center``, ``n_oversamples`` and ``n_power_iters`` arguments.
     Note that ``pca`` without centering is equivalent to a truncated SVD.
+  - LU decomposition has been added
+  - QR decomposition has been added
   - ``hilbert`` has been introduced. It creates the famous ill-conditioned Hilbert matrix.
     The matrix is suitable to stress test decompositions.
   - The ``arange`` procedure has been introduced. It creates evenly spaced value within a specified range
     and step
   - The ordering of arguments to error functions has been converted to
-    `(y_pred, y)`, enabling the syntax `y_pred.accuracy_score(y)`.
+    `(y_pred, y_target)` (from (y_target, y_pred)), enabling the syntax `y_pred.accuracy_score(y)`.
+    All existing error functions in Arraymancer were commutative w.r.t. to arguments
+    so existing code will keep working.
+  - a ``solve`` procedure has been added to solve linear system of equations represented as matrices.
+  - a ``softmax`` layer has been added to the autograd and neural networks
+    complementing the SoftmaxCrossEntropy layer which fused softmax + Negative-loglikelihood.
+  - The stochastic gradient descent now has a version with Momentum
 
 Bug fixes:
-  - ``gemm`` could crash when the result was column major
+  - ``gemm`` could crash when the result was column major.
+  - The automatic fusion of matrix multiplication with matrix addition `(A * X) + b` could update the b matrix.
   - Complex converters do not pollute the global namespace and do not
     prevent string covnersion via `$` of number types due to ambiguous call.
+  - in-place division has been fixed, a typo made it into substraction.
+  - A conflict between NVIDIA "nanosecond" and Nim times module "nanosecond"
+    preventing CUDA compilation has been fixed
 
 Breaking
   - In ``symeig``, the ``eigenvectors`` argument is now called ``return_eigenvectors``.
@@ -38,6 +50,11 @@ Deprecation:
   - The syntax gemm(A, B, C) is now deprecated.
     Use explicit "gemm(1.0, A, B, 0.0, C)" instead.
     Arguably not zero-ing C could also be a reasonable default.
+
+Thanks to @dynalagreen for the SGD with Momentum,  @xcokazaki for spotting the in-place division typo,
+@Vindaar for fixing the automatic matrix multiplication and addition fusion,
+@Imperator26 for the Softmax layer, @brentp for reviewing and augmenting the SVD and PCA API,
+@auxym for the linear equation solver and @berquist for the reordering all error functions to the new API.
 
 Arraymancer v0.5.1 Jul. 19 2019
 =====================================================

@@ -54,7 +54,7 @@ proc `*.`*[T: SomeFloat](a,b: ClTensor[T]): ClTensor[T] {.noInit.} =
 proc `.*`*[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T] {.noInit,inline, deprecated:"Use `*.` instead".} =
   a *. b
 
-proc `./`*[T: SomeFloat](a,b: ClTensor[T]): ClTensor[T] {.noInit.} =
+proc `/.`*[T: SomeFloat](a,b: ClTensor[T]): ClTensor[T] {.noInit.} =
   ## Element-wise multiplication (Hadamard product).
   ##
   ## And broadcasted element-wise multiplication.

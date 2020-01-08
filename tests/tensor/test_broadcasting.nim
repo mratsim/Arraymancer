@@ -120,7 +120,7 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
 
     block: # Float division
       var a = [100.0, 10, 20, 30].toTensor().reshape(4,1)
-      a ./= 10.0
+      a /.= 10.0
 
       check: a == [[10.0],
                    [1.0],
@@ -145,7 +145,7 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                           [1.0/20.0],
                           [1.0/30.0]].toTensor.astype(Complex[float64])
 
-  test "Implicit tensor-tensor broadcasting - basic in-place operations +.=, -.=, *.=, ./=":
+  test "Implicit tensor-tensor broadcasting - basic in-place operations +.=, -.=, *.=, /.=":
     block: # Addition
       # Note: We can't broadcast the lhs with in-place operations
       var a = [0, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).asContiguous
@@ -202,7 +202,7 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       var a = [100, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).asContiguous
       let b = [2, 5, 10].toTensor().reshape(1,3)
 
-      a ./= b
+      a /.= b
       check: a == [[50, 20, 10],
                   [5, 2, 1],
                   [10, 4, 2],
@@ -214,8 +214,8 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       var a_c = [100.0, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).asContiguous.astype(Complex[float64])
       let b = [2.0, 5, 10].toTensor().reshape(1,3)
 
-      a ./= b
-      a_c ./= b.astype(Complex[float64])
+      a /.= b
+      a_c /.= b.astype(Complex[float64])
       check: a == [[50.0, 20, 10],
                   [5.0, 2, 1],
                   [10.0, 4, 2],

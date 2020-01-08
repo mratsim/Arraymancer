@@ -22,5 +22,5 @@ beginning with a dot:
 -  ``*.``: broadcasted element-wise matrix multiplication also called
    Hadamard product)
 -  ``./``: broadcasted element-wise division or integer-division
--  ``+.=``, ``-.=``, ``*.=``, ``./=``: in-place versions. Only the right
+-  ``+.=``, ``-.=``, ``*.=``, ``/.=``: in-place versions. Only the right
    operand is broadcastable.

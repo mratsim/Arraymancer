@@ -72,7 +72,7 @@ suite "CUDA: Shapeshifting - broadcasting and non linear algebra elementwise ope
                               [10.0, 4, 2],
                               [15.0, 6, 3]].toTensor
 
-  test "Implicit tensor-tensor broadcasting - basic in-place operations +.=, -.=, *.=, ./=":
+  test "Implicit tensor-tensor broadcasting - basic in-place operations +.=, -.=, *.=, /.=":
     block: # Addition
       # Note: We can't broadcast the lhs with in-place operations
       var a = [0, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).astype(float32).cuda
@@ -111,7 +111,7 @@ suite "CUDA: Shapeshifting - broadcasting and non linear algebra elementwise ope
       var a = [100, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).astype(float32).cuda
       let b = [2, 5, 10].toTensor().reshape(1,3).astype(float32).cuda
 
-      a ./= b
+      a /.= b
       check: a.cpu == [[50, 20, 10],
                       [5, 2, 1],
                       [10, 4, 2],
@@ -122,7 +122,7 @@ suite "CUDA: Shapeshifting - broadcasting and non linear algebra elementwise ope
       var a = [100.0, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).cuda
       let b = [2.0, 5, 10].toTensor().reshape(1,3).cuda
 
-      a ./= b
+      a /.= b
       check: a.cpu == [[50.0, 20, 10],
                       [5.0, 2, 1],
                       [10.0, 4, 2],

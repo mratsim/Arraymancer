@@ -347,7 +347,7 @@ proc gen_text[TT](
       var preds = output.value
 
       # We scale by the temperature first.
-      preds ./= temperature
+      preds /.= temperature
       # Get a probability distribution.
       let probs = preds.softmax().squeeze(0)
 

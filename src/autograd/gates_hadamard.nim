@@ -22,8 +22,8 @@ type HadamardGate* {.final.} [TT] = ref object of Gate[TT]
 proc hadamard_backward_ag[TT](self: HadamardGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
   result = newSeq[TT](2)
-  result[0] = gradient     .* self.b.value
-  result[1] = self.a.value .* gradient
+  result[0] = gradient     *. self.b.value
+  result[1] = self.a.value *. gradient
 
 proc hadamard_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
   # Gate
@@ -45,14 +45,14 @@ proc hadamard_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
     a, b
   )
 
-proc `.*`*[TT](a, b: Variable[TT]): Variable[TT] =
+proc `*.`*[TT](a, b: Variable[TT]): Variable[TT] =
   when compileOption("boundChecks"):
     check_ctx(a, b)
 
   # Resulting var
   new result
   result.context = a.context
-  result.value = a.value .* b.value
+  result.value = a.value *. b.value
 
   # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:

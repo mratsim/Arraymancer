@@ -22,7 +22,7 @@ or
     a.map(plusone) # Map the function plusone
 
 Note: for basic operation, you can use implicit broadcasting instead
-``a .+ 1``
+``a +. 1``
 
 ``apply`` is the same as ``map`` but in-place.
 

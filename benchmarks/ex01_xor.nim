@@ -15,12 +15,12 @@ let y = y_bool.astype(float32)
 # Input --> Linear(out_features = 3) --> relu --> Linear(out_features = 1) --> Sigmoid --> Cross-Entropy Loss
 
 let layer_3neurons = ctx.variable(
-                      randomTensor(3, 2, 2.0f) .- 1.0f,
+                      randomTensor(3, 2, 2.0f) -. 1.0f,
                       requires_grad = true
                       )
 
 let classifier_layer = ctx.variable(
-                  randomTensor(1, 3, 2.0f) .- 1.0f,
+                  randomTensor(1, 3, 2.0f) -. 1.0f,
                   requires_grad = true
                   )
 

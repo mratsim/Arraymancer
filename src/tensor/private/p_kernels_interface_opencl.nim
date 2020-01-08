@@ -126,11 +126,11 @@ template genClInfixOp*( T: typedesc,
     export procName
 
 template gen_cl_apply2*(kern_name, ctype, op: string): string =
-  ## Generates an OpenCL kernel for an elementwise in-place binary infix operation (like +=, -=, .*= or ./=)
+  ## Generates an OpenCL kernel for an elementwise in-place binary infix operation (like +=, -=, *.= or /.=)
   ## Input:
   ##   - The C type
   ##   - The C kernel name (this only helps debugging the C code)
-  ##   - The C operation (+=, -=, .*= or ./=)
+  ##   - The C operation (+=, -=, *.= or /.=)
 
   opencl_getIndexOfElementID() & """
   __kernel
@@ -165,13 +165,13 @@ template genClInPlaceOp*( T: typedesc,
                         cInfixOp: string,
                         exported: static[bool] = true): untyped =
   ## Generates an OpenCL kernel for an elementwise in-place binary
-  ## infix operation (like +=, -=, .*= or ./=)
+  ## infix operation (like +=, -=, *.= or /.=)
   ## Input:
   ##   - The Nim type of the elements of the input tensors
   ##   - The equivalent C type
   ##   - The Nim identifier of the resulting proc
   ##   - The C kernel name (this only helps debugging the C code)
-  ##   - The C operation (+=, -=, .*= or ./=)
+  ##   - The C operation (+=, -=, *.= or /.=)
 
   proc procName(dst: var ClTensor[T], src: ClTensor[T]) =
     when compileOption("boundChecks"):

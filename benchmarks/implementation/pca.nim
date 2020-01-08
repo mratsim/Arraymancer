@@ -69,7 +69,7 @@ when false:
   doAssert d == [1,2,3].toTensor().diag(3, 4)
   doAssert a * d == a.mul_diag([1,2,3].toTensor().asContiguous(colMajor, force = true), 3, 4)
   doAssert a * d == a.mul_diag([1,2,3].toTensor(), 3, 4)
-  # doAssert a * d == a .* [1,2,3].toTensor().unsqueeze(0)
+  # doAssert a * d == a *. [1,2,3].toTensor().unsqueeze(0)
 
   echo a * d
   # Tensor[system.int] of shape [4, 4]" on backend "Cpu"
@@ -77,7 +77,7 @@ when false:
   # |4      10      18      0|
   # |7      16      27      0|
   # |10     22      36      0|
-  echo a .* [1,2,3].toTensor().unsqueeze(0)
+  echo a *. [1,2,3].toTensor().unsqueeze(0)
   # Tensor[system.int] of shape [4, 3]" on backend "Cpu"
   # |1      4       9|
   # |4      10      18|
@@ -89,7 +89,7 @@ when false:
 
 proc pca_cov[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}=
   # mean_centered
-  let X = X .- X.mean(axis=0)
+  let X = X -. X.mean(axis=0)
   let m = X.shape[0]
   let n = X.shape[1]
 
@@ -103,28 +103,28 @@ proc pca_cov[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}
   result = X * rotation_matrix
 
 proc pca_svd_tXU[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}=
-  let X = X .- X.mean(axis=0)
+  let X = X -. X.mean(axis=0)
 
   let (U, _, _) = svd(X.transpose)
   result = X * U[_, 0..<n_components]
 
 proc pca_svd_XV[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}=
-  let X = X .- X.mean(axis=0)
+  let X = X -. X.mean(axis=0)
 
   let (_, _, Vh) = svd(X)
   result = X * Vh.transpose[_, 0..<n_components]
 
 proc pca_svd_US[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}=
-  let X = X .- X.mean(axis=0)
+  let X = X -. X.mean(axis=0)
 
   let (U, S, _) = svd(X)
-  result = U[_, 0..<n_components] .* S[0..<n_components].unsqueeze(0)
+  result = U[_, 0..<n_components] *. S[0..<n_components].unsqueeze(0)
 
 proc pca_svd_tX_VhS[T: SomeFloat](X: Tensor[T], n_components = 2): Tensor[T] {.noInit.}=
-  let X = X .- X.mean(axis=0)
+  let X = X -. X.mean(axis=0)
 
   let (_, S, Vh) = svd(X.transpose)
-  result = Vh.transpose[_, 0..<n_components] .* S[0..<n_components].unsqueeze(0)
+  result = Vh.transpose[_, 0..<n_components] *. S[0..<n_components].unsqueeze(0)
 
 # Sanity checks
 # ---------------------------------------------------

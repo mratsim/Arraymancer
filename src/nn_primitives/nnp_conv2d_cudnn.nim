@@ -69,7 +69,7 @@ proc conv2d*[T: SomeFloat](input, kernel, bias: CudaTensor[T],
     result.get_offset_ptr
   )
 
-  result .+= bias.unsqueeze(0)
+  result +.= bias.unsqueeze(0)
 
 proc conv2d_backward*[T: SomeFloat](input, kernel, bias: CudaTensor[T],
                          padding: SizeHW = [0,0],

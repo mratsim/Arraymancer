@@ -26,7 +26,7 @@ proc linear*[T](input, weight: Tensor[T], bias: Tensor[T], output: var Tensor[T]
   # Output is: Y = x * W.transpose + b
 
   output = input * weight.transpose # TODO: with the transpose the non-matching rows and cols is confusing
-  output .+= bias
+  output +.= bias
 
 proc linear*[T](input, weight: Tensor[T], output: var Tensor[T]) {.inline.} =
   # Linear (Dense) forward primitive with bias
@@ -64,4 +64,3 @@ proc linear_backward*[T](
   # Tensors are expected in a batch first shape [batch_size, n_features]
   gradInput = gradOutput * weight
   gradWeight = gradOutput.transpose * input
-

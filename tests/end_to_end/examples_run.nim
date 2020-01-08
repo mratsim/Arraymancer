@@ -16,12 +16,12 @@ proc ex01() =
   let y = y_bool.astype(float32)
 
   let layer_3neurons = ctx.variable(
-                        randomTensor(3, 2, 2.0f) .- 1.0f,
+                        randomTensor(3, 2, 2.0f) -. 1.0f,
                         true
                         )
 
   let classifier_layer = ctx.variable(
-                    randomTensor(1, 3, 2.0f) .- 1.0f,
+                    randomTensor(1, 3, 2.0f) -. 1.0f,
                     true
                     )
 

@@ -105,7 +105,7 @@ proc im2colgemm_conv2d*[T](input, kernel, bias: Tensor[T],
     gemm(1.T, kernel_col, input_col, 0.T, output)
 
   if bias.rank > 0:
-    result .+= bias.unsqueeze(0)
+    result +.= bias.unsqueeze(0)
 
 proc im2colgemm_conv2d_gradient*[T](input, kernel: Tensor[T],
                          padding: Size2D = (0,0),

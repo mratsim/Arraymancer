@@ -290,7 +290,7 @@ echo "### Sparse challenger"
 echo pred.sparse_softmax_cross_entropy2(sparse_labels) # Warning it's only accurate at 1e-3 and precision is at 1e-2 with OpenMP
 
 ## Warmup for OpenMP threadpool and CPU on "on-demand" governor
-discard pred .* pred
+discard pred *. pred
 
 var start = epochTime()
 

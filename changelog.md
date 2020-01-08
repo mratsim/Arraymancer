@@ -50,11 +50,18 @@ Deprecation:
   - The syntax gemm(A, B, C) is now deprecated.
     Use explicit "gemm(1.0, A, B, 0.0, C)" instead.
     Arguably not zero-ing C could also be a reasonable default.
+  - The dot in broadcasting and elementwise operators has changed place
+    Use `+.`, `*.`, `/.`, `-.`, `^.`, `+.=`, `*.=`, `/.=`, `-.=`, `^.=`
+    instead of the previous order `.+` and `.+=`.
+    This allows the broadcasting operators to have the same precedence as the
+    natural operators.
+    This also align Arraymancer with other Nim packages: Manu and NumericalNim
 
 Thanks to @dynalagreen for the SGD with Momentum,  @xcokazaki for spotting the in-place division typo,
 @Vindaar for fixing the automatic matrix multiplication and addition fusion,
 @Imperator26 for the Softmax layer, @brentp for reviewing and augmenting the SVD and PCA API,
 @auxym for the linear equation solver and @berquist for the reordering all error functions to the new API.
+Thanks @b3liever for suggesting the dot change to solve the precedence issue in broadcasting and elementwise operators.
 
 Arraymancer v0.5.1 Jul. 19 2019
 =====================================================

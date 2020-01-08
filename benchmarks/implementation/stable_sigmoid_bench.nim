@@ -4,7 +4,7 @@ import times, ../../src/arraymancer, math
 # Some are numericall stable for positive, negative or both value
 
 # We create a random tensor with randomly positive and negative value
-let a = randomTensor(1000, 1000, 100.0f) .- 50.0f
+let a = randomTensor(1000, 1000, 100.0f) -. 50.0f
 
 proc sigmoid1[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.}=
   # Instable for large negative

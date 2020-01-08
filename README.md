@@ -119,7 +119,7 @@ import arraymancer
 let j = [0, 10, 20, 30].toTensor.reshape(4,1)
 let k = [0, 1, 2].toTensor.reshape(1,3)
 
-echo j .+ k
+echo j +. k
 # Tensor of shape 4x3 of type "int" on backend "Cpu"
 # |0      1       2|
 # |10     11      12|
@@ -264,7 +264,7 @@ For now Arraymancer is mostly at the multidimensional array stage, in particular
 - Matrix algebra primitives: Matrix-Matrix, Matrix-Vector multiplication.
 - Easy and efficient slicing including with ranges and steps.
 - No need to worry about "vectorized" operations.
-- Broadcasting support. Unlike Numpy it is explicit, you just need to use `.+` instead of `+`.
+- Broadcasting support. Unlike Numpy it is explicit, you just need to use `+.` instead of `+`.
 - Plenty of reshaping operations: concat, reshape, split, chunk, permute, transpose.
 - Supports tensors of up to 6 dimensions. For example a stack of 4 3D RGB minifilms of 10 seconds would be 6 dimensions:
   `[4, 10, 3, 64, 1920, 1080]` for `[nb_movies, time, colors, depth, height, width]`

@@ -25,8 +25,8 @@ suite "Autograd of Hadamard product":
       a = randomTensor([height, width], 1.0)
       b = randomTensor([height, width], 1.0)
 
-    proc hadamard_a(a: Tensor[float64]): float64 = (a .* b).sum()
-    proc hadamard_b(b: Tensor[float64]): float64 = (a .* b).sum()
+    proc hadamard_a(a: Tensor[float64]): float64 = (a *. b).sum()
+    proc hadamard_b(b: Tensor[float64]): float64 = (a *. b).sum()
 
     let # Compute the numerical gradients
       target_grad_a = a.numerical_gradient(hadamard_a)
@@ -37,7 +37,7 @@ suite "Autograd of Hadamard product":
       va = ctx.variable(a, requires_grad = true)
       vb = ctx.variable(b, requires_grad = true)
 
-    let loss = (va .* vb).sum()
+    let loss = (va *. vb).sum()
     loss.backprop()
 
     check:

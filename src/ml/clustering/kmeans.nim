@@ -19,7 +19,7 @@ proc euclidean_distance[T: SomeFloat](u: Tensor[T], v: Tensor[T], squared: bool 
   ##
   ## Returns:
   ##  - A tensor of shape (nb samples)
-  let u_v = (u .- v).reshape(u.shape[1])
+  let u_v = (u -. v).reshape(u.shape[1])
   result = dot(u_v, u_v)
   if not squared:
     result = sqrt(result)

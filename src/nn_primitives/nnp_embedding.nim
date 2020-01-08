@@ -84,6 +84,6 @@ proc embedding_backward*[T; Idx: byte or char or SomeNumber](
         # For speed don't respect IEEE-754 and avoid
         # division in tight loop by multiplying by the inverse
         let idf = 1.T div counts[word_idx] # inverse document frequency
-        grad_curr_word .+= flat_dOutput[i] * idf
+        grad_curr_word +.= flat_dOutput[i] * idf
       else:
-        grad_curr_word .+= flat_dOutput[i]
+        grad_curr_word +.= flat_dOutput[i]

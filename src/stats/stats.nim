@@ -24,8 +24,8 @@ proc covariance_matrix*[T: SomeFloat](x, y: Tensor[T]): Tensor[T] =
   assert x.rank == 2
   assert x.shape == y.shape
 
-  let deviation_X = (x .- x.mean(axis=0)).transpose # shape [features, batch_size]
-  let deviation_Y = y .- y.mean(axis=0)             # shape [batch_size, features]
+  let deviation_X = (x -. x.mean(axis=0)).transpose # shape [features, batch_size]
+  let deviation_Y = y -. y.mean(axis=0)             # shape [batch_size, features]
 
   result = newTensorUninit[T]([x.shape[1], x.shape[1]])
   gemm(1.T / T(x.shape[0]-1), deviation_X, deviation_Y, 0, result)

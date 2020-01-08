@@ -22,17 +22,17 @@ import complex except Complex64, Complex32
 # # Broadcasting Tensor-Tensor
 # # And element-wise multiplication (Hadamard) and division
 
-proc `.+`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noInit,inline.} =
+proc `+.`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noInit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a + tmp_b
 
-proc `.-`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noInit,inline.} =
+proc `-.`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noInit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a - tmp_b
 
-proc `.*`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noInit.} =
+proc `*.`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noInit.} =
   ## Element-wise multiplication (Hadamard product).
   ##
   ## And broadcasted element-wise multiplication.
@@ -57,7 +57,7 @@ proc `./`*[T: SomeFloat|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Ten
 # ##############################################
 # # Broadcasting in-place Tensor-Tensor
 
-proc `.+=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
+proc `+.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor broadcasted in-place addition.
   ##
   ## Only the right hand side tensor can be broadcasted.
@@ -66,7 +66,7 @@ proc `.+=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b
   let tmp_b = b.broadcast(a.shape)
   apply2_inline(a, tmp_b, x + y)
 
-proc `.-=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
+proc `-.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor broadcasted in-place substraction.
   ##
   ## Only the right hand side tensor can be broadcasted.
@@ -75,7 +75,7 @@ proc `.-=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b
   let tmp_b = b.broadcast(a.shape)
   apply2_inline(a, tmp_b, x - y)
 
-proc `.*=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
+proc `*.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor broadcasted in-place multiplication (Hadamard product)
   ##
   ## Only the right hand side tensor can be broadcasted
@@ -106,19 +106,19 @@ proc `./=`*[T: SomeFloat|Complex[float32]|Complex[float64]](a: var Tensor[T], b:
 # ##############################################
 # # Broadcasting Tensor-Scalar and Scalar-Tensor
 
-proc `.+`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, t: Tensor[T]): Tensor[T] {.noInit.} =
+proc `+.`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Broadcasted addition for tensor + scalar.
   result = t.map_inline(x + val)
 
-proc `.+`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], val: T): Tensor[T] {.noInit.} =
+proc `+.`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], val: T): Tensor[T] {.noInit.} =
   ## Broadcasted addition for scalar + tensor.
   result = t.map_inline(x + val)
 
-proc `.-`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, t: Tensor[T]): Tensor[T] {.noInit.} =
+proc `-.`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Broadcasted substraction for tensor - scalar.
   result = t.map_inline(val - x)
 
-proc `.-`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], val: T): Tensor[T] {.noInit.} =
+proc `-.`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], val: T): Tensor[T] {.noInit.} =
   ## Broadcasted substraction for scalar - tensor.
   result = t.map_inline(x - val)
 
@@ -145,11 +145,11 @@ proc `.^`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T], exponen
 # #####################################
 # # Broadcasting in-place Tensor-Scalar
 
-proc `.+=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], val: T) =
+proc `+.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], val: T) =
   ## Tensor in-place addition with a broadcasted scalar.
   t.apply_inline(x + val)
 
-proc `.-=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], val: T) =
+proc `-.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], val: T) =
   ## Tensor in-place substraction with a broadcasted scalar.
   t.apply_inline(x - val)
 
@@ -157,7 +157,7 @@ proc `.^=`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: var Tensor[T], ex
   ## Compute in-place element-wise exponentiation
   t.apply_inline pow(x, exponent)
 
-proc `.*=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], val: T) =
+proc `*.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], val: T) =
   ## Tensor in-place multiplication with a broadcasted scalar.
   t.apply_inline(x * val)
 

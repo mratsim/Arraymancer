@@ -127,7 +127,7 @@ proc map*[T; U: not (ref|string|seq)](t: Tensor[T], f: T -> U): Tensor[U] {.noIn
   ##   for basic operation, you can use implicit broadcasting instead
   ##   with operators prefixed by a dot :
   ##  .. code:: nim
-  ##     a .+ 1
+  ##     a +. 1
   ## ``map`` is especially useful to do multiple element-wise operations on a tensor in a single loop over the data.
   ##
   ## For OpenMP compatibility, this ``map`` doesn't allow ref types as result like seq or string

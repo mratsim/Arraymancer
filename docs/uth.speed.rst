@@ -34,14 +34,14 @@ data: - ``temp1 = -x`` - ``temp2 = math.exp(temp1)`` -
 So you suddenly get a o(n^4) algorithm.
 
 Arraymancer can do the same using the explicit broadcast operator ``./``
-and ``.+``. (To avoid name conflict we change the logistic sigmoid name)
+and ``+.``. (To avoid name conflict we change the logistic sigmoid name)
 
 .. code:: nim
 
     import arraymancer
 
     proc customSigmoid[T: SomeFloat](t: Tensor[T]): Tensor[T] =
-      result = 1 ./ (1 .+ exp(-t))
+      result = 1 ./ (1 +. exp(-t))
 
 Well, unfortunately, the only thing we gain here is parallelism but we
 still have 4 loops over the data implicitly. Another way would be to use
@@ -60,14 +60,14 @@ Now in a single loop over ``t``, Arraymancer will do
 elements of the first tensor argument.
 
 Here is another example with 3 tensors and element-wise fused
-multiply-add ``C += A .* B``:
+multiply-add ``C += A *. B``:
 
 .. code:: nim
 
     import arraymancer
 
     proc fusedMultiplyAdd[T: SomeNumber](c: var Tensor[T], a, b: Tensor[T]) =
-      ## Implements C += A .* B, .* is the element-wise multiply
+      ## Implements C += A *. B, *. is the element-wise multiply
       apply3_inline(c, a, b):
         x += y * z
 

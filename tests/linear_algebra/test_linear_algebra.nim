@@ -403,7 +403,7 @@ suite "Linear algebra":
         Vh.shape[0] == k
         Vh.shape[1] == H.shape[1]
 
-      let reconstructed = (U .* S.unsqueeze(0)) * Vh
+      let reconstructed = (U *. S.unsqueeze(0)) * Vh
       check: H.mean_absolute_error(reconstructed) < 1e-2
 
     block: # Ensure that m > n / m < n logic is working fine
@@ -425,7 +425,7 @@ suite "Linear algebra":
         Vh.shape[0] == k
         Vh.shape[1] == H.shape[1]
 
-      let reconstructed = (U .* S.unsqueeze(0)) * Vh
+      let reconstructed = (U *. S.unsqueeze(0)) * Vh
       check: H.mean_absolute_error(reconstructed) < 1e-2
 
   test "Solve linear equations general matrix":

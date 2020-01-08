@@ -23,7 +23,7 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
     let expected_mul_int = @[-8, 0, 27].toTensor()
     let expected_div_int = @[-2, 0, 3].toTensor()
 
-    check: u_int .* v_int == expected_mul_int
+    check: u_int *. v_int == expected_mul_int
     check: u_int ./ v_int == expected_div_int
 
     let u_float = @[1.0, 8.0, -3.0].toTensor()
@@ -31,9 +31,9 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
     let expected_mul_float = @[4.0, 16.0, -30.0].toTensor()
     let expected_div_float = @[0.25, 4.0, -0.3].toTensor()
 
-    check: u_float .* v_float == expected_mul_float
+    check: u_float *. v_float == expected_mul_float
     check: u_float ./ v_float == expected_div_float
-    check: u_float.astype(Complex[float64]) .* v_float.astype(Complex[float64]) == expected_mul_float.astype(Complex[float64])
+    check: u_float.astype(Complex[float64]) *. v_float.astype(Complex[float64]) == expected_mul_float.astype(Complex[float64])
     check: u_float.astype(Complex[float64]) ./ v_float.astype(Complex[float64]) == expected_div_float.astype(Complex[float64])
 
   test "Explicit broadcasting":
@@ -55,16 +55,16 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       check b == [[1,1],
                   [2,2]].toTensor()
 
-  test "Implicit tensor-tensor broadcasting - basic operations .+, .-, .*, ./, .^":
+  test "Implicit tensor-tensor broadcasting - basic operations +., -., *., ./, .^":
     block: # Addition
       let a = [0, 10, 20, 30].toTensor().reshape(4,1)
       let b = [0, 1, 2].toTensor().reshape(1,3)
 
-      check: a .+ b == [[0, 1, 2],
+      check: a +. b == [[0, 1, 2],
                         [10, 11, 12],
                         [20, 21, 22],
                         [30, 31, 32]].toTensor
-      check: a.astype(Complex[float64]) .+ b.astype(Complex[float64]) == [[0, 1, 2],
+      check: a.astype(Complex[float64]) +. b.astype(Complex[float64]) == [[0, 1, 2],
                         [10, 11, 12],
                         [20, 21, 22],
                         [30, 31, 32]].toTensor.astype(Complex[float64])
@@ -74,11 +74,11 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       let a = [0, 10, 20, 30].toTensor().reshape(4,1)
       let b = [0, 1, 2].toTensor().reshape(1,3)
 
-      check: a .- b == [[0, -1, -2],
+      check: a -. b == [[0, -1, -2],
                         [10, 9, 8],
                         [20, 19, 18],
                         [30, 29, 28]].toTensor
-      check: a.astype(Complex[float64]) .- b.astype(Complex[float64]) == [[0, -1, -2],
+      check: a.astype(Complex[float64]) -. b.astype(Complex[float64]) == [[0, -1, -2],
                         [10, 9, 8],
                         [20, 19, 18],
                         [30, 29, 28]].toTensor.astype(Complex[float64])
@@ -87,11 +87,11 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       let a = [0, 10, 20, 30].toTensor().reshape(4,1)
       let b = [0, 1, 2].toTensor().reshape(1,3)
 
-      check: a .* b == [[0, 0, 0],
+      check: a *. b == [[0, 0, 0],
                         [0, 10, 20],
                         [0, 20, 40],
                         [0, 30, 60]].toTensor
-      check: a.astype(Complex[float64]) .* b.astype(Complex[float64]) == [[0, 0, 0],
+      check: a.astype(Complex[float64]) *. b.astype(Complex[float64]) == [[0, 0, 0],
                         [0, 10, 20],
                         [0, 20, 40],
                         [0, 30, 60]].toTensor.astype(Complex[float64])
@@ -145,15 +145,15 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                           [1.0/20.0],
                           [1.0/30.0]].toTensor.astype(Complex[float64])
 
-  test "Implicit tensor-tensor broadcasting - basic in-place operations .+=, .-=, .*=, ./=":
+  test "Implicit tensor-tensor broadcasting - basic in-place operations +.=, -.=, *.=, ./=":
     block: # Addition
       # Note: We can't broadcast the lhs with in-place operations
       var a = [0, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).asContiguous
       var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).asContiguous.astype(Complex[float64])
       let b = [0, 1, 2].toTensor().reshape(1,3)
 
-      a .+= b
-      a_c .+= b.astype(Complex[float64])
+      a +.= b
+      a_c +.= b.astype(Complex[float64])
       check: a == [[0, 1, 2],
                   [10, 11, 12],
                   [20, 21, 22],
@@ -169,8 +169,8 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).asContiguous.astype(Complex[float64])
       let b = [0, 1, 2].toTensor().reshape(1,3)
 
-      a .-= b
-      a_c .-= b.astype(Complex[float64])
+      a -.= b
+      a_c -.= b.astype(Complex[float64])
       check: a == [[0, -1, -2],
                     [10, 9, 8],
                     [20, 19, 18],
@@ -186,8 +186,8 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).bc([4,3]).asContiguous.astype(Complex[float64])
       let b = [0, 1, 2].toTensor().reshape(1,3)
 
-      a .*= b
-      a_c .*= b.astype(Complex[float64])
+      a *.= b
+      a_c *.= b.astype(Complex[float64])
       check: a == [[0, 0, 0],
                   [0, 10, 20],
                   [0, 20, 40],
@@ -226,13 +226,13 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                   [15.0, 6, 3]].toTensor.astype(Complex[float64])
 
 
-  test "Implicit tensor-scalar broadcasting - basic operations .+=, .-=, .^=":
+  test "Implicit tensor-scalar broadcasting - basic operations +.=, -.=, .^=":
     block: # Addition
       var a = [0, 10, 20, 30].toTensor().reshape(4,1)
       var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).astype(Complex[float64])
 
-      a .+= 100
-      a_c .+= complex64(100.0, 0.0)
+      a +.= 100
+      a_c +.= complex64(100.0, 0.0)
       check: a == [[100],
                   [110],
                   [120],
@@ -246,8 +246,8 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       var a = [0, 10, 20, 30].toTensor().reshape(4,1)
       var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).astype(Complex[float64])
 
-      a .-= 100
-      a_c .-= complex64(100.0, 0.0)
+      a -.= 100
+      a_c -.= complex64(100.0, 0.0)
       check: a == [[-100],
                     [-90],
                     [-80],
@@ -285,13 +285,13 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                     [1.0/20.0],
                     [1.0/30.0]].toTensor.astype(Complex[float64])
 
-  test "Implicit broadcasting - Sigmoid 1 ./ (1 .+ exp(-x)":
+  test "Implicit broadcasting - Sigmoid 1 ./ (1 +. exp(-x)":
     block:
       proc sigmoid[T: SomeFloat](t: Tensor[T]): Tensor[T]=
-        1.T ./ (1.T .+ exp(0.T .- t))
+        1.T ./ (1.T +. exp(0.T -. t))
 
       proc sigmoid(t: Tensor[Complex32]): Tensor[Complex32]=
-        complex32(1) ./ (complex32(1) .+ exp(complex32(0) .- t))
+        complex32(1) ./ (complex32(1) +. exp(complex32(0) -. t))
 
       let a = newTensor[float32]([2,2])
       check: sigmoid(a) == [[0.5'f32, 0.5],[0.5'f32, 0.5]].toTensor

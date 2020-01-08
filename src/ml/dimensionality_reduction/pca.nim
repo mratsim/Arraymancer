@@ -46,8 +46,8 @@ proc pca*[T: SomeFloat](
   when center:
     # TODO: When we center, we could do in-place randomized SVD and save memory from cloning x
     #       but that only happen when the number of components is within 25% of [Observations, Features]
-    let X = X .- X.mean(axis=0)
+    let X = X -. X.mean(axis=0)
 
   let (U, S, Vh) = svd_randomized(X, n_components, n_oversamples=n_oversamples, n_power_iters=n_power_iters)
   result.components = Vh.transpose
-  result.projected = U .* S.unsqueeze(0) # S sparse diagonal, equivalent to multiplying by a dense diagonal matrix
+  result.projected = U *. S.unsqueeze(0) # S sparse diagonal, equivalent to multiplying by a dense diagonal matrix

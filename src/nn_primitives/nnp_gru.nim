@@ -19,8 +19,8 @@ import
 #
 # r  =    σ(Wr * x + bWr +       Ur * h + bUr)
 # z  =    σ(Wz * x + bWz +       Uz * h + bUz)
-# n  = tanh(W  * x + bW  + r .* (U  * h + bU ))
-# h' = (1 - z) .* n + z .* h
+# n  = tanh(W  * x + bW  + r *. (U  * h + bU ))
+# h' = (1 - z) *. n + z *. h
 #
 # Those differs from the original paper for n and h'
 #   - The pointwise multiplication by r is after the matrix multiplication
@@ -163,13 +163,13 @@ proc gru_cell_backward*[T: SomeFloat](
   ##   - x, h, W3, U3: inputs saved from the forward pass
   ##   - r, z, n, Uh: intermediate results saved from the forward pass of shape [batch_size, hidden_size]
   # Backprop of step 4 - z part
-  let dz = (h - n) .* dnext
-  let dn = (1.0.T .- z) .* dnext
+  let dz = (h - n) *. dnext
+  let dn = (1.0.T -. z) *. dnext
 
   # Backprop of step 3.
   let dWx = tanh_backward(dn, n)
-  let dr = Uh .* dWx
-  let dUh = r .* dWx
+  let dr = Uh *. dWx
+  let dUh = r *. dWx
 
   # Backprop of step 2 - update gate z
   let dWzx = sigmoid_backward(dz, z)
@@ -500,7 +500,7 @@ proc gru_backward*[T: SomeFloat](
       tmp += dU3s_lts.unsqueeze(0)
 
       tmp = dbW3s[layer, _, _]
-      tmp .+= dbW3s_lts.unsqueeze(0)
+      tmp +.= dbW3s_lts.unsqueeze(0)
 
       tmp = dbU3s[layer, _, _]
-      tmp .+= dbU3s_lts.unsqueeze(0)
+      tmp +.= dbU3s_lts.unsqueeze(0)

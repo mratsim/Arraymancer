@@ -83,7 +83,7 @@ proc `+.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
   let tmp_b = b.broadcast(a.shape)
   a += tmp_b
 
-proc `.+=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) {.noInit, inline, deprecated: "Use `+.=` instead".} =
+proc `.+=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) {.inline, deprecated: "Use `+.=` instead".} =
   a +.= b
 
 proc `-.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
@@ -95,7 +95,7 @@ proc `-.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
   let tmp_b = b.broadcast(a.shape)
   a -= tmp_b
 
-proc `.-=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) {.noInit, inline, deprecated: "Use `-.=` instead".} =
+proc `.-=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) {.inline, deprecated: "Use `-.=` instead".} =
   a -.= b
 
 proc `*.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
@@ -107,7 +107,7 @@ proc `*.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
   let tmp_b = b.broadcast(a.shape)
   cuda_assign_call(cuda_mMulOp, a, tmp_b)
 
-proc `.*=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) {.noInit, inline, deprecated: "Use `*.=` instead".} =
+proc `.*=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) {.inline, deprecated: "Use `*.=` instead".} =
   a .*= b
 
 proc `/.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
@@ -119,7 +119,7 @@ proc `/.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
   let tmp_b = b.broadcast(a.shape)
   cuda_assign_call(cuda_mDivOp, a, tmp_b)
 
-proc `./=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) {.noInit, inline, deprecated: "Use `/.=` instead".} =
+proc `./=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) {.inline, deprecated: "Use `/.=` instead".} =
   a /.= b
 
 # ##############################################
@@ -181,12 +181,12 @@ proc `+.=`*[T: SomeFloat](t: var CudaTensor[T], val: T) =
   ## Broadcasted addition for scalar + tensor.
   cuda_assignscal_call(cuda_mscalAdd, t, val)
 
-proc `.+=`*[T: SomeFloat](t: var CudaTensor[T], val: T) {.noInit, inline, deprecated: "Use `+.=` instead".} =
+proc `.+=`*[T: SomeFloat](t: var CudaTensor[T], val: T) {.inline, deprecated: "Use `+.=` instead".} =
   t +.= val
 
 proc `-.=`*[T: SomeFloat](t: var CudaTensor[T], val: T) =
   ## Broadcasted substraction for scalar - tensor.
   cuda_assignscal_call(cuda_mscalSub, t, val)
 
-proc `.-=`*[T: SomeFloat](t: var CudaTensor[T], val: T) {.noInit, inline, deprecated: "Use `-.=` instead".} =
+proc `.-=`*[T: SomeFloat](t: var CudaTensor[T], val: T) {.inline, deprecated: "Use `-.=` instead".} =
   t -.= val

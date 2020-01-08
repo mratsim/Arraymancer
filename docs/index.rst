@@ -155,7 +155,7 @@ Tensors and CudaTensors do not have the same features implemented yet.
 Also Cuda Tensors can only be float32 or float64 while Cpu Tensor can be
 integers, string, boolean or any custom object.
 
-Here is a comparative table, not that this feature set is developing rapidly.
+Here is a comparative table.
 
 -------------------------------------------------- --------- --------------------------- --------------------------
  Feature                                            Tensor    CudaTensor                  ClTensor

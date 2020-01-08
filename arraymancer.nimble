@@ -279,6 +279,11 @@ task gen_doc, "Generate Arraymancer documentation":
     let modName = filePath[15..^5]
     exec r"nim doc -o:docs/build/ml." & modName & ".html " & filePath
 
+  block:
+    let filePath = "src/nlp/tokenizers.nim"
+    let modName = filePath[8..^5]
+    exec r"nim doc -o:docs/build/nlp." & modName & ".html " & filePath
+
   for filePath in listFiles("src/io/"):
     let modName = filePath[7..^5]
     exec r"nim doc -o:docs/build/io." & modName & ".html " & filePath

@@ -650,6 +650,10 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   # echo result.repr
 
 when isMainModule:
+  import
+    ./data_structure, ./init_cpu, ./ufunc, ./backend/metadataArray,
+    ./accessors_macros_read, ./accessors_macros_write
+
   let c0 = toSeq(11..34).toTensor.astype(float)
   let d0 = toSeq(1..6).toTensor.astype(float)
   let c = c0.reshape(2, 2, 3, 2)
@@ -659,7 +663,6 @@ when isMainModule:
   echo d
 
   let t = einsum(c, d):
-    let i, j, k, l = EinsumIndex
     c[i,j,k,l] * d[k,l]
 
   echo t.shape

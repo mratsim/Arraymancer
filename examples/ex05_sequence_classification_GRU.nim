@@ -123,7 +123,7 @@ for epoch in 0 ..< Epochs:
                   .argmax(axis = 1)
                   .squeeze
 
-    let score = accuracy_score(y, y_pred)
+    let score = y_pred.accuracy_score(y)
     echo &"Epoch #{epoch:> 04}. Accuracy: {score*100:00.3f}%"
 
 ###################

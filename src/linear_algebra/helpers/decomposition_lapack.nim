@@ -364,5 +364,5 @@ when isMainModule:
     var scratchspace: seq[float64]
     geqrf(r_v, tau, scratchspace)
 
-    doAssert mean_absolute_error(r_v, expected_rv) < 1e-6
-    doAssert mean_absolute_error(tau.toTensor, expected_tau) < 1e-15
+    doAssert r_v.mean_absolute_error(expected_rv) < 1e-6
+    doAssert tau.toTensor.mean_absolute_error(expected_tau) < 1e-15

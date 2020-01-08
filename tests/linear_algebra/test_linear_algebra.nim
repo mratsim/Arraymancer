@@ -43,10 +43,10 @@ suite "Linear algebra":
         expected_sv = [ 4.10003045f,  1.09075677].toTensor
 
       check:
-        mean_relative_error(solution, expected_sol) < 1e-6
-        mean_relative_error(residuals, expected_residuals) < 2e-6 # Due to parallelism hazards this sometimes go over 1e-6 on Travis
+        solution.mean_relative_error(expected_sol) < 1e-6
+        residuals.mean_relative_error(expected_residuals) < 2e-6 # Due to parallelism hazards this sometimes go over 1e-6 on Travis
         matrix_rank == expected_matrix_rank
-        mean_relative_error(singular_values, expected_sv) < 1e-6
+        singular_values.mean_relative_error(expected_sv) < 1e-6
 
     block: # Example from Eigen
            # https://eigen.tuxfamily.org/dox/group__LeastSquares.html
@@ -58,7 +58,7 @@ suite "Linear algebra":
       let (solution, _, _, _) = least_squares_solver(A, b)
       let expected_sol = [-0.67, 0.314].toTensor
 
-      check: mean_relative_error(solution, expected_sol) < 1e-3
+      check: solution.mean_relative_error(expected_sol) < 1e-3
 
     block: # "Multiple independant equations"
            # Example from Intel documentation:
@@ -90,10 +90,10 @@ suite "Linear algebra":
       let expected_sv = [ 18.66, 15.99, 10.01, 8.51].toTensor
 
       check:
-        mean_relative_error(solution, expected_sol) < 0.015
+        solution.mean_relative_error(expected_sol) < 0.015
         residuals.rank == 0 and residuals.shape[0] == 0 and residuals.strides[0] == 0
         matrix_rank == expected_matrix_rank
-        mean_relative_error(singular_values, expected_sv) < 1e-03
+        singular_values.mean_relative_error(expected_sv) < 1e-03
 
   test "Eigenvalues and eigenvector of symmetric matrices":
     # Note: Functions should return a unit vector (norm == 1).
@@ -120,7 +120,7 @@ suite "Linear algebra":
 
       let (val, vec) = symeig(a, true, 'U')
 
-      check: mean_absolute_error(val, expected_val) < 1e-4
+      check: val.mean_absolute_error(expected_val) < 1e-4
 
       for col in 0..<5:
         check:  mean_absolute_error( vec[_, col], expected_vec[_, col]) < 1e-4 or
@@ -139,7 +139,7 @@ suite "Linear algebra":
 
       let (val, vec) = symeig(a, true, 'U')
 
-      check: mean_absolute_error(val, expected_val) < 1e-7
+      check: val.mean_absolute_error(expected_val) < 1e-7
 
       for col in 0..<2:
         check:  mean_absolute_error( vec[_, col], expected_vec[_, col]) < 1e-11 or
@@ -163,7 +163,7 @@ suite "Linear algebra":
 
       let (val, vec) = symeig(a, true, 'U')
 
-      check: mean_absolute_error(val, expected_val) < 1e-2
+      check: val.mean_absolute_error(expected_val) < 1e-2
 
       for col in 0..<5:
         check:  mean_absolute_error( vec[_, col], expected_vec[_, col]) < 1e-2 or
@@ -187,7 +187,7 @@ suite "Linear algebra":
 
       let (val, vec) = symeig(a, true, 'U', 0..2)
 
-      check: mean_absolute_error(val, selected_val) < 1e-1
+      check: val.mean_absolute_error(selected_val) < 1e-1
 
       for col in 0..<3:
         check:  mean_absolute_error( vec[_, col], selected_vec[_, col]) < 1e-2 or
@@ -215,7 +215,7 @@ suite "Linear algebra":
       block: # Sanity checks
         # A = QR
         let qr = q * r
-        check: mean_absolute_error(a, qr) < 1e-8
+        check: a.mean_absolute_error(qr) < 1e-8
         # TODO: r is triangular
 
       block: # vs NumPy implementation. Note that
@@ -233,8 +233,8 @@ suite "Linear algebra":
                     [   0.0,    0.0,  -35.0]].toTensor()
 
         check:
-          mean_absolute_error(q, np_q) < 1e-8
-          mean_absolute_error(r, np_r) < 1e-8
+          q.mean_absolute_error(np_q) < 1e-8
+          r.mean_absolute_error(np_r) < 1e-8
 
     block: # M > N, from Numpy https://docs.scipy.org/doc/numpy-1.15.1/reference/generated/numpy.linalg.qr.html
       let a = [[0.0, 1.0],
@@ -247,7 +247,7 @@ suite "Linear algebra":
       block: # Sanity checks
         # A = QR
         let qr = q * r
-        check: mean_absolute_error(a, qr) < 1e-8
+        check: a.mean_absolute_error(qr) < 1e-8
         # TODO: r is triangular
 
       block: # vs NumPy implementation. Note that
@@ -265,8 +265,8 @@ suite "Linear algebra":
                     [ 0.0       ,  1.15470054]].toTensor()
 
         check:
-          mean_absolute_error(q, np_q) < 1e-8
-          mean_absolute_error(r, np_r) < 1e-8
+          q.mean_absolute_error(np_q) < 1e-8
+          r.mean_absolute_error(np_r) < 1e-8
 
     block: # M < N
       let a = [[0.0, 1.0, 1.0, 1.0],
@@ -277,7 +277,7 @@ suite "Linear algebra":
       block: # Sanity checks
         # A = QR
         let qr = q * r
-        check: mean_absolute_error(a, qr) < 1e-8
+        check: a.mean_absolute_error(qr) < 1e-8
         # TODO: r is triangular
 
       block: # vs NumPy implementation. Note that
@@ -293,8 +293,8 @@ suite "Linear algebra":
                     [ 0.0, -1.0, -1.0, -1.0]].toTensor()
 
         check:
-          mean_absolute_error(q, np_q) < 1e-8
-          mean_absolute_error(r, np_r) < 1e-8
+          q.mean_absolute_error(np_q) < 1e-8
+          r.mean_absolute_error(np_r) < 1e-8
 
   test "LU Factorization":
     block: # M > N
@@ -321,8 +321,8 @@ suite "Linear algebra":
 
       let (PL, U) = lu_permuted(a)
       check:
-        mean_absolute_error(PL, expected_pl) < 1e-8
-        mean_absolute_error(U, expected_u) < 1e-8
+        PL.mean_absolute_error(expected_pl) < 1e-8
+        U.mean_absolute_error(expected_u) < 1e-8
 
     block: # M < N
       # import numpy as np
@@ -346,8 +346,8 @@ suite "Linear algebra":
 
       let (PL, U) = lu_permuted(a)
       check:
-        mean_absolute_error(PL, expected_pl) < 1e-8
-        mean_absolute_error(U, expected_u) < 1e-8
+        PL.mean_absolute_error(expected_pl) < 1e-8
+        U.mean_absolute_error(expected_u) < 1e-8
 
   test "Singular Value Decomposition (SVD)":
     block: # From https://software.intel.com/sites/products/documentation/doclib/mkl_sa/11/mkl_lapack_examples/sgesdd_ex.c.htm
@@ -378,9 +378,9 @@ suite "Linear algebra":
       let k = min(a.shape[0], a.shape[1])
 
       check:
-        mean_absolute_error(U, expected_U) < 1e-2
-        mean_absolute_error(S, expected_S) < 1e-2
-        mean_absolute_error(Vh, expected_Vh) < 1e-2
+        U.mean_absolute_error(expected_U) < 1e-2
+        S.mean_absolute_error(expected_S) < 1e-2
+        Vh.mean_absolute_error(expected_Vh) < 1e-2
 
   test "Randomized SVD":
     # TODO: tests using spectral norm, see fbpca python package
@@ -399,12 +399,12 @@ suite "Linear algebra":
       check:
         U.shape[0] == H.shape[0]
         U.shape[1] == k
-        mean_absolute_error(S, expected_S) < 1.5e-5
+        S.mean_absolute_error(expected_S) < 1.5e-5
         Vh.shape[0] == k
         Vh.shape[1] == H.shape[1]
 
       let reconstructed = (U .* S.unsqueeze(0)) * Vh
-      check: mean_absolute_error(H, reconstructed) < 1e-2
+      check: H.mean_absolute_error(reconstructed) < 1e-2
 
     block: # Ensure that m > n / m < n logic is working fine
       const
@@ -421,12 +421,12 @@ suite "Linear algebra":
       check:
         U.shape[0] == H.shape[0]
         U.shape[1] == k
-        mean_absolute_error(S, expected_S) < 1.5e-5
+        S.mean_absolute_error(expected_S) < 1.5e-5
         Vh.shape[0] == k
         Vh.shape[1] == H.shape[1]
 
       let reconstructed = (U .* S.unsqueeze(0)) * Vh
-      check: mean_absolute_error(H, reconstructed) < 1e-2
+      check: H.mean_absolute_error(reconstructed) < 1e-2
 
   test "Solve linear equations general matrix":
     block:
@@ -450,4 +450,4 @@ suite "Linear algebra":
                      [ 0.57,  0.11,  4.04]].toTensor
 
       let x = solve(a, b)
-      check mean_absolute_error(x, x_known) < 0.01
+      check x.mean_absolute_error(x_known) < 0.01

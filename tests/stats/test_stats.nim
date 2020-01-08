@@ -21,7 +21,7 @@ suite "Statistics":
 
       let computed = covariance_matrix(x,x)
 
-      check: mean_absolute_error(computed, expected) <= 1e-04 # The website seems to have precision issue
+      check: computed.mean_absolute_error(expected) <= 1e-04 # The website seems to have precision issue
 
     block: # p13 of http://www.cs.otago.ac.nz/cosc453/student_tutorials/principal_components.pdf
       let data = [[2.5, 2.4],
@@ -40,7 +40,7 @@ suite "Statistics":
 
       let computed = covariance_matrix(data, data)
 
-      check: mean_absolute_error(computed, expected) <= 1e-09
+      check: computed.mean_absolute_error(expected) <= 1e-09
 
     block: # Numpy doc https://docs.scipy.org/doc/numpy-1.14.0/reference/generated/numpy.cov.html
 
@@ -53,7 +53,7 @@ suite "Statistics":
 
       let computed = covariance_matrix(x, x)
 
-      check: mean_absolute_error(computed, expected) <= 1e-14
+      check: computed.mean_absolute_error(expected) <= 1e-14
 
     block: # Numpy example 2
       let x =  [[-2.1, 3.0],
@@ -65,4 +65,4 @@ suite "Statistics":
 
       let computed = covariance_matrix(x, x)
 
-      check: mean_absolute_error(computed, expected) <= 1e-09
+      check: computed.mean_absolute_error(expected) <= 1e-09

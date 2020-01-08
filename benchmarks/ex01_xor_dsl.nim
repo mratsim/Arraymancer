@@ -40,7 +40,7 @@ for epoch in 0..10000:
     let output = model.forward(x)
 
     # Computing the loss
-    let loss = sigmoid_cross_entropy(output, target)
+    let loss = output.sigmoid_cross_entropy(target)
 
     # Compute the gradient (i.e. contribution of each parameter to the loss)
     loss.backprop()

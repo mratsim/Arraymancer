@@ -38,4 +38,4 @@ suite "[NN Primitives] Maxpool":
     let expected_grad = a.astype(float) .* numerical_gradient(a.astype(float), mpool)
     let grad = maxpool2d_backward(a.shape, max_indices, pooled).astype(float)
 
-    check: mean_relative_error(expected_grad, grad) < 1e-6
+    check: grad.mean_relative_error(expected_grad) < 1e-6

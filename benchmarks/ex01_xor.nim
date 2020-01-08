@@ -41,7 +41,7 @@ for epoch in 0..10000:
     # Building the network
     let n1 = relu linear(x, layer_3neurons)
     let n2 = linear(n1, classifier_layer)
-    let loss = sigmoid_cross_entropy(n2, target)
+    let loss = n2.sigmoid_cross_entropy(target)
 
     # Compute the gradient (i.e. contribution of each parameter to the loss)
     loss.backprop()

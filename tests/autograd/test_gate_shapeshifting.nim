@@ -49,10 +49,10 @@ suite "Autograd of shapeshifting operations":
     loss.backprop()
 
     check:
-      mean_relative_error(va.grad, target_grad_a) < 1e-07
-      mean_relative_error(vb.grad, target_grad_b) < 1e-07
-      mean_relative_error(vc.grad, target_grad_c) < 1e-07
-      mean_relative_error(vd.grad, target_grad_d) < 1e-07
+      va.grad.mean_relative_error(target_grad_a) < 1e-07
+      vb.grad.mean_relative_error(target_grad_b) < 1e-07
+      vc.grad.mean_relative_error(target_grad_c) < 1e-07
+      vd.grad.mean_relative_error(target_grad_d) < 1e-07
 
   test "Gradient of chunk operation":
     let
@@ -80,7 +80,7 @@ suite "Autograd of shapeshifting operations":
       loss = sum(vs[0] + vs[1] - (vs[2] + vs[3]))
 
     loss.backprop()
-    check: mean_relative_error(vx.grad, expected) < 1e-07
+    check: vx.grad.mean_relative_error(expected) < 1e-07
 
   test "Gradient of uneven chunks + slicing operations":
 
@@ -130,7 +130,7 @@ suite "Autograd of shapeshifting operations":
               )
 
     loss.backprop()
-    check: mean_relative_error(vx.grad, expected) < 1e-07
+    check: vx.grad.mean_relative_error(expected) < 1e-07
 
   test "Gradient of squeeze operation (+ chunking)":
 
@@ -182,9 +182,9 @@ suite "Autograd of shapeshifting operations":
 
     loss.backprop()
     check:
-      mean_relative_error(vx.grad, expected_x) < 1e-07
-      mean_relative_error(vy.grad, expected_y) < 1e-07
-      mean_relative_error(vz.grad, expected_z) < 1e-07
+      vx.grad.mean_relative_error(expected_x) < 1e-07
+      vy.grad.mean_relative_error(expected_y) < 1e-07
+      vz.grad.mean_relative_error(expected_z) < 1e-07
 
   test "Gradient of unsqueeze operation":
 
@@ -211,5 +211,5 @@ suite "Autograd of shapeshifting operations":
 
     loss.backprop()
     check:
-      mean_relative_error(vx.grad, expected_x) < 1e-07
-      mean_relative_error(vy.grad, expected_y) < 1e-07
+      vx.grad.mean_relative_error(expected_x) < 1e-07
+      vy.grad.mean_relative_error(expected_y) < 1e-07

@@ -35,9 +35,8 @@ template test_conv(T: typedesc[SomeFloat]) =
     let bias = [0].toTensor().reshape(1,1,1).astype(T).cuda
 
     # TODO: padding should accept a tuple (i.e. unify Size2D and SizeHW)
-    check: mean_absolute_error(
-      input.conv2d(kernel, bias, padding=[1,1]).cpu,
-      target) <= T(1e-7)
+    check: input.conv2d(kernel, bias, padding=[1,1]).cpu
+             .mean_absolute_error(target) <= T(1e-7)
 
   test "Conv2D Forward + Backward [" & $T & ']':
 
@@ -82,9 +81,9 @@ template test_conv(T: typedesc[SomeFloat]) =
     # Ideally we would need a Cuda numerical_gradient
     # In practice it is not relevant as we can use low precision (float16) without issue in deep learning
 
-    check: mean_relative_error(target_grad_bias.astype(T), grad_bias.cpu) < 1e-6
-    check: mean_relative_error(target_grad_kernel.astype(T), grad_kernel.cpu) < 0.2
-    check: mean_relative_error(target_grad_input.astype(T), grad_input.cpu) < 0.2
+    check: grad_bias.cpu.mean_relative_error(target_grad_bias.astype(T)) < 1e-6
+    check: grad_kernel.cpu.mean_relative_error(target_grad_kernel.astype(T)) < 0.2
+    check: grad_input.cpu.mean_relative_error(target_grad_input.astype(T)) < 0.2
 
     # echo "output"
     # echo output

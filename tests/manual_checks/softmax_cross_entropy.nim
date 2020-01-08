@@ -21,8 +21,8 @@ let pred = randomTensor(nb_classes, batch_size, -1.0..1.0)
 
 echo pred
 
-let sce_loss = softmax_cross_entropy(pred, labels)
-let sparse_sce_loss = sparse_softmax_cross_entropy(pred, sparse_labels)
+let sce_loss = pred.softmax_cross_entropy(labels)
+let sparse_sce_loss = pred.sparse_softmax_cross_entropy(sparse_labels)
 
 echo sce_loss
 echo sparse_sce_loss

@@ -93,7 +93,7 @@ for epoch in 0 ..< Epochs:
                   .argmax(axis = 1)
                   .squeeze
 
-    let score = accuracy_score(y_train, y_pred)
+    let score = y_pred.accuracy_score(y_train)
     echo &"Accuracy: {score:.3f}%"
     echo "\n"
 

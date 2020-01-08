@@ -42,14 +42,13 @@ suite "Convolution 2D":
       ftarget = target.astype(float32)
 
     test "Simple Conv2D [Im2ColGEMM]":
-      check: mean_absolute_error(finput.conv2d(fkernel, fbias, padding=(1,1)), ftarget) <= 1e-7'f32
+      check: finput.conv2d(fkernel, fbias, padding=(1,1)).mean_absolute_error(ftarget) <= 1e-7'f32
 
     when defined(nnpack):
       test "Simple Conv2D [NNPack]":
-        check: mean_absolute_error(
-          finput.conv2d(
-            fkernel, fbias, padding=(1,1), algorithm=Conv2DAlgorithm.NNPackAuto
-            ), ftarget) <= 5e-6'f32 # TODO understand the loss of precision
+        check: finput.conv2d(
+          fkernel, fbias, padding=(1,1), algorithm=Conv2DAlgorithm.NNPackAuto
+        ).mean_absolute_error(ftarget) <= 5e-6'f32 # TODO understand the loss of precision
 
   test "Strided Conv2D [Im2ColGEMM]":
     let input = [
@@ -163,15 +162,15 @@ suite "Convolution 2D":
     test "Conv2D Forward + Backward [Im2ColGEMM]":
       conv2d_backward(input, kernel, bias, padding, stride,
                       grad_output, grad_input, grad_weight, grad_bias)
-      check: mean_relative_error(target_grad_bias, grad_bias.astype(float)) < 1e-6
-      check: mean_relative_error(target_grad_weight, grad_weight.astype(float)) < 1e-6
-      check: mean_relative_error(target_grad_input, grad_input.astype(float)) < 1e-6
+      check: grad_bias.astype(float).mean_relative_error(target_grad_bias) < 1e-6
+      check: grad_weight.astype(float).mean_relative_error(target_grad_weight) < 1e-6
+      check: grad_input.astype(float).mean_relative_error(target_grad_input) < 1e-6
 
     when defined(nnpack):
       test "Conv2D Forward + Backward [NNPack]":
         conv2d_backward(input, kernel, bias, padding, stride,
                         grad_output, grad_input, grad_weight, grad_bias,
                         algorithm=Conv2DAlgorithm.NNPackAuto)
-        check: mean_relative_error(target_grad_bias, grad_bias.astype(float)) < 1e-6
-        check: mean_relative_error(target_grad_weight, grad_weight.astype(float)) < 1e-6
-        check: mean_relative_error(target_grad_input, grad_input.astype(float)) < 1e-6
+        check: grad_bias.astype(float).mean_relative_error(target_grad_bias) < 1e-6
+        check: grad_weight.astype(float).mean_relative_error(target_grad_weight) < 1e-6
+        check: grad_input.astype(float).mean_relative_error(target_grad_input) < 1e-6

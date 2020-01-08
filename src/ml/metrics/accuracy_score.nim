@@ -15,7 +15,7 @@
 import ../../tensor/tensor
 
 
-proc accuracy_score*[T](y_true, y_pred: Tensor[T]): float =
+proc accuracy_score*[T](y_pred, y_true: Tensor[T]): float =
   ## Input:
   ##   - y_true: Tensor[T] containing the ground truth (correct) labels
   ##   - y_pred: Tensor[T] containing the predicted labels

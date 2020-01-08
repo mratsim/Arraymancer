@@ -31,12 +31,12 @@ suite "[NN primitives] Loss functions":
       let predicted = [-3.44, 1.16, -0.81, 3.91].toTensor.reshape(1,4)
       let truth = [0'f64, 0, 0, 1].toTensor.reshape(1,4)
 
-      let sce_loss = softmax_cross_entropy(predicted, truth)
+      let sce_loss = predicted.softmax_cross_entropy(truth)
       check: sce_loss ~= 0.0709
 
       let sparse_truth = [3].toTensor
 
-      let sparse_sce_loss = sparse_softmax_cross_entropy(predicted, sparse_truth)
+      let sparse_sce_loss = predicted.sparse_softmax_cross_entropy(sparse_truth)
       check: sparse_sce_loss ~= 0.0709
 
 
@@ -53,11 +53,11 @@ suite "[NN primitives] Loss functions":
       check: mean_relative_error(expected_grad, expected_sparse_grad) < 1e-6
 
       let grad = softmax_cross_entropy_backward(sce_loss, predicted, truth)
-      check: mean_relative_error(grad, expected_grad) < 1e-6
+      check: grad.mean_relative_error(expected_grad) < 1e-6
 
 
       let sparse_grad = sparse_softmax_cross_entropy_backward(sparse_sce_loss, predicted, sparse_truth)
-      check: mean_relative_error(sparse_grad, expected_sparse_grad) < 1e-6
+      check: sparse_grad.mean_relative_error(expected_sparse_grad) < 1e-6
 
     block: # with batch
       let batch_size = 256
@@ -76,8 +76,8 @@ suite "[NN primitives] Loss functions":
       # Create a random tensor with predictions:
       let pred = randomTensor(batch_size, nb_classes, -1.0..1.0)
 
-      let sce_loss = softmax_cross_entropy(pred, labels)
-      let sparse_sce_loss = sparse_softmax_cross_entropy(pred, sparse_labels)
+      let sce_loss = pred.softmax_cross_entropy(labels)
+      let sparse_sce_loss = pred.sparse_softmax_cross_entropy(sparse_labels)
 
       check: sce_loss ~= sparse_sce_loss
 
@@ -94,7 +94,7 @@ suite "[NN primitives] Loss functions":
       check: mean_relative_error(expected_grad, expected_sparse_grad) < 1e-6
 
       let grad = softmax_cross_entropy_backward(sce_loss, pred, labels)
-      check: mean_relative_error(grad, expected_grad) < 1e-6
+      check: grad.mean_relative_error(expected_grad) < 1e-6
 
       let sparse_grad = sparse_softmax_cross_entropy_backward(sparse_sce_loss, pred, sparse_labels)
-      check: mean_relative_error(sparse_grad, expected_sparse_grad) < 1e-6
+      check: sparse_grad.mean_relative_error(expected_sparse_grad) < 1e-6

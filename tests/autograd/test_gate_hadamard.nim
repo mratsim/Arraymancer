@@ -41,5 +41,5 @@ suite "Autograd of Hadamard product":
     loss.backprop()
 
     check:
-      mean_relative_error(va.grad, target_grad_a) < 1e-07
-      mean_relative_error(vb.grad, target_grad_b) < 1e-07
+      va.grad.mean_relative_error(target_grad_a) < 1e-07
+      vb.grad.mean_relative_error(target_grad_b) < 1e-07

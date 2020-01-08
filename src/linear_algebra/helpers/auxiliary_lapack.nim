@@ -190,7 +190,7 @@ when isMainModule:
   # Materialize Q
   var Q = Q_reflectors.clone(colMajor)
   orgqr(Q, tau, scratchspace)
-  doAssert mean_absolute_error(Q, np_q) < 1e-8
+  doAssert Q.mean_absolute_error(np_q) < 1e-8
 
   # Check multiplication
   let Msrc = [[1.0, 2, 3],
@@ -200,19 +200,19 @@ when isMainModule:
   block: # M*Q
     var M = Msrc.clone(colMajor)
     ormqr(M, Q_reflectors, tau, side = 'R', trans = 'N', scratchspace)
-    doAssert mean_absolute_error(M, Msrc * Q) < 1e-8
+    doAssert M.mean_absolute_error(Msrc * Q) < 1e-8
 
   block: # Q*M
     var M = Msrc.clone(colMajor)
     ormqr(M, Q_reflectors, tau, side = 'L', trans = 'N', scratchspace)
-    doAssert mean_absolute_error(M, Q * Msrc) < 1e-8
+    doAssert M.mean_absolute_error(Q * Msrc) < 1e-8
 
   block: # M*Q.T
     var M = Msrc.clone(colMajor)
     ormqr(M, Q_reflectors, tau, side = 'R', trans = 'T', scratchspace)
-    doAssert mean_absolute_error(M, Msrc * Q.transpose()) < 1e-8
+    doAssert M.mean_absolute_error(Msrc * Q.transpose()) < 1e-8
 
   block: # Q.T * M
     var M = Msrc.clone(colMajor)
     ormqr(M, Q_reflectors, tau, side = 'L', trans = 'T', scratchspace)
-    doAssert mean_absolute_error(M, Q.transpose() * Msrc) < 1e-8
+    doAssert M.mean_absolute_error(Q.transpose() * Msrc) < 1e-8

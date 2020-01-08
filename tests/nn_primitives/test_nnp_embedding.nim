@@ -143,7 +143,7 @@ suite "[NN Primitive] Embedding":
       scale_grad_by_freq = false # We don't reduce contribution of common words
     )
 
-    check: mean_absolute_error(target_grad_embed, dWeight) < 1e-8
+    check: dWeight.mean_absolute_error(target_grad_embed) < 1e-8
 
   test "Embedding backpropagation - vocabulary of shape [batch_size, seq_len]":
     const
@@ -170,4 +170,4 @@ suite "[NN Primitive] Embedding":
       scale_grad_by_freq = false # We don't reduce contribution of common words
     )
 
-    check: mean_absolute_error(target_grad_embed, dWeight) < 1e-8
+    check: dWeight.mean_absolute_error(target_grad_embed) < 1e-8

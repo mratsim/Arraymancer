@@ -54,7 +54,7 @@ suite "[NN Primitives - Gated Recurrent Unit - Cell]":
                         bW3, bU3,
                         h)
 
-      check: mean_relative_error(pytorch_expected, h) < 1e-8
+      check: h.mean_relative_error(pytorch_expected) < 1e-8
 
     test "GRU Cell forward - equivalent to PyTorch/CuDNN":
 
@@ -70,7 +70,7 @@ suite "[NN Primitives - Gated Recurrent Unit - Cell]":
                       r, z, n, Uh,
                       h)
 
-      check: mean_relative_error(pytorch_expected, h) < 1e-8
+      check: h.mean_relative_error(pytorch_expected) < 1e-8
 
   ################################
 
@@ -168,12 +168,12 @@ suite "[NN Primitives - Gated Recurrent Unit - Cell]":
                       r, z, n, Uh)
 
     check:
-      mean_absolute_error(target_grad_x, dx) < 1e-8
-      mean_absolute_error(target_grad_hidden, dhidden) < 1e-8
-      mean_absolute_error(target_grad_W3, dW3) < 1e-8
-      mean_absolute_error(target_grad_U3, dU3) < 1e-8
-      mean_absolute_error(target_grad_bW3, dbW3) < 1e-8
-      mean_absolute_error(target_grad_bU3, dbU3) < 1e-8
+      dx.mean_absolute_error(target_grad_x) < 1e-8
+      dhidden.mean_absolute_error(target_grad_hidden) < 1e-8
+      dW3.mean_absolute_error(target_grad_W3) < 1e-8
+      dU3.mean_absolute_error(target_grad_U3) < 1e-8
+      dbW3.mean_absolute_error(target_grad_bW3) < 1e-8
+      dbU3.mean_absolute_error(target_grad_bU3) < 1e-8
 
 suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
 
@@ -278,8 +278,8 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
                   output, h)
 
     check:
-      mean_relative_error(py_expected_output, output) < 1e-8
-      mean_relative_error(py_expected_hiddenN, h) < 1e-8
+      output.mean_relative_error(py_expected_output) < 1e-8
+      h.mean_relative_error(py_expected_hiddenN) < 1e-8
 
   test "GRU forward - equivalent to PyTorch/CuDNN":
     # 1 direction hence `hidden.shape[0] * 1`
@@ -300,8 +300,8 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
                 cached_inputs, cached_hidden)
 
     check:
-      mean_relative_error(py_expected_output, output) < 1e-8
-      mean_relative_error(py_expected_hiddenN, h) < 1e-8
+      output.mean_relative_error(py_expected_output) < 1e-8
+      h.mean_relative_error(py_expected_hiddenN) < 1e-8
 
   type GradKind = enum
     HiddenN, Output, Both
@@ -466,16 +466,16 @@ suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
               rs, zs, ns, Uhs)
 
       check:
-        mean_absolute_error(target_grad_x, dx) < tol
-        mean_absolute_error(target_grad_hidden, dhidden0) < tol
-        mean_absolute_error(target_grad_W3s0, dW3s0) < tol
-        mean_absolute_error(target_grad_U3s, dU3s) < tol
-        mean_absolute_error(target_grad_bW3s, dbW3s) < tol
-        mean_absolute_error(target_grad_bU3s, dbU3s) < tol
+        dx.mean_absolute_error(target_grad_x) < tol
+        dhidden0.mean_absolute_error(target_grad_hidden) < tol
+        dW3s0.mean_absolute_error(target_grad_W3s0) < tol
+        dU3s.mean_absolute_error(target_grad_U3s) < tol
+        dbW3s.mean_absolute_error(target_grad_bW3s) < tol
+        dbU3s.mean_absolute_error(target_grad_bU3s) < tol
 
       when Layers > 1:
-        let target_grad_W3sN   = W3sN.numerical_gradient(gru_W3sN)
-        check: mean_absolute_error(target_grad_W3sN, dW3sN) < tol
+        let target_grad_W3sN = W3sN.numerical_gradient(gru_W3sN)
+        check: dW3sN.mean_absolute_error(target_grad_W3sN) < tol
 
 
   GRU_backprop( 1,  1,  Output,   1e-8)

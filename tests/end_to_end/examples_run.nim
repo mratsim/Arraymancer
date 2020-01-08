@@ -38,7 +38,7 @@ proc ex01() =
 
       let n1 = relu linear(x, layer_3neurons)
       let n2 = linear(n1, classifier_layer)
-      let loss = sigmoid_cross_entropy(n2, target)
+      let loss = n2.sigmoid_cross_entropy(target)
 
       # echo "Epoch is:" & $epoch
       # echo "Batch id:" & $batch_id
@@ -101,7 +101,7 @@ proc ex02() =
       var loss = 0.0
       for i in 0 ..< 1:
         let y_pred = model.forward(X_test[i*1000 ..< (i+1)*1000, _]).value.softmax.argmax(axis = 1).squeeze
-        score += accuracy_score(y_test[i*1000 ..< (i+1)*1000], y_pred)
+        score += y_pred.accuracy_score(y_test[i*1000 ..< (i+1)*1000])
 
         loss += model.forward(X_test[i*1000 ..< (i+1)*1000, _]).sparse_softmax_cross_entropy(y_test[i*1000 ..< (i+1)*1000]).value.data[0]
       score /= 10

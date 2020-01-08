@@ -15,6 +15,8 @@ Changes:
     The matrix is suitable to stress test decompositions.
   - The ``arange`` procedure has been introduced. It creates evenly spaced value within a specified range
     and step
+  - The ordering of arguments to error functions has been converted to
+    `(y_pred, y)`, enabling the syntax `y_pred.accuracy_score(y)`.
 
 Bug fixes:
   - ``gemm`` could crash when the result was column major

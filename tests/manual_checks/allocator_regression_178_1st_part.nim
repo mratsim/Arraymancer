@@ -65,7 +65,7 @@ for sample_id, nonzero_idx in enumerate(sparse_labels):
 let pred = randomTensor(nb_classes, batch_size, -1.0..1.0)
 
 echo "### Reference"
-let sce_loss = softmax_cross_entropy1(pred, labels)
+let sce_loss = pred.softmax_cross_entropy1(labels)
 echo sce_loss
 
 

@@ -42,7 +42,6 @@ template dispatch_common {.dirty.} =
   # 2. Dispatch according to type and SIMD support
   let symT = getTypeInst(alpha)
 
-
 macro dispatch_general(
     ukernel: static MicroKernel,
     kc: int,

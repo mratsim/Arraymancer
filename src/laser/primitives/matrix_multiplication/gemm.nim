@@ -6,7 +6,7 @@
 import
   # ../../cpuinfo,
   ../../compiler_optim_hints, ../../openmp,
-  ../cpuinfo_x86,
+  ../../cpuinfo_x86,
   ./gemm_tiling, ./gemm_utils, ./gemm_packing,
   ./gemm_ukernel_dispatch
 
@@ -183,7 +183,7 @@ proc gemm_impl[T; ukernel: static MicroKernel](
 #
 # ############################################################
 
-proc gemm_strided*[T: SomeNumber](
+proc gemm_strided*[T: SomeNumber and not(uint32|uint64|uint|int)](
       M, N, K: int,
       alpha: T,
       A: ptr T,
@@ -238,7 +238,7 @@ proc gemm_strided*[T: SomeNumber](
         elif hasFma3():  dispatch(x86_AVX_FMA)
         elif hasAvx():   dispatch(x86_AVX)
         elif hasSse2():  dispatch(x86_SSE2)
-      elif T is int32 or T is uint32:
+      elif T is int32:
         if hasAvx512f(): dispatch(x86_AVX512)
         elif hasAvx2():  dispatch(x86_AVX2)
         elif hasSse41(): dispatch(x86_SSE4_1)
@@ -247,6 +247,40 @@ proc gemm_strided*[T: SomeNumber](
         if hasAvx512f(): dispatch(x86_AVX512)
         elif hasSse2():  dispatch(x86_SSE2)
     dispatch(x86_Generic)
+
+proc gemm_strided*[T: uint32|uint64|uint|int](
+      M, N, K: int,
+      alpha: T,
+      A: ptr T,
+      rowStrideA, colStrideA: int,
+      B: ptr T,
+      rowStrideB, colStrideB: int,
+      beta: T,
+      C: ptr T,
+      rowStrideC, colStrideC: int) =
+  ## Overload to avoid bloating the code size with generics monomorphization
+  when sizeof(T) == 4:
+    gemm_strided(
+      M, N, K,
+      int32(alpha), cast[ptr int32](A),
+                    rowStrideA, colStrideA,
+                    cast[ptr int32](B),
+                    rowStrideB, colStrideB,
+      int32(beta),  cast[ptr int32](C),
+                    rowStrideC, colStrideC,
+      )
+  elif sizeof(T) == 8:
+    gemm_strided(
+      M, N, K,
+      int64(alpha), cast[ptr int64](A),
+                    rowStrideA, colStrideA,
+                    cast[ptr int64](B),
+                    rowStrideB, colStrideB,
+      int64(beta),  cast[ptr int64](C),
+                    rowStrideC, colStrideC,
+      )
+  else:
+    {.error: "Unreachable".}
 
 # ############################################################
 #

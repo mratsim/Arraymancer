@@ -8,7 +8,7 @@ import ../src/arraymancer
 proc main(n: int) =
   let even_n = n div 2 * 2
 
-  let a, b = randomTensor(n,n, 100_000_000.int - 1) # Nim ints are int64 on x86_64
+  let a, b = randomTensor(n,n, 100.int - 1) # Nim ints are int64 on x86_64
   let c = a*b
   echo $c[even_n div 2, even_n div 2]
 

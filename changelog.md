@@ -1,6 +1,9 @@
 Arraymancer v0.x.x
 =====================================================
 
+Arraymancer v0.6.0 Jan. 09 2020
+=====================================================
+
 Changes:
   - The ``symeig`` proc to compute eigenvectors of a symmetric matrix
     now accepts an "uplo" char parameter. This allows to fill only the Upper or Lower

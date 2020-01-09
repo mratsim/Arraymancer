@@ -12,40 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./backend/metadataArray,
+import  ../laser/dynamic_stack_arrays,
+        ../laser/tensor/datatypes,
         nimblas, complex
 
 export nimblas.OrderType, complex
 
 type
-  CpuStorage*[T] {.shallow.} = object
-    ## Opaque data storage for Tensors
-    ## Currently implemented as a seq with reference semantics (shallow copy on assignment).
-    ## It may change in the future for a custom memory managed and 64 bit aligned solution.
-    ##
-    ## Warning ⚠:
-    ##   Do not use Fdata directly, direct access will be removed in 0.4.0.
-
-    # `Fdata` will be transformed into an opaque type once `unsafeToTensorReshape` is removed.
-    Fdata*: seq[T]
-
-  Tensor*[T] = object
-    ## Tensor data structure stored on Cpu
-    ##   - ``shape``: Dimensions of the tensor
-    ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
-    ##   - ``offset``: Offset to get the first item of the tensor. Note: offset can be negative, in particular for slices.
-    ##   - ``storage``: An opaque data storage for the tensor
-    ## Fields are public so that external libraries can easily construct a Tensor.
-    ## You can use ``.data`` to access the opaque data storage.
-    ##
-    ## Warning ⚠:
-    ##   Assignment ```var a = b``` does not copy the data. Data modification on one tensor will be reflected on the other.
-    ##   However modification on metadata (shape, strides or offset) will not affect the other tensor.
-    ##   Explicit copies can be made with ``clone``: ```var a = b.clone```
-    shape*: MetadataArray
-    strides*: MetadataArray
-    offset*: int
-    storage*: CpuStorage[T]
+  # On CPU, the tensor datastructures and basic accessors
+  # are defined in laser/tensor/datatypes
 
   CudaStorage*[T: SomeFloat] = object
     ## Opaque seq-like structure for storage on the Cuda backend.

@@ -6,6 +6,7 @@
 import
   # ../../cpuinfo,
   ../../compiler_optim_hints, ../../openmp,
+  ../cpuinfo_x86,
   ./gemm_tiling, ./gemm_utils, ./gemm_packing,
   ./gemm_ukernel_dispatch
 
@@ -226,29 +227,25 @@ proc gemm_strided*[T: SomeNumber](
         const ukernel = cpu_features.x86_ukernel(T, false)
         apply(ukernel)
 
-    # TODO: Unfortunately the SIMD detection package cpuinfo
-    #       breaks C++ compilation with some compilers as it requires C99
-    #       and a strict compiler will refuse to compile.
-
-    # when defined(i386) or defined(amd64):
-    #   when T is float32:
-    #     if cpuinfo_has_x86_avx512f():   dispatch(x86_AVX512)
-    #     elif cpuinfo_has_x86_fma3():   dispatch(x86_AVX_FMA)
-    #     elif cpuinfo_has_x86_avx():  dispatch(x86_AVX)
-    #     elif cpuinfo_has_x86_sse():    dispatch(x86_SSE)
-    #   elif T is float64:
-    #     if cpuinfo_has_x86_avx512f():   dispatch(x86_AVX512)
-    #     elif cpuinfo_has_x86_fma3():   dispatch(x86_AVX_FMA)
-    #     elif cpuinfo_has_x86_avx():  dispatch(x86_AVX)
-    #     elif cpuinfo_has_x86_sse2():    dispatch(x86_SSE2)
-    #   elif T is int32 or T is uint32:
-    #     if cpuinfo_has_x86_avx512f():   dispatch(x86_AVX512)
-    #     elif cpuinfo_has_x86_avx2():   dispatch(x86_AVX2)
-    #     elif cpuinfo_has_x86_sse41():   dispatch(x86_SSE4_1)
-    #     elif cpuinfo_has_x86_sse2():   dispatch(x86_SSE2)
-    #   elif T is int64:
-    #     if cpuinfo_has_x86_avx512f():   dispatch(x86_AVX512)
-    #     elif cpuinfo_has_x86_sse2():   dispatch(x86_SSE2)
+    when defined(i386) or defined(amd64):
+      when T is float32:
+        if hasAvx512f(): dispatch(x86_AVX512)
+        elif hasFma3():  dispatch(x86_AVX_FMA)
+        elif hasAvx():   dispatch(x86_AVX)
+        elif hasSse():   dispatch(x86_SSE)
+      elif T is float64:
+        if hasAvx512f(): dispatch(x86_AVX512)
+        elif hasFma3():  dispatch(x86_AVX_FMA)
+        elif hasAvx():   dispatch(x86_AVX)
+        elif hasSse2():  dispatch(x86_SSE2)
+      elif T is int32 or T is uint32:
+        if hasAvx512f(): dispatch(x86_AVX512)
+        elif hasAvx2():  dispatch(x86_AVX2)
+        elif hasSse41(): dispatch(x86_SSE4_1)
+        elif hasSse2():  dispatch(x86_SSE2)
+      elif T is int64:
+        if hasAvx512f(): dispatch(x86_AVX512)
+        elif hasSse2():  dispatch(x86_SSE2)
     dispatch(x86_Generic)
 
 # ############################################################

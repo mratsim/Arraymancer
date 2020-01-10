@@ -25,7 +25,7 @@ type
     when supportsCopyMem(T):
       raw_buffer*: ptr UncheckedArray[T] # 8 bytes
       memalloc*: pointer                 # 8 bytes
-      memowner*: bool                    # 1 byte
+      isMemOwner*: bool                    # 1 byte
     else: # Tensors of strings, other ref types or non-trivial destructors
       raw_buffer*: seq[T]                # 8 bytes (16 for seq v2 backed by destructors?)
 

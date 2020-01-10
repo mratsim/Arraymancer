@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./backend/metadataArray,
-        ./private/p_shapeshifting,
+import  ./private/p_shapeshifting,
         ./private/p_checks,
         ./private/p_accessors_macros_write,
         ./accessors,

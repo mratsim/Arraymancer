@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../backend/metadataArray,
+import  ../../laser/tensor/[allocator, initialization],
+        ../../private/sequninit,
         ../data_structure, ../higher_order_applymap,
         ../init_cpu,
-        ./p_init_cpu,
         ./p_checks,
         nimblas
 
@@ -24,8 +23,11 @@ proc contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]) 
   if layout == rowMajor:
     result = t.map_inline(x)
   else: # colMajor
-    tensorCpu(t.shape, result, layout)
-    result.data = newSeqUninit[T](result.size)
+    var size: int
+    initTensorMetadata(result, size, t.shape)
+    # TODO: init with colMajor layout
+    result.strides.reversed
+    allocCpuStorage(result.storage, size)
     apply2_inline(result, t):
       y
 
@@ -77,7 +79,7 @@ proc broadcastImpl*(t: var AnyTensor, shape: varargs[int]|MetadataArray) {.noSid
 proc broadcast2Impl*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T]]) {.noSideEffect.}=
   let rank = max(a.rank, b.rank)
 
-  var shapeA, stridesA, shapeB, stridesB = initMetadataArray(rank) # initialized with 0
+  var shapeA, stridesA, shapeB, stridesB = Metadata(len: rank) # initialized with 0
 
   for i in 0..<rank:
     let shape_A_iter = if i < rank: a.shape[i] else: 1

@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/nested_containers,
-        ./backend/metadataArray,
+import  ../laser/private/nested_containers,
+        ../laser/tensor/[allocator, initialization],
         ./private/p_checks,
-        ./private/p_init_cpu,
         ./data_structure,
         ./operators_blas_l2l3,
-        sequtils
+        sequtils, typetraits
 
 #################################################
 ## Operations fusion
@@ -77,16 +76,22 @@ template rewriteTensor_MultiplyAdd_inplace*{C += `*`(A,B)}[T](
 ## initialization
 
 template toTensorReshapeImpl(oa: typed, shape: varargs[int]): untyped =
-  let data = toSeq(flatIter(oa))
-  let seq_shape = shape.toMetadataArray
 
-  when compileOption("boundChecks"):
-    check_nested_elements(seq_shape, data.len)
+  var t: Tensor[typeof(flatIter(oa))]
+  var size: int
 
-  var t: Tensor[type(data[0])]
-  tensorCpu(seq_shape, t)
-  shallowCopy(t.data, data)
-  t
+  static: echo typeof(t)
+  static: echo supportsCopyMem(string)
+  static: echo typeof t.storage.raw_buffer
+  static: echo typeof t.storage
+  initTensorMetadata(t, size, shape)
+  allocCpuStorage(t.storage, size)
+  var i = 0
+  for val in flatIter(oa):
+    t.storage.raw_buffer[i] = val
+    assert i < size
+    i += 1
+  assert i == size
 
 proc toTensorReshape(oa: string, shape: varargs[int]): auto {.noInit,noSideEffect.}=
   ## Fuse toTensor and reshape in one operation.

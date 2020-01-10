@@ -12,15 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/[nested_containers, sequninit],
-        ./backend/[metadataArray],
-        ./private/p_checks,
-        ./private/p_init_cpu,
-        ./data_structure,
-        nimblas,
-        sequtils,
-        random,
-        math
+import
+  # Internal
+  ../private/sequninit,
+  ../laser/tensor/[initialization, allocator],
+  ../laser/strided_iteration/foreach,
+  ./private/p_checks,
+  ./data_structure,
+  # Third-party
+  nimblas,
+  # Standard library
+  sequtils,
+  random,
+  math,
+  typetraits
+
+export initialization
 
 proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
@@ -31,10 +38,11 @@ proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, 
   ##      - A Tensor of the proper shape with NO initialization
   ## Warning ⚠
   ##   Tensor data is uninitialized and contains garbage.
-  tensorCpu(shape, result)
-  result.storage.Fdata = newSeqUninit[T](result.size)
+  var size: int
+  initTensorMetadata(result, size, shape)
+  allocCpuStorage(result.storage, size)
 
-proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noSideEffect,noInit, inline.} =
+proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -43,19 +51,11 @@ proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noSideEffect,noInit,
   ##      - A Tensor of the proper shape with NO initialization
   ## Warning ⚠
   ##   Tensor data is uninitialized and contains garbage.
-  tensorCpu(shape, result)
-  result.storage.Fdata = newSeqUninit[T](result.size)
+  var size: int
+  initTensorMetadata(result, size, shape)
+  allocCpuStorage(result.storage, size)
 
-proc newTensor*[T](shape: varargs[int]): Tensor[T] {.noSideEffect,noInit, inline.} =
-  ## Creates a new Tensor on Cpu backend
-  ## Input:
-  ##      - Shape of the Tensor
-  ##      - Type of its elements
-  ## Result:
-  ##      - A Tensor of the proper shape initialized with
-  ##        the default type value (0 for numeric types) on Cpu backend
-  tensorCpu(shape, result)
-  result.storage.Fdata = newSeq[T](result.size)
+# newTensor is defined in laser/tensor/initialization
 
 proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit, noSideEffect.} =
   ## Creates a new Tensor filled with the given value
@@ -67,12 +67,16 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit, noSid
   ##      - A Tensor of the proper shape initialized with
   ##        the given value
   # Todo: use a template that can accept proc or value. See the code for newSeqWith: https://github.com/nim-lang/Nim/blob/master/lib/pure/collections/sequtils.nim#L650-L665
-  tensorCpu(shape, result)
-  result.storage.Fdata = newSeqUninit[T](result.size)
+  var size: int
+  initTensorMetadata(result, size, shape)
+  allocCpuStorage(result.storage, size)
 
-  for tval in result.storage.Fdata.mitems:
-    {.unroll: 8.}
-    tval = value
+  when T.supportsCopyMem:
+    forEachContiguous x in result:
+      x = value
+  else:
+    forEachContiguousSerial x in result:
+      x = value
 
 proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit, noSideEffect.} =
   ## Creates a new Tensor filled with the given value
@@ -84,29 +88,18 @@ proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit, noSi
   ##      - A Tensor of the proper shape initialized with
   ##        the given value
   # Todo: use a template that can accept proc or value. See the code for newSeqWith: https://github.com/nim-lang/Nim/blob/master/lib/pure/collections/sequtils.nim#L650-L665
-  tensorCpu(shape, result)
-  result.storage.Fdata = newSeqUninit[T](result.size)
+  var size: int
+  initTensorMetadata(result, size, shape)
+  allocCpuStorage(result.storage, size)
 
-  for tval in result.storage.Fdata.mitems:
-    {.unroll: 8.}
-    tval = value
+  when T.supportsCopyMem:
+    forEachContiguous x in result:
+      x = value
+  else:
+    forEachContiguousSerial x in result:
+      x = value
 
-proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0): auto {.noSideEffect.} =
-  ## Convert an openarray to a Tensor
-  ## Input:
-  ##      - An array or a seq (can be nested)
-  ## Result:
-  ##      - A Tensor of the same shape
-  ##
-  ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
-  # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
-  toTensorCpu(s)
-
-proc toTensor*(s:string): auto {.noSideEffect.} =
-  ## Convert a string to a Tensor
-  ##
-  ## This proc handles string specifically as otherwise they are interpreted as a sequence of char
-  toTensorCpu(s)
+# newTensor is defined in laser/tensor/initialization
 
 proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
@@ -116,8 +109,7 @@ proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]
   ##      - Type of its elements
   ## Result:
   ##      - A zero-ed Tensor of the input shape on backend Cpu
-  tensorCpu(shape, result)
-  result.storage.Fdata = newSeq[T](result.size)
+  result = newTensor(shape)
 
 proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArray): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0
@@ -127,8 +119,7 @@ proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArra
   ##      - Type of its elements
   ## Result:
   ##      - A zero-ed Tensor of the input shape on backend Cpu
-  tensorCpu(shape, result)
-  result.storage.Fdata = newSeq[T](result.size)
+  result = newTensor(shape)
 
 proc zeros_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noInit,noSideEffect, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
@@ -147,10 +138,10 @@ proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int])
   ## Result:
   ##      - A one-ed Tensor of the same shape
   when T is SomeNumber:
-    newTensorWith[T](shape, 1.T)
+    result = newTensorWith[T](shape, 1.T)
   else:
     type F = T.T # Get the float subtype of Complex[T]
-    newTensorWith[T](shape, complex(1.F, 0.F))
+    result = newTensorWith[T](shape, complex(1.F, 0.F))
 
 proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArray): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1
@@ -160,10 +151,10 @@ proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArray
   ## Result:
   ##      - A one-ed Tensor of the same shape
   when T is SomeNumber:
-    newTensorWith[T](shape, 1.T)
+    result = newTensorWith[T](shape, 1.T)
   else:
     type F = T.T
-    newTensorWith[T](shape, complex(1.F, 0.F))
+    result = newTensorWith[T](shape, complex(1.F, 0.F))
 
 proc ones_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noInit, inline, noSideEffect.} =
   ## Creates a new Tensor filled with 1 with the same shape as the input
@@ -172,7 +163,7 @@ proc ones_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): 
   ##      - Tensor
   ## Result:
   ##      - A one-ed Tensor of the same shape
-  return ones[T](t.shape)
+  result = ones[T](t.shape)
 
 func arange*[T: SomeNumber](start, stop, step: T): Tensor[T] {.noInit.} =
   ## Creates a new 1d-tensor with values evenly spaced by ``step``
@@ -196,12 +187,13 @@ func arange*[T: SomeNumber](start, stop, step: T): Tensor[T] {.noInit.} =
   var size_f64 = ceil((stop.float64 - start.float64) / step.float64)
   assert 0 <= size_f64 and size_f64 <= float64(high(int)), "Invalid size"
 
-  let size = int(size_f64)
-  tensorCpu([size], result)
-  result.storage.Fdata = newSeqUninit[T](size)
+  let shape = [int(size_f64)]
+  var size: int
+  initTensorMetadata(result, size, shape)
+  allocCpuStorage(result.storage, size)
 
   for i in 0 ..< size:
-    result.storage.Fdata[i] = start + i.T * step
+    result.storage.raw_buffer[i] = start + i.T * step
 
 template arange*[T: SomeNumber](stop: T): Tensor[T] =
   # Error messages of templates are very poor
@@ -212,8 +204,12 @@ template arange*[T: SomeNumber](start, stop: T): Tensor[T] =
   arange(start, stop, T(1))
 
 template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typed): untyped =
-  tensorCpu(shape, t)
-  result.storage.Fdata = newSeqWith(t.size, T(rand(max_or_range))) # Due to automatic converter (float32 -> float64), we must force T #68
+  var size: int
+  initTensorMetadata(result, size, shape)
+  allocCpuStorage(result.storage, size)
+
+  for i in 0 ..< t.size:
+    result.storage.raw_buffer[i] = T(rand(max_or_range)) # Due to automatic converter (float32 -> float64), we must force T #68
 
 proc randomTensor*[T:SomeFloat](shape: varargs[int], max: T): Tensor[T] {.noInit.} =
   ## Creates a new float Tensor filled with values between 0 and max.
@@ -260,8 +256,12 @@ proc randomTensor*[T](shape: varargs[int], sample_source: openarray[T]): Tensor[
   ##      - a sample_source
   ## Result:
   ##      - A tensor of the input shape filled with random values from ``sample_source``
-  tensorCpu(shape, result)
-  result.storage.Fdata = newSeqWith(result.size, sample(sample_source))
+  var size: int
+  initTensorMetadata(result, size, shape)
+  allocCpuStorage(result.storage, size)
+
+  for i in 0 ..< size:
+    result.storage.raw_buffer[i] = sample(sample_source)
 
 proc randomNormal(mean = 0.0, std = 1.0): float =
   ## Random number in the normal distribution using Box-Muller method
@@ -288,5 +288,9 @@ proc randomNormalTensor*[T:SomeFloat](shape: varargs[int], mean:T = 0, std:T = 1
   ##      - the standard deviation (default 1)
   ## Result:
   ##      - A tensor of the input shape filled with random values in the normal distribution
-  tensorCpu(shape, result)
-  result.storage.Fdata = newSeqWith(result.size, T(randomNormal(mean.float, std.float)))
+  var size: int
+  initTensorMetadata(result, size, shape)
+  allocCpuStorage(result.storage, size)
+
+  for i in 0 ..< size:
+    result.storage.raw_buffer[i] = T(randomNormal(mean.float, std.float))

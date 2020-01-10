@@ -12,15 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../laser/dynamic_stack_arrays,
-        ../laser/tensor/datatypes,
-        nimblas, complex
+import
+  # Internal
+  ../laser/dynamic_stack_arrays,
+  ../laser/tensor/datatypes,
+  ../private/sequninit,
+  # Third-party
+  nimblas,
+  # Standard library
+  std/[complex, typetraits]
 
 export nimblas.OrderType, complex
+export datatypes, dynamic_stack_arrays
 
 type
   # On CPU, the tensor datastructures and basic accessors
   # are defined in laser/tensor/datatypes
+  MetadataArray*{.deprecated: "Use Metadata instead".} = Metadata
 
   CudaStorage*[T: SomeFloat] = object
     ## Opaque seq-like structure for storage on the Cuda backend.
@@ -76,77 +84,40 @@ type
 # Field accessors
 # ###############
 
-proc data*[T](t: Tensor[T]): seq[T] {.inline, noSideEffect, noInit.} =
+proc data*[T](t: Tensor[T]): seq[T] {.inline, noInit, deprecated: "This used to be a way to extract raw data without copy. Use the raw pointer instead.".} =
   # Get tensor raw data
   # This is intended for library writer
-  shallowCopy(result, t.storage.Fdata)
+  when supportsCopyMem:
+    result = newSeqUninit(t.size)
+    for i in 0 ..< t.size:
+      result[i] = t.storage.raw_buffer[i]
+  else:
+    shallowCopy(result, t.storage.raw_buffer)
 
-proc data*[T](t: var Tensor[T]): var seq[T] {.inline, noSideEffect, noInit.} =
+proc data*[T](t: var Tensor[T]): var seq[T] {.deprecated: "This used to be a way to extract raw data without copy. Use the raw pointer instead.".} =
   # Get mutable tensor raw data
   # This is intended for library writer
-  shallowCopy(result, t.storage.Fdata)
+  when supportsCopyMem:
+    result = newSeqUninit(t.size)
+    for i in 0 ..< t.size:
+      result[i] = t.storage.raw_buffer[i]
+  else:
+    shallowCopy(result, t.storage.raw_buffer)
 
-proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.inline, noSideEffect.}=
+proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.deprecated: "Use copyFromRaw instead".} =
   # Set tensor raw data
   # This is intended for library writer
-  t.storage.Fdata = s
+  assert s.len > 0
+  when T.supportsCopyMem:
+    t.copyFromRaw(s[0].addr, s.len)
+  else:
+    t.storage.raw_buffer = s
 
 # ################
 # Tensor Metadata
 # ################
 
-proc rank*(t: AnyTensor): int {.noSideEffect, inline.}=
-  ## Input:
-  ##     - A tensor
-  ## Returns:
-  ##     - Its rank
-  ##
-  ##   - 0 for scalar (unfortunately cannot be stored)
-  ##   - 1 for vector
-  ##   - 2 for matrices
-  ##   - N for N-dimension array
-  t.shape.len
-
-proc size*(t: AnyTensor): int {.noSideEffect, inline.}=
-  ## Input:
-  ##     - A tensor
-  ## Returns:
-  ##     - The total number of elements it contains
-  t.shape.product
-
-proc shape_to_strides*(shape: MetadataArray, layout: OrderType = rowMajor, result: var MetadataArray) {.noSideEffect.} =
-  ## Input:
-  ##     - A shape (MetadataArray), for example [3,5] for a 3x5 matrix
-  ##     - Optionally rowMajor (C layout - default) or colMajor (Fortran)
-  ## Returns:
-  ##     - The strides in C or Fortran order corresponding to this shape and layout
-  ##
-  ## Arraymancer defaults to rowMajor. Temporarily, CudaTensors are colMajor by default.
-  # See Design document for further considerations.
-  var accum = 1
-  result.len = shape.len
-
-  if layout == rowMajor:
-    for i in countdown(shape.len-1,0):
-      result[i] = accum
-      accum *= shape[i]
-    return
-
-  for i in 0 ..< shape.len:
-    result[i] = accum
-    accum *= shape[i]
-  return
-
-proc is_C_contiguous*(t: AnyTensor): bool {.noSideEffect, inline.}=
-  ## Check if the tensor follows C convention / is row major
-  var z = 1
-  for i in countdown(t.shape.high,0):
-    # 1. We should ignore strides on dimensions of size 1
-    # 2. Strides always must have the size equal to the product of the next dimensons
-    if t.shape[i] != 1 and t.strides[i] != z:
-        return false
-    z *= t.shape[i]
-  return true
+# rank, size, is_C_contiguous defined in laser
 
 proc is_F_contiguous*(t: AnyTensor): bool {.noSideEffect, inline.}=
   ## Check if the tensor follows Fortran convention / is column major
@@ -163,29 +134,54 @@ proc isContiguous*(t: AnyTensor): bool {.noSideEffect, inline.}=
   ## Check if the tensor is contiguous
   return t.is_C_contiguous or t.is_F_contiguous
 
+proc shape_to_strides*(shape: MetadataArray, layout: OrderType = rowMajor, result: var MetadataArray) {.noSideEffect.} =
+  ## Input:
+  ##     - A shape (MetadataArray), for example [3,5] for a 3x5 matrix
+  ##     - Optionally rowMajor (C layout - default) or colMajor (Fortran)
+  ## Returns:
+  ##     - The strides in C or Fortran order corresponding to this shape and layout
+  ##
+  ## Arraymancer defaults to rowMajor. Temporarily, CudaTensors are colMajor by default.
+  # See Design document for further considerations.
+  var accum = 1
+  result.len = shape.len
+
+  if layout == rowMajor:
+    for i in countdown(shape.len-1,0):
+      result[i] = accum
+      accum *= shape[i]
+    return
+
+  for i in 0 ..< shape.len:
+    result[i] = accum
+    accum *= shape[i]
+  return
+
 # ##################
 # Raw pointer access
 # ##################
 
+# TODO: proper getters and setters, that also update Nim refcount
+#       for interoperability of Arraymancer buffers with other framework
 
 proc get_data_ptr*[T](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the real start of its data (no offset)
-  unsafeAddr(t.storage.Fdata[0])
+  cast[ptr T](t.storage.raw_buffer)
 
 proc get_offset_ptr*[T](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the offset start of its data
-  unsafeAddr(t.storage.Fdata[t.offset])
+  t.storage.raw_buffer[t.offset].unsafeAddr
 
-proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.noSideEffect, inline.}=
+proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.noSideEffect, inline, deprecated: "Use unsafe_raw_data instead".}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the offset start of the data.
   ##       Return value supports array indexing.
-  cast[ptr UncheckedArray[T]](t.storage.Fdata[t.offset].unsafeAddr)
+  (ptr UncheckedArray[T])(t.unsafe_raw_data)

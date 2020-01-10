@@ -16,7 +16,7 @@ import nimblas
 # Export OrderType (rowMajor, colMajor) from nimblas
 export OrderType
 
-import  ./backend/metadataArray,
+import  ../laser/dynamic_stack_arrays,
         ./data_structure,
         ./init_cpu,
         ./init_copy_cpu,

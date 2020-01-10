@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import  ../backend/[global_config, memory_optimization_hints],
-        ../backend/metadataArray,
         ../data_structure,
         ./p_checks
 

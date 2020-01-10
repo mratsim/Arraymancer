@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/[nested_containers],
-        ../backend/metadataArray,
+import  ../../laser/private/nested_containers,
         ../data_structure
 
 include ./p_checks_cuda, ./p_checks_opencl

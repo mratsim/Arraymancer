@@ -22,7 +22,7 @@ when_isMainModule()
 # Input 1500x1500 random large int64 matrix
 
 # Nim 0.17.3 (devel) NO openMP. Compilation option: "-d:release --passc:-march=native"
-# Julia v6.0
+# Julia v0.6
 # Python 3.5.2 + Numpy 1.12
 
 # Nim: 1.66s, 90 MB
@@ -34,7 +34,7 @@ when_isMainModule()
 # Input 1500x1500 random large int64 matrix
 
 # Nim 0.17.3 (devel) WITH OpenMP. Compilation option: "-d:release --passc:-march=native -d:openmp"
-# Julia v6.0
+# Julia v0.6
 # Python 3.6.2 + Numpy 1.12 compiled from source with march=native and openBLAS
 
 # Nim + OpenMP: 0.36s, 55.5 MB

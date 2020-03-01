@@ -38,6 +38,7 @@ proc newCudaStorage*[T: SomeFloat](length: int): CudaStorage[T] {.noSideEffect.}
   result.Flen = length
   new(result.Fref_tracking, deallocCuda)
   result.Fdata = cast[ptr UncheckedArray[T]](cudaMalloc[T](result.Flen))
+  result.Fref_tracking[] = result.Fdata
 
 # #########################################################
 # # Sending tensor layout to Cuda Kernel

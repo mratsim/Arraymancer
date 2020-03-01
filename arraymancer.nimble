@@ -76,8 +76,10 @@ template cudaSwitches(switches: var string) =
   # we only support compute capabilities 3.5+
   # See here: http://docs.nvidia.com/cuda/pascal-compatibility-guide/index.html
   # And wikipedia for GPU capabilities: https://en.wikipedia.org/wiki/CUDA
-  switches.add " --gcc.options.always:\"-arch=sm_61 --x cu\"" # Interpret .c files as .cu
-  switches.add " --gcc.cpp.options.always:\"-arch=sm_61 --x cu -Xcompiler -fpermissive\"" # Interpret .c files as .cu, gate fpermissive behind Xcompiler
+
+  # Note: the switches below might conflict with nim.cfg
+  # switches.add " --gcc.options.always:\"-arch=sm_61 --x cu\"" # Interpret .c files as .cu
+  # switches.add " --gcc.cpp.options.always:\"-arch=sm_61 --x cu -Xcompiler -fpermissive\"" # Interpret .c files as .cu, gate fpermissive behind Xcompiler
   switches.add " -d:cudnn"
 
 template cuda_mkl_openmp(switches: var string) =
@@ -88,8 +90,10 @@ template cuda_mkl_openmp(switches: var string) =
   switches.add " --gcc.linkerexe:/opt/cuda/bin/nvcc"
   switches.add " --gcc.cpp.exe:/opt/cuda/bin/nvcc"
   switches.add " --gcc.cpp.linkerexe:/opt/cuda/bin/nvcc"
-  switches.add " --gcc.options.always:\"-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native\""
-  switches.add " --gcc.cpp.options.always:\"-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native\""
+
+  # Note: the switches below might conflict with nim.cfg
+  # switches.add " --gcc.options.always:\"-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native\""
+  # switches.add " --gcc.cpp.options.always:\"-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native\""
 
 # Clang config - make sure Clang supports your CUDA SDK version
 # https://gist.github.com/ax3l/9489132

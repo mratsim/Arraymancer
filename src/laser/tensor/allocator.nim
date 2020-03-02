@@ -27,4 +27,4 @@ proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
     storage.raw_buffer = align_raw_data(T, storage.memalloc)
   else: # Always 0-initialize Tensors of seq, strings, ref types and types with non-trivial destructors
     new(storage)
-    newSeq[T](storage.raw_buffer, size)
+    storage.raw_buffer.newSeq(size)

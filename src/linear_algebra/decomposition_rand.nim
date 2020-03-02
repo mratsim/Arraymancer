@@ -255,7 +255,7 @@ proc svd_randomized*[T](
     Q = Y                                                          #                          - [M, L]
     geqrf(Q, tau, scratchspace)                                    # Q = qr(Y) - orthonormal basis for samples
     orgqr(Q, tau, scratchspace)                                    # extract Q; next line project to low-dimensional space
-    tensorCpu(L, n, Z, colMajor)                                   # Reuse Z buffer (shape NxL) to store B (shape LxN)
+    Z.newMatrixUninitColMajor(L, n)                                # Reuse Z buffer (shape NxL) to store B (shape LxN)
     gemm(1.T, Q.transpose(), A, 0.T, Z)                            # B = Q.T * A              - [L,M]*[M,N] -> [L, N]
     # QB decomposition ----------------------------------------------------------------------------------------
     gesdd(Z, result.U, result.S, result.Vh, scratchspace)          # U, S, Vh = svd(B)

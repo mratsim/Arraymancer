@@ -80,10 +80,6 @@ template toTensorReshapeImpl(oa: typed, shape: varargs[int]): untyped =
   var t: Tensor[typeof(flatIter(oa))]
   var size: int
 
-  static: echo typeof(t)
-  static: echo supportsCopyMem(string)
-  static: echo typeof t.storage.raw_buffer
-  static: echo typeof t.storage
   initTensorMetadata(t, size, shape)
   allocCpuStorage(t.storage, size)
   var i = 0

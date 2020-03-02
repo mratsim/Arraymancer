@@ -4,10 +4,9 @@
 
 import
   nimlapack, fenv,
-  ./overload,
+  ./overload, ./init_colmajor,
   ../../private/sequninit,
-  ../../tensor/tensor,
-  ../../tensor/private/p_init_cpu # TODO: can't call newTensorUninit with optional colMajor, varargs breaks it
+  ../../tensor/tensor
 
 # Least Squares using Recursive Divide & Conquer
 # --------------------------------------------------------------------------------------
@@ -52,10 +51,7 @@ proc gelsd*[T: SomeFloat](
   # Furthermore, as we have input B shape M x NRHS and output N x NRHS
   # if M < N we must zero the remainder of the tensor
   var b2: Tensor[T]
-  # Varargs + optional colMajor argument issue, must resort to low level proc at the moment
-  # instead of newTensorUninit
-  tensorCpu([ldb.int, nrhs.int], b2, colMajor)
-  b2.storage.Fdata = newSeq[T](b2.size)
+  b2.newMatrixUninitColMajor(ldb.int, nrhs.int)
 
   var b2_slice = b2[0 ..< b.shape[0], 0 ..< nrhs] # Workaround because slicing does no produce a var at the moment
   apply2_inline(b2_slice, b):

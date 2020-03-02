@@ -4,7 +4,7 @@
 
 import
   ../tensor/tensor,
-  ../tensor/private/p_init_cpu,
+  ../laser/tensor/[initialization, allocator],
   strutils, strformat, os, options,
   nimhdf5
 
@@ -87,11 +87,6 @@ proc read_hdf5*[T: SomeNumber](h5f: var H5FileObj,
   let shape = h5dset.attrs["shape", seq[int]]
   let rank  = h5dset.attrs["rank", int]
   let size  = h5dset.attrs["size", int]
-  let layout =
-    if h5dset.attrs["is_C_contiguous", string] == "true":
-      rowMajor
-    else:
-      colMajor
 
   # since the datatype of the resulting tensor is not necessarily
   # the same as the actual data in the H5 file (we may want to convert
@@ -100,8 +95,16 @@ proc read_hdf5*[T: SomeNumber](h5f: var H5FileObj,
   # finally convert seq to tensor and reshape
 
   # Read the data
-  tensorCpu(shape, result, layout)
-  result.data = convertTo(h5dset)
+  block:
+    var size: int
+    if h5dset.attrs["is_C_contiguous", string] == "true":
+      result.initTensorMetadata(shape, size, rowMajor)
+    else:
+      result.initTensorMetadata(shape, size, colMajor)
+    result.storage.allocCpuStorage(size)
+
+  let tmp = convertTo(h5dset)
+  result.copyFromRaw(tmp[0].addr, tmp.len)
 
   assert shape == h5dset.shape
   assert shape == @(result.shape)

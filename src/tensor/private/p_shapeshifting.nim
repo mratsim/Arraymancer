@@ -24,9 +24,7 @@ proc contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]) 
     result = t.map_inline(x)
   else: # colMajor
     var size: int
-    initTensorMetadata(result, size, t.shape)
-    # TODO: init with colMajor layout
-    result.strides.reversed
+    initTensorMetadata(result, size, t.shape, colMajor)
     allocCpuStorage(result.storage, size)
     apply2_inline(result, t):
       y
@@ -42,10 +40,7 @@ proc reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, resul
 
 proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
   when compileOption("boundChecks"):
-    when new_shape is MetadataArray:
-      check_reshape(t, new_shape)
-    else:
-      check_reshape(t, new_shape.toMetadataArray)
+    check_reshape(t, new_shape)
 
   if t.is_C_contiguous:
     reshape_no_copy(t, new_shape, result, rowMajor)
@@ -126,7 +121,7 @@ proc exch_dim*[T](t: Tensor[T], dim1, dim2: int): Tensor[T] {.noInit,noSideEffec
   swap(result.shape[dim1], result.shape[dim2])
 
 proc permuteImpl*[T](result: var Tensor[T], dims: varargs[int]) {.noSideEffect.} =
-  var perm = dims.toMetadataArray
+  var perm = dims.toMetadata
   for i, p in perm:
     if p != i and p != -1:
       var j = i
@@ -136,7 +131,6 @@ proc permuteImpl*[T](result: var Tensor[T], dims: varargs[int]) {.noSideEffect.}
         if perm[j] == i:
           break
       perm[j] = -1
-
 
 proc squeezeImpl*(t: var AnyTensor) {.noSideEffect.} =
   var idx_real_dim = 0

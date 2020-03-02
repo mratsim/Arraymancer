@@ -7,7 +7,7 @@
 
 import
   ../dynamic_stack_arrays, ../compiler_optim_hints,
-  sugar, typetraits
+  typetraits
 
 type
   RawImmutableView*[T] = distinct ptr UncheckedArray[T]
@@ -21,11 +21,12 @@ type
     offset*: int                         # 8 bytes
     storage*: CpuStorage[T]              # 8 bytes
 
-  CpuStorage*{.shallow.}[T] = ref object # Total heap: 25 bytes = 1 cache-line
-    when supportsCopyMem(T):
+  CpuStorage*[T] {.shallow.} = ref object # Total heap: 25 bytes = 1 cache-line
+    # Workaround supportsCopyMem in type section - https://github.com/nim-lang/Nim/issues/13193
+    when not(T is string or T is ref):
       raw_buffer*: ptr UncheckedArray[T] # 8 bytes
       memalloc*: pointer                 # 8 bytes
-      isMemOwner*: bool                    # 1 byte
+      isMemOwner*: bool                  # 1 byte
     else: # Tensors of strings, other ref types or non-trivial destructors
       raw_buffer*: seq[T]                # 8 bytes (16 for seq v2 backed by destructors?)
 

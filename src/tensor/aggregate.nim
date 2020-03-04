@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./backend/memory_optimization_hints,
-        ./data_structure,
+import  ./data_structure,
         ./init_cpu,
         ./higher_order_foldreduce,
         ./math_functions,
@@ -165,9 +164,8 @@ proc argmax_max*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes:
   result.maxes = t.atAxisIndex(axis, 0).clone()
   result.indices = zeros[int](result.maxes.shape)
 
-  withMemoryOptimHints()
-  let dmax{.restrict.} = result.maxes.dataArray
-  let dind{.restrict.} = result.indices.dataArray
+  let dmax = result.maxes.unsafe_raw_data()
+  let dind = result.indices.unsafe_raw_data()
 
   for i, subtensor in t.enumerateAxis(axis, 1, t.shape[axis] - 1):
     for j, val in enumerate(subtensor):

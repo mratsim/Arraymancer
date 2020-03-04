@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import  ./backend/openmp,
-        ./backend/memory_optimization_hints,
         ./private/p_checks,
         ./data_structure, ./init_cpu, ./accessors,
         sugar
@@ -53,8 +52,7 @@ template map_inline*[T](t: Tensor[T], op:untyped): untyped =
   ))
 
   var dest = newTensorUninit[outType](z.shape)
-  withMemoryOptimHints()
-  let data{.restrict.} = dest.dataArray # Warning ⚠: data pointed to will be mutated
+  let data = dest.unsafe_raw_data()
 
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for i, x {.inject.} in enumerate(z, block_offset, block_size):
@@ -78,8 +76,7 @@ template map2_inline*[T, U](t1: Tensor[T], t2: Tensor[U], op:untyped): untyped =
   ))
 
   var dest = newTensorUninit[outType](z1.shape)
-  withMemoryOptimHints()
-  let data{.restrict.} = dest.dataArray # Warning ⚠: data pointed to will be mutated
+  let data = dest.unsafe_raw_data()
 
   omp_parallel_blocks(block_offset, block_size, z1.size):
     for i, x {.inject.}, y {.inject.} in enumerateZip(z1, z2, block_offset, block_size):
@@ -105,8 +102,7 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
   ))
 
   var dest = newTensorUninit[outType](z1.shape)
-  withMemoryOptimHints()
-  let data{.restrict.} = dest.dataArray # Warning ⚠: data pointed to will be mutated
+  let data = dest.unsafe_raw_data()
 
   omp_parallel_blocks(block_offset, block_size, z1.size):
     for i, x {.inject.}, y {.inject.}, z {.inject.} in enumerateZip(z1, z2, z3, block_offset, block_size):

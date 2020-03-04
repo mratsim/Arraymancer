@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../tensor/backend/memory_optimization_hints,
-        ../../tensor/tensor,
+import  ../../tensor/tensor,
         ../private/p_nnp_types
 
 proc im2col*[T]( input: Tensor[T], kernel_size: Size2D,
@@ -34,9 +33,8 @@ proc im2col*[T]( input: Tensor[T], kernel_size: Size2D,
   assert result.is_C_contiguous and input.is_C_contiguous
   assert result.shape == [channels_col, flatten_size_col]
 
-  withMemoryOptimHints()
-  let odata{.restrict.} = result.dataArray # Warning ⚠: data pointed to will be mutated
-  let idata{.restrict.} = input.dataArray
+  let odata = result.unsafe_raw_data()
+  let idata = input.unsafe_raw_data()
   for c in `||`(0, channels_col-1, "simd"):
     let
       w_offset = (c mod kernel_size.width) - padding.width

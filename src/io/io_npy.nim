@@ -5,7 +5,6 @@
 import
   ../private/sequninit,
   ../tensor/tensor, ./io_stream_readers,
-  ../tensor/backend/memory_optimization_hints,
   ../laser/tensor/initialization,
   os, streams, strscans, strformat, parseutils, strutils, endians
 
@@ -107,8 +106,7 @@ proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noInit.} =
   result.initTensorMetadata(shape, layout)
   result.storage.Fdata = newSeqUninit[T](result.size)
 
-  withMemoryOptimHints()
-  let r_ptr {.restrict.}= result.dataArray
+  let r_ptr = result.unsafe_raw_data()
 
   for i in 0..<result.size:
     r_ptr[i] = stream.parser

@@ -64,7 +64,7 @@ suite "[NN primitives] Loss functions":
       let nb_classes = 20
 
       # Create a sparse label tensor of shape: [batch_size]
-      let sparse_labels = randomTensor(batch_size, nb_classes)
+      let sparse_labels = randomTensor(batch_size, nb_classes-1)
 
       # Create the corresponding dense label tensor of shape [batch_size, nb_classes]
       var labels = zeros[float64](batch_size, nb_classes)

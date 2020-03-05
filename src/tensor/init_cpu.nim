@@ -221,7 +221,7 @@ proc randomTensor*[T:SomeFloat](shape: varargs[int], max: T): Tensor[T] {.noInit
   randomTensorCpu(result, shape, max)
 
 proc randomTensor*(shape: varargs[int], max: int): Tensor[int] {.noInit.} =
-  ## Creates a new int Tensor filled with values between 0 and max.
+  ## Creates a new int Tensor filled with values between 0 and max (inclusive).
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
   ## Input:
@@ -233,7 +233,7 @@ proc randomTensor*(shape: varargs[int], max: int): Tensor[int] {.noInit.} =
   randomTensorCpu(result, shape, max)
 
 proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] {.noInit.} =
-  ## Creates a new int Tensor filled with values in the Slice range.
+  ## Creates a new int Tensor filled with values in the Slice range (inclusive).
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
   ## Input:

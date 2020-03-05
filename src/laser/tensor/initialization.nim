@@ -19,7 +19,7 @@ import
 
 func toMetadata*(s: varargs[int]): Metadata =
   result.len = s.len
-  for i in 0..<s.len:
+  for i in 0 ..< s.len:
     result.data[i] = s[i]
 
 template toMetadata*(m: Metadata): Metadata = m

@@ -13,13 +13,13 @@
 # limitations under the License.
 
 import  ./metrics/accuracy_score,
-        ./metrics/common_error_functions
+        ./metrics/common_error_functions,
+        ./clustering/kmeans
 
 export  accuracy_score,
-        common_error_functions
+        common_error_functions,
+        kmeans
 
 when not defined(no_lapack):
-  import ./dimensionality_reduction/pca,
-         ./clustering/kmeans
-  export pca,
-         kmeans
+  import ./dimensionality_reduction/pca
+  export pca

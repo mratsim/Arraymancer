@@ -14,8 +14,7 @@
 
 import  ./data_structure,
         ./aggregate,
-        ./higher_order_applymap,
-        ./higher_order_foldreduce
+        ./higher_order_applymap
 
 proc frobenius_inner_prod*[T](a,b: Tensor[T]): T =
   sum:

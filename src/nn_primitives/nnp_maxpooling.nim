@@ -15,8 +15,7 @@
 import  ../tensor/backend/memory_optimization_hints,
         ../tensor/backend/openmp,
         ../tensor/tensor,
-        ./private/p_nnp_types,
-        ./fallback/conv
+        ./private/p_nnp_types
 
 proc maxpool2d*[T](input: Tensor[T],
                 kernel: Size2D,

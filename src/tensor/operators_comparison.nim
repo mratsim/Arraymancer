@@ -14,7 +14,6 @@
 
 import ./data_structure, ./accessors,
         ./higher_order_applymap,
-        ./init_cpu,
         ./shapeshifting
 
 proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=

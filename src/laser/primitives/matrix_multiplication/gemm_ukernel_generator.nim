@@ -5,7 +5,6 @@
 
 import
   ../../compiler_optim_hints,
-  ../../simd,
   ./gemm_tiling, ./gemm_utils,
   ./gemm_ukernel_generic,
   macros

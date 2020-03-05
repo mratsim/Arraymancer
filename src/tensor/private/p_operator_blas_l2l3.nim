@@ -15,10 +15,8 @@
 when defined(blis):
   import ../backend/blis
 
-import  ./p_checks,
-        # ../fallback/legacy/blas_l3_gemm, # Replaced by laser
+import  # ../fallback/legacy/blas_l3_gemm, # Replaced by laser
         ../../laser/primitives/matrix_multiplication/gemm,
-        ../fallback/naive_l2_gemv,
         ../data_structure,
         nimblas
 from complex import Complex

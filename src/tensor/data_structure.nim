@@ -18,7 +18,7 @@ import  ./backend/metadataArray,
 export nimblas.OrderType, complex
 
 type
-  CpuStorage* {.shallow.} [T] = object
+  CpuStorage*[T] {.shallow.} = object
     ## Opaque data storage for Tensors
     ## Currently implemented as a seq with reference semantics (shallow copy on assignment).
     ## It may change in the future for a custom memory managed and 64 bit aligned solution.

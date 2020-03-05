@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import  ./backend/openmp,
-        ./data_structure, ./init_cpu, ./init_copy_cpu, ./accessors,
+        ./data_structure, ./init_copy_cpu, ./accessors,
         sugar
 
 template reduce_inline*[T](t: Tensor[T], op: untyped): untyped =
@@ -89,7 +89,7 @@ proc fold*[U, T](t: Tensor[U],
 
 proc fold*[U, T](t: Tensor[U],
                 start_val: Tensor[T],
-                f: (Tensor[T], Tensor[U])-> Tensor[T],
+                f: (Tensor[T], Tensor[U]) -> Tensor[T],
                 axis: int
                 ): Tensor[T] =
   ## Chain result = f(result, element) over all elements of the Tensor
@@ -124,7 +124,7 @@ proc reduce*[T](t: Tensor[T],
     shallowCopy(x, f(x,y))
 
 proc reduce*[T](t: Tensor[T],
-                f: (Tensor[T], Tensor[T])-> Tensor[T],
+                f: (Tensor[T], Tensor[T]) -> Tensor[T],
                 axis: int
                 ): Tensor[T] {.noInit.} =
   ## Chain result = f(result, element) over all elements of the Tensor.

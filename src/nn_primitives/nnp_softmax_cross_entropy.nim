@@ -15,8 +15,7 @@
 import  ../tensor/backend/openmp,
         ../tensor/tensor,
         ./private/p_nnp_checks,
-        ./private/p_logsumexp,
-        math
+        ./private/p_logsumexp
 
 # Fused numerically stable softmax + cross-entropy loss function
 

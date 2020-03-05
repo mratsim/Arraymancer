@@ -30,10 +30,9 @@
 #     - https://github.com/numforge/laser/wiki/GEMM-optimization-resources
 
 import
-  # ../../cpuinfo,
   ../../compiler_optim_hints,
   ../../private/[memory, align_unroller],
-  typetraits, macros,
+  macros,
   ./gemm_utils
 
 # ############################################################

@@ -220,11 +220,11 @@ proc `-.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], v
 proc `.-=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], val: T) {.deprecated:"Use `-.=` instead".}=
   t -.= val
 
-proc `.^=`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: var Tensor[T], exponent: T) =
+proc `^.=`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: var Tensor[T], exponent: T) =
   ## Compute in-place element-wise exponentiation
   t.apply_inline pow(x, exponent)
 
-proc `^.=`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: var Tensor[T], exponent: T) {.deprecated:"Use `^.=` instead".}=
+proc `.^=`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: var Tensor[T], exponent: T) {.deprecated:"Use `^.=` instead".}=
   ## Compute in-place element-wise exponentiation
   t ^.= exponent
 

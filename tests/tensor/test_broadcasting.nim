@@ -263,8 +263,8 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       var a_c = a.clone.astype(Complex[float64])
       var b_c = b.clone.astype(Complex[float64])
 
-      a .^= 2.0
-      a_c .^= complex(2.0)
+      a ^.= 2.0
+      a_c ^.= complex(2.0)
       check: a == [[1.0],
                     [100.0],
                     [400.0],
@@ -274,8 +274,8 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                     [400.0],
                     [900.0]].toTensor.astype(Complex[float64])
 
-      b .^= -1
-      b_c .^= complex(-1.0)
+      b ^.= -1
+      b_c ^.= complex(-1.0)
       check: b == [[1.0],
                     [1.0/10.0],
                     [1.0/20.0],

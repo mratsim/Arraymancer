@@ -6,12 +6,11 @@
 # Types and low level primitives for tensors
 
 import
-  ../dynamic_stack_arrays, ../compiler_optim_hints
+  ../dynamic_stack_arrays, ../compiler_optim_hints,
+  typetraits
 
-when NimVersion >= "1.1.0":
+when NimVersion < "1.1.0":
   # For distinctBase
-  import typetraits
-else:
   import sugar
 
 type

@@ -20,7 +20,7 @@ import  ./private/p_shapeshifting,
         ../laser/tensor/allocator,
         sequtils
 
-# NOTE: Procs that accepts shape are duplicated to accept both varargs and MetadataArray
+# NOTE: Procs that accepts shape are duplicated to accept both varargs and Metadata
 # until either https://github.com/nim-lang/Nim/issues/6528 or https://github.com/nim-lang/Nim/issues/6529
 # are solved/added.
 
@@ -68,7 +68,7 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
   ##   - a tensor with the same data but reshaped.
   reshapeImpl(t, new_shape, result)
 
-proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
+proc reshape*(t: Tensor, new_shape: Metadata): Tensor {.noInit.} =
   ## Reshape a tensor. If possible no data copy is done and the returned tensor
   ## shares data with the input. If input is not contiguous, this is not possible
   ## and a copy will be made.
@@ -92,7 +92,7 @@ proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSide
   result = t
   result.broadcastImpl(shape)
 
-proc broadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit,noSideEffect.}=
+proc broadcast*[T](t: Tensor[T], shape: Metadata): Tensor[T] {.noInit,noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.
   ##
   ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
@@ -125,7 +125,7 @@ proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit.
   result.storage.allocCpuStorage(1)
   result.unsafe_raw_buf[0] = val
 
-proc broadcast*[T: SomeNumber](val: T, shape: MetadataArray): Tensor[T] {.noInit,noSideEffect.} =
+proc broadcast*[T: SomeNumber](val: T, shape: Metadata): Tensor[T] {.noInit,noSideEffect.} =
   ## Broadcast a number
   ##
   ## Input:
@@ -150,7 +150,7 @@ template bc*(t: (Tensor|SomeNumber), shape: varargs[int]): untyped =
   ## Alias for ``broadcast``
   t.broadcast(shape)
 
-template bc*(t: (Tensor|SomeNumber), shape: MetadataArray): untyped =
+template bc*(t: (Tensor|SomeNumber), shape: Metadata): untyped =
   ## Alias for ``broadcast``
   t.broadcast(shape)
 

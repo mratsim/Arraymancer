@@ -18,7 +18,7 @@ import  ../../tensor/tensor,
 
 
 type MaxPool2DGate*[TT] {.final.} = ref object of Gate[TT]
-  cached_input_shape: MetadataArray
+  cached_input_shape: Metadata
   cached_max_indices: Tensor[int]
   kernel, padding, stride: Size2D
 

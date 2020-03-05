@@ -14,10 +14,9 @@
 
 import  ../laser/private/nested_containers,
         ../laser/tensor/[allocator, initialization],
-        ./private/p_checks,
         ./data_structure,
         ./operators_blas_l2l3,
-        sequtils, typetraits
+        typetraits
 
 #################################################
 ## Operations fusion

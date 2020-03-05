@@ -29,16 +29,16 @@ proc contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]) 
     apply2_inline(result, t):
       y
 
-proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray, result: var Tensor[T]) =
+proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|Metadata, result: var Tensor[T]) =
   result = newTensorUninit[T](new_shape)
   result.apply2_inline(t,y)
 
-proc reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor, layout: OrderType) {.noSideEffect.}=
+proc reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|Metadata, result: var AnyTensor, layout: OrderType) {.noSideEffect.}=
   result.shape.copyFrom(new_shape)
   shape_to_strides(result.shape, layout, result.strides)
   result.offset = t.offset
 
-proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
+proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|Metadata, result: var AnyTensor) =
   when compileOption("boundChecks"):
     check_reshape(t, new_shape)
 
@@ -51,7 +51,7 @@ proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: v
   else:
     reshape_with_copy(t, new_shape, result)
 
-proc broadcastImpl*(t: var AnyTensor, shape: varargs[int]|MetadataArray) {.noSideEffect.}=
+proc broadcastImpl*(t: var AnyTensor, shape: varargs[int]|Metadata) {.noSideEffect.}=
   when compileOption("boundChecks"):
     assert t.rank == shape.len
 

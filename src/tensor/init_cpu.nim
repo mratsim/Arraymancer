@@ -14,15 +14,12 @@
 
 import
   # Internal
-  ../private/sequninit,
   ../laser/tensor/[initialization, allocator],
   ../laser/strided_iteration/foreach,
-  ./private/p_checks,
   ./data_structure,
   # Third-party
   nimblas,
   # Standard library
-  sequtils,
   random,
   math,
   typetraits
@@ -42,7 +39,7 @@ proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noInit, inline.} =
   initTensorMetadata(result, size, shape)
   allocCpuStorage(result.storage, size)
 
-proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noInit, inline.} =
+proc newTensorUninit*[T](shape: Metadata): Tensor[T] {.noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -78,7 +75,7 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit.} =
     forEachContiguousSerial x in result:
       x = value
 
-proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit.} =
+proc newTensorWith*[T](shape: Metadata, value: T): Tensor[T] {.noInit.} =
   ## Creates a new Tensor filled with the given value
   ## Input:
   ##      - Shape of the Tensor
@@ -111,7 +108,7 @@ proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]
   ##      - A zero-ed Tensor of the input shape on backend Cpu
   result = newTensor[T](shape)
 
-proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArray): Tensor[T] {.noInit, inline.} =
+proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: Metadata): Tensor[T] {.noInit, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -143,7 +140,7 @@ proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int])
     type F = T.T # Get the float subtype of Complex[T]
     result = newTensorWith[T](shape, complex(1.F, 0.F))
 
-proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArray): Tensor[T] {.noInit, inline.} =
+proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: Metadata): Tensor[T] {.noInit, inline.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor

@@ -39,7 +39,7 @@ func check_index*(t: Tensor, idx: varargs[int]) {.inline.}=
       raise newException(
         IndexError, "Out-of-bounds access: " &
                     "Tensor of shape " & $t.shape &
-                    "bing indexed by " & $idx
+                    " being indexed by " & $idx
       )
 
 func check_contiguous_index*(t: Tensor, idx: int) {.inline.}=

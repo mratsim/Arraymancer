@@ -100,7 +100,7 @@ suite "Shapeshifting":
 
   test "Squeeze":
     block:
-      let a = toSeq(1..12).toTensor().reshape(1,3,1,2,1,1,2)
+      let a = toSeq(1..12).toTensor().reshape(3,1,2,1,1,2)
       let b = a.squeeze
 
       check: b == toSeq(1..12).toTensor().reshape(3,2,2)

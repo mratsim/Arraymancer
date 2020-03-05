@@ -53,7 +53,7 @@ template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
 
 # #############################################
 
-type ReshapeGate*{.final.}[TT] = ref object of Gate[TT]
+type ReshapeGate*[TT] {.final.} = ref object of Gate[TT]
   cached_input_shape: MetadataArray
 
 proc reshape_backward_ag[TT](self: ReshapeGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
@@ -115,7 +115,7 @@ proc flatten*[TT](a: Variable[TT]): Variable[TT] =
 
 template squeezeUnsqueeze(GateName, forward_proc, backward_proc: untyped): untyped =
 
-  type GateName{.final.}[TT] = ref object of Gate[TT]
+  type GateName[TT] {.final.} = ref object of Gate[TT]
     axis: int
 
   proc `forward_proc _ backward _ ag`[TT](self: GateName[TT], payload: Payload[TT]): SmallDiffs[TT] =

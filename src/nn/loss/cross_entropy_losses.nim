@@ -20,7 +20,7 @@ import  ../../tensor/tensor,
 template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) =
   # Template of softmax and sigmoid cross entropy losses
 
-  type `LossType`* {.inject, final.} [TT] = ref object of Gate[TT]
+  type `LossType`*[TT] {.inject, final.} = ref object of Gate[TT]
     target: TT
     cache: Variable[TT]
 
@@ -64,7 +64,7 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
 gen_cross_entropy_loss SigmoidCrossEntropyLoss, sigmoid_cross_entropy, sigmoid_cross_entropy_backward
 gen_cross_entropy_loss SoftmaxCrossEntropyLoss, softmax_cross_entropy, softmax_cross_entropy_backward
 
-type SparseSoftmaxCrossEntropyLoss*{.final.}[TT; Idx: SomeNumber or byte or char or enum] = ref object of Gate[TT]
+type SparseSoftmaxCrossEntropyLoss*[TT; Idx: SomeNumber or byte or char or enum] {.final.} = ref object of Gate[TT]
   target: Tensor[Idx]
   cache: Variable[TT]
 

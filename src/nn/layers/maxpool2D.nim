@@ -17,7 +17,7 @@ import  ../../tensor/tensor,
         ../../nn_primitives/nn_primitives
 
 
-type MaxPool2DGate* {.final.} [TT] = ref object of Gate[TT]
+type MaxPool2DGate*[TT] {.final.} = ref object of Gate[TT]
   cached_input_shape: MetadataArray
   cached_max_indices: Tensor[int]
   kernel, padding, stride: Size2D

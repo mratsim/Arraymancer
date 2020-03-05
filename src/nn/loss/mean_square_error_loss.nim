@@ -16,7 +16,7 @@ import  ../../tensor/tensor,
         ../../ml/ml,
         ../../autograd/autograd
 
-type MSELoss*{.final.}[TT] = ref object of Gate[TT]
+type MSELoss*[TT] {.final.} = ref object of Gate[TT]
   target: TT
   cache: Variable[TT]
 

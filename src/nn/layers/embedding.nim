@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/ast_utils,
-        ../../tensor/tensor,
+import  ../../tensor/tensor,
         ../../autograd/autograd,
-        ../../nn_primitives/nn_primitives,
-        sequtils, options
+        ../../nn_primitives/nn_primitives
 
-type EmbeddingGate*{.final.}[TT; scaled: static bool; Idx: SomeNumber or byte or char or enum] = ref object of Gate[TT]
+type EmbeddingGate*[TT; scaled: static bool; Idx: SomeNumber or byte or char or enum] {.final.} = ref object of Gate[TT]
   cached_input_vocab_id: Tensor[Idx]
   weight: Variable[TT]
   padding_idx: Idx

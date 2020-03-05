@@ -17,7 +17,7 @@ import  ../tensor/tensor,
         ./autograd_common,
         sequtils
 
-type StackGate{.final.}[TT] = ref object of Gate[TT]
+type StackGate[TT] {.final.} = ref object of Gate[TT]
   ## TODO support unlimited stacking
   axis: int
   nb_grads: int
@@ -80,7 +80,7 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
 
 # ###########################################################
 
-type ChunkSplitGate*{.final.}[TT] = ref object of Gate[TT]
+type ChunkSplitGate*[TT] {.final.} = ref object of Gate[TT]
   axis: int
 
 proc chunk_inference[TT](result: var seq[Variable[TT]], x: Variable[TT], nb_chunks: Positive, axis: int) =

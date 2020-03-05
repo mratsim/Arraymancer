@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-import  httpclient, zip/gzipfiles, strformat, os, strutils,
+import  httpclient, strformat, os, strutils,
         ./util, ../tensor/tensor,
         untar
 

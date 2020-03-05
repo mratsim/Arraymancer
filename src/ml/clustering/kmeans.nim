@@ -3,8 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 import math, random, tables
 
-import
-  ../../tensor/tensor, ../../linear_algebra/linear_algebra
+import ../../tensor/tensor
 
 proc euclidean_distance[T: SomeFloat](u: Tensor[T], v: Tensor[T], squared: bool = false): T {.noInit.} =
   ## Calculates the euclidean distance

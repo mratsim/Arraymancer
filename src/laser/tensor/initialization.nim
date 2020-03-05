@@ -1,4 +1,4 @@
-# Laser
+  # Laser
 # Copyright (c) 2018 Mamy André-Ratsimbazafy
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
@@ -79,8 +79,8 @@ proc deepCopy*[T](dst: var Tensor[T], src: Tensor[T]) =
             size, chunk_offset, chunk_size,
             OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
         copyMem(
-          dst.storage.raw_buffer[chunk_offset],
-          src.storage.raw_buffer[chunk_offset],
+          dst.unsafe_raw_offset[chunk_offset],
+          src.unsafe_raw_offset[chunk_offset],
           chunk_size * sizeof(T)
           )
     else:
@@ -110,15 +110,15 @@ proc copyFrom*[T](dst: var Tensor[T], src: Tensor[T]) =
     # We use memcpy, due to SIMD optimizations in memcpy,
     # we require higher parallelization thresholds
     if src.is_C_contiguous:
-      assert dst.shape == src.shape
+      assert dst.size == src.size
       omp_parallel_chunks(
             src.size, chunk_offset, chunk_size,
             OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
         copyMem(
-          dst.storage.raw_buffer[chunk_offset].addr,
-          src.storage.raw_buffer[chunk_offset].unsafeAddr,
+          dst.unsafe_raw_offset[chunk_offset].addr,
+          src.unsafe_raw_offset[chunk_offset].unsafeAddr,
           chunk_size * sizeof(T)
-          )
+        )
     else:
       forEachStrided d in dst, s in src:
         d = s
@@ -139,10 +139,10 @@ proc copyFromRaw*[T](dst: var Tensor[T], buffer: ptr T, len: Natural) =
             len, chunk_offset, chunk_size,
             OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
         copyMem(
-          dst.storage.raw_buffer[chunk_offset].addr,
+          dst.unsafe_raw_offset[chunk_offset].addr,
           buf[chunk_offset].unsafeAddr,
           chunk_size * sizeof(T)
-          )
+        )
   else:
     {.fatal: "Only non-ref types and types with trivial destructors can be raw copied.".}
 
@@ -168,9 +168,9 @@ proc setZero*[T](t: var Tensor[T], check_contiguous: static bool = true) =
           t.size, chunk_offset, chunk_size,
           OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
       zeroMem(
-        t.storage.raw_buffer[chunk_offset].addr,
+        t.unsafe_raw_offset[chunk_offset].addr,
         chunk_size * sizeof(T)
-        )
+      )
 
 proc newTensor*[T](shape: varargs[int]): Tensor[T] =
   var size: int

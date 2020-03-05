@@ -24,11 +24,11 @@ suite "Testing miscellaneous data functions":
 
     var b = ones[int](4,1)
 
-    b.copy_from(a)
+    b.copyFrom(a)
 
     check: b == [[1],[2], [3], [4]].toTensor
     block:
       let a = [[1,2],[3,4]].toTensor.reshape(2,2).astype(Complex[float64])
       var b = ones[Complex[float64]](4,1)
-      b.copy_from(a)
+      b.copyFrom(a)
       check: b == [[1],[2], [3], [4]].toTensor.astype(Complex[float64])

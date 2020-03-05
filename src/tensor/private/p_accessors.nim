@@ -133,7 +133,7 @@ template stridedIteration*(strider: IterKind, t, iter_offset, iter_size: typed):
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
 
   # Get tensor data address with offset builtin
-  let data = t.unsafe_raw_buf()
+  let data = t.unsafe_raw_offset()
 
   # Optimize for loops in contiguous cases
   if t.is_C_Contiguous:

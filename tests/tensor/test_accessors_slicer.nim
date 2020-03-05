@@ -184,10 +184,10 @@ suite "Slice mutations":
   test "Setting a slice to a single value":
     var t_van = t_van_immut.clone
     let test =  @[@[1,  1,   1,   1,    1],
-            @[2,  4,   8, 999,  999],
-            @[3,  9,  27, 999,  999],
-            @[4, 16,  64, 256, 1024],
-            @[5, 25, 125, 625, 3125]]
+                  @[2,  4,   8, 999,  999],
+                  @[3,  9,  27, 999,  999],
+                  @[4, 16,  64, 256, 1024],
+                  @[5, 25, 125, 625, 3125]]
 
     let t_test = test.toTensor()
     t_van[1..2, 3..4] = 999

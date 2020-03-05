@@ -87,8 +87,8 @@ type
 proc data*[T](t: Tensor[T]): seq[T] {.inline, noInit, deprecated: "This used to be a way to extract raw data without copy. Use the raw pointer instead.".} =
   # Get tensor raw data
   # This is intended for library writer
-  when supportsCopyMem:
-    result = newSeqUninit(t.size)
+  when supportsCopyMem(T):
+    result = newSeqUninit[T](t.size)
     for i in 0 ..< t.size:
       result[i] = t.storage.raw_buffer[i]
   else:

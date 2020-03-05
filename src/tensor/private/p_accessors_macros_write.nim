@@ -83,7 +83,7 @@ template slicerMutImpl_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa
 
   var data = toSeq(flatIter(oa))
   when compileOption("boundChecks"):
-    check_nested_elements(oa.shape, data.len)
+    check_nested_elements(oa.getShape(), data.len)
 
   # Unfortunately we need to loop twice over data/oa
   # Reason 1: we can't check the iterator length before consuming it

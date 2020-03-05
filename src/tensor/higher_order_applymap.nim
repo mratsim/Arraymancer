@@ -52,7 +52,7 @@ template map_inline*[T](t: Tensor[T], op:untyped): untyped =
   ))
 
   var dest = newTensorUninit[outType](z.shape)
-  let data = dest.unsafe_raw_data()
+  let data = dest.unsafe_raw_buf()
 
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for i, x {.inject.} in enumerate(z, block_offset, block_size):
@@ -76,7 +76,7 @@ template map2_inline*[T, U](t1: Tensor[T], t2: Tensor[U], op:untyped): untyped =
   ))
 
   var dest = newTensorUninit[outType](z1.shape)
-  let data = dest.unsafe_raw_data()
+  let data = dest.unsafe_raw_buf()
 
   omp_parallel_blocks(block_offset, block_size, z1.size):
     for i, x {.inject.}, y {.inject.} in enumerateZip(z1, z2, block_offset, block_size):
@@ -102,7 +102,7 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
   ))
 
   var dest = newTensorUninit[outType](z1.shape)
-  let data = dest.unsafe_raw_data()
+  let data = dest.unsafe_raw_offset()
 
   omp_parallel_blocks(block_offset, block_size, z1.size):
     for i, x {.inject.}, y {.inject.}, z {.inject.} in enumerateZip(z1, z2, z3, block_offset, block_size):
@@ -140,7 +140,7 @@ proc map*[T; U: ref|string|seq](t: Tensor[T], f: T -> U): Tensor[U] {.noInit,noS
 
   result = newTensorUninit[U](t.shape)
   for i, val in enumerate(t):
-    result.data[i] = f(val)
+    result.unsafe_raw_buf[i] = f(val)
 
 proc apply*[T](t: var Tensor[T], f: T -> T) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.

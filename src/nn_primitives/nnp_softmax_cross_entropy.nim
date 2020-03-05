@@ -142,7 +142,7 @@ proc softmax_cross_entropy_backward*[T](
   when gradient is T:
     let grad = gradient
   elif gradient is Tensor:
-    let grad = gradient.data[gradient.offset]
+    let grad = gradient.unsafe_raw_offset()
 
   result = zeros_like(cached_tensor)
 
@@ -174,7 +174,7 @@ proc sparse_softmax_cross_entropy_backward*[T; Idx: SomeNumber or byte or char o
   when gradient is T:
     let grad = gradient
   elif gradient is Tensor:
-    let grad = gradient.data[gradient.offset]
+    let grad = gradient.unsafe_raw_offset()[0]
 
   let batch_size = cached_tensor.shape[0]
 

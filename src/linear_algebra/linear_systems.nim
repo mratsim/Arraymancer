@@ -17,7 +17,7 @@ type MatrixKind* = enum
     mkPosDefBand,
     mkPosDefTriDiag
 
-func solve*[T: SomeFloat](a, b: Tensor[T], kind: MatrixKind = mkGeneral): Tensor[T] =
+proc solve*[T: SomeFloat](a, b: Tensor[T], kind: MatrixKind = mkGeneral): Tensor[T] =
   ## Compute the solution ``X`` to the system of linear equations ``AX = B``.
   ##
   ## Multiple right-hand sides can be solved simultaneously.

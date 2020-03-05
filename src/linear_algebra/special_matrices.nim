@@ -7,7 +7,7 @@ import ../tensor/tensor
 proc hilbert*(n: int, T: typedesc[SomeFloat]): Tensor[T] =
   ## Generates an Hilbert matrix of shape [N, N]
   result = newTensorUninit[T]([n, n])
-  let R = result.unsafe_raw_data()
+  let R = result.unsafe_raw_buf()
 
   # Reminder: The canonical Hilbert matrix
   #           assumes that i, j starts at 1 instead of 0

@@ -164,8 +164,8 @@ proc argmax_max*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes:
   result.maxes = t.atAxisIndex(axis, 0).clone()
   result.indices = zeros[int](result.maxes.shape)
 
-  let dmax = result.maxes.unsafe_raw_data()
-  let dind = result.indices.unsafe_raw_data()
+  let dmax = result.maxes.unsafe_raw_buf()
+  let dind = result.indices.unsafe_raw_buf()
 
   for i, subtensor in t.enumerateAxis(axis, 1, t.shape[axis] - 1):
     for j, val in enumerate(subtensor):

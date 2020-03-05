@@ -67,7 +67,7 @@ proc initForEach*(
 
     let raw_ptr_i = genSym(nskLet, $tensor & "_raw_data" & $i & '_')
     raw_ptrs_stmt.add quote do:
-      let `raw_ptr_i`{.restrict.} = `alias`.unsafe_raw_data
+      let `raw_ptr_i`{.restrict.} = `alias`.unsafe_raw_offset()
     raw_ptrs.add raw_ptr_i
 
   let alias0 = aliases[0]

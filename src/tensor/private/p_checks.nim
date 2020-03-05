@@ -84,7 +84,10 @@ func check_start_end*(a, b: int, dim_size: int) {.inline.} =
 func check_shape*(a: Tensor; b: Tensor|openarray) {.inline.}=
   ## Compare shape
 
-  let b_shape = b.shape # There is a shape proc that converts openarray to MetadataArray
+  when b is Tensor:
+    let b_shape = b.shape
+  else:
+    let b_shape = b.getShape()
 
   if unlikely(a.shape != b_shape):
     raise newException(IndexError, "Your tensors or openarrays do not have the same shape: " &

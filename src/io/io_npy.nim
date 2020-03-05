@@ -5,7 +5,7 @@
 import
   ../private/sequninit,
   ../tensor/tensor, ./io_stream_readers,
-  ../laser/tensor/initialization,
+  ../laser/tensor/[initialization, allocator],
   os, streams, strscans, strformat, parseutils, strutils, endians
 
 func get_parser_metadata[T](header_raw: string):
@@ -103,10 +103,14 @@ proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noInit.} =
   let (parser, shape, layout) = get_parser_metadata[T](header_raw)
 
   # Read the data
-  result.initTensorMetadata(shape, layout)
-  result.storage.Fdata = newSeqUninit[T](result.size)
+  var size: int
+  if layout == rowMajor:
+    result.initTensorMetadata(size, shape, rowMajor)
+  else:
+    result.initTensorMetadata(size, shape, colMajor)
+  result.storage.allocCPUStorage(size)
 
-  let r_ptr = result.unsafe_raw_data()
+  let r_ptr = result.unsafe_raw_buf()
 
   for i in 0..<result.size:
     r_ptr[i] = stream.parser

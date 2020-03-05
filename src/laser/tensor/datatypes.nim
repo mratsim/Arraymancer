@@ -6,8 +6,7 @@
 # Types and low level primitives for tensors
 
 import
-  ../dynamic_stack_arrays, ../compiler_optim_hints,
-  typetraits
+  ../dynamic_stack_arrays, ../compiler_optim_hints
 
 when NimVersion >= "1.1.0":
   # For distinctBase
@@ -68,31 +67,53 @@ func is_C_contiguous*(t: Tensor): bool =
 # Another anti-escape could be the "var T from container" and "lent T from container"
 # mentionned here: https://nim-lang.org/docs/manual.html#var-return-type-future-directions
 
-template unsafe_raw_data_impl() {.dirty.} =
-
+template unsafe_raw_offset_impl(offset: int) {.dirty.} =
+  bind supportsCopyMem, withCompilerOptimHints, assume_aligned
   when supportsCopyMem(T):
     withCompilerOptimHints()
     when aligned:
       let raw_pointer{.restrict.} = assume_aligned t.storage.raw_buffer
     else:
       let raw_pointer{.restrict.} = t.storage.raw_buffer
-    result = cast[type result](raw_pointer[t.offset].addr)
+    result = cast[type result](raw_pointer[offset].addr)
   else:
-    result = cast[type result](t.storage.raw_buffer[t.offset].addr)
+    result = cast[type result](t.storage.raw_buffer[offset].addr)
 
-func unsafe_raw_data*[T](t: Tensor[T], aligned: static bool = true): RawImmutableView[T] {.inline.} =
+func unsafe_raw_buf*[T](t: Tensor[T], aligned: static bool = true): RawImmutableView[T] {.inline.} =
+  ## Returns a view to the start of the data buffer
+  ##
   ## Unsafe: the pointer can outlive the input tensor
   ## For optimization purposes, Laser will hint the compiler that
   ## while the pointer is valid, all data accesses will be through it (no aliasing)
   ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
-  unsafe_raw_data_impl()
+  unsafe_raw_offset_impl(0)
 
-func unsafe_raw_data*[T](t: var Tensor[T], aligned: static bool = true): RawMutableView[T] {.inline.} =
+func unsafe_raw_buf*[T](t: var Tensor[T], aligned: static bool = true): RawMutableView[T] {.inline.} =
+  ## Returns a view to the start of the data buffer
+  ##
   ## Unsafe: the pointer can outlive the input tensor
   ## For optimization purposes, Laser will hint the compiler that
   ## while the pointer is valid, all data accesses will be through it (no aliasing)
   ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
-  unsafe_raw_data_impl()
+  unsafe_raw_offset_impl(0)
+
+func unsafe_raw_offset*[T](t: Tensor[T], aligned: static bool = true): RawImmutableView[T] {.inline.} =
+  ## Returns a view to the start of the valid data
+  ##
+  ## Unsafe: the pointer can outlive the input tensor
+  ## For optimization purposes, Laser will hint the compiler that
+  ## while the pointer is valid, all data accesses will be through it (no aliasing)
+  ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
+  unsafe_raw_offset_impl(t.offset)
+
+func unsafe_raw_offset*[T](t: var Tensor[T], aligned: static bool = true): RawMutableView[T] {.inline.} =
+  ## Returns a view to the start of the valid data
+  ##
+  ## Unsafe: the pointer can outlive the input tensor
+  ## For optimization purposes, Laser will hint the compiler that
+  ## while the pointer is valid, all data accesses will be through it (no aliasing)
+  ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
+  unsafe_raw_offset_impl(t.offset)
 
 macro raw_data_unaligned*(body: untyped): untyped =
   ## Within this code block, all raw data accesses will not be
@@ -104,8 +125,10 @@ macro raw_data_unaligned*(body: untyped): untyped =
   ##     All processing within the file this is called will be considered
   ##     unaligned. https://github.com/nim-lang/Nim/issues/7214#issuecomment-431567894.
   block:
-    template trmUnsafeRawData{unsafe_raw_data(x, aligned)}(x, aligned): auto =
-      {.noRewrite.}: unsafe_raw_data(x, false)
+    template trmUnsafeRawBuf{unsafe_raw_buf(x, aligned)}(x, aligned): auto =
+      {.noRewrite.}: unsafe_raw_buf(x, false)
+    template trmUnsafeRawOffset{unsafe_raw_offset(x, aligned)}(x, aligned): auto =
+      {.noRewrite.}: unsafe_raw_offset(x, false)
     body
 
 template `[]`*[T](v: RawImmutableView[T], idx: int): T =

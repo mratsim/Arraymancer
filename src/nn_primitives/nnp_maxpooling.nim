@@ -40,9 +40,9 @@ proc maxpool2d*[T](input: Tensor[T],
   result.max_indices = newTensoruninit[int](N * C * outH * outW)
   result.maxpooled   = newTensoruninit[ T ](N, C, outH, outW)
 
-  let idata = input.unsafe_raw_data()
-  let idx_data = result.max_indices.unsafe_raw_data()
-  let max_data = result.maxpooled.unsafe_raw_data()
+  let idata = input.unsafe_raw_offset()
+  let idx_data = result.max_indices.unsafe_raw_offset()
+  let max_data = result.maxpooled.unsafe_raw_offset()
 
   for n in `||`(0, N-1, "simd"):
     for c in 0 ..< C:
@@ -75,9 +75,9 @@ proc maxpool2d_backward*[T](
 
   result = zeros[T](cached_input_shape) # gradInput
 
-  let rdata = result.unsafe_raw_data()
-  let godata = gradOutput.unsafe_raw_data()
-  let cmidata = cached_max_indices.unsafe_raw_data()
+  let rdata = result.unsafe_raw_offset()
+  let godata = gradOutput.unsafe_raw_offset()
+  let cmidata = cached_max_indices.unsafe_raw_offset()
 
   omp_parallel_countup(i, gradOutput.size - 1):
     rdata[cmidata[i]] = godata[i]

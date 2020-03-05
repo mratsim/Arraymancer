@@ -73,7 +73,7 @@ proc sigmoid_cross_entropy_backward*[T](
   when gradient is T:
     let grad = gradient
   elif gradient is Tensor:
-    let grad = gradient.data[gradient.offset]
+    let grad = gradient.unsafe_raw_offset()[0]
 
   result = map2_inline(cached_tensor, target):
     grad * (sigmoid(x) - y) / T(batch_size)

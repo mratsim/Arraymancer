@@ -41,10 +41,10 @@ import  ../backend/[global_config, memory_optimization_hints],
 #   for i in 0 ..< t.shape.product:
 #
 #     ## Templating the return value
-#     when strider == IterKind.Values: yield t.data[iter_pos]
-#     elif strider == IterKind.Coord_Values: yield (coord, t.data[iter_pos])
+#     when strider == IterKind.Values: yield t.unsafe_raw_buf[iter_pos]
+#     elif strider == IterKind.Coord_Values: yield (coord, t.unsafe_raw_buf[iter_pos])
 #     elif strider == IterKind.MemOffset: yield iter_pos
-#     elif strider == IterKind.MemOffset_Values: yield (iter_pos, t.data[iter_pos])
+#     elif strider == IterKind.MemOffset_Values: yield (iter_pos, t.unsafe_raw_buf[iter_pos])
 #
 #     ## Computing the next position
 #     for k in countdown(t.rank - 1,0):
@@ -77,17 +77,17 @@ proc getContiguousIndex*[T](t: Tensor[T], idx: int): int {.noSideEffect,inline.}
 proc atIndex*[T](t: Tensor[T], idx: varargs[int]): T {.noSideEffect,inline.} =
   ## Get the value at input coordinates
   ## This used to be `[]` before slicing was implemented
-  result = t.data[t.getIndex(idx)]
+  result = t.unsafe_raw_buf[t.getIndex(idx)]
 
 proc atIndex*[T](t: var Tensor[T], idx: varargs[int]): var T {.noSideEffect,inline.} =
   ## Get the value at input coordinates
   ## This allows inplace operators t[1,2] += 10 syntax
-  result = t.data[t.getIndex(idx)]
+  result = t.unsafe_raw_buf[t.getIndex(idx)]
 
 proc atIndexMut*[T](t: var Tensor[T], idx: varargs[int], val: T) {.noSideEffect,inline.} =
   ## Set the value at input coordinates
   ## This used to be `[]=` before slicing was implemented
-  t.data[t.getIndex(idx)] = val
+  t.unsafe_raw_buf[t.getIndex(idx)] = val
 
 ## Iterators
 type
@@ -133,7 +133,7 @@ template stridedIteration*(strider: IterKind, t, iter_offset, iter_size: typed):
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
 
   # Get tensor data address with offset builtin
-  let data = t.unsafe_raw_data()
+  let data = t.unsafe_raw_buf()
 
   # Optimize for loops in contiguous cases
   if t.is_C_Contiguous:
@@ -149,7 +149,7 @@ template stridedCoordsIteration*(t, iter_offset, iter_size: typed): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides. (coords)
 
   # Get tensor data address with offset builtin
-  let data = t.unsafe_raw_data()
+  let data = t.unsafe_raw_offset()
   let rank = t.rank
 
   initStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
@@ -170,8 +170,8 @@ template dualStridedIteration*(strider: IterKind, t1, t2, iter_offset, iter_size
   let t2_contiguous = t2.is_C_Contiguous()
 
   # Get tensor data address with offset builtin
-  let t1data = t1.unsafe_raw_data()
-  let t2data = t2.unsafe_raw_data()
+  let t1data = t1.unsafe_raw_offset()
+  let t2data = t2.unsafe_raw_offset()
 
   # Optimize for loops in contiguous cases
   if t1_contiguous and t2_contiguous:
@@ -209,9 +209,9 @@ template tripleStridedIteration*(strider: IterKind, t1, t2, t3, iter_offset, ite
 
   # Get tensor data address with offset builtin
   withMemoryOptimHints()
-  let t1data = t1.unsafe_raw_data()
-  let t2data = t2.unsafe_raw_data()
-  let t3data = t3.unsafe_raw_data()
+  let t1data = t1.unsafe_raw_offset()
+  let t2data = t2.unsafe_raw_offset()
+  let t3data = t3.unsafe_raw_offset()
 
   # Optimize for loops in contiguous cases
   # Note that not all cases are handled here, just some probable ones

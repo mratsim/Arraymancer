@@ -96,7 +96,7 @@ proc linear*[TT](input, weight: Variable[TT], bias: Variable[TT] = nil): Variabl
 
     # weight has shape: Out_features * In_features
     # bias must have shape: Out_features * 1
-    if not bias.isNil and not (bias.value.shape == [1, weight.value.shape[0]].toMetadataArray):
+    if not bias.isNil and not (bias.value.shape == [1, weight.value.shape[0]].toMetadata):
       raise newException(ValueError, "Incompatible shape: bias must be a vector of shape [out_features, 1]")
 
   # Resulting var

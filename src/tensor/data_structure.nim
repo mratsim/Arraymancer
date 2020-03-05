@@ -94,10 +94,11 @@ proc data*[T](t: Tensor[T]): seq[T] {.inline, noInit, deprecated: "This used to 
   else:
     shallowCopy(result, t.storage.raw_buffer)
 
+# TODO: pretty sure this is completely broken
 proc data*[T](t: var Tensor[T]): var seq[T] {.deprecated: "This used to be a way to extract raw data without copy. Use the raw pointer instead.".} =
   # Get mutable tensor raw data
   # This is intended for library writer
-  when supportsCopyMem:
+  when supportsCopyMem(T):
     result = newSeqUninit(t.size)
     for i in 0 ..< t.size:
       result[i] = t.storage.raw_buffer[i]
@@ -108,7 +109,7 @@ proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.deprecated: "Use copyFromRaw ins
   # Set tensor raw data
   # This is intended for library writer
   assert s.len > 0
-  when T.supportsCopyMem:
+  when supportsCopyMem(T):
     t.copyFromRaw(s[0].addr, s.len)
   else:
     t.storage.raw_buffer = s

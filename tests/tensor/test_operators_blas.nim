@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import
+  ../../src/arraymancer,
+  ../../src/linear_algebra/helpers/init_colmajor
 import unittest, sugar
 import complex except Complex64, Complex32
 
@@ -167,9 +169,7 @@ suite "BLAS (Basic Linear Algebra Subprograms)":
               [-0.71,               -1.01]].toTensor
 
     var eigvecs: Tensor[float64]
-
-    tensorCpu(2, 2, eigvecs, colMajor)
-    eigvecs.storage.Fdata = newSeq[float64](eigvecs.size)
+    eigvecs.newMatrixUninitColMajor(2 ,2)
 
     eigvecs[0, 0] = -0.735178655544408
     eigvecs[0, 1] = 0.6778733985280118

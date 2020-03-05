@@ -33,8 +33,8 @@ proc im2col*[T]( input: Tensor[T], kernel_size: Size2D,
   assert result.is_C_contiguous and input.is_C_contiguous
   assert result.shape == [channels_col, flatten_size_col]
 
-  let odata = result.unsafe_raw_data()
-  let idata = input.unsafe_raw_data()
+  let odata = result.unsafe_raw_offset()
+  let idata = input.unsafe_raw_offset()
   for c in `||`(0, channels_col-1, "simd"):
     let
       w_offset = (c mod kernel_size.width) - padding.width

@@ -105,7 +105,7 @@ proc reshape*[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
 proc flatten*[TT](a: Variable[TT]): Variable[TT] =
   ## Input:
   ##   - A variable
-  reshapeImpl(a, [a.value.shape[0], a.value.size div a.value.shape[0]].toMetadataArray)
+  reshapeImpl(a, [a.value.shape[0], a.value.size div a.value.shape[0]].toMetadata)
 
 # ############################################################
 #

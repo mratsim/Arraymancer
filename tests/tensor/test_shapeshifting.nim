@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, sugar, sequtils
+import unittest, sequtils
 import complex except Complex64, Complex32
 
 suite "Shapeshifting":

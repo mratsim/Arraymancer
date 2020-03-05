@@ -5,7 +5,7 @@
 import
   ../tensor/tensor,
   ../tensor/private/p_init_cpu,
-  strutils, strformat, ospaths, options,
+  strutils, strformat, os, options,
   nimhdf5
 
 # constant which we use to keep track of how many tensors are stored

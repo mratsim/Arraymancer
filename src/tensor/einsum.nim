@@ -374,12 +374,6 @@ proc shapeAssertions(tensorIdxSeq: seq[TensorIdx]): NimNode =
     result = quote do:
       doAssert `t`.rank == `nIdx`
 
-iterator enumerateIdx(s: seq[TensorIdx]): string =
-  ## enumerates all indices of the tensors in `s` as strings
-  for t in s:
-    for idx in t.idx:
-      yield $idx
-
 proc genShapes(idxIdentPairs: var seq[(string, int)],
                idxSet: OrderedSet[string],
                shapeIdent: NimNode,

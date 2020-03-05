@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, ospaths
+import unittest, os
 
 let expected_output_1d = """dimension_1,value
 0,1

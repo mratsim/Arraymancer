@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, sugar, math
+import unittest, math
 import complex except Complex64, Complex32
 
 suite "Math functions":

@@ -374,9 +374,6 @@ suite "Linear algebra":
 
       let (U, S, Vh) = svd(a)
 
-      # Note - Intel example asks for partial matrices
-      let k = min(a.shape[0], a.shape[1])
-
       check:
         U.mean_absolute_error(expected_U) < 1e-2
         S.mean_absolute_error(expected_S) < 1e-2

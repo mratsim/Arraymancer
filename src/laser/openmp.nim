@@ -122,7 +122,7 @@ template omp_parallel*(body: untyped): untyped =
   block: body
 
 template omp_parallel_if*(condition: bool, body: untyped) =
-  let predicate = condition # Make symbol valid and ensure it's lvalue
+  let predicate{.used.} = condition # Make symbol valid and ensure it's lvalue
   # New line intentional: https://github.com/mratsim/Arraymancer/issues/407
   {.emit: ["""
   #pragma omp parallel if (", predicate, ")"""].}

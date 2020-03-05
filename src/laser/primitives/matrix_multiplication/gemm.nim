@@ -69,7 +69,6 @@ proc gebp_mkernel*[T; ukernel: static MicroKernel](
   const
     MR = ukernel.extract_mr
     NR = ukernel.extract_nr
-    PT = ukernel.extract_pt
 
   # #####################################
   # 4. for jr = 0,...,nc−1 in steps of nr

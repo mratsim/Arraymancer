@@ -105,9 +105,9 @@ proc gelsd*[T: SomeFloat](
 
   if rank == n and m > n:
     residuals = (b2[n .. _, _].squeeze(axis = 1)).fold_axis_inline(Tensor[T], fold_axis = 0):
-      x = y .^ 2f # initial value
+      x = y ^. 2f # initial value
     do:
-      x += y .^ 2f # core loop
+      x += y ^. 2f # core loop
     do:
       x += y # values were stored in a temporary array of size == nb of cores
               # to avoid multithreading issues and must be reduced one last time

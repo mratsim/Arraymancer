@@ -82,7 +82,7 @@ template omp_parallel_reduce_blocks*[T](reduced: T, block_offset, block_size: un
 
   # TODO compile time evaluation depending of sizeof(T)
   # Pending https://github.com/nim-lang/Nim/pull/5664
-  const maxItemsPerCacheLine = 16
+  const maxItemsPerCacheLine{.used.} = 16
   let ompsize = size # ensure that if size is computed it is only called once
 
   if likely(ompsize > 0):

@@ -60,7 +60,7 @@ proc get_closest_centroid[T: SomeFloat](x: Tensor[T], centroids: Tensor[T], cid:
 
 proc get_candidates[T: SomeFloat](n: int, distances: Tensor[T]): Tensor[int] {.noInit.} =
   ## Sample candidates with probability weighted by the distances
-  let probs = cumsum(distances ./ distances.sum)
+  let probs = cumsum(distances /. distances.sum)
   result = newTensor[int](n)
   for t in 0..<n:
     block sampling:
@@ -201,7 +201,7 @@ proc assign_labels[T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0
         # Avoid NaNs
         if counts[i] > 0:
           var count = @[counts[i]].toTensor.astype(T)
-          centroids[i, _] = (totals[i] ./ count).reshape(1, n_cols)
+          centroids[i, _] = (totals[i] /. count).reshape(1, n_cols)
 
   return (labels: labels, centroids: centroids, inertia: inertia)
 

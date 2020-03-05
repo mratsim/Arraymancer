@@ -236,7 +236,7 @@ proc checkStatement(stmts: NimNode): StatementKind =
   case stmt.kind
   of nnkInfix:
     # TODO: also check nested infix for multiple tensors
-    doAssert stmt[0].ident == toNimIdent("*"), "It ``must`` be a product `*` " &
+    doAssert stmt[0].eqIdent"*", "It ``must`` be a product `*` " &
       "between the tensors!"
     result = skAuto
   of nnkAsgn:
@@ -262,7 +262,7 @@ proc getTensorIdx(tensors: NimNode, tensorArgument: seq[NimNode]): seq[TensorIdx
       "statement of `einsum`, only a single argument may be given!"
     result = @[extractIdentIdx(tensors, tensorArgument[0])]
   of nnkInfix:
-    doAssert tensors[0].ident == toNimIdent"*"
+    doAssert tensors[0].eqIdent"*"
     if tensors[1].kind == nnkInfix:
       result.add getTensorIdx(tensors[1], tensorArgument)
       result.add getTensorIdx(tensors[2], @[tensorArgument[^1]])

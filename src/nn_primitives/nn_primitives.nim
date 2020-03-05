@@ -21,7 +21,8 @@ import  ./nnp_activation,
         ./nnp_softmax,
         ./nnp_numerical_gradient,
         ./nnp_gru,
-        ./nnp_embedding.nim
+        ./nnp_embedding,
+        ./nnp_crf
 
 export  nnp_activation,
         nnp_convolution,
@@ -32,7 +33,8 @@ export  nnp_activation,
         nnp_softmax,
         nnp_numerical_gradient,
         nnp_gru,
-        nnp_embedding
+        nnp_embedding,
+        nnp_crf
 
 import private/p_nnp_types
 export Size2D

@@ -13,14 +13,14 @@
 # limitations under the License.
 
 import  ./activation/[sigmoid, relu, tanh],
-        ./layers/[linear, conv2D, maxpool2D, gru, embedding],
+        ./layers/[linear, conv2D, maxpool2D, gru, embedding, crf],
         ./loss/cross_entropy_losses,
         ./loss/mean_square_error_loss,
         ./optimizers/optimizers,
         ./init
 
 export  sigmoid, relu, tanh,
-        linear, conv2D, maxpool2d, gru, embedding,
+        linear, conv2D, maxpool2d, gru, embedding, crf,
         cross_entropy_losses, mean_square_error_loss,
         optimizers,
         init

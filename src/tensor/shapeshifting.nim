@@ -318,3 +318,23 @@ func index_select*[T; Idx: byte or char or SomeNumber](t: Tensor[T], axis: int, 
     var r_slice = result.atAxisIndex(axis, i)
     var t_slice = t.atAxisIndex(axis, int(index))
     r_slice.copyFrom(t_slice)
+
+proc index_select*[T; Idx: byte or char or SomeNumber](t: Tensor[T], axis: int, indices: Tensor[Idx], result: var Tensor[T]) =
+  ## Same as the `index_select` function, but use a preallocated tensor for
+  ## output.
+  doAssert indices.shape.len == 1
+
+  var select_shape = t.shape
+  select_shape[axis] = indices.shape[0]
+
+  if (select_shape != result.shape):
+    ## FIXME: Better way of resizing the result when necessary
+    if (select_shape.product() == result.size()):
+      result = result.reshape(select_shape)
+    else:
+      result = newTensorUninit[T](select_shape)
+  
+  for i, index in enumerate(indices):
+    var r_slice = result.atAxisIndex(axis, i)
+    var t_slice = t.atAxisIndex(axis, int(index))
+    r_slice.copyFrom(t_slice)

@@ -6,8 +6,13 @@
 # Types and low level primitives for tensors
 
 import
-  ../dynamic_stack_arrays, ../compiler_optim_hints,
-  typetraits
+  ../dynamic_stack_arrays, ../compiler_optim_hints
+
+when NimVersion >= "1.1.0":
+  # For distinctBase
+  import typetraits
+else:
+  import sugar
 
 type
   RawImmutableView*[T] = distinct ptr UncheckedArray[T]

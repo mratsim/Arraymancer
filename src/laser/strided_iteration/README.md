@@ -14,7 +14,7 @@ Routine and fields used, (routines mean proc, template, macros):
   - shape, strides:
       routines or fields that returns an array, seq or indexable container
       that supports `[]`. Read-only access.
-  - unsafe_raw_data:
+  - unsafe_raw_offset:
       routine or field that returns a ptr UncheckedArray[T]
       or a distinct type with `[]` indexing implemented.
       The address should be the start of the raw data including

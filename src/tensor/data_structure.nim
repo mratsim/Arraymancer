@@ -179,10 +179,10 @@ proc get_offset_ptr*[T](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
   ##     - A pointer to the offset start of its data
   t.storage.raw_buffer[t.offset].unsafeAddr
 
-proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.noSideEffect, inline, deprecated: "Use unsafe_raw_data instead".}=
+proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.noSideEffect, inline, deprecated: "Use unsafe_raw_offset instead".}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the offset start of the data.
   ##       Return value supports array indexing.
-  (ptr UncheckedArray[T])(t.unsafe_raw_data)
+  (ptr UncheckedArray[T])(t.unsafe_raw_offset)

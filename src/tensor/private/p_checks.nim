@@ -18,7 +18,7 @@ import  ../../laser/private/nested_containers,
 
 include ./p_checks_cuda, ./p_checks_opencl
 
-func check_nested_elements*(shape: MetadataArray, len: int) {.inline.}=
+func check_nested_elements*(shape: Metadata, len: int) {.inline.}=
   ## Compare the detected shape from flatten with the real length of the data
   ## Input:
   ##   -- A shape (sequence of int)
@@ -28,10 +28,19 @@ func check_nested_elements*(shape: MetadataArray, len: int) {.inline.}=
 
 func check_index*(t: Tensor, idx: varargs[int]) {.inline.}=
   if unlikely(idx.len != t.rank):
-    raise newException(IndexError, "Number of arguments: " &
-                    $(idx.len) &
-                    ", is different from tensor rank: " &
-                    $(t.rank))
+    raise newException(
+      IndexError, "Number of arguments: " &
+                  $(idx.len) &
+                  ", is different from tensor rank: " &
+                  $(t.rank)
+    )
+  for i in 0 ..< t.shape.len:
+    if unlikely(not(0 <= idx[i] and idx[i] < t.shape[i])):
+      raise newException(
+        IndexError, "Out-of-bounds access: " &
+                    "Tensor of shape " & $t.shape &
+                    "bing indexed by " & $idx
+      )
 
 func check_contiguous_index*(t: Tensor, idx: int) {.inline.}=
   if unlikely(idx < 0 or idx >= t.size):
@@ -94,7 +103,7 @@ func check_shape*(a: Tensor; b: Tensor|openarray) {.inline.}=
                                    $a.shape &
                                    " and " & $b_shape)
 
-func check_reshape*(t: AnyTensor, new_shape:MetadataArray) {.inline.}=
+func check_reshape*(t: AnyTensor, new_shape: Metadata) {.inline.}=
   if unlikely(t.size != new_shape.product):
     raise newException(ValueError, "The total number of elements in the old (" &
                                     $t.size &

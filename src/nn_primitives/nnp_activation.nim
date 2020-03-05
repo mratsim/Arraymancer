@@ -14,8 +14,7 @@
 
 import math
 import  ../tensor/tensor,
-        ./private/p_activation,
-        ./private/p_logsumexp
+        ./private/p_activation
 
 # Neural net activation functions that works directly on Tensors
 # TODO: tests

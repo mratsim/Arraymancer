@@ -14,7 +14,7 @@
 
 
 import ../../src/arraymancer
-import unittest, math, sugar, sequtils
+import unittest, math
 import complex except Complex64, Complex32
 
 
@@ -32,4 +32,3 @@ suite "Testing miscellaneous data functions":
       var b = ones[Complex[float64]](4,1)
       b.copy_from(a)
       check: b == [[1],[2], [3], [4]].toTensor.astype(Complex[float64])
-

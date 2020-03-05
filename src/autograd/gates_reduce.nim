@@ -17,7 +17,7 @@ import  ../private/ast_utils,
         ./autograd_common,
         sequtils
 
-type MeanGate* {.final.} [TT] = ref object of Gate[TT]
+type MeanGate*[TT] {.final.} = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
   cached_input_shape: MetadataArray
   axis: int
@@ -101,7 +101,7 @@ proc mean*[TT](a: Variable[TT], axis: Natural): Variable[TT] =
   if a.is_grad_needed:
     result.mean_cache(a, axis)
 
-type SumGate* {.final.} [TT] = ref object of Gate[TT]
+type SumGate*[TT]{.final.}= ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
   cached_input_shape: MetadataArray
 

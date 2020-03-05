@@ -18,7 +18,7 @@ import  ../../private/sequninit,
         ../../nn_primitives/nn_primitives,
         sequtils
 
-type GRUGate*{.final.}[TT] = ref object of Gate[TT]
+type GRUGate*[TT]{.final.}= ref object of Gate[TT]
   ## For now the GRU layer only supports fixed size GRU stack and Timesteps
   cached_inputs: seq[TT]
   cached_hiddens: seq[seq[TT]]

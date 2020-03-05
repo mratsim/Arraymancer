@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/[nested_containers, functional],
-        ./backend/metadataArray,
-        ./private/p_checks,
-        ./data_structure
+import ./backend/metadataArray
 
 # ## This file adds slicing syntactic sugar.
 # ## Foo being:
@@ -214,4 +211,3 @@ proc `^`*(s: Slice): SteppedSlice {.noSideEffect, inline.} =
   ## Internal: Prefix to a to indicate starting the slice at "a" away from the end
   ## Note: This does not automatically inverse stepping, what if we want ^5..^1
   return SteppedSlice(a: s.a, b: s.b, step: 1, a_from_end: true)
-

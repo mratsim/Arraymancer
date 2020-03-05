@@ -15,7 +15,6 @@
 import  ../../private/[nested_containers, ast_utils],
         ../data_structure, ../accessors_macros_syntax,
         ../backend/metadataArray,
-        ./p_accessors_macros_desugar,
         ./p_accessors_macros_read,
         ./p_checks,
         ./p_accessors,

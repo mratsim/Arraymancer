@@ -5,7 +5,6 @@
 
 import
   ../../compiler_optim_hints,
-  ../../simd,
   ./gemm_tiling, ./gemm_utils,
   ./gemm_ukernel_generic,
   macros
@@ -36,7 +35,7 @@ template ukernel_simd_proc(ukernel_name, epilogue_name: NimNode, edge: bool) {.d
           `simd_setZero`, `simd_load_aligned`, `simd_broadcast_value`, `simd_fma`
         )
         const
-          is_c_unit_stride = ukernel.extract_c_unit_stride()
+          # is_c_unit_stride = ukernel.extract_c_unit_stride()
           MR = ukernel.extract_mr()
           NR = ukernel.extract_nr()
 
@@ -56,7 +55,7 @@ template ukernel_simd_proc(ukernel_name, epilogue_name: NimNode, edge: bool) {.d
           `simd_setZero`, `simd_load_aligned`, `simd_broadcast_value`, `simd_fma`
         )
         const
-          is_c_unit_stride = ukernel.extract_c_unit_stride()
+          # is_c_unit_stride = ukernel.extract_c_unit_stride()
           MR = ukernel.extract_mr()
           NR = ukernel.extract_nr()
 
@@ -228,7 +227,7 @@ macro ukernel_simd_impl*(
       bcast_fma.add quote do:
         # At the edge: `i`+1 = MR so equivalent to loading A[(k+1)*MR]
         `a_next` = `simd_broadcast_value`(`A`[`k`*`MR`+(`i`+1)])
-      
+
       # load current
       let a = rA[i mod NbVecs]
 

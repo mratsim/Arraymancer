@@ -16,7 +16,7 @@ import  ../../tensor/tensor,
         ../../nn_primitives/nn_primitives,
         ../../autograd/autograd
 
-type ReluActivation* {.final.} [TT] = ref object of Gate[TT]
+type ReluActivation*[TT] {.final.} = ref object of Gate[TT]
   cache: TT
 
 proc relu_backward_ag[TT](self: ReluActivation[TT], payload: Payload[TT]): SmallDiffs[TT] =
@@ -55,7 +55,3 @@ proc relu*[TT](a: Variable[TT]): Variable[TT] =
   # Caching for backprop
   if a.is_grad_needed:
     result.relu_cache(a)
-
-
-
-

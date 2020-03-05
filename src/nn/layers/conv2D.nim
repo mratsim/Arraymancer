@@ -16,7 +16,7 @@ import  ../../tensor/tensor,
         ../../autograd/autograd,
         ../../nn_primitives/nn_primitives
 
-type Conv2DGate* {.final.} [TT] = ref object of Gate[TT]
+type Conv2DGate*[TT]{.final.} = ref object of Gate[TT]
   cached_input: Variable[TT]
   weight, bias: Variable[TT]
   padding, stride: Size2D

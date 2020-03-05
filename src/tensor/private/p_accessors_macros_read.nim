@@ -16,9 +16,9 @@
 # Slicing macros - read access
 
 import  ../../private/ast_utils,
-        ../data_structure, ../init_cpu, ../accessors_macros_syntax,
+        ../data_structure, ../accessors_macros_syntax,
         ../backend/metadataArray,
-        ./p_checks, ./p_accessors, ./p_accessors_macros_desugar,
+        ./p_checks, ./p_accessors,
         sequtils, macros
 
 template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSlices): untyped =

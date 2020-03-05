@@ -18,7 +18,7 @@
 import  ../tensor/tensor,
         ./autograd_common
 
-type AddGate* {.final.} [TT] = ref object of Gate[TT]
+type AddGate*[TT] {.final.} = ref object of Gate[TT]
 
 proc add_backward_ag[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
@@ -57,7 +57,7 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
   if a.is_grad_needed or b.is_grad_needed:
     result.add_cache(a, b)
 
-type SubGate* {.final.} [TT] = ref object of Gate[TT]
+type SubGate*[TT] {.final.} = ref object of Gate[TT]
 
 proc sub_backward_ag[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad

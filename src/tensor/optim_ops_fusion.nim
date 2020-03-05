@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/[nested_containers, ast_utils],
+import  ../private/nested_containers,
         ./backend/metadataArray,
         ./private/p_checks,
         ./private/p_init_cpu,

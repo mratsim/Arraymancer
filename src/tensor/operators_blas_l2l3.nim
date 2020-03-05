@@ -19,8 +19,7 @@ import  ./private/p_checks,
         ./private/p_operator_blas_l2l3,
         ./fallback/naive_l2_gemv,
         ./data_structure,
-        ./init_cpu,
-        ../private/ast_utils
+        ./init_cpu
 
 proc gemv*[T: SomeFloat|Complex](
           alpha: T,

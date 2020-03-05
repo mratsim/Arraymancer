@@ -16,7 +16,7 @@ import  ../../autograd/autograd,
         ../../tensor/tensor,
         ../../nn_primitives/nn_primitives
 
-type SigmoidActivation* {.final.} [TT] = ref object of Gate[TT]
+type SigmoidActivation*[TT] {.final.} = ref object of Gate[TT]
   cache: TT
 
 proc sigmoid_backward_ag[TT](self: SigmoidActivation[TT], payload: Payload[TT]): SmallDiffs[TT] =
@@ -55,5 +55,3 @@ proc sigmoid*[TT](a: Variable[TT]): Variable[TT] =
   # Caching for backprop
   if a.is_grad_needed:
     result.sigmoid_cache(a)
-
-

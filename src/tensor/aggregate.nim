@@ -15,7 +15,6 @@
 import  ./backend/memory_optimization_hints,
         ./data_structure,
         ./init_cpu,
-        ./higher_order_applymap,
         ./higher_order_foldreduce,
         ./math_functions,
         ./accessors,

@@ -5,7 +5,7 @@ description   = "A n-dimensional tensor (ndarray) library"
 license       = "Apache License 2.0"
 
 ### Dependencies
-requires "nim >= 0.20.0",
+requires "nim >= 1.0.0",
   "nimblas >= 0.2.2",
   "nimlapack >= 0.1.1",
   "nimcuda >= 0.1.4",
@@ -149,22 +149,31 @@ task all_tests, "Run all tests - Intel MKL + Cuda + OpenCL + OpenMP":
   switches.cuda_mkl_openmp()
   test "full_test_suite", switches, split=false, lang="cpp"
 
+# Split tests are unnecessary after 1.0.0 (no more 3GB+ memory used when compiling)
+#
+# task test, "Run all tests - Default BLAS & Lapack":
+#   test "tests_tensor_part01", "", split = true
+#   test "tests_tensor_part02", "", split = true
+#   test "tests_tensor_part03", "", split = true
+#   test "tests_tensor_part04", "", split = true
+#   test "tests_tensor_part05", "", split = true
+#   test "tests_cpu_remainder", "", split = true
+#
+# task test_no_lapack, "Run all tests - Default BLAS without lapack":
+#   let switch = " -d:no_lapack"
+#   test "tests_tensor_part01", switch, split = true
+#   test "tests_tensor_part02", switch, split = true
+#   test "tests_tensor_part03", switch, split = true
+#   test "tests_tensor_part04", switch, split = true
+#   test "tests_tensor_part05", switch, split = true
+#   test "tests_cpu_remainder", switch, split = true
+
 task test, "Run all tests - Default BLAS & Lapack":
-  test "tests_tensor_part01", "", split = true
-  test "tests_tensor_part02", "", split = true
-  test "tests_tensor_part03", "", split = true
-  test "tests_tensor_part04", "", split = true
-  test "tests_tensor_part05", "", split = true
-  test "tests_cpu_remainder", "", split = true
+  test "tests_cpu", "", split = false
 
 task test_no_lapack, "Run all tests - Default BLAS without lapack":
   let switch = " -d:no_lapack"
-  test "tests_tensor_part01", switch, split = true
-  test "tests_tensor_part02", switch, split = true
-  test "tests_tensor_part03", switch, split = true
-  test "tests_tensor_part04", switch, split = true
-  test "tests_tensor_part05", switch, split = true
-  test "tests_cpu_remainder", switch, split = true
+  test "tests_cpu", switch, split = false
 
 task test_cpp, "Run all tests - Cpp codegen":
   test "tests_cpu", "", split = false, "cpp"

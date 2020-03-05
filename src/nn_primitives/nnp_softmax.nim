@@ -14,9 +14,7 @@
 
 import  ../tensor/backend/openmp,
         ../tensor/tensor,
-        ./private/p_nnp_checks,
-        ./private/p_logsumexp,
-        math
+        ./private/p_logsumexp
 
 proc softmax*[T](input: Tensor[T]): Tensor[T] {.noInit.} =
   ## For each sample in a tensor:

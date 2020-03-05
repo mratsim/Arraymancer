@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import  ./data_structure,
-        ./higher_order_applymap,
         ./private/p_shapeshifting
 
 # Unfortunately higher_order depends on init_cpu and "clone" depends on higher_order, so we need an extra file

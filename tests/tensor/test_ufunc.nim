@@ -28,17 +28,17 @@ suite "Universal functions":
   test "Common math functions are exported":
     let a = @[@[1.0,2,3],@[4.0,5,6]]
     let b = @[@[7.0, 8],@[9.0, 10],@[11.0, 12]]
-    let c = @[@[complex64(1.0,0.0),complex64(2.0,0.0),complex64(3.0,0.0)],
-              @[complex64(4.0,0.0),complex64(5.0,0.0),complex64(6.0,0.0)]]
+    # let c = @[@[complex64(1.0,0.0),complex64(2.0,0.0),complex64(3.0,0.0)],
+    #           @[complex64(4.0,0.0),complex64(5.0,0.0),complex64(6.0,0.0)]]
 
     let ta = a.toTensor()
     let tb = b.toTensor()
-    let tc = c.toTensor()
+    # let tc = c.toTensor()
 
     let expected_a = @[@[cos(1'f64),cos(2'f64),cos(3'f64)],@[cos(4'f64),cos(5'f64),cos(6'f64)]]
     let expected_b = @[@[ln(7'f64), ln(8'f64)],@[ln(9'f64), ln(10'f64)],@[ln(11'f64), ln(12'f64)]]
-    let expected_c = @[@[cos(complex64(1'f64,0.0)),cos(complex64(2'f64,0.0)),cos(complex64(3'f64,0.0))],
-                       @[cos(complex64(4'f64,0.0)),cos(complex64(5'f64,0.0)),cos(complex64(6'f64,0.0))]]
+    # let expected_c = @[@[cos(complex64(1'f64,0.0)),cos(complex64(2'f64,0.0)),cos(complex64(3'f64,0.0))],
+    #                    @[cos(complex64(4'f64,0.0)),cos(complex64(5'f64,0.0)),cos(complex64(6'f64,0.0))]]
 
     check: cos(ta).mean_absolute_error(expected_a.toTensor()) <= 1e-15 # We have slight precision loss with OpenMP
     check: ln(tb) == expected_b.toTensor()

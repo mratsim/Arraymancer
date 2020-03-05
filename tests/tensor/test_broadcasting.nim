@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, sugar, sequtils
+import unittest, sequtils
 import complex except Complex64, Complex32
 
 suite "Shapeshifting - broadcasting and non linear algebra elementwise operations":
@@ -24,7 +24,7 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
     let expected_div_int = @[-2, 0, 3].toTensor()
 
     check: u_int *. v_int == expected_mul_int
-    check: u_int ./ v_int == expected_div_int
+    check: u_int /. v_int == expected_div_int
 
     let u_float = @[1.0, 8.0, -3.0].toTensor()
     let v_float = @[4.0, 2.0, 10.0].toTensor()
@@ -32,9 +32,9 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
     let expected_div_float = @[0.25, 4.0, -0.3].toTensor()
 
     check: u_float *. v_float == expected_mul_float
-    check: u_float ./ v_float == expected_div_float
+    check: u_float /. v_float == expected_div_float
     check: u_float.astype(Complex[float64]) *. v_float.astype(Complex[float64]) == expected_mul_float.astype(Complex[float64])
-    check: u_float.astype(Complex[float64]) ./ v_float.astype(Complex[float64]) == expected_div_float.astype(Complex[float64])
+    check: u_float.astype(Complex[float64]) /. v_float.astype(Complex[float64]) == expected_div_float.astype(Complex[float64])
 
   test "Explicit broadcasting":
     block:
@@ -100,7 +100,7 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       let a = [100, 10, 20, 30].toTensor().reshape(4,1)
       let b = [2, 5, 10].toTensor().reshape(1,3)
 
-      check: a ./ b == [[50, 20, 10],
+      check: a /. b == [[50, 20, 10],
                         [5, 2, 1],
                         [10, 4, 2],
                         [15, 6, 3]].toTensor
@@ -109,11 +109,11 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       let a = [100.0, 10, 20, 30].toTensor().reshape(4,1)
       let b = [2.0, 5, 10].toTensor().reshape(1,3)
 
-      check: a ./ b == [[50.0, 20, 10],
+      check: a /. b == [[50.0, 20, 10],
                         [5.0, 2, 1],
                         [10.0, 4, 2],
                         [15.0, 6, 3]].toTensor
-      check: a.astype(Complex[float64]) ./ b.astype(Complex[float64]) == [[50.0, 20, 10],
+      check: a.astype(Complex[float64]) /. b.astype(Complex[float64]) == [[50.0, 20, 10],
                         [5.0, 2, 1],
                         [10.0, 4, 2],
                         [15.0, 6, 3]].toTensor.astype(Complex[float64])
@@ -130,17 +130,17 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
     block: # Float Exponentiation
       let a = [1.0, 10, 20, 30].toTensor().reshape(4,1)
 
-      check: a .^ 2.0 == [[1.0],
+      check: a ^. 2.0 == [[1.0],
                           [100.0],
                           [400.0],
                           [900.0]].toTensor
 
-      check: a .^ -1 == [[1.0],
+      check: a ^. -1 == [[1.0],
                           [1.0/10.0],
                           [1.0/20.0],
                           [1.0/30.0]].toTensor
 
-      check: a.astype(Complex[float64]) .^ complex64(-1.0,0.0) == [[1.0],
+      check: a.astype(Complex[float64]) ^. complex64(-1.0,0.0) == [[1.0],
                           [1.0/10.0],
                           [1.0/20.0],
                           [1.0/30.0]].toTensor.astype(Complex[float64])
@@ -263,8 +263,8 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
       var a_c = a.clone.astype(Complex[float64])
       var b_c = b.clone.astype(Complex[float64])
 
-      a .^= 2.0
-      a_c .^= complex(2.0)
+      a ^.= 2.0
+      a_c ^.= complex(2.0)
       check: a == [[1.0],
                     [100.0],
                     [400.0],
@@ -274,8 +274,8 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
                     [400.0],
                     [900.0]].toTensor.astype(Complex[float64])
 
-      b .^= -1
-      b_c .^= complex(-1.0)
+      b ^.= -1
+      b_c ^.= complex(-1.0)
       check: b == [[1.0],
                     [1.0/10.0],
                     [1.0/20.0],
@@ -288,10 +288,10 @@ suite "Shapeshifting - broadcasting and non linear algebra elementwise operation
   test "Implicit broadcasting - Sigmoid 1 ./ (1 +. exp(-x)":
     block:
       proc sigmoid[T: SomeFloat](t: Tensor[T]): Tensor[T]=
-        1.T ./ (1.T +. exp(0.T -. t))
+        1.T /. (1.T +. exp(0.T -. t))
 
       proc sigmoid(t: Tensor[Complex32]): Tensor[Complex32]=
-        complex32(1) ./ (complex32(1) +. exp(complex32(0) -. t))
+        complex32(1) /. (complex32(1) +. exp(complex32(0) -. t))
 
       let a = newTensor[float32]([2,2])
       check: sigmoid(a) == [[0.5'f32, 0.5],[0.5'f32, 0.5]].toTensor

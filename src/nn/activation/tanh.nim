@@ -16,7 +16,7 @@ import  ../../autograd/autograd,
         ../../tensor/tensor,
         ../../nn_primitives/nn_primitives
 
-type TanhActivation* {.final.} [TT] = ref object of Gate[TT]
+type TanhActivation*[TT ]{.final.} = ref object of Gate[TT]
   cache: TT
 
 proc tanh_backward_ag[TT](self: TanhActivation[TT], payload: Payload[TT]): SmallDiffs[TT] =

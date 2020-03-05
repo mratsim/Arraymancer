@@ -14,8 +14,7 @@
 
 import  ./data_structure,
         ./higher_order_applymap,
-        sugar, math, complex,
-        ../private/ast_utils
+        sugar, math, complex
 
 proc astype*[T; U: not Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noInit.} =
   ## Apply type conversion on the whole tensor
@@ -87,7 +86,7 @@ makeUniversal(tanh)
 makeUniversal(erf)
 makeUniversal(erfc)
 makeUniversal(lgamma)
-makeUniversal(tgamma)
+makeUniversal(gamma)
 makeUniversal(floor)
 makeUniversal(ceil)
 makeUniversal(trunc)

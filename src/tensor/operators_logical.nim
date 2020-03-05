@@ -14,8 +14,7 @@
 
 import  ./data_structure,
         ./higher_order_applymap,
-        ./init_cpu,
-        ./shapeshifting
+        ./init_cpu
 
 # TODO tests
 

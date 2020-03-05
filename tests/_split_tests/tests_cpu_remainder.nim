@@ -30,6 +30,7 @@ import  ../io/test_csv,
         ../autograd/test_gate_hadamard,
         ../autograd/test_gate_shapeshifting,
         ../ml/test_metrics,
+        ../ml/test_clustering,
         ../test_bugtracker
 
 when not defined(windows) and not sizeof(int) == 4:
@@ -38,8 +39,7 @@ when not defined(windows) and not sizeof(int) == 4:
 
 when not defined(no_lapack):
   import ../linear_algebra/test_linear_algebra,
-        ../ml/test_dimensionality_reduction,
-        ../ml/test_clustering
+        ../ml/test_dimensionality_reduction
 
 import  ../stability_tests/test_stability_openmp,
         # /end_to_end/examples_compile

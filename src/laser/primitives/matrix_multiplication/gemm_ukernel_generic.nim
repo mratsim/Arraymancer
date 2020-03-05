@@ -23,7 +23,6 @@ template ukernel_generic_impl*(){.dirty.} =
   const
     MR = ukernel.extract_mr()
     NR = ukernel.extract_nr()
-    simd = ukernel.extract_cpu_simd
 
   var AB{.align_variable.}: array[MR, array[NR, T]]
   var  A {.restrict.} = assume_aligned packedA # [kc, mc] by chunks of mr
@@ -86,7 +85,6 @@ proc gebb_ukernel_fallback*[T; ukernel: static MicroKernel](
     ) =
   ukernel_generic_impl()
 
-  const is_c_unit_stride = ukernel.extract_c_unit_stride
   gebb_ukernel_epilogue_fallback(alpha, to_ptr(AB, MR, NR, T), beta, vC)
 
 # ############################################################

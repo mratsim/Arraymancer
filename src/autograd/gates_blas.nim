@@ -15,7 +15,7 @@
 import  ../tensor/tensor,
         ./autograd_common
 
-type MatMulGate* {.final.} [TT] = ref object of Gate[TT]
+type MatMulGate*[TT] {.final.} = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
   a: Variable[TT]
   b: Variable[TT]

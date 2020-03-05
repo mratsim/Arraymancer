@@ -5,8 +5,7 @@
 import
   nimlapack,
   ./overload,
-  ../../tensor/tensor,
-  ../../private/sequninit
+  ../../tensor/tensor
 
 # Auxiliary functions from Lapack
 # ----------------------------------

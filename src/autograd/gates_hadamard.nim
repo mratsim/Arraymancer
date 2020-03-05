@@ -15,7 +15,7 @@
 import  ../tensor/tensor,
         ./autograd_common
 
-type HadamardGate* {.final.} [TT] = ref object of Gate[TT]
+type HadamardGate*[TT]{.final.} = ref object of Gate[TT]
   a: Variable[TT]
   b: Variable[TT]
 

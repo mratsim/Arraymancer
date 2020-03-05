@@ -6,7 +6,8 @@
 # Types and low level primitives for tensors
 
 import
-  ../dynamic_stack_arrays, ../compiler_optim_hints
+  ../dynamic_stack_arrays, ../compiler_optim_hints,
+  typetraits
 
 when NimVersion >= "1.1.0":
   # For distinctBase
@@ -69,7 +70,7 @@ func is_C_contiguous*(t: Tensor): bool =
 
 template unsafe_raw_data_impl() {.dirty.} =
 
-  when T.supportsCopyMem:
+  when supportsCopyMem(T):
     withCompilerOptimHints()
     when aligned:
       let raw_pointer{.restrict.} = assume_aligned t.storage.raw_buffer

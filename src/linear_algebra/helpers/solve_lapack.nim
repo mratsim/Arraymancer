@@ -7,15 +7,15 @@ import
   ./overload,
   ../../tensor/tensor
 
-# Wrappers for Fortran LAPACK linear equation driver routines *SV
-# Currently only *GESV is wrapped
+# Wrappers for Fortran LAPACK linear equation driver routines `*SV`
+# Currently only `*GESV` is wrapped
 # TODO: Implement GBSV, GTSV, POSV, PBSV, PTSV, SYSV
 
 overload(gesv, sgesv)
 overload(gesv, dgesv)
 
 proc gesv*[T: SomeFloat](a, b: var Tensor[T], pivot_indices: var seq[int32]) =
-  ## Wrapper for LAPACK *gesv routines
+  ## Wrapper for LAPACK `*gesv` routines
   ## Solve AX = B for general matrix
   ##
   ## In-place version, this will overwrite a and b

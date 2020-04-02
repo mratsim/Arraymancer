@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../backend/openmp
+import ../../backend/openmp
 
 proc gemm_macro_kernel[T](mc, nc, kc: int,
                           alpha: T,

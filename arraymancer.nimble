@@ -229,88 +229,19 @@ task test_mkl_omp, "Run all tests - Intel MKL + OpenMP":
 task test_release, "Run all tests - Release mode":
   test "tests_cpu", " -d:release"
 
-task gen_doc, "Generate Arraymancer documentation":
-  # TODO: Industrialize: something more robust that only check nim files (and not .DS_Store ...)
-  for filePath in listFiles("src/tensor/"):
-    let modName = filePath[11..^5] # Removing src/tensor/ (11 chars) and .nim (4 chars) # TODO: something more robust
-    # Cuda doc is broken https://github.com/nim-lang/Nim/issues/6910
-    # Delete doc comment from nimcuda before using this
-    exec r"nim doc -o:docs/build/tensor." & modName & ".html " & filePath
 
-  for filePath in listFiles("src/nn_primitives/"):
-    let modName = filePath[18..^5] # Removing src/nn_primitives/ (18 chars) and .nim (4 chars) # TODO: something more robust
-    # Cuda doc is broken https://github.com/nim-lang/Nim/issues/6910
-    # Delete doc comment from nimcuda before using this
-    exec r"nim doc -o:docs/build/nnp." & modName & ".html " & filePath
-
-  for filePath in listFiles("src/autograd/"):
-    let modName = filePath[13..^5] # Removing src/autograd/ (13 chars) and .nim (4 chars) # TODO: something more robust
-    exec r"nim doc -o:docs/build/ag." & modName & ".html " & filePath
-
-  for filePath in listFiles("src/nn/"):
-    let modName = filePath[7..^5] # Removing src/nn_primitives/ (18 chars) and .nim (4 chars) # TODO: something more robust
-    exec r"nim doc -o:docs/build/nn." & modName & ".html " & filePath
-
-  # TODO auto check subdir
-  for filePath in listFiles("src/nn/activation/"):
-    let modName = filePath[18..^5]
-    exec r"nim doc -o:docs/build/nn_activation." & modName & ".html " & filePath
-
-  for filePath in listFiles("src/nn/layers/"):
-    let modName = filePath[14..^5]
-    exec r"nim doc -o:docs/build/nn_layers." & modName & ".html " & filePath
-
-  for filePath in listFiles("src/nn/loss/"):
-    let modName = filePath[12..^5]
-    exec r"nim doc -o:docs/build/nn_loss." & modName & ".html " & filePath
-
-  for filePath in listFiles("src/nn/optimizers/"):
-    let modName = filePath[18..^5]
-    exec r"nim doc -o:docs/build/nn_optimizers." & modName & ".html " & filePath
-
-  for filePath in listFiles("src/nn_dsl/"):
-    let modName = filePath[11..^5]
-    exec r"nim doc -o:docs/build/nn_dsl." & modName & ".html " & filePath
-
-  for filePath in listFiles("src/linear_algebra/"):
-    let modName = filePath[19..^5]
-    exec r"nim doc -o:docs/build/la." & modName & ".html " & filePath
-
-  for filePath in listFiles("src/stats/"):
-    let modName = filePath[10..^5]
-    exec r"nim doc -o:docs/build/stats." & modName & ".html " & filePath
-
-  for filePath in listFiles("src/ml/clustering/"):
-    let modName = filePath[18..^5]
-    exec r"nim doc -o:docs/build/ml." & modName & ".html " & filePath
-
-  for filePath in listFiles("src/ml/dimensionality_reduction/"):
-    let modName = filePath[32..^5]
-    exec r"nim doc -o:docs/build/ml." & modName & ".html " & filePath
-
-  for filePath in listFiles("src/ml/metrics/"):
-    let modName = filePath[15..^5]
-    exec r"nim doc -o:docs/build/ml." & modName & ".html " & filePath
-
-  block:
-    let filePath = "src/nlp/tokenizers.nim"
-    let modName = filePath[8..^5]
-    exec r"nim doc -o:docs/build/nlp." & modName & ".html " & filePath
-
-  for filePath in listFiles("src/io/"):
-    let modName = filePath[7..^5]
-    exec r"nim doc -o:docs/build/io." & modName & ".html " & filePath
-
-  for filePath in listFiles("src/datasets/"):
-    let modName = filePath[13..^5]
-    exec r"nim doc -o:docs/build/datasets." & modName & ".html " & filePath
-
+import docs / [docs, generateNimdocCfg]
+task gen_docs, "Generate Arraymancer documentation":
+  # generate nimdoc.cfg file so we can generate the correct header for the
+  # index.html page without having to mess with the HTML manually.
+  genNimdocCfg("src/")
+  # build the actual docs and the index
+  buildDocs("src/", "docs/build")
+  # Copy our stylesheets
+  cpFile("docs/docutils.css", "docs/build/docutils.css")
+  cpFile("docs/nav.css", "docs/build/nav.css")
   # Process the rst
   for filePath in listFiles("docs/"):
     if filePath[^4..^1] == ".rst":
       let modName = filePath[5..^5]
       exec r"nim rst2html -o:docs/build/" & modName & ".html " & filePath
-
-  # Copy stylesheets
-  cpFile("docs/docutils.css", "docs/build/docutils.css")
-  cpFile("docs/nav.css", "docs/build/nav.css")

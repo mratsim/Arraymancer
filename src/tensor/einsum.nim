@@ -4,163 +4,162 @@ import ./shapeshifting
   # Note: importing shapeshifting_cuda will trigger a Nim inference bug
   #       in genContiguous with no workaround
 
-#[
-This module provides Einstein summation for an arbitrary number of tensors.
+## This module provides Einstein summation for an arbitrary number of tensors.
+##
+## Einstein summation describes a special application of
+## `index notation <https://en.wikipedia.org/wiki/Index_notation>`_
+## in which indices that appear more than once are implicitly summed over.
+## This allows for a concise notation of many vector / matrix / tensor calculations,
+## while exactly representing the required calculation.
+##
+## In general Einstein summation is a subset of
+## `Ricci calculus <https://en.wikipedia.org/wiki/Ricci_calculus>`_.
+##
+## The implementation of `einsum` in different languages however, typically goes
+## above and beyond actual Einstein summation, allowing for many aspects of
+## Ricci calculus.
+##
+## Simple Einstein summation examples
+## ==================================
+##
+## Typical examples include matrix-vector multiplcation, matrix-matrix multiplication
+## or the cross product. The examples below use the `einsum` / notation for the
+## elements of tensors, namely `m[i,j]` for element `i,j` of the matrix ``m``, instead of
+## the more mathematical notation `m_ij`.
+##
+## Matrix-vector multiplication
+## ----------------------------
+##
+## Let ``m`` be an `NxM` matrix and ``v`` a `M` vector. Then matrix-vector multiplication
+## `m * v` is defined as:
+## `w[i] = \sum_j m[i,j] * v[j]`.
+## The result is an `N` vector ``w`` consisting of elements `w[i]`.
+## Since `j` appears twice on the RHS of the equation, Einstein summation implies that
+## the sum over `j` is implicit, hence we can write:
+##
+## `w[i] = m[i,j] * v[j]`.
+##
+## Matrix-matrix multiplication
+## ----------------------------
+##
+## The same can be applied to matrix-matrix multiplication. Let ``m``, ``n`` be two
+## compatible matrices (both `NxN` or `NxM` and `MxN`) with elements `m[i,j]` and
+## `n[i,j]`. Matrix-matrix multiplication is defined as
+##
+## `a[i,k] = \sum_j m[i,j] * n[j,k]`
+##
+## and thus in Einstein summation:
+##
+## `a[i,k] = m[i,j] * n[j,k]`.
+##
+## Cross-product of two vectors
+## ----------------------------
+##
+## The cross product of two 3 vectors ``v``, ``w`` can be conveniently defined using
+## the `Levi-Civita symbol <https://en.wikipedia.org/wiki/Levi-Civita_symbol#Three_dimensions>`_
+## `\epsilon_{ijk}`:
+##
+## `a[i] = \epsilon_{ijk} v[j] * w[k]`,
+##
+## which implies `j` and `k` are summed over, while `i` is kept for the resulting tensor.
+##
+## More complex examples
+## =====================
+##
+## In this implementation of `einsum` (similar to other `einsum` implementations),
+## it's also possible to explicitly keep different dimensions of the multiplied
+## tensors or even perform calculations without a single index appearing mutliple
+## times, for instance to transpose a tensor. For these cases the explicit form
+## of the `einsum` macro has to be used, see below.
+##
+## Transposition of a matrix
+## -------------------------
+##
+## Transposition of a matrix can be expressed in index notation simply as an
+## exchange of indices, namely let ``m`` be an `NxM` matrix, the transposed
+## `MxN` matrix ``m^T`` is written as:
+##
+## `m[j,i] = m[i,j]`.
+##
+## Hadamard product
+## ----------------
+##
+## The Hadamard product defines the product of two `NxM` matrices ``n``, ``m``
+## in which the matrices are multiplied element wise. It is a good example
+## of the extension of `einsum` over standard Einstein summation:
+##
+## `a[i,j] = m[i,j] * n[i,j]`.
+##
+## Naive Einstein summation would demand a sum over both `i` and `j`, resulting
+## in a scalar on the LHS instead of another `NxM` matrix.
+##
+## Contracting a whole matrix
+## --------------------------
+##
+## Contraction of a full matrix describes summing all elements of a matrix
+## ``m``, resulting in a scalar `a`. It is expressed by:
+##
+## `a = m[i,i]`.
+##
+## The `einsum` macro
+## ==================
+##
+## The `einsum` macro provides two different usage paradigms.
+## * implicit <- normal Einstein summation
+## * explicit <- potential extended Einstein summation
+##
+## The macro takes a `varargs[Tensor]` and a single statement. It
+## returns a `Tensor[T]`, where `T` is deduced from the subtype of the
+## given tensors, if the result is not a scalar. For a scalar result
+## the return value is of type `T`. Note that the type of all given tensors
+## must match!
+##
+## The statement given to the macro is just a single line making use of
+## Einstein summation as in all the examples above. As a matter of fact
+## all examples above are valid statements for the `einsum` macro!
+##
+## Of course only tensors, which are given to the macro in the `varargs`
+## may be used in the statement.
+##
+## If only the `RHS` of the examples above are given, the required indices
+## for the resulting tensor are automatically calculated using pure Einstein
+## summation. Assuming `a`, `b` are two 2D arraymancer tensors , we could
+## express their matrix mutliplcation as
+##
+## .. code:: nim
+##    let c = einsum(a, b):
+##      a[i,j] * b[j,k]
+##
+## Of course the same can be written in explicit form:
+##
+## .. code:: nim
+##    let c = einsum(a, b):
+##      c[i,k] = a[i,j] * b[j,k]
+##
+## A few things must be noted here for the explicit case:
+## * the indices on the LHS are taken as "the truth"! Any index appearing here
+##   will ``not`` be summed over.
+## * the order on the LHS is taken into account, allowing for transposing
+##   dimensions.
+## * the identifier used on the LHS is arbitrary. It can match what the user assigns
+##   to, but need not.
+##
+## For many more examples for typical applications, take a look at the test case
+## `<../../tests/tensor/test_einsum.nim>`_.
+##
+## Implementation details
+## ----------------------
+##
+## The macro calculates, which indices must be contracted and which remain in the
+## final tensor. For each appearing index (of either case) we create a for loop,
+## while the contracting for loops appear within the non contracting indices.
+##
+## The macro creates a `block`, in which the code is produced and returns the
+## temporary tensor used in it.
+##
+## It also forces the tensors into contiguous, row major form by creating
+## local copies with `asContiguous`.
 
-Einstein summation describes a special application of
-`index notation <https://en.wikipedia.org/wiki/Index_notation>`_
-in which indices that appear more than once are implicitly summed over.
-This allows for a concise notation of many vector / matrix / tensor calculations,
-while exactly representing the required calculation.
-
-In general Einstein summation is a subset of
-`Ricci calculus <https://en.wikipedia.org/wiki/Ricci_calculus>`_.
-
-The implementation of `einsum` in different languages however, typically goes
-above and beyond actual Einstein summation, allowing for many aspects of
-Ricci calculus.
-
-Simple Einstein summation examples
-==================================
-
-Typical examples include matrix-vector multiplcation, matrix-matrix multiplication
-or the cross product. The examples below use the `einsum` / notation for the
-elements of tensors, namely `m[i,j]` for element `i,j` of the matrix ``m``, instead of
-the more mathematical notation `m_ij`.
-
-Matrix-vector multiplication
-----------------------------
-
-Let ``m`` be an `NxM` matrix and ``v`` a `M` vector. Then matrix-vector multiplication
-`m * v` is defined as:
-`w[i] = \sum_j m[i,j] * v[j]`.
-The result is an `N` vector ``w`` consisting of elements `w[i]`.
-Since `j` appears twice on the RHS of the equation, Einstein summation implies that
-the sum over `j` is implicit, hence we can write:
-
-`w[i] = m[i,j] * v[j]`.
-
-Matrix-matrix multiplication
-----------------------------
-
-The same can be applied to matrix-matrix multiplication. Let ``m``, ``n`` be two
-compatible matrices (both `NxN` or `NxM` and `MxN`) with elements `m[i,j]` and
-`n[i,j]`. Matrix-matrix multiplication is defined as
-
-`a[i,k] = \sum_j m[i,j] * n[j,k]`
-
-and thus in Einstein summation:
-
-`a[i,k] = m[i,j] * n[j,k]`.
-
-Cross-product of two vectors
-----------------------------
-
-The cross product of two 3 vectors ``v``, ``w`` can be conveniently defined using
-the `Levi-Civita symbol <https://en.wikipedia.org/wiki/Levi-Civita_symbol#Three_dimensions>`_
-`\epsilon_{ijk}`:
-
-`a[i] = \epsilon_{ijk} v[j] * w[k]`,
-
-which implies `j` and `k` are summed over, while `i` is kept for the resulting tensor.
-
-More complex examples
-=====================
-
-In this implementation of `einsum` (similar to other `einsum` implementations),
-it's also possible to explicitly keep different dimensions of the multiplied
-tensors or even perform calculations without a single index appearing mutliple
-times, for instance to transpose a tensor. For these cases the explicit form
-of the `einsum` macro has to be used, see below.
-
-Transposition of a matrix
--------------------------
-
-Transposition of a matrix can be expressed in index notation simply as an
-exchange of indices, namely let ``m`` be an `NxM` matrix, the transposed
-`MxN` matrix ``m^T`` is written as:
-
-`m[j,i] = m[i,j]`.
-
-Hadamard product
-----------------
-
-The Hadamard product defines the product of two `NxM` matrices ``n``, ``m``
-in which the matrices are multiplied element wise. It is a good example
-of the extension of `einsum` over standard Einstein summation:
-
-`a[i,j] = m[i,j] * n[i,j]`.
-
-Naive Einstein summation would demand a sum over both `i` and `j`, resulting
-in a scalar on the LHS instead of another `NxM` matrix.
-
-Contracting a whole matrix
---------------------------
-
-Contraction of a full matrix describes summing all elements of a matrix
-``m``, resulting in a scalar `a`. It is expressed by:
-
-`a = m[i,i]`.
-
-The `einsum` macro
-==================
-
-The `einsum` macro provides two different usage paradigms.
-* implicit <- normal Einstein summation
-* explicit <- potential extended Einstein summation
-
-The macro takes a `varargs[Tensor]` and a single statement. It
-returns a `Tensor[T]`, where `T` is deduced from the subtype of the
-given tensors, if the result is not a scalar. For a scalar result
-the return value is of type `T`. Note that the type of all given tensors
-must match!
-
-The statement given to the macro is just a single line making use of
-Einstein summation as in all the examples above. As a matter of fact
-all examples above are valid statements for the `einsum` macro!
-
-Of course only tensors, which are given to the macro in the `varargs`
-may be used in the statement.
-
-If only the `RHS` of the examples above are given, the required indices
-for the resulting tensor are automatically calculated using pure Einstein
-summation. Assuming `a`, `b` are two 2D arraymancer tensors , we could
-express their matrix mutliplcation as
-
-.. code:: nim
-   let c = einsum(a, b):
-     a[i,j] * b[j,k]
-
-Of course the same can be written in explicit form:
-
-.. code:: nim
-   let c = einsum(a, b):
-     c[i,k] = a[i,j] * b[j,k]
-
-A few things must be noted here for the explicit case:
-* the indices on the LHS are taken as "the truth"! Any index appearing here
-  will ``not`` be summed over.
-* the order on the LHS is taken into account, allowing for transposing
-  dimensions.
-* the identifier used on the LHS is arbitrary. It can match what the user assigns
-  to, but need not.
-
-For many more examples for typical applications, take a look at the test case
-`<../../tests/tensor/test_einsum.nim>`_.
-
-Implementation details
-----------------------
-
-The macro calculates, which indices must be contracted and which remain in the
-final tensor. For each appearing index (of either case) we create a for loop,
-while the contracting for loops appear within the non contracting indices.
-
-The macro creates a `block`, in which the code is produced and returns the
-temporary tensor used in it.
-
-It also forces the tensors into contiguous, row major form by creating
-local copies with `asContiguous`.
-]#
 
 type
   # enum which stores whether an `einsum` call is explicit `skAssign` (statement

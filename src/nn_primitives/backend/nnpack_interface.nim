@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../tensor/tensor, ../types
+import ../../tensor/tensor, ../private/p_nnp_types
 import ./nnpack
 
 proc nnpack_conv2d*(input, weight, bias: Tensor[float32], padding, stride: Size2D): Tensor[float32] {.noInit.}= # TODO use a single convention, return value or var result

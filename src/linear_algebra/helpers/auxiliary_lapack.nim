@@ -167,6 +167,7 @@ proc ormqr*[T: SomeFloat](C: var Tensor[T], Q: Tensor[T], tau: openarray[T], sid
 when isMainModule:
   import ./decomposition_lapack
   import ../../ml/metrics/common_error_functions
+  import ../../private/sequninit
 
   let a = [[12.0, -51.0, 4.0],
           [ 6.0, 167.0, -68.0],

@@ -230,7 +230,7 @@ task test_release, "Run all tests - Release mode":
   test "tests_cpu", " -d:release"
 
 
-import docs / [docs, generateNimdocCfg]
+import docs / docs
 task gen_docs, "Generate Arraymancer documentation":
   # generate nimdoc.cfg file so we can generate the correct header for the
   # index.html page without having to mess with the HTML manually.

@@ -1,6 +1,6 @@
-import macros, strformat, strutils, sequtils, sets
+import macros, strformat, strutils, sequtils, sets, tables, algorithm
 
-from os import parentDir, getCurrentCompilerExe, DirSep, extractFilename, `/`
+from os import parentDir, getCurrentCompilerExe, DirSep, extractFilename, `/`, setCurrentDir
 
 when defined(nimdoc):
   from os import getCurrentDir, paramCount, paramStr
@@ -67,6 +67,8 @@ proc getFiles*(path: string): seq[string] =
       result.add file
   for dir in listDirs(path):
     result.add getFiles(dir)
+
+import nimDocTemplates
 
 proc buildDocs*(path: string, docPath: string, baseDir = getProjectPath() & $DirSep,
                 defines: openArray[string] = @[]) =
@@ -152,3 +154,147 @@ proc buildDocs*(path: string, docPath: string, baseDir = getProjectPath() & $Dir
     # echo "Processed files: ", fileSet
     if duplSet.card > 0:
       echo "WARNING: Duplicate filenames detected: ", duplSet
+
+
+let nameMap = {
+  "dsl_core" : "Neural network: Declaration",
+  "relu" : "Activation: Relu (Rectified linear Unit)",
+  "sigmoid" : "Activation: Sigmoid",
+  "tanh" : "Activation: Tanh",
+  "conv2D" : "Layers: Convolution 2D",
+  "embedding" : "Layers: Embedding",
+  "gru" : "Layers: GRU (Gated Linear Unit)",
+  "linear" : "Layers: Linear/Dense",
+  "maxpool2D" : "Layers: Maxpool 2D",
+  "cross_entropy_losses" : "Loss: Cross-Entropy losses",
+  "mean_square_error_loss" : "Loss: Mean Square Error",
+  "softmax" : "Softmax",
+  "optimizers" : "Optimizers",
+  "init" : "Layers: Initializations"
+
+  "reshape_flatten" : "Reshape & Flatten",
+
+  "decomposition" : "Eigenvalue decomposition",
+  "decomposition_rand" : "Randomized Truncated SVD",
+  "least_squares" : "Least squares solver",
+  "linear_systems" : "Linear systems solver",
+  "special_matrices" : "Special linear algebra matrices",
+  "stats" : "Statistics",
+  "pca" : "Principal Component Analysis (PCA)",
+  "accuracy_score" : "Accuracy score",
+  "common_error_functions" : "Common errors, MAE and MSE (L1, L2 loss)",
+  "kmeans" : "K-Means",
+
+  "mnist" : "MNIST",
+  "imdb" : "IMDB",
+  "io_csv" : "CSV reading and writing",
+  "io_hdf5" : "HDF5 files reading and writing",
+  "io_image" : "Images reading and writing",
+  "io_npy" : "Numpy files reading and writing",
+
+  "autograd_common" : "Data structure",
+  "gates_basic" : "Basic operations",
+  "gates_blas" : "Linear algebra operations",
+  "gates_hadamard" : "Hadamard product (elementwise matrix multiply)",
+  "gates_reduce" : "Reduction operations",
+  "gates_shapeshifting_concat_split" : "Concatenation, stacking, splitting, chunking operations",
+  "gates_shapeshifting_views" : "Linear algebra operations",
+
+  "nnp_activation" : "Activations",
+  "nnp_convolution" : "Convolution 2D",
+  "nnp_conv2d_cudnn" : "Convolution 2D - CuDNN",
+  "nnp_embedding" : "Embeddings",
+  "nnp_gru" : "Gated Recurrent Unit (GRU)",
+  "nnp_linear" : "Linear / Dense layer",
+  "nnp_maxpooling" : "Maxpooling",
+  "nnp_numerical_gradient" : "Numerical gradient",
+  "nnp_sigmoid_cross_entropy" : "Sigmoid Cross-Entropy loss",
+  "nnp_softmax_cross_entropy" : "Softmax Cross-Entropy loss",
+  "nnp_softmax" : "Softmax"
+}.toTable
+
+proc wrap(name: string): string =
+  const tmpl = """<li><a href="$#">$#</a></li>"""
+  if name in nameMap:
+    result = tmpl % [name & ".html", nameMap[name]]
+  else:
+    result = tmpl % [name & ".html", name]
+
+proc getHeaderMap(path: string): seq[seq[string]] =
+  ## returns a nesteed seq where each element is a `seq[string]` containing
+  ## all elements to be added to the header at the index. The index
+  ## corresponds to the `$N` of the `nimDocTemplates.headerTmpl` field.
+  const excludeFiles = [ "nn", # only imports and exports `NN` files
+                         "nn_dsl", # only imports and exports `NN DSL` files
+                         "ml", # only imports and exports `ML` files
+                         "io", # only imports and exports `io` files
+                         "autograd", # only imports and exports `autograd` files
+                         "blis" # doesn't import or export anything
+  ]
+  let ExcludeFileSet = toSet(excludeFiles)
+  # map of the different header categories
+  let catMap = { "tensor" : 1,
+                 "nn" : 2,
+                 "nn_dsl" : 2,
+                 "linear_algebra" : 3,
+                 "stats" : 3,
+                 "ml" : 3,
+                 "datasets" : 4,
+                 "io" : 4,
+                 "autograd" : 5 ,
+                 "nn_primitives" : 6,
+                 "nlp" : 7,
+                 "math_ops_fusion" : 7,
+                 "laser" : 7,
+                 "private" : 7}.toTable
+
+  # `indexOverride` is used to override the index of the header the file
+  # is added to. Some files may be part of e.g. `tensor` but shouldn't be
+  # listed there, since they aren't that important.
+  # NOTE: the elements here are ``filenames`` and ``not`` directories!
+  let indexOverride = { "global_config" : 7 }.toTable
+  let files = getFiles(path)
+
+  result = newSeq[seq[string]](7)
+  for file in files:
+    let baseName = file.extractFilename()
+    let outfile = baseName.replace(".nim", "")
+    if outfile in ExcludeFileSet: continue
+    let subDir = file.removePrefix(path).split('/')[0]
+    if subDir in catMap:
+      var idx: int
+      if outfile notin indexOverride:
+        idx = catMap[subDir] - 1
+      else:
+        idx = indexOverride[outfile] - 1
+      result[idx].add outfile
+
+proc genNimdocCfg*(path: string) =
+  ## This proc generates the `nimdoc.cfg`, which sits at the root of the
+  ## arraymancer repository. We generate it so that we can combine the
+  ## front page template derived from flyx's NimYaml: https://github.com/flyx/NimYAML
+  ## with the standard Nim document generation. We generate the fields for
+  ## the header links from the actual files found in each diretory.
+  ##
+  ## NOTE: manual intervention is required for each directory that is added
+  ## and should show up as its own tab in the header. Essentially look at the
+  ## `$<number>` spans in the `docFileTmpl` above to see what to do.
+  let headerMap = getHeaderMap(path)
+  # create the strings based on the header map for each span
+  var spans = newSeq[string](7)
+  for idx in 0 ..< spans.len:
+    spans[idx] = headerMap[idx].sorted.mapIt(wrap(it)).join("\n")
+  # fill the HTML generation template from the filenames
+  let htmlTmpl = headerTmpl % [ spans[0], spans[1], spans[2],
+                                spans[3], spans[4], spans[5],
+                                spans[6]]
+  # first "header"
+  var fdata = ""
+  fdata.add("# Arraymancer documentation generation\n\n")
+  fdata.add(&"git.url = \"{gitUrl}\"\n\n")
+  fdata.add(&"doc.item.seesrc = \"\"\"{docItemSeeSrc}\"\"\"\n\n")
+  # finally write the HTML document template
+  fdata.add(&"doc.file = \"\"\"{docFileTmpl}{htmlTmpl}\"\"\"\n")
+
+  # now build the content for the spans
+  writeFile(getProjectPath() & $DirSep & "nimdoc.cfg", fdata)

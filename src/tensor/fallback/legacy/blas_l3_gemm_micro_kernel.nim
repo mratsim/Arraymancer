@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import  macros,
-        ../backend/memory_optimization_hints
+        ../../backend/memory_optimization_hints
 
 macro unroll_ukernel[MRNR, T](AB: array[MRNR, T],
                               a: ptr UncheckedArray[T], offA: int,

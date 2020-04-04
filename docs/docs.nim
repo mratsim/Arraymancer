@@ -71,6 +71,7 @@ proc getFiles*(path: string): seq[string] =
 import nimDocTemplates
 
 proc buildDocs*(path: string, docPath: string, baseDir = getProjectPath() & $DirSep,
+                masterBranch = "master",
                 defines: openArray[string] = @[]) =
   ## Generate docs for all nim files in `path` and output all HTML files to the
   ## `docPath` in a flattened form (subdirectories are removed).
@@ -79,6 +80,9 @@ proc buildDocs*(path: string, docPath: string, baseDir = getProjectPath() & $Dir
   ##
   ## `baseDir` is the project path by default and `files` and `path` are relative
   ## to that directory. Set to "" if using absolute paths.
+  ##
+  ## `masterBranch` is the name of the default branch to which the docs should link
+  ## when clicking the `Source` button below a procedure etc.
   ##
   ## `defines` is a list of `-d:xxx` define flags (the `xxx` part) that should be passed
   ## to `nim doc` so that `getHeader()` is invoked correctly.
@@ -134,13 +138,18 @@ proc buildDocs*(path: string, docPath: string, baseDir = getProjectPath() & $Dir
         fileSet.incl outfile
       outfile = docPath / outfile
       echo "Processing: ", outfile, " [", idx, "/", files.len, "]"
-      # now call `nim doc` on each file
-      echo execAction(&"{nim} doc {defStr} -o:{outfile} --index:on {file}")
+      # NOTE: Changing the current working directory to the project path is required in order for
+      # `git.commit:` to work! Otherwise we sit in `docs` and for some reason the relative path
+      # will eat one piece of the resulting `source` links and thereby removing the actual branch
+      # and we end up with a broken link!
+      echo execAction(&"cd {getProjectPath()} && {nim} doc {defStr} --git.commit:{masterBranch} -o:{outfile} --index:on {file}")
       inc idx
     ## now build  the index
     echo execAction(&"{nim} buildIndex -o:{docPath}/theindex.html {docPath}")
     when declared(getNimRootDir):
       #[
+      NOTE: running it locally doesn't work anymore on modern chromium browser,
+      because they block "access from origin 'null' due to CORS policy".
       this enables doc search, works at least locally with:
       cd {docPath} && python -m SimpleHTTPServer 9009
       ]#

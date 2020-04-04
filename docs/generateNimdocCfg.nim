@@ -158,6 +158,12 @@ const headerTmpl* = """
           $6
         </ul>
       </span>
+      <span>
+        <a href="#">Other docs</a>
+        <ul class="monospace">
+          $7
+        </ul>
+      </span>
     </ul>
   </span>
   <span>
@@ -268,18 +274,22 @@ proc genNimdocCfg*(path: string) =
   let catMap = { "tensor" : 1,
                  "nn" : 2,
                  "nn_dsl" : 2,
-                 "la" : 3,
+                 "linear_algebra" : 3,
                  "stats" : 3,
                  "ml" : 3,
                  "datasets" : 4,
                  "io" : 4,
-                 "ag" : 5 ,
-                 "nn_primitives" : 6 }.toTable
-  var spanMap = newSeq[seq[string]](6)
+                 "autograd" : 5 ,
+                 "nn_primitives" : 6,
+                 "nlp" : 7,
+                 "math_ops_fusion" : 7,
+                 "laser" : 7,
+                 "private" : 7}.toTable
+  var spanMap = newSeq[seq[string]](7)
 
   for file in files:
     let baseName = file.extractFilename()
-    var outfile = baseName.replace(".nim", ".html")
+    var outfile = baseName.replace(".nim", "")
     let subDir = file.parentDir.extractFilename
     if subDir in catMap:
       echo subDir
@@ -288,13 +298,15 @@ proc genNimdocCfg*(path: string) =
     else:
       echo "!! subDir ", subDir
 
-  var spans = newSeq[string](6)
+  var spans = newSeq[string](7)
   for idx in 0 ..< spans.len:
     spans[idx] = spanMap[idx].sorted.mapIt(wrap(it)).join("\n")
   # fill the HTML generation template from the filenames
   echo spans
+
   let htmlTmpl = headerTmpl % [ spans[0], spans[1], spans[2],
-                                spans[3], spans[4], spans[5] ]
+                                spans[3], spans[4], spans[5],
+                                spans[6]]
 
   # first "header"
   var fdata = ""

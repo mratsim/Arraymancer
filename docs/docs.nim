@@ -179,7 +179,7 @@ let nameMap = {
   "mean_square_error_loss" : "Loss: Mean Square Error",
   "softmax" : "Softmax",
   "optimizers" : "Optimizers",
-  "init" : "Layers: Initializations"
+  "init" : "Layers: Initializations",
 
   "reshape_flatten" : "Reshape & Flatten",
 

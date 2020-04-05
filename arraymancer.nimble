@@ -230,18 +230,27 @@ task test_release, "Run all tests - Release mode":
   test "tests_cpu", " -d:release"
 
 
-import src / docs / docs
-task gen_docs, "Generate Arraymancer documentation":
-  # generate nimdoc.cfg file so we can generate the correct header for the
-  # index.html page without having to mess with the HTML manually.
-  genNimdocCfg("src/")
-  # build the actual docs and the index
-  buildDocs("src/", "docs/build")
-  # Copy our stylesheets
-  cpFile("docs/docutils.css", "docs/build/docutils.css")
-  cpFile("docs/nav.css", "docs/build/nav.css")
-  # Process the rst
-  for filePath in listFiles("docs/"):
-    if filePath[^4..^1] == ".rst":
-      let modName = filePath[5..^5]
-      exec r"nim rst2html -o:docs/build/" & modName & ".html " & filePath
+template canImport(x: untyped): untyped =
+  compiles:
+    import x
+
+when canImport(docs / docs):
+  # can define the `gen_docs` task (docs already imported now)
+  # this is to hack around weird nimble + nimscript behavior.
+  # when overwriting an install nimble will try to parse the generated
+  # nimscript file and for some reason then it won't be able to import
+  # the module (even if it's put into `src/`).
+  task gen_docs, "Generate Arraymancer documentation":
+    # generate nimdoc.cfg file so we can generate the correct header for the
+    # index.html page without having to mess with the HTML manually.
+    genNimdocCfg("src/")
+    # build the actual docs and the index
+    buildDocs("src/", "docs/build")
+    # Copy our stylesheets
+    cpFile("docs/docutils.css", "docs/build/docutils.css")
+    cpFile("docs/nav.css", "docs/build/nav.css")
+    # Process the rst
+    for filePath in listFiles("docs/"):
+      if filePath[^4..^1] == ".rst":
+        let modName = filePath[5..^5]
+        exec r"nim rst2html -o:docs/build/" & modName & ".html " & filePath

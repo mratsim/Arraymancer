@@ -18,6 +18,7 @@ import  ./backend/metadataArray,
         ./private/p_accessors_macros_write,
         ./accessors,
         ./data_structure, ./init_cpu,
+        ./higher_order_applymap,
         ./higher_order_foldreduce,
         std/sequtils
 
@@ -45,6 +46,8 @@ func masked_select*[T](t: Tensor[T], mask: Tensor[bool], axis = 0): Tensor[T] =
   ## Take elements from a tensor according to the provided boolean mask.
   ## The mask must be a 1D tensor and is applied along an axis, by default 0.
   ##
+  ## The result will be the concatenation of values for which the mask is true.
+  ##
   ## For example, for a 1D tensor `t`
   ## t.masked_select(t > 0) will return a tensor with
   ## only the positive values of t.
@@ -60,7 +63,7 @@ func masked_select*[T](t: Tensor[T], mask: Tensor[bool], axis = 0): Tensor[T] =
   result = newTensorUninit[T](shape)
 
   if shape.len == 1:
-    # 1D tensor case, we only need to iterate through ``t`` and ``mask`` and
+    # 1D tensor fast path, we only need to iterate through ``t`` and ``mask`` and
     # copy ``t[i]`` if ``mask[i]`` is true
     check_elementwise(t, mask)
     var idx = 0
@@ -80,10 +83,35 @@ func masked_select*[T](t: Tensor[T], mask: Tensor[bool], axis = 0): Tensor[T] =
     dstSlice[axis].a = 0
     dstSlice[axis].b = 0
 
-    for srcIndex, srcSlice in t.enumerateAxis():
+    for srcIndex, srcSlice in t.enumerateAxis(axis):
       if mask[srcIndex]:
         result.slicerMut(dstSlice, srcSlice)
         dstSlice[axis].a += 1
         dstSlice[axis].b = dstSlice[axis].a
-        
+
     assert dstSlice[axis].a == size
+
+func masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
+  ## For the index of each element of t.
+  ## Fill the elements at ``t[index]`` with the ``value``
+  ## if their corresponding ``mask[index]`` is true.
+  ## If not they are untouched.
+  ##
+  ## Example:
+  ##
+  ##   t.masked_fill(t > 0, -1)
+  ##
+  ## or alternatively:
+  ##
+  ##   t.masked_fill(t > 0): -1
+  check_elementwise(t, mask)
+  t.apply2_inline(mask):
+    if y:
+      x = value
+
+func masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T) =
+  ## Take a boolean mask tensor and
+  ## for each slice of ``t`` along the ``axis``
+  ## Set the slice elements to value if their mask is true
+  for slice in t.maxis(axis):
+    t.masked_fill(mask, value)

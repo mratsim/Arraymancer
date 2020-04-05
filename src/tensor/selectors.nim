@@ -43,7 +43,7 @@ func index_select*[T; Idx: byte or char or SomeNumber](t: Tensor[T], axis: int, 
     r_slice.copyFrom(t_slice)
 
 
-func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis = 0): Tensor[T] =
+func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor[T] =
   ## Take elements from a tensor according to the provided boolean mask.
   ## The mask must be a 1D tensor and is applied along an axis, by default 0.
   ##
@@ -94,6 +94,29 @@ func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis = 0): Tensor[
 
     assert dstSlice[axis].a == size
 
+
+func masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T) =
+  ## Take a 1D boolean mask tensor with size equal to the `t.shape[axis]`
+  ## The axis index that are set to true in the mask will be filled with `value`
+
+  # TODO: proper check
+  doAssert mask.shape.len == 1, "Mask must be a 1d tensor"
+
+  # N-D tensor case, we iterate on t axis
+  # We update the slice of t if mask is true.
+
+  # Track the current slice of the result tensor
+  var dstSlice = t.shape.mapIt((0..<it)|1) # TODO avoid alloc
+  dstSlice[axis].a = 0
+  dstSlice[axis].b = 0
+
+  for fillIt in mask:
+    if fillIt:
+      t.slicerMut(dstSlice, value)
+    dstSlice[axis].a += 1
+    dstSlice[axis].b = dstSlice[axis].a
+
+
 func masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
   ## For the index of each element of t.
   ## Fill the elements at ``t[index]`` with the ``value``
@@ -123,7 +146,8 @@ func masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
       if maskElem:
         tElem = value
 
-func masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T) =
+
+func masked_fill_along_axis*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T) =
   ## Take a boolean mask tensor and
   ## for each slice of ``t`` along the ``axis``
   ## Set the slice elements to value if their mask is true
@@ -138,8 +162,6 @@ func masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T) 
   when compileOption("boundChecks"):
     check_axis_index(t, axis, 0, t.shape[axis])
   var slice = t.atAxisIndex(axis, 0)
-
-  debugEcho "slice: ", slice
 
   for _ in 0 ..< t.shape[axis]:
     slice.masked_fill(mask, value)

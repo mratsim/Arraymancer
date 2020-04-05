@@ -91,7 +91,7 @@ proc `.>`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##   - A tensor of boolean
   gen_broadcasted_comparison(`>`)
 
-# ###############
+# ######################
 # broadcasted scalar ops
 
 template gen_broadcasted_scalar_comparison(op: untyped): untyped {.dirty.} =
@@ -134,3 +134,19 @@ proc `.>`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
   ## Returns:
   ##   - A tensor of boolean
   gen_broadcasted_scalar_comparison(`>`)
+
+# ##################################
+# broadcasted special float handling
+
+proc isNan*(t: Tensor[SomeFloat]): Tensor[bool] =
+  ## Returns a boolean tensor set to true for each element which is "Not-a-number"
+  ## or set to false otherwise
+  result = t.map_inline():
+    x != x
+
+proc isNotNan*(t: Tensor[SomeFloat]): Tensor[bool] =
+  ## Returns a boolean tensor set to false for each element
+  ## which is "Not-a-number"
+  ## or set to true otherwise
+  result = t.map_inline():
+    x == x

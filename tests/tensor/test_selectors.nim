@@ -40,6 +40,22 @@ suite "Selectors":
         x.index_select(axis = 0, indices) == ax0
         x.index_select(axis = 1, indices) == ax1
 
+  test "Masked_select":
+    block: # Numpy reference doc
+           # https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#boolean-array-indexing
+           # select non NaN
+      # x = np.array([[1., 2.], [np.nan, 3.], [np.nan, np.nan]])
+      # x[~np.isnan(x)]
+      # array([ 1.,  2.,  3.])
+      let x = [[1.0, 2.0],
+               [Nan, 3.0],
+               [Nan, Nan]].toTensor
+
+      let r = x.masked_select(x.isNotNan)
+
+      let expected = [1.0, 2.0, 3.0].toTensor()
+      check: r == expected
+
   test "Masked_axis_select":
     block: # Numpy reference doc
            # https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#boolean-array-indexing
@@ -86,14 +102,7 @@ suite "Selectors":
       check: a == expected
 
   test "Masked_fill_along_axis":
-    block: # Numpy
-           # Fill all columns which sum up to greater than 1
-           # with -10
-      # import numpy as np
-      # a = np.array([[-1, -2, 1], [1, 2, 0], [1, -1, 1]])
-      # print(a.sum(axis=0) > 1)
-      # a[:, a.sum(axis=0) > 1] = -10
-      # print(a)
+    block:
       var a = [[-1, -2, 1],
                [ 1,  2, 0],
                [ 1, -1, 1]].toTensor

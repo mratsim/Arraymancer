@@ -23,7 +23,7 @@ import  ./backend/metadataArray,
         ./higher_order_foldreduce,
         std/sequtils
 
-func index_select*[T; Idx: byte or char or SomeNumber](t: Tensor[T], axis: int, indices: Tensor[Idx]): Tensor[T] =
+func index_select*[T; Idx: byte or char or SomeNumber](t: Tensor[T], axis: int, indices: Tensor[Idx]): Tensor[T] {.noInit.} =
   ## Take elements from a tensor along an axis using the indices Tensor.
   ## This is equivalent to NumPy `take`.
   ## The result does not share the input storage, there are copies.
@@ -42,8 +42,30 @@ func index_select*[T; Idx: byte or char or SomeNumber](t: Tensor[T], axis: int, 
     var t_slice = t.atAxisIndex(axis, int(index))
     r_slice.copyFrom(t_slice)
 
+func masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
+  ## Take elements from a tensor accordinf to the provided boolean mask
+  ##
+  ## Returns a **flattened** tensor which is the concatenation of values for which the mask is true.
+  ##
+  ## The result does not share input storage.
+  check_elementwise(t, mask)
 
-func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor[T] =
+  # TODO: fold_inline should accept an accumType like fold_axis_inline
+  var size = 0
+  for val in mask:
+    size += int(val)
+
+  result = newTensorUninit[T](size)
+
+  var idx = 0
+  let dst{.restrict.} = result.dataArray
+  for value, take in zip(t, mask):
+    if take:
+      dst[idx] = value
+      inc idx
+  assert idx == size
+
+func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor[T] {.noInit.} =
   ## Take elements from a tensor according to the provided boolean mask.
   ## The mask must be a 1D tensor and is applied along an axis, by default 0.
   ##
@@ -65,35 +87,20 @@ func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor
   shape[axis] = size
   result = newTensorUninit[T](shape)
 
-  if shape.len == 1:
-    # 1D tensor fast path, we only need to iterate through ``t`` and ``mask`` and
-    # copy ``t[i]`` if ``mask[i]`` is true
-    check_elementwise(t, mask)
-    var idx = 0
-    let dst{.restrict.} = result.dataArray
-    for value, take in zip(t, mask):
-      if take:
-        dst[idx] = value
-        inc idx
-    assert idx == size
-  else:
-    # N-D tensor case, we iterate on t axis
-    # We copy the slice of t if mask is true.
+  # Track the current slice of the result tensor
+  var dstSlice = shape.mapIt((0..<it)|1) # TODO avoid alloc
 
-    # Track the current slice of the result tensor
-    var dstSlice = shape.mapIt((0..<it)|1) # TODO avoid alloc
+  dstSlice[axis].a = 0
+  dstSlice[axis].b = 0
 
-    dstSlice[axis].a = 0
-    dstSlice[axis].b = 0
+  for srcIndex, srcSlice in t.enumerateAxis(axis):
+    if mask[srcIndex]:
+      result.slicerMut(dstSlice, srcSlice)
+      dstSlice[axis].a += 1
+      dstSlice[axis].b = dstSlice[axis].a
 
-    for srcIndex, srcSlice in t.enumerateAxis(axis):
-      if mask[srcIndex]:
-        result.slicerMut(dstSlice, srcSlice)
-        dstSlice[axis].a += 1
-        dstSlice[axis].b = dstSlice[axis].a
-
-    assert dstSlice[axis].a == size
-
+  assert dstSlice[axis].a == size
+  
 
 func masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T) =
   ## Take a 1D boolean mask tensor with size equal to the `t.shape[axis]`

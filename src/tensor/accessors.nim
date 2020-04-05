@@ -313,13 +313,6 @@ iterator axis*[T](t: Tensor[T], axis: int): Tensor[T] {.inline.}=
 iterator axis*[T](t: Tensor[T], axis, offset, size: int): Tensor[T] {.inline.}=
   axisIterator(t, axis, offset, size)
 
-iterator mAxis*[T](t: var Tensor[T], axis: int): var Tensor[T] {.inline.}=
-  ## Inline iterator over an axis.
-  ##
-  ## Returns:
-  ##   - A mutable slice along the given axis at each iteration.
-  axisIterator(t, axis, 0, t.shape[axis])
-
 iterator zipAxis*[T, U](a: Tensor[T], b: Tensor[U], axis: int): tuple[a: Tensor[T], b: Tensor[U]] {.inline.}=
   ## Inline iterator over 2 tensors over an axis.
   ##

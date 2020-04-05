@@ -40,3 +40,46 @@ suite "Selectors":
         x.index_select(axis = 0, indices) == ax0
         x.index_select(axis = 1, indices) == ax1
 
+  test "Masked_fill with axis":
+    block: # Numpy
+           # Fill all columns which sum up to greater than 1
+           # with -10
+      # import numpy as np
+      # a = np.array([[-1, -2, 1], [1, 2, 0], [1, -1, 1]])
+      # print(a.sum(axis=0) > 1)
+      # a[:, a.sum(axis=0) > 1] = -10
+      # print(a)
+      var a = [[-1, -2, 1],
+               [ 1,  2, 0],
+               [ 1, -1, 1]].toTensor
+
+      a.masked_fill(a.sum(axis = 0) .> 1, axis = 0, -10)
+
+      let expected = [[-1, -2, -10],
+                      [ 1,  2, -10],
+                      [ 1, -1, -10]].toTensor
+
+      check: a == expected
+
+  test "Masked_axis_select":
+    block: # Numpy reference doc
+           # https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#boolean-array-indexing
+           # select all rows which sum up to less or equal two
+      # x = np.array([[0, 1], [1, 1], [2, 2]])
+      # rowsum = x.sum(-1)
+      # print(rowsum)
+      # print(x[rowsum <= 2, :])
+      # array([[0, 1],
+      #        [1, 1]]
+      let x = [[0, 1],
+               [1, 1],
+               [2, 2]].toTensor
+
+      let rowsum = x.sum(axis = 1)
+      let cond = rowsum .<= 2
+      let r = x.masked_axis_select(cond.squeeze(), axis = 0)
+
+      let expected = [[0, 1],
+                      [1, 1]].toTensor
+
+      check: r == expected

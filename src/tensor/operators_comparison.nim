@@ -95,7 +95,7 @@ proc `.>`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
 # broadcasted scalar ops
 
 template gen_broadcasted_scalar_comparison(op: untyped): untyped {.dirty.} =
-  result = map2_inline(t):
+  result = map_inline(t):
     op(x, value)
 
 proc `.==`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =

@@ -14,9 +14,10 @@
 
 import  ./backend/metadataArray,
         ./backend/memory_optimization_hints,
+        ./backend/openmp,
         ./private/p_checks,
         ./private/p_accessors_macros_write,
-        ./accessors,
+        ./accessors, ./accessors_macros_syntax,
         ./data_structure, ./init_cpu,
         ./higher_order_applymap,
         ./higher_order_foldreduce,
@@ -42,7 +43,7 @@ func index_select*[T; Idx: byte or char or SomeNumber](t: Tensor[T], axis: int, 
     r_slice.copyFrom(t_slice)
 
 
-func masked_select*[T](t: Tensor[T], mask: Tensor[bool], axis = 0): Tensor[T] =
+func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis = 0): Tensor[T] =
   ## Take elements from a tensor according to the provided boolean mask.
   ## The mask must be a 1D tensor and is applied along an axis, by default 0.
   ##
@@ -53,10 +54,12 @@ func masked_select*[T](t: Tensor[T], mask: Tensor[bool], axis = 0): Tensor[T] =
   ## only the positive values of t.
   ##
   ## The result does not share input storage.
-  check_shape(mask, [1])
+  doAssert mask.shape.len == 1, "Mask must be a 1d tensor"
 
-  let size = mask.reduce_inline():
-    x += int(y)
+  # TODO: fold_inline should accept an accumType like fold_axis_inline
+  var size = 0
+  for val in mask:
+    size += int(val)
 
   var shape = t.shape
   shape[axis] = size
@@ -105,13 +108,39 @@ func masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
   ##
   ##   t.masked_fill(t > 0): -1
   check_elementwise(t, mask)
-  t.apply2_inline(mask):
-    if y:
-      x = value
+
+  # Due to requiring unnecessary assigning `x` for a `false` mask
+  # apply2_inline is a bit slower for very sparse mask.
+  # As this is a critical operation, especially on dataframes, we use the lower level construct.
+  #
+  # t.apply2_inline(mask):
+  #   if y:
+  #     value
+  #   else:
+  #     x
+  omp_parallel_blocks(block_offset, block_size, t.size):
+    for tElem, maskElem in mzip(t, mask, block_offset, block_size):
+      if maskElem:
+        tElem = value
 
 func masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T) =
   ## Take a boolean mask tensor and
   ## for each slice of ``t`` along the ``axis``
   ## Set the slice elements to value if their mask is true
-  for slice in t.maxis(axis):
-    t.masked_fill(mask, value)
+
+  # Normally we want to mutable axis iterator but Nim escape analysis prevents that
+  # as it doesn't return a trivial type.
+  # so we can't pass the slice to masked_fill / apply2_inline.
+  #
+  # for slice in t.axis(axis):
+  #   slice.masked_fill(mask, value)
+
+  when compileOption("boundChecks"):
+    check_axis_index(t, axis, 0, t.shape[axis])
+  var slice = t.atAxisIndex(axis, 0)
+
+  debugEcho "slice: ", slice
+
+  for _ in 0 ..< t.shape[axis]:
+    slice.masked_fill(mask, value)
+    slice.offset += t.strides[axis]

@@ -21,7 +21,7 @@ proc maxpool2d*[T](input: Tensor[T],
                 kernel: Size2D,
                 padding: Size2D = (0,0),
                 stride: Size2D = (1,1)
-                ): tuple[max_indices: Tensor[int], maxpooled: Tensor[T]] {.noinit.}=
+                ): tuple[max_indices: Tensor[int], maxpooled: Tensor[T]] {.noInit.}=
   ## MaxPool 2D forward pass
 
   assert input.rank == 4 and input.is_C_contiguous

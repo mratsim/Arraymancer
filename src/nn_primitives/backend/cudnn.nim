@@ -56,7 +56,7 @@ template asCudnnType*[T: SomeFloat](typ: typedesc[T]): cudnnDataType_t =
 # #####################################################################
 # Tensor descriptor
 
-proc newCudnn4DTensorDesc*[T: SomeFloat](t: CudaTensor[T]): cudnnTensorDescriptor_t {.inline, noinit.}=
+proc newCudnn4DTensorDesc*[T: SomeFloat](t: CudaTensor[T]): cudnnTensorDescriptor_t {.inline, noInit.}=
   # TODO: destroy descriptor automatically
   # TODO: generalize with the NDTensor Desc
   check cudnnCreateTensorDescriptor(result.addr)

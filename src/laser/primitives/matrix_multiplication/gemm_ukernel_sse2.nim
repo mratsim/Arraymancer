@@ -25,11 +25,11 @@ ukernel_generator(
       simd_fma = float64x2_muladd_unfused
     )
 
-#######################################
+# #######################################
 #
 # Int32: hack to unroll scalar code
 #
-#######################################
+# #######################################
 
 # This is faster than using the fallback for mm_mullo_epi32
 # in laser/primitives/private/sse2_utils
@@ -80,11 +80,11 @@ ukernel_generator(
     )
 
 
-#######################################
+# #######################################
 #
 # Int64: hack to unroll scalar code
 #
-#######################################
+# #######################################
 
 type Int64x2 = array[2, int64]
 

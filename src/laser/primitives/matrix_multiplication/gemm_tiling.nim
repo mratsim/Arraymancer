@@ -218,7 +218,7 @@ func x86_ukernel*(cpu: CPUFeatureX86, T: typedesc, c_unit_stride: bool): MicroKe
   result.nb_vecs_nr = NbVecs[cpu]           # SIMD vectors of B
   result.nr = result.nb_vecs_nr * result.nb_scalars
 
-#############################################
+# #############################################
 # Workaround "undeclared identifier mr or nr"
 # for some reason the compiler cannot access fields in
 # the static MicroKernel.

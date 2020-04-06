@@ -298,8 +298,9 @@ proc gemm_packed*[T: SomeNumber](
 #
 # ############################################################
 
-when isMainModule:
-
+when false:
+  ## these tests don't work in arraymancer, since the imported files are not
+  ## part of arraymancer's repository.
   import
     ../../tensor/[allocator, datatypes, initialization],
     strformat

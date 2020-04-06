@@ -188,10 +188,10 @@ macro ukernel_simd_impl*(
     var declBody = newStmtList()
     for a in rA:
       declBody.add quote do:
-        var `a`{.noinit.}: `V`
+        var `a`{.noInit.}: `V`
     for b in rB:
       declBody.add quote do:
-        var `b`{.noinit.}: `V`
+        var `b`{.noInit.}: `V`
     for i in 0 ..< MR:
       for j in 0 ..< NbVecs:
         let ab = rAB[i][j]

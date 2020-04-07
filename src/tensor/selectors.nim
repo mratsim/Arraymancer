@@ -100,9 +100,9 @@ func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor
       dstSlice[axis].b = dstSlice[axis].a
 
   assert dstSlice[axis].a == size
-  
 
-func masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T) =
+
+func masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T or Tensor[T]) =
   ## Take a 1D boolean mask tensor with size equal to the `t.shape[axis]`
   ## The axis index that are set to true in the mask will be filled with `value`
 

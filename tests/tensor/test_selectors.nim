@@ -56,6 +56,23 @@ suite "Selectors":
       let expected = [1.0, 2.0, 3.0].toTensor()
       check: r == expected
 
+  test "Masked_fill":
+    block: # Numpy reference doc
+           # https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#boolean-array-indexing
+           # select non NaN
+      # x = np.array([[1., 2.], [np.nan, 3.], [np.nan, np.nan]])
+      # x[np.isnan(x)] = -1
+      # x
+      # np.array([[1., 2.], [-1, 3.], [-1, -1]])
+      var x = [[1.0, 2.0],
+               [Nan, 3.0],
+               [Nan, Nan]].toTensor
+
+      x.masked_fill(x.isNan, -1.0)
+
+      let expected = [[1.0, 2.0], [-1.0, 3.0], [-1.0, -1.0]].toTensor()
+      check: x == expected
+
   test "Masked_axis_select":
     block: # Numpy reference doc
            # https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#boolean-array-indexing
@@ -98,6 +115,28 @@ suite "Selectors":
       let expected = [[-1, -2, -10],
                       [ 1,  2, -10],
                       [ 1, -1, -10]].toTensor
+
+      check: a == expected
+
+    block: # Fill with tensor
+      # import numpy as np
+      # a = np.array([[-1, -2, 1], [1, 2, 0], [1, -1, 1]])
+      # print(a.sum(axis=0) > 1)
+      # a[:, a.sum(axis=0) > 1] = np.array([-10, -20, -30])[:, np.newaxis]
+      # print(a)
+
+      var a = [[-1, -2, 1],
+               [ 1,  2, 0],
+               [ 1, -1, 1]].toTensor
+
+      let b = [-10, -20, -30].toTensor.unsqueeze(1)
+
+      let cond = squeeze(a.sum(axis = 0) .> 1)
+      a.masked_axis_fill(cond, axis = 1, b)
+
+      let expected = [[-1, -2, -10],
+                      [ 1,  2, -20],
+                      [ 1, -1, -30]].toTensor
 
       check: a == expected
 
@@ -165,6 +204,6 @@ suite "Selectors":
         ]
       ].toTensor()
 
-      checkered.masked_fill_along_axis(mask, axis = 0, 0)
+      checkered.masked_fill_along_axis(mask, axis = 0, 0'u8)
 
       check: checkered == expected

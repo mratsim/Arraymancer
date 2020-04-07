@@ -114,3 +114,57 @@ suite "Selectors":
                       [ 1, -1, -10]].toTensor
 
       check: a == expected
+
+    block: # Apply a 2D mask on a RGB image
+      var checkered = [
+        [ # Red
+          [uint8 255, 255, 255, 255],
+          [uint8 255, 255, 255, 255],
+          [uint8 255, 255, 255, 255],
+          [uint8 255, 255, 255, 255],
+        ],
+        [ # Green
+          [uint8 255, 255, 255, 255],
+          [uint8 255, 255, 255, 255],
+          [uint8 255, 255, 255, 255],
+          [uint8 255, 255, 255, 255],
+        ],
+        [ # Blue
+          [uint8 255, 255, 255, 255],
+          [uint8 255, 255, 255, 255],
+          [uint8 255, 255, 255, 255],
+          [uint8 255, 255, 255, 255],
+        ]
+      ].toTensor()
+
+      var mask = [
+        [false, true, false, true],
+        [true, false, true, false],
+        [false, true, false, true],
+        [true, false, true, false]
+      ].toTensor().unsqueeze(0)
+
+      var expected = [
+        [ # Red
+          [uint8 255, 0, 255, 0],
+          [uint8 0, 255, 0, 255],
+          [uint8 255, 0, 255, 0],
+          [uint8 0, 255, 0, 255],
+        ],
+        [ # Green
+          [uint8 255, 0, 255, 0],
+          [uint8 0, 255, 0, 255],
+          [uint8 255, 0, 255, 0],
+          [uint8 0, 255, 0, 255],
+        ],
+        [ # Blue
+          [uint8 255, 0, 255, 0],
+          [uint8 0, 255, 0, 255],
+          [uint8 255, 0, 255, 0],
+          [uint8 0, 255, 0, 255],
+        ]
+      ].toTensor()
+
+      checkered.masked_fill_along_axis(mask, axis = 0, 0)
+
+      check: checkered == expected

@@ -167,27 +167,3 @@ suite "Shapeshifting":
       a.chunk(3, axis = 0) == [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]].mapIt(it.toTensor)
       a.chunk(4, axis = 0) == [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]].mapIt(it.toTensor)
       a.chunk(5, axis = 0) == [@[1, 2, 3], @[4, 5, 6], @[7, 8], @[9, 10], @[11, 12]].mapIt(it.toTensor)
-
-  test "Index_select (Numpy take)":
-    block: # Numpy
-      let a = [4, 3, 5, 7, 6, 8].toTensor
-      let indices = [0, 1, 4].toTensor
-
-      check: a.index_select(axis = 0, indices) == [4, 3, 6].toTensor
-
-    block: # PyTorch
-      let x =  [[ 0.1427,  0.0231, -0.5414, -1.0009],
-                [-0.4664,  0.2647, -0.1228, -1.1068],
-                [-1.1734, -0.6571,  0.7230, -0.6004]].toTensor
-
-      let indices = [0, 2].toTensor
-
-      let ax0 =  [[ 0.1427,  0.0231, -0.5414, -1.0009],
-                  [-1.1734, -0.6571,  0.7230, -0.6004]].toTensor
-      let ax1 =  [[ 0.1427, -0.5414],
-                  [-0.4664, -0.1228],
-                  [-1.1734,  0.7230]].toTensor
-
-      check:
-        x.index_select(axis = 0, indices) == ax0
-        x.index_select(axis = 1, indices) == ax1

@@ -1,4 +1,4 @@
-# Copyright 2017 the Arraymancer contributors
+# Copyright 2017-2020 Mamy-André Ratsimbazafy
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -299,22 +299,3 @@ func chunk*[T](t: Tensor[T], nb_chunks: Positive, axis: Natural): seq[Tensor[T]]
       result[i] = t.atAxisIndex(axis, i * chunk_size + i, chunk_size + 1)
     else:
       result[i] = t.atAxisIndex(axis, i * chunk_size + remainder, chunk_size)
-
-func index_select*[T; Idx: byte or char or SomeNumber](t: Tensor[T], axis: int, indices: Tensor[Idx]): Tensor[T] =
-  ## Take elements from a tensor along an axis using the indices Tensor.
-  ## This is equivalent to NumPy `take`.
-  ## The result does not share the input storage, there are copies.
-  ## The tensors containing the indices can be an integer, byte or char tensor.
-
-  doAssert indices.shape.len == 1
-
-  var select_shape = t.shape
-  select_shape[axis] = indices.shape[0]
-  result = newTensorUninit[T](select_shape)
-
-  # TODO: optim for contiguous tensors
-  # TODO: use OpenMP for tensors of non-ref/strings/seqs
-  for i, index in enumerate(indices):
-    var r_slice = result.atAxisIndex(axis, i)
-    var t_slice = t.atAxisIndex(axis, int(index))
-    r_slice.copyFrom(t_slice)

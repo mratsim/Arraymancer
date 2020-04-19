@@ -21,6 +21,8 @@ import  ../../private/ast_utils,
         ./p_checks, ./p_accessors,
         sequtils, macros
 
+from ../init_cpu import toTensor
+
 template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSlices): untyped =
   ## Slicing routine
 
@@ -131,15 +133,24 @@ proc getFancySelector*(ast: NimNode, axis: var int, selector: var NimNode): Fanc
   result = None
   var foundNonSpanOrEllipsis = false
 
+  template checkNonSpan(): untyped {.dirty.} =
+    doAssert not foundNonSpanOrEllipsis,
+        "Fancy indexing is only compatible with full spans `_` on non-indexed dimensions" &
+        " and/or ellipsis `...`"
+
+  let tensorBoolType = nnkBracketExpr.newTree(bindSym"Tensor", bindSym"bool")
+
   var i = 0
   while i < ast.len:
     let cur = ast[i]
+
+    echo cur.treerepr
+    echo cur.getType().treerepr
+
     if cur.eqIdent"Span":
       discard
     elif cur.kind == nnkBracket:
-      doAssert not foundNonSpanOrEllipsis,
-          "Fancy indexing is only compatible with full spans `_` on non-indexed dimensions" &
-          " and/or ellipsis `...`"
+      checkNonSpan()
       axis = i
       if cur[0].kind == nnkIntLit:
         result = FancyIndex
@@ -151,6 +162,29 @@ proc getFancySelector*(ast: NimNode, axis: var int, selector: var NimNode): Fanc
       else:
         # byte, char, enums are all represented by integers in the VM
         error "Fancy indexing is only possible with integers or booleans"
+    elif cur.isOpenarray:
+      # Only check the instantiation type, the overload will ake care of conversion
+      checkNonSpan()
+      axis = i
+      let curAsTensor = newCall(bindSym"toTensor", cur)
+      if sameType(curAsTensor, tensorBoolType):
+        let full = i == 0 and ast.len == 1
+        result = if full: FancyMaskFull else: FancyMaskAxis
+        selector = cur
+      else:
+        result = FancyIndex
+        selector = cur
+    elif sameType(cur, tensorBoolType):
+      checkNonSpan()
+      axis = i
+      let full = i == 0 and ast.len == 1
+      result = if full: FancyMaskFull else: FancyMaskAxis
+      selector = cur
+    elif sameType(cur, bindSym"Tensor"):
+      checkNonSpan()
+      axis = i
+      result = FancyIndex
+      selector = cur
     else:
       if result != None:
         doAssert cur.eqIdent"..." and i == ast.len - 1

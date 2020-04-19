@@ -16,7 +16,6 @@
 
 import macros
 
-
 proc hasType*(x: NimNode, t: static[string]): bool {. compileTime .} =
   ## Compile-time type checking
   sameType(x, bindSym(t))
@@ -28,6 +27,10 @@ proc isInt*(x: NimNode): bool {. compileTime .} =
 proc isBool*(x: NimNode): bool {. compileTime .} =
   ## Compile-time type checking
   hasType(x, "bool")
+
+proc isOpenarray*(x: NimNode): bool {. compileTime .} =
+  ## Compile-time type checking
+  hasType(x, "array") or hasType(x, "seq") or hasType(x, "openArray")
 
 proc isAllInt*(slice_args: NimNode): bool {. compileTime .} =
   ## Compile-time type checking

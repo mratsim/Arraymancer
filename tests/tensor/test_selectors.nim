@@ -66,6 +66,72 @@ suite "Selectors":
         x.index_select(axis = 0, indices) == ax0
         x.index_select(axis = 1, indices) == ax1
 
+  test "Index_fill (Numpy put)":
+    block: # Numpy
+      var a = [4, 3, 5, 7, 6, 8].toTensor
+      let indices = [0, 1, 4].toTensor
+
+      a.index_fill(axis = 0, indices, -1)
+      check: a == [-1, -1, 5, 7, -1, 8].toTensor
+
+    block: # PyTorch
+      let x =  [[ 0.1427,  0.0231, -0.5414, -1.0009],
+                [-0.4664,  0.2647, -0.1228, -1.1068],
+                [-1.1734, -0.6571,  0.7230, -0.6004]].toTensor
+
+      let indices = [0, 2].toTensor
+
+      var x0 = x.clone()
+      var x1 = x.clone()
+
+      x0.index_fill(axis = 0, indices, -10.0)
+      x1.index_fill(axis = 1, indices, -10.0)
+
+      let ax0 =  [[ -10.0   , -10.0   , -10.0   , -10.0   ],
+                  [  -0.4664,   0.2647,  -0.1228,  -1.1068],
+                  [ -10.0   , -10.0   , -10.0   , -10.0   ]].toTensor
+      let ax1 =  [[-10.0,  0.0231, -10.0, -1.0009],
+                  [-10.0,  0.2647, -10.0, -1.1068],
+                  [-10.0, -0.6571, -10.0, -0.6004]].toTensor
+
+      check:
+        x0 == ax0
+        x1 == ax1
+
+    # ------------------------------------------------------
+    # Selection with regular arrays/sequences
+
+    block: # Numpy
+      var a = [4, 3, 5, 7, 6, 8].toTensor
+      let indices = [0, 1, 4]
+
+      a.index_fill(axis = 0, indices, -1)
+      check: a == [-1, -1, 5, 7, -1, 8].toTensor
+
+    block: # PyTorch
+      let x =  [[ 0.1427,  0.0231, -0.5414, -1.0009],
+                [-0.4664,  0.2647, -0.1228, -1.1068],
+                [-1.1734, -0.6571,  0.7230, -0.6004]].toTensor
+
+      let indices = [0, 2]
+
+      var x0 = x.clone()
+      var x1 = x.clone()
+
+      x0.index_fill(axis = 0, indices, -10.0)
+      x1.index_fill(axis = 1, indices, -10.0)
+
+      let ax0 =  [[ -10.0   , -10.0   , -10.0   , -10.0   ],
+                  [  -0.4664,   0.2647,  -0.1228,  -1.1068],
+                  [ -10.0   , -10.0   , -10.0   , -10.0   ]].toTensor
+      let ax1 =  [[-10.0,  0.0231, -10.0, -1.0009],
+                  [-10.0,  0.2647, -10.0, -1.1068],
+                  [-10.0, -0.6571, -10.0, -0.6004]].toTensor
+
+      check:
+        x0 == ax0
+        x1 == ax1
+
   test "Masked_select":
     block: # Numpy reference doc
            # https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#boolean-array-indexing

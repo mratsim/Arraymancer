@@ -62,6 +62,22 @@ func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int,
     var t_slice = t.atAxisIndex(axis, int(index))
     r_slice.copyFrom(t_slice)
 
+proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: int, indices: Tensor[Idx], value: T) =
+  ## Replace elements of `t` indicated by their `indices` along `axis` with `value`
+  ## This is equivalent to Numpy `put`.
+  for i, index in enumerate(indices):
+    var t_slice = t.atAxisIndex(axis, int(index))
+    for old_val in t_slice.mitems():
+      old_val = value
+
+proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: int, indices: openarray[Idx], value: T) =
+  ## Replace elements of `t` indicated by their `indices` along `axis` with `value`
+  ## This is equivalent to Numpy `put`.
+  for i, index in indices:
+    var t_slice = t.atAxisIndex(axis, int(index))
+    for old_val in t_slice.mitems():
+      old_val = value
+
 # Mask full tensor
 # --------------------------------------------------------------------------------------------
 
@@ -155,7 +171,7 @@ func masked_fill*[T](t: var Tensor[T], mask: openarray, value: T) =
 # Mask axis
 # --------------------------------------------------------------------------------------------
 
-template masked_axis_select_impl[T](result: Tensor[T], t: Tensor[T], mask: Tensor[bool] or openArray[bool], axis: int) =
+template masked_axis_select_impl[T](result: var Tensor[T], t: Tensor[T], mask: Tensor[bool] or openArray[bool], axis: int) =
   ## Indirection because Nim proc can't type match "Tensor[bool] or openArray[bool]" with an array[N, bool]
   when mask is Tensor:
     doAssert mask.shape.len == 1, "Mask must be a 1d tensor"

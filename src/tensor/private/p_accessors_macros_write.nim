@@ -183,13 +183,46 @@ proc slicerMut*[T](t: var Tensor[T],
 
 macro slice_typed_dispatch_mut*(t: typed, args: varargs[typed], val: typed): untyped =
   ## Assign `val` to Tensor T at slice/position `args`
+
+  # Point indexing
+  # -----------------------------------------------------------------
   if isAllInt(args):
-    result = newCall(bindSym("atIndexMut"), t)
+    result = newCall(bindSym"atIndexMut", t)
     for slice in args:
       result.add(slice)
     result.add(val)
-  else:
-    result = newCall(bindSym("slicerMut"), t)
+    return
+
+  # Fancy indexing
+  # -----------------------------------------------------------------
+  # Cannot depend/bindSym the "selectors.nim" proc
+  # Due to recursive module dependencies
+  var selector: NimNode
+  var axis: int
+  let fancy = args.getFancySelector(axis, selector)
+  if fancy == FancyIndex:
+    return newCall(
+        ident"index_fill",
+        t, newLit axis, selector,
+        val
+      )
+  if fancy == FancyMaskFull:
+    return newCall(
+        ident"masked_fill",
+        t, selector,
+        val
+      )
+  elif fancy == FancyMaskAxis:
+    return newCall(
+        ident"masked_axis_fill",
+        t, selector, newLit axis,
+        val
+      )
+
+  # Slice indexing
+  # -----------------------------------------------------------------
+  if fancy == FancyNone:
+    result = newCall(bindSym"slicerMut", t)
     for slice in args:
       if isInt(slice):
         ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
@@ -197,10 +230,39 @@ macro slice_typed_dispatch_mut*(t: typed, args: varargs[typed], val: typed): unt
       else:
         result.add(slice)
     result.add(val)
+    return
+
+  # Fancy bug in Nim compiler
+  # -----------------------------------------------------------------
+  # We need to drop down to "when a is T" to infer what selector to call
+  # as `getType`/`getTypeInst`/`getTypeImpl`/`sameType`
+  # are buggy with generics
+  # due to https://github.com/nim-lang/Nim/issues/14021
+  let lateBind_masked_fill = ident"masked_fill"
+  let lateBind_masked_axis_fill = ident"masked_axis_fill"
+  let lateBind_index_fill = ident"index_fill"
+
+  result = quote do:
+    type FancyType = typeof(`selector`)
+    when FancyType is (array or seq):
+      type FancyTensorType = typeof(toTensor(`selector`))
+    else:
+      type FancyTensorType = FancyType
+    when FancyTensorType is Tensor[bool]:
+      when FancySelectorKind(`fancy`) == FancyUnknownFull:
+        `lateBind_masked_fill`(`t`, `selector`, `val`)
+      elif FancySelectorKind(`fancy`) == FancyUnknownAxis:
+        `lateBind_masked_axis_fill`(`t`, `selector`, `axis`, `val`)
+      else:
+        {.error: "Unreachable".}
+    else:
+      `lateBind_index_fill`(`t`, `axis`, `selector`, `val`)
 
 # ############################################################################
 # Slicing a var returns a var (for Result[_] += support)
 # And apply2(result[_], foo) support
+#
+# Unused: Nim support for var return types is problematic
 
 proc slicer_var[T](t: var AnyTensor[T], slices: varargs[SteppedSlice]): var AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor and SteppedSlices

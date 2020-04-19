@@ -52,10 +52,10 @@ macro `[]=`*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
     slice_typed_dispatch_mut(`t`, `new_args`,`val`)
 
 
-# # Linked to: https://github.com/mratsim/Arraymancer/issues/52
+# Linked to: https://github.com/mratsim/Arraymancer/issues/52
 # Unfortunately enabling this breaksthe test suite
 # "Setting a slice from a view of the same Tensor"
-
+#
 # macro `[]`*[T](t: var AnyTensor[T], args: varargs[untyped]): untyped =
 #   ## Slice a Tensor or a CudaTensor
 #   ## Input:
@@ -69,6 +69,6 @@ macro `[]=`*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
 #   ##   For CudaTensor only, this is a no-copy operation, data is shared with the input.
 #   ##   This proc does not guarantee that a ``let`` value is immutable.
 #   let new_args = getAST(desugar(args))
-
+#
 #   result = quote do:
 #     slice_typed_dispatch_var(`t`, `new_args`)

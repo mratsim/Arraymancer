@@ -40,6 +40,98 @@ suite "Selectors":
         x.index_select(axis = 0, indices) == ax0
         x.index_select(axis = 1, indices) == ax1
 
+    # ------------------------------------------------------
+    # Selection with regular arrays/sequences
+
+    block: # Numpy
+      let a = [4, 3, 5, 7, 6, 8].toTensor
+      let indices = [0, 1, 4]
+
+      check: a.index_select(axis = 0, indices) == [4, 3, 6].toTensor
+
+    block: # PyTorch
+      let x =  [[ 0.1427,  0.0231, -0.5414, -1.0009],
+                [-0.4664,  0.2647, -0.1228, -1.1068],
+                [-1.1734, -0.6571,  0.7230, -0.6004]].toTensor
+
+      let indices = [0, 2]
+
+      let ax0 =  [[ 0.1427,  0.0231, -0.5414, -1.0009],
+                  [-1.1734, -0.6571,  0.7230, -0.6004]].toTensor
+      let ax1 =  [[ 0.1427, -0.5414],
+                  [-0.4664, -0.1228],
+                  [-1.1734,  0.7230]].toTensor
+
+      check:
+        x.index_select(axis = 0, indices) == ax0
+        x.index_select(axis = 1, indices) == ax1
+
+  test "Index_fill (Numpy put)":
+    block: # Numpy
+      var a = [4, 3, 5, 7, 6, 8].toTensor
+      let indices = [0, 1, 4].toTensor
+
+      a.index_fill(axis = 0, indices, -1)
+      check: a == [-1, -1, 5, 7, -1, 8].toTensor
+
+    block: # PyTorch
+      let x =  [[ 0.1427,  0.0231, -0.5414, -1.0009],
+                [-0.4664,  0.2647, -0.1228, -1.1068],
+                [-1.1734, -0.6571,  0.7230, -0.6004]].toTensor
+
+      let indices = [0, 2].toTensor
+
+      var x0 = x.clone()
+      var x1 = x.clone()
+
+      x0.index_fill(axis = 0, indices, -10.0)
+      x1.index_fill(axis = 1, indices, -10.0)
+
+      let ax0 =  [[ -10.0   , -10.0   , -10.0   , -10.0   ],
+                  [  -0.4664,   0.2647,  -0.1228,  -1.1068],
+                  [ -10.0   , -10.0   , -10.0   , -10.0   ]].toTensor
+      let ax1 =  [[-10.0,  0.0231, -10.0, -1.0009],
+                  [-10.0,  0.2647, -10.0, -1.1068],
+                  [-10.0, -0.6571, -10.0, -0.6004]].toTensor
+
+      check:
+        x0 == ax0
+        x1 == ax1
+
+    # ------------------------------------------------------
+    # Selection with regular arrays/sequences
+
+    block: # Numpy
+      var a = [4, 3, 5, 7, 6, 8].toTensor
+      let indices = [0, 1, 4]
+
+      a.index_fill(axis = 0, indices, -1)
+      check: a == [-1, -1, 5, 7, -1, 8].toTensor
+
+    block: # PyTorch
+      let x =  [[ 0.1427,  0.0231, -0.5414, -1.0009],
+                [-0.4664,  0.2647, -0.1228, -1.1068],
+                [-1.1734, -0.6571,  0.7230, -0.6004]].toTensor
+
+      let indices = [0, 2]
+
+      var x0 = x.clone()
+      var x1 = x.clone()
+
+      x0.index_fill(axis = 0, indices, -10.0)
+      x1.index_fill(axis = 1, indices, -10.0)
+
+      let ax0 =  [[ -10.0   , -10.0   , -10.0   , -10.0   ],
+                  [  -0.4664,   0.2647,  -0.1228,  -1.1068],
+                  [ -10.0   , -10.0   , -10.0   , -10.0   ]].toTensor
+      let ax1 =  [[-10.0,  0.0231, -10.0, -1.0009],
+                  [-10.0,  0.2647, -10.0, -1.1068],
+                  [-10.0, -0.6571, -10.0, -0.6004]].toTensor
+
+      check:
+        x0 == ax0
+        x1 == ax1
+
   test "Masked_select":
     block: # Numpy reference doc
            # https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#boolean-array-indexing
@@ -52,6 +144,20 @@ suite "Selectors":
                [Nan, Nan]].toTensor
 
       let r = x.masked_select(x.isNotNan)
+
+      let expected = [1.0, 2.0, 3.0].toTensor()
+      check: r == expected
+
+    block: # with regular arrays/sequences
+      let x = [[1.0, 2.0],
+               [Nan, 3.0],
+               [Nan, Nan]].toTensor
+
+      let r = x.masked_select(
+          [[true,  true],
+           [false, true],
+           [false, false]]
+        )
 
       let expected = [1.0, 2.0, 3.0].toTensor()
       check: r == expected
@@ -73,6 +179,21 @@ suite "Selectors":
       let expected = [[1.0, 2.0], [-1.0, 3.0], [-1.0, -1.0]].toTensor()
       check: x == expected
 
+    block: # with regular arrays/sequences
+      var x = [[1.0, 2.0],
+               [Nan, 3.0],
+               [Nan, Nan]].toTensor
+
+      x.masked_fill(
+        [[false,  false],
+         [true, false],
+         [true, true]],
+        -1.0
+      )
+
+      let expected = [[1.0, 2.0], [-1.0, 3.0], [-1.0, -1.0]].toTensor()
+      check: x == expected
+
   test "Masked_axis_select":
     block: # Numpy reference doc
            # https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#boolean-array-indexing
@@ -88,7 +209,7 @@ suite "Selectors":
                [2, 2]].toTensor
 
       let rowsum = x.sum(axis = 1)
-      let cond = rowsum .<= 2
+      let cond = rowsum <=. 2
       let r = x.masked_axis_select(cond.squeeze(), axis = 0)
 
       let expected = [[0, 1],
@@ -96,7 +217,22 @@ suite "Selectors":
 
       check: r == expected
 
-  test "masked_axis_fill":
+    block: # With regular arrays/sequences
+
+      let x = [[0, 1],
+               [1, 1],
+               [2, 2]].toTensor
+
+      let rowsum = x.sum(axis = 1)
+      let cond = [true,
+                  true,
+                  false]
+      let r = x.masked_axis_select(cond, axis = 0)
+
+      let expected = [[0, 1],
+                      [1, 1]].toTensor
+
+  test "Masked_axis_fill with value":
     block: # Numpy
            # Fill all columns which sum up to greater than 1
            # with -10
@@ -109,7 +245,7 @@ suite "Selectors":
                [ 1,  2, 0],
                [ 1, -1, 1]].toTensor
 
-      let cond = squeeze(a.sum(axis = 0) .> 1)
+      let cond = squeeze(a.sum(axis = 0) >. 1)
       a.masked_axis_fill(cond, axis = 1, -10)
 
       let expected = [[-1, -2, -10],
@@ -118,7 +254,22 @@ suite "Selectors":
 
       check: a == expected
 
-    block: # Fill with tensor
+    block: # With regular arrays/sequences
+      var a = [[-1, -2, 1],
+               [ 1,  2, 0],
+               [ 1, -1, 1]].toTensor
+
+      let cond = [false, false, true]
+      a.masked_axis_fill(cond, axis = 1, -10)
+
+      let expected = [[-1, -2, -10],
+                      [ 1,  2, -10],
+                      [ 1, -1, -10]].toTensor
+
+      check: a == expected
+
+  test "Masked_axis_fill with tensor":
+    block:
       # import numpy as np
       # a = np.array([[-1, -2, 1], [1, 2, 0], [1, -1, 1]])
       # print(a.sum(axis=0) > 1)
@@ -131,7 +282,23 @@ suite "Selectors":
 
       let b = [-10, -20, -30].toTensor.unsqueeze(1)
 
-      let cond = squeeze(a.sum(axis = 0) .> 1)
+      let cond = squeeze(a.sum(axis = 0) >. 1)
+      a.masked_axis_fill(cond, axis = 1, b)
+
+      let expected = [[-1, -2, -10],
+                      [ 1,  2, -20],
+                      [ 1, -1, -30]].toTensor
+
+      check: a == expected
+
+    block: # With regular arrays/sequences
+      var a = [[-1, -2, 1],
+               [ 1,  2, 0],
+               [ 1, -1, 1]].toTensor
+
+      let b = [-10, -20, -30].toTensor.unsqueeze(1)
+
+      let cond = [false, false, true]
       a.masked_axis_fill(cond, axis = 1, b)
 
       let expected = [[-1, -2, -10],
@@ -146,7 +313,7 @@ suite "Selectors":
                [ 1,  2, 0],
                [ 1, -1, 1]].toTensor
 
-      a.masked_fill_along_axis(a.sum(axis = 0) .> 1, axis = 0, -10)
+      a.masked_fill_along_axis(a.sum(axis = 0) >. 1, axis = 0, -10)
 
       let expected = [[-1, -2, -10],
                       [ 1,  2, -10],

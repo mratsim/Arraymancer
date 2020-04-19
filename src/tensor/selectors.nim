@@ -176,6 +176,9 @@ template masked_axis_select_impl[T](result: var Tensor[T], t: Tensor[T], mask: T
   ## Indirection because Nim proc can't type match "Tensor[bool] or openArray[bool]" with an array[N, bool]
   when mask is Tensor:
     doAssert mask.shape.len == 1, "Mask must be a 1d tensor"
+    doAssert t.shape[axis] == mask.shape[0], "The mask length doesn't match the axis length."
+  else:
+    doAssert t.shape[axis] == mask.len, "The mask length doesn't match the axis length."
 
   # TODO: fold_inline should accept an accumType like fold_axis_inline
   var size = 0
@@ -232,6 +235,9 @@ template masked_axis_fill_impl[T](t: var Tensor[T], mask: Tensor[bool] or openAr
   # TODO: proper check
   when mask is Tensor:
     doAssert mask.shape.len == 1, "Mask must be a 1d tensor"
+    doAssert t.shape[axis] == mask.shape[0], "The mask length doesn't match the axis length."
+  else:
+    doAssert t.shape[axis] == mask.len, "The mask length doesn't match the axis length."
 
   # N-D tensor case, we iterate on t axis
   # We update the slice of t if mask is true.

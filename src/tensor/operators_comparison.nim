@@ -98,38 +98,38 @@ template gen_broadcasted_scalar_comparison(op: untyped): untyped {.dirty.} =
   result = map_inline(t):
     op(x, value)
 
-proc `.==`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
+proc `==.`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
   ## Tensor element-wise equality with scalar
   ## Returns:
   ##   - A tensor of boolean
   gen_broadcasted_scalar_comparison(`==`)
 
 
-proc `.!=`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
+proc `!=.`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
   ## Tensor element-wise inequality with scalar
   ## Returns:
   ##   - A tensor of boolean
   gen_broadcasted_scalar_comparison(`!=`)
 
-proc `.<=`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
+proc `<=.`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
   ## Tensor element-wise lesser or equal with scalar
   ## Returns:
   ##   - A tensor of boolean
   gen_broadcasted_scalar_comparison(`<=`)
 
-proc `.<`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
+proc `<.`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
   ## Tensor element-wise lesser than a scalar
   ## Returns:
   ##   - A tensor of boolean
   gen_broadcasted_scalar_comparison(`<`)
 
-proc `.>=`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
+proc `>=.`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
   ## Tensor element-wise greater or equal than a scalar
   ## Returns:
   ##   - A tensor of boolean
   gen_broadcasted_scalar_comparison(`>=`)
 
-proc `.>`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
+proc `>.`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
   ## Tensor element-wise greater than a scalar
   ## Returns:
   ##   - A tensor of boolean

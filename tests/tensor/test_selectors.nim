@@ -143,7 +143,7 @@ suite "Selectors":
                [2, 2]].toTensor
 
       let rowsum = x.sum(axis = 1)
-      let cond = rowsum .<= 2
+      let cond = rowsum <=. 2
       let r = x.masked_axis_select(cond.squeeze(), axis = 0)
 
       let expected = [[0, 1],
@@ -179,7 +179,7 @@ suite "Selectors":
                [ 1,  2, 0],
                [ 1, -1, 1]].toTensor
 
-      let cond = squeeze(a.sum(axis = 0) .> 1)
+      let cond = squeeze(a.sum(axis = 0) >. 1)
       a.masked_axis_fill(cond, axis = 1, -10)
 
       let expected = [[-1, -2, -10],

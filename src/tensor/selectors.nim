@@ -194,6 +194,7 @@ func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor
   ## only the positive values of t.
   ##
   ## The result does not share input storage.
+  let mask = mask.squeeze() # make 1D if coming from unreduced axis aggregation like sum
   masked_axis_select_impl(result, t, mask, axis)
 
 func masked_axis_select*[T](t: Tensor[T], mask: openArray[bool], axis: int): Tensor[T] {.noInit.} =
@@ -232,6 +233,7 @@ template masked_axis_fill_impl[T](t: var Tensor[T], mask: Tensor[bool] or openAr
 func masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T or Tensor[T]) =
   ## Take a 1D boolean mask tensor with size equal to the `t.shape[axis]`
   ## The axis index that are set to true in the mask will be filled with `value`
+  let mask = mask.squeeze() # make 1D if coming from unreduced axis aggregation like sum
   masked_axis_fill_impl(t, mask, axis, value)
 
 func masked_axis_fill*[T](t: var Tensor[T], mask: openArray[bool], axis: int, value: T or Tensor[T]) =

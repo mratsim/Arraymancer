@@ -215,7 +215,7 @@ suite "Selectors":
 
       let b = [-10, -20, -30].toTensor.unsqueeze(1)
 
-      let cond = squeeze(a.sum(axis = 0) .> 1)
+      let cond = squeeze(a.sum(axis = 0) >. 1)
       a.masked_axis_fill(cond, axis = 1, b)
 
       let expected = [[-1, -2, -10],
@@ -246,7 +246,7 @@ suite "Selectors":
                [ 1,  2, 0],
                [ 1, -1, 1]].toTensor
 
-      a.masked_fill_along_axis(a.sum(axis = 0) .> 1, axis = 0, -10)
+      a.masked_fill_along_axis(a.sum(axis = 0) >. 1, axis = 0, -10)
 
       let expected = [[-1, -2, -10],
                       [ 1,  2, -10],

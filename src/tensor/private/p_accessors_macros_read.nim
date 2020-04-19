@@ -120,35 +120,50 @@ proc slicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,noSideE
 # Dispatching logic
 
 type FancySelectorKind* = enum
-  None
+  FancyNone
   FancyIndex
   FancyMaskFull
   FancyMaskAxis
+  # Workaround needed for https://github.com/nim-lang/Nim/issues/14021
+  FancyUnknownFull
+  FancyUnknownAxis
 
 proc getFancySelector*(ast: NimNode, axis: var int, selector: var NimNode): FancySelectorKind =
   ## Detect indexing in the form
   ##   - "tensor[_, _, [0, 1, 4], _, _]
   ##   - "tensor[_, _, [0, 1, 4], `...`]
   ##  or with the index selector being a tensor
-  result = None
+  result = FancyNone
   var foundNonSpanOrEllipsis = false
+  var ellipsisAtStart = false
 
   template checkNonSpan(): untyped {.dirty.} =
     doAssert not foundNonSpanOrEllipsis,
         "Fancy indexing is only compatible with full spans `_` on non-indexed dimensions" &
         " and/or ellipsis `...`"
 
-  let tensorBoolType = nnkBracketExpr.newTree(bindSym"Tensor", bindSym"bool")
-
   var i = 0
   while i < ast.len:
     let cur = ast[i]
 
-    echo cur.treerepr
-    echo cur.getType().treerepr
-
-    if cur.eqIdent"Span":
-      discard
+    # Important: sameType doesn't work for generic type like Array, Seq or Tensors ...
+    #            https://github.com/nim-lang/Nim/issues/14021
+    if cur.sameType(bindSym"SteppedSlice") or cur.isInt():
+      if cur.eqIdent"Span":
+        discard
+      else:
+        doAssert result == FancyNone
+        foundNonSpanOrEllipsis = true
+    elif cur.sameType(bindSym"Ellipsis"):
+      if i == ast.len - 1: # t[t.sum(axis = 1) >. 0.5, `...`]
+        doAssert not ellipsisAtStart, "Cannot deduce the indexed/sliced dimensions due to ellipsis at the start and end of indexing."
+        ellipsisAtStart = false
+      elif i == 0: # t[`...`, t.sum(axis = 0) >. 0.5]
+        ellipsisAtStart = true
+      else:
+        # t[0 ..< 10, `...`, t.sum(axis = 0) >. 0.5] is unsupported
+        # so we tag as "foundNonSpanOrEllipsis"
+        foundNonSpanOrEllipsis = true
     elif cur.kind == nnkBracket:
       checkNonSpan()
       axis = i
@@ -162,35 +177,17 @@ proc getFancySelector*(ast: NimNode, axis: var int, selector: var NimNode): Fanc
       else:
         # byte, char, enums are all represented by integers in the VM
         error "Fancy indexing is only possible with integers or booleans"
-    elif cur.isOpenarray:
-      # Only check the instantiation type, the overload will ake care of conversion
-      checkNonSpan()
-      axis = i
-      let curAsTensor = newCall(bindSym"toTensor", cur)
-      if sameType(curAsTensor, tensorBoolType):
-        let full = i == 0 and ast.len == 1
-        result = if full: FancyMaskFull else: FancyMaskAxis
-        selector = cur
-      else:
-        result = FancyIndex
-        selector = cur
-    elif sameType(cur, tensorBoolType):
+    else:
       checkNonSpan()
       axis = i
       let full = i == 0 and ast.len == 1
-      result = if full: FancyMaskFull else: FancyMaskAxis
+      result = if full: FancyUnknownFull else: FancyUnknownAxis
       selector = cur
-    elif sameType(cur, bindSym"Tensor"):
-      checkNonSpan()
-      axis = i
-      result = FancyIndex
-      selector = cur
-    else:
-      if result != None:
-        doAssert cur.eqIdent"..." and i == ast.len - 1
-      else:
-        foundNonSpanOrEllipsis = true
     inc i
+
+  # Handle ellipsis at the start
+  if result != FancyNone and ellipsisAtStart:
+    axis = ast.len - axis
 
 macro slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
   ## Typed macro so that isAllInt has typed context and we can dispatch.
@@ -200,6 +197,7 @@ macro slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
   ## TODO in total we do 3 passes over the list of arguments :/. It is done only at compile time though
 
   # Point indexing
+  # -----------------------------------------------------------------
   if isAllInt(args):
     result = newCall(bindSym"atIndex", t)
     for slice in args:
@@ -207,6 +205,7 @@ macro slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
     return
 
   # Fancy indexing
+  # -----------------------------------------------------------------
   # Cannot depend/bindSym the "selectors.nim" proc
   # Due to recursive module dependencies
   var selector: NimNode
@@ -229,10 +228,39 @@ macro slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
       )
 
   # Slice indexing
-  result = newCall(bindSym"slicer", t)
-  for slice in args:
-    if isInt(slice):
-      ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
-      result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
+  # -----------------------------------------------------------------
+  if fancy == FancyNone:
+    result = newCall(bindSym"slicer", t)
+    for slice in args:
+      if isInt(slice):
+        ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
+        result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
+      else:
+        result.add(slice)
+    return
+
+  # Fancy bug in Nim compiler
+  # -----------------------------------------------------------------
+  # We need to drop down to "when a is T" to infer what selector to call
+  # as `getType`/`getTypeInst`/`getTypeImpl`/`sameType`
+  # are buggy with generics
+  # due to https://github.com/nim-lang/Nim/issues/14021
+  let lateBind_masked_select = ident"masked_select"
+  let lateBind_masked_axis_select = ident"masked_axis_select"
+  let lateBind_index_select = ident"index_select"
+
+  result = quote do:
+    type FancyType = typeof(`selector`)
+    when FancyType is (array or seq):
+      type FancyTensorType = typeof(toTensor(`selector`))
     else:
-      result.add(slice)
+      type FancyTensorType = FancyType
+    when FancyTensorType is Tensor[bool]:
+      when FancySelectorKind(`fancy`) == FancyUnknownFull:
+        `lateBind_masked_select`(`t`, `selector`)
+      elif FancySelectorKind(`fancy`) == FancyUnknownAxis:
+        `lateBind_masked_axis_select`(`t`, `selector`, `axis`)
+      else:
+        {.error: "Unreachable".}
+    else:
+      `lateBind_index_select`(`t`, `axis`, `selector`)

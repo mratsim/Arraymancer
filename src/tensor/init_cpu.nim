@@ -91,7 +91,7 @@ proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit, noSi
     {.unroll: 8.}
     tval = value
 
-proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0 ): auto {.noSideEffect.} =
+proc toTensor*(s:openarray, dummy_bugfix: static[int] = 0): auto {.noSideEffect.} =
   ## Convert an openarray to a Tensor
   ## Input:
   ##      - An array or a seq (can be nested)

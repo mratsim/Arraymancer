@@ -26,6 +26,22 @@ def masked_select():
 
     print(x)
     print('--------------------------')
+    print('x[x > 50]')
+    print(x[x > 50])
+    print('--------------------------')
+    print('x[x < 50]')
+    print(x[x < 50])
+
+def masked_axis_select():
+    print('Masked axis select')
+    print('--------------------------')
+    x = np.array([[ 4, 99,  2],
+                [ 3,  4, 99],
+                [ 1,  8,  7],
+                [ 8,  6,  8]])
+
+    print(x)
+    print('--------------------------')
     print('x[:, np.sum(x, axis = 0) > 50]')
     print(x[:, np.sum(x, axis = 0) > 50])
     print('--------------------------')

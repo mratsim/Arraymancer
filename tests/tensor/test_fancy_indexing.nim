@@ -46,6 +46,17 @@ suite "Fancy indexing":
       check: r == exp
 
   test "Masked selection via fancy indexing":
+    block:
+      let r = x[x >. 50]
+      let exp = [99, 99].toTensor()
+      check: r == exp
+
+    block:
+      let r = x[x <. 50]
+      let exp = [4, 2, 3, 4, 1, 8, 7, 8, 6, 8].toTensor()
+      check: r == exp
+
+  test "Masked axis selection via fancy indexing":
     block: # print('x[:, np.sum(x, axis = 0) > 50]')
       let r = x[_, x.sum(axis = 0) >. 50]
 

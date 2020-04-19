@@ -381,7 +381,10 @@ suite "Linear algebra":
 
   test "Randomized SVD":
     # TODO: tests using spectral norm, see fbpca python package
-    block: # Using Hilbert matrix, see ../manual_checks/randomized_svd.py
+    # Using Hilbert matrix, see ../manual_checks/randomized_svd.py
+    block:
+      # Going through the **full** SVD codepath
+      # n_components + n_over_samples >= observations
       const
         Observations = 10
         Features = 4000
@@ -403,7 +406,10 @@ suite "Linear algebra":
       let reconstructed = (U *. S.unsqueeze(0)) * Vh
       check: H.mean_absolute_error(reconstructed) < 1e-2
 
-    block: # Ensure that m > n / m < n logic is working fine
+    block:
+      # Going through the **full** SVD codepath
+      # n_components + n_over_samples >= features
+      # Ensure that m > n / m < n logic is working fine
       const
         Observations = 4000
         Features = 10
@@ -414,6 +420,53 @@ suite "Linear algebra":
       let (U, S, Vh) = svd_randomized(H, n_components=k, n_oversamples=5, n_power_iters=2)
 
       let expected_S = [1.90675907e+00, 4.86476625e-01, 7.52734238e-02, 8.84829787e-03, 7.86824889e-04, 3.71028924e-05, 1.74631562e-06].toTensor()
+
+      check:
+        U.shape[0] == H.shape[0]
+        U.shape[1] == k
+        S.mean_absolute_error(expected_S) < 1.5e-5
+        Vh.shape[0] == k
+        Vh.shape[1] == H.shape[1]
+
+      let reconstructed = (U *. S.unsqueeze(0)) * Vh
+      check: H.mean_absolute_error(reconstructed) < 1e-2
+
+    block:
+      # Going through the **randomized** SVD codepath
+      const
+        Observations = 200
+        Features = 4000
+        N = max(Observations, Features)
+        k = 7
+
+      let H = hilbert(N, float64)[0..<Observations, 0..<Features]
+      let (U, S, Vh) = svd_randomized(H, n_components=k, n_oversamples=5, n_power_iters=2)
+
+      let expected_S = [2.34837630e+00, 1.07682981e+00, 3.72203282e-01, 1.12672683e-01, 3.16910267e-02, 8.45798286e-03, 2.10165880e-03].toTensor()
+
+      check:
+        U.shape[0] == H.shape[0]
+        U.shape[1] == k
+        S.mean_absolute_error(expected_S) < 1.5e-5
+        Vh.shape[0] == k
+        Vh.shape[1] == H.shape[1]
+
+      let reconstructed = (U *. S.unsqueeze(0)) * Vh
+      check: H.mean_absolute_error(reconstructed) < 1e-2
+
+    block:
+      # Going through the **randomized** SVD codepath
+      # Ensure that m > n / m < n logic is working fine
+      const
+        Observations = 4000
+        Features = 200
+        N = max(Observations, Features)
+        k = 7
+
+      let H = hilbert(N, float64)[0..<Observations, 0..<Features]
+      let (U, S, Vh) = svd_randomized(H, n_components=k, n_oversamples=5, n_power_iters=2)
+
+      let expected_S = [2.34837630e+00, 1.07682981e+00, 3.72203282e-01, 1.12672683e-01, 3.16910267e-02, 8.45798286e-03, 2.10165880e-03].toTensor()
 
       check:
         U.shape[0] == H.shape[0]

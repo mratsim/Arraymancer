@@ -76,4 +76,26 @@ def index_fill():
     print(y)
     print('--------------------------')
 
-index_fill()
+def masked_fill():
+    print('Masked fill')
+    print('--------------------------')
+    x = np.array([[ 4, 99,  2],
+                [ 3,  4, 99],
+                [ 1,  8,  7],
+                [ 8,  6,  8]])
+
+    print(x)
+    print('--------------------------')
+    y = x.copy()
+    print('y[y > 50] = -100')
+    y[y > 50] = -100
+    print(y)
+    print('--------------------------')
+    y = x.copy()
+    print('y[y < 50] = -100')
+    y[y < 50] = -100
+    print(y)
+    print('--------------------------')
+
+# index_fill()
+masked_fill()

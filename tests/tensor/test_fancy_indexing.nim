@@ -22,9 +22,9 @@ suite "Fancy indexing":
   #               [ 8,  6,  8]])
 
   let x = [[ 4, 99,  2],
-            [ 3,  4, 99],
-            [ 1,  8,  7],
-            [ 8,  6,  8]].toTensor()
+           [ 3,  4, 99],
+           [ 1,  8,  7],
+           [ 8,  6,  8]].toTensor()
 
   test "Index selection via fancy indexing":
     block: # print(x[:, [0, 2]])
@@ -75,7 +75,7 @@ suite "Fancy indexing":
 
       check: r == exp
 
-  test "Index mutation via fancy indexing":
+  test "Index assign value via fancy indexing":
     block: # y[:, [0, 2]] = -100
       var y = x.clone()
       y[_, [0, 2]] = -100
@@ -95,5 +95,28 @@ suite "Fancy indexing":
                  [-100, -100, -100],
                  [   1,    8,    7],
                  [-100, -100, -100]].toTensor()
+
+      check: y == exp
+
+  test "Masked assign value via fancy indexing":
+    block: # y[y > 50] = -100
+      var y = x.clone()
+      y[y >. 50] = -100
+
+      let exp = [[ 4, -100,    2],
+                 [ 3,    4, -100],
+                 [ 1,    8,    7],
+                 [ 8,    6,    8]].toTensor()
+
+      check: y == exp
+
+    block: # y[y < 50] = -100
+      var y = x.clone()
+      y[y <. 50] = -100
+
+      let exp = [[ -100,   99, -100],
+                 [ -100, -100,   99],
+                 [ -100, -100, -100],
+                 [ -100, -100, -100]].toTensor()
 
       check: y == exp

@@ -106,6 +106,7 @@ proc `$`*(pca: PCA_Detailed): string =
   result &= "      mean:\n" & $pca.mean & '\n'
   result &= "      explained_variance:\n" & $pca.explained_variance & '\n'
   result &= "      explained_variance_ratio:\n" & $pca.explained_variance_ratio & '\n'
+  result &= "      singular_values:\n" & $pca.singular_values & '\n'
   result &= "      noise_variance: " & $pca.noise_variance
 
 proc pca_detailed*[T: SomeFloat](

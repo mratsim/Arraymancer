@@ -232,7 +232,7 @@ suite "Selectors":
       let expected = [[0, 1],
                       [1, 1]].toTensor
 
-  test "Masked_axis_fill":
+  test "Masked_axis_fill with value":
     block: # Numpy
            # Fill all columns which sum up to greater than 1
            # with -10
@@ -268,7 +268,8 @@ suite "Selectors":
 
       check: a == expected
 
-    block: # Fill with tensor
+  test "Masked_axis_fill with tensor":
+    block:
       # import numpy as np
       # a = np.array([[-1, -2, 1], [1, 2, 0], [1, -1, 1]])
       # print(a.sum(axis=0) > 1)

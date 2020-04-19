@@ -97,5 +97,27 @@ def masked_fill():
     print(y)
     print('--------------------------')
 
+def masked_axis_fill_value():
+    print('Masked axis fill with value')
+    print('--------------------------')
+    x = np.array([[ 4, 99,  2],
+                [ 3,  4, 99],
+                [ 1,  8,  7],
+                [ 8,  6,  8]])
+
+    print(x)
+    print('--------------------------')
+    y = x.copy()
+    print('y[:, y.sum(axis = 0) > 50] = -100')
+    y[:, y.sum(axis = 0) > 50] = -100
+    print(y)
+    print('--------------------------')
+    y = x.copy()
+    print('y[y.sum(axis = 1) > 50, :] = -100')
+    y[y.sum(axis = 0) > 50, :] = -100
+    print(y)
+    print('--------------------------')
+
 # index_fill()
-masked_fill()
+# masked_fill()
+masked_axis_fill_value()

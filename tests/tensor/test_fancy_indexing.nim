@@ -120,3 +120,26 @@ suite "Fancy indexing":
                  [ -100, -100, -100]].toTensor()
 
       check: y == exp
+
+  test "Masked axis assign value via fancy indexing":
+    block: # y[:, y.sum(axis = 0) > 50] = -100
+      var y = x.clone()
+      y[_, y.sum(axis = 0) >. 50] = -100
+
+      let exp = [[  4, -100, -100],
+                 [  3, -100, -100],
+                 [  1, -100, -100],
+                 [  8, -100, -100]].toTensor()
+
+      check: y == exp
+
+    block: # y[y.sum(axis = 1) > 50, :] = -100
+      var y = x.clone()
+      y[y.sum(axis = 1) >. 50, _] = -100
+
+      let exp = [[-100, -100, -100],
+                 [-100, -100, -100],
+                 [   1,    8,    7],
+                 [   8,    6,    8]].toTensor()
+
+      check: y == exp

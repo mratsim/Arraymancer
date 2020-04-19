@@ -50,6 +50,9 @@ proc pca*[T: SomeFloat](
     let X = X -. X.mean(axis=0)
 
   let (U, S, Vh) = svd_randomized(X, n_components, n_oversamples=n_oversamples, n_power_iters=n_power_iters)
+  result.components = Vh.transpose
+  result.projected = U *. S.unsqueeze(0) # S sparse diagonal, equivalent to multiplying by a dense diagonal matrix
+
 
 type PCA_Detailed*[T: SomeFloat] = object
   ## Principal Component Analysis (PCA) object
@@ -168,7 +171,8 @@ proc pca_detailed*[T: SomeFloat](
   # refer back to the original matrix for total variance
   # We assume that the divisor is (N-1) (unbiaised ~ Bessel correction)
   let total_variance = X.variance(axis = 0) # assumes unbiaised
-  result.explained_variance_ratio = result.explained_variance ./ total_variance
+  let sum_total_var = total_variance.sum()
+  result.explained_variance_ratio = result.explained_variance /. sum_total_var
 
   result.singular_values = S
 
@@ -178,7 +182,7 @@ proc pca_detailed*[T: SomeFloat](
   #     http://www.miketipping.com/papers/met-mppca.pdf
   # Equation 12.46
   if result.n_components < min(result.n_features, result.n_observations):
-    result.noise_variance = total_variance.sum() - result.explained_variance.sum()
+    result.noise_variance = sum_total_var - result.explained_variance.sum()
     result.noise_variance /= T(min(result.n_features, result.n_observations) - n_components)
   else:
     result.noise_variance = 0

@@ -31,7 +31,7 @@ method computeDistance(metric: Minkowski, v, w: Tensor[float]): float =
 method computeDistance(metric: Jaccard, v, w: Tensor[float]): float = 
   let sx = toHashSet(toSeq(v))
   let sy = toHashSet(toSeq(w))
-  result = len(intersection(sx, sy)) / len(union(sx, sy))
+  result = 1 - len(intersection(sx, sy)) / len(union(sx, sy))
 
 
 method pairwise*(metric: PairwiseDist, x, y: Tensor[float]): Tensor[float] {.base.} =

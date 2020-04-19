@@ -60,7 +60,7 @@ func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int,
     r_slice.copyFrom(t_slice)
 
 func masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
-  ## Take elements from a tensor accordinf to the provided boolean mask
+  ## Take elements from a tensor according to the provided boolean mask
   ##
   ## Returns a **flattened** tensor which is the concatenation of values for which the mask is true.
   ##
@@ -81,6 +81,19 @@ func masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
       dst[idx] = value
       inc idx
   assert idx == size
+
+func masked_select*[T](t: Tensor[T], mask: openarray): Tensor[T] {.noInit.} =
+  ## Take elements from a tensor according to the provided boolean mask
+  ##
+  ## The boolean mask must be
+  ##   - an array or sequence of bools
+  ##   - an array of arrays of bools,
+  ##   - ...
+  ##
+  ## Returns a **flattened** tensor which is the concatenation of values for which the mask is true.
+  ##
+  ## The result does not share input storage.
+  t.masked_select mask.toTensor()
 
 func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor[T] {.noInit.} =
   ## Take elements from a tensor according to the provided boolean mask.
@@ -170,6 +183,27 @@ func masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
       if maskElem:
         tElem = value
 
+
+func masked_fill*[T](t: var Tensor[T], mask: openarray, value: T) =
+  ## For the index of each element of t.
+  ## Fill the elements at ``t[index]`` with the ``value``
+  ## if their corresponding ``mask[index]`` is true.
+  ## If not they are untouched.
+  ##
+  ## Example:
+  ##
+  ##   t.masked_fill(t > 0, -1)
+  ##
+  ## or alternatively:
+  ##
+  ##   t.masked_fill(t > 0): -1
+  ##
+  ## The boolean mask must be
+  ##   - an array or sequence of bools
+  ##   - an array of arrays of bools,
+  ##   - ...
+  ##
+  t.masked_fill(mask.toTensor(), value)
 
 func masked_fill_along_axis*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T) =
   ## Take a boolean mask tensor and

@@ -40,6 +40,9 @@ suite "Selectors":
         x.index_select(axis = 0, indices) == ax0
         x.index_select(axis = 1, indices) == ax1
 
+    # ------------------------------------------------------
+    # Selection with regular arrays/sequences
+
     block: # Numpy
       let a = [4, 3, 5, 7, 6, 8].toTensor
       let indices = [0, 1, 4]
@@ -79,6 +82,20 @@ suite "Selectors":
       let expected = [1.0, 2.0, 3.0].toTensor()
       check: r == expected
 
+    block: # with regular arrays/sequences
+      let x = [[1.0, 2.0],
+               [Nan, 3.0],
+               [Nan, Nan]].toTensor
+
+      let r = x.masked_select(
+          [[true,  true],
+           [false, true],
+           [false, false]]
+        )
+
+      let expected = [1.0, 2.0, 3.0].toTensor()
+      check: r == expected
+
   test "Masked_fill":
     block: # Numpy reference doc
            # https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#boolean-array-indexing
@@ -92,6 +109,21 @@ suite "Selectors":
                [Nan, Nan]].toTensor
 
       x.masked_fill(x.isNan, -1.0)
+
+      let expected = [[1.0, 2.0], [-1.0, 3.0], [-1.0, -1.0]].toTensor()
+      check: x == expected
+
+    block: # with regular arrays/sequences
+      var x = [[1.0, 2.0],
+               [Nan, 3.0],
+               [Nan, Nan]].toTensor
+
+      x.masked_fill(
+        [[false,  false],
+         [true, false],
+         [true, true]],
+        -1.0
+      )
 
       let expected = [[1.0, 2.0], [-1.0, 3.0], [-1.0, -1.0]].toTensor()
       check: x == expected
@@ -119,7 +151,7 @@ suite "Selectors":
 
       check: r == expected
 
-  test "masked_axis_fill":
+  test "Masked_axis_fill":
     block: # Numpy
            # Fill all columns which sum up to greater than 1
            # with -10

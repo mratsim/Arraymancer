@@ -23,7 +23,7 @@ import  ./backend/metadataArray,
         ./higher_order_foldreduce,
         std/sequtils
 
-# Index axis
+# Indexed axis
 # --------------------------------------------------------------------------------------------
 
 func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int, indices: Tensor[Idx]): Tensor[T] {.noInit.} =

@@ -25,6 +25,10 @@ proc isInt*(x: NimNode): bool {. compileTime .} =
   ## Compile-time type checking
   hasType(x, "int")
 
+proc isBool*(x: NimNode): bool {. compileTime .} =
+  ## Compile-time type checking
+  hasType(x, "bool")
+
 proc isAllInt*(slice_args: NimNode): bool {. compileTime .} =
   ## Compile-time type checking
   result = true

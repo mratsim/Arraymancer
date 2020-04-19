@@ -20,4 +20,6 @@ import
   ../tensor/test_operators_comparison,
   ../tensor/test_accessors,
   ../tensor/test_accessors_slicer,
+  ../tensor/test_selectors,
+  ../tensor/test_fancy_indexing,
   ../tensor/test_display

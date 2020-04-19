@@ -117,21 +117,88 @@ proc slicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,noSideE
 # #########################################################################
 # Dispatching logic
 
+type FancySelectorKind* = enum
+  None
+  FancyIndex
+  FancyMaskFull
+  FancyMaskAxis
+
+proc getFancySelector*(ast: NimNode, axis: var int, selector: var NimNode): FancySelectorKind =
+  ## Detect indexing in the form
+  ##   - "tensor[_, _, [0, 1, 4], _, _]
+  ##   - "tensor[_, _, [0, 1, 4], `...`]
+  ##  or with the index selector being a tensor
+  result = None
+  var foundNonSpanOrEllipsis = false
+
+  var i = 0
+  while i < ast.len:
+    let cur = ast[i]
+    if cur.eqIdent"Span":
+      discard
+    elif cur.kind == nnkBracket:
+      doAssert not foundNonSpanOrEllipsis,
+          "Fancy indexing is only compatible with full spans `_` on non-indexed dimensions" &
+          " and/or ellipsis `...`"
+      axis = i
+      if cur[0].kind == nnkIntLit:
+        result = FancyIndex
+        selector = cur
+      elif cur[0].isBool():
+        let full = i == 0 and ast.len == 1
+        result = if full: FancyMaskFull else: FancyMaskAxis
+        selector = cur
+      else:
+        # byte, char, enums are all represented by integers in the VM
+        error "Fancy indexing is only possible with integers or booleans"
+    else:
+      if result != None:
+        doAssert cur.eqIdent"..." and i == ast.len - 1
+      else:
+        foundNonSpanOrEllipsis = true
+    inc i
+
 macro slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
   ## Typed macro so that isAllInt has typed context and we can dispatch.
   ## If args are all int, we dispatch to atIndex and return T
   ## Else, all ints are converted to SteppedSlices and we return a Tensor.
   ## Note, normal slices and `_` were already converted in the `[]` macro
   ## TODO in total we do 3 passes over the list of arguments :/. It is done only at compile time though
+
+  # Point indexing
   if isAllInt(args):
-    result = newCall(bindSym("atIndex"), t)
+    result = newCall(bindSym"atIndex", t)
     for slice in args:
       result.add(slice)
-  else:
-    result = newCall(bindSym("slicer"), t)
-    for slice in args:
-      if isInt(slice):
-        ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
-        result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
-      else:
-        result.add(slice)
+    return
+
+  # Fancy indexing
+  # Cannot depend/bindSym the "selectors.nim" proc
+  # Due to recursive module dependencies
+  var selector: NimNode
+  var axis: int
+  let fancy = args.getFancySelector(axis, selector)
+  if fancy == FancyIndex:
+    return newCall(
+        ident"index_select",
+        t, newLit axis, selector
+      )
+  if fancy == FancyMaskFull:
+    return newCall(
+        ident"masked_select",
+        t, selector
+      )
+  elif fancy == FancyMaskAxis:
+    return newCall(
+        ident"masked_axis_select",
+        t, selector, newLit axis
+      )
+
+  # Slice indexing
+  result = newCall(bindSym"slicer", t)
+  for slice in args:
+    if isInt(slice):
+      ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
+      result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
+    else:
+      result.add(slice)

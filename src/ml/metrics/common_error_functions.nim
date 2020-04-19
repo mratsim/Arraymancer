@@ -48,7 +48,7 @@ proc relative_error*[T](y, y_true: Tensor[T]): Tensor[T] {.noInit.} =
   ## Normally the relative error is defined as |y_true - x| / |y_true|,
   ## but here max is used to make it symmetric and to prevent dividing by zero,
   ## guaranteed to return zero in the case when both values are zero.
-  result = map2_inline(y_true, y, relative_error(x,y))
+  result = map2_inline(y, y_true, relative_error(x,y))
 
 proc mean_relative_error*[T](y, y_true: Tensor[T]): T =
   ## Mean relative error for Tensor, mean of the element-wise
@@ -67,10 +67,10 @@ proc absolute_error*[T: SomeFloat](y, y_true: T): T {.inline.} =
 
 proc absolute_error*[T](y, y_true: Tensor[T]): Tensor[T] {.noInit.} =
   ## Element-wise absolute error for a tensor
-  result = map2_inline(y_true, y, y.absolute_error(x))
+  result = map2_inline(y, y_true, y.absolute_error(x))
 
 proc mean_absolute_error*[T](y, y_true: Tensor[T]): T =
   ## Also known as L1 loss, absolute error between elements:
   ## sum(|y_true - y|)/m
   ## where m is the number of elements
-  result = map2_inline(y_true, y, y.absolute_error(x)).mean()
+  result = map2_inline(y, y_true, y.absolute_error(x)).mean()

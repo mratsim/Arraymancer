@@ -33,7 +33,7 @@ data: - ``temp1 = -x`` - ``temp2 = math.exp(temp1)`` -
 
 So you suddenly get a o(4*n) algorithm.
 
-Arraymancer can do the same using the explicit broadcast operator ``./``
+Arraymancer can do the same using the explicit broadcast operator ``/.``
 and ``+.``. (To avoid name conflict we change the logistic sigmoid name)
 
 .. code:: nim
@@ -41,7 +41,7 @@ and ``+.``. (To avoid name conflict we change the logistic sigmoid name)
     import arraymancer
 
     proc customSigmoid[T: SomeFloat](t: Tensor[T]): Tensor[T] =
-      result = 1 ./ (1 +. exp(-t))
+      result = 1 /. (1 +. exp(-t))
 
 Well, unfortunately, the only thing we gain here is parallelism but we
 still have 4 loops over the data implicitly. Another way would be to use

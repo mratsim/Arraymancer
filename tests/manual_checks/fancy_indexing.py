@@ -114,10 +114,77 @@ def masked_axis_fill_value():
     print('--------------------------')
     y = x.copy()
     print('y[y.sum(axis = 1) > 50, :] = -100')
-    y[y.sum(axis = 0) > 50, :] = -100
+    y[y.sum(axis = 1) > 50, :] = -100
+    print(y)
+    print('--------------------------')
+
+def masked_axis_fill_tensor_invalid_1():
+    # ValueError: shape mismatch:
+    # value array of shape (4,) could not be broadcast
+    # to indexing result of shape (2,4)
+    print('Masked axis fill with tensor - invalid numpy syntax')
+    print('--------------------------')
+    x = np.array([[ 4, 99,  2],
+                [ 3,  4, 99],
+                [ 1,  8,  7],
+                [ 8,  6,  8]])
+
+    print(x)
+    print('--------------------------')
+    y = x.copy()
+    print('y[:, y.sum(axis = 0) > 50] = np.array([10, 20, 30, 40])')
+    y[:, y.sum(axis = 0) > 50] = np.array([10, 20, 30, 40])
+    print(y)
+
+def masked_axis_fill_tensor_valid_1():
+    print('Masked axis fill with tensor - 1d tensor broadcasting')
+    print('--------------------------')
+    x = np.array([[ 4, 99,  2],
+                [ 3,  4, 99],
+                [ 1,  8,  7],
+                [ 8,  6,  8]])
+
+    print(x)
+    print('--------------------------')
+    y = x.copy()
+    print('y[:, y.sum(axis = 0) > 50] = np.array([[10], [20], [30], [40]])')
+    y[:, y.sum(axis = 0) > 50] = np.array([[10], [20], [30], [40]])
+    print(y)
+    print('--------------------------')
+    y = x.copy()
+    print('y[y.sum(axis = 1) > 50, :] = np.array([-10, -20, -30])')
+    y[y.sum(axis = 1) > 50, :] = np.array([-10, -20, -30])
+    print(y)
+    print('--------------------------')
+
+def masked_axis_fill_tensor_valid_2():
+    print('Masked axis fill with tensor - multidimensional tensor')
+    print('--------------------------')
+    x = np.array([[ 4, 99,  2],
+                [ 3,  4, 99],
+                [ 1,  8,  7],
+                [ 8,  6,  8]])
+
+    print(x)
+    print('--------------------------')
+    y = x.copy()
+    print('y[:, y.sum(axis = 0) > 50] = np.array([[10, 50], [20, 60], [30, 70], [40, 80]])')
+    y[:, y.sum(axis = 0) > 50] = np.array([[10, 50],
+                                           [20, 60],
+                                           [30, 70],
+                                           [40, 80]])
+    print(y)
+    print('--------------------------')
+    y = x.copy()
+    print('y[y.sum(axis = 1) > 50, :] = np.array([-10, -20, -30], [-40, -50, -60])')
+    y[y.sum(axis = 1) > 50, :] = np.array([[-10, -20, -30],
+                                           [-40, -50, -60]])
     print(y)
     print('--------------------------')
 
 # index_fill()
 # masked_fill()
-masked_axis_fill_value()
+# masked_axis_fill_value()
+masked_axis_fill_tensor_invalid_1()
+# masked_axis_fill_tensor_valid_1()
+# masked_axis_fill_tensor_valid_2()

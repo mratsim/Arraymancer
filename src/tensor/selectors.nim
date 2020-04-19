@@ -256,12 +256,57 @@ template masked_axis_fill_impl[T](t: var Tensor[T], mask: Tensor[bool] or openAr
 func masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T or Tensor[T]) =
   ## Take a 1D boolean mask tensor with size equal to the `t.shape[axis]`
   ## The axis index that are set to true in the mask will be filled with `value`
+  ##
+  ## Limitation:
+  ##   If value is a Tensor, only filling via broadcastable tensors is supported at the moment
+  ##   for example if filling axis of a tensor `t` of shape [4, 3] the corresponding shapes are valid
+  ##     [4, 3].masked_axis_fill(mask = [1, 3], axis = 1, value = [4, 1])
+  ##
+  ##   with values
+  ##     t = [[ 4, 99,  2],
+  ##          [ 3,  4, 99],
+  ##          [ 1,  8,  7],
+  ##          [ 8,  6,  8]].toTensor()
+  ##     mask = [false, true, true]
+  ##     value = [[10],
+  ##              [20],
+  ##              [30],
+  ##              [40]].toTensor()
+  ##
+  ##     result = [[  4, 10, 10],
+  ##               [  3, 20, 20],
+  ##               [  1, 30, 30],
+  ##               [  8, 40, 40]].toTensor()
+  # TODO: support filling with a multidimensional tensor
   let mask = mask.squeeze() # make 1D if coming from unreduced axis aggregation like sum
+                            # TODO: squeeze exactly depending on axis to prevent accepting invalid values
   masked_axis_fill_impl(t, mask, axis, value)
 
 func masked_axis_fill*[T](t: var Tensor[T], mask: openArray[bool], axis: int, value: T or Tensor[T]) =
   ## Take a 1D boolean mask tensor with size equal to the `t.shape[axis]`
   ## The axis index that are set to true in the mask will be filled with `value`
+  ##
+  ## Limitation:
+  ##   If value is a Tensor, only filling via broadcastable tensors is supported at the moment
+  ##   for example if filling axis of a tensor `t` of shape [4, 3] the corresponding shapes are valid
+  ##     [4, 3].masked_axis_fill(mask = [1, 3], axis = 1, value = [4, 1])
+  ##
+  ##   with values
+  ##     t = [[ 4, 99,  2],
+  ##          [ 3,  4, 99],
+  ##          [ 1,  8,  7],
+  ##          [ 8,  6,  8]].toTensor()
+  ##     mask = [false, true, true]
+  ##     value = [[10],
+  ##              [20],
+  ##              [30],
+  ##              [40]].toTensor()
+  ##
+  ##     result = [[  4, 10, 10],
+  ##               [  3, 20, 20],
+  ##               [  1, 30, 30],
+  ##               [  8, 40, 40]].toTensor()
+  # TODO: support filling with a multidimensional tensor
   masked_axis_fill_impl(t, mask, axis, value)
 
 # Apply N-D mask along an axis

@@ -143,3 +143,61 @@ suite "Fancy indexing":
                  [   8,    6,    8]].toTensor()
 
       check: y == exp
+
+  test "Masked axis assign tensor via fancy indexing - invalid Numpy syntaxes":
+    block: # y[:, y.sum(axis = 0) > 50] = np.array([10, 20, 30, 40])
+      var y = x.clone()
+
+      expect(IndexError):
+        y[_, y.sum(axis = 0) >. 50] = [10, 20, 30, 40].toTensor()
+
+  test "Masked axis assign broadcastable 1d tensor via fancy indexing":
+    block: # y[:, y.sum(axis = 0) > 50] = np.array([[10], [20], [30], [40]])
+      var y = x.clone()
+      y[_, y.sum(axis = 0) >. 50] = [[10], [20], [30], [40]].toTensor()
+
+      let exp = [[  4, 10, 10],
+                 [  3, 20, 20],
+                 [  1, 30, 30],
+                 [  8, 40, 40]].toTensor()
+
+      check: y == exp
+
+    block: # y[y.sum(axis = 1) > 50, :] = np.array([-10, -20, -30])
+      var y = x.clone()
+      y[y.sum(axis = 1) >. 50, _] = [[-10, -20, -30]].toTensor()
+
+      let exp = [[-10, -20, -30],
+                 [-10, -20, -30],
+                 [  1,   8,   7],
+                 [  8,   6,   8]].toTensor()
+
+      check: y == exp
+
+  # TODO - only broadcastable tensor assign are supported at the moment
+  # test "Masked axis assign multidimensional tensor via fancy indexing":
+  #   block: # y[:, y.sum(axis = 0) > 50] = np.array([[10, 50], [20, 60], [30, 70], [40, 80]])
+  #     var y = x.clone()
+  #     y[_, y.sum(axis = 0) >. 50] = [[10, 50],
+  #                                    [20, 60],
+  #                                    [30, 70],
+  #                                    [40, 80]].toTensor()
+  #
+  #     let exp = [[  4, 10, 50],
+  #                [  3, 20, 60],
+  #                [  1, 30, 70],
+  #                [  8, 40, 80]].toTensor()
+  #
+  #     check: y == exp
+  #
+  #   block: # y[y.sum(axis = 1) > 50, :] = np.array([-10, -20, -30], [-40, -50, -60])
+  #     var y = x.clone()
+  #     y[y.sum(axis = 1) >. 50, _] = [[-10, -20, -30],
+  #                                    [-40, -50, -60]].toTensor()
+  #
+  #     let exp = [[-10, -20, -30],
+  #                [-40, -50, -60],
+  #                [  1,   8,   7],
+  #                [  8,   6,   8]].toTensor()
+  #
+  #     check: y == exp

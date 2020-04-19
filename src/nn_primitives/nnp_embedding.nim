@@ -8,7 +8,7 @@ import
 proc flatten_idx(t: Tensor): Tensor {.inline.}=
   t.reshape(t.size)
 
-proc embedding*[T; Idx: byte or char or SomeNumber](
+proc embedding*[T; Idx: byte or char or SomeInteger](
       vocab_id: Tensor[Idx],
       weight: Tensor[T]
     ): Tensor[T] =
@@ -54,7 +54,7 @@ proc embedding*[T; Idx: byte or char or SomeNumber](
   let shape = vocab_id.shape & weight.shape[1]
   result = weight.index_select(0, vocab_id.flatten_idx).reshape(shape)
 
-proc embedding_backward*[T; Idx: byte or char or SomeNumber](
+proc embedding_backward*[T; Idx: byte or char or SomeInteger](
       dWeight: var Tensor[T],
       vocab_id: Tensor[Idx],
       dOutput: Tensor[T],

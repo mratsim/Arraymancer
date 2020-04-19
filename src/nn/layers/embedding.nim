@@ -63,7 +63,7 @@ proc embedding_cache[TT, Idx](
   )
 
 
-proc embedding*[TT; Idx: byte or char or SomeNumber](
+proc embedding*[TT; Idx: byte or char or SomeInteger](
         input_vocab_id: Tensor[Idx],
         weight: Variable[TT],
         padding_idx: Idx = -1,

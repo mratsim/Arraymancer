@@ -23,7 +23,7 @@ import  ./backend/metadataArray,
         ./higher_order_foldreduce,
         std/sequtils
 
-func index_select*[T; Idx: byte or char or SomeNumber](t: Tensor[T], axis: int, indices: Tensor[Idx]): Tensor[T] {.noInit.} =
+func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int, indices: Tensor[Idx]): Tensor[T] {.noInit.} =
   ## Take elements from a tensor along an axis using the indices Tensor.
   ## This is equivalent to NumPy `take`.
   ## The result does not share the input storage, there are copies.

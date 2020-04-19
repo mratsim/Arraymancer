@@ -71,6 +71,7 @@ proc getFiles*(path: string): seq[string] =
 import nimDocTemplates
 
 proc buildDocs*(path: string, docPath: string, baseDir = getProjectPath() & $DirSep,
+                defaultFlags = "",
                 masterBranch = "master",
                 defines: openArray[string] = @[]) =
   ## Generate docs for all nim files in `path` and output all HTML files to the
@@ -95,6 +96,8 @@ proc buildDocs*(path: string, docPath: string, baseDir = getProjectPath() & $Dir
   ##
   ## NOTE: `buildDocs()` only works correctly on Windows with Nim 1.0+ since
   ## https://github.com/nim-lang/Nim/pull/11814 is required.
+  ##
+  ##
   when defined(windows) and (NimMajor, NimMinor, NimPatch) < (1, 0, 0):
     echo "buildDocs() unsupported on Windows for Nim < 1.0 - requires PR #11814"
   else:
@@ -107,7 +110,7 @@ proc buildDocs*(path: string, docPath: string, baseDir = getProjectPath() & $Dir
       docPath = baseDir & docPath
       path = baseDir & path
       defStr = block:
-        var defStr = ""
+        var defStr = " " & defaultFlags
         for def in defines:
           defStr &= " -d:" & def
         defStr

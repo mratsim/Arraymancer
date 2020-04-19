@@ -245,7 +245,10 @@ when canImport(docs / docs):
     # index.html page without having to mess with the HTML manually.
     genNimdocCfg("src/")
     # build the actual docs and the index
-    buildDocs("src/", "docs/build")
+    buildDocs(
+      "src/", "docs/build",
+      defaultFlags = "--hints:off --warnings:off"
+    )
     # Copy our stylesheets
     cpFile("docs/docutils.css", "docs/build/docutils.css")
     cpFile("docs/nav.css", "docs/build/nav.css")

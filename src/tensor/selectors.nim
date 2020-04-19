@@ -95,6 +95,7 @@ func masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
     size += int(val)
 
   result = newTensorUninit[T](size)
+  withMemoryOptimHints()
 
   var idx = 0
   let dst{.restrict.} = result.dataArray

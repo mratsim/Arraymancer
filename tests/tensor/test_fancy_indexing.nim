@@ -74,3 +74,26 @@ suite "Fancy indexing":
                  [3, 4, 99]].toTensor()
 
       check: r == exp
+
+  test "Index mutation via fancy indexing":
+    block: # y[:, [0, 2]] = -100
+      var y = x.clone()
+      y[_, [0, 2]] = -100
+
+      let exp = [[-100, 99, -100],
+                 [-100,  4, -100],
+                 [-100,  8, -100],
+                 [-100,  6, -100]].toTensor()
+
+      check: y == exp
+
+    block: # y[[1, 3], :] = -100
+      var y = x.clone()
+      y[[1, 3], _] = -100
+
+      let exp = [[   4,   99,    2],
+                 [-100, -100, -100],
+                 [   1,    8,    7],
+                 [-100, -100, -100]].toTensor()
+
+      check: y == exp

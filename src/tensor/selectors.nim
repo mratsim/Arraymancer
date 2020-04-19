@@ -23,6 +23,9 @@ import  ./backend/metadataArray,
         ./higher_order_foldreduce,
         std/sequtils
 
+# Index axis
+# --------------------------------------------------------------------------------------------
+
 func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int, indices: Tensor[Idx]): Tensor[T] {.noInit.} =
   ## Take elements from a tensor along an axis using the indices Tensor.
   ## This is equivalent to NumPy `take`.
@@ -59,6 +62,9 @@ func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int,
     var t_slice = t.atAxisIndex(axis, int(index))
     r_slice.copyFrom(t_slice)
 
+# Mask full tensor
+# --------------------------------------------------------------------------------------------
+
 func masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
   ## Take elements from a tensor according to the provided boolean mask
   ##
@@ -94,65 +100,6 @@ func masked_select*[T](t: Tensor[T], mask: openarray): Tensor[T] {.noInit.} =
   ##
   ## The result does not share input storage.
   t.masked_select mask.toTensor()
-
-func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor[T] {.noInit.} =
-  ## Take elements from a tensor according to the provided boolean mask.
-  ## The mask must be a 1D tensor and is applied along an axis, by default 0.
-  ##
-  ## The result will be the concatenation of values for which the mask is true.
-  ##
-  ## For example, for a 1D tensor `t`
-  ## t.masked_select(t > 0) will return a tensor with
-  ## only the positive values of t.
-  ##
-  ## The result does not share input storage.
-  doAssert mask.shape.len == 1, "Mask must be a 1d tensor"
-
-  # TODO: fold_inline should accept an accumType like fold_axis_inline
-  var size = 0
-  for val in mask:
-    size += int(val)
-
-  var shape = t.shape
-  shape[axis] = size
-  result = newTensorUninit[T](shape)
-
-  # Track the current slice of the result tensor
-  var dstSlice = shape.mapIt((0..<it)|1) # TODO avoid alloc
-
-  dstSlice[axis].a = 0
-  dstSlice[axis].b = 0
-
-  for srcIndex, srcSlice in t.enumerateAxis(axis):
-    if mask[srcIndex]:
-      result.slicerMut(dstSlice, srcSlice)
-      dstSlice[axis].a += 1
-      dstSlice[axis].b = dstSlice[axis].a
-
-  assert dstSlice[axis].a == size
-
-
-func masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T or Tensor[T]) =
-  ## Take a 1D boolean mask tensor with size equal to the `t.shape[axis]`
-  ## The axis index that are set to true in the mask will be filled with `value`
-
-  # TODO: proper check
-  doAssert mask.shape.len == 1, "Mask must be a 1d tensor"
-
-  # N-D tensor case, we iterate on t axis
-  # We update the slice of t if mask is true.
-
-  # Track the current slice of the result tensor
-  var dstSlice = t.shape.mapIt((0..<it)|1) # TODO avoid alloc
-  dstSlice[axis].a = 0
-  dstSlice[axis].b = 0
-
-  for fillIt in mask:
-    if fillIt:
-      t.slicerMut(dstSlice, value)
-    dstSlice[axis].a += 1
-    dstSlice[axis].b = dstSlice[axis].a
-
 
 func masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
   ## For the index of each element of t.
@@ -204,6 +151,96 @@ func masked_fill*[T](t: var Tensor[T], mask: openarray, value: T) =
   ##   - ...
   ##
   t.masked_fill(mask.toTensor(), value)
+
+# Mask axis
+# --------------------------------------------------------------------------------------------
+
+template masked_axis_select_impl[T](result: Tensor[T], t: Tensor[T], mask: Tensor[bool] or openArray[bool], axis: int) =
+  ## Indirection because Nim proc can't type match "Tensor[bool] or openArray[bool]" with an array[N, bool]
+  when mask is Tensor:
+    doAssert mask.shape.len == 1, "Mask must be a 1d tensor"
+
+  # TODO: fold_inline should accept an accumType like fold_axis_inline
+  var size = 0
+  for val in mask:
+    size += int(val)
+
+  var shape = t.shape
+  shape[axis] = size
+  result = newTensorUninit[T](shape)
+
+  # Track the current slice of the result tensor
+  var dstSlice = mapIt(shape, (0..<it)|1) # TODO avoid alloc
+
+  dstSlice[axis].a = 0
+  dstSlice[axis].b = 0
+
+  for srcIndex, srcSlice in t.enumerateAxis(axis):
+    if mask[srcIndex]:
+      result.slicerMut(dstSlice, srcSlice)
+      dstSlice[axis].a += 1
+      dstSlice[axis].b = dstSlice[axis].a
+
+  assert dstSlice[axis].a == size
+
+func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor[T] {.noInit.} =
+  ## Take elements from a tensor according to the provided boolean mask.
+  ## The mask must be a 1D tensor and is applied along an axis, by default 0.
+  ##
+  ## The result will be the concatenation of values for which the mask is true.
+  ##
+  ## For example, for a 1D tensor `t`
+  ## t.masked_select(t > 0) will return a tensor with
+  ## only the positive values of t.
+  ##
+  ## The result does not share input storage.
+  masked_axis_select_impl(result, t, mask, axis)
+
+func masked_axis_select*[T](t: Tensor[T], mask: openArray[bool], axis: int): Tensor[T] {.noInit.} =
+  ## Take elements from a tensor according to the provided boolean mask.
+  ## The mask must be a 1D tensor and is applied along an axis, by default 0.
+  ##
+  ## The result will be the concatenation of values for which the mask is true.
+  ##
+  ## For example, for a 1D tensor `t`
+  ## t.masked_select(t > 0) will return a tensor with
+  ## only the positive values of t.
+  ##
+  ## The result does not share input storage.
+  masked_axis_select_impl(result, t, mask, axis)
+
+template masked_axis_fill_impl[T](t: var Tensor[T], mask: Tensor[bool] or openArray[bool], axis: int, value: T or Tensor[T]) =
+  ## Indirection because Nim proc can't type match "Tensor[bool] or openArray[bool]" with an array[N, bool]
+  # TODO: proper check
+  when mask is Tensor:
+    doAssert mask.shape.len == 1, "Mask must be a 1d tensor"
+
+  # N-D tensor case, we iterate on t axis
+  # We update the slice of t if mask is true.
+
+  # Track the current slice of the result tensor
+  var dstSlice = mapIt(t.shape, (0..<it)|1) # TODO avoid alloc
+  dstSlice[axis].a = 0
+  dstSlice[axis].b = 0
+
+  for fillIt in mask:
+    if fillIt:
+      t.slicerMut(dstSlice, value)
+    dstSlice[axis].a += 1
+    dstSlice[axis].b = dstSlice[axis].a
+
+func masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T or Tensor[T]) =
+  ## Take a 1D boolean mask tensor with size equal to the `t.shape[axis]`
+  ## The axis index that are set to true in the mask will be filled with `value`
+  masked_axis_fill_impl(t, mask, axis, value)
+
+func masked_axis_fill*[T](t: var Tensor[T], mask: openArray[bool], axis: int, value: T or Tensor[T]) =
+  ## Take a 1D boolean mask tensor with size equal to the `t.shape[axis]`
+  ## The axis index that are set to true in the mask will be filled with `value`
+  masked_axis_fill_impl(t, mask, axis, value)
+
+# Apply N-D mask along an axis
+# --------------------------------------------------------------------------------------------
 
 func masked_fill_along_axis*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T) =
   ## Take a boolean mask tensor and

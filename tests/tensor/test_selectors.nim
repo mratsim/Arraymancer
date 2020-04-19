@@ -151,6 +151,21 @@ suite "Selectors":
 
       check: r == expected
 
+    block: # With regular arrays/sequences
+
+      let x = [[0, 1],
+               [1, 1],
+               [2, 2]].toTensor
+
+      let rowsum = x.sum(axis = 1)
+      let cond = [true,
+                  true,
+                  false]
+      let r = x.masked_axis_select(cond, axis = 0)
+
+      let expected = [[0, 1],
+                      [1, 1]].toTensor
+
   test "Masked_axis_fill":
     block: # Numpy
            # Fill all columns which sum up to greater than 1
@@ -173,6 +188,20 @@ suite "Selectors":
 
       check: a == expected
 
+    block: # With regular arrays/sequences
+      var a = [[-1, -2, 1],
+               [ 1,  2, 0],
+               [ 1, -1, 1]].toTensor
+
+      let cond = [false, false, true]
+      a.masked_axis_fill(cond, axis = 1, -10)
+
+      let expected = [[-1, -2, -10],
+                      [ 1,  2, -10],
+                      [ 1, -1, -10]].toTensor
+
+      check: a == expected
+
     block: # Fill with tensor
       # import numpy as np
       # a = np.array([[-1, -2, 1], [1, 2, 0], [1, -1, 1]])
@@ -187,6 +216,22 @@ suite "Selectors":
       let b = [-10, -20, -30].toTensor.unsqueeze(1)
 
       let cond = squeeze(a.sum(axis = 0) .> 1)
+      a.masked_axis_fill(cond, axis = 1, b)
+
+      let expected = [[-1, -2, -10],
+                      [ 1,  2, -20],
+                      [ 1, -1, -30]].toTensor
+
+      check: a == expected
+
+    block: # With regular arrays/sequences
+      var a = [[-1, -2, 1],
+               [ 1,  2, 0],
+               [ 1, -1, 1]].toTensor
+
+      let b = [-10, -20, -30].toTensor.unsqueeze(1)
+
+      let cond = [false, false, true]
       a.masked_axis_fill(cond, axis = 1, b)
 
       let expected = [[-1, -2, -10],

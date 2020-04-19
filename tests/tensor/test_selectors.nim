@@ -40,6 +40,29 @@ suite "Selectors":
         x.index_select(axis = 0, indices) == ax0
         x.index_select(axis = 1, indices) == ax1
 
+    block: # Numpy
+      let a = [4, 3, 5, 7, 6, 8].toTensor
+      let indices = [0, 1, 4]
+
+      check: a.index_select(axis = 0, indices) == [4, 3, 6].toTensor
+
+    block: # PyTorch
+      let x =  [[ 0.1427,  0.0231, -0.5414, -1.0009],
+                [-0.4664,  0.2647, -0.1228, -1.1068],
+                [-1.1734, -0.6571,  0.7230, -0.6004]].toTensor
+
+      let indices = [0, 2]
+
+      let ax0 =  [[ 0.1427,  0.0231, -0.5414, -1.0009],
+                  [-1.1734, -0.6571,  0.7230, -0.6004]].toTensor
+      let ax1 =  [[ 0.1427, -0.5414],
+                  [-0.4664, -0.1228],
+                  [-1.1734,  0.7230]].toTensor
+
+      check:
+        x.index_select(axis = 0, indices) == ax0
+        x.index_select(axis = 1, indices) == ax1
+
   test "Masked_select":
     block: # Numpy reference doc
            # https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#boolean-array-indexing

@@ -42,6 +42,23 @@ func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int,
     var t_slice = t.atAxisIndex(axis, int(index))
     r_slice.copyFrom(t_slice)
 
+func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int, indices: openarray[Idx]): Tensor[T] {.noInit.} =
+  ## Take elements from a tensor along an axis using the indices Tensor.
+  ## This is equivalent to NumPy `take`.
+  ## The result does not share the input storage, there are copies.
+  ## The tensors containing the indices can be an integer, byte or char tensor.
+
+  var select_shape = t.shape
+  select_shape[axis] = indices.len
+  result = newTensorUninit[T](select_shape)
+
+  # TODO: optim for contiguous tensors
+  # TODO: use OpenMP for tensors of non-ref/strings/seqs
+  for i, index in indices:
+    var r_slice = result.atAxisIndex(axis, i)
+    var t_slice = t.atAxisIndex(axis, int(index))
+    r_slice.copyFrom(t_slice)
+
 func masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
   ## Take elements from a tensor accordinf to the provided boolean mask
   ##

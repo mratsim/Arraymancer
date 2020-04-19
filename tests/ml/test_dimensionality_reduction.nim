@@ -59,3 +59,43 @@ suite "[ML] Dimensionality reduction":
       # Projecting the original data with the components matrix
       let centered = data -. data.mean(axis=0)
       check: projected.mean_absolute_error(centered * components) < 1e-08
+
+
+  test "Principal component analysis (PCA) with full details":
+    # import numpy as np
+    # from sklearn.decomposition import PCA
+    #
+    # def test(X):
+    #     pca = PCA(n_components=2)
+    #
+    #
+    #     projected = pca.fit_transform(X)
+    #
+    #     print(f'n_components: {pca.n_components_}')
+    #     print(f'n_features: {pca.n_features_}')
+    #     print(f'n_observations: {pca.n_samples_}')
+    #     print(f'\nprojected:\n{projected}')
+    #     print(f'\ncomponents:\n{pca.components_}')
+    #     print(f'\nexplained_variance:\n{pca.explained_variance_}')
+    #     print(f'\nexplained_variance_ratio:\n{pca.explained_variance_ratio_}')
+    #     print(f'\nmean:\n{pca.mean_}')
+    #     print(f'\nsingular_values:\n{pca.singular_values_}')
+    #     print(f'\nnoise_variance: {pca.noise_variance_}')
+    block:
+      # X = np.array(
+      #     [[-1, -1],
+      #      [-2, -1],
+      #      [-3, -2],
+      #      [1, 1],
+      #      [2, 1],
+      #      [3, 2]])
+      let X = [[-1, -1],
+               [-2, -1],
+               [-3, -2],
+               [ 1,  1],
+               [ 2,  1],
+               [ 3,  3]].toTensor().astype(float64)
+
+      let pca_result = pca_detailed(X, n_components = 2)
+
+      echo pca_result

@@ -5,7 +5,6 @@
 import
   ../../tensor/tensor, ../../linear_algebra/linear_algebra
 
-
 proc pca*[T: SomeFloat](
        X: Tensor[T], n_components = 2, center: static bool = true,
        n_oversamples = 5,
@@ -59,9 +58,9 @@ type PCA_Detailed*[T: SomeFloat] = object
   ## with full details
   ##
   ## Contains the full PCA details from an input matrix of shape [n_observations, n_features]
-  ## - n_components: The number of principal components asked in `pca_detailed`
-  ## - n_features: The number of features from the input matrix of shape [n_observations, n_features]
   ## - n_observations: The number of observations/samples from an input matrix of shape [n_observations, n_features]
+  ## - n_features: The number of features from the input matrix of shape [n_observations, n_features]
+  ## - n_components: The number of principal components asked in `pca_detailed`
   ## - projected: The result of the PCA of shape [n_observations, n_components] in descending order of explained variance
   ## - components: a matrix of shape [n_features, n_components] to project new data on the same orthogonal basis
   ## - mean: Per-feature empirical mean, equal to input.mean(axis=0)
@@ -80,9 +79,12 @@ type PCA_Detailed*[T: SomeFloat] = object
   ##     compute the estimated data covariance and score samples.##
   ##     Equal to the average of (min(n_features, n_samples) - n_components)
   ##     smallest eigenvalues of the covariance matrix of X.
-  n_components*: int
-  n_features*: int
+  ##
+  ## The outputs `mean`, `explained_variance`, `explained_variance_ratio`, `singular_values`
+  ## are squeezed to 1D and matches the features column vectors
   n_observations*: int
+  n_features*: int
+  n_components*: int
   projected*: Tensor[T]
   components*: Tensor[T]
   mean*:Tensor[T]
@@ -90,6 +92,21 @@ type PCA_Detailed*[T: SomeFloat] = object
   explained_variance_ratio*: Tensor[T]
   singular_values*: Tensor[T]
   noise_variance*: T
+
+proc `$`*(pca: PCA_Detailed): string =
+
+  # TODO: use the dup macro
+  # TODO: ellipsis in large tensors
+  result =  "PCA Detailed: \n"
+  result &= "      n_observations: " & $pca.n_observations &
+            ", n_features: " & $pca.n_features &
+            ", n_components: " & $pca.n_components & '\n'
+  result &= "      projected:\n" & $pca.projected & '\n'
+  result &= "      components:\n" & $pca.components & '\n'
+  result &= "      mean:\n" & $pca.mean & '\n'
+  result &= "      explained_variance:\n" & $pca.explained_variance & '\n'
+  result &= "      explained_variance_ratio:\n" & $pca.explained_variance_ratio & '\n'
+  result &= "      noise_variance: " & $pca.noise_variance
 
 proc pca_detailed*[T: SomeFloat](
        X: Tensor[T], n_components = 2, center: static bool = true,
@@ -124,9 +141,9 @@ proc pca_detailed*[T: SomeFloat](
   ##   - The number of components to keep (default 2D for 2D projection)
   ##
   ## Returns a "Principal Component Analysis" object with the following fields
-  ## - n_components: The number of principal components asked in `pca_detailed`
-  ## - n_features: The number of features from the input matrix of shape [n_observations, n_features]
   ## - n_observations: The number of observations/samples from an input matrix of shape [n_observations, n_features]
+  ## - n_features: The number of features from the input matrix of shape [n_observations, n_features]
+  ## - n_components: The number of principal components asked in `pca_detailed`
   ## - projected: The result of the PCA of shape [n_observations, n_components] in descending order of explained variance
   ## - components: a matrix of shape [n_features, n_components] to project new data on the same orthogonal basis
   ## - mean: Per-feature empirical mean, equal to input.mean(axis=0)
@@ -145,6 +162,9 @@ proc pca_detailed*[T: SomeFloat](
   ##     compute the estimated data covariance and score samples.##
   ##     Equal to the average of (min(n_features, n_samples) - n_components)
   ##     smallest eigenvalues of the covariance matrix of X.
+  ##
+  ## The outputs `mean`, `explained_variance`, `explained_variance_ratio`, `singular_values`
+  ## are squeezed to 1D and matches the features column vectors
   assert X.rank == 2, "Input should be a 2-dimensional matrix"
 
   result.n_observations = X.shape[0]
@@ -158,6 +178,8 @@ proc pca_detailed*[T: SomeFloat](
     #       but that only happen when the number of components is within 25% of [Observations, Features]
     let X = X -. result.mean
 
+  result.mean = result.mean.squeeze(axis = 0)
+
   let (U, S, Vh) = svd_randomized(X, n_components, n_oversamples=n_oversamples, n_power_iters=n_power_iters)
   result.components = Vh.transpose
   result.projected = U *. S.unsqueeze(0) # S sparse diagonal, equivalent to multiplying by a dense diagonal matrix
@@ -166,6 +188,7 @@ proc pca_detailed*[T: SomeFloat](
   let bessel_correction = T(result.n_observations - 1)
   result.explained_variance = map_inline(S):
     x * x / bessel_correction
+  result.explained_variance = result.explained_variance
 
   # Since we are using SVD truncated to `n_components` we need to
   # refer back to the original matrix for total variance

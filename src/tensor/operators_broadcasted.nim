@@ -122,9 +122,9 @@ proc `/.`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, t: Tensor[T]
 proc `/.`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], val: T): Tensor[T] {.noInit.} =
   ## Broadcasted division
   when T is SomeInteger:
-    result = t.map_inline(val div x)
+    result = t.map_inline(x div val)
   else:
-    result = t.map_inline(val / x)
+    result = t.map_inline(x / val)
 
 proc `^.`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T], exponent: T): Tensor[T] {.noInit.} =
   ## Compute element-wise exponentiation

@@ -50,3 +50,22 @@ proc pop*(tree: var NimNode): NimNode {. compileTime .}=
 macro getSubType*(TT: typedesc): untyped =
   # Get the subtype T of an AnyTensor[T] input
   getTypeInst(TT)[1][1]
+
+template letsGoDeeper* =
+  var rTree = node.kind.newTree()
+  for child in node:
+    rTree.add inspect(child)
+  return rTree
+
+proc replaceSymsByIdents*(ast: NimNode): NimNode =
+  proc inspect(node: NimNode): NimNode =
+    case node.kind:
+    of {nnkIdent, nnkSym}:
+      return ident($node)
+    of nnkEmpty:
+      return node
+    of nnkLiterals:
+      return node
+    else:
+      letsGoDeeper()
+  result = inspect(ast)

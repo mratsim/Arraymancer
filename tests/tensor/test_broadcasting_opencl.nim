@@ -24,7 +24,7 @@ suite "OpenCL: Shapeshifting - broadcasting and non linear algebra elementwise o
       let expected_div = @[-2, 0, 3].toTensor().astype(float32)
 
       check: (u *. v).cpu == expected_mul
-      check: (u ./ v).cpu == expected_div
+      check: (u /. v).cpu == expected_div
 
     block:
       let u = @[1.0, 8.0, -3.0].toTensor().astype(float32).opencl
@@ -33,7 +33,7 @@ suite "OpenCL: Shapeshifting - broadcasting and non linear algebra elementwise o
       let expected_div = @[0.25, 4.0, -0.3].toTensor().astype(float32)
 
       check: (u *. v).cpu == expected_mul
-      check: (u ./ v).cpu == expected_div
+      check: (u /. v).cpu == expected_div
 
   test "Implicit tensor-tensor broadcasting - basic operations +., -., *., ./, .^":
     block: # Addition
@@ -67,7 +67,7 @@ suite "OpenCL: Shapeshifting - broadcasting and non linear algebra elementwise o
       let a = [100.0, 10, 20, 30].toTensor().reshape(4,1).opencl
       let b = [2.0, 5, 10].toTensor().reshape(1,3).opencl
 
-      check: (a ./ b).cpu == [[50.0, 20, 10],
+      check: (a /. b).cpu == [[50.0, 20, 10],
                               [5.0, 2, 1],
                               [10.0, 4, 2],
                               [15.0, 6, 3]].toTensor

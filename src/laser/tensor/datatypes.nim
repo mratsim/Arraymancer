@@ -131,10 +131,13 @@ macro raw_data_unaligned*(body: untyped): untyped =
     body
 
 template `[]`*[T](v: RawImmutableView[T], idx: int): T =
+  bind distinctBase
   distinctBase(type v)(v)[idx]
 
 template `[]`*[T](v: RawMutableView[T], idx: int): var T =
+  bind distinctBase
   distinctBase(type v)(v)[idx]
 
 template `[]=`*[T](v: RawMutableView[T], idx: int, val: T) =
+  bind distinctBase
   distinctBase(type v)(v)[idx] = val

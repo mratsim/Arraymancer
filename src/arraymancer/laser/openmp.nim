@@ -118,6 +118,7 @@ template omp_parallel*(body: untyped): untyped =
   ## Those should be thread-local temporaries.
   # New line intentional: https://github.com/mratsim/Arraymancer/issues/407
   {.emit: ["""
+
   #pragma omp parallel """].}
   block: body
 
@@ -125,6 +126,7 @@ template omp_parallel_if*(condition: bool, body: untyped) =
   let predicate{.used.} = condition # Make symbol valid and ensure it's lvalue
   # New line intentional: https://github.com/mratsim/Arraymancer/issues/407
   {.emit: ["""
+
   #pragma omp parallel if (", predicate, ")"""].}
   block: body
 
@@ -345,35 +347,42 @@ template omp_parallel_chunks_default*(
 
 template omp_critical*(body: untyped): untyped =
   {.emit: ["""
+
   #pragma omp critical"""].}
   block: body
 
 template omp_master*(body: untyped): untyped =
   {.emit: ["""
+
   #pragma omp master"""].}
   block: body
 
 template omp_single*(body: untyped): untyped =
   {.emit: ["""
+
   #pragma omp single"""].}
   block: body
 
 template omp_single_nowait*(body: untyped): untyped =
   {.emit: ["""
+
   #pragma omp single nowait"""].}
   block: body
 
 template omp_barrier*(): untyped =
   {.emit: ["""
+
   #pragma omp barrier"""].}
 
 template omp_task*(annotation: static string, body: untyped): untyped =
   {.emit: [
+
     """#pragma omp task """, annotation].}
   block: body
 
 template omp_taskwait*(): untyped =
   {.emit: ["""
+
   #pragma omp taskwait"""].}
 
 template omp_taskloop*(
@@ -398,4 +407,5 @@ macro omp_flush*(variables: varargs[untyped]): untyped =
   listvars.add ')'
   result = quote do:
     {.emit: ["""
+    
     #pragma omp flush " & `listvars`"""].}

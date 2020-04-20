@@ -15,7 +15,9 @@
 import ../../src/arraymancer
 import unittest, os
 
-let expected_output_1d = """dimension_1,value
+proc main() =
+
+  let expected_output_1d = """dimension_1,value
 0,1
 1,2
 2,3
@@ -23,7 +25,7 @@ let expected_output_1d = """dimension_1,value
 4,5
 """
 
-let expected_output_2d = """dimension_1,dimension_2,value
+  let expected_output_2d = """dimension_1,dimension_2,value
 0,0,1
 0,1,2
 0,2,3
@@ -32,7 +34,7 @@ let expected_output_2d = """dimension_1,dimension_2,value
 1,2,6
 """
 
-let expected_output_3d = """dimension_1,dimension_2,dimension_3,value
+  let expected_output_3d = """dimension_1,dimension_2,dimension_3,value
 0,0,0,1
 0,0,1,2
 0,1,0,A
@@ -43,37 +45,40 @@ let expected_output_3d = """dimension_1,dimension_2,dimension_3,value
 1,1,1,Y
 """
 
-let expected_output_semicolon = """dimension_1;dimension_2;value
+  let expected_output_semicolon = """dimension_1;dimension_2;value
 0;0;1.0
 0;1;2.0
 1;0;3.0
 1;1;4.0
 """
 
-let test_file_path = getTempDir() / "arraymancer_test.csv"
+  let test_file_path = getTempDir() / "arraymancer_test.csv"
 
-suite "[IO] CSV support":
+  suite "[IO] CSV support":
 
-  test "Should export 1d Tensor":
-    let t = @[1, 2, 3, 4, 5].toTensor()
-    t.to_csv(test_file_path)
-    let content = readFile(test_file_path)
-    check content == expected_output_1d
+    test "Should export 1d Tensor":
+      let t = @[1, 2, 3, 4, 5].toTensor()
+      t.to_csv(test_file_path)
+      let content = readFile(test_file_path)
+      check content == expected_output_1d
 
-  test "Should export 2d Tensor":
-    let t = @[@[1, 2, 3], @[4, 5, 6]].toTensor()
-    t.to_csv(test_file_path)
-    let content = readFile(test_file_path)
-    check content == expected_output_2d
+    test "Should export 2d Tensor":
+      let t = @[@[1, 2, 3], @[4, 5, 6]].toTensor()
+      t.to_csv(test_file_path)
+      let content = readFile(test_file_path)
+      check content == expected_output_2d
 
-  test "Should export 3d Tensor":
-    let t = @[@[@["1", "2"], @["A", "B"]], @[@["10", "20"], @["X", "Y"]]].toTensor()
-    t.to_csv(test_file_path)
-    let content = readFile(test_file_path)
-    check content == expected_output_3d
+    test "Should export 3d Tensor":
+      let t = @[@[@["1", "2"], @["A", "B"]], @[@["10", "20"], @["X", "Y"]]].toTensor()
+      t.to_csv(test_file_path)
+      let content = readFile(test_file_path)
+      check content == expected_output_3d
 
-  test "Should handle separator":
-    let t = @[@[1.0, 2.0], @[3.0, 4.0]].toTensor()
-    t.to_csv(test_file_path, separator=';')
-    let content = readFile(test_file_path)
-    check content == expected_output_semicolon
+    test "Should handle separator":
+      let t = @[@[1.0, 2.0], @[3.0, 4.0]].toTensor()
+      t.to_csv(test_file_path, separator=';')
+      let content = readFile(test_file_path)
+      check content == expected_output_semicolon
+
+main()
+GC_fullCollect()

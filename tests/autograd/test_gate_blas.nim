@@ -28,21 +28,25 @@ import unittest, sequtils
 # ∂C/∂X = W.transpose * previous_gradient
 # ∂C/∂W = previous_gradient * X.transpose
 
-suite "Autograd of BLAS operations":
-  test "Gradient of matrix multiplication":
+proc main() =
+  suite "Autograd of BLAS operations":
+    test "Gradient of matrix multiplication":
 
-    let W = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
-    let X = toSeq(11..22).toTensor.reshape(4,3).astype(float32)
+      let W = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
+      let X = toSeq(11..22).toTensor.reshape(4,3).astype(float32)
 
-    let ctx = newContext Tensor[float32]
+      let ctx = newContext Tensor[float32]
 
-    let w_ag = ctx.variable(W, requires_grad = true)
-    let x_ag = ctx.variable(X, requires_grad = true)
+      let w_ag = ctx.variable(W, requires_grad = true)
+      let x_ag = ctx.variable(X, requires_grad = true)
 
-    let C = w_ag * x_ag
+      let C = w_ag * x_ag
 
-    C.backprop
+      C.backprop
 
-    let grad_C = ones[float32](2,3)
-    check: w_ag.grad == grad_C * X.transpose
-    check: x_ag.grad == W.transpose * grad_C
+      let grad_C = ones[float32](2,3)
+      check: w_ag.grad == grad_C * X.transpose
+      check: x_ag.grad == W.transpose * grad_C
+
+main()
+GC_fullCollect()

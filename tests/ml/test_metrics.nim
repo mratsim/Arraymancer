@@ -15,28 +15,33 @@
 import ../../src/arraymancer
 import unittest, math
 
-suite "[ML] Metrics":
-  test "Accuracy score":
-    let
-      y_pred = [0, 2, 1, 3].toTensor
-      y_true = [0, 1, 2, 3].toTensor
+proc main() =
+  suite "[ML] Metrics":
+    test "Accuracy score":
+      let
+        y_pred = [0, 2, 1, 3].toTensor
+        y_true = [0, 1, 2, 3].toTensor
 
-    check: y_pred.accuracy_score(y_true) == 0.5
+      check: y_pred.accuracy_score(y_true) == 0.5
 
-  test "Mean absolute error":
-    var y_true = [0.9, 0.2, 0.1, 0.4, 0.9].toTensor()
-    var y =      [1.0, 0.0, 0.0, 1.0, 1.0].toTensor()
-    check: y.absolute_error(y_true).sum() == 1.1
-    check: y.mean_absolute_error(y_true) == (1.1 / 5.0)
+    test "Mean absolute error":
+      var y_true = [0.9, 0.2, 0.1, 0.4, 0.9].toTensor()
+      var y =      [1.0, 0.0, 0.0, 1.0, 1.0].toTensor()
+      check: y.absolute_error(y_true).sum() == 1.1
+      check: y.mean_absolute_error(y_true) == (1.1 / 5.0)
 
-  test "Relative error":
-    var y_true = [0.0,  0.0, -1.0, 1e-8, 1e-8].toTensor()
-    var y =      [0.0, -1.0,  0.0, 0.0,  1e-7].toTensor()
-    check: y.relative_error(y_true) == [0.0, 1.0, 1.0, 1.0, 0.9].toTensor()
-    check: y.mean_relative_error(y_true) == 0.78
+    test "Relative error":
+      var y_true = [0.0,  0.0, -1.0, 1e-8, 1e-8].toTensor()
+      var y =      [0.0, -1.0,  0.0, 0.0,  1e-7].toTensor()
+      check: y.relative_error(y_true) == [0.0, 1.0, 1.0, 1.0, 0.9].toTensor()
+      check: y.mean_relative_error(y_true) == 0.78
 
-  test "Mean squared error":
-    var y_true = [0.9, 0.2, 0.1, 0.4, 0.9].toTensor()
-    var y =      [1.0, 0.0, 0.0, 1.0, 1.0].toTensor()
-    check: y.squared_error(y_true).sum() == 0.43
-    check: y.mean_squared_error(y_true) == (0.43 / 5.0)
+    test "Mean squared error":
+      var y_true = [0.9, 0.2, 0.1, 0.4, 0.9].toTensor()
+      var y =      [1.0, 0.0, 0.0, 1.0, 1.0].toTensor()
+      check: y.squared_error(y_true).sum() == 0.43
+      check: y.mean_squared_error(y_true) == (0.43 / 5.0)
+
+
+main()
+GC_fullCollect()

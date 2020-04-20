@@ -4,63 +4,69 @@
 import ../../src/arraymancer
 import unittest
 
-suite "Datasets - IMDB":
-  test "Load IMDB":
-    let imdb = load_imdb(cache = true)
+proc main() =
 
-    template is_pos(x: int): bool =
-      (7 <= x) and (x <= 10)
+  suite "Datasets - IMDB":
+    test "Load IMDB":
+      let imdb = load_imdb(cache = true)
 
-    template is_neg(x: int): bool =
-      (1 <= x) and (x <= 4)
+      template is_pos(x: int): bool =
+        (7 <= x) and (x <= 10)
 
-    check:
-      imdb.train_texts.shape == [25000]
-      imdb.test_texts.shape == [25000]
-      imdb.train_labels.shape == [25000]
-      imdb.test_labels.shape == [25000]
+      template is_neg(x: int): bool =
+        (1 <= x) and (x <= 4)
 
-      # Check at boundaries that we correctly read data
-      # positive: [0, 12499]
-      imdb.train_texts[0] != ""
-      imdb.train_texts[1] != ""
-      imdb.train_texts[12498] != ""
-      imdb.train_texts[12499] != ""
+      check:
+        imdb.train_texts.shape == [25000]
+        imdb.test_texts.shape == [25000]
+        imdb.train_labels.shape == [25000]
+        imdb.test_labels.shape == [25000]
 
-      imdb.train_labels[0].is_pos()
-      imdb.train_labels[1].is_pos()
-      imdb.train_labels[12498].is_pos()
-      imdb.train_labels[12499].is_pos()
+        # Check at boundaries that we correctly read data
+        # positive: [0, 12499]
+        imdb.train_texts[0] != ""
+        imdb.train_texts[1] != ""
+        imdb.train_texts[12498] != ""
+        imdb.train_texts[12499] != ""
 
-      # negative: [12500, 24999]
-      imdb.train_texts[12500] != ""
-      imdb.train_texts[12501] != ""
-      imdb.train_texts[24998] != ""
-      imdb.train_texts[24999] != ""
+        imdb.train_labels[0].is_pos()
+        imdb.train_labels[1].is_pos()
+        imdb.train_labels[12498].is_pos()
+        imdb.train_labels[12499].is_pos()
 
-      imdb.train_labels[12500].is_neg()
-      imdb.train_labels[12501].is_neg()
-      imdb.train_labels[24998].is_neg()
-      imdb.train_labels[24999].is_neg()
+        # negative: [12500, 24999]
+        imdb.train_texts[12500] != ""
+        imdb.train_texts[12501] != ""
+        imdb.train_texts[24998] != ""
+        imdb.train_texts[24999] != ""
 
-      # positive: [0, 12499]
-      imdb.test_texts[0] != ""
-      imdb.test_texts[1] != ""
-      imdb.test_texts[12498] != ""
-      imdb.test_texts[12499] != ""
+        imdb.train_labels[12500].is_neg()
+        imdb.train_labels[12501].is_neg()
+        imdb.train_labels[24998].is_neg()
+        imdb.train_labels[24999].is_neg()
 
-      imdb.test_labels[0].is_pos()
-      imdb.test_labels[1].is_pos()
-      imdb.test_labels[12498].is_pos()
-      imdb.test_labels[12499].is_pos()
+        # positive: [0, 12499]
+        imdb.test_texts[0] != ""
+        imdb.test_texts[1] != ""
+        imdb.test_texts[12498] != ""
+        imdb.test_texts[12499] != ""
 
-      # negative: [12500, 24999]
-      imdb.test_texts[12500] != ""
-      imdb.test_texts[12501] != ""
-      imdb.test_texts[24998] != ""
-      imdb.test_texts[24999] != ""
+        imdb.test_labels[0].is_pos()
+        imdb.test_labels[1].is_pos()
+        imdb.test_labels[12498].is_pos()
+        imdb.test_labels[12499].is_pos()
 
-      imdb.test_labels[12500].is_neg()
-      imdb.test_labels[12501].is_neg()
-      imdb.test_labels[24998].is_neg()
-      imdb.test_labels[24999].is_neg()
+        # negative: [12500, 24999]
+        imdb.test_texts[12500] != ""
+        imdb.test_texts[12501] != ""
+        imdb.test_texts[24998] != ""
+        imdb.test_texts[24999] != ""
+
+        imdb.test_labels[12500].is_neg()
+        imdb.test_labels[12501].is_neg()
+        imdb.test_labels[24998].is_neg()
+        imdb.test_labels[24999].is_neg()
+
+
+main()
+GC_fullCollect()

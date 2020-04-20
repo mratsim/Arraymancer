@@ -15,6 +15,7 @@
 import ../../src/arraymancer
 import unittest, math
 
+
 suite "Testing fusion operations":
   test "Multiply and add":
     let

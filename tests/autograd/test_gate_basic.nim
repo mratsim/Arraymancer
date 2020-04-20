@@ -15,57 +15,61 @@
 import ../../src/arraymancer
 import unittest, sequtils
 
-suite "Autograd of basic operations":
-  test "Gradient of tensor addition":
+proc main() =
+  suite "Autograd of basic operations":
+    test "Gradient of tensor addition":
 
-    let a = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
-    let b = toSeq(11..18).toTensor.reshape(2,4).astype(float32)
+      let a = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
+      let b = toSeq(11..18).toTensor.reshape(2,4).astype(float32)
 
-    let ctx = newContext Tensor[float32]
+      let ctx = newContext Tensor[float32]
 
-    let va = ctx.variable(a, requires_grad = true)
-    let vb = ctx.variable(b, requires_grad = true)
+      let va = ctx.variable(a, requires_grad = true)
+      let vb = ctx.variable(b, requires_grad = true)
 
-    let vc = va + vb
+      let vc = va + vb
 
-    vc.backprop()
+      vc.backprop()
 
-    let onesTensor = ones[float32](2, 4)
+      let onesTensor = ones[float32](2, 4)
 
-    check: va.grad == onesTensor
-    check: vb.grad == onesTensor
+      check: va.grad == onesTensor
+      check: vb.grad == onesTensor
 
-  test "Gradient of mean":
+    test "Gradient of mean":
 
-    let a = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
+      let a = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
 
-    let ctx = newContext Tensor[float32]
+      let ctx = newContext Tensor[float32]
 
-    let va = ctx.variable(a, requires_grad = true)
-    let m = va.mean()
+      let va = ctx.variable(a, requires_grad = true)
+      let m = va.mean()
 
-    m.backprop()
+      m.backprop()
 
-    let constantTensor = ones[float32](2, 4) / 8.0
+      let constantTensor = ones[float32](2, 4) / 8.0
 
-    check: va.grad == constantTensor
+      check: va.grad == constantTensor
 
-  test "Gradient of mean along one axis":
+    test "Gradient of mean along one axis":
 
-    let a = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
+      let a = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
 
-    let ctx = newContext Tensor[float32]
+      let ctx = newContext Tensor[float32]
 
-    let va = ctx.variable(a, requires_grad = true)
+      let va = ctx.variable(a, requires_grad = true)
 
-    let m0 = va.mean(axis=0)
-    m0.backprop()
-    let constantTensor0 = ones[float32](2, 4) / 4.0
-    check: va.grad == constantTensor0
+      let m0 = va.mean(axis=0)
+      m0.backprop()
+      let constantTensor0 = ones[float32](2, 4) / 4.0
+      check: va.grad == constantTensor0
 
-    va.grad = zeros_like(va.grad)
+      va.grad = zeros_like(va.grad)
 
-    let m = va.mean(axis=1)
-    m.backprop()
-    let constantTensor1 = ones[float32](2, 4) / 2.0
-    check: va.grad == constantTensor1
+      let m = va.mean(axis=1)
+      m.backprop()
+      let constantTensor1 = ones[float32](2, 4) / 2.0
+      check: va.grad == constantTensor1
+
+main()
+GC_fullCollect()

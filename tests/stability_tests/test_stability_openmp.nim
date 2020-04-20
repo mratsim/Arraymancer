@@ -16,37 +16,41 @@
 import ../../src/arraymancer
 import unittest, math, random, sequtils
 
-suite "Load test - OpenMP":
-  test "Integer - toTensor, slicing, matmul, inplace addition, display, rince & repeat":
-    # The following bugs shows that OpenMP is very sensitive
-    # https://github.com/mratsim/Arraymancer/issues/107
-    # https://github.com/mratsim/Arraymancer/issues/78
-    # https://github.com/mratsim/Arraymancer/issues/99
-    # OpenMP operations is deactivated on Tensors with less than <1000 elements except for matmul
-    # We test random seeded inputs in a hot loop to make sure the library is robust
+proc main() =
+  suite "Load test - OpenMP":
+    test "Integer - toTensor, slicing, matmul, inplace addition, display, rince & repeat":
+      # The following bugs shows that OpenMP is very sensitive
+      # https://github.com/mratsim/Arraymancer/issues/107
+      # https://github.com/mratsim/Arraymancer/issues/78
+      # https://github.com/mratsim/Arraymancer/issues/99
+      # OpenMP operations is deactivated on Tensors with less than <1000 elements except for matmul
+      # We test random seeded inputs in a hot loop to make sure the library is robust
 
 
-    randomize(1337) # seed for reproducibility
+      randomize(1337) # seed for reproducibility
 
-    for _ in 0..<100:
+      for _ in 0..<100:
 
-      # Shape of the matrices
-      let M = rand(2..100)
-      let N = rand(2..100)
-      let K = rand(2..100)
+        # Shape of the matrices
+        let M = rand(2..100)
+        let N = rand(2..100)
+        let K = rand(2..100)
 
-      # We create the matrices from seq to test the GC/OpenMP interaction
-      let a = newSeqWith(M*N, rand(-1_000..1_000)).toTensor.reshape(M, N)
-      let b = newSeqWith(N*K, rand(-1_000..1_000)).toTensor.reshape(N, K)
+        # We create the matrices from seq to test the GC/OpenMP interaction
+        let a = newSeqWith(M*N, rand(-1_000..1_000)).toTensor.reshape(M, N)
+        let b = newSeqWith(N*K, rand(-1_000..1_000)).toTensor.reshape(N, K)
 
-      # Create a c and test some computation
-      var c = a*b - randomTensor(M,K, 100)
+        # Create a c and test some computation
+        var c = a*b - randomTensor(M,K, 100)
 
-      # Take a slice and assign to it
-      c[0..<(M div 2), 0..<(K div 2)] = randomTensor(M div 2,K div 2, 100)
+        # Take a slice and assign to it
+        c[0..<(M div 2), 0..<(K div 2)] = randomTensor(M div 2,K div 2, 100)
 
-      # Redo computation
-      c += c
+        # Redo computation
+        c += c
 
-      # display the result
-      discard $c
+        # display the result
+        discard $c
+
+main()
+GC_fullCollect()

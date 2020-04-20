@@ -17,8 +17,12 @@ import  ./data_structure,
         sugar, math, complex
 
 proc astype*[T; U: not Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noInit.} =
-  ## Apply type conversion on the whole tensor
-  result = t.map(x => x.U)
+  ## Apply type conversion on the whole tensor. This is a no-op if `T` is the same
+  ## as `U`.
+  when T is U:
+    result = t
+  else:
+    result = t.map(x => x.U)
 
 proc astype*[T: SomeNumber, U: Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noInit.} =
   ## Apply type conversion on the whole tensor

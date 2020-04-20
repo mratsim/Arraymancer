@@ -139,8 +139,8 @@ proc map*[T; U: ref|string|seq](t: Tensor[T], f: T -> U): Tensor[U] {.noInit,noS
   ## OpenMP will not work with if the results allocate memory managed by GC.
 
   result = newTensorUninit[U](t.shape)
-  for i, val in enumerate(t):
-    result.unsafe_raw_buf[i] = f(val)
+  for res, val in mzip(result, t):
+    res = f(val)
 
 proc apply*[T](t: var Tensor[T], f: T -> T) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.

@@ -98,5 +98,3 @@ proc main() =
 
 main()
 GC_fullCollect()
-
-GC_

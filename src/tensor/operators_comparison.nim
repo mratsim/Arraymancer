@@ -14,7 +14,8 @@
 
 import ./data_structure, ./accessors,
         ./higher_order_applymap,
-        ./shapeshifting
+        ./shapeshifting,
+        ../private/deprecate
 
 proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
   ## Tensor comparison
@@ -36,7 +37,7 @@ template gen_broadcasted_comparison(op: untyped): untyped {.dirty.}=
   result = map2_inline(tmp_a, tmp_b):
     op(x, y)
 
-proc `.==`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
+proc `==.`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ## Tensor element-wise equality.
   ##
   ## And broadcasted element-wise equality.
@@ -46,7 +47,7 @@ proc `.==`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   gen_broadcasted_comparison(`==`)
 
 
-proc `.!=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
+proc `!=.`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ## Tensor element-wise inequality.
   ##
   ## And broadcasted element-wise inequality.
@@ -55,7 +56,7 @@ proc `.!=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##   - A tensor of boolean
   gen_broadcasted_comparison(`!=`)
 
-proc `.<=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
+proc `<=.`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ## Tensor element-wise lesser or equal.
   ##
   ## And broadcasted element-wise lesser or equal.
@@ -64,7 +65,7 @@ proc `.<=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##   - A tensor of boolean
   gen_broadcasted_comparison(`<=`)
 
-proc `.<`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
+proc `<.`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ## Tensor element-wise lesser than.
   ##
   ## And broadcasted element-wise lesser than.
@@ -73,7 +74,7 @@ proc `.<`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##   - A tensor of boolean
   gen_broadcasted_comparison(`<`)
 
-proc `.>=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
+proc `>=.`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ## Tensor element-wise greater or equal.
   ##
   ## And broadcasted element-wise greater or equal.
@@ -82,7 +83,7 @@ proc `.>=`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ##   - A tensor of boolean
   gen_broadcasted_comparison(`>=`)
 
-proc `.>`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
+proc `>.`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ## Tensor element-wise greater than.
   ##
   ## And broadcasted element-wise greater than.
@@ -90,6 +91,13 @@ proc `.>`*[T](a, b: Tensor[T]): Tensor[bool] {.noInit.} =
   ## Returns:
   ##   - A tensor of boolean
   gen_broadcasted_comparison(`>`)
+
+implDeprecatedBy(`.==`, `==.`, exported = true)
+implDeprecatedBy(`.!=`, `!=.`, exported = true)
+implDeprecatedBy(`.<=`, `<=.`, exported = true)
+implDeprecatedBy(`.<`, `<.`, exported = true)
+implDeprecatedBy(`.>=`, `>=.`, exported = true)
+implDeprecatedBy(`.>`, `>.`, exported = true)
 
 # ######################
 # broadcasted scalar ops

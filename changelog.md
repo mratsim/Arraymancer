@@ -4,6 +4,14 @@ Arraymancer v0.x.x
 Changes (TODO):
   - Fancy Indexing (#434)
 
+Deprecation
+  - The dot in broadcasting and elementwise operators has changed place. This was not propagated to logical comparison
+    Use `==.`, `!=.`, `<=.`, `<.`, `>=.`, `>.`
+    instead of the previous order `.==`.
+    This allows the broadcasting operators to have the same precedence as the
+    natural operators.
+    This also align Arraymancer with other Nim packages: Manu and NumericalNim
+
 Arraymancer v0.6.0 Jan. 09 2020
 =====================================================
 

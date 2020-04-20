@@ -5,13 +5,8 @@
 import
   macros, tables,
   ../autograd/autograd,
+  ../private/ast_utils,
   ./dsl_types
-
-template letsGoDeeper =
-  var rTree = node.kind.newTree()
-  for child in node:
-    rTree.add inspect(child)
-  return rTree
 
 proc replaceInputNodes*(self: TopoTable, in_shape: NimNode): NimNode =
   # Args:
@@ -35,19 +30,6 @@ proc replaceInputNodes*(self: TopoTable, in_shape: NimNode): NimNode =
     else:
       letsGoDeeper()
   result = inspect(in_shape)
-
-proc replaceSymsByIdents*(ast: NimNode): NimNode =
-  proc inspect(node: NimNode): NimNode =
-    case node.kind:
-    of {nnkIdent, nnkSym}:
-      return ident($node)
-    of nnkEmpty:
-      return node
-    of nnkLiterals:
-      return node
-    else:
-      letsGoDeeper()
-  result = inspect(ast)
 
 macro ctxSubtype*(context: Context): untyped =
   ## Extract the subtype from a Context

@@ -18,7 +18,8 @@ import  ./backend/opencl_backend,
         ./private/p_checks,
         ./data_structure,
         ./shapeshifting_opencl,
-        ./operators_blas_l1_opencl
+        ./operators_blas_l1_opencl,
+        ../private/deprecate
 
 # #########################################################
 # # Broadcasting Tensor-Tensor
@@ -28,16 +29,10 @@ proc `+.`*[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T] {.noInit,inline.} =
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a + tmp_b
 
-proc `.+`*[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T] {.noInit,inline, deprecated:"Use `+.` instead".} =
-  a +. b
-
 proc `-.`*[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T] {.noInit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a - tmp_b
-
-proc `.-`*[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T] {.noInit,inline, deprecated:"Use `-.` instead".} =
-  a -. b
 
 genClInfixOp(float32, "float", elwise_mul, "clMul", "*", exported = false)
 genClInfixOp(float64, "double", elwise_mul, "clAdd", "*", exported = false)
@@ -51,9 +46,6 @@ proc `*.`*[T: SomeFloat](a,b: ClTensor[T]): ClTensor[T] {.noInit.} =
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = elwise_mul(tmp_a, tmp_b)
 
-proc `.*`*[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T] {.noInit,inline, deprecated:"Use `*.` instead".} =
-  a *. b
-
 proc `/.`*[T: SomeFloat](a,b: ClTensor[T]): ClTensor[T] {.noInit.} =
   ## Element-wise multiplication (Hadamard product).
   ##
@@ -61,5 +53,11 @@ proc `/.`*[T: SomeFloat](a,b: ClTensor[T]): ClTensor[T] {.noInit.} =
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = elwise_div(tmp_a, tmp_b)
 
-proc `./`*[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T] {.noInit,inline, deprecated:"Use `/.` instead".} =
-  a /. b
+
+# ##############################################
+# Deprecated syntax
+
+implDeprecatedBy(`.+`, `+.`, exported = true)
+implDeprecatedBy(`.-`, `-.`, exported = true)
+implDeprecatedBy(`.*`, `*.`, exported = true)
+implDeprecatedBy(`./`, `/.`, exported = true)

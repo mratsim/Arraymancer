@@ -22,6 +22,8 @@ include ./private/incl_accessors_cuda,
         ./private/incl_higher_order_cuda,
         ./private/incl_kernels_cuda
 
+import ../private/deprecate
+
 # #########################################################
 # # Broadcasting Tensor-Tensor
 # # And element-wise multiplication (Hadamard) and division
@@ -33,16 +35,10 @@ proc `+.`*[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T] {.noInit,inline.} =
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a + tmp_b
 
-proc `.+`*[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T] {.noInit,inline, deprecated: "Use `+.` instead".} =
-  a +. b
-
 proc `-.`*[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T] {.noInit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a - tmp_b
-
-proc `.-`*[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T] {.noInit,inline, deprecated: "Use `-.` instead".} =
-  a -. b
 
 proc `*.`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   ## Element-wise multiplication (Hadamard product).
@@ -54,10 +50,7 @@ proc `*.`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   result = newCudaTensor[T](tmp_a.shape)
   cuda_binary_call(cuda_Mul, result, tmp_a, tmp_b)
 
-proc `.*`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noInit, inline, deprecated: "Use `*.` instead".} =
-  a *. b
-
-proc `/.`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+proc `/.`*[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   ## CudaTensor substraction
 
   let (tmp_a, tmp_b) = broadcast2(a, b)
@@ -65,8 +58,6 @@ proc `/.`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   result = newCudaTensor[T](tmp_a.shape)
   cuda_binary_call(cuda_Div, result, tmp_a, tmp_b)
 
-proc `./`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noInit, inline, deprecated: "Use `/.` instead".} =
-  a /. b
 
 # ##############################################
 # # Broadcasting in-place Tensor-Tensor
@@ -83,9 +74,6 @@ proc `+.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
   let tmp_b = b.broadcast(a.shape)
   a += tmp_b
 
-proc `.+=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) {.inline, deprecated: "Use `+.=` instead".} =
-  a +.= b
-
 proc `-.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Tensor broadcasted in-place substraction.
   ##
@@ -94,9 +82,6 @@ proc `-.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
 
   let tmp_b = b.broadcast(a.shape)
   a -= tmp_b
-
-proc `.-=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) {.inline, deprecated: "Use `-.=` instead".} =
-  a -.= b
 
 proc `*.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Tensor broadcasted in-place multiplication (Hadamard product)
@@ -107,9 +92,6 @@ proc `*.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
   let tmp_b = b.broadcast(a.shape)
   cuda_assign_call(cuda_mMulOp, a, tmp_b)
 
-proc `.*=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) {.inline, deprecated: "Use `*.=` instead".} =
-  a .*= b
-
 proc `/.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
   ## Tensor broadcasted in-place float division.
   ##
@@ -119,8 +101,6 @@ proc `/.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
   let tmp_b = b.broadcast(a.shape)
   cuda_assign_call(cuda_mDivOp, a, tmp_b)
 
-proc `./=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) {.inline, deprecated: "Use `/.=` instead".} =
-  a /.= b
 
 # ##############################################
 # # Broadcasting Tensor-Scalar and Scalar-Tensor
@@ -133,16 +113,10 @@ proc `+.`*[T: SomeFloat](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
   result = newCudaTensor[T](t.shape)
   cuda_rscal_call(cuda_rscalAdd, result, t, val)
 
-proc `.+`*[T: SomeFloat](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit, inline, deprecated: "Use `+.` instead".} =
-  t +. val
-
 proc `-.`*[T: SomeFloat](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
   ## Broadcasted substraction for scalar - tensor.
   result = newCudaTensor[T](t.shape)
   cuda_rscal_call(cuda_rscalSub, result, t, val)
-
-proc `.-`*[T: SomeFloat](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit, inline, deprecated: "Use `-.` instead".} =
-  t -. val
 
 cuda_lscal_glue("cuda_lscalSub","LscalSub", cuda_lscalSub)
 cuda_lscal_glue("cuda_lscalAdd","LscalAdd", cuda_lscalAdd)
@@ -153,24 +127,16 @@ proc `+.`*[T: SomeFloat](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   result = newCudaTensor[T](t.shape)
   cuda_lscal_call(cuda_lscalAdd, result, val, t)
 
-proc `.+`*[T: SomeFloat](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit, inline, deprecated: "Use `+.` instead".} =
-  val +. t
-
 proc `-.`*[T: SomeFloat](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   ## Broadcasted substraction for tensor - scalar.
   result = newCudaTensor[T](t.shape)
   cuda_lscal_call(cuda_lscalSub, result, val, t)
-
-proc `.-`*[T: SomeFloat](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit, inline, deprecated: "Use `-.` instead".} =
-  val -. t
 
 proc `/.`*[T: SomeFloat](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   ## Broadcasted division of a float by a tensor of floats.
   result = newCudaTensor[T](t.shape)
   cuda_lscal_call(cuda_lscalDiv, result, val, t)
 
-proc `./`*[T: SomeFloat](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit, inline, deprecated: "Use `/.` instead".} =
-  val /. t
 
 # ##############################################
 # # Broadcasting in-place Tensor-Scalar
@@ -181,12 +147,19 @@ proc `+.=`*[T: SomeFloat](t: var CudaTensor[T], val: T) =
   ## Broadcasted addition for scalar + tensor.
   cuda_assignscal_call(cuda_mscalAdd, t, val)
 
-proc `.+=`*[T: SomeFloat](t: var CudaTensor[T], val: T) {.inline, deprecated: "Use `+.=` instead".} =
-  t +.= val
-
 proc `-.=`*[T: SomeFloat](t: var CudaTensor[T], val: T) =
   ## Broadcasted substraction for scalar - tensor.
   cuda_assignscal_call(cuda_mscalSub, t, val)
 
-proc `.-=`*[T: SomeFloat](t: var CudaTensor[T], val: T) {.inline, deprecated: "Use `-.=` instead".} =
-  t -.= val
+# ##############################################
+# Deprecated syntax
+
+implDeprecatedBy(`.+`, `+.`, exported = true)
+implDeprecatedBy(`.-`, `-.`, exported = true)
+implDeprecatedBy(`.*`, `*.`, exported = true)
+implDeprecatedBy(`./`, `/.`, exported = true)
+
+implDeprecatedBy(`.=+`, `+.=`, exported = true)
+implDeprecatedBy(`.=-`, `-.=`, exported = true)
+implDeprecatedBy(`.=*`, `*.=`, exported = true)
+implDeprecatedBy(`.=/`, `/.=`, exported = true)

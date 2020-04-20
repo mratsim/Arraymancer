@@ -61,6 +61,6 @@ suite "Testing tensor comparison":
       a_complex = a.astype(Complex[float64])
       b_complex = b.astype(Complex[float64])
 
-    check: (a .== b) == [true, false, false, true].toTensor
-    check: (a .> b)  == [false, true, false, false].toTensor
-    check: (a_complex .== b_complex) == [true, false, false, true].toTensor
+    check: (a ==. b) == [true, false, false, true].toTensor
+    check: (a >. b)  == [false, true, false, false].toTensor
+    check: (a_complex ==. b_complex) == [true, false, false, true].toTensor

@@ -118,7 +118,7 @@ func masked_select*[T](t: Tensor[T], mask: openarray): Tensor[T] {.noInit.} =
   ## The result does not share input storage.
   t.masked_select mask.toTensor()
 
-func masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
+proc masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
   ## For the index of each element of t.
   ## Fill the elements at ``t[index]`` with the ``value``
   ## if their corresponding ``mask[index]`` is true.
@@ -148,7 +148,7 @@ func masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
         tElem = value
 
 
-func masked_fill*[T](t: var Tensor[T], mask: openarray, value: T) =
+proc masked_fill*[T](t: var Tensor[T], mask: openarray, value: T) =
   ## For the index of each element of t.
   ## Fill the elements at ``t[index]`` with the ``value``
   ## if their corresponding ``mask[index]`` is true.
@@ -203,7 +203,7 @@ template masked_axis_select_impl[T](result: var Tensor[T], t: Tensor[T], mask: T
 
   assert dstSlice[axis].a == size
 
-func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor[T] {.noInit.} =
+proc masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor[T] {.noInit.} =
   ## Take elements from a tensor according to the provided boolean mask.
   ## The mask must be a 1D tensor and is applied along an axis, by default 0.
   ##
@@ -217,7 +217,7 @@ func masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor
   let mask = mask.squeeze() # make 1D if coming from unreduced axis aggregation like sum
   masked_axis_select_impl(result, t, mask, axis)
 
-func masked_axis_select*[T](t: Tensor[T], mask: openArray[bool], axis: int): Tensor[T] {.noInit.} =
+proc masked_axis_select*[T](t: Tensor[T], mask: openArray[bool], axis: int): Tensor[T] {.noInit.} =
   ## Take elements from a tensor according to the provided boolean mask.
   ## The mask must be a 1D tensor and is applied along an axis, by default 0.
   ##
@@ -253,7 +253,7 @@ template masked_axis_fill_impl[T](t: var Tensor[T], mask: Tensor[bool] or openAr
     dstSlice[axis].a += 1
     dstSlice[axis].b = dstSlice[axis].a
 
-func masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T or Tensor[T]) =
+proc masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T or Tensor[T]) =
   ## Take a 1D boolean mask tensor with size equal to the `t.shape[axis]`
   ## The axis index that are set to true in the mask will be filled with `value`
   ##
@@ -282,7 +282,7 @@ func masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value
                             # TODO: squeeze exactly depending on axis to prevent accepting invalid values
   masked_axis_fill_impl(t, mask, axis, value)
 
-func masked_axis_fill*[T](t: var Tensor[T], mask: openArray[bool], axis: int, value: T or Tensor[T]) =
+proc masked_axis_fill*[T](t: var Tensor[T], mask: openArray[bool], axis: int, value: T or Tensor[T]) =
   ## Take a 1D boolean mask tensor with size equal to the `t.shape[axis]`
   ## The axis index that are set to true in the mask will be filled with `value`
   ##
@@ -312,7 +312,7 @@ func masked_axis_fill*[T](t: var Tensor[T], mask: openArray[bool], axis: int, va
 # Apply N-D mask along an axis
 # --------------------------------------------------------------------------------------------
 
-func masked_fill_along_axis*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T) =
+proc masked_fill_along_axis*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T) =
   ## Take a boolean mask tensor and
   ## for each slice of ``t`` along the ``axis``
   ## Set the slice elements to value if their mask is true

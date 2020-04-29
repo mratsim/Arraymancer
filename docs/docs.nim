@@ -2,6 +2,9 @@ import macros, strformat, strutils, sequtils, sets, tables, algorithm
 
 from os import parentDir, getCurrentCompilerExe, DirSep, extractFilename, `/`, setCurrentDir
 
+when (NimMajor, NimMinor, NimPatch) >= (1, 3, 0):
+  from os import paramCount, paramStr
+
 when defined(nimdoc):
   from os import getCurrentDir, paramCount, paramStr
 

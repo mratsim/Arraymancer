@@ -1,5 +1,21 @@
-import ggplotnim, sequtils, stats, algorithm, strutils, math
-import arraymancer except readCsv
+# Copyright 2020 the Arraymancer contributors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import ../tensor/tensor,
+       ./distributions
+
+import math
 
 type
   KernelKind* = enum
@@ -10,7 +26,7 @@ type
     knEpanechnikov = "epanechnikov"
     knGauss = "gauss"
 
-  KernelFunc* = proc(x, x_i, bw: float): float
+  KernelFunc* = proc(x, x_i, bw: float): float {.inline.}
 
 template makeKernel*(fn: untyped): untyped =
   proc `fn Kernel`*(x, x_i, bw: float): float {.inline.} =
@@ -25,7 +41,7 @@ makeKernel(epanechnikov)
 # manually build the gauss kerne, since the underlying distribution relies
 # on more than 1 value.
 proc gaussKernel*(x, x_i, bw: float): float {.inline.} =
-  gauss(x = x, mean = x_i, sigma = bw)
+  gauss(x = x, mean = x_i, sigma = bw, norm = true)
 
 proc getCutoff(bw: float, kind: KernelKind): float =
   ## calculates a reasonable cutoff for a given `KernelKind` for a bandwidth `bw`
@@ -58,32 +74,49 @@ proc findWindow[T](dist: T, s: T, t: Tensor[T], oldStart = 0, oldStop = 0): (int
     if not startFound and abs(s - t[j]) < dist:
       startFound = true
       result[0] = j
-      j = if oldStop == 0: j else: oldStop
+      j = if oldStop < j: j else: oldStop
       continue
     elif startFound and not stopFound and abs(s - t[j]) > dist:
       stopFound = true
       result[1] = j
       break
     inc j
+ # set to max, if we left the while loop naturally
+  if result[1] == 0: result[1] = t.size
+  assert result[1] > result[0]
 
-proc kde[T: SomeNumber](t: Tensor[T],
-                        kernel: KernelFunc,
-                        kernelKind = knCustom,
-                        adjust: float = 1.0,
-                        samples: int = 1000,
-                        bw: float = NaN,
-                        normalize = true,
-                        cutoff: float = NaN): Tensor[float] =
+proc kde*[T: SomeNumber](t: Tensor[T],
+                         kernel: KernelFunc,
+                         kernelKind = knCustom,
+                         adjust: float = 1.0,
+                         samples: int = 1000,
+                         bw: float = NaN,
+                         normalize = false,
+                         cutoff: float = NaN): Tensor[float] =
   ## Returns the kernel density estimation for the 1D tensor `t`. The returned
   ## `Tensor[float]` contains `samples` elements.
+  ##
   ## The bandwidth is estimated using Silverman's rule of thumb.
+  ##
   ## `adjust` can be used to scale the automatic bandwidth calculation.
   ## Note that this assumes the data is roughly normal distributed. To
   ## override the automatic bandwidth calculation, hand the `bw` manually.
   ## If `normalize` is true the result will be normalized such that the
   ## integral over it is equal to 1.
   ##
-  ## UPDATE / FINISH
+  ## The `kernel` is the kernel function that will be used. Unless you want to
+  ## use a custom kernel function, call the convenience wrapper below, which
+  ## only takes a `KernelKind` (either as string or directly as an enum value)
+  ## below, which defaults to a gaussian kernel.
+  ##
+  ## Custom kernel functions are supported by handing a function of signature
+  ##
+  ## `KernelFunc = proc(x, x_i, bw: float): float`
+  ##
+  ## to this procedure and setting the `kernelKind` to `knCustom`. This ``requires``
+  ## to also hand a `cutoff`, which is the window of `x - x_i` considered for the
+  ## kernel summation for efficiency. Set it such that the contribution of the
+  ## custom kernel is very small outside that range.
   let N = t.size
   # sort input
   let t = t.sorted
@@ -93,7 +126,7 @@ proc kde[T: SomeNumber](t: Tensor[T],
               iqr(t) / 1.34)
   let bwAct = if classify(bw) != fcNaN: bw
               else: 0.9 * A * pow(N.float, -1.0/5.0)
-  result = newTensorUninit[float](samples)
+  result = newTensor[float](samples)
   let norm = 1.0 / (N.float * bwAct)
   var
     start = 0
@@ -105,20 +138,27 @@ proc kde[T: SomeNumber](t: Tensor[T],
 
   for i in 0 ..< t.size:
     (start, stop) = findWindow(cutoff, t[i], x, start, stop)
+    # TODO: rewrite using kernel(t: Tensor) and fancy indexing?
     for j in start ..< stop:
       result[j] += norm * kernel(x[j], t[i], bwAct)
 
   if normalize:
-    let normFactor = result.sum * (maxT - minT) / samples.float
+    let normFactor = 1.0 / (result.sum * (maxT - minT) / samples.float)
     result.apply_inline(normFactor * x)
 
-proc kde[T: SomeNumber; U: KernelKind | string](
+proc kde*[T: SomeNumber; U: KernelKind | string](
     t: Tensor[T],
     kernel: U = "gauss",
     adjust: float = 1.0,
     samples: int = 1000,
     bw: float = NaN,
-    normalize = true): Tensor[float] =
+    normalize = false): Tensor[float] =
+  ## This is a convenience wrapper around the above defined `kde` proc, which takes
+  ## a kernel as a `string` corresponding to the string value of the `KernelKind`
+  ## enum or a `KernelKind` value directly, which does not require to manually hand
+  ## a kernel procedure.
+  ##
+  ## By default a gaussian kernel is used.
   when U is string:
     let kKind = parseEnum[KernelKind](kernel)
   else:
@@ -131,16 +171,3 @@ proc kde[T: SomeNumber; U: KernelKind | string](
                samples = samples,
                bw = bw,
                normalize = normalize)
-
-when isMainModule:
-  let df = toDf(readCsv("/home/basti/CastData/ExternCode/ggplotnim/data/diamonds.csv"))
-  let carat = df["carat"].toTensor(float)
-  let x = linspace(min(carat), max(carat), 1000)
-  let estimate = kde(carat)
-  let dfEst = seqsToDf(x, estimate)
-  ggplot(dfEst, aes("x", "estimate")) +
-    geom_line(fillColor = some(parseHex("9B4EFF")),
-              alpha = some(0.3)) +
-    ggsave("density_test.pdf")
-
-  main()

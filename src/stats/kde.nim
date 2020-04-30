@@ -15,7 +15,8 @@
 import ../tensor/tensor,
        ./distributions
 
-import math
+import std / [math, strutils]
+export nimIdentNormalize # for parseEnum
 
 type
   KernelKind* = enum
@@ -85,14 +86,15 @@ proc findWindow[T](dist: T, s: T, t: Tensor[T], oldStart = 0, oldStop = 0): (int
   if result[1] == 0: result[1] = t.size
   assert result[1] > result[0]
 
-proc kde*[T: SomeNumber](t: Tensor[T],
-                         kernel: KernelFunc,
-                         kernelKind = knCustom,
-                         adjust: float = 1.0,
-                         samples: int = 1000,
-                         bw: float = NaN,
-                         normalize = false,
-                         cutoff: float = NaN): Tensor[float] =
+proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
+    t: Tensor[T],
+    kernel: KernelFunc,
+    kernelKind = knCustom,
+    adjust: float = 1.0,
+    samples: U = 1000,
+    bw: float = NaN,
+    normalize = false,
+    cutoff: float = NaN): Tensor[float] =
   ## Returns the kernel density estimation for the 1D tensor `t`. The returned
   ## `Tensor[float]` contains `samples` elements.
   ##
@@ -104,6 +106,10 @@ proc kde*[T: SomeNumber](t: Tensor[T],
   ## If `normalize` is true the result will be normalized such that the
   ## integral over it is equal to 1.
   ##
+  ## By default the evaluation points will be `samples` linearly spaced points
+  ## between `[min(t), max(t)]`. If desired the evaluation points can be given
+  ## explicitly by handing a `Tensor[float] | openArray[float]` as `samples`.
+  ##
   ## The `kernel` is the kernel function that will be used. Unless you want to
   ## use a custom kernel function, call the convenience wrapper below, which
   ## only takes a `KernelKind` (either as string or directly as an enum value)
@@ -114,19 +120,28 @@ proc kde*[T: SomeNumber](t: Tensor[T],
   ## `KernelFunc = proc(x, x_i, bw: float): float`
   ##
   ## to this procedure and setting the `kernelKind` to `knCustom`. This ``requires``
-  ## to also hand a `cutoff`, which is the window of `x - x_i` considered for the
-  ## kernel summation for efficiency. Set it such that the contribution of the
-  ## custom kernel is very small outside that range.
+  ## to also hand a `cutoff`, which is the window of `s[j] - t[i] <= cutoff`, where
+  ## `s[j]` is the `j`-th sample and `t[i]` the `i`-th input value. Only this window is
+  ## considered for the kernel summation for efficiency. Set it such that the
+  ## contribution of the custom kernel is very small (or 0) outside that range.
   let N = t.size
   # sort input
-  let t = t.sorted
+  let t = t.asType(float).sorted
   let (minT, maxT) = (min(t), max(t))
-  let x = linspace(minT, maxT, samples)
+  when U is int:
+    let x = linspace(minT, maxT, samples)
+    let nsamples = samples
+  elif U is seq | array:
+    let x = toTensor(@samples).asType(float)
+    let nsamples = x.size
+  else:
+    let x = samples.asType(float)
+    let nsamples = x.size
   let A = min(std(t),
               iqr(t) / 1.34)
   let bwAct = if classify(bw) != fcNaN: bw
               else: 0.9 * A * pow(N.float, -1.0/5.0)
-  result = newTensor[float](samples)
+  result = newTensor[float](nsamples)
   let norm = 1.0 / (N.float * bwAct)
   var
     start = 0
@@ -135,7 +150,6 @@ proc kde*[T: SomeNumber](t: Tensor[T],
     "is used you have to provide a cutoff distance!"
   let cutoff = if classify(cutoff) != fcNan: cutoff
                else: getCutoff(bwAct, kernelKind)
-
   for i in 0 ..< t.size:
     (start, stop) = findWindow(cutoff, t[i], x, start, stop)
     # TODO: rewrite using kernel(t: Tensor) and fancy indexing?
@@ -143,14 +157,14 @@ proc kde*[T: SomeNumber](t: Tensor[T],
       result[j] += norm * kernel(x[j], t[i], bwAct)
 
   if normalize:
-    let normFactor = 1.0 / (result.sum * (maxT - minT) / samples.float)
+    let normFactor = 1.0 / (result.sum * (maxT - minT) / nsamples.float)
     result.apply_inline(normFactor * x)
 
-proc kde*[T: SomeNumber; U: KernelKind | string](
+proc kde*[T: SomeNumber; U: KernelKind | string; V: int | Tensor[SomeNumber] | openArray[SomeNumber]](
     t: Tensor[T],
     kernel: U = "gauss",
     adjust: float = 1.0,
-    samples: int = 1000,
+    samples: V = 1000,
     bw: float = NaN,
     normalize = false): Tensor[float] =
   ## This is a convenience wrapper around the above defined `kde` proc, which takes

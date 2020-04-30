@@ -35,3 +35,18 @@ suite "[Core] Testing algorithm functions":
     block:
       var t = @[4, 2, 7, 3, 1].toTensor()
       check t.sorted(order = SortOrder.Descending) == @[7, 4, 3, 2, 1].toTensor()
+
+  test "Argsort":
+    block:
+      let t = @[4, 2, 7, 3, 1].toTensor()
+      let exp = @[4, 1, 3, 0, 2].toTensor()
+      let idxSorted = t.argsort()
+      check idxSorted == exp
+      check t[idxSorted] == @[1, 2, 3, 4, 7].toTensor()
+
+    block:
+      let t = @[4, 2, 7, 3, 1].toTensor()
+      let exp = @[2, 0, 3, 1, 4].toTensor()
+      let idxSorted = t.argsort(order = SortOrder.Descending)
+      check idxSorted == exp
+      check t[idxSorted] == @[7, 4, 3, 2, 1].toTensor()

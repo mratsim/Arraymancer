@@ -39,3 +39,32 @@ proc gauss*[T](x: Tensor[T], mean, sigma: T, norm = false): Tensor[float] =
   ## Returns a tensor evaluated at all positions of its values on the
   ## gaussian distribution described by `mean` and `sigma`.
   result = x.map_inline(gauss(x, mean, sigma, norm = norm))
+
+proc box*(x: float): float =
+  ## provides a box distribution
+  result = if abs(x) <= 0.5: 1.0 else: 0.0
+
+proc triangular*(x: float): float =
+  ## provides a triangular distribution
+  let val = abs(x)
+  result = if val <= 1.0: 1.0 - val else: 0.0
+
+proc trigonometric*(x: float): float =
+  ## provides a trigonometric distribution
+  let val = abs(x)
+  result = if val <= 0.5: 1.0 + cos(2 * PI * val) else: 0.0
+
+proc epanechnikov*(x: float): float =
+  ## provides an Epanechnikov distribution
+  let val = abs(x)
+  result = if val <= 1.0: 3.0 / 4.0 * (1 - val * val) else: 0.0
+
+template liftDistributions(fn: untyped): untyped =
+  template `fn`*[T](t: Tensor[T]): Tensor[float] =
+    t.map_inline(fn(x.float))
+
+# for use with tensors, lift all distributions
+liftDistributions(box)
+liftDistributions(triangular)
+liftDistributions(trigonometric)
+liftDistributions(epanechnikov)

@@ -12,28 +12,20 @@ type
 
   KernelFunc* = proc(x, x_i, bw: float): float
 
-proc boxKernel*(x, x_i, bw: float): float =
-  ## provides a box kernel
-  result = if abs((x - x_i) / bw) < 0.5: 1.0 else: 0.0
+template makeKernel*(fn: untyped): untyped =
+  proc `fn Kernel`*(x, x_i, bw: float): float {.inline.} =
+    let val = (x - x_i) / bw
+    result = fn(val)
 
-proc triangularKernel*(x, x_i, bw: float): float =
-  ## provides a triangular kernel
-  let val = abs(x - x_i) / bw
-  result = if val < 1.0: 1.0 - val else: 0.0
+makeKernel(box)
+makeKernel(triangular)
+makeKernel(trigonometric)
+makeKernel(epanechnikov)
 
-proc trigonometricKernel*(x, x_i, bw: float): float =
-  ## provides a trigonometric kernel
-  let val = abs(x - x_i) / bw
-  result = if val < 0.5: 1.0 + cos(2 * PI * val) else: 0.0
-
-proc epanechnikovKernel*(x, x_i, bw: float): float =
-  ## provides an Epanechnikov kernel
-  let val = abs(x - x_i) / bw
-  result = if val < 1.0: 3.0 / 4.0 * (1 - val * val) else: 0.0
-
-proc gaussKernel*(x, x_i, bw: float): float =
-  ## provides a gaussian kernel
-  result = gauss(x = x, mean = x_i, sigma = bw)
+# manually build the gauss kerne, since the underlying distribution relies
+# on more than 1 value.
+proc gaussKernel*(x, x_i, bw: float): float {.inline.} =
+  gauss(x = x, mean = x_i, sigma = bw)
 
 proc getCutoff(bw: float, kind: KernelKind): float =
   ## calculates a reasonable cutoff for a given `KernelKind` for a bandwidth `bw`

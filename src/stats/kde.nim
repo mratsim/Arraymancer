@@ -21,17 +21,6 @@ proc gauss*[T](x: Tensor[T], mean, sigma: T, norm = false): Tensor[float] =
   ## version of gauss working on a full tensor
   result = x.map_inline(gauss(x, mean, sigma, norm = norm))
 
-proc sort*[T](t: var Tensor[T]) =
-  ## Sorts the given tensor inplace. For the time being this is only supported for
-  ## 1D tensors!
-  assert t.rank == 1
-  sort(toOpenArray(t.storage.Fdata, 0, t.size - 1))
-
-proc sorted*[T](t: Tensor[T]): Tensor[T] =
-  ## Returns a sorted version of the given tensor `t`. Also only supported for
-  ## 1D tensors for the time being!
-  result = t.clone
-  result.sort
 
 proc percentile*[T](t: Tensor[T], p: int, isSorted = false): float =
   ## statistical percentile value of ``t``, where ``p`` percentile value

@@ -43,6 +43,7 @@ suite "Kernel Density Estimation - KDE":
         for i in 0 ..< res.size:
           check abs(res[i] - exp[i]) < 1e-2
       block:
+        # gauss, custom sampling
         let samples = linspace(0, 10, 20)
         let exp = [4.54049584e-02, 8.68118959e-02, 1.36989540e-01, 1.80197530e-01,
                    2.01438504e-01, 1.99660279e-01, 1.87215215e-01, 1.74511246e-01,
@@ -53,3 +54,30 @@ suite "Kernel Density Estimation - KDE":
         let res = kde(a, samples = samples, bw = 1.0)
         for i in 0 ..< res.size:
           check abs(res[i] - exp[i]) < 1e-2
+
+      block:
+        # epanechnikov, custom sampling
+        let samples = linspace(0, 10, 20)
+        let exp = [0.0       , 0.06463527, 0.10872576, 0.26108033, 0.26385042,
+                   0.22229917, 0.12973223, 0.1943675 , 0.19067405, 0.15373961,
+                   0.11565097, 0.11103416, 0.07502308, 0.02423823, 0.0       ,
+                   0.0       , 0.0       , 0.0       , 0.0       , 0.0       ].toTensor()
+        # exp obtained as above with `np.linspace(0, 10, 20)` as argument
+        let res = kde(a, "epanechnikov", samples = samples, bw = 1.0)
+        for i in 0 ..< res.size:
+          check abs(res[i] - exp[i]) < 1e-2
+
+      block:
+        # box, custom sampling
+        let samples = linspace(0, 10, 20)
+        let exp = [0.0       , 0.11111111, 0.11111111, 0.33333333, 0.33333333,
+                   0.11111111, 0.11111111, 0.22222222, 0.22222222, 0.11111111,
+                   0.11111111, 0.11111111, 0.11111111, 0.0       , 0.0       ,
+                   0.0       , 0.0       , 0.0       , 0.0       , 0.0       ].toTensor()
+        # NOTE: sklearn defines the box (`tophat`) function differently, essentially
+        # it's twice the size. So we use half the bandwidth in sklearn:
+        # `In [38]: kde = KernelDensity(kernel='tophat', bandwidth=0.5).fit(a.reshape(-1, 1))`
+        let res = kde(a, "box", samples = samples, bw = 1.0)
+        for i in 0 ..< res.size:
+          check abs(res[i] - exp[i]) < 1e-2
+

@@ -94,7 +94,8 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
     samples: U = 1000,
     bw: float = NaN,
     normalize = false,
-    cutoff: float = NaN): Tensor[float] =
+    cutoff: float = NaN,
+    weights: Tensor[T] = newTensor[T](0)): Tensor[float] =
   ## Returns the kernel density estimation for the 1D tensor `t`. The returned
   ## `Tensor[float]` contains `samples` elements.
   ##
@@ -125,8 +126,23 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
   ## considered for the kernel summation for efficiency. Set it such that the
   ## contribution of the custom kernel is very small (or 0) outside that range.
   let N = t.size
-  # sort input
-  let t = t.asType(float).sorted
+  # `t` not sorted here yet, but does not matter
+  let A = min(std(t),
+              iqr(t) / 1.34)
+  let bwAct = if classify(bw) != fcNaN: bw
+              else: 0.9 * A * pow(N.float, -1.0/5.0)
+
+  var t = t
+  var weights = weights
+  if weights.size > 0:
+    doAssert weights.size == t.size
+    let sortIdx = t.argsort()
+    ## TODO: if we don't clone the resulting t and weights for some reason they end up
+    ## all messed up?!
+    t = t[sortIdx].clone()
+    weights = weights[sortIdx].clone()
+  else:
+    t = t.asType(float).sorted
   let (minT, maxT) = (min(t), max(t))
   when U is int:
     let x = linspace(minT, maxT, samples)
@@ -137,10 +153,6 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
   else:
     let x = samples.asType(float)
     let nsamples = x.size
-  let A = min(std(t),
-              iqr(t) / 1.34)
-  let bwAct = if classify(bw) != fcNaN: bw
-              else: 0.9 * A * pow(N.float, -1.0/5.0)
   result = newTensor[float](nsamples)
   let norm = 1.0 / (N.float * bwAct)
   var
@@ -150,11 +162,18 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
     "is used you have to provide a cutoff distance!"
   let cutoff = if classify(cutoff) != fcNan: cutoff
                else: getCutoff(bwAct, kernelKind)
-  for i in 0 ..< t.size:
-    (start, stop) = findWindow(cutoff, t[i], x, start, stop)
-    # TODO: rewrite using kernel(t: Tensor) and fancy indexing?
-    for j in start ..< stop:
-      result[j] += norm * kernel(x[j], t[i], bwAct)
+  if weights.size == 0:
+    for i in 0 ..< t.size:
+      (start, stop) = findWindow(cutoff, t[i], x, start, stop)
+      # TODO: rewrite using kernel(t: Tensor) and fancy indexing?
+      for j in start ..< stop:
+        result[j] += norm * kernel(x[j], t[i], bwAct)
+  else:
+    for i in 0 ..< t.size:
+      (start, stop) = findWindow(cutoff, t[i], x, start, stop)
+      # TODO: rewrite using kernel(t: Tensor) and fancy indexing?
+      for j in start ..< stop:
+        result[j] += weights[i] * norm * kernel(x[j], t[i], bwAct)
 
   if normalize:
     let normFactor = 1.0 / (result.sum * (maxT - minT) / nsamples.float)
@@ -166,7 +185,8 @@ proc kde*[T: SomeNumber; U: KernelKind | string; V: int | Tensor[SomeNumber] | o
     adjust: float = 1.0,
     samples: V = 1000,
     bw: float = NaN,
-    normalize = false): Tensor[float] =
+    normalize = false,
+    weights: Tensor[T] = newTensor[T](0)): Tensor[float] =
   ## This is a convenience wrapper around the above defined `kde` proc, which takes
   ## a kernel as a `string` corresponding to the string value of the `KernelKind`
   ## enum or a `KernelKind` value directly, which does not require to manually hand
@@ -184,4 +204,5 @@ proc kde*[T: SomeNumber; U: KernelKind | string; V: int | Tensor[SomeNumber] | o
                adjust = adjust,
                samples = samples,
                bw = bw,
-               normalize = normalize)
+               normalize = normalize,
+               weights = weights)

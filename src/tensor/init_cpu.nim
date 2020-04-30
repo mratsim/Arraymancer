@@ -17,7 +17,6 @@ import  ../private/[nested_containers, sequninit],
         ./private/p_checks,
         ./private/p_init_cpu,
         ./data_structure,
-        ./higher_order_applymap,
         nimblas,
         sequtils,
         random,
@@ -248,8 +247,9 @@ func logspace*[T: SomeNumber](start, stop: T,
   ##
   ## Resulting size is `num`.
   # TODO: think about not using `linspace` internally
-  let linear = linspace(start, stop, num, endpoint = endpoint)
-  result = linear.map_inline(pow(base, x))
+  result = linspace(start, stop, num, endpoint = endpoint)
+  for i in 0 ..< num:
+    result[i] = pow(base, result[i])
 
 template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typed): untyped =
   tensorCpu(shape, t)

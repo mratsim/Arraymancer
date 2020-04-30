@@ -1,40 +1,6 @@
 import ggplotnim, sequtils, stats, algorithm, strutils, math
 import arraymancer except readCsv
 
-func linspace*[T: SomeNumber](start, stop: T, num: int, endpoint = true): Tensor[T] {.noInit.} =
-  ## Creates a new 1d-tensor with `num` values linearly spaced between
-  ## the closed interval [start, stop] (`endpoint == true`) or in the
-  ## half open interval [start, stop) (`endpoint == false`).
-  ##
-  ## Resulting size is `num`.
-  # TODO: proper exceptions
-  when T is SomeFloat:
-    assert start.classify() notin {fcNaN, fcInf, fcNegInf}
-    assert stop.classify() notin {fcNaN, fcInf, fcNegInf}
-  result = newTensorUninit[T](num)
-  var
-    step = start
-    diff: float
-  if endpoint == true:
-    diff = (stop - start) / float(num - 1)
-  else:
-    diff = (stop - start) / float(num)
-
-  for i in 0 ..< num:
-    result[i] = step
-    # for every element calculate new value for next iteration
-    step += diff
-
-func logspace*[T: SomeNumber](start, stop: T, num: int, endpoint = true): Tensor[T] {.noInit.} =
-  ## Creates a new 1d-tensor with `num` values linearly spaced in log space
-  ## of base `base` either in the closed interval [start, stop] (`endpoint == true`)
-  ## or in the half open interval [start, stop) (`endpoint == false`).
-  ##
-  ## Resulting size is `num`.
-  # TODO: think about not using `linspace` internally
-  let linear = linspace(start, stop, num, endpoint = endpoint)
-  result = linear.map_inline(pow(base, x))
-
 proc gauss*[T](x, mean, sigma: T, norm = false): float =
   ## Returns a value of the gaussian distribution descriped by `mean`, `sigma`
   ## at position `x`.

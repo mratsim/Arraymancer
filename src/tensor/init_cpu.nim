@@ -17,6 +17,7 @@ import  ../private/[nested_containers, sequninit],
         ./private/p_checks,
         ./private/p_init_cpu,
         ./data_structure,
+        ./higher_order_applymap,
         nimblas,
         sequtils,
         random,
@@ -210,6 +211,45 @@ template arange*[T: SomeNumber](stop: T): Tensor[T] =
 template arange*[T: SomeNumber](start, stop: T): Tensor[T] =
   # Error messages of templates are very poor
   arange(start, stop, T(1))
+
+func linspace*[T: SomeNumber](start, stop: T, num: int, endpoint = true): Tensor[float] {.noInit.} =
+  ## Creates a new 1d-tensor with `num` values linearly spaced between
+  ## the closed interval [start, stop] (`endpoint == true`) or in the
+  ## half open interval [start, stop) (`endpoint == false`).
+  ##
+  ## Resulting size is `num`.
+  # TODO: proper exceptions
+  when T is SomeFloat:
+    assert start.classify() notin {fcNaN, fcInf, fcNegInf}
+    assert stop.classify() notin {fcNaN, fcInf, fcNegInf}
+  result = newTensorUninit[float](num)
+  var
+    step = start.float
+    diff: float
+  if endpoint == true:
+    diff = (stop.float - start.float) / float(num - 1)
+  else:
+    diff = (stop.float - start.float) / float(num)
+
+  for i in 0 ..< num:
+    result[i] = step
+    # for every element calculate new value for next iteration
+    step += diff
+
+func logspace*[T: SomeNumber](start, stop: T,
+                              num: int,
+                              base = 10.0,
+                              endpoint = true): Tensor[float] {.noInit.} =
+  ## Creates a new 1d-tensor with `num` values linearly spaced in log space
+  ## of base `base` either in the closed interval [start, stop] (`endpoint == true`)
+  ## or in the half open interval [start, stop) (`endpoint == false`).
+  ##
+  ## Note that the given start, stop arguments refer to the exponents of `base`!
+  ##
+  ## Resulting size is `num`.
+  # TODO: think about not using `linspace` internally
+  let linear = linspace(start, stop, num, endpoint = endpoint)
+  result = linear.map_inline(pow(base, x))
 
 template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typed): untyped =
   tensorCpu(shape, t)

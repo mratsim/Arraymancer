@@ -1,26 +1,6 @@
 import ggplotnim, sequtils, stats, algorithm, strutils, math
 import arraymancer except readCsv
 
-proc gauss*[T](x, mean, sigma: T, norm = false): float =
-  ## Returns a value of the gaussian distribution descriped by `mean`, `sigma`
-  ## at position `x`.
-  ## based on the ROOT implementation of TMath::Gaus:
-  ## https://root.cern.ch/root/html524/src/TMath.cxx.html#dKZ4iB
-  ## inputs are converted to float
-  if sigma == 0:
-    result = 1.0e30
-  let
-    arg = (x - mean).float / sigma.float
-    res = exp(-0.5 * arg * arg)
-  if norm == false:
-    result = res
-  else:
-    result = res / (2.50662827463100024 * sigma) # sqrt(2*Pi)=2.5066282746310002
-
-proc gauss*[T](x: Tensor[T], mean, sigma: T, norm = false): Tensor[float] =
-  ## version of gauss working on a full tensor
-  result = x.map_inline(gauss(x, mean, sigma, norm = norm))
-
 type
   KernelKind* = enum
     knCustom = "custom"

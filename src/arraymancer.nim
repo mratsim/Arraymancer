@@ -21,7 +21,7 @@ import  ./tensor/tensor,
         ./datasets/imdb,
         ./io/io,
         ./ml/ml,
-        ./stats/stats,
+        ./stats/[stats, distributions],
         ./nlp/nlp,
         ./tensor/einsum
 
@@ -34,7 +34,7 @@ export  tensor,
         imdb,
         io,
         ml,
-        stats,
+        stats, distributions,
         nlp,
         einsum
 

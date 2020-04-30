@@ -49,6 +49,8 @@ import ../src/arraymancer,
         ./autograd/test_gate_shapeshifting,
         ./ml/test_metrics,
         ./ml/test_clustering,
+        ./tests/stats/test_stats,
+        ./tests/stats/test_distributions,
         ./test_bugtracker
 
 when not defined(windows) and not sizeof(int) == 4:

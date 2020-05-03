@@ -35,6 +35,10 @@ proc `<`[T](n1, n2: Node[T]): bool =
   ## Comparisons of Nodes is done via the `id` of each object, which for CPython is
   ## just the address if I understand correctly
   ## https://github.com/scipy/scipy/blob/master/scipy/spatial/kdtree.py#L251-L252
+  ## I assume the idea is that, since the tree is built from the root node that the nodes
+  ## later nodes will end up at later positions in memory. Why not just add an id field
+  ## to the node, which is a unique identifier? This here is ugly, unsafe and I'm not
+  ## convinced it will work under all circumstances.
   result = cast[int](n1.unsafeAddr) < cast[int](n2.unsafeAddr)
 
 proc `<`[T](s1, s2: seq[T]): bool =

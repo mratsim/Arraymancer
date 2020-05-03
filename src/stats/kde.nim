@@ -16,7 +16,8 @@ import ../tensor/tensor,
        ./distributions
 
 import std / [math, strutils]
-export nimIdentNormalize # for parseEnum
+when (NimMajor, NimMinor, NimPatch) >= (1, 3, 0):
+  export nimIdentNormalize # for parseEnum
 
 type
   KernelKind* = enum

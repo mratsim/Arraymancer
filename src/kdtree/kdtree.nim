@@ -286,7 +286,7 @@ proc query[T](tree: KDTree[T],
     result = toTupleSeqNorm(neighbors, p)
 
 when isMainModule:
-  import arraymancer
+  import arraymancer, nimpy
 
   let xs = randomTensor(1000, 1.0)
   let ys = randomTensor(1000, 1.0)
@@ -303,3 +303,9 @@ when isMainModule:
   for x in idxs:
     echo x
     echo t[x[1], _]
+
+  echo idxs
+  let scipy = pyImport("scipy.spatial")
+  let np = pyImport("numpy")
+  let tree = scipy.cKDTree(np.array([xs.toRawSeq, ys.toRawSeq]).T)
+  echo tree.query(ps.toRawSeq, 3)

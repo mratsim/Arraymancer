@@ -55,7 +55,7 @@ proc nonzero[T](t: Tensor[T]): seq[seq[int]] =
   ## returns the indices, which are non zero along `axis` as a `seq[seq[int]]`.
   ## One `seq[int]` for each dimension of `t`, which contains the indices
   ## of nonzero elements along that axis
-  let mask = t .!= 0.T
+  let mask = t !=. 0.T
   result = newSeqWith(t.shape.len, newSeqOfCap[int](t.size))
   var i = 0
   var ax = 0
@@ -84,7 +84,6 @@ proc build[T](tree: KDTree[T],
               maxes, mins: Tensor[T]): Node[T] =
               #useMedian: static bool,
               #createCompact: static bool) =
-  echo "BUILD!"
   ## recursively build the KD tree
   if idx.size <= tree.leafSize:
     result = Node[T](kind: tnLeaf,
@@ -103,16 +102,16 @@ proc build[T](tree: KDTree[T],
 
     # sliding midpoint rule
     var split = (maxVal + minVal) / 2.0
-    var lessIdx = toTensor nonzero(data .<= split)[0]
-    var greaterIdx = toTensor nonzero(data .> split)[0]
+    var lessIdx = toTensor nonzero(data <=. split)[0]
+    var greaterIdx = toTensor nonzero(data >. split)[0]
     if lessIdx.size == 0:
       split = min(data)
-      lessIdx = toTensor nonzero(data .<= split)[0]
-      greaterIdx = toTensor nonzero(data .> split)[0]
+      lessIdx = toTensor nonzero(data <=. split)[0]
+      greaterIdx = toTensor nonzero(data >. split)[0]
     if greaterIdx.size == 0:
       split = max(data)
-      lessIdx = toTensor nonzero(data .< split)[0]
-      greaterIdx = toTensor nonzero(data .>= split)[0]
+      lessIdx = toTensor nonzero(data <. split)[0]
+      greaterIdx = toTensor nonzero(data >=. split)[0]
     if lessIdx.size == 0:
       # still zero, all must have same value
       if not allEqual(data, data[0]):

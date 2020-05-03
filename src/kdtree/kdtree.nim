@@ -1,6 +1,6 @@
 #import ../tensor/tensor
 import arraymancer
-import sequtils, math, heapqueue, sugar
+import sequtils, math, heapqueue, sugar, algorithm
 
 type
   TreeNodeKind = enum
@@ -297,14 +297,19 @@ when isMainModule:
   let ps = randomTensor(2, 1.0)
   echo ps.shape
   echo ps
-  let idxs = kd.query(ps, k = 3)
+  let nimRes = kd.query(ps, k = 3).sortedByIt(it[1])
 
-  for x in idxs:
-    echo x
-    echo t[x[1], _]
-
-  echo idxs
+  echo nimRes
   let scipy = pyImport("scipy.spatial")
   let np = pyImport("numpy")
   let tree = scipy.cKDTree(np.array([xs.toRawSeq, ys.toRawSeq]).T)
-  echo tree.query(ps.toRawSeq, 3)
+  # scipy returns array of dist, array of ids. Should do the same I guess
+  # Having a seq[tuple] as return is bad.
+  let scipyResPy = tree.query(ps.toRawSeq, 3)
+  let scipyDists = scipyResPy[0].mapIt(it.to(float))
+  let scipyIdxs = scipyResPy[1].mapIt(it.to(int))
+  let scipyRes = zip(scipyDists, scipyIdxs).sortedByIt(it[1])
+  echo scipyDists
+  for i in 0 ..< nimRes.len:
+    doAssert nimRes[i][0] == scipyRes[i][0]
+    doAssert nimRes[i][1] == scipyRes[i][1]

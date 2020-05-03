@@ -31,9 +31,10 @@ type
     size: int ## number of nodes in the tree
 
 proc `<`[T](n1, n2: Node[T]): bool =
-  ## now this is a little sketcy, but (from what I understand) follows what numpy does.
+  ## now this is a little sketchy, but (from what I understand) follows what numpy does.
   ## Comparisons of Nodes is done via the `id` of each object, which for CPython is
-  ## just the addess if I understand correctly
+  ## just the address if I understand correctly
+  ## https://github.com/scipy/scipy/blob/master/scipy/spatial/kdtree.py#L251-L252
   result = cast[int](n1.unsafeAddr) < cast[int](n2.unsafeAddr)
 
 proc `<`[T](s1, s2: seq[T]): bool =
@@ -162,9 +163,6 @@ proc kdTree[T](data: Tensor[T], ## data must be 2D tensor (n, m)
   result.buildKdTree(arange[int](result.n),
                      useMedian = balancedTree,
                      createCompact = compactNodes)
-
-#proc initQueue[T](min_distance: T, side_distances: Tensor[T], node: Node[T]):
-#  HeapQueue[tuple[T, Tensor[T], Node[T]]] =
 
 func minkowski_distance_p[T](x, y: Tensor[T], p = 2.0): Tensor[T] =
   let ax = x.shape.len - 1

@@ -40,7 +40,7 @@ makeKernel(triangular)
 makeKernel(trigonometric)
 makeKernel(epanechnikov)
 
-# manually build the gauss kerne, since the underlying distribution relies
+# manually build the gauss kernel, since the underlying distribution relies
 # on more than 1 value.
 proc gaussKernel*(x, x_i, bw: float): float {.inline.} =
   gauss(x = x, mean = x_i, sigma = bw, norm = true)
@@ -98,7 +98,8 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
     cutoff: float = NaN,
     weights: Tensor[T] = newTensor[T](0)): Tensor[float] =
   ## Returns the kernel density estimation for the 1D tensor `t`. The returned
-  ## `Tensor[float]` contains `samples` elements.
+  ## `Tensor[float]` contains `samples` elements. The input will be converted to
+  ## float.
   ##
   ## The bandwidth is estimated using Silverman's rule of thumb.
   ##
@@ -128,13 +129,13 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
   ## contribution of the custom kernel is very small (or 0) outside that range.
   let N = t.size
   # `t` not sorted here yet, but does not matter
+  var t = t.asType(float)
   let A = min(std(t),
               iqr(t) / 1.34)
   let bwAct = if classify(bw) != fcNaN: bw
               else: 0.9 * A * pow(N.float, -1.0/5.0)
 
-  var t = t
-  var weights = weights
+  var weights = weights.asType(float)
   if weights.size > 0:
     doAssert weights.size == t.size
     let sortIdx = t.argsort()

@@ -89,7 +89,7 @@ proc findWindow[T](dist: T, s: T, t: Tensor[T], oldStart = 0, oldStop = 0): (int
 
 proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
     t: Tensor[T],
-    kernel: KernelFunc,
+    kernel: static KernelFunc,
     kernelKind = knCustom,
     adjust: float = 1.0,
     samples: U = 1000,
@@ -199,12 +199,20 @@ proc kde*[T: SomeNumber; U: KernelKind | string; V: int | Tensor[SomeNumber] | o
     let kKind = parseEnum[KernelKind](kernel)
   else:
     let kKind = kernel
-  let kernelFn = getKernelFunc(kKind)
-  result = kde(t,
-               kernelFn,
-               kernelKind = kKind,
-               adjust = adjust,
-               samples = samples,
-               bw = bw,
-               normalize = normalize,
-               weights = weights)
+  template callKde(fn: untyped): untyped =
+    result = kde(t,
+                 fn,
+                 kernelKind = kKind,
+                 adjust = adjust,
+                 samples = samples,
+                 bw = bw,
+                 normalize = normalize,
+                 weights = weights)
+  case kKind
+  of knBox: callKde(boxKernel)
+  of knTriangular: callKde(triangularKernel)
+  of knTrig: callKde(trigonometricKernel)
+  of knEpanechnikov: callKde(epanechnikovKernel)
+  of knGauss: callKde(gaussKernel)
+  of knCustom: doAssert false, "Call `kde` taking a kernel proc directly " &
+    "for custom kernel support!"

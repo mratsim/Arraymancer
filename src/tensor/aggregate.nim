@@ -18,11 +18,16 @@ import  ./backend/memory_optimization_hints,
         ./higher_order_foldreduce,
         ./math_functions,
         ./accessors,
+        ./private/p_empty_tensors,
         math
 import complex except Complex64, Complex32
 
 # ### Standard aggregate functions
 # TODO consider using stats from Nim standard lib: https://nim-lang.org/docs/stats.html#standardDeviation,RunningStat
+
+# Note: for aggregate that returns scalar, if the tensor is empty,
+#       Numpy seems to return the neutral element, do we want that?
+
 
 proc sum*[T](t: Tensor[T]): T =
   ## Compute the sum of all elements
@@ -31,6 +36,7 @@ proc sum*[T](t: Tensor[T]): T =
 
 proc sum*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
   ## Compute the sum of all elements along an axis
+  returnEmptyIfEmpty(t)
   t.reduce_axis_inline(axis):
     x+=y
 
@@ -41,6 +47,7 @@ proc product*[T](t: Tensor[T]): T =
 
 proc product*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.}=
   ## Compute the product along an axis
+  returnEmptyIfEmpty(t)
   t.reduce_axis_inline(axis):
     x.melwise_mul(y)
 
@@ -54,6 +61,7 @@ proc mean*[T: SomeInteger](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}
   ## Compute the mean along an axis
   ##
   ## Warning ⚠: Since input is integer, output will also be integer (using integer division)
+  returnEmptyIfEmpty(t)
   t.sum(axis) div t.shape[axis].T
 
 proc mean*[T: SomeFloat](t: Tensor[T]): T {.inline.}=
@@ -67,10 +75,12 @@ proc mean*[T: Complex[float32] or Complex[float64]](t: Tensor[T]): T {.inline.}=
 
 proc mean*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
   ## Compute the mean along an axis
+  returnEmptyIfEmpty(t)
   t.sum(axis) / t.shape[axis].T
 
 proc mean*[T: Complex[float32] or Complex[float64]](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
   ## Compute the mean along an axis
+  returnEmptyIfEmpty(t)
   type F = T.T # Get float subtype of Complex[T]
   t.sum(axis) / complex(t.shape[axis].F, 0.F)
 
@@ -81,6 +91,7 @@ proc min*[T](t: Tensor[T]): T =
 
 proc min*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
   ## Compute the min along an axis
+  returnEmptyIfEmpty(t)
   t.reduce_axis_inline(axis):
     for ex, ey in mzip(x,y):
       ex = min(ex,ey)
@@ -92,6 +103,7 @@ proc max*[T](t: Tensor[T]): T =
 
 proc max*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
   ## Compute the max along an axis
+  returnEmptyIfEmpty(t)
   t.reduce_axis_inline(axis):
     for ex, ey in mzip(x,y):
       ex = max(ex,ey)
@@ -115,6 +127,7 @@ proc variance*[T: SomeFloat](t: Tensor[T]): T =
 proc variance*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
   ## Compute the variance of all elements
   ## The normalization is by the (n-1), like in the formal definition
+  returnEmptyIfEmpty(t)
   let mean = t.mean(axis)
   result = t.fold_axis_inline(Tensor[T], axis) do:
     # Initialize to the first element
@@ -136,6 +149,7 @@ proc std*[T: SomeFloat](t: Tensor[T]): T {.inline.} =
 proc std*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.} =
   ## Compute the standard deviation of all elements
   ## The normalization is by the (n-1), like in the formal definition
+  returnEmptyIfEmpty(t)
   sqrt(t.variance(axis))
 
 proc argmax_max*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes: Tensor[T]] {.noInit.} =
@@ -161,6 +175,8 @@ proc argmax_max*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes:
   assert axis in {0, 1}, "Only 1D and 2D tensors are supported at the moment for argmax"
   # TODO: Reimplement parallel Argmax (introduced by https://github.com/mratsim/Arraymancer/pull/171)
   #       must be done with care: https://github.com/mratsim/Arraymancer/issues/183
+
+  returnEmptyIfEmpty(t)
 
   result.maxes = t.atAxisIndex(axis, 0).clone()
   result.indices = zeros[int](result.maxes.shape)

@@ -16,6 +16,7 @@ import  ./backend/metadataArray,
         ./private/p_shapeshifting,
         ./private/p_checks,
         ./private/p_accessors_macros_write,
+        ./private/p_empty_tensors,
         ./accessors,
         ./data_structure, ./init_cpu, ./higher_order_applymap,
         sequtils
@@ -218,6 +219,7 @@ proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit.}=
 
   ### Now, create "windows" in the result tensor and assign corresponding tensors
   for t in t_list:
+    skipIfEmpty(t)
     slices[axis].a = iaxis
     slices[axis].b = iaxis + t.shape[axis] - 1
     result.slicerMut(slices, t)

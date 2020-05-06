@@ -17,6 +17,7 @@ import  ./backend/metadataArray,
         ./backend/openmp,
         ./private/p_checks,
         ./private/p_accessors_macros_write,
+        ./private/p_empty_tensors,
         ./accessors, ./accessors_macros_syntax,
         ./data_structure, ./init_cpu,
         ./higher_order_applymap,
@@ -31,7 +32,7 @@ func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int,
   ## This is equivalent to NumPy `take`.
   ## The result does not share the input storage, there are copies.
   ## The tensors containing the indices can be an integer, byte or char tensor.
-
+  returnEmptyIfEmpty(t, indices)
   doAssert indices.shape.len == 1
 
   var select_shape = t.shape
@@ -50,7 +51,7 @@ func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int,
   ## This is equivalent to NumPy `take`.
   ## The result does not share the input storage, there are copies.
   ## The tensors containing the indices can be an integer, byte or char tensor.
-
+  returnEmptyIfEmpty(t)
   var select_shape = t.shape
   select_shape[axis] = indices.len
   result = newTensorUninit[T](select_shape)
@@ -65,6 +66,7 @@ func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int,
 proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: int, indices: Tensor[Idx], value: T) =
   ## Replace elements of `t` indicated by their `indices` along `axis` with `value`
   ## This is equivalent to Numpy `put`.
+  returnEmptyIfEmpty(t, indices)
   for i, index in enumerate(indices):
     var t_slice = t.atAxisIndex(axis, int(index))
     for old_val in t_slice.mitems():
@@ -73,6 +75,7 @@ proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: in
 proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: int, indices: openarray[Idx], value: T) =
   ## Replace elements of `t` indicated by their `indices` along `axis` with `value`
   ## This is equivalent to Numpy `put`.
+  returnEmptyIfEmpty(t, indices)
   for i, index in indices:
     var t_slice = t.atAxisIndex(axis, int(index))
     for old_val in t_slice.mitems():
@@ -87,12 +90,16 @@ func masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
   ## Returns a **flattened** tensor which is the concatenation of values for which the mask is true.
   ##
   ## The result does not share input storage.
+  returnEmptyIfEmpty(t, mask)
   check_elementwise(t, mask)
 
   # TODO: fold_inline should accept an accumType like fold_axis_inline
   var size = 0
   for val in mask:
     size += int(val)
+
+  if size == 0:
+    return # Empty!
 
   result = newTensorUninit[T](size)
   withMemoryOptimHints()
@@ -131,6 +138,7 @@ proc masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
   ## or alternatively:
   ##
   ##   t.masked_fill(t > 0): -1
+  returnEmptyIfEmpty(t, mask)
   check_elementwise(t, mask)
 
   # Due to requiring unnecessary assigning `x` for a `false` mask
@@ -167,6 +175,7 @@ proc masked_fill*[T](t: var Tensor[T], mask: openarray, value: T) =
   ##   - an array of arrays of bools,
   ##   - ...
   ##
+  returnEmptyIfEmpty(t, mask)
   t.masked_fill(mask.toTensor(), value)
 
 # Mask axis
@@ -184,6 +193,9 @@ template masked_axis_select_impl[T](result: var Tensor[T], t: Tensor[T], mask: T
   var size = 0
   for val in mask:
     size += int(val)
+
+  if size == 0:
+    return # Empty!
 
   var shape = t.shape
   shape[axis] = size
@@ -214,6 +226,7 @@ proc masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor
   ## only the positive values of t.
   ##
   ## The result does not share input storage.
+  returnEmptyIfEmpty(t, mask)
   let mask = mask.squeeze() # make 1D if coming from unreduced axis aggregation like sum
   masked_axis_select_impl(result, t, mask, axis)
 
@@ -228,6 +241,7 @@ proc masked_axis_select*[T](t: Tensor[T], mask: openArray[bool], axis: int): Ten
   ## only the positive values of t.
   ##
   ## The result does not share input storage.
+  returnEmptyIfEmpty(t, mask)
   masked_axis_select_impl(result, t, mask, axis)
 
 template masked_axis_fill_impl[T](t: var Tensor[T], mask: Tensor[bool] or openArray[bool], axis: int, value: T or Tensor[T]) =
@@ -278,6 +292,7 @@ proc masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value
   ##               [  1, 30, 30],
   ##               [  8, 40, 40]].toTensor()
   # TODO: support filling with a multidimensional tensor
+  returnEmptyIfEmpty(t, mask)
   let mask = mask.squeeze() # make 1D if coming from unreduced axis aggregation like sum
                             # TODO: squeeze exactly depending on axis to prevent accepting invalid values
   masked_axis_fill_impl(t, mask, axis, value)
@@ -307,6 +322,7 @@ proc masked_axis_fill*[T](t: var Tensor[T], mask: openArray[bool], axis: int, va
   ##               [  1, 30, 30],
   ##               [  8, 40, 40]].toTensor()
   # TODO: support filling with a multidimensional tensor
+  returnEmptyIfEmpty(t, mask)
   masked_axis_fill_impl(t, mask, axis, value)
 
 # Apply N-D mask along an axis
@@ -323,7 +339,7 @@ proc masked_fill_along_axis*[T](t: var Tensor[T], mask: Tensor[bool], axis: int,
   #
   # for slice in t.axis(axis):
   #   slice.masked_fill(mask, value)
-
+  returnEmptyIfEmpty(t, mask)
   when compileOption("boundChecks"):
     check_axis_index(t, axis, 0, t.shape[axis])
   var slice = t.atAxisIndex(axis, 0)

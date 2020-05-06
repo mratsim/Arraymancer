@@ -12,20 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./private/p_display,
-        ./data_structure,
-        typetraits
+import ../../src/arraymancer
+import unittest
 
-proc `$`*[T](t: Tensor[T]): string =
-  ## Pretty-print a tensor (when using ``echo`` for example)
-  let desc = t.type.name & " of shape " & $t.shape & "\" on backend \"" & "Cpu" & "\""
-  if t.size() == 0:
-    return desc & "\n    [] (empty)"
-  elif t.rank <= 2:
-    return desc & "\n" & t.disp2d
-  elif t.rank == 3:
-    return desc & "\n" & t.disp3d
-  elif t.rank == 4:
-    return desc & "\n" & t.disp4d
-  else:
-    return desc & "\n" & " -- NotImplemented: Display not implemented for tensors of rank > 4"
+
+# TODO: Fill the suite with corner cases, example "prod" returning 1 or "var" returning nan
+suite "Empty Tensors":
+  test "Indexing with empty tensor doesn't crash":
+    var r = @[1'f32, 1'f32].toTensor()
+    echo r[r <. 0]

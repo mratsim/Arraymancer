@@ -40,6 +40,6 @@ macro returnEmptyIfEmpty*(tensors: varargs[untyped]): untyped =
   result = newStmtList()
   for tensor in tensors: # static for loop
     let isEmptyCall = newCall(bindSym"isEmpty", tensor)
-    result = quote do:
+    result.add quote do:
       if `isEmptyCall`:
         return

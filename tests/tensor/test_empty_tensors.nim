@@ -21,3 +21,9 @@ suite "Empty Tensors":
   test "Indexing with empty tensor doesn't crash":
     var r = @[1'f32, 1'f32].toTensor()
     echo r[r <. 0]
+
+  test "Indexing an empty tensor doesn't crash":
+    var r = @[1'f32, 1'f32].toTensor()
+    let s = r[r <. 0]
+
+    echo s[toTensor([true])]

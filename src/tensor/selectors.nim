@@ -99,7 +99,7 @@ func masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
     size += int(val)
 
   if size == 0:
-    return # Empty!
+    return typeof(result)() # initialized empty
 
   result = newTensorUninit[T](size)
   withMemoryOptimHints()
@@ -195,7 +195,7 @@ template masked_axis_select_impl[T](result: var Tensor[T], t: Tensor[T], mask: T
     size += int(val)
 
   if size == 0:
-    return # Empty!
+    return typeof(result)() # initialized empty
 
   var shape = t.shape
   shape[axis] = size

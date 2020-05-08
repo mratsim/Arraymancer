@@ -1,6 +1,6 @@
 #import ../tensor/tensor
 import arraymancer
-import sequtils, math, heapqueue, sugar, algorithm
+import sequtils, math, heapqueue, sugar, algorithm, typetraits
 
 type
   TreeNodeKind = enum
@@ -55,22 +55,6 @@ proc `<`[T](s1, s2: seq[T]): bool =
     elif s1[i] > s2[i]:
       return false
 
-proc nonzero[T](t: Tensor[T]): seq[seq[int]] =
-  ## returns the indices, which are non zero along `axis` as a `seq[seq[int]]`.
-  ## One `seq[int]` for each dimension of `t`, which contains the indices
-  ## of nonzero elements along that axis
-  let mask = t !=. 0.T
-  result = newSeqWith(t.shape.len, newSeqOfCap[int](t.size))
-  var i = 0
-  var ax = 0
-  for idx, x in mask:
-    if x:
-      ax = 0
-      for j in idx:
-        result[ax].add j
-        inc ax
-    inc i
-
 proc allEqual[T](t: Tensor[T], val: T): bool =
   ## checks if all elements of `t` are `val`
   result = true
@@ -102,16 +86,18 @@ proc build[T](tree: KDTree[T],
 
     # sliding midpoint rule
     var split = (maxVal + minVal) / 2.0
-    var lessIdx = toTensor nonzero(data <=. split)[0]
-    var greaterIdx = toTensor nonzero(data >. split)[0]
+    # we (ab)use nonzero to get the indices for the mask along the
+    # first axis
+    var lessIdx = nonzero(data <=. split)[0, _]
+    var greaterIdx = nonzero(data >. split)[0, _]
     if lessIdx.size == 0:
       split = min(data)
-      lessIdx = toTensor nonzero(data <=. split)[0]
-      greaterIdx = toTensor nonzero(data >. split)[0]
+      lessIdx = nonzero(data <=. split)[0, _]
+      greaterIdx = nonzero(data >. split)[0, _]
     if greaterIdx.size == 0:
       split = max(data)
-      lessIdx = toTensor nonzero(data <. split)[0]
-      greaterIdx = toTensor nonzero(data >=. split)[0]
+      lessIdx = nonzero(data <. split)[0, _]
+      greaterIdx = nonzero(data >=. split)[0, _]
     if lessIdx.size == 0:
       # still zero, all must have same value
       if not allEqual(data, data[0]):
@@ -128,8 +114,8 @@ proc build[T](tree: KDTree[T],
     result = Node[T](kind: tnInner,
                      split_dim: d,
                      split: split,
-                     lesser: tree.build(idx[lessIdx], lessmaxes, mins),
-                     greater: tree.build(idx[greaterIdx], maxes, greatermins))
+                     lesser: tree.build(idx[lessIdx.squeeze], lessmaxes, mins),
+                     greater: tree.build(idx[greaterIdx.squeeze], maxes, greatermins))
 
 proc buildKdTree[T](tree: var KDTree[T],
                     startIdx: Tensor[int],

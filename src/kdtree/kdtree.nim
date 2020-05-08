@@ -182,28 +182,34 @@ func minkowski_distance[T](x, y: Tensor[T], p = 2.0): Tensor[T] =
   else:
     result = minkowski_distance_p(x, y, p).map_inline(pow(x, 1.0 / p))
 
-proc toTupleSeq[T: tuple](q: var HeapQueue[T]): seq[T] =
+proc toTensorTuple[T, U](q: var HeapQueue[T],
+                         retType: typedesc[U],
+                         p = Inf): tuple[dist: Tensor[U],
+                                         idx: Tensor[int]] =
+  static: doAssert arity(T) == 2
+  result[0] = newTensor[U](q.len)
+  result[1] = newTensor[int](q.len)
   var i = 0
-  result = newSeq[T](q.len)
-  while q.len > 0:
-    let (val, idx) = q.pop
-    result[i] = (-val, idx)
-    inc i
-
-proc toTupleSeqNorm[T: tuple](q: var HeapQueue[T], p: float): seq[T] =
-  var i = 0
-  result = newSeq[T](q.len)
-  while q.len > 0:
-    let (val, idx) = q.pop
-    result[i] = (pow(-val, 1.0 / p), idx)
-    inc i
+  if classify(p) == fcInf:
+    while q.len > 0:
+      let (val, idx) = q.pop
+      result[0][i] = -val
+      result[1][i] = idx
+      inc i
+  else:
+    while q.len > 0:
+      let (val, idx) = q.pop
+      result[0][i] = pow(-val, 1.0 / p)
+      result[1][i] = idx
+      inc i
 
 proc query[T](tree: KDTree[T],
               x: Tensor[T],
               k = 1, # number of neighbors to yield
               eps = 0.0,
               p = 2.0,
-              distanceUpperBound = Inf): seq[tuple[d: T, i: int]] =
+              distanceUpperBound = Inf): tuple[dist: Tensor[T],
+                                               idx: Tensor[int]] =
   echo tree.maxes
   echo x
   var side_distancesT = map2_inline(x .- tree.maxes,
@@ -283,10 +289,7 @@ proc query[T](tree: KDTree[T],
       if min_distance <= distance_upper_bound * epsfac:
         q.push( (min_distance, sd, far) )
 
-  if classify(p) == fcInf:
-    result = toTupleSeq neighbors
-  else:
-    result = toTupleSeqNorm(neighbors, p)
+  result = toTensorTuple(neighbors, retType = T, p = p)
 
 when isMainModule:
   import arraymancer, nimpy
@@ -301,7 +304,9 @@ when isMainModule:
   let ps = randomTensor(2, 1.0)
   echo ps.shape
   echo ps
-  let nimRes = kd.query(ps, k = 3).sortedByIt(it[1])
+  let nimResTup = kd.query(ps, k = 3)
+  let nimRes = zip(nimResTup[0].toRawSeq,
+                   nimResTup[1].toRawSeq).sortedByIt(it[1])
 
   echo nimRes
   let scipy = pyImport("scipy.spatial")

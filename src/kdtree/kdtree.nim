@@ -78,10 +78,6 @@ proc allEqual[T](t: Tensor[T], val: T): bool =
     if x != val:
       return false
 
-proc fancyIndex[T](t: Tensor[T], idx: Tensor[int]): Tensor[T] =
-  #result = newTensorUninit(idx.size)
-  result = t.index_select(axis = 0, idx)
-
 proc build[T](tree: KDTree[T],
               idx: Tensor[int],
               #startIdx, endIdx: int
@@ -94,7 +90,7 @@ proc build[T](tree: KDTree[T],
                      idx: idx,
                      children: idx.size)
   else:
-    var data = tree.data.fancyIndex(idx)
+    var data = tree.data[idx]
     let d = argmax((maxes .- mins).squeeze, axis = 0)[0]
     let maxVal = maxes[d]
     let minVal = mins[d]
@@ -132,8 +128,8 @@ proc build[T](tree: KDTree[T],
     result = Node[T](kind: tnInner,
                      split_dim: d,
                      split: split,
-                     lesser: tree.build(idx.fancyIndex(lessIdx), lessmaxes, mins),
-                     greater: tree.build(idx.fancyIndex(greaterIdx), maxes, greatermins))
+                     lesser: tree.build(idx[lessIdx], lessmaxes, mins),
+                     greater: tree.build(idx[greaterIdx], maxes, greatermins))
 
 proc buildKdTree[T](tree: var KDTree[T],
                     startIdx: Tensor[int],
@@ -254,7 +250,7 @@ proc query[T](tree: KDTree[T],
     case node.kind
     of tnLeaf:
       # brute force for remaining
-      data = tree.data.fancyIndex(node.idx)
+      data = tree.data[node.idx]
       let ds = minkowski_distance_p(data, x.unsqueeze(axis = 0), p).squeeze
       for i in 0 ..< ds.size:
         if ds[i] < distance_upper_bound:

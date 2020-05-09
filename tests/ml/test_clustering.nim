@@ -2,12 +2,12 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import
   unittest,
   math
 
-suite "[ML] Clustering":
+testSuite "[ML] Clustering":
   # Fishers Iris dataset - sans species column
   # See R. A. Fisher (1936) "The use of multiple measurements in taxonomic problems"
   let data = read_npy[float]("./tests/ml/data/input/iris_no_species.npy")

@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest
 
-suite "Fancy indexing":
+testSuite "Fancy indexing":
   # x = np.array([[ 4, 99,  2],
   #               [ 3,  4, 99],
   #               [ 1,  8,  7],

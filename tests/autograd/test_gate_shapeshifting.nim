@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, random, sequtils
 
-suite "Autograd of shapeshifting operations":
+testSuite "Autograd of shapeshifting operations":
   test "Gradient of stack operation":
     let
       height = rand(1..20)

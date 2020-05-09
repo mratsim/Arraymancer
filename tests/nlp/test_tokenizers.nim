@@ -1,12 +1,12 @@
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, strutils, times
 
 
-suite "Tokenizers":
+testSuite "Tokenizers":
   test "Whitespace Tokenizer - Basic":
     let text = [["hello world"], ["the quick brown fox"]].toTensor()
-    
+
     var tokenized = newSeq[seq[string]]()
     for word in whitespaceTokenizer(text):
         tokenized.add(word)
@@ -33,10 +33,10 @@ suite "Tokenizers":
     var minWps = 400_000
     when defined(release):
         miWps = 4_000_000
-    
+
     check:
         len(tokenized[0]) == size * words
         # See bottom of https://nlp.stanford.edu/software/tokenizer.shtml
         # for a good comparison between stanford NLP (Java) and spaCy (cython)
-        # performance on words tokenized per second 
+        # performance on words tokenized per second
         wordsPerSecond > minWps.toFloat

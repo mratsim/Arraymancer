@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest
 
 
-suite "Cuda init":
+testSuite "Cuda init":
   test "Clone function":
     let a = [ 7, 4, 3, 1, 8, 6,
               8, 1, 6, 2, 6, 6,

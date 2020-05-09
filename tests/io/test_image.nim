@@ -2,10 +2,10 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, os
 
-suite "[IO] Reading and writing images":
+testSuite "[IO] Reading and writing images":
   const
     imgpath = "./tests/io/images/nim_in_action_cover.jpg"
     outpng = "./build/test_img_out.png"

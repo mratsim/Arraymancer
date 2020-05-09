@@ -2,7 +2,7 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import nimhdf5
 import unittest, os, options
 
@@ -15,7 +15,7 @@ template withFile(filename: string, actions: untyped): untyped =
     removeFile(filename)
 
 
-suite "[IO] HDF5 .h5 file support":
+testSuite "[IO] HDF5 .h5 file support":
 
   const test_write_file = "./build/test_hdf5_write.h5"
   const tensorName = "TestTensor"

@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, sequtils
 import complex except Complex64, Complex32
 
-suite "Exporting":
+testSuite "Exporting":
   test "Raw sequence exporting":
     let t = toSeq(1..6).toTensor().reshape(2, 3)
     check t.toRawSeq == toSeq(1 .. 6)

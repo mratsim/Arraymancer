@@ -2,7 +2,7 @@
 # Licensed under the Apache License, version 2.0, ([LICENSE-APACHE](LICENSE) or http://www.apache.org/licenses/LICENSE-2.0)
 # This file may not be copied, modified, or distributed except according to those terms.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, random
 
 proc ex01() =
@@ -107,7 +107,7 @@ proc ex02() =
       score /= 10
       loss /= 10
 
-suite "End-to-End: mini-examples run":
+testSuite "End-to-End: mini-examples run":
   test "Example 1: XOR Perceptron":
     ex01()
   test "Example 2: MNIST via Convolutional Neural Net":

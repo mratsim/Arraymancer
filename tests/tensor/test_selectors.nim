@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest
 
-suite "Selectors":
+testSuite "Selectors":
   test "Index_select (Numpy take)":
     block: # Numpy
       let a = [4, 3, 5, 7, 6, 8].toTensor

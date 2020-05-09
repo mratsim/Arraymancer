@@ -1,10 +1,10 @@
 # Copyright (c) 2018 the Arraymancer contributors
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest
 
-suite "Datasets - IMDB":
+testSuite "Datasets - IMDB":
   test "Load IMDB":
     let imdb = load_imdb(cache = true)
 

@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, sequtils
 
-suite "Optimization":
+testSuite "Optimization":
   test "Test if contiguous slices are detected as contiguous":
     let a = [[1, 2, 3, 4, 5],
             [6, 7, 8, 9, 10]].toTensor

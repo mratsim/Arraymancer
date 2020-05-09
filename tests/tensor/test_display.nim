@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import math, unittest
 
 
-suite "Displaying tensors":
+testSuite "Displaying tensors":
   test "Display compiles":
     const
       a = @[1, 2, 3, 4, 5]

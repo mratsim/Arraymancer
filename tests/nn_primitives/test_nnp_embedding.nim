@@ -2,10 +2,10 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, tables, sequtils, strutils
 
-suite "[NN Primitive] Embedding":
+testSuite "[NN Primitive] Embedding":
   ## Embedding matrix that maps a vocabulary
   ## of size 21 into a 5-dimensional space
   ## (initialization completely random of course)

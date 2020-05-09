@@ -13,10 +13,10 @@
 # limitations under the License.
 
 # Please compile with -d:opencl switch
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest
 
-suite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":
+testSuite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":
   test "GEMM - General Matrix to Matrix Multiplication":
     ## TODO: test with slices
     let a = [[1.0,2,3],

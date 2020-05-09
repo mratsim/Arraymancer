@@ -66,7 +66,8 @@ func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int,
 proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: int, indices: Tensor[Idx], value: T) =
   ## Replace elements of `t` indicated by their `indices` along `axis` with `value`
   ## This is equivalent to Numpy `put`.
-  returnEmptyIfEmpty(t, indices)
+  if t.size == 0 or indices.size == 0:
+    return
   for i, index in enumerate(indices):
     var t_slice = t.atAxisIndex(axis, int(index))
     for old_val in t_slice.mitems():
@@ -75,7 +76,8 @@ proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: in
 proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: int, indices: openarray[Idx], value: T) =
   ## Replace elements of `t` indicated by their `indices` along `axis` with `value`
   ## This is equivalent to Numpy `put`.
-  returnEmptyIfEmpty(t, indices)
+  if t.size == 0 or indices.len == 0:
+    return
   for i, index in indices:
     var t_slice = t.atAxisIndex(axis, int(index))
     for old_val in t_slice.mitems():
@@ -138,7 +140,8 @@ proc masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
   ## or alternatively:
   ##
   ##   t.masked_fill(t > 0): -1
-  returnEmptyIfEmpty(t, mask)
+  if t.size == 0 or mask.size == 0:
+    return
   check_elementwise(t, mask)
 
   # Due to requiring unnecessary assigning `x` for a `false` mask
@@ -175,7 +178,8 @@ proc masked_fill*[T](t: var Tensor[T], mask: openarray, value: T) =
   ##   - an array of arrays of bools,
   ##   - ...
   ##
-  returnEmptyIfEmpty(t, mask)
+  if t.size == 0 or mask.len == 0:
+    return
   t.masked_fill(mask.toTensor(), value)
 
 # Mask axis
@@ -292,7 +296,11 @@ proc masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value
   ##               [  1, 30, 30],
   ##               [  8, 40, 40]].toTensor()
   # TODO: support filling with a multidimensional tensor
-  returnEmptyIfEmpty(t, mask)
+  if t.size == 0 or mask.size == 0:
+    return
+  when value is Tensor:
+    if value.size == 0:
+      return
   let mask = mask.squeeze() # make 1D if coming from unreduced axis aggregation like sum
                             # TODO: squeeze exactly depending on axis to prevent accepting invalid values
   masked_axis_fill_impl(t, mask, axis, value)
@@ -322,7 +330,11 @@ proc masked_axis_fill*[T](t: var Tensor[T], mask: openArray[bool], axis: int, va
   ##               [  1, 30, 30],
   ##               [  8, 40, 40]].toTensor()
   # TODO: support filling with a multidimensional tensor
-  returnEmptyIfEmpty(t, mask)
+  if t.size == 0 or mask.len == 0:
+    return
+  when value is Tensor:
+    if value.size == 0:
+      return
   masked_axis_fill_impl(t, mask, axis, value)
 
 # Apply N-D mask along an axis
@@ -339,7 +351,8 @@ proc masked_fill_along_axis*[T](t: var Tensor[T], mask: Tensor[bool], axis: int,
   #
   # for slice in t.axis(axis):
   #   slice.masked_fill(mask, value)
-  returnEmptyIfEmpty(t, mask)
+  if t.size == 0 or mask.size == 0:
+    return
   when compileOption("boundChecks"):
     check_axis_index(t, axis, 0, t.shape[axis])
   var slice = t.atAxisIndex(axis, 0)

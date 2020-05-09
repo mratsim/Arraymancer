@@ -176,7 +176,9 @@ proc argmax_max*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes:
   # TODO: Reimplement parallel Argmax (introduced by https://github.com/mratsim/Arraymancer/pull/171)
   #       must be done with care: https://github.com/mratsim/Arraymancer/issues/183
 
-  returnEmptyIfEmpty(t)
+  if t.size == 0:
+    result.indices.reset()
+    result.maxes.reset()
 
   result.maxes = t.atAxisIndex(axis, 0).clone()
   result.indices = zeros[int](result.maxes.shape)

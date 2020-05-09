@@ -143,27 +143,32 @@ proc `^.`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T], exponen
 
 proc `+.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], val: T) =
   ## Tensor in-place addition with a broadcasted scalar.
-  returnEmptyIfEmpty(t)
+  if t.size == 0:
+    return
   t.apply_inline(x + val)
 
 proc `-.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], val: T) =
   ## Tensor in-place substraction with a broadcasted scalar.
-  returnEmptyIfEmpty(t)
+  if t.size == 0:
+    return
   t.apply_inline(x - val)
 
 proc `^.=`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: var Tensor[T], exponent: T) =
   ## Compute in-place element-wise exponentiation
-  returnEmptyIfEmpty(t)
+  if t.size == 0:
+    return
   t.apply_inline pow(x, exponent)
 
 proc `*.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], val: T) =
   ## Tensor in-place multiplication with a broadcasted scalar.
-  returnEmptyIfEmpty(t)
+  if t.size == 0:
+    return
   t.apply_inline(x * val)
 
 proc `/.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], val: T) =
   ## Tensor in-place division with a broadcasted scalar.
-  returnEmptyIfEmpty(t)
+  if t.size == 0:
+    return
   t.apply_inline(x / val)
 
 

@@ -47,7 +47,3 @@ macro returnEmptyIfEmpty*(tensors: varargs[untyped]): untyped =
     result.add quote do:
       if `isEmptyCall`:
         return `buildEmptyTensor`
-
-
-dumpAstgen:
-  typeof(result)()

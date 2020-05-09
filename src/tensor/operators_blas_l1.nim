@@ -88,15 +88,18 @@ proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
 
 proc `*=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], a: T) =
   ## Element-wise multiplication by a scalar (in-place)
-  returnEmptyIfEmpty(t)
+  if t.size == 0:
+    return
   t.apply_inline(x * a)
 
 proc `/=`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: var Tensor[T], a: T) =
   ## Element-wise division by a scalar (in-place)
-  returnEmptyIfEmpty(t)
+  if t.size == 0:
+    return
   t.apply_inline(x / a)
 
 proc `/=`*[T: SomeInteger](t: var Tensor[T], a: T) =
   ## Element-wise division by a scalar (in-place)
-  returnEmptyIfEmpty(t)
+  if t.size == 0:
+    return
   t.apply_inline(x div a)

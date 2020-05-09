@@ -6,7 +6,9 @@
 import
     ./gemm_ukernel_generator, ./gemm_tiling,
     ../../simd
-  
+
+x86only()
+
 ukernel_generator(
     x86_AVX512,
     typ = float32,

@@ -7,14 +7,17 @@ import
   macros,
   ../../compiler_optim_hints,
   ./gemm_tiling, ./gemm_utils,
-  ./gemm_ukernel_generic,
-  ./gemm_ukernel_sse,
-  ./gemm_ukernel_sse2,
-  ./gemm_ukernel_sse4_1,
-  ./gemm_ukernel_avx,
-  ./gemm_ukernel_avx_fma,
-  ./gemm_ukernel_avx2,
-  ./gemm_ukernel_avx512
+  ./gemm_ukernel_generic
+
+when defined(i386) or defined(amd64):
+  import
+    ./gemm_ukernel_sse,
+    ./gemm_ukernel_sse2,
+    ./gemm_ukernel_sse4_1,
+    ./gemm_ukernel_avx,
+    ./gemm_ukernel_avx_fma,
+    ./gemm_ukernel_avx2,
+    ./gemm_ukernel_avx512
 
 {.experimental: "dynamicBindSym".}
 

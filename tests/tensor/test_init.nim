@@ -149,6 +149,43 @@ testSuite "Creating a new Tensor":
       let t = arange(1.0,2.5,0.5)
       check: t == [1.0,1.5,2.0].toTensor()
 
+  test "linspace - initialization from (start, stop, num)":
+    block:
+      # with endpoint
+      let exp = @[2.00, 2.25, 2.5, 2.75, 3.00].toTensor()
+      let t = linspace(2.0, 3.0, num = 5)
+      check t.size == 5
+      for i in 0 ..< t.size:
+        check round(t[i], places = 2) == round(exp[i], places = 2)
+    block:
+      let exp = @[2.00, 2.20, 2.40, 2.60, 2.80].toTensor()
+      let t = linspace(2.0, 3.0, num = 5, endpoint = false)
+      check t.size == 5
+      for i in 0 ..< t.size:
+        check round(t[i], places = 2) == round(exp[i], places = 2)
+    block:
+      # start larger than stop
+      let exp = @[5.0, 4.0, 3.0, 2.0, 1.0, 0.0].toTensor()
+      let t = linspace(5.0, 0.0, num = 6)
+      check t.size == 6
+      for i in 0 ..< t.size:
+        check round(t[i], places = 2) == round(exp[i], places = 2)
+
+  test "logspace - initialization from (start, stop, num)":
+    block:
+      # with endpoint
+      let exp = @[1e0, 1e1, 1e2, 1e3, 1e4]
+      let t = logspace(0, 4, num = 5)
+      check t.size == 5
+      for i in 0 ..< t.size:
+        check round(t[i], places = 2) == round(exp[i], places = 2)
+    block:
+      let exp = @[1e0, 1e1, 1e2, 1e3, 1e4]
+      let t = logspace(0, 5, num = 5, endpoint = false)
+      check t.size == 5
+      for i in 0 ..< t.size:
+        check round(t[i], places = 2) == round(exp[i], places = 2)
+
   test "Random tensor":
     # Check that randomTensor doesn't silently convert float32 to float64
     let a = randomTensor([3, 4], 100'f32)

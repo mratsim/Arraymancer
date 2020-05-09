@@ -18,8 +18,10 @@ import  ./backend/memory_optimization_hints,
         ./higher_order_foldreduce,
         ./math_functions,
         ./accessors,
+        ./algorithms,
         ./private/p_empty_tensors,
         math
+        
 import complex except Complex64, Complex32
 
 # ### Standard aggregate functions
@@ -213,3 +215,39 @@ proc argmax*[T](t: Tensor[T], axis: int): Tensor[int] {.inline.}=
   ##                             [1],
   ##                             [1]].toTensor
   argmax_max(t, axis).indices
+
+proc percentile*[T](t: Tensor[T], p: int, isSorted = false): float =
+  ## statistical percentile value of ``t``, where ``p`` percentile value
+  ## is between ``0`` and ``100`` inclusively,
+  ## and ``p=0`` gives the min value, ``p=100`` gives the max value
+  ## and ``p=50`` gives the median value.
+  ##
+  ## If the input percentile does not match an element of `t` exactly
+  ## the result is the linear interpolation between the neighbors.
+  ##
+  ## ``t`` does not need to be sorted, because ``percentile`` sorts
+  ## a copy of the data itself. If ``isSorted``` is ``true`` however,
+  ## no sorting is done.
+  # TODO: we could in principle also return `T`, but then we cannot do
+  # interpolation between values. Hm.
+  if t.size == 0: result = 0.0
+  elif p <= 0: result = min(t).float
+  elif p >= 100: result = max(t).float
+  else:
+    let a = if not isSorted: sorted(t) else: t
+    let f = (t.size - 1) * p / 100
+    let i = floor(f).int
+    if f == i.float: result = a[i].float
+    else:
+      # interpolate linearly
+      let frac = f - i.float
+      result = (a[i].float + (a[i+1] - a[i]).float * frac)
+
+func iqr*[T](t: Tensor[T]): float =
+  ## Returns the interquartile range of the 1D tensor `t`.
+  ##
+  ## The interquartile range (IQR) is the distance between the
+  ## 25th and 75th percentile
+  let tS = t.sorted
+  result = percentile(tS, 75, isSorted = true) -
+           percentile(tS, 25, isSorted = true)

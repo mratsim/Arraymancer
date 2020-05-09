@@ -189,6 +189,10 @@ proc getFancySelector*(ast: NimNode, axis: var int, selector: var NimNode): Fanc
   if result != FancyNone and ellipsisAtStart:
     axis = ast.len - axis
 
+  # replace all possible `nnkSym` by `idents` because we otherwise might get
+  # type mismatches
+  selector = replaceSymsByIdents(selector)
+
 macro slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
   ## Typed macro so that isAllInt has typed context and we can dispatch.
   ## If args are all int, we dispatch to atIndex and return T

@@ -7,6 +7,8 @@ import
   ./gemm_ukernel_generator, ./gemm_tiling,
   ../../simd
 
+x86only()
+
 template int32x8_muladd_unfused_avx2(a, b, c: m256i): m256i =
   mm256_add_epi32(mm256_mullo_epi32(a, b), c)
 

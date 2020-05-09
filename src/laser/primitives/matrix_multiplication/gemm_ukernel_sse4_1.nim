@@ -8,6 +8,8 @@ import
   ./gemm_ukernel_generator, ./gemm_tiling,
   ../../simd
 
+x86only()
+
 template int32x4_muladd_unfused_sse4_1(a, b, c: m128i): m128i =
   mm_add_epi32(mm_mullo_epi32(a, b), c)
 

@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, math
 import complex except Complex64, Complex32
 
-suite "[Core] Testing aggregation functions":
+testSuite "[Core] Testing aggregation functions":
   let t = [[0, 1, 2],
           [3, 4, 5],
           [6, 7, 8],

@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, sequtils
 
-suite "Autograd of basic operations":
+testSuite "Autograd of basic operations":
   test "Gradient of tensor addition":
 
     let a = toSeq(1..8).toTensor.reshape(2,4).astype(float32)

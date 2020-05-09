@@ -12,18 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest
 
-testSuite "Test the numerical gradient proc":
-  test "Numerical gradient":
-    proc f(x: float): float = x*x + x + 1.0
-    check: numerical_gradient(2.0, f).relative_error(5.0) < 1e-8
 
-    proc g(t: Tensor[float]): float =
-      let x = t[0]
-      let y = t[1]
-      x*x + y*y + x*y + x + y + 1.0
-    let input = [2.0, 3.0].toTensor()
-    let grad = [8.0, 9.0].toTensor()
-    check: numerical_gradient(input, g).mean_relative_error(grad) < 1e-8
+# TODO: Fill the suite with corner cases, example "prod" returning 1 or "var" returning nan
+suite "Empty Tensors":
+  test "Indexing with empty tensor doesn't crash":
+    var r = @[1'f32, 1'f32].toTensor()
+    echo r[r <. 0]
+
+  test "Indexing an empty tensor doesn't crash":
+    var r = @[1'f32, 1'f32].toTensor()
+    let s = r[r <. 0]
+
+    echo s[toTensor([true])]

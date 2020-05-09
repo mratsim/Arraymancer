@@ -1,13 +1,13 @@
 # Copyright (c) 2019 the Arraymancer contributors
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, sequtils
 
 # The tests are adapted from here:
 # https://rockt.github.io/2018/04/30/einsum
 
-suite "Einsum":
+testSuite "Einsum":
   test "Transposition of a tensor":
     let a = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
     let b = einsum(a):

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Please compile with -d:cuda switch
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, sugar
 
 template test_conv(T: typedesc[SomeFloat]) =
@@ -97,6 +97,6 @@ template test_conv(T: typedesc[SomeFloat]) =
     # echo target_grad_input
     # echo grad_input
 
-suite "CUDNN: Convolution 2D":
+testSuite "CUDNN: Convolution 2D":
   test_conv(float32)
   test_conv(float64)

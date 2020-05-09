@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, sequtils
 import complex except Complex64, Complex32
 
-suite "Shapeshifting":
+testSuite "Shapeshifting":
   test "Contiguous conversion":
     block:
       let a = [7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0].toTensor.reshape([3,6])

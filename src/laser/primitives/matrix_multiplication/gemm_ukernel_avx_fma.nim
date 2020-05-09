@@ -7,6 +7,8 @@ import
   ./gemm_ukernel_generator, ./gemm_tiling,
   ../../simd
 
+x86only()
+
 ukernel_generator(
       x86_AVX_FMA,
       typ = float32,

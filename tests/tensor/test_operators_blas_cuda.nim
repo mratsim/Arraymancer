@@ -13,10 +13,10 @@
 # limitations under the License.
 
 # Please compile with -d:cuda switch
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, sugar, math
 
-suite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
+testSuite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
   test "GEMM - General Matrix to Matrix Multiplication":
     ## TODO: test with slices
     let a = [[1.0,2,3],

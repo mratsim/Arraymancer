@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, math, sugar, sequtils
 import complex except Complex32, Complex64
 
-suite "[Core] Testing higher-order functions":
+testSuite "[Core] Testing higher-order functions":
   let t = [[0, 1, 2],
           [3, 4, 5],
           [6, 7, 8],
@@ -93,7 +93,7 @@ suite "[Core] Testing higher-order functions":
     check: t_c.fold(initval.astype(Complex[float64]), `+`, axis = 1) == col_sum_plus_1010.astype(Complex[float64])
 
 
-suite "[Core] Testing higher-order templates":
+testSuite "[Core] Testing higher-order templates":
   test "Map templates can have an automatically inferred return type different from input types":
 
     let a = [10, 2, 4, 12].toTensor

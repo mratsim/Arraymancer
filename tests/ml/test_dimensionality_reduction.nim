@@ -2,10 +2,10 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, math
 
-suite "[ML] Dimensionality reduction":
+testSuite "[ML] Dimensionality reduction":
   test "Principal component analysis (PCA)":
 
     block: # http://www.cs.otago.ac.nz/cosc453/student_tutorials/principal_components.pdf

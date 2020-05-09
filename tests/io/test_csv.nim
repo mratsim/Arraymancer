@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, os
 
 let expected_output_1d = """dimension_1,value
@@ -52,7 +52,7 @@ let expected_output_semicolon = """dimension_1;dimension_2;value
 
 let test_file_path = getTempDir() / "arraymancer_test.csv"
 
-suite "[IO] CSV support":
+testSuite "[IO] CSV support":
 
   test "Should export 1d Tensor":
     let t = @[1, 2, 3, 4, 5].toTensor()

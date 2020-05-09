@@ -15,7 +15,8 @@
 import ./data_structure, ./accessors,
         ./higher_order_applymap,
         ./shapeshifting,
-        ../private/deprecate
+        ../private/deprecate,
+        ./private/p_empty_tensors
 
 proc `==`*[T](a,b: Tensor[T]): bool {.noSideEffect.}=
   ## Tensor comparison
@@ -103,6 +104,7 @@ implDeprecatedBy(`.>`, `>.`, exported = true)
 # broadcasted scalar ops
 
 template gen_broadcasted_scalar_comparison(op: untyped): untyped {.dirty.} =
+  returnEmptyIfEmpty(t)
   result = map_inline(t):
     op(x, value)
 
@@ -149,6 +151,7 @@ proc `>.`*[T](t: Tensor[T], value : T): Tensor[bool] {.noInit.} =
 proc isNan*(t: Tensor[SomeFloat]): Tensor[bool] =
   ## Returns a boolean tensor set to true for each element which is "Not-a-number"
   ## or set to false otherwise
+  returnEmptyIfEmpty(t)
   result = t.map_inline():
     x != x
 
@@ -156,5 +159,6 @@ proc isNotNan*(t: Tensor[SomeFloat]): Tensor[bool] =
   ## Returns a boolean tensor set to false for each element
   ## which is "Not-a-number"
   ## or set to true otherwise
+  returnEmptyIfEmpty(t)
   result = t.map_inline():
     x == x

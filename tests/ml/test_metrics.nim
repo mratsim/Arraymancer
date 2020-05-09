@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, math
 
-suite "[ML] Metrics":
+testSuite "[ML] Metrics":
   test "Accuracy score":
     let
       y_pred = [0, 2, 1, 3].toTensor

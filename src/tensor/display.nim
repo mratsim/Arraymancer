@@ -19,7 +19,9 @@ import  ./private/p_display,
 proc `$`*[T](t: Tensor[T]): string =
   ## Pretty-print a tensor (when using ``echo`` for example)
   let desc = t.type.name & " of shape " & $t.shape & "\" on backend \"" & "Cpu" & "\""
-  if t.rank <= 2:
+  if t.size() == 0:
+    return desc & "\n    [] (empty)"
+  elif t.rank <= 2:
     return desc & "\n" & t.disp2d
   elif t.rank == 3:
     return desc & "\n" & t.disp3d

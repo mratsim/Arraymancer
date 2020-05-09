@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, math, sequtils
 import complex except Complex64, Complex32
 
-suite "Creating a new Tensor":
+testSuite "Creating a new Tensor":
   test "Creating from sequence":
     let t1 = @[1,2,3].toTensor()
     check: t1.shape == [3]

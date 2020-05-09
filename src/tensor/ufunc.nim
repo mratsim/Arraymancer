@@ -14,6 +14,7 @@
 
 import  ./data_structure,
         ./higher_order_applymap,
+        ./private/p_empty_tensors,
         sugar, math, complex
 
 proc astype*[T; U: not Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noInit.} =
@@ -22,10 +23,12 @@ proc astype*[T; U: not Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noI
   when T is U:
     result = t
   else:
+    returnEmptyIfEmpty(t)
     result = t.map(x => x.U)
 
 proc astype*[T: SomeNumber, U: Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noInit.} =
   ## Apply type conversion on the whole tensor
+  returnEmptyIfEmpty(t)
   when T is SomeNumber and U is Complex[float32]:
     result = t.map(x => complex32(x.float32))
   elif T is SomeNumber and U is Complex[float64]:
@@ -46,10 +49,11 @@ template makeUniversal*(func_name: untyped) =
   # ``makeUniversal`` does not work when the internal type of the Tensor changes,
   # for example, a function "isEven: int -> bool".
   # Use ``map`` in this case instead instead
-  proc func_name*(t: Tensor): Tensor {.noInit.} =
+  proc func_name*[T](t: Tensor[T]): Tensor[T] {.noInit.} =
     ## Auto-generated universal version of the function.
     ##
     ## The function can be used directly on tensors and will work element-wise.
+    returnEmptyIfEmpty(t)
     t.map_inline(func_name(x))
   export func_name
 
@@ -61,7 +65,8 @@ template makeUniversalLocal*(func_name: untyped) =
   # ``makeUniversalLocal`` does not work when the internal type of the Tensor changes,
   # for example, a function "isEven: int -> bool".
   # Use ``map`` in this case instead instead
-  proc func_name(t: Tensor): Tensor {.noInit.} =
+  proc func_name[T](t: Tensor[T]): Tensor[T] {.noInit.} =
+    returnEmptyIfEmpty(t)
     t.map_inline(func_name(x))
 
 # Unary functions from Nim math library

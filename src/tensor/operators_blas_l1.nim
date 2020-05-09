@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import  ./private/p_checks,
+        ./private/p_empty_tensors,
         ./data_structure,
         ./accessors, ./higher_order_applymap,
         nimblas
@@ -65,6 +66,7 @@ proc `-=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b:
 
 proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: T, t: Tensor[T]): Tensor[T] {.noInit.} =
   ## Element-wise multiplication by a scalar
+  returnEmptyIfEmpty(t)
   t.map_inline(x * a)
 
 proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
@@ -73,10 +75,12 @@ proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): 
 
 proc `/`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
   ## Element-wise division by a float scalar
+  returnEmptyIfEmpty(t)
   t.map_inline(x / a)
 
 proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
   ## Element-wise division by an integer
+  returnEmptyIfEmpty(t)
   t.map_inline(x div a)
 
 # #########################################################
@@ -84,12 +88,18 @@ proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
 
 proc `*=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], a: T) =
   ## Element-wise multiplication by a scalar (in-place)
+  if t.size == 0:
+    return
   t.apply_inline(x * a)
 
 proc `/=`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: var Tensor[T], a: T) =
   ## Element-wise division by a scalar (in-place)
+  if t.size == 0:
+    return
   t.apply_inline(x / a)
 
 proc `/=`*[T: SomeInteger](t: var Tensor[T], a: T) =
   ## Element-wise division by a scalar (in-place)
+  if t.size == 0:
+    return
   t.apply_inline(x div a)

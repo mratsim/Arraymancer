@@ -129,7 +129,7 @@ proc `$`*(a: DynamicStackArray): string {.inline.} =
   result.add("]")
 
 proc product*[T:SomeNumber](a: DynamicStackArray[T]): T {.inline.} =
-  result = 1
+  result = int(a.len != 0) # 1 in the usual case, 0 in the degenerate case of 0 length (supports empty tensors detection with a generic size(t))
   for value in items(a):
     result *= value
 

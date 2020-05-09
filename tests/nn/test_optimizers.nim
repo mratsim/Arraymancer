@@ -33,7 +33,7 @@ let start_y = [1.5'f64].toTensor
 type Model = object
   x, y: Variable[Tensor[float64]]
 
-suite "[Optimizer] Optimizer on the Rosenbrock function":
+testSuite "[Optimizer] Optimizer on the Rosenbrock function":
   setup:
     let ctx = newContext Tensor[float64]
     let model = Model(x: ctx.variable(start_x.clone, requires_grad = true),

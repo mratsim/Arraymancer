@@ -17,7 +17,7 @@ import ../../src/arraymancer, ../testutils, unittest, random
 # Fix random seed for reproducibility
 randomize(1234)
 
-suite "[NN primitives] Loss functions":
+testSuite "[NN primitives] Loss functions":
   proc `~=`[T: SomeFloat](a, b: T): bool =
     let eps = 2e-5.T
     result = abs(a - b) <= eps

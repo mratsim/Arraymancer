@@ -5,7 +5,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest, os
 
-suite "[IO] Reading and writing images":
+testSuite "[IO] Reading and writing images":
   const
     imgpath = "./tests/io/images/nim_in_action_cover.jpg"
     outpng = "./build/test_img_out.png"

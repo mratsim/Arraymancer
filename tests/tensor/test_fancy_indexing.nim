@@ -15,7 +15,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest
 
-suite "Fancy indexing":
+testSuite "Fancy indexing":
   # x = np.array([[ 4, 99,  2],
   #               [ 3,  4, 99],
   #               [ 1,  8,  7],

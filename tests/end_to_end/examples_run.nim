@@ -107,7 +107,7 @@ proc ex02() =
       score /= 10
       loss /= 10
 
-suite "End-to-End: mini-examples run":
+testSuite "End-to-End: mini-examples run":
   test "Example 1: XOR Perceptron":
     ex01()
   test "Example 2: MNIST via Convolutional Neural Net":

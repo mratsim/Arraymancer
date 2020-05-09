@@ -61,7 +61,7 @@ block:
 #
 # ############################################################
 
-suite "[Optimizer] Optimizer on the Rosenbrock function":
+testSuite "[Optimizer] Optimizer on the Rosenbrock function":
   const
     a = 1'f64
     b = 100'f64

@@ -15,7 +15,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest, sugar, sequtils
 
-suite "CUDA: Shapeshifting - broadcasting and non linear algebra elementwise operations":
+testSuite "CUDA: Shapeshifting - broadcasting and non linear algebra elementwise operations":
   test "Tensor element-wise multiplication (Hadamard product) and division":
     block:
       let u = @[-4, 0, 9].toTensor().astype(float32).cuda

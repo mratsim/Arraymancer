@@ -5,7 +5,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest, tables, sequtils, strutils
 
-suite "[NN Primitive] Embedding":
+testSuite "[NN Primitive] Embedding":
   ## Embedding matrix that maps a vocabulary
   ## of size 21 into a 5-dimensional space
   ## (initialization completely random of course)

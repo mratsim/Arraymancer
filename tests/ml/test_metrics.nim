@@ -15,7 +15,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest, math
 
-suite "[ML] Metrics":
+testSuite "[ML] Metrics":
   test "Accuracy score":
     let
       y_pred = [0, 2, 1, 3].toTensor

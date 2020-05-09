@@ -3,7 +3,7 @@ import ../../src/arraymancer, ../testutils
 import unittest, strutils, times
 
 
-suite "Tokenizers":
+testSuite "Tokenizers":
   test "Whitespace Tokenizer - Basic":
     let text = [["hello world"], ["the quick brown fox"]].toTensor()
 

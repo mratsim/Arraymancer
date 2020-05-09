@@ -16,7 +16,7 @@ import ../../src/arraymancer, ../testutils
 import unittest, math
 import complex except Complex64, Complex32
 
-suite "Math functions":
+testSuite "Math functions":
   test "Reciprocal (element-wise 1/x)":
     var a = [1.0, 10, 20, 30].toTensor.reshape(4,1)
     var a_c = [1.0, 10, 20, 30].toTensor.reshape(4,1).astype(Complex[float64])

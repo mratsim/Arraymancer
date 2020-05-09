@@ -15,7 +15,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest, random, sequtils
 
-suite "Autograd of shapeshifting operations":
+testSuite "Autograd of shapeshifting operations":
   test "Gradient of stack operation":
     let
       height = rand(1..20)

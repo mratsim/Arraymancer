@@ -4,7 +4,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest, math, fenv
 
-suite "Linear algebra":
+testSuite "Linear algebra":
   test "Hilbert matrix":
     block:
       const N = 3

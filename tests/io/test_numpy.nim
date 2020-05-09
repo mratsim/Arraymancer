@@ -5,7 +5,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest, os
 
-suite "[IO] Numpy .npy file support":
+testSuite "[IO] Numpy .npy file support":
 
   const folder = "./tests/io/npy_files/"
   const test_write_file = "./build/test_numpy_write.npy"

@@ -16,7 +16,7 @@ import ../../src/arraymancer, ../testutils
 import unittest
 
 
-suite "OpenCL init":
+testSuite "OpenCL init":
 
   let a =  [[1.0, 2, 3, 4],
             [5.0, 6, 7, 8]].toTensor

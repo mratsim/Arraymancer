@@ -15,7 +15,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest, sugar, sequtils
 
-suite "CUDA: Shapeshifting":
+testSuite "CUDA: Shapeshifting":
   ## Note: by default (momentarily), CudaTensors are column-major
   test "Contiguous conversion":
     let a = [7, 4, 3, 1, 8, 6,

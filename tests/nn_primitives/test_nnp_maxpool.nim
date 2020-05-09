@@ -16,7 +16,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest
 
-suite "[NN Primitives] Maxpool":
+testSuite "[NN Primitives] Maxpool":
   let a =  [[1, 1, 2, 4],
             [5, 6, 7, 8],
             [3, 2, 1, 0],

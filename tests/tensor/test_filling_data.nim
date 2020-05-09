@@ -18,7 +18,7 @@ import unittest, math
 import complex except Complex64, Complex32
 
 
-suite "Testing miscellaneous data functions":
+testSuite "Testing miscellaneous data functions":
   test "Copy data from source":
     let a = [[1,2],[3,4]].toTensor.reshape(2,2)
 

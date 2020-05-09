@@ -6,7 +6,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest, sequtils, strformat
 
-suite "[NN Primitives - Gated Recurrent Unit - Cell]":
+testSuite "[NN Primitives - Gated Recurrent Unit - Cell]":
   block:
     let x = toTensor([[ 0.1,  0.2,  0.3,  0.4],
                       [-0.1, -0.2, -0.3, -0.4],
@@ -175,7 +175,7 @@ suite "[NN Primitives - Gated Recurrent Unit - Cell]":
       dbW3.mean_absolute_error(target_grad_bW3) < 1e-8
       dbU3.mean_absolute_error(target_grad_bU3) < 1e-8
 
-suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
+testSuite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
 
   const
     Timesteps = 4

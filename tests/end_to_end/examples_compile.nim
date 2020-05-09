@@ -15,7 +15,7 @@ import unittest, ../testutils
 
 # TODO - currently compiles run the code :/
 
-suite "Full examples - compilation check only":
+testSuite "Full examples - compilation check only":
   test "Example 1: XOR Perceptron":
     check: compiles: import ../../examples/ex01_xor_perceptron_from_scratch
   test "Example 2: MNIST via Convolutional Neural Net":

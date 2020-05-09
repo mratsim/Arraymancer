@@ -16,7 +16,7 @@ import ../../src/arraymancer, ../testutils
 import math, unittest
 
 
-suite "Displaying tensors":
+testSuite "Displaying tensors":
   test "Display compiles":
     const
       a = @[1, 2, 3, 4, 5]

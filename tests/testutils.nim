@@ -19,4 +19,4 @@ template testSuite*(name: string, body: untyped): untyped =
     proc testSuite() =
       suite name:
         body
-    testSuite
+    testSuite()

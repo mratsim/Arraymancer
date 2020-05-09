@@ -15,7 +15,7 @@ template withFile(filename: string, actions: untyped): untyped =
     removeFile(filename)
 
 
-suite "[IO] HDF5 .h5 file support":
+testSuite "[IO] HDF5 .h5 file support":
 
   const test_write_file = "./build/test_hdf5_write.h5"
   const tensorName = "TestTensor"

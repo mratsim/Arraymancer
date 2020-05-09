@@ -15,7 +15,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest
 
-suite "Selectors":
+testSuite "Selectors":
   test "Index_select (Numpy take)":
     block: # Numpy
       let a = [4, 3, 5, 7, 6, 8].toTensor

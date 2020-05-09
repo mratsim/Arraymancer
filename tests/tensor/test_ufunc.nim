@@ -16,7 +16,7 @@ import ../../src/arraymancer, ../testutils
 import math, unittest, complex
 import complex except Complex64, Complex32
 
-suite "Universal functions":
+testSuite "Universal functions":
   test "As type with slicing":
     let a = [1, 2, 3, 4].toTensor()
     let b = a[1..2].astype(float)

@@ -17,7 +17,7 @@ import unittest, math
 import complex except Complex64, Complex32
 
 
-suite "Accessing and setting tensor values":
+testSuite "Accessing and setting tensor values":
   test "Accessing and setting a single value":
     var a = zeros[int](@[2,3,4])
     a[1,2,2] = 122

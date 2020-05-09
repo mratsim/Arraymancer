@@ -7,7 +7,7 @@ import
   unittest,
   math
 
-suite "[ML] Clustering":
+testSuite "[ML] Clustering":
   # Fishers Iris dataset - sans species column
   # See R. A. Fisher (1936) "The use of multiple measurements in taxonomic problems"
   let data = read_npy[float]("./tests/ml/data/input/iris_no_species.npy")

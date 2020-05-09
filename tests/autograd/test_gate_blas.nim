@@ -28,7 +28,7 @@ import unittest, sequtils
 # ∂C/∂X = W.transpose * previous_gradient
 # ∂C/∂W = previous_gradient * X.transpose
 
-suite "Autograd of BLAS operations":
+testSuite "Autograd of BLAS operations":
   test "Gradient of matrix multiplication":
 
     let W = toSeq(1..8).toTensor.reshape(2,4).astype(float32)

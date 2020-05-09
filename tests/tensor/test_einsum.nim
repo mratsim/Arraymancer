@@ -7,7 +7,7 @@ import unittest, sequtils
 # The tests are adapted from here:
 # https://rockt.github.io/2018/04/30/einsum
 
-suite "Einsum":
+testSuite "Einsum":
   test "Transposition of a tensor":
     let a = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
     let b = einsum(a):

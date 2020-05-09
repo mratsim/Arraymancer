@@ -5,7 +5,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest
 
-suite "Statistics":
+testSuite "Statistics":
   test "Covariance matrix":
 
     block: # https://www.itl.nist.gov/div898/handbook/pmc/section5/pmc541.htm

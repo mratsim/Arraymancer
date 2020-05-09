@@ -15,7 +15,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest, random, sequtils
 
-suite "Autograd of Hadamard product":
+testSuite "Autograd of Hadamard product":
   test "Gradient of Hadamard product":
     let
       height = rand(1..20)

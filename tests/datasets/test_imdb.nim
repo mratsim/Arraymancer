@@ -4,7 +4,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest
 
-suite "Datasets - IMDB":
+testSuite "Datasets - IMDB":
   test "Load IMDB":
     let imdb = load_imdb(cache = true)
 

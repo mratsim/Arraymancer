@@ -5,7 +5,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest, math
 
-suite "[ML] Dimensionality reduction":
+testSuite "[ML] Dimensionality reduction":
   test "Principal component analysis (PCA)":
 
     block: # http://www.cs.otago.ac.nz/cosc453/student_tutorials/principal_components.pdf

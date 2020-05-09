@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer, unittest, random
+import ../../src/arraymancer, ../testutils, unittest, random
 
 # Fix random seed for reproducibility
 randomize(1234)

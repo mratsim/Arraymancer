@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, math, sugar
 
 suite "Convolution 2D":

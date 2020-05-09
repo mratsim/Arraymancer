@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Please compile with -d:cuda switch
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, sugar
 
 template test_conv(T: typedesc[SomeFloat]) =

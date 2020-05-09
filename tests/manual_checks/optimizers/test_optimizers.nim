@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import
-  ../../src/arraymancer,
+  ../../src/arraymancer, ../testutils,
   unittest, random, strformat
 
 # ############################################################

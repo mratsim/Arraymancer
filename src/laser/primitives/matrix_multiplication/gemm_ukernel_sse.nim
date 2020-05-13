@@ -7,6 +7,8 @@ import
   ./gemm_ukernel_generator, ./gemm_tiling,
   ../../simd
 
+x86only()
+
 template float32x4_muladd_unfused(a, b, c: m128): m128 =
   mm_add_ps(mm_mul_ps(a, b), c)
 

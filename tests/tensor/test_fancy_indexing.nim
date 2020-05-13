@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest
 
-suite "Fancy indexing":
+testSuite "Fancy indexing":
   # x = np.array([[ 4, 99,  2],
   #               [ 3,  4, 99],
   #               [ 1,  8,  7],
@@ -173,6 +173,24 @@ suite "Fancy indexing":
                  [  8,   6,   8]].toTensor()
 
       check: y == exp
+
+  test "Access based on a Tensor[int], seq[int], indirect Tensor[int]":
+    let t = @[4, 2, 7, 3, 1].toTensor()
+    let sortIdx = @[4, 1, 3, 0, 2]
+    let sortIdxTensor = sortIdx.toTensor()
+    let exp = @[1, 2, 3, 4, 7].toTensor()
+    check t[sortIdx] == exp # using `seq`
+    check t[sortIdxTensor] == exp # using `Tensor` directly
+    # NOTE: The following
+    check t[sortIdx.toTensor()] == exp # using tensor indirectly
+    # requires use to replace
+    # Call
+    #   Ident "toTensor"
+    #   HiddenStdConv
+    #     Empty
+    #     Sym "sortIdx"
+    #   IntLit 0
+    # the `HiddenStdConv` by a simple `Ident "sortIdx"`
 
   # TODO - only broadcastable tensor assign are supported at the moment
   # test "Masked axis assign multidimensional tensor via fancy indexing":

@@ -17,6 +17,7 @@ import  ./data_structure,
         ./init_cpu
 
 # TODO tests
+# TODO Empty tensors boolean logic?
 
 # #############################
 # logical ops

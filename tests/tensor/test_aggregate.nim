@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, math
 import complex except Complex64, Complex32
 
-suite "[Core] Testing aggregation functions":
+testSuite "[Core] Testing aggregation functions":
   let t = [[0, 1, 2],
           [3, 4, 5],
           [6, 7, 8],
@@ -124,3 +124,15 @@ suite "[Core] Testing aggregation functions":
       check: argmax(a, 0) == [[1, 1, 1]].toTensor
       check: argmax(a, 1) == [[2],
                               [2]].toTensor
+
+  test "Percentile":
+    check percentile(@[10, 7, 4, 3, 2, 1].toTensor(), 0) == 1.0
+    check percentile(@[10, 7, 4, 3, 2, 1].toTensor(), 100) == 10.0
+    check percentile(@[10, 7, 4, 3, 2, 1, 0].toTensor(),  50) == 3.0
+    check percentile(@[10, 7, 4, 3, 2, 1].toTensor(), 50) == 3.5
+
+  test "iqr - interquartile range":
+    check iqr(@[10, 7, 4, 3, 2, 1].toTensor()) == 4.0
+    check iqr(@[10, 7, 4, 3, 2, 1, 0].toTensor()) == 4.0
+    check round(iqr(@[10, 7, 4, 3, 2, 1, 0, 0, 0, 0, 0].toTensor()),
+                places = 2) == 3.5

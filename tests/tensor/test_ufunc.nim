@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import math, unittest, complex
 import complex except Complex64, Complex32
 
-suite "Universal functions":
+testSuite "Universal functions":
   test "As type with slicing":
     let a = [1, 2, 3, 4].toTensor()
     let b = a[1..2].astype(float)

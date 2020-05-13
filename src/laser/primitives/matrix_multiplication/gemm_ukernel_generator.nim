@@ -21,6 +21,10 @@ import
 
 # #############################################################
 
+template x86only*(): untyped =
+  when not (defined(i386) or defined(amd64)):
+    {.error: "This file is x86-only, there should be a fallback path for other architectures.".}
+
 template ukernel_simd_proc(ukernel_name, epilogue_name: NimNode, edge: bool) {.dirty.} =
   if edge:
     result.add quote do:

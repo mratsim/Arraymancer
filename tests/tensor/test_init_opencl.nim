@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest
 
 
-suite "OpenCL init":
+testSuite "OpenCL init":
 
   let a =  [[1.0, 2, 3, 4],
             [5.0, 6, 7, 8]].toTensor

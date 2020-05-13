@@ -13,10 +13,10 @@
 # limitations under the License.
 
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, math, random, sequtils
 
-suite "Load test - OpenMP":
+testSuite "Load test - OpenMP":
   test "Integer - toTensor, slicing, matmul, inplace addition, display, rince & repeat":
     # The following bugs shows that OpenMP is very sensitive
     # https://github.com/mratsim/Arraymancer/issues/107

@@ -25,6 +25,7 @@ import ../src/arraymancer,
         ./tensor/test_math_functions,
         ./tensor/test_higherorder,
         ./tensor/test_aggregate,
+        ./tensor/test_algorithms,
         ./tensor/test_shapeshifting,
         ./tensor/test_broadcasting,
         ./tensor/test_ufunc,
@@ -48,6 +49,8 @@ import ../src/arraymancer,
         ./autograd/test_gate_shapeshifting,
         ./ml/test_metrics,
         ./ml/test_clustering,
+        ./stats/test_stats,
+        ./stats/test_distributions,
         ./test_bugtracker
 
 when not defined(windows) and not sizeof(int) == 4:

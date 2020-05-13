@@ -13,10 +13,10 @@
 # limitations under the License.
 
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, math, sugar
 
-suite "Convolution 2D":
+testSuite "Convolution 2D":
   block:
     let input = [
       [1, 2, 0, 0],

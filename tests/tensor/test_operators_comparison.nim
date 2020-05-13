@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, math
 from complex import Complex
 
 
-suite "Testing tensor comparison":
+testSuite "Testing tensor comparison":
   test "Testing for [1..^2, 1..3] slicing":
     const
       a = @[1, 2, 3, 4, 5]

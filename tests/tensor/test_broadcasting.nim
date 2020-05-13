@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, sequtils
 import complex except Complex64, Complex32
 
-suite "Shapeshifting - broadcasting and non linear algebra elementwise operations":
+testSuite "Shapeshifting - broadcasting and non linear algebra elementwise operations":
   test "Tensor element-wise multiplication (Hadamard product) and division":
     let u_int = @[-4, 0, 9].toTensor()
     let v_int = @[2, 10, 3].toTensor()

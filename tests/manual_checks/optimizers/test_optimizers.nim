@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import
-  ../../src/arraymancer,
+  ../../src/arraymancer, ../testutils,
   unittest, random, strformat
 
 # ############################################################
@@ -61,7 +61,7 @@ block:
 #
 # ############################################################
 
-suite "[Optimizer] Optimizer on the Rosenbrock function":
+testSuite "[Optimizer] Optimizer on the Rosenbrock function":
   const
     a = 1'f64
     b = 100'f64

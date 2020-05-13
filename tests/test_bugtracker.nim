@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../src/arraymancer
+import ../src/arraymancer, ./testutils
 import unittest
 
-suite "Testing specific issues from bug tracker":
+testSuite "Testing specific issues from bug tracker":
   test "#43: Span slicing inside dynamic type procs fails to compile":
     # https://github.com/mratsim/Arraymancer/issues/43
     proc boo[T](): T {.used.}=

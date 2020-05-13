@@ -1,10 +1,10 @@
 # Copyright (c) 2018 the Arraymancer contributors
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 
-import ../../src/arraymancer
+import ../../src/arraymancer, ../testutils
 import unittest, math, fenv
 
-suite "Linear algebra":
+testSuite "Linear algebra":
   test "Hilbert matrix":
     block:
       const N = 3

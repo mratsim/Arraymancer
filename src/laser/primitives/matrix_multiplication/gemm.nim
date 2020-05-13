@@ -6,9 +6,11 @@
 import
   # ../../cpuinfo,
   ../../compiler_optim_hints, ../../openmp,
-  ../../cpuinfo_x86,
   ./gemm_tiling, ./gemm_utils, ./gemm_packing,
   ./gemm_ukernel_dispatch
+
+when defined(i386) or defined(amd64):
+  import ../../cpuinfo_x86
 
 withCompilerOptimHints()
 

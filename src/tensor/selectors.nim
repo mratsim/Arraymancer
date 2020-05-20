@@ -217,7 +217,9 @@ template masked_axis_select_impl[T](result: var Tensor[T], t: Tensor[T], mask: T
       dstSlice[axis].a += 1
       dstSlice[axis].b = dstSlice[axis].a
 
-  assert dstSlice[axis].a == size
+  assert dstSlice[axis].a == size, "Found " & $size &
+    " true values in mask, but selected " & $dstSlice[axis].a &
+    " values on that axis"
 
 proc masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor[T] {.noInit.} =
   ## Take elements from a tensor according to the provided boolean mask.

@@ -2,9 +2,11 @@ import macros, strformat, strutils, sequtils, sets, tables, algorithm
 
 from os import parentDir, getCurrentCompilerExe, DirSep, extractFilename, `/`, setCurrentDir
 
-when (NimMajor, NimMinor, NimPatch) >= (1, 3, 0):
-  from os import paramCount, paramStr
-
+# NOTE:
+# for some time on devel 1.3.x `paramCount` and `paramStr` had to be imported
+# os, because they were removed for nimscript. This was reverted in:
+# https://github.com/nim-lang/Nim/pull/14658
+# For `nimdoc` we still have to import those from `os`!
 when defined(nimdoc):
   from os import getCurrentDir, paramCount, paramStr
 

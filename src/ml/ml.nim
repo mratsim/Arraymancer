@@ -13,12 +13,17 @@
 # limitations under the License.
 
 import  ./metrics/accuracy_score,
+        ./metrics/distance,
         ./metrics/common_error_functions,
-        ./clustering/kmeans
+        ./clustering/kmeans,
+        ./clustering/dbscan
+
 
 export  accuracy_score,
+        distance,
         common_error_functions,
-        kmeans
+        kmeans,
+        dbscan
 
 when not defined(no_lapack):
   import ./dimensionality_reduction/pca

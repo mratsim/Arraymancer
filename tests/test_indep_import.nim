@@ -3,7 +3,9 @@
 ]#
 
 import arraymancer/tensor
+import arraymancer/stats/kde
 
 let t = zeros[float](100)
 
 doAssert t.size == 100
+doAssert kde(t).size == 1000

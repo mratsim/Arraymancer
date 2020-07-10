@@ -6,12 +6,12 @@ template canImport(x: untyped): bool =
   compiles:
     import x
 
-import ./io_csv, ./io_npy, ./io_image
+import io / [io_csv, io_npy, io_image]
 
 export io_csv, io_npy, io_image
 
 when canImport(nimhdf5):
   # only provide the hdf5 interface, if the hdf5 library is
   # installed to avoid making `nimhdf5` a dependency
-  import ./io_hdf5
+  import io / io_hdf5
   export io_hdf5

@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import  ../../tensor,
-        ../../ml/ml,
-        ../../autograd/autograd
+        ../../ml,
+        ../../autograd
 
 type MSELoss*[TT] {.final.} = ref object of Gate[TT]
   target: TT

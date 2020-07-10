@@ -3,8 +3,11 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  ./least_squares, ./special_matrices,
-  ./decomposition, ./decomposition_rand, ./linear_systems
+  linear_algebra / [least_squares,
+                    special_matrices,
+                    decomposition,
+                    decomposition_rand,
+                    linear_systems]
 
 export
   least_squares, special_matrices,

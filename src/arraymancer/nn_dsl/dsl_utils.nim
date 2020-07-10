@@ -4,7 +4,7 @@
 
 import
   macros, tables,
-  ../autograd/autograd,
+  ../autograd,
   ../private/ast_utils,
   ./dsl_types
 

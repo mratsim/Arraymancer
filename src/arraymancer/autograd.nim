@@ -12,14 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./metrics/accuracy_score,
-        ./metrics/common_error_functions,
-        ./clustering/kmeans
+import  ./autograd/autograd_common,
+        ./autograd/gates_basic,
+        ./autograd/gates_blas,
+        ./autograd/gates_reduce,
+        ./autograd/gates_shapeshifting_views,
+        ./autograd/gates_shapeshifting_concat_split,
+        ./autograd/gates_hadamard
 
-export  accuracy_score,
-        common_error_functions,
-        kmeans
-
-when not defined(no_lapack):
-  import ./dimensionality_reduction/pca
-  export pca
+export  autograd_common,
+        gates_basic,
+        gates_blas,
+        gates_reduce,
+        gates_shapeshifting_views,
+        gates_shapeshifting_concat_split,
+        gates_hadamard

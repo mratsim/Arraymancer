@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import  ../../tensor,
-        ../../nn_primitives/nn_primitives,
-        ../../autograd/autograd,
+        ../../nn_primitives,
+        ../../autograd,
         typetraits
 
 template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) =

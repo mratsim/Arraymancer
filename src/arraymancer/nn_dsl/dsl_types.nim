@@ -4,7 +4,7 @@
 
 import
   macros, tables, hashes,
-  ../autograd/autograd
+  ../autograd
 
 type
   #################################################

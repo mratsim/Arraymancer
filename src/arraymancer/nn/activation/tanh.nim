@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../autograd/autograd,
+import  ../../autograd,
         ../../tensor,
-        ../../nn_primitives/nn_primitives
+        ../../nn_primitives
 
 type TanhActivation*[TT ]{.final.} = ref object of Gate[TT]
   cache: TT

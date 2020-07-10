@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./nnp_activation,
-        ./nnp_convolution,
-        ./nnp_linear,
-        ./nnp_sigmoid_cross_entropy,
-        ./nnp_softmax_cross_entropy,
-        ./nnp_maxpooling,
-        ./nnp_softmax,
-        ./nnp_numerical_gradient,
-        ./nnp_gru,
-        ./nnp_embedding.nim
+import  ./nn_primitives/nnp_activation,
+        ./nn_primitives/nnp_convolution,
+        ./nn_primitives/nnp_linear,
+        ./nn_primitives/nnp_sigmoid_cross_entropy,
+        ./nn_primitives/nnp_softmax_cross_entropy,
+        ./nn_primitives/nnp_maxpooling,
+        ./nn_primitives/nnp_softmax,
+        ./nn_primitives/nnp_numerical_gradient,
+        ./nn_primitives/nnp_gru,
+        ./nn_primitives/nnp_embedding
 
 export  nnp_activation,
         nnp_convolution,
@@ -34,11 +34,11 @@ export  nnp_activation,
         nnp_gru,
         nnp_embedding
 
-import private/p_nnp_types
+import nn_primitives/private/p_nnp_types
 export Size2D
 
 when defined(cudnn) or defined(nimdoc) or defined(nimsuggest):
-  import  ./backend/cudnn,
-          ./nnp_conv2d_cudnn
+  import  ./nn_primitives/backend/cudnn,
+          ./nn_primitives/nnp_conv2d_cudnn
 
   export nnp_conv2d_cudnn

@@ -3,7 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  ../../tensor, ../../linear_algebra/linear_algebra
+  ../../tensor, ../../linear_algebra
 
 proc pca*[T: SomeFloat](
        X: Tensor[T], n_components = 2, center: static bool = true,

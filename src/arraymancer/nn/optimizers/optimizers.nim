@@ -14,7 +14,7 @@
 
 import  ../../tensor/higher_order_applymap,
         ../../tensor,
-        ../../autograd/autograd,
+        ../../autograd,
         math
 
 # ############################################################

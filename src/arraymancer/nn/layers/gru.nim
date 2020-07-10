@@ -14,8 +14,8 @@
 
 import  ../../private/sequninit,
         ../../tensor,
-        ../../autograd/autograd,
-        ../../nn_primitives/nn_primitives,
+        ../../autograd,
+        ../../nn_primitives,
         sequtils
 
 type GRUGate*[TT]{.final.}= ref object of Gate[TT]

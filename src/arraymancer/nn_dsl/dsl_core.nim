@@ -5,7 +5,7 @@
 import
   macros, tables,
   ./dsl_types, ./dsl_initialization, ./dsl_utils, ./dsl_topology, ./dsl_forwardsugar,
-  ../autograd/autograd
+  ../autograd
 
 proc splitSections(config: NimNode): NetworkSections =
   template unknown =

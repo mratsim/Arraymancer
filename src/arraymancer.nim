@@ -13,16 +13,16 @@
 # limitations under the License.
 
 import  ./arraymancer/tensor,
-        ./arraymancer/nn_primitives/nn_primitives,
-        ./arraymancer/autograd/autograd,
-        ./arraymancer/nn/nn,
-        ./arraymancer/nn_dsl/nn_dsl,
+        ./arraymancer/nn_primitives,
+        ./arraymancer/autograd,
+        ./arraymancer/nn,
+        ./arraymancer/nn_dsl,
         ./arraymancer/datasets/mnist,
         ./arraymancer/datasets/imdb,
-        ./arraymancer/io/io,
-        ./arraymancer/ml/ml,
+        ./arraymancer/io,
+        ./arraymancer/ml,
         ./arraymancer/stats/[stats, distributions, kde],
-        ./arraymancer/nlp/nlp,
+        ./arraymancer/nlp,
         ./arraymancer/tensor/einsum
 
 export  tensor,
@@ -40,5 +40,5 @@ export  tensor,
 
 when not defined(no_lapack):
   # The ml module also does not export everything is LAPACK is not available
-  import ./arraymancer/linear_algebra/linear_algebra
+  import ./arraymancer/linear_algebra
   export linear_algebra

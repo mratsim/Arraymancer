@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import  ../../tensor,
-        ../../autograd/autograd,
-        ../../nn_primitives/nn_primitives
+        ../../autograd,
+        ../../nn_primitives
 
 
 type MaxPool2DGate*[TT] {.final.} = ref object of Gate[TT]

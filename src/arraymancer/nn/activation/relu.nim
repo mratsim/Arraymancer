@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import  ../../tensor,
-        ../../nn_primitives/nn_primitives,
-        ../../autograd/autograd
+        ../../nn_primitives,
+        ../../autograd
 
 type ReluActivation*[TT] {.final.} = ref object of Gate[TT]
   cache: TT

@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./activation/[sigmoid, relu, tanh],
-        ./layers/[linear, conv2D, maxpool2D, gru, embedding],
-        ./loss/cross_entropy_losses,
-        ./loss/mean_square_error_loss,
-        ./optimizers/optimizers,
-        ./init
+import  ./nn/activation/[sigmoid, relu, tanh],
+        ./nn/layers/[linear, conv2D, maxpool2D, gru, embedding],
+        ./nn/loss/cross_entropy_losses,
+        ./nn/loss/mean_square_error_loss,
+        ./nn/optimizers/optimizers,
+        ./nn/init
 
 export  sigmoid, relu, tanh,
         linear, conv2D, maxpool2d, gru, embedding,

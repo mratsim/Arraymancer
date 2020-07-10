@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import  ../../tensor,
-        ../../autograd/autograd,
-        ../../nn_primitives/nn_primitives
+        ../../autograd,
+        ../../nn_primitives
 
 type EmbeddingGate*[TT; scaled: static bool; Idx: SomeNumber or byte or char or enum] {.final.} = ref object of Gate[TT]
   cached_input_vocab_id: Tensor[Idx]

@@ -1,4 +1,4 @@
-import  ../../src/tensor/tensor,
+import  ../../src/arraymancer/tensor,
         math
 
 # GC_disableMarkAndSweep() # This only delays the crash, it seems like using setters `data=` in the init_cpu procs prevent memory freeing in certain circumstances

@@ -16,7 +16,7 @@ import ../../src/arraymancer, ../testutils
 import unittest, sugar
 import complex except Complex64, Complex32
 
-import ../../src/tensor/private/p_init_cpu # needed for testing column major tensors
+import ../../src/arraymancer/tensor/private/p_init_cpu # needed for testing column major tensors
 
 testSuite "BLAS (Basic Linear Algebra Subprograms)":
   test "GEMM - General Matrix to Matrix Multiplication":

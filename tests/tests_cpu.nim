@@ -51,7 +51,8 @@ import ../src/arraymancer,
         ./ml/test_clustering,
         ./stats/test_stats,
         ./stats/test_distributions,
-        ./test_bugtracker
+        ./test_bugtracker,
+        ./test_indep_import
 
 when not defined(windows) and not sizeof(int) == 4:
   # STB image does not work on windows 32-bit, https://github.com/mratsim/Arraymancer/issues/358

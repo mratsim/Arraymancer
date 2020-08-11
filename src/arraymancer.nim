@@ -12,18 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./tensor/tensor,
-        ./nn_primitives/nn_primitives,
-        ./autograd/autograd,
-        ./nn/nn,
-        ./nn_dsl/nn_dsl,
-        ./datasets/mnist,
-        ./datasets/imdb,
-        ./io/io,
-        ./ml/ml,
-        ./stats/[stats, distributions, kde],
-        ./nlp/nlp,
-        ./tensor/einsum
+import  ./arraymancer/tensor,
+        ./arraymancer/nn_primitives,
+        ./arraymancer/autograd,
+        ./arraymancer/nn,
+        ./arraymancer/nn_dsl,
+        ./arraymancer/datasets/mnist,
+        ./arraymancer/datasets/imdb,
+        ./arraymancer/io,
+        ./arraymancer/ml,
+        ./arraymancer/stats/[stats, distributions, kde],
+        ./arraymancer/nlp,
+        ./arraymancer/tensor/einsum
 
 export  tensor,
         nn_primitives,
@@ -40,5 +40,5 @@ export  tensor,
 
 when not defined(no_lapack):
   # The ml module also does not export everything is LAPACK is not available
-  import ./linear_algebra/linear_algebra
+  import ./arraymancer/linear_algebra
   export linear_algebra

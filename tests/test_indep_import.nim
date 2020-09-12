@@ -2,8 +2,8 @@
    tensor submodule work as expected
 ]#
 
-import arraymancer/tensor
-import arraymancer/stats/kde
+import ../src/arraymancer/tensor
+import ../src/arraymancer/stats/kde
 
 let t = zeros[float](100)
 

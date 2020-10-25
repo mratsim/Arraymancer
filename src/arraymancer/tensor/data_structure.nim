@@ -19,7 +19,7 @@ import
   # Standard library
   std/[complex, typetraits]
 
-export nimblas.OrderType, complex, Tensor
+export nimblas.OrderType, complex, datatypes
 
 type
   # On CPU, the tensor datastructures and basic accessors
@@ -103,25 +103,6 @@ proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.deprecated: "Use copyFromRaw ins
 # ################
 # Tensor Metadata
 # ################
-
-proc rank*(t: AnyTensor): int {.noSideEffect, inline.}=
-  ## Input:
-  ##     - A tensor
-  ## Returns:
-  ##     - Its rank
-  ##
-  ##   - 0 for scalar (unfortunately cannot be stored)
-  ##   - 1 for vector
-  ##   - 2 for matrices
-  ##   - N for N-dimension array
-  t.shape.len
-
-proc size*(t: AnyTensor): int {.noSideEffect, inline.}=
-  ## Input:
-  ##     - A tensor
-  ## Returns:
-  ##     - The total number of elements it contains
-  t.shape.product
 
 proc shape_to_strides*(shape: MetadataArray, layout: OrderType = rowMajor, result: var MetadataArray) {.noSideEffect.} =
   ## Input:

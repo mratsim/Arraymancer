@@ -12,15 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../laser/dynamic_stack_arrays,
-        ../laser/tensor/datatypes,
-        nimblas, complex
+import
+  ../laser/dynamic_stack_arrays,
+  ../laser/tensor/datatypes,
+  nimblas,
+  # Standard library
+  std/[complex, typetraits]
 
 export nimblas.OrderType, complex
 
 type
   # On CPU, the tensor datastructures and basic accessors
   # are defined in laser/tensor/datatypes
+  MetadataArray* {.deprecated: "Use Metadata instead".} = Metadata
+
 
   CudaStorage*[T: SomeFloat] = object
     ## Opaque seq-like structure for storage on the Cuda backend.

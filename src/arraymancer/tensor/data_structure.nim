@@ -19,7 +19,7 @@ import
   # Standard library
   std/[complex, typetraits]
 
-export nimblas.OrderType, complex
+export nimblas.OrderType, complex, Tensor
 
 type
   # On CPU, the tensor datastructures and basic accessors

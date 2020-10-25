@@ -12,15 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/[nested_containers, sequninit],
-        ./backend/[metadataArray],
-        ./private/p_checks,
-        ./private/p_init_cpu,
-        ./data_structure,
-        nimblas,
-        sequtils,
-        random,
-        math
+import
+  # Internal
+  ../laser/tensor/[initialization, allocator],
+  ../laser/strided_iteration/foreach,
+  ./data_structure,
+  # Third-party
+  nimblas,
+  # Standard library
+  random,
+  math,
+  typetraits
+
+export initialization
 
 proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
@@ -34,7 +38,7 @@ proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noInit, inline.} =
   tensorCpu(shape, result)
   result.storage.Fdata = newSeqUninit[T](result.size)
 
-proc newTensorUninit*[T](shape: MetadataArray): Tensor[T] {.noSideEffect,noInit, inline.} =
+proc newTensorUninit*[T](shape: Metadata): Tensor[T] {.noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -74,7 +78,7 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit.} =
     {.unroll: 8.}
     tval = value
 
-proc newTensorWith*[T](shape: MetadataArray, value: T): Tensor[T] {.noInit.} =
+proc newTensorWith*[T](shape: Metadata, value: T): Tensor[T] {.noInit.} =
   ## Creates a new Tensor filled with the given value
   ## Input:
   ##      - Shape of the Tensor
@@ -118,7 +122,7 @@ proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]
   ##      - A zero-ed Tensor of the input shape on backend Cpu
   result = newTensor[T](shape)
 
-proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArray): Tensor[T] {.noInit, inline.} =
+proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: Metadata): Tensor[T] {.noInit, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -150,7 +154,7 @@ proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int])
     type F = T.T # Get the float subtype of Complex[T]
     newTensorWith[T](shape, complex(1.F, 0.F))
 
-proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: MetadataArray): Tensor[T] {.noInit, inline.} =
+proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: Metadata): Tensor[T] {.noInit, inline.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor

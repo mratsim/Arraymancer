@@ -5,8 +5,7 @@
 
 import
   macros,
-  ../compiler_optim_hints,
-  ../private/ast_utils
+  ../compiler_optim_hints
 
 template isVar[T: object](x: T): bool =
   ## Workaround due to `is` operator not working for `var`

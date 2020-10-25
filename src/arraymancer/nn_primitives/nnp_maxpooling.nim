@@ -66,7 +66,7 @@ proc maxpool2d*[T](input: Tensor[T],
           idx_data[oidx] = argmax
 
 proc maxpool2d_backward*[T](
-  cached_input_shape: openarray[int]|MetadataArray,
+  cached_input_shape: openarray[int]|Metadata,
   cached_max_indices: Tensor[int],
   gradOutput: Tensor[T]
   ): Tensor[T] {.noInit.}=

@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../private/nested_containers,
-        ./backend/metadataArray,
-        ./private/p_checks,
-        ./private/p_init_cpu,
+import  ../laser/private/nested_containers,
+        ../laser/tensor/[allocator, initialization],
         ./data_structure,
         ./operators_blas_l2l3,
-        sequtils
+        typetraits
 
 #################################################
 ## Operations fusion

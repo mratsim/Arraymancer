@@ -15,31 +15,36 @@
 import ../../src/arraymancer, ../testutils
 import unittest, random, sequtils
 
-testSuite "Autograd of Hadamard product":
-  test "Gradient of Hadamard product":
-    let
-      height = rand(1..20)
-      width = rand(1..20)
+proc main() =
+  suite "Autograd of Hadamard product":
+    test "Gradient of Hadamard product":
+      let
+        height = rand(1..20)
+        width = rand(1..20)
 
-    let
-      a = randomTensor([height, width], 1.0)
-      b = randomTensor([height, width], 1.0)
+      let
+        a = randomTensor([height, width], 1.0)
+        b = randomTensor([height, width], 1.0)
 
-    proc hadamard_a(a: Tensor[float64]): float64 = (a *. b).sum()
-    proc hadamard_b(b: Tensor[float64]): float64 = (a *. b).sum()
+      proc hadamard_a(a: Tensor[float64]): float64 = (a *. b).sum()
+      proc hadamard_b(b: Tensor[float64]): float64 = (a *. b).sum()
 
-    let # Compute the numerical gradients
-      target_grad_a = a.numerical_gradient(hadamard_a)
-      target_grad_b = b.numerical_gradient(hadamard_b)
+      let # Compute the numerical gradients
+        target_grad_a = a.numerical_gradient(hadamard_a)
+        target_grad_b = b.numerical_gradient(hadamard_b)
 
-    let
-      ctx = newContext Tensor[float64]
-      va = ctx.variable(a, requires_grad = true)
-      vb = ctx.variable(b, requires_grad = true)
+      let
+        ctx = newContext Tensor[float64]
+        va = ctx.variable(a, requires_grad = true)
+        vb = ctx.variable(b, requires_grad = true)
 
-    let loss = (va *. vb).sum()
-    loss.backprop()
+      let loss = (va *. vb).sum()
+      loss.backprop()
 
-    check:
-      va.grad.mean_relative_error(target_grad_a) < 1e-07
-      vb.grad.mean_relative_error(target_grad_b) < 1e-07
+      check:
+        va.grad.mean_relative_error(target_grad_a) < 1e-07
+        vb.grad.mean_relative_error(target_grad_b) < 1e-07
+
+
+main()
+GC_fullCollect()

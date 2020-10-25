@@ -15,7 +15,8 @@
 import ../../src/arraymancer, ../testutils
 import unittest, math
 
-testSuite "Testing fusion operations":
+
+suite "Testing fusion operations":
   test "Multiply and add":
     let
       A = @[4.0].toTensor.reshape(1, 1)

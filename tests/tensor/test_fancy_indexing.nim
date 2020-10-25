@@ -15,207 +15,193 @@
 import ../../src/arraymancer, ../testutils
 import unittest
 
-testSuite "Fancy indexing":
-  # x = np.array([[ 4, 99,  2],
-  #               [ 3,  4, 99],
-  #               [ 1,  8,  7],
-  #               [ 8,  6,  8]])
+proc main() =
+  suite "Fancy indexing":
+    # x = np.array([[ 4, 99,  2],
+    #               [ 3,  4, 99],
+    #               [ 1,  8,  7],
+    #               [ 8,  6,  8]])
 
-  let x = [[ 4, 99,  2],
-           [ 3,  4, 99],
-           [ 1,  8,  7],
-           [ 8,  6,  8]].toTensor()
+    let x = [[ 4, 99,  2],
+            [ 3,  4, 99],
+            [ 1,  8,  7],
+            [ 8,  6,  8]].toTensor()
 
-  test "Index selection via fancy indexing":
-    block: # print(x[:, [0, 2]])
-      let r = x[_, [0, 2]]
+    test "Index selection via fancy indexing":
+      block: # print(x[:, [0, 2]])
+        let r = x[_, [0, 2]]
 
-      let exp = [[ 4,  2],
-                 [ 3, 99],
-                 [ 1,  7],
-                 [ 8,  8]].toTensor()
+        let exp = [[ 4,  2],
+                  [ 3, 99],
+                  [ 1,  7],
+                  [ 8,  8]].toTensor()
 
-      check: r == exp
+        check: r == exp
 
-    block: # print(x[[1, 3], :])
-      let r = x[[1, 3], _]
+      block: # print(x[[1, 3], :])
+        let r = x[[1, 3], _]
 
-      let exp = [[3, 4, 99],
-                 [8, 6,  8]].toTensor()
+        let exp = [[3, 4, 99],
+                  [8, 6,  8]].toTensor()
 
-      check: r == exp
+        check: r == exp
 
-  test "Masked selection via fancy indexing":
-    block:
-      let r = x[x >. 50]
-      let exp = [99, 99].toTensor()
-      check: r == exp
+    test "Masked selection via fancy indexing":
+      block:
+        let r = x[x >. 50]
+        let exp = [99, 99].toTensor()
+        check: r == exp
 
-    block:
-      let r = x[x <. 50]
-      let exp = [4, 2, 3, 4, 1, 8, 7, 8, 6, 8].toTensor()
-      check: r == exp
+      block:
+        let r = x[x <. 50]
+        let exp = [4, 2, 3, 4, 1, 8, 7, 8, 6, 8].toTensor()
+        check: r == exp
 
-  test "Masked axis selection via fancy indexing":
-    block: # print('x[:, np.sum(x, axis = 0) > 50]')
-      let r = x[_, x.sum(axis = 0) >. 50]
+    test "Masked axis selection via fancy indexing":
+      block: # print('x[:, np.sum(x, axis = 0) > 50]')
+        let r = x[_, x.sum(axis = 0) >. 50]
 
-      let exp = [[99, 2],
-                 [ 4, 99],
-                 [ 8, 7],
-                 [ 6, 8]].toTensor()
+        let exp = [[99, 2],
+                  [ 4, 99],
+                  [ 8, 7],
+                  [ 6, 8]].toTensor()
 
-      check: r == exp
+        check: r == exp
 
-    block: # print('x[np.sum(x, axis = 1) > 50, :]')
-      let r = x[x.sum(axis = 1) >. 50, _]
+      block: # print('x[np.sum(x, axis = 1) > 50, :]')
+        let r = x[x.sum(axis = 1) >. 50, _]
 
-      let exp = [[4, 99, 2],
-                 [3, 4, 99]].toTensor()
+        let exp = [[4, 99, 2],
+                  [3, 4, 99]].toTensor()
 
-      check: r == exp
+        check: r == exp
 
-  test "Index assign value via fancy indexing":
-    block: # y[:, [0, 2]] = -100
-      var y = x.clone()
-      y[_, [0, 2]] = -100
+    test "Index assign value via fancy indexing":
+      block: # y[:, [0, 2]] = -100
+        var y = x.clone()
+        y[_, [0, 2]] = -100
 
-      let exp = [[-100, 99, -100],
-                 [-100,  4, -100],
-                 [-100,  8, -100],
-                 [-100,  6, -100]].toTensor()
+        let exp = [[-100, 99, -100],
+                  [-100,  4, -100],
+                  [-100,  8, -100],
+                  [-100,  6, -100]].toTensor()
 
-      check: y == exp
+        check: y == exp
 
-    block: # y[[1, 3], :] = -100
-      var y = x.clone()
-      y[[1, 3], _] = -100
+      block: # y[[1, 3], :] = -100
+        var y = x.clone()
+        y[[1, 3], _] = -100
 
-      let exp = [[   4,   99,    2],
-                 [-100, -100, -100],
-                 [   1,    8,    7],
-                 [-100, -100, -100]].toTensor()
+        let exp = [[   4,   99,    2],
+                  [-100, -100, -100],
+                  [   1,    8,    7],
+                  [-100, -100, -100]].toTensor()
 
-      check: y == exp
+        check: y == exp
 
-  test "Masked assign value via fancy indexing":
-    block: # y[y > 50] = -100
-      var y = x.clone()
-      y[y >. 50] = -100
+    test "Masked assign value via fancy indexing":
+      block: # y[y > 50] = -100
+        var y = x.clone()
+        y[y >. 50] = -100
 
-      let exp = [[ 4, -100,    2],
-                 [ 3,    4, -100],
-                 [ 1,    8,    7],
-                 [ 8,    6,    8]].toTensor()
+        let exp = [[ 4, -100,    2],
+                  [ 3,    4, -100],
+                  [ 1,    8,    7],
+                  [ 8,    6,    8]].toTensor()
 
-      check: y == exp
+        check: y == exp
 
-    block: # y[y < 50] = -100
-      var y = x.clone()
-      y[y <. 50] = -100
+      block: # y[y < 50] = -100
+        var y = x.clone()
+        y[y <. 50] = -100
 
-      let exp = [[ -100,   99, -100],
-                 [ -100, -100,   99],
-                 [ -100, -100, -100],
-                 [ -100, -100, -100]].toTensor()
+        let exp = [[ -100,   99, -100],
+                  [ -100, -100,   99],
+                  [ -100, -100, -100],
+                  [ -100, -100, -100]].toTensor()
 
-      check: y == exp
+        check: y == exp
 
-  test "Masked axis assign value via fancy indexing":
-    block: # y[:, y.sum(axis = 0) > 50] = -100
-      var y = x.clone()
-      y[_, y.sum(axis = 0) >. 50] = -100
+    test "Masked axis assign value via fancy indexing":
+      block: # y[:, y.sum(axis = 0) > 50] = -100
+        var y = x.clone()
+        y[_, y.sum(axis = 0) >. 50] = -100
 
-      let exp = [[  4, -100, -100],
-                 [  3, -100, -100],
-                 [  1, -100, -100],
-                 [  8, -100, -100]].toTensor()
+        let exp = [[  4, -100, -100],
+                  [  3, -100, -100],
+                  [  1, -100, -100],
+                  [  8, -100, -100]].toTensor()
 
-      check: y == exp
+        check: y == exp
 
-    block: # y[y.sum(axis = 1) > 50, :] = -100
-      var y = x.clone()
-      y[y.sum(axis = 1) >. 50, _] = -100
+      block: # y[y.sum(axis = 1) > 50, :] = -100
+        var y = x.clone()
+        y[y.sum(axis = 1) >. 50, _] = -100
 
-      let exp = [[-100, -100, -100],
-                 [-100, -100, -100],
-                 [   1,    8,    7],
-                 [   8,    6,    8]].toTensor()
+        let exp = [[-100, -100, -100],
+                  [-100, -100, -100],
+                  [   1,    8,    7],
+                  [   8,    6,    8]].toTensor()
 
-      check: y == exp
+        check: y == exp
 
-  test "Masked axis assign tensor via fancy indexing - invalid Numpy syntaxes":
-    block: # y[:, y.sum(axis = 0) > 50] = np.array([10, 20, 30, 40])
-      var y = x.clone()
+    test "Masked axis assign tensor via fancy indexing - invalid Numpy syntaxes":
+      block: # y[:, y.sum(axis = 0) > 50] = np.array([10, 20, 30, 40])
+        var y = x.clone()
 
-      expect(IndexError):
-        y[_, y.sum(axis = 0) >. 50] = [10, 20, 30, 40].toTensor()
+        expect(IndexError):
+          y[_, y.sum(axis = 0) >. 50] = [10, 20, 30, 40].toTensor()
 
-  test "Masked axis assign broadcastable 1d tensor via fancy indexing":
-    block: # y[:, y.sum(axis = 0) > 50] = np.array([[10], [20], [30], [40]])
-      var y = x.clone()
-      y[_, y.sum(axis = 0) >. 50] = [[10], [20], [30], [40]].toTensor()
+    test "Masked axis assign broadcastable 1d tensor via fancy indexing":
+      block: # y[:, y.sum(axis = 0) > 50] = np.array([[10], [20], [30], [40]])
+        var y = x.clone()
+        y[_, y.sum(axis = 0) >. 50] = [[10], [20], [30], [40]].toTensor()
 
-      let exp = [[  4, 10, 10],
-                 [  3, 20, 20],
-                 [  1, 30, 30],
-                 [  8, 40, 40]].toTensor()
+        let exp = [[  4, 10, 10],
+                  [  3, 20, 20],
+                  [  1, 30, 30],
+                  [  8, 40, 40]].toTensor()
 
-      check: y == exp
+        check: y == exp
 
-    block: # y[y.sum(axis = 1) > 50, :] = np.array([-10, -20, -30])
-      var y = x.clone()
-      y[y.sum(axis = 1) >. 50, _] = [[-10, -20, -30]].toTensor()
+      block: # y[y.sum(axis = 1) > 50, :] = np.array([-10, -20, -30])
+        var y = x.clone()
+        y[y.sum(axis = 1) >. 50, _] = [[-10, -20, -30]].toTensor()
 
-      let exp = [[-10, -20, -30],
-                 [-10, -20, -30],
-                 [  1,   8,   7],
-                 [  8,   6,   8]].toTensor()
+        let exp = [[-10, -20, -30],
+                  [-10, -20, -30],
+                  [  1,   8,   7],
+                  [  8,   6,   8]].toTensor()
 
-      check: y == exp
+        check: y == exp
 
-  test "Access based on a Tensor[int], seq[int], indirect Tensor[int]":
-    let t = @[4, 2, 7, 3, 1].toTensor()
-    let sortIdx = @[4, 1, 3, 0, 2]
-    let sortIdxTensor = sortIdx.toTensor()
-    let exp = @[1, 2, 3, 4, 7].toTensor()
-    check t[sortIdx] == exp # using `seq`
-    check t[sortIdxTensor] == exp # using `Tensor` directly
-    # NOTE: The following
-    check t[sortIdx.toTensor()] == exp # using tensor indirectly
-    # requires use to replace
-    # Call
-    #   Ident "toTensor"
-    #   HiddenStdConv
-    #     Empty
-    #     Sym "sortIdx"
-    #   IntLit 0
-    # the `HiddenStdConv` by a simple `Ident "sortIdx"`
+    # TODO - only broadcastable tensor assign are supported at the moment
+    # test "Masked axis assign multidimensional tensor via fancy indexing":
+    #   block: # y[:, y.sum(axis = 0) > 50] = np.array([[10, 50], [20, 60], [30, 70], [40, 80]])
+    #     var y = x.clone()
+    #     y[_, y.sum(axis = 0) >. 50] = [[10, 50],
+    #                                    [20, 60],
+    #                                    [30, 70],
+    #                                    [40, 80]].toTensor()
+    #
+    #     let exp = [[  4, 10, 50],
+    #                [  3, 20, 60],
+    #                [  1, 30, 70],
+    #                [  8, 40, 80]].toTensor()
+    #
+    #     check: y == exp
+    #
+    #   block: # y[y.sum(axis = 1) > 50, :] = np.array([-10, -20, -30], [-40, -50, -60])
+    #     var y = x.clone()
+    #     y[y.sum(axis = 1) >. 50, _] = [[-10, -20, -30],
+    #                                    [-40, -50, -60]].toTensor()
+    #
+    #     let exp = [[-10, -20, -30],
+    #                [-40, -50, -60],
+    #                [  1,   8,   7],
+    #                [  8,   6,   8]].toTensor()
+    #
+    #     check: y == exp
 
-  # TODO - only broadcastable tensor assign are supported at the moment
-  # test "Masked axis assign multidimensional tensor via fancy indexing":
-  #   block: # y[:, y.sum(axis = 0) > 50] = np.array([[10, 50], [20, 60], [30, 70], [40, 80]])
-  #     var y = x.clone()
-  #     y[_, y.sum(axis = 0) >. 50] = [[10, 50],
-  #                                    [20, 60],
-  #                                    [30, 70],
-  #                                    [40, 80]].toTensor()
-  #
-  #     let exp = [[  4, 10, 50],
-  #                [  3, 20, 60],
-  #                [  1, 30, 70],
-  #                [  8, 40, 80]].toTensor()
-  #
-  #     check: y == exp
-  #
-  #   block: # y[y.sum(axis = 1) > 50, :] = np.array([-10, -20, -30], [-40, -50, -60])
-  #     var y = x.clone()
-  #     y[y.sum(axis = 1) >. 50, _] = [[-10, -20, -30],
-  #                                    [-40, -50, -60]].toTensor()
-  #
-  #     let exp = [[-10, -20, -30],
-  #                [-40, -50, -60],
-  #                [  1,   8,   7],
-  #                [  8,   6,   8]].toTensor()
-  #
-  #     check: y == exp
+main()
+GC_fullCollect()

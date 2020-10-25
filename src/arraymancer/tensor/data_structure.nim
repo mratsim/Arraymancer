@@ -79,9 +79,14 @@ type
 proc data*[T](t: Tensor[T]): seq[T] {.inline, noSideEffect, noInit.} =
   # Get tensor raw data
   # This is intended for library writer
-  shallowCopy(result, t.storage.Fdata)
+  when supportsCopyMem(T):
+    result = newSeqUninit[T](t.size)
+    for i in 0 ..< t.size:
+      result[i] = t.storage.raw_buffer[i]
+  else:
+    shallowCopy(result, t.storage.raw_buffer)
 
-proc data*[T](t: var Tensor[T]): var seq[T] {.inline, noSideEffect, noInit.} =
+proc data*[T](t: var Tensor[T]): var seq[T] {.deprecated: "This used to be a way to extract raw data without copy. Use the raw pointer instead.".} =
   # Get mutable tensor raw data
   # This is intended for library writer
   shallowCopy(result, t.storage.Fdata)

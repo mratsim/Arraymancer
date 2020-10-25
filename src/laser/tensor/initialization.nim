@@ -10,34 +10,53 @@ import
   ../dynamic_stack_arrays,
   ../private/nested_containers,
   ./datatypes, ./allocator,
-  typetraits, sequtils
+  # Standard library
+  typetraits, sequtils,
+  # Third-party
+  nimblas
 
 ## Initialization and copy routines
 
-func toMetadata(s: varargs[int]): Metadata =
+func toMetadata*(s: varargs[int]): Metadata =
   result.len = s.len
   for i in 0..<s.len:
     result.data[i] = s[i]
 
-template toMetadata(m: Metadata): Metadata = m
+template toMetadata*(m: Metadata): Metadata = m
 
-template initTensorMetadataImpl(result: var Tensor, size: var int, shape: openarray[int]|Metadata) =
+template initTensorMetadataImpl(
+    result: var Tensor,
+    size: var int, shape: openarray[int]|Metadata,
+    layout: static OrderType) =
   ## We don't use a proc directly due to https://github.com/nim-lang/Nim/issues/6529
   result.shape = shape.toMetadata
   result.strides.len = result.rank
 
   size = 1
-  for i in countdown(shape.len - 1, 0):
-    result.strides[i] = size
-    size *= shape[i]
+  when layout == rowMajor:
+    for i in countdown(shape.len - 1, 0):
+      result.strides[i] = size
+      size *= shape[i]
+  elif layout == colMajor:
+    for i in 0 ..< shape.len:
+      result.strides[i] = size
+      size *= shape[i]
+  else:
+    {.error: "Unreachable, unknown layout".}
 
-func initTensorMetadata*(result: var Tensor, size: var int, shape: openarray[int]) =
+func initTensorMetadata*(
+       result: var Tensor,
+       size: var int, shape: openarray[int],
+       layout: static OrderType = rowMajor) =
   ## result metadata and size will be initialized in-place
-  initTensorMetadataImpl(result, size, shape)
+  initTensorMetadataImpl(result, size, shape, layout)
 
-func initTensorMetadata*(result: var Tensor, size: var int, shape: Metadata) =
+func initTensorMetadata*(
+       result: var Tensor,
+       size: var int, shape: Metadata,
+       layout: static OrderType = rowMajor) =
   ## result metadata and size will be initialized in-place
-  initTensorMetadataImpl(result, size, shape)
+  initTensorMetadataImpl(result, size, shape, layout)
 
 proc deepCopy*[T](dst: var Tensor[T], src: Tensor[T]) =
   ## Performs a deep copy of y and copies it into x.

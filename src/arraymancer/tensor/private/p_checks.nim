@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/[nested_containers],
-        ../backend/metadataArray,
+import  ../../laser/private/nested_containers,
+        ../../laser/tensor/initialization,
         ../data_structure
 
 include ./p_checks_cuda, ./p_checks_opencl
@@ -97,6 +97,15 @@ func check_reshape*(t: AnyTensor, new_shape:MetadataArray) {.inline.}=
                                     $t.size &
                                     ") and the new (" &
                                     $new_shape.product &
+                                    ") reshaped tensor must be the same")
+
+func check_reshape*(t: AnyTensor, new_shape:varargs[int]) {.inline.}=
+  let product = new_shape.toMetadata.product
+  if unlikely(t.size != product):
+    raise newException(ValueError, "The total number of elements in the old (" &
+                                    $t.size &
+                                    ") and the new (" &
+                                    $product &
                                     ") reshaped tensor must be the same")
 
 func check_concat*(t1, t2: Tensor, axis: int) {.inline.}=

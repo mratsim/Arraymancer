@@ -44,7 +44,7 @@ import  ./tensor/backend/metadataArray,
         ./tensor/syntactic_sugar,
         ./tensor/exporting
 
-export  metadataArray,
+export  dynamic_stack_arrays,
         data_structure,
         init_cpu,
         init_copy_cpu,

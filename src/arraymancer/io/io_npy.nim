@@ -4,9 +4,9 @@
 
 import
   ../private/sequninit,
-  ../tensor, ./io_stream_readers,
-  ../tensor/private/p_init_cpu,
+  ../tensor/tensor, ./io_stream_readers,
   ../tensor/backend/memory_optimization_hints,
+  ../laser/tensor/initialization,
   os, streams, strscans, strformat, parseutils, strutils, endians
 
 func get_parser_metadata[T](header_raw: string):
@@ -104,7 +104,7 @@ proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noInit.} =
   let (parser, shape, layout) = get_parser_metadata[T](header_raw)
 
   # Read the data
-  tensorCpu(shape, result, layout)
+  result.initTensorMetadata(shape, layout)
   result.storage.Fdata = newSeqUninit[T](result.size)
 
   withMemoryOptimHints()

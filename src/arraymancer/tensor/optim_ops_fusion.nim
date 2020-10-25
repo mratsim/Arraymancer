@@ -80,13 +80,17 @@ template toTensorReshapeImpl(oa: typed, shape: varargs[int]): untyped =
   let data = toSeq(flatIter(oa))
   let seq_shape = shape.toMetadataArray
 
-  when compileOption("boundChecks"):
-    check_nested_elements(seq_shape, data.len)
+  var t: Tensor[typeof(flatIter(oa))]
+  var size: int
 
-  var t: Tensor[type(data[0])]
-  tensorCpu(seq_shape, t)
-  shallowCopy(t.data, data)
-  t
+  initTensorMetadata(t, size, shape)
+  allocCpuStorage(t.storage, size)
+  var i = 0
+  for val in flatIter(oa):
+    t.storage.raw_buffer[i] = val
+    assert i < size
+    i += 1
+  assert i == size
 
 proc toTensorReshape(oa: string, shape: varargs[int]): auto {.noInit,noSideEffect.}=
   ## Fuse toTensor and reshape in one operation.

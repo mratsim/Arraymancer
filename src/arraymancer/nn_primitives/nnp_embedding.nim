@@ -6,7 +6,7 @@ import
   ../tensor, tables, math
 
 proc flatten_idx(t: Tensor): Tensor {.inline.}=
-  t.reshape(t.size)
+  t.reshape(t.size.int)
 
 proc embedding*[T; Idx: byte or char or SomeInteger](
       vocab_id: Tensor[Idx],

@@ -160,7 +160,7 @@ func concat*[T](dsas: varargs[DynamicStackArray[T]]): DynamicStackArray[T] =
   for dsa in dsas:
     inc(total_len, dsa.len)
 
-  assert total_len <= MAXRANK
+  assert total_len <= LASER_MAXRANK
 
   result.len = total_len
   var i = 0

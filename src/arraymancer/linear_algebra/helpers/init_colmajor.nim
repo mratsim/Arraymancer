@@ -6,7 +6,7 @@ import
   ../../laser/tensor/[datatypes, allocator, initialization],
   nimblas
 
-func newMatrixUninitColMajor*[T](M: var Tensor[T], rows, cols: int) {.noInit, inline.} =
+proc newMatrixUninitColMajor*[T](M: var Tensor[T], rows, cols: int) {.noInit, inline.} =
   var size: int
   initTensorMetadata(M, size, [rows, cols], colMajor)
   M.storage.allocCpuStorage(size)

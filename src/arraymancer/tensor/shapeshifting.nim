@@ -19,6 +19,7 @@ import  ./backend/metadataArray,
         ./private/p_empty_tensors,
         ./accessors,
         ./data_structure, ./init_cpu, ./higher_order_applymap,
+        ../laser/tensor/allocator,
         sequtils
 
 # NOTE: Procs that accepts shape are duplicated to accept both varargs and MetadataArray
@@ -105,7 +106,7 @@ proc broadcast*[T](t: Tensor[T], shape: MetadataArray): Tensor[T] {.noInit,noSid
   result = t
   result.broadcastImpl(shape)
 
-proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.} =
+proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit.} =
   ## Broadcast a number
   ##
   ## Input:
@@ -121,9 +122,10 @@ proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit,
   ##   A broadcasted tensor should not be modified and only used for computation.
   ##   Modifying any value from this broadcasted tensor will change all its values.
   result.shape.copyFrom(shape)
-  # result.strides # Unneeded, autoinitialized with 0
+  result.strides = default(Metadata)
   result.offset = 0
-  result.data = @[val]
+  result.storage.allocCpuStorage(1)
+  result.unsafe_raw_buf[0] = val
 
 proc broadcast*[T: SomeNumber](val: T, shape: MetadataArray): Tensor[T] {.noInit,noSideEffect.} =
   ## Broadcast a number
@@ -141,9 +143,10 @@ proc broadcast*[T: SomeNumber](val: T, shape: MetadataArray): Tensor[T] {.noInit
   ##   A broadcasted tensor should not be modified and only used for computation.
   ##   Modifying any value from this broadcasted tensor will change all its values.
   result.shape.copyFrom(shape)
-  # result.strides # Unneeded, autoinitialized with 0
+  result.strides = default(Metadata)
   result.offset = 0
-  result.data = @[val]
+  result.storage.allocCpuStorage(1)
+  result.unsafe_raw_buf[0] = val
 
 template bc*(t: (Tensor|SomeNumber), shape: varargs[int]): untyped =
   ## Alias for ``broadcast``

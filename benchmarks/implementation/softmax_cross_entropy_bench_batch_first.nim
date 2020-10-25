@@ -46,7 +46,7 @@ proc streaming_max_sumexp[T](t: Tensor[T], axis: int): Tensor[tuple[max:T, sumex
   result = newTensorUninit[tuple[max:T, sumexp: T]](t.shape[axis])
 
   for i in `||`(0, t.shape[axis]-1, "simd"):
-    result.data[i] = t.atAxisIndex(axis, i).streaming_max_sumexp
+    result.unsafe_raw_buf[i] = t.atAxisIndex(axis, i).streaming_max_sumexp
 
   # Reexpand the tensor to be consistent with fold_axis/reduce_axis
   if axis == 0:
@@ -61,7 +61,7 @@ proc classic_max_sumexp[T](t: Tensor[T], axis: int): Tensor[tuple[max:T, sumexp:
   result = newTensorUninit[tuple[max:T, sumexp: T]](t.shape[axis])
 
   for i in `||`(0, t.shape[axis]-1, "simd"):
-    result.data[i] = t.atAxisIndex(axis, i).classic_max_sumexp
+    result.unsafe_raw_buf[i] = t.atAxisIndex(axis, i).classic_max_sumexp
 
   # Reexpand the tensor to be consistent with fold_axis/reduce_axis
   if axis == 0:
@@ -172,7 +172,7 @@ proc softmax_cross_entropy_backward1[T](
   when gradient is T:
     let grad = gradient
   elif gradient is Tensor:
-    let grad = gradient.data[gradient.offset]
+    let grad = gradient.unsafe_raw_offset()
 
   result = zeros_like(cached_tensor)
 
@@ -193,7 +193,7 @@ proc sparse_softmax_cross_entropy_backward1[T](
   when gradient is T:
     let grad = gradient
   elif gradient is Tensor:
-    let grad = gradient.data[gradient.offset]
+    let grad = gradient.unsafe_raw_offset()
 
   let batch_size = cached_tensor.shape[0]
 
@@ -221,7 +221,7 @@ proc softmax_cross_entropy_backward2[T](
   when gradient is T:
     let grad = gradient
   elif gradient is Tensor:
-    let grad = gradient.data[gradient.offset]
+    let grad = gradient.unsafe_raw_offset()
 
   let axis_max_sumexp = cached_tensor.streaming_max_sumexp(axis = 0).broadcast(cached_tensor.shape)
   # let axis_max_sumexp = cached_tensor.classic_max_sumexp(axis = 0).broadcast(cached_tensor.shape)
@@ -238,7 +238,7 @@ proc sparse_softmax_cross_entropy_backward2[T](
   when gradient is T:
     let grad = gradient
   elif gradient is Tensor:
-    let grad = gradient.data[gradient.offset]
+    let grad = gradient.unsafe_raw_offset()
 
   let batch_size = cached_tensor.shape[0]
 

@@ -19,12 +19,12 @@ import  ./private/p_accessors,
 proc atContiguousIndex*[T](t: Tensor[T], idx: int): T {.noSideEffect,inline.} =
   ## Return value of tensor at contiguous index
   ## i.e. as treat the tensor as flattened
-  return t.data[t.getContiguousIndex(idx)]
+  return t.unsafe_raw_buf[t.getContiguousIndex(idx)]
 
 proc atContiguousIndex*[T](t: var Tensor[T], idx: int): var T {.noSideEffect,inline.} =
   ## Return value of tensor at contiguous index (mutable)
   ## i.e. as treat the tensor as flattened
-  return t.data[t.getContiguousIndex(idx)]
+  return t.unsafe_raw_buf[t.getContiguousIndex(idx)]
 
 proc atAxisIndex*[T](t: Tensor[T], axis, idx: int, length = 1): Tensor[T] {.noInit,inline.} =
   ## Returns a sliced tensor in the given axis index

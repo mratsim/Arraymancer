@@ -149,7 +149,7 @@ func newContext*(TT: typedesc): Context[TT] =
   new result
   result.nodes = newSeq[Node[TT]]()
 
-func variable*[TT](ctx: Context[TT], value: TT, requires_grad = false): Variable[TT] =
+proc variable*[TT](ctx: Context[TT], value: TT, requires_grad = false): Variable[TT] =
   ## Wrap a variable to the context
   ## T is a Tensor[T, CudaTensor[T] or scalar T
   new result

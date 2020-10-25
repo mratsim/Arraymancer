@@ -16,7 +16,7 @@ import nimblas
 # Export OrderType (rowMajor, colMajor) from nimblas
 export OrderType
 
-import  ./tensor/backend/metadataArray,
+import  ./laser/dynamic_stack_arrays,
         ./tensor/data_structure,
         ./tensor/init_cpu,
         ./tensor/init_copy_cpu,
@@ -64,7 +64,6 @@ export  dynamic_stack_arrays,
         operators_broadcasted,
         operators_logical,
         math_functions,
-        filling_data,
         aggregate,
         algorithms,
         lapack,

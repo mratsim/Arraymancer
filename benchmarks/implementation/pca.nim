@@ -35,9 +35,9 @@ proc mul_diag[T](x, diag: Tensor[T], K, N: int): Tensor[T] {.noInit.}=
   assert x.shape[1] == K
 
   result = zeros[T](M, N)
-  let R = result.unsafe_raw_data()
-  let X = x.unsafe_raw_data()
-  let D = diag.unsafe_raw_data()
+  let R = result.unsafe_raw_offset()
+  let X = x.unsafe_raw_offset()
+  let D = diag.unsafe_raw_offset()
 
   const Tile = 32
   let nk = min(N, K)

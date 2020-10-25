@@ -306,11 +306,11 @@ when false:
     strformat
 
   proc toPtr*[T](t: Tensor[T]): ptr T =
-    cast[ptr T](t.unsafe_raw_data)
+    cast[ptr T](t.unsafe_raw_offset)
 
   proc `$`[T](t: Tensor[T]): string =
     var tmp = newSeq[T](t.size)
-    copyMem(tmp[0].addr, cast[ptr T](t.unsafe_raw_data), t.size * sizeof(T))
+    copyMem(tmp[0].addr, cast[ptr T](t.unsafe_raw_offset), t.size * sizeof(T))
     result = $tmp
 
   proc pack_and_test[M, N, K: static int; T](

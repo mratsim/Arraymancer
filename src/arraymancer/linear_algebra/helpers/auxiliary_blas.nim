@@ -97,7 +97,7 @@ proc pttr(a: var Tensor, uplo: static char) =
   let N = a.shape[0]
   assert N == a.shape[1]
 
-  let A = a.unsafe_raw_data()
+  let A = a.unsafe_raw_offset()
   when uplo == 'U':
     if a.is_F_contiguous:
       for i in 0 ..< N:

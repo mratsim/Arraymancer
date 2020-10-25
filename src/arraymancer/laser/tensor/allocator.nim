@@ -11,7 +11,7 @@ import
 proc finalizer[T](storage: CpuStorage[T]) =
   static: assert T.supportsCopyMem, "Tensors of seq, strings, ref types and types with non-trivial destructors cannot be finalized by this proc"
 
-  if storage.memowner and not storage.memalloc.isNil:
+  if storage.isMemOwner and not storage.memalloc.isNil:
     storage.memalloc.deallocShared()
 
 proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
@@ -22,7 +22,7 @@ proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
   when T.supportsCopyMem:
     new(storage, finalizer[T])
     storage.memalloc = allocShared0(sizeof(T) * size + LASER_MEM_ALIGN - 1)
-    storage.memowner = true
+    storage.isMemOwner = true
     storage.raw_buffer = align_raw_data(T, storage.memalloc)
   else: # Always 0-initialize Tensors of seq, strings, ref types and types with non-trivial destructors
     new(storage)

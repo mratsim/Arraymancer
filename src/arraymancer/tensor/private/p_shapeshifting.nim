@@ -49,7 +49,7 @@ proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: v
     reshape_no_copy(t, new_shape, result, rowMajor)
     result.storage = t.storage
   elif t.is_F_contiguous:
-    reshape_no_copy(t, new_shape, result, rowMajor)
+    reshape_no_copy(t, new_shape, result, colMajor)
     result.storage = t.storage
   else:
     reshape_with_copy(t, new_shape, result)

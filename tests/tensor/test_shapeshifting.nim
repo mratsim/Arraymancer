@@ -64,6 +64,17 @@ testSuite "Shapeshifting":
     check: a == [[1,2],
                  [3,4]].toTensor()
 
+  test "Reshape with explicit order":
+    let a = toSeq(1..12).toTensor().reshape(3, 2, 2).asContiguous(rowMajor, force = true)
+    let b = toSeq(1..12).toTensor().reshape(3, 2, 2).asContiguous(colMajor, force = true)
+    check: a == b
+    # Default behavior is respecting memory layouts when reshaping
+    check: a.reshape(6, 2) != b.reshape(6, 2)
+
+    # Explicit ordering will reshape using the same memory layout
+    check: a.reshape(6, 2, colMajor) == b.reshape(6, 2)
+    check: a.reshape(6, 2) == b.reshape(6, 2, rowMajor)
+
   test "Unsafe reshape":
     block:
       let a = toSeq(1..4).toTensor()

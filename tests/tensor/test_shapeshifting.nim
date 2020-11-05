@@ -75,6 +75,22 @@ testSuite "Shapeshifting":
     check: a.reshape(6, 2, colMajor) == b.reshape(6, 2)
     check: a.reshape(6, 2) == b.reshape(6, 2, rowMajor)
 
+  test "Transpose with explicit permutation":
+    let a = toSeq(1..6).toTensor().reshape(1, 2, 3)
+    let b = a.transpose(@[0, 2, 1])
+    let c = a.transpose(@[2, 0, 1])
+    # Check different permutations other than a full transpose
+
+    let expected_b = @[1, 4, 2, 5, 3, 6].toTensor().reshape(1, 3, 2)
+    check: b == expected_b
+    check: b.shape == [1, 3, 2]
+    check: b.strides == [6, 1, 3]
+
+    let expected_c = @[1, 4, 2, 5, 3, 6].toTensor().reshape(3, 1, 2)
+    check: c == expected_c
+    check: c.shape == [3, 1, 2]
+    check: c.strides == [1, 6, 3]
+
   test "Unsafe reshape":
     block:
       let a = toSeq(1..4).toTensor()

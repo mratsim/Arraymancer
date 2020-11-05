@@ -36,6 +36,39 @@ proc transpose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
   result.offset = t.offset
   result.storage = t.storage
 
+proc transpose*(t : Tensor, axes: seq[int]) : Tensor {.noInit,inline.} =
+  ## Transpose a Tensor using a passed permutation of axes.
+  ##
+  ## Data is not copied or modified, only metadata is modified.
+  assert axes.len == t.rank
+
+  let
+    n = axes.len
+
+  var
+    perm = newSeqWith(t.rank, 0)
+    mrep = newSeqWith(t.rank, -1)
+    new_shape = t.shape
+    new_strides = t.strides
+
+  for i in 0 ..< n:
+    var axis = axes[i]
+    if axis < 0:
+      axis += t.rank
+    assert axis >= 0 and axis < t.rank, "Out of bounds axis for the Tensor"
+    assert mrep[axis] == -1, "Axes can not be repeated"
+    mrep[axis] = i
+    perm[i] = axis
+
+  for i in 0 ..< n:
+    new_shape[i] = t.shape[perm[i]]
+    new_strides[i] = t.strides[perm[i]]
+
+  result.shape = new_shape
+  result.strides = new_strides
+  result.offset = t.offset
+  result.storage = t.storage
+
 proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noInit.} =
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
   ##
@@ -69,6 +102,19 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
   ##   - a tensor with the same data but reshaped.
   reshapeImpl(t, new_shape, result)
 
+proc reshape*(t: Tensor, new_shape: varargs[int], layout: OrderType): Tensor {.noInit.} =
+  ## Reshape a tensor. If possible no data copy is done and the returned tensor
+  ## shares data with the input. If input is not contiguous, this is not possible
+  ## and a copy will be made.
+  ##
+  ## Input:
+  ##   - a tensor
+  ##   - a new shape. Number of elements must be the same
+  ##   - a memory layout to use when reshaping the data
+  ## Returns:
+  ##   - a tensor with the same data but reshaped.
+  reshapeImplWithContig(t, new_shape, result, layout)
+
 proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ## Reshape a tensor. If possible no data copy is done and the returned tensor
   ## shares data with the input. If input is not contiguous, this is not possible
@@ -80,6 +126,19 @@ proc reshape*(t: Tensor, new_shape: MetadataArray): Tensor {.noInit.} =
   ## Returns:
   ##   - a tensor with the same data but reshaped.
   reshapeImpl(t, new_shape, result)
+
+proc reshape*(t: Tensor, new_shape: MetadataArray, layout: OrderType): Tensor {.noInit.} =
+  ## Reshape a tensor. If possible no data copy is done and the returned tensor
+  ## shares data with the input. If input is not contiguous, this is not possible
+  ## and a copy will be made.
+  ##
+  ## Input:
+  ##   - a tensor
+  ##   - a new shape. Number of elements must be the same
+  ##   - a memory layout to use when reshaping the data
+  ## Returns:
+  ##   - a tensor with the same data but reshaped.
+  reshapeImplWithContig(t, new_shape, result, layout)
 
 proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.

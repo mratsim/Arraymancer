@@ -54,6 +54,16 @@ proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: v
   else:
     reshape_with_copy(t, new_shape, result)
 
+proc reshapeImplWithContig*(t : AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor, layout: OrderType) {.noSideEffect.}=
+  when compileOption("boundChecks"):
+    when new_shape is MetadataArray:
+      check_reshape(t, new_shape)
+    else:
+      check_reshape(t, new_shape.toMetadataArray)
+
+  reshapeImpl(t.asContiguous(layout, force=true), new_shape, result)
+
+
 proc broadcastImpl*(t: var AnyTensor, shape: varargs[int]|MetadataArray) {.noSideEffect.}=
   when compileOption("boundChecks"):
     assert t.rank == shape.len

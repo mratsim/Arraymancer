@@ -74,7 +74,7 @@ proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noInit.} =
   ##
   ## Only integer, unsigned integer and float ndarrays are supported at the moment.
 
-  if unlikely(not existsFile(npyPath)):
+  if unlikely(not fileExists(npyPath)):
     raise newException(IOError, &".npy file \"{npyPath}\" does not exist")
 
   let stream = newFileStream(npyPath, mode = fmRead)

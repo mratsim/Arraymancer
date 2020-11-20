@@ -72,7 +72,7 @@ testSuite "Creating a new Tensor":
     let u = @[@[1.0, -1, 2],@[0.0, -1]]
 
     when compileOption("boundChecks") and not defined(openmp):
-      expect(IndexError):
+      expect(IndexDefect):
         discard u.toTensor()
     else:
       echo "Bound-checking is disabled or OpenMP is used. The incorrect seq shape test has been skipped."

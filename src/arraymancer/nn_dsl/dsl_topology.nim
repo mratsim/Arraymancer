@@ -104,7 +104,7 @@ proc topoFromInput(self: var TopoTable, ident: NimNode, desc: NimNode) =
   if desc.len != 2:
     incorrect(desc) ## Placeholder to specify padding stride in the future
 
-  self.add ident, LayerTopology(kind: lkInput,
+  self[ident] = LayerTopology(kind: lkInput,
                                 in_shape: desc[1],
                                 out_shape: desc[1])
 
@@ -144,7 +144,7 @@ proc topoFromConv2D(self: var TopoTable, ident: NimNode, desc: NimNode) =
   let out_shape = quote do:
     out_shape_conv2d(`in_shape`, `kernel`, `padding`, `strides`)
 
-  self.add ident, LayerTopology(kind: lkConv2D,
+  self[ident] = LayerTopology(kind: lkConv2D,
                                 in_shape: in_shape,
                                 out_shape: out_shape,
                                 c2d_kernel_shape: kernel,
@@ -182,7 +182,7 @@ proc topoFromMaxPool2D(self: var TopoTable, ident: NimNode, desc: NimNode) =
   let out_shape = quote do:
     out_shape_maxpool2d(`in_shape`, `kernel`, `padding`, `strides`)
 
-  self.add ident, LayerTopology(kind: lkMaxPool2D,
+  self[ident] = LayerTopology(kind: lkMaxPool2D,
                                 in_shape: in_shape,
                                 out_shape: out_shape,
                                 m2d_kernel: kernel,
@@ -202,7 +202,7 @@ proc topoFromLinear(self: var TopoTable, ident: NimNode, desc: NimNode) =
   var in_shape = self.replaceInputNodes(desc[1])
   in_shape = quote do: `in_shape`
 
-  self.add ident, LayerTopology(kind: lkLinear,
+  self[ident] = LayerTopology(kind: lkLinear,
                                 in_shape: in_shape,
                                 out_shape: desc[2])
 
@@ -223,7 +223,7 @@ proc topoFromFlatten(self: var TopoTable, ident: NimNode, desc: NimNode) =
   let out_shape = quote do:
     out_shape_flatten(`in_shape`)
 
-  self.add ident, LayerTopology(kind: lkFlatten,
+  self[ident] = LayerTopology(kind: lkFlatten,
                                 in_shape: in_shape,
                                 out_shape: out_shape)
 
@@ -253,7 +253,7 @@ proc topoFromGRU(self: var TopoTable, ident: NimNode, desc: NimNode) =
       hidden_size
     )
 
-  self.add ident, LayerTopology(kind: lkGRU,
+  self[ident] = LayerTopology(kind: lkGRU,
                                 in_shape: in_shape,
                                 out_shape: out_shape,
                                 gru_hidden_size: hidden_size,

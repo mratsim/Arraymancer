@@ -110,9 +110,9 @@ const
 
 type
   nnp_size* {.bycopy.} = object
-    width*: csize              ## * Width (horizontal size) of an image, kernel, or pooling filter.
+    width*: csize_t              ## * Width (horizontal size) of an image, kernel, or pooling filter.
     ## * Height (vertical size) of an image, kernel, or pooling filter.
-    height*: csize
+    height*: csize_t
 
 ## *
 ##  @brief Padding of images in NNPACK.
@@ -120,11 +120,11 @@ type
 
 type
   nnp_padding* {.bycopy.} = object
-    top*: csize                ## * Padding above the image data
+    top*: csize_t                ## * Padding above the image data
     ## * Padding on the right of image data
-    right*: csize              ## * Padding below the image data
-    bottom*: csize             ## * Padding on the left of image data
-    left*: csize
+    right*: csize_t              ## * Padding below the image data
+    bottom*: csize_t             ## * Padding on the left of image data
+    left*: csize_t
 
 ## *
 ##  @brief Profiling information about time spent in different phases of a function call.
@@ -178,12 +178,12 @@ proc nnp_deinitialize*(): nnp_status {.cdecl, importc: "nnp_deinitialize".}
 ##
 
 proc nnp_convolution_output*(algorithm: nnp_convolution_algorithm;
-                            batch_size: csize; input_channels: csize;
-                            output_channels: csize; input_size: nnp_size;
+                            batch_size: csize_t; input_channels: csize_t;
+                            output_channels: csize_t; input_size: nnp_size;
                             input_padding: nnp_padding; kernel_size: nnp_size;
                             input: ptr cfloat; kernel: ptr cfloat; bias: ptr cfloat;
                             output: ptr cfloat; workspace_buffer: pointer=nil;
-                            workspace_size: ptr csize=nil; activation: nnp_activation=nnp_activation_identity;
+                            workspace_size: ptr csize_t=nil; activation: nnp_activation=nnp_activation_identity;
                             activation_parameters: pointer=nil;
                             threadpool: pthreadpool_t=nil; profile: ptr nnp_profile=nil): nnp_status {.
     cdecl, importc: "nnp_convolution_output".}
@@ -222,14 +222,14 @@ proc nnp_convolution_output*(algorithm: nnp_convolution_algorithm;
 ##
 
 proc nnp_convolution_input_gradient*(algorithm: nnp_convolution_algorithm;
-                                    batch_size: csize; input_channels: csize;
-                                    output_channels: csize; input_size: nnp_size;
+                                    batch_size: csize_t; input_channels: csize_t;
+                                    output_channels: csize_t; input_size: nnp_size;
                                     input_padding: nnp_padding;
                                     kernel_size: nnp_size;
                                     grad_output: ptr cfloat; kernel: ptr cfloat;
                                     grad_input: ptr cfloat;
                                     workspace_buffer: pointer = nil;
-                                    workspace_size: ptr csize = nil;
+                                    workspace_size: ptr csize_t = nil;
                                     activation: nnp_activation = nnp_activation_identity;
                                     activation_parameters: pointer = nil;
                                     threadpool: pthreadpool_t = nil;
@@ -269,14 +269,14 @@ proc nnp_convolution_input_gradient*(algorithm: nnp_convolution_algorithm;
 ##
 
 proc nnp_convolution_kernel_gradient*(algorithm: nnp_convolution_algorithm;
-                                     batch_size: csize; input_channels: csize;
-                                     output_channels: csize; input_size: nnp_size;
+                                     batch_size: csize_t; input_channels: csize_t;
+                                     output_channels: csize_t; input_size: nnp_size;
                                      input_padding: nnp_padding;
                                      kernel_size: nnp_size; input: ptr cfloat;
                                      grad_output: ptr cfloat;
                                      grad_kernel: ptr cfloat;
                                      workspace_buffer: pointer = nil;
-                                     workspace_size: ptr csize = nil;
+                                     workspace_size: ptr csize_t = nil;
                                      activation: nnp_activation = nnp_activation_identity;
                                      activation_parameters: pointer = nil;
                                      threadpool: pthreadpool_t = nil;
@@ -338,13 +338,13 @@ proc nnp_convolution_kernel_gradient*(algorithm: nnp_convolution_algorithm;
 ##
 
 proc nnp_convolution_inference*(algorithm: nnp_convolution_algorithm;
-    transform_strategy: nnp_convolution_transform_strategy; input_channels: csize;
-                               output_channels: csize; input_size: nnp_size;
+    transform_strategy: nnp_convolution_transform_strategy; input_channels: csize_t;
+                               output_channels: csize_t; input_size: nnp_size;
                                input_padding: nnp_padding; kernel_size: nnp_size;
                                output_subsampling: nnp_size; input: ptr cfloat;
                                kernel: ptr cfloat; bias: ptr cfloat;
                                output: ptr cfloat; workspace_buffer: pointer;
-                               workspace_size: ptr csize;
+                               workspace_size: ptr csize_t;
                                activation: nnp_activation;
                                activation_parameters: pointer;
                                threadpool: pthreadpool_t; profile: ptr nnp_profile): nnp_status {.
@@ -364,8 +364,8 @@ proc nnp_convolution_inference*(algorithm: nnp_convolution_algorithm;
 ##                    If threadpool is NULL, the computation would run on the caller thread without parallelization.
 ##
 
-proc nnp_fully_connected_output*(batch_size: csize; input_channels: csize;
-                                output_channels: csize; input: ptr cfloat;
+proc nnp_fully_connected_output*(batch_size: csize_t; input_channels: csize_t;
+                                output_channels: csize_t; input: ptr cfloat;
                                 kernel: ptr cfloat; output: ptr cfloat;
                                 threadpool: pthreadpool_t;
                                 profile: ptr nnp_profile): nnp_status {.cdecl,
@@ -382,7 +382,7 @@ proc nnp_fully_connected_output*(batch_size: csize; input_channels: csize;
 ##                    If threadpool is NULL, the computation would run on the caller thread without parallelization.
 ##
 
-proc nnp_fully_connected_inference*(input_channels: csize; output_channels: csize;
+proc nnp_fully_connected_inference*(input_channels: csize_t; output_channels: csize_t;
                                    input: ptr cfloat; kernel: ptr cfloat;
                                    output: ptr cfloat; threadpool: pthreadpool_t): nnp_status {.
     cdecl, importc: "nnp_fully_connected_inference".}
@@ -398,8 +398,8 @@ proc nnp_fully_connected_inference*(input_channels: csize; output_channels: csiz
 ##                    If threadpool is NULL, the computation would run on the caller thread without parallelization.
 ##
 
-proc nnp_fully_connected_inference_f16f32*(input_channels: csize;
-    output_channels: csize; input: ptr cfloat; kernel: pointer; output: ptr cfloat;
+proc nnp_fully_connected_inference_f16f32*(input_channels: csize_t;
+    output_channels: csize_t; input: ptr cfloat; kernel: pointer; output: ptr cfloat;
     threadpool: pthreadpool_t): nnp_status {.cdecl,
     importc: "nnp_fully_connected_inference_f16f32".}
 ## *
@@ -425,7 +425,7 @@ proc nnp_fully_connected_inference_f16f32*(input_channels: csize;
 ##                    If threadpool is NULL, the computation would run on the caller thread without parallelization.
 ##
 
-proc nnp_max_pooling_output*(batch_size: csize; channels: csize;
+proc nnp_max_pooling_output*(batch_size: csize_t; channels: csize_t;
                             input_size: nnp_size; input_padding: nnp_padding;
                             pooling_size: nnp_size; pooling_stride: nnp_size;
                             input: ptr cfloat; output: ptr cfloat;
@@ -443,7 +443,7 @@ proc nnp_max_pooling_output*(batch_size: csize; channels: csize;
 ##                    If threadpool is NULL, the computation would run on the caller thread without parallelization.
 ##
 
-proc nnp_softmax_output*(batch_size: csize; channels: csize; input: ptr cfloat;
+proc nnp_softmax_output*(batch_size: csize_t; channels: csize_t; input: ptr cfloat;
                         output: ptr cfloat; threadpool: pthreadpool_t): nnp_status {.
     cdecl, importc: "nnp_softmax_output".}
 ## *
@@ -458,7 +458,7 @@ proc nnp_softmax_output*(batch_size: csize; channels: csize; input: ptr cfloat;
 ##                    If threadpool is NULL, the computation would run on the caller thread without parallelization.
 ##
 
-proc nnp_relu_output*(batch_size: csize; channels: csize; input: ptr cfloat;
+proc nnp_relu_output*(batch_size: csize_t; channels: csize_t; input: ptr cfloat;
                      output: ptr cfloat; negative_slope: cfloat;
                      threadpool: pthreadpool_t): nnp_status {.cdecl,
     importc: "nnp_relu_output".}
@@ -474,7 +474,7 @@ proc nnp_relu_output*(batch_size: csize; channels: csize; input: ptr cfloat;
 ##                    If threadpool is NULL, the computation would run on the caller thread without parallelization.
 ##
 
-proc nnp_relu_input_gradient*(batch_size: csize; channels: csize;
+proc nnp_relu_input_gradient*(batch_size: csize_t; channels: csize_t;
                              grad_output: ptr cfloat; input: ptr cfloat;
                              grad_input: ptr cfloat; negative_slope: cfloat;
                              threadpool: pthreadpool_t): nnp_status {.cdecl,

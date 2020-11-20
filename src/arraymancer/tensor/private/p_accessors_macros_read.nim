@@ -29,7 +29,7 @@ template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSl
   when compileOption("boundChecks"):
     if unlikely(slices.len > result.rank):
       raise newException(
-        IndexError,
+        IndexDefect,
         "Rank of slice expression (" & $slices.len &
           ") is larger than the tensor rank. Tensor shape" & $result.shape & "."
       )

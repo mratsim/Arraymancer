@@ -111,7 +111,7 @@ testSuite "BLAS (Basic Linear Algebra Subprograms)":
     test "GEMM - Bounds checking":
       let c = @[@[1'f32,2,3],@[4'f32,5,6]].toTensor()
 
-      expect(IndexError):
+      expect(IndexDefect):
         discard c * c
   else:
     echo "Bound-checking is disabled or OpenMP is used. The out-of-bounds checking test has been skipped."

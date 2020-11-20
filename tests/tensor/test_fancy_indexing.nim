@@ -148,7 +148,7 @@ testSuite "Fancy indexing":
     block: # y[:, y.sum(axis = 0) > 50] = np.array([10, 20, 30, 40])
       var y = x.clone()
 
-      expect(IndexError):
+      expect(IndexDefect):
         y[_, y.sum(axis = 0) >. 50] = [10, 20, 30, 40].toTensor()
 
   test "Masked axis assign broadcastable 1d tensor via fancy indexing":

@@ -21,7 +21,7 @@ import  ./backend/memory_optimization_hints,
         ./algorithms,
         ./private/p_empty_tensors,
         math
-        
+
 import complex except Complex64, Complex32
 
 # ### Standard aggregate functions
@@ -174,7 +174,7 @@ proc argmax_max*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes:
   ##                                     [1],
   ##                                     [1]].toTensor
 
-  assert axis in {0, 1}, "Only 1D and 2D tensors are supported at the moment for argmax"
+  # assert axis in {0, 1}, "Only 1D and 2D tensors are supported at the moment for argmax"
   # TODO: Reimplement parallel Argmax (introduced by https://github.com/mratsim/Arraymancer/pull/171)
   #       must be done with care: https://github.com/mratsim/Arraymancer/issues/183
 

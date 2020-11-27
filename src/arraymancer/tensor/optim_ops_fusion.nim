@@ -75,9 +75,6 @@ template rewriteTensor_MultiplyAdd_inplace*{C += `*`(A,B)}[T](
 ## initialization
 
 template toTensorReshapeImpl(oa: typed, shape: varargs[int]): untyped =
-  let data = toSeq(flatIter(oa))
-  let seq_shape = shape.toMetadataArray
-
   var t: Tensor[typeof(flatIter(oa))]
   var size: int
 

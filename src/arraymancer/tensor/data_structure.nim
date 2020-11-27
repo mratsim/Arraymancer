@@ -15,6 +15,7 @@
 import
   ../laser/dynamic_stack_arrays,
   ../laser/tensor/datatypes,
+  ../private/sequninit,
   nimblas,
   # Standard library
   std/[complex, typetraits]

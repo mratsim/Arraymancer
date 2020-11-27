@@ -20,7 +20,7 @@ import  ./data_structure,
         ./algorithms,
         ./private/p_empty_tensors,
         math
-        
+
 import complex except Complex64, Complex32
 
 # ### Standard aggregate functions

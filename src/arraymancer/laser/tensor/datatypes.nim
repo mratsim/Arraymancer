@@ -6,7 +6,7 @@
 # Types and low level primitives for tensors
 
 import
-  ../dynamic_stack_arrays, ../compiler_optim_hints,
+  ../dynamic_stack_arrays, ../compiler_optim_hints, ../private/memory,
   typetraits
 
 when NimVersion < "1.1.0":
@@ -25,7 +25,8 @@ type
     offset*: int                         # 8 bytes
     storage*: CpuStorage[T]              # 8 bytes
 
-  CpuStorage*[T] {.shallow.} = ref object # Total heap: 25 bytes = 1 cache-line
+  CpuStorage*[T] {.shallow.} = ref CpuStorageObj[T] # Total heap: 25 bytes = 1 cache-line
+  CpuStorageObj[T] {.shallow.} = object
     # Workaround supportsCopyMem in type section - https://github.com/nim-lang/Nim/issues/13193
     when not(T is string or T is ref):
       raw_buffer*: ptr UncheckedArray[T] # 8 bytes
@@ -33,6 +34,40 @@ type
       isMemOwner*: bool                  # 1 byte
     else: # Tensors of strings, other ref types or non-trivial destructors
       raw_buffer*: seq[T]                # 8 bytes (16 for seq v2 backed by destructors?)
+
+
+# note: the finalizer has to be here for ARC to like it
+when not defined(gcDestructors):
+  proc finalizer[T](storage: CpuStorage[T]) =
+    static: assert T.supportsCopyMem, "Tensors of seq, strings, ref types and types with non-trivial destructors cannot be finalized by this proc"
+    if storage.isMemOwner and not storage.memalloc.isNil:
+      storage.memalloc.deallocShared()
+else:
+  proc `=destroy`[T](storage: var CpuStorageObj[T]) =
+    #static: assert T.supportsCopyMem, "Tensors of seq, strings, ref types and types with non-trivial destructors cannot be finalized by this proc. Type is: " & $type(T)
+    when T.supportsCopyMem:
+      if storage.isMemOwner and not storage.memalloc.isNil:
+        storage.memalloc.deallocShared()
+    else:
+      discard
+
+proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
+  ## Allocate aligned memory to hold `size` elements of type T.
+  ## If T does not supports copyMem, it is also zero-initialized.
+  ## I.e. Tensors of seq, strings, ref types or types with non-trivial destructors
+  ## are always zero-initialized. This prevents potential GC issues.
+  when T.supportsCopyMem:
+    when not defined(gcDestructors):
+      new(storage, finalizer[T])
+    else:
+      new(storage)
+    storage.memalloc = allocShared0(sizeof(T) * size + LASER_MEM_ALIGN - 1)
+    storage.isMemOwner = true
+    storage.raw_buffer = align_raw_data(T, storage.memalloc)
+  else: # Always 0-initialize Tensors of seq, strings, ref types and types with non-trivial destructors
+    new(storage)
+    storage.raw_buffer.newSeq(size)
+
 
 func rank*(t: Tensor): range[0 .. LASER_MAXRANK] {.inline.} =
   t.shape.len

@@ -3,7 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  ../tensor/tensor,
+  ../tensor,
   ../laser/tensor/[initialization, allocator],
   strutils, strformat, os, options,
   nimhdf5

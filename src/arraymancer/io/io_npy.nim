@@ -4,7 +4,7 @@
 
 import
   ../private/sequninit,
-  ../tensor/tensor, ./io_stream_readers,
+  ../tensor, ./io_stream_readers,
   ../laser/tensor/[initialization, allocator],
   os, streams, strscans, strformat, parseutils, strutils, endians
 

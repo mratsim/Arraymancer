@@ -292,7 +292,7 @@ proc randomNormalTensor*[T:SomeFloat](shape: varargs[int], mean:T = 0, std:T = 1
   for i in 0 ..< size:
     result.storage.raw_buffer[i] = T(randomNormal(mean.float, std.float))
 
-func linspace*[T: SomeNumber](start, stop: T, num: int, endpoint = true): Tensor[float] {.noInit.} =
+proc linspace*[T: SomeNumber](start, stop: T, num: int, endpoint = true): Tensor[float] {.noInit.} =
   ## Creates a new 1d-tensor with `num` values linearly spaced between
   ## the closed interval [start, stop] (`endpoint == true`) or in the
   ## half open interval [start, stop) (`endpoint == false`).
@@ -316,7 +316,7 @@ func linspace*[T: SomeNumber](start, stop: T, num: int, endpoint = true): Tensor
     # for every element calculate new value for next iteration
     step += diff
 
-func logspace*[T: SomeNumber](start, stop: T,
+proc logspace*[T: SomeNumber](start, stop: T,
                               num: int,
                               base = 10.0,
                               endpoint = true): Tensor[float] {.noInit.} =

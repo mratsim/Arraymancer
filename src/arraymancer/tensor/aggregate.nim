@@ -241,7 +241,7 @@ proc percentile*[T](t: Tensor[T], p: int, isSorted = false): float =
       let frac = f - i.float
       result = (a[i].float + (a[i+1] - a[i]).float * frac)
 
-func iqr*[T](t: Tensor[T]): float =
+proc iqr*[T](t: Tensor[T]): float =
   ## Returns the interquartile range of the 1D tensor `t`.
   ##
   ## The interquartile range (IQR) is the distance between the

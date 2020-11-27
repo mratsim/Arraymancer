@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import  ../tensor/backend/openmp,
-        ../tensor/tensor,
+        ../tensor,
         ./private/p_nnp_types
 
 proc maxpool2d*[T](input: Tensor[T],

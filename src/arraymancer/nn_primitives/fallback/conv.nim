@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../tensor/tensor,
+import  ../../tensor,
         ../private/p_nnp_types
 
 proc im2col*[T]( input: Tensor[T], kernel_size: Size2D,

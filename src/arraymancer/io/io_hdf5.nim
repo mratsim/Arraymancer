@@ -4,7 +4,7 @@
 
 import
   ../tensor,
-  ../laser/tensor/[initialization, allocator],
+  ../laser/tensor/initialization,
   strutils, strformat, os, options,
   nimhdf5
 

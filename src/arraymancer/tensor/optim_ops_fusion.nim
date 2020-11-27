@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import  ../laser/private/nested_containers,
-        ../laser/tensor/[allocator, initialization],
+        ../laser/tensor/initialization,
         ./data_structure,
         ./operators_blas_l2l3,
         typetraits

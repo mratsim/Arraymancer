@@ -9,7 +9,7 @@ import
   ../strided_iteration/foreach,
   ../dynamic_stack_arrays,
   ../private/nested_containers,
-  ./datatypes, ./allocator,
+  ./datatypes,
   # Standard library
   typetraits, sequtils,
   # Third-party

@@ -14,7 +14,7 @@
 
 import
   # Internal
-  ../laser/tensor/[initialization, allocator],
+  ../laser/tensor/initialization,
   ../laser/strided_iteration/foreach,
   ./data_structure,
   # Third-party

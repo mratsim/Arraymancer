@@ -5,7 +5,7 @@
 import
   ../private/sequninit,
   ../tensor, ./io_stream_readers,
-  ../laser/tensor/[initialization, allocator],
+  ../laser/tensor/initialization,
   os, streams, strscans, strformat, parseutils, strutils, endians
 
 func get_parser_metadata[T](header_raw: string):

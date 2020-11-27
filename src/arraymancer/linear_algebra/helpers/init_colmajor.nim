@@ -3,7 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  ../../laser/tensor/[datatypes, allocator, initialization],
+  ../../laser/tensor/[datatypes, initialization],
   nimblas
 
 proc newMatrixUninitColMajor*[T](M: var Tensor[T], rows, cols: int) {.noInit, inline.} =

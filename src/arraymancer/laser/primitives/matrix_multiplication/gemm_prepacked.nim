@@ -302,7 +302,7 @@ when false:
   ## these tests don't work in arraymancer, since the imported files are not
   ## part of arraymancer's repository.
   import
-    ../../tensor/[allocator, datatypes, initialization],
+    ../../tensor/[datatypes, initialization],
     strformat
 
   proc toPtr*[T](t: Tensor[T]): ptr T =

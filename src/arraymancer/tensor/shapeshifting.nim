@@ -19,7 +19,6 @@ import  ./backend/metadataArray,
         ./private/p_empty_tensors,
         ./accessors,
         ./data_structure, ./init_cpu, ./higher_order_applymap,
-        ../laser/tensor/allocator,
         sequtils
 
 # NOTE: Procs that accepts shape are duplicated to accept both varargs and Metadata

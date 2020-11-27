@@ -14,7 +14,7 @@
 
 import
   ../../src/arraymancer,
-  ../../src/linear_algebra/helpers/init_colmajor
+  ../../src/arraymancer/linear_algebra/helpers/init_colmajor
 import unittest, sugar
 import complex except Complex64, Complex32
 

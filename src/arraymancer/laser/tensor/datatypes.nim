@@ -49,7 +49,8 @@ else:
       if storage.isMemOwner and not storage.memalloc.isNil:
         storage.memalloc.deallocShared()
     else:
-      discard
+      `=destroy`(storage.raw_buffer)
+
 
 proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
   ## Allocate aligned memory to hold `size` elements of type T.

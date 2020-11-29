@@ -14,6 +14,8 @@ when NimVersion < "1.1.0":
   import sugar
 
 type
+  KnownSupportsCopyMem* = SomeNumber | char
+
   RawImmutableView*[T] = distinct ptr UncheckedArray[T]
   RawMutableView*[T] = distinct ptr UncheckedArray[T]
 
@@ -28,7 +30,7 @@ type
   CpuStorage*[T] {.shallow.} = ref CpuStorageObj[T] # Total heap: 25 bytes = 1 cache-line
   CpuStorageObj[T] {.shallow.} = object
     # Workaround supportsCopyMem in type section - https://github.com/nim-lang/Nim/issues/13193
-    when not(T is string or T is ref):
+    when T is KnownSupportsCopyMem:
       raw_buffer*: ptr UncheckedArray[T] # 8 bytes
       memalloc*: pointer                 # 8 bytes
       isMemOwner*: bool                  # 1 byte
@@ -39,13 +41,12 @@ type
 # note: the finalizer has to be here for ARC to like it
 when not defined(gcDestructors):
   proc finalizer[T](storage: CpuStorage[T]) =
-    static: assert T.supportsCopyMem, "Tensors of seq, strings, ref types and types with non-trivial destructors cannot be finalized by this proc"
+    static: assert T is KnownSupportsCopyMem, "Tensors of seq, strings, ref types and types with non-trivial destructors cannot be finalized by this proc"
     if storage.isMemOwner and not storage.memalloc.isNil:
       storage.memalloc.deallocShared()
 else:
   proc `=destroy`[T](storage: var CpuStorageObj[T]) =
-    #static: assert T.supportsCopyMem, "Tensors of seq, strings, ref types and types with non-trivial destructors cannot be finalized by this proc. Type is: " & $type(T)
-    when T.supportsCopyMem:
+    when T is KnownSupportsCopyMem:
       if storage.isMemOwner and not storage.memalloc.isNil:
         storage.memalloc.deallocShared()
     else:
@@ -57,7 +58,7 @@ proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
   ## If T does not supports copyMem, it is also zero-initialized.
   ## I.e. Tensors of seq, strings, ref types or types with non-trivial destructors
   ## are always zero-initialized. This prevents potential GC issues.
-  when T.supportsCopyMem:
+  when T is KnownSupportsCopyMem:
     when not defined(gcDestructors):
       new(storage, finalizer[T])
     else:
@@ -103,8 +104,8 @@ func is_C_contiguous*(t: Tensor): bool =
 # mentionned here: https://nim-lang.org/docs/manual.html#var-return-type-future-directions
 
 template unsafe_raw_offset_impl(offset: int) {.dirty.} =
-  bind supportsCopyMem, withCompilerOptimHints, assume_aligned
-  when supportsCopyMem(T):
+  bind KnownSupportsCopyMem, withCompilerOptimHints, assume_aligned
+  when T is KnownSupportsCopyMem:
     withCompilerOptimHints()
     when aligned:
       let raw_pointer{.restrict.} = assume_aligned t.storage.raw_buffer

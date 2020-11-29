@@ -71,7 +71,7 @@ proc deepCopy*[T](dst: var Tensor[T], src: Tensor[T]) =
   initTensorMetadata(dst, size, src.shape)
   dst.storage = allocCpuStorage(T, size)
 
-  when T.supportsCopyMem:
+  when T is KnownSupportsCopyMem:
     # We use memcpy, due to SIMD optimizations in memcpy,
     # we require higher parallelization thresholds
     if src.is_C_contiguous:
@@ -106,7 +106,7 @@ proc copyFrom*[T](dst: var Tensor[T], src: Tensor[T]) =
   ##    They however conserve their shape and strides.
   ##
   ## Note: The copy is not recursive.
-  when T.supportsCopyMem:
+  when T is KnownSupportsCopyMem:
     # We use memcpy, due to SIMD optimizations in memcpy,
     # we require higher parallelization thresholds
     if src.is_C_contiguous:
@@ -131,7 +131,7 @@ proc copyFrom*[T](dst: var Tensor[T], src: Tensor[T]) =
 proc copyFromRaw*[T](dst: var Tensor[T], buffer: ptr T, len: Natural) =
   ## Copy data from the buffer into the destination tensor.
   ## Destination tensor size and buffer length should be the same
-  when T.supportsCopyMem:
+  when T is KnownSupportsCopyMem:
     withCompilerOptimHints()
     doAssert dst.size == len, "Tensor size and buffer length should be the same"
     let buf{.restrict.} = cast[ptr UncheckedArray[T]](buffer)
@@ -161,7 +161,7 @@ proc setZero*[T](t: var Tensor[T], check_contiguous: static bool = true) =
       # + If using exceptions, display the tensor ident with astToStr
       raise newException(ValueError, "Input tensor is not contiguous.")
 
-  when not T.supportsCopyMem:
+  when not T is KnownSupportsCopyMem:
     t.storage.raw_buffer.reset()
   else:
     omp_parallel_chunks(
@@ -213,7 +213,7 @@ proc toTensor*(a: openarray, dummy_bugfix: static[int] = 0): auto =
   initTensorMetadata(t, size, shape)
   allocCpuStorage(t.storage, size)
 
-  when T.supportsCopyMem():
+  when T is KnownSupportsCopyMem:
     t.copyFromRaw(data[0].unsafeAddr, data.len)
   else:
     shallowCopy(t.storage.raw_buffer, data)

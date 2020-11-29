@@ -68,7 +68,7 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit.} =
   initTensorMetadata(result, size, shape)
   allocCpuStorage(result.storage, size)
 
-  when T.supportsCopyMem:
+  when T is KnownSupportsCopyMem:
     forEachContiguous x in result:
       x = value
   else:
@@ -89,7 +89,7 @@ proc newTensorWith*[T](shape: Metadata, value: T): Tensor[T] {.noInit.} =
   initTensorMetadata(result, size, shape)
   allocCpuStorage(result.storage, size)
 
-  when T.supportsCopyMem:
+  when T is KnownSupportsCopyMem:
     forEachContiguous x in result:
       x = value
   else:

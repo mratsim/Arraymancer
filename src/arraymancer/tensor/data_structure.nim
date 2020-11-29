@@ -85,7 +85,7 @@ type
 proc data*[T](t: Tensor[T]): seq[T] {.inline, noSideEffect, noInit.} =
   # Get tensor raw data
   # This is intended for library writer
-  when supportsCopyMem(T):
+  when T is KnownSupportsCopyMem:
     result = newSeqUninit[T](t.size)
     for i in 0 ..< t.size:
       result[i] = t.storage.raw_buffer[i]
@@ -96,7 +96,7 @@ proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.deprecated: "Use copyFromRaw ins
   # Set tensor raw data
   # This is intended for library writer
   assert s.len > 0
-  when supportsCopyMem(T):
+  when T is KnownSupportsCopyMem:
     t.copyFromRaw(s[0].addr, s.len)
   else:
     t.storage.raw_buffer = s

@@ -110,7 +110,7 @@ proc copyFrom*[T](dst: var Tensor[T], src: Tensor[T]) =
     # We use memcpy, due to SIMD optimizations in memcpy,
     # we require higher parallelization thresholds
     if src.is_C_contiguous:
-      assert dst.size == src.size
+      assert dst.shape == src.shape
       omp_parallel_chunks(
             src.size, chunk_offset, chunk_size,
             OMP_MEMORY_BOUND_GRAIN_SIZE * 4):

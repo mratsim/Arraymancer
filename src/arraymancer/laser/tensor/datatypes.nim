@@ -7,14 +7,14 @@
 
 import
   ../dynamic_stack_arrays, ../compiler_optim_hints, ../private/memory,
-  typetraits
+  typetraits, complex
 
 when NimVersion < "1.1.0":
   # For distinctBase
   import sugar
 
 type
-  KnownSupportsCopyMem* = SomeNumber | char
+  KnownSupportsCopyMem* = SomeNumber | char | Complex[float64] | Complex[float32]
 
   RawImmutableView*[T] = distinct ptr UncheckedArray[T]
   RawMutableView*[T] = distinct ptr UncheckedArray[T]

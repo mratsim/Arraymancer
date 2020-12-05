@@ -173,13 +173,14 @@ proc main() =
         check: abs(t.mean()) <= 2e-1
         check: abs(t.std() - 1.0) <= 2e-1
 
-    test "Self assignment of tensor (ARC)":
-      var a = @[1.0, 2, 3, 4, 5].toTensor()
-      var t: TestObject
-      t.x = @[1.0, 2, 3, 4].toTensor()
-      t.x = t.x
-      doAssert t.x.storage.isNil, "If you see this message, bug Nim #16185 is fixed." &
-        " Remove this test or set it to `not t.x.isNil`!"
+    when defined(gcDestructors):
+      test "Self assignment of tensor (ARC)":
+        var a = @[1.0, 2, 3, 4, 5].toTensor()
+        var t: TestObject
+        t.x = @[1.0, 2, 3, 4].toTensor()
+        t.x = t.x
+        doAssert t.x.storage.isNil, "If you see this message, bug Nim #16185 is fixed." &
+          " Remove this test or set it to `not t.x.isNil`!"
 
 main()
 GC_fullCollect()

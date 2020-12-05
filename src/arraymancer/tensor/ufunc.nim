@@ -17,7 +17,9 @@ import  ./data_structure,
         ./private/p_empty_tensors,
         sugar, math, complex
 
-proc astype*[T; U: not Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noInit.} =
+## NOTE: This should be `{.noInit.}`, but this is blocked by:
+## https://github.com/nim-lang/Nim/issues/16253
+proc astype*[T; U: not Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] =
   ## Apply type conversion on the whole tensor. This is a no-op if `T` is the same
   ## as `U`.
   when T is U:
@@ -26,7 +28,8 @@ proc astype*[T; U: not Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noI
     returnEmptyIfEmpty(t)
     result = t.map(x => x.U)
 
-proc astype*[T: SomeNumber, U: Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] {.noInit.} =
+## NOTE: This should be `{.noInit.}`, see above.
+proc astype*[T: SomeNumber, U: Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] =
   ## Apply type conversion on the whole tensor
   returnEmptyIfEmpty(t)
   when T is SomeNumber and U is Complex[float32]:

@@ -53,6 +53,7 @@ else:
         storage.memalloc = nil
     else:
       `=destroy`(storage.raw_buffer)
+  proc `=`[T](a: var CpuStorageObj[T]; b: CpuStorageObj[T]) {.error.}
 
 
 proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =

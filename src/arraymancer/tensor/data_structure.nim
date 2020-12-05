@@ -82,16 +82,6 @@ type
 # Field accessors
 # ###############
 
-proc data*[T](t: Tensor[T]): seq[T] {.inline, noSideEffect, noInit.} =
-  # Get tensor raw data
-  # This is intended for library writer
-  when T is KnownSupportsCopyMem:
-    result = newSeqUninit[T](t.size)
-    for i in 0 ..< t.size:
-      result[i] = t.storage.raw_buffer[i]
-  else:
-    shallowCopy(result, t.storage.raw_buffer)
-
 proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.deprecated: "Use copyFromRaw instead".} =
   # Set tensor raw data
   # This is intended for library writer

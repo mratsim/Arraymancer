@@ -161,7 +161,7 @@ proc setZero*[T](t: var Tensor[T], check_contiguous: static bool = true) =
       # + If using exceptions, display the tensor ident with astToStr
       raise newException(ValueError, "Input tensor is not contiguous.")
 
-  when not T is KnownSupportsCopyMem:
+  when not (T is KnownSupportsCopyMem):
     t.storage.raw_buffer.reset()
   else:
     omp_parallel_chunks(

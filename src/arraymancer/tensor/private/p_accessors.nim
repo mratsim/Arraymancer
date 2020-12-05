@@ -87,7 +87,16 @@ proc atIndex*[T](t: var Tensor[T], idx: varargs[int]): var T {.noSideEffect,inli
 proc atIndexMut*[T](t: var Tensor[T], idx: varargs[int], val: T) {.noSideEffect,inline.} =
   ## Set the value at input coordinates
   ## This used to be `[]=` before slicing was implemented
-  t.unsafe_raw_buf[t.getIndex(idx)] = val
+  when defined(gcDestructors):
+    # for ARC `unsafe_raw_buf` works for all types
+    t.unsafe_raw_buf[t.getIndex(idx)] = val
+  else:
+    # on the normal GC using `unsafe_raw_buf` for `seq` based tensors
+    # breaks the reference counting (I believe). The code segfaults in any case.
+    when T is KnownSupportsCopyMem:
+      t.unsafe_raw_buf[t.getIndex(idx)] = val
+    else:
+      t.storage.raw_buffer[t.getIndex(idx)] = val
 
 ## Iterators
 type

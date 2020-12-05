@@ -44,11 +44,13 @@ when not defined(gcDestructors):
     static: assert T is KnownSupportsCopyMem, "Tensors of seq, strings, ref types and types with non-trivial destructors cannot be finalized by this proc"
     if storage.isMemOwner and not storage.memalloc.isNil:
       storage.memalloc.deallocShared()
+      storage.memalloc = nil
 else:
   proc `=destroy`[T](storage: var CpuStorageObj[T]) =
     when T is KnownSupportsCopyMem:
       if storage.isMemOwner and not storage.memalloc.isNil:
         storage.memalloc.deallocShared()
+        storage.memalloc = nil
     else:
       `=destroy`(storage.raw_buffer)
 

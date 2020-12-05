@@ -171,8 +171,18 @@ task all_tests, "Run all tests - Intel MKL + Cuda + OpenCL + OpenMP":
 task test, "Run all tests - Default BLAS & Lapack":
   test "tests_cpu", "", split = false
 
+task test_arc, "Run all tests under ARC - Default BLAS & Lapack":
+  test "tests_cpu", "--gc:arc", split = false
+
+task test_orc, "Run all tests under ORC - Default BLAS & Lapack":
+  test "tests_cpu", "--gc:orc", split = false
+
 task test_no_lapack, "Run all tests - Default BLAS without lapack":
   let switch = " -d:no_lapack"
+  test "tests_cpu", switch, split = false
+
+task test_no_lapack_arc, "Run all tests - Default BLAS without lapack under ARC":
+  let switch = " -d:no_lapack --gc:arc"
   test "tests_cpu", switch, split = false
 
 task test_cpp, "Run all tests - Cpp codegen":
@@ -229,6 +239,11 @@ task test_mkl_omp, "Run all tests - Intel MKL + OpenMP":
 task test_release, "Run all tests - Release mode":
   test "tests_cpu", " -d:release"
 
+task test_arc_release, "Run all tests under ARC - Release mode":
+  test "tests_cpu", " -d:release --gc:arc"
+
+task test_orc_release, "Run all tests under ORC - Release mode":
+  test "tests_cpu", " -d:release --gc:orc"
 
 template canImport(x: untyped): untyped =
   compiles:

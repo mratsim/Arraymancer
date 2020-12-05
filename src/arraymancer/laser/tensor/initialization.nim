@@ -149,7 +149,8 @@ proc copyFromRaw*[T](dst: var Tensor[T], buffer: ptr T, len: Natural) =
 proc setZero*[T](t: var Tensor[T], check_contiguous: static bool = true) =
   ## Reset/initialize the tensor data to binary zero.
   ## The tensor metadata is not touched.
-  ## Input tensor must be contiguous.
+  ## Input tensor must be contiguous. For seq based Tensors the underlying
+  ## sequence will be reset and set back to the tensors size.
   ##
   ## ⚠️ Warning:
   ##    The data of the input tensor will be overwritten.
@@ -163,6 +164,7 @@ proc setZero*[T](t: var Tensor[T], check_contiguous: static bool = true) =
 
   when not (T is KnownSupportsCopyMem):
     t.storage.raw_buffer.reset()
+    t.storage.raw_buffer.setLen(t.size)
   else:
     omp_parallel_chunks(
           t.size, chunk_offset, chunk_size,
@@ -176,13 +178,17 @@ proc newTensor*[T](shape: varargs[int]): Tensor[T] =
   var size: int
   initTensorMetadata(result, size, shape)
   allocCpuStorage(result.storage, size)
-  setZero(result, check_contiguous = false)
+  when T is KnownSupportsCopyMem:
+    # seq based tensors are zero'ed by default upon construction
+    setZero(result, check_contiguous = false)
 
 proc newTensor*[T](shape: Metadata): Tensor[T] =
   var size: int
   initTensorMetadata(result, size, shape)
   allocCpuStorage(result.storage, size)
-  setZero(result, check_contiguous = false)
+  when T is KnownSupportsCopyMem:
+    # seq based tensors are zero'ed by default upon construction
+    setZero(result, check_contiguous = false)
 
 proc toTensor*(a: openarray, dummy_bugfix: static[int] = 0): auto =
   ## Convert an openarray to a Tensor

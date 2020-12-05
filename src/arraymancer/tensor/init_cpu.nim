@@ -39,6 +39,11 @@ proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noInit, inline.} =
   initTensorMetadata(result, size, shape)
   allocCpuStorage(result.storage, size)
 
+proc newTensorUninit*[T](size: int): Tensor[T] {.noInit, inline.} =
+  ## Overload above taking `varargs[int]` to avoid "expression * cannot be called"
+  ## errors if called in a template. Warning: This ``will`` create a 1D tensor!
+  result = newTensorUninit[T]([size])
+
 proc newTensorUninit*[T](shape: Metadata): Tensor[T] {.noInit, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:

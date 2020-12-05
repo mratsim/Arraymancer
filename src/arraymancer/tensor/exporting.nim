@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import ./data_structure
+import ../private/sequninit
 import sequtils
 
 proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect, deprecated: "This proc cannot be reimplemented in a backward compatible way.".} =
@@ -35,7 +36,12 @@ proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect, deprecated: "This proc ca
   # Due to forward declaration this proc must be declared
   # after "cpu" proc are declared in init_cuda
   when t is Tensor:
-    return t.data
+    result = newSeqUninit[T](t.size)
+    for i in 0 ..< t.size:
+      when T is KnownSupportsCopyMem:
+        result[i] = t.unsafe_raw_offset()[i]
+      else:
+        result[i] = t.storage.raw_buffer[i]
   elif t is CudaTensor:
     return t.cpu.data
 
@@ -52,7 +58,7 @@ proc export_tensor*[T](t: Tensor[T]):
 
   result.shape = contig_t.shape
   result.strides = contig_t.strides
-  result.data = contig_t.data
+  result.data = contig_t.toRawSeq
 
 proc toSeq2D*[T](t: Tensor[T]): seq[seq[T]] =
   ## Exports a rank-2 tensor to a 2D sequence.

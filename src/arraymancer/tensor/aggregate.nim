@@ -153,7 +153,7 @@ proc std*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.} =
   returnEmptyIfEmpty(t)
   sqrt(t.variance(axis))
 
-proc argmax_max*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes: Tensor[T]] {.noInit.} =
+proc argmax_max*[T: SomeNumber](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes: Tensor[T]] {.noInit.} =
   ## Returns (indices, maxes) along an axis
   ##
   ## Input:

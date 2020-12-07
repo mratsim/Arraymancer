@@ -14,28 +14,49 @@
 
 import  ./backend/openmp,
         ./private/p_checks,
-        ./data_structure, ./init_cpu, ./accessors
+        ./data_structure, ./init_cpu, ./accessors, ./accessors_macros_write
 
 import sugar except enumerate
 
 # ####################################################################
 # Mapping over tensors
 
-template apply_inline*(t: var Tensor, op: untyped): untyped =
+template apply_inline*[T: KnownSupportsCopyMem](t: var Tensor[T], op: untyped): untyped =
   # TODO, if t is a result of a function
   # how to ensure that it is not called twice
   omp_parallel_blocks(block_offset, block_size, t.size):
     for x {.inject.} in t.mitems(block_offset, block_size):
       x = op
 
-template apply2_inline*[T,U](dest: var Tensor[T], src: Tensor[U], op: untyped): untyped =
+template apply_inline*[T: not KnownSupportsCopyMem](t: var Tensor[T], op: untyped): untyped =
+  # TODO, if t is a result of a function
+  # how to ensure that it is not called twice
+  for x {.inject.} in t.mitems():
+    x = op
+
+template apply2_inline*[T: KnownSupportsCopyMem; U](dest: var Tensor[T],
+                                                   src: Tensor[U],
+                                                   op: untyped): untyped =
   # TODO, if dest is a result of a function
   # how to ensure that it is not called twice
   omp_parallel_blocks(block_offset, block_size, dest.size):
     for x {.inject.}, y {.inject.} in mzip(dest, src, block_offset, block_size):
       x = op
 
-template apply3_inline*[T,U,V](dest: var Tensor[T], src1: Tensor[U], src2: Tensor[V], op: untyped): untyped =
+template apply2_inline*[T: not KnownSupportsCopyMem; U](dest: var Tensor[T],
+                                                   src: Tensor[U],
+                                                   op: untyped): untyped =
+  # TODO, if dest is a result of a function
+  # how to ensure that it is not called twice
+  ## NOTE: this is an overload of `apply2_inline`, which also works with
+  ##
+  for x {.inject.}, y {.inject.} in mzip(dest, src):
+    x = op
+
+template apply3_inline*[T: KnownSupportsCopyMem;U,V](dest: var Tensor[T],
+                                                     src1: Tensor[U],
+                                                     src2: Tensor[V],
+                                                     op: untyped): untyped =
   # TODO, if dest is a result of a function
   # how to ensure that it is not called twice
   omp_parallel_blocks(block_offset, block_size, dest.size):
@@ -52,12 +73,16 @@ template map_inline*[T](t: Tensor[T], op:untyped): untyped =
       op
   ))
 
-  var dest = newTensorUninit[outType](z.shape)
-  let data = dest.unsafe_raw_buf()
-
-  omp_parallel_blocks(block_offset, block_size, dest.size):
-    for i, x {.inject.} in enumerate(z, block_offset, block_size):
-      data[i] = op
+  when outType is KnownSupportsCopyMem:
+    var dest = newTensorUninit[outType](z.shape)
+    let data = dest.unsafe_raw_offset()
+    omp_parallel_blocks(block_offset, block_size, dest.size):
+      for i, x {.inject.} in enumerate(z, block_offset, block_size):
+        data[i] = op
+  else:
+    var dest = newTensorUninit[outType](z.shape)
+    for i, x {.inject.} in enumerate(z):
+      dest[i] = op
   dest
 
 template map2_inline*[T, U](t1: Tensor[T], t2: Tensor[U], op:untyped): untyped =
@@ -76,12 +101,18 @@ template map2_inline*[T, U](t1: Tensor[T], t2: Tensor[U], op:untyped): untyped =
       op
   ))
 
-  var dest = newTensorUninit[outType](z1.shape)
-  let data = dest.unsafe_raw_buf()
 
-  omp_parallel_blocks(block_offset, block_size, z1.size):
-    for i, x {.inject.}, y {.inject.} in enumerateZip(z1, z2, block_offset, block_size):
-      data[i] = op
+  when outType is KnownSupportsCopyMem:
+    var dest = newTensorUninit[outType](z1.shape)
+    let data = dest.unsafe_raw_buf()
+
+    omp_parallel_blocks(block_offset, block_size, z1.size):
+      for i, x {.inject.}, y {.inject.} in enumerateZip(z1, z2, block_offset, block_size):
+        data[i] = op
+  else:
+    var dest = newTensorUninit[outType](z1.shape)
+    for i, x {.inject.}, y {.inject.} in enumerateZip(z1, z2):
+      dest[i] = op
   dest
 
 template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:untyped): untyped =
@@ -101,13 +132,18 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
       var z{.inject.}: type(items(z3));
       op
   ))
+  when outType is KnownSupportsCopyMem:
+    var dest = newTensorUninit[outType](z1.shape)
+    let data = dest.unsafe_raw_offset()
 
-  var dest = newTensorUninit[outType](z1.shape)
-  let data = dest.unsafe_raw_offset()
+    omp_parallel_blocks(block_offset, block_size, z1.size):
+      for i, x {.inject.}, y {.inject.}, z {.inject.} in enumerateZip(z1, z2, z3, block_offset, block_size):
+        data[i] = op
+  else:
+    var dest = newTensorUninit[outType](z1.shape)
+    for i, x {.inject.}, y {.inject.}, z {.inject.} in enumerateZip(z1, z2, z3):
+      dest[i] = op
 
-  omp_parallel_blocks(block_offset, block_size, z1.size):
-    for i, x {.inject.}, y {.inject.}, z {.inject.} in enumerateZip(z1, z2, z3, block_offset, block_size):
-      data[i] = op
   dest
 
 proc map*[T; U: not (ref|string|seq)](t: Tensor[T], f: T -> U): Tensor[U] {.noInit.} =

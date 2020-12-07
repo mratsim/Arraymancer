@@ -138,24 +138,33 @@ proc isContiguous*(t: AnyTensor): bool {.noSideEffect, inline.}=
 # ##################
 
 
-proc get_data_ptr*[T](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
+proc get_data_ptr*[T: KnownSupportsCopyMem](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the real start of its data (no offset)
   cast[ptr T](t.storage.raw_buffer)
 
-proc get_offset_ptr*[T](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
+proc get_data_ptr*[T: not KnownSupportsCopyMem](t: AnyTensor[T]): ptr T {.error: "`get_data_ptr`" &
+  " cannot be safely used for GC'ed types!".}
+
+proc get_offset_ptr*[T: KnownSupportsCopyMem](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the offset start of its data
   t.storage.raw_buffer[t.offset].unsafeAddr
 
-proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.noSideEffect, inline, deprecated: "Use unsafe_raw_offset instead".}=
+proc get_offset_ptr*[T: not KnownSupportsCopyMem](t: AnyTensor[T]): ptr T {.error: "`get_offset_ptr`" &
+  " cannot be safely used for GC'ed types!".}
+
+proc dataArray*[T: KnownSupportsCopyMem](t: Tensor[T]): ptr UncheckedArray[T] {.noSideEffect, inline, deprecated: "Use unsafe_raw_offset instead".}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the offset start of the data.
   ##       Return value supports array indexing.
-  (ptr UncheckedArray[T])(t.unsafe_raw_offset)
+  cast[ptr UncheckedArray[T]](t.unsafe_raw_offset[t.offset].unsafeAddr)
+
+proc dataArray*[T: not KnownSupportsCopyMem](t: Tensor[T]): ptr UncheckedArray[T] {.error: "`dataArray` " &
+  " is deprecated for mem copyable types and not supported for GC'ed types!".}

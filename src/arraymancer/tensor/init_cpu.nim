@@ -77,8 +77,8 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit.} =
     forEachContiguous x in result:
       x = value
   else:
-    forEachContiguousSerial x in result:
-      x = value
+    for i in 0 ..< result.size:
+      result[i] = value
 
 proc newTensorWith*[T](shape: Metadata, value: T): Tensor[T] {.noInit.} =
   ## Creates a new Tensor filled with the given value
@@ -98,8 +98,8 @@ proc newTensorWith*[T](shape: Metadata, value: T): Tensor[T] {.noInit.} =
     forEachContiguous x in result:
       x = value
   else:
-    forEachContiguousSerial x in result:
-      x = value
+    for i in 0 ..< result.size:
+      result[i] = value
 
 # newTensor is defined in laser/tensor/initialization
 

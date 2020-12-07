@@ -43,6 +43,12 @@ Breaking changes
 - Some procedures now have side-effects inherited from Nim's `allocShared`
   - `variable` from the `autograd` module
   - `solve` from the `linear_algebra` module
+- `io_hdf5` is not imported automatically anymore if the module is
+  installed. The reason for this is that the HDF5 library runs code in
+  global scope to initialize the HDF5 library. This means dead code
+  elimination does not work and a binary will always depend on the
+  HDF5 shared library if the `nimhdf5` is installed, even if not used.
+  Simply import using `import arraymancer/io/io_hdf5`.
 
 Deprecation
 - `MetadataArray` is now `Metadata`

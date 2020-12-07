@@ -73,7 +73,6 @@ proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
     new(storage)
     storage.raw_buffer.newSeq(size)
 
-
 func rank*(t: Tensor): range[0 .. LASER_MAXRANK] {.inline.} =
   t.shape.len
 
@@ -108,17 +107,16 @@ func is_C_contiguous*(t: Tensor): bool =
 
 template unsafe_raw_offset_impl(offset: int) {.dirty.} =
   bind KnownSupportsCopyMem, withCompilerOptimHints, assume_aligned
-  when T is KnownSupportsCopyMem:
-    withCompilerOptimHints()
-    when aligned:
-      let raw_pointer{.restrict.} = assume_aligned t.storage.raw_buffer
-    else:
-      let raw_pointer{.restrict.} = t.storage.raw_buffer
-    result = cast[type result](raw_pointer[offset].addr)
+  static: assert T is KnownSupportsCopyMem, "unsafe_raw access only supported for " &
+    "mem-copyable types!"
+  withCompilerOptimHints()
+  when aligned:
+    let raw_pointer{.restrict.} = assume_aligned t.storage.raw_buffer
   else:
-    result = cast[type result](t.storage.raw_buffer[offset].addr)
+    let raw_pointer{.restrict.} = t.storage.raw_buffer
+  result = cast[type result](raw_pointer[offset].addr)
 
-func unsafe_raw_buf*[T](t: Tensor[T], aligned: static bool = true): RawImmutableView[T] {.inline.} =
+func unsafe_raw_buf*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): RawImmutableView[T] {.inline.} =
   ## Returns a view to the start of the data buffer
   ##
   ## Unsafe: the pointer can outlive the input tensor
@@ -127,7 +125,7 @@ func unsafe_raw_buf*[T](t: Tensor[T], aligned: static bool = true): RawImmutable
   ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
   unsafe_raw_offset_impl(0)
 
-func unsafe_raw_buf*[T](t: var Tensor[T], aligned: static bool = true): RawMutableView[T] {.inline.} =
+func unsafe_raw_buf*[T: KnownSupportsCopyMem](t: var Tensor[T], aligned: static bool = true): RawMutableView[T] {.inline.} =
   ## Returns a view to the start of the data buffer
   ##
   ## Unsafe: the pointer can outlive the input tensor
@@ -136,7 +134,7 @@ func unsafe_raw_buf*[T](t: var Tensor[T], aligned: static bool = true): RawMutab
   ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
   unsafe_raw_offset_impl(0)
 
-func unsafe_raw_offset*[T](t: Tensor[T], aligned: static bool = true): RawImmutableView[T] {.inline.} =
+func unsafe_raw_offset*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): RawImmutableView[T] {.inline.} =
   ## Returns a view to the start of the valid data
   ##
   ## Unsafe: the pointer can outlive the input tensor
@@ -145,7 +143,7 @@ func unsafe_raw_offset*[T](t: Tensor[T], aligned: static bool = true): RawImmuta
   ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
   unsafe_raw_offset_impl(t.offset)
 
-func unsafe_raw_offset*[T](t: var Tensor[T], aligned: static bool = true): RawMutableView[T] {.inline.} =
+func unsafe_raw_offset*[T: KnownSupportsCopyMem](t: var Tensor[T], aligned: static bool = true): RawMutableView[T] {.inline.} =
   ## Returns a view to the start of the valid data
   ##
   ## Unsafe: the pointer can outlive the input tensor
@@ -153,6 +151,10 @@ func unsafe_raw_offset*[T](t: var Tensor[T], aligned: static bool = true): RawMu
   ## while the pointer is valid, all data accesses will be through it (no aliasing)
   ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
   unsafe_raw_offset_impl(t.offset)
+
+func unsafe_raw_buf*[T: not KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): ptr UncheckedArray[T]  {.error: "Access via raw pointer forbidden for non mem copyable types!".}
+
+func unsafe_raw_offset*[T: not KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): ptr UncheckedArray[T] {.error: "Access via raw pointer forbidden for non mem copyable types!".}
 
 macro raw_data_unaligned*(body: untyped): untyped =
   ## Within this code block, all raw data accesses will not be

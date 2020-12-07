@@ -99,6 +99,33 @@ proc atIndexMut*[T](t: var Tensor[T], idx: varargs[int], val: T) {.noSideEffect,
   else:
     t.storage.raw_buffer[t.getIndex(idx)] = val
 
+#[
+The following accessors represent a ``very`` specific workaround.
+The templates used for the iterators in this file make use of `unsafe_raw_offset`.
+This is not valid for `not KnownSupportsCopyMem` types. That's why we
+define these helper accessors, which access the corresponding position
+for `seq` based Tensors, including the offset!
+Instead of defining a `Raw(Im)MutableView` type, we simply define a template
+to the input tensor, like so:
+
+ .. code-block:: nim
+   when getSubType(t) is KnownSupportsCopyMem:
+     let data = t.unsafe_raw_offset()
+   else:
+     template data: untyped = t
+
+The `data` template is then given to the following code, which simply accesses
+the input tensor. Since it is a seq based tensor, it will use the accessors
+below.
+]#
+
+func `[]`[T: not KnownSupportsCopyMem](t: Tensor[T], idx: int): T =
+  t.storage.raw_buffer[t.offset + idx]
+func `[]`[T: not KnownSupportsCopyMem](t: var Tensor[T], idx: int): var T =
+  t.storage.raw_buffer[t.offset + idx]
+func `[]=`[T: not KnownSupportsCopyMem](t: var Tensor[T], idx: int, val: T) =
+    t.storage.raw_buffer[t.offset + idx] = val
+
 ## Iterators
 type
   IterKind* = enum
@@ -143,7 +170,11 @@ template stridedIteration*(strider: IterKind, t, iter_offset, iter_size: typed):
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
 
   # Get tensor data address with offset builtin
-  let data = t.unsafe_raw_offset()
+  # only reading here, pointer access is safe even for ref types
+  when getSubType(type(t)) is KnownSupportsCopyMem:
+    let data = t.unsafe_raw_offset()
+  else:
+    template data: untyped = t
 
   # Optimize for loops in contiguous cases
   if t.is_C_Contiguous:
@@ -159,7 +190,11 @@ template stridedCoordsIteration*(t, iter_offset, iter_size: typed): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides. (coords)
 
   # Get tensor data address with offset builtin
-  let data = t.unsafe_raw_offset()
+  # only reading here, pointer access is safe even for ref types
+  when getSubType(type(t)) is KnownSupportsCopyMem:
+    let data = t.unsafe_raw_offset()
+  else:
+    template data: untyped = t
   let rank = t.rank
 
   initStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
@@ -173,15 +208,20 @@ template dualStridedIterationYield*(strider: IterKind, t1data, t2data, i, t1_ite
   elif strider == IterKind.Iter_Values: yield (i, t1data[t1_iter_pos], t2data[t2_iter_pos])
   elif strider == IterKind.Offset_Values: yield (t1_iter_pos, t1data[t1_iter_pos], t2data[t2_iter_pos])  ## TODO: remove workaround for C++ backend
 
-
 template dualStridedIteration*(strider: IterKind, t1, t2, iter_offset, iter_size: typed): untyped =
   ## Iterate over two Tensors, displaying data as in C order, whatever the strides.
+
   let t1_contiguous = t1.is_C_Contiguous()
   let t2_contiguous = t2.is_C_Contiguous()
 
-  # Get tensor data address with offset builtin
-  let t1data = t1.unsafe_raw_offset()
-  let t2data = t2.unsafe_raw_offset()
+  when getSubType(type(t1)) is KnownSupportsCopyMem:
+    let t1data = t1.unsafe_raw_offset()
+  else:
+    template t1data: untyped = t1
+  when getSubType(type(t2)) is KnownSupportsCopyMem:
+    let t2data = t2.unsafe_raw_offset()
+  else:
+    template t2data: untyped = t2
 
   # Optimize for loops in contiguous cases
   if t1_contiguous and t2_contiguous:
@@ -219,9 +259,18 @@ template tripleStridedIteration*(strider: IterKind, t1, t2, t3, iter_offset, ite
 
   # Get tensor data address with offset builtin
   withMemoryOptimHints()
-  let t1data = t1.unsafe_raw_offset()
-  let t2data = t2.unsafe_raw_offset()
-  let t3data = t3.unsafe_raw_offset()
+  when getSubType(type(t1)) is KnownSupportsCopyMem:
+    let t1data = t1.unsafe_raw_offset()
+  else:
+    template t1data: untyped = t1
+  when getSubType(type(t2)) is KnownSupportsCopyMem:
+    let t2data = t2.unsafe_raw_offset()
+  else:
+    template t2data: untyped = t2
+  when getSubType(type(t3)) is KnownSupportsCopyMem:
+    let t3data = t3.unsafe_raw_offset()
+  else:
+    template t3data: untyped = t3
 
   # Optimize for loops in contiguous cases
   # Note that not all cases are handled here, just some probable ones

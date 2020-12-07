@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import  ../backend/[global_config, memory_optimization_hints],
+        ../../private/ast_utils,
         ../data_structure,
         ./p_checks
 
@@ -77,26 +78,26 @@ proc getContiguousIndex*[T](t: Tensor[T], idx: int): int {.noSideEffect,inline.}
 proc atIndex*[T](t: Tensor[T], idx: varargs[int]): T {.noSideEffect,inline.} =
   ## Get the value at input coordinates
   ## This used to be `[]` before slicing was implemented
-  result = t.unsafe_raw_buf[t.getIndex(idx)]
+  when T is KnownSupportsCopyMem:
+    result = t.unsafe_raw_buf[t.getIndex(idx)]
+  else:
+    result = t.storage.raw_buffer[t.getIndex(idx)]
 
 proc atIndex*[T](t: var Tensor[T], idx: varargs[int]): var T {.noSideEffect,inline.} =
   ## Get the value at input coordinates
   ## This allows inplace operators t[1,2] += 10 syntax
-  result = t.unsafe_raw_buf[t.getIndex(idx)]
+  when T is KnownSupportsCopyMem:
+    result = t.unsafe_raw_buf[t.getIndex(idx)]
+  else:
+    result = t.storage.raw_buffer[t.getIndex(idx)]
 
 proc atIndexMut*[T](t: var Tensor[T], idx: varargs[int], val: T) {.noSideEffect,inline.} =
   ## Set the value at input coordinates
   ## This used to be `[]=` before slicing was implemented
-  when defined(gcDestructors):
-    # for ARC `unsafe_raw_buf` works for all types
+  when T is KnownSupportsCopyMem:
     t.unsafe_raw_buf[t.getIndex(idx)] = val
   else:
-    # on the normal GC using `unsafe_raw_buf` for `seq` based tensors
-    # breaks the reference counting (I believe). The code segfaults in any case.
-    when T is KnownSupportsCopyMem:
-      t.unsafe_raw_buf[t.getIndex(idx)] = val
-    else:
-      t.storage.raw_buffer[t.getIndex(idx)] = val
+    t.storage.raw_buffer[t.getIndex(idx)] = val
 
 ## Iterators
 type

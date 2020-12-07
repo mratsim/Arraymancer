@@ -14,7 +14,7 @@ when NimVersion < "1.1.0":
   import sugar
 
 type
-  KnownSupportsCopyMem* = SomeNumber | char | Complex[float64] | Complex[float32]
+  KnownSupportsCopyMem* = SomeNumber | char | Complex[float64] | Complex[float32] | bool
 
   RawImmutableView*[T] = distinct ptr UncheckedArray[T]
   RawMutableView*[T] = distinct ptr UncheckedArray[T]

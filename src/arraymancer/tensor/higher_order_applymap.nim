@@ -146,7 +146,7 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
 
   dest
 
-proc map*[T; U: not (ref|string|seq)](t: Tensor[T], f: T -> U): Tensor[U] {.noInit.} =
+proc map*[T; U](t: Tensor[T], f: T -> U): Tensor[U] {.noInit.} =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
   ## Usage with Nim's ``future`` module:
   ##  .. code:: nim
@@ -163,21 +163,10 @@ proc map*[T; U: not (ref|string|seq)](t: Tensor[T], f: T -> U): Tensor[U] {.noIn
   ##     a +. 1
   ## ``map`` is especially useful to do multiple element-wise operations on a tensor in a single loop over the data.
   ##
-  ## For OpenMP compatibility, this ``map`` doesn't allow ref types as result like seq or string
-
+  ## For types that are not mem-copyable types (ref, string, etc.) a non OpenMP accelerated version of
+  ## `apply2_inline` is used internally!
   result = newTensorUninit[U](t.shape)
   result.apply2_inline(t, f(y))
-
-proc map*[T; U: ref|string|seq](t: Tensor[T], f: T -> U): Tensor[U] {.noInit,noSideEffect.}=
-  ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
-  ##
-  ##
-  ## This is a fallback for ref types as
-  ## OpenMP will not work with if the results allocate memory managed by GC.
-
-  result = newTensorUninit[U](t.shape)
-  for res, val in mzip(result, t):
-    res = f(val)
 
 proc apply*[T](t: var Tensor[T], f: T -> T) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
@@ -197,10 +186,9 @@ proc apply*[T](t: var Tensor[T], f: T -> T) =
   ##     proc plusone[T](x: T): T =
   ##       x + 1
   ##     a.apply(plusone) # Apply the function plusone in-place
-
   t.apply_inline(f(x))
 
-proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
+proc apply*[T: KnownSupportsCopyMem](t: var Tensor[T], f: proc(x:var T)) =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
   ##
   ## Input:
@@ -223,7 +211,7 @@ proc apply*[T](t: var Tensor[T], f: proc(x:var T)) =
     for x in t.mitems(block_offset, block_size):
       f(x)
 
-proc map2*[T, U; V: not (ref|string|seq)](t1: Tensor[T],
+proc map2*[T, U; V: KnownSupportsCopyMem](t1: Tensor[T],
                                           f: (T,U) -> V,
                                           t2: Tensor[U]): Tensor[V] {.noInit.} =
   ## Apply a binary function in an element-wise manner on two Tensor[T], returning a new Tensor.
@@ -253,9 +241,9 @@ proc map2*[T, U; V: not (ref|string|seq)](t1: Tensor[T],
   result = newTensorUninit[V](t1.shape)
   result.apply3_inline(t1, t2, f(y,z))
 
-proc map2*[T, U; V: ref|string|seq](t1: Tensor[T],
-                                    f: (T,U) -> V,
-                                    t2: Tensor[U]): Tensor[V] {.noInit,noSideEffect.}=
+proc map2*[T, U; V: not KnownSupportsCopyMem](t1: Tensor[T],
+                                              f: (T,U) -> V,
+                                              t2: Tensor[U]): Tensor[V] {.noInit,noSideEffect.}=
   ## Apply a binary function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ##
   ##
@@ -268,10 +256,11 @@ proc map2*[T, U; V: ref|string|seq](t1: Tensor[T],
   for r, a, b in mzip(result, t1, t2):
     r = f(t1, t2)
 
-proc apply2*[T, U](a: var Tensor[T],
-                   f: proc(x:var T, y:T), # We can't use the nice future syntax here
-                   b: Tensor[U]) =
+proc apply2*[T: KnownSupportsCopyMem, U](a: var Tensor[T],
+                                         f: proc(x:var T, y:T), # We can't use the nice future syntax here
+                                                b: Tensor[U]) =
   ## Apply a binary in-place function in an element-wise manner on two Tensor[T], returning a new Tensor.
+  ## Overload for types that are not mem-copyable.
   ##
   ## The function is applied on the elements with the same coordinates.
   ##
@@ -296,3 +285,31 @@ proc apply2*[T, U](a: var Tensor[T],
   omp_parallel_blocks(block_offset, block_size, a.size):
     for x, y in mzip(a, b, block_offset, block_size):
       f(x, y)
+
+proc apply2*[T: not KnownSupportsCopyMem; U](a: var Tensor[T],
+                                             f: proc(x:var T, y: T), # We can't use the nice future syntax here
+                                                    b: Tensor[U]) =
+  ## Apply a binary in-place function in an element-wise manner on two Tensor[T], returning a new Tensor.
+  ## Overload for types that are not mem-copyable.
+  ##
+  ## The function is applied on the elements with the same coordinates.
+  ##
+  ## Input:
+  ##   - A var tensor
+  ##   - A function
+  ##   - A tensor
+  ## Result:
+  ##   - Nothing, the ``var``Tensor is modified in-place
+  ## Usage with named functions:
+  ##  .. code:: nim
+  ##     proc `**=`[T](x, y: T) = # We create a new in-place power `**=` function that works on 2 scalars
+  ##       x = pow(x, y)
+  ##     a.apply2(`**=`, b)
+  ##     # Or
+  ##     apply2(a, `**=`, b)
+  ## ``apply2`` is especially useful to do multiple element-wise operations on a two tensors in a single loop over the data.
+  ## for example ```A += alpha * sin(A) + B```
+  when compileOption("boundChecks"):
+    check_elementwise(a,b)
+  for x, y in mzip(a, b):
+    f(x, y)

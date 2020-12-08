@@ -73,6 +73,23 @@ proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
     new(storage)
     storage.raw_buffer.newSeq(size)
 
+proc cpuStorageFromBuffer*[T: KnownSupportsCopyMem](
+    storage: var CpuStorage[T],
+    rawBuffer: pointer,
+    size: int) =
+  ## Create a `CpuStorage`, which stores data from a given raw pointer, which it does
+  ## ``not`` own. The destructor/finalizer will be a no-op, because the memory is
+  ## marked as not owned by the `CpuStorage`.
+  ##
+  ## The input buffer must be a raw `pointer`.
+  when not defined(gcDestructors):
+    new(storage, finalizer[T])
+  else:
+    new(storage)
+  storage.memalloc = rawBuffer
+  storage.isMemOwner = false
+  storage.raw_buffer = cast[ptr UncheckedArray[T]](storage.memalloc)
+
 func rank*(t: Tensor): range[0 .. LASER_MAXRANK] {.inline.} =
   t.shape.len
 

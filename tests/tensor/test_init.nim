@@ -182,5 +182,26 @@ proc main() =
         doAssert t.x.storage.isNil, "If you see this message, bug Nim #16185 is fixed." &
           " Remove this test or set it to `not t.x.isNil`!"
 
+    test "Init tensor from raw buffer":
+      let size = 100
+      let buf = allocShared0(sizeof(int) * size)
+      var data = cast[ptr UncheckedArray[int]](buf)
+      var exp = newSeq[int](size)
+      for i in 0 ..< size:
+        data[i] = i
+        exp[i] = i
+      block FromRawPtr:
+        let t = fromBuffer[int](buf, size)
+        check t == exp.toTensor()
+        check t.rank == 1
+        check t.shape[0] == 100
+      block FromPtrUncheckedArray:
+        var data = cast[ptr UncheckedArray[int]](buf)
+        let t = fromBuffer(data, size)
+        check t == exp.toTensor()
+        check t.rank == 1
+        check t.shape[0] == 100
+      deallocShared(buf)
+
 main()
 GC_fullCollect()

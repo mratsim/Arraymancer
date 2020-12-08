@@ -16,7 +16,10 @@ Overview (TODO)
 
 This release integrates part of the Laser Backend (https://github.com/numforge/laser) that has been brewing since the end of 2018. The new backend provides the following features:
 - Tensors can now either be a view over a memory buffer or manage the memory (like before).
-  The "view" allows zero-copy with libraries using the same multi-dimensional array/tensor memory layout in particular Numpy, PyTorch and Tensorflow or even image libraries.
+  The "view" allows zero-copy with libraries using the same
+  multi-dimensional array/tensor memory layout in particular Numpy,
+  PyTorch and Tensorflow or even image libraries. This can be achieved
+  using the new `fromBuffer` procedures to create a tensor.
 - strings, ref types and types with non-trivial destructors will still always own and manager their memory buffer.
   Trivial types (plain-old data) like integers, floats or complex can use the zero-copy scheme
   by setting `isMemOwner` to false and then point `raw_buffer` to the preallocated buffer.

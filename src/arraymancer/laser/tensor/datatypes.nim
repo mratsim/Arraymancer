@@ -21,6 +21,10 @@ type
 
   Metadata* = DynamicStackArray[int]
 
+  # On CPU, the tensor datastructures and basic accessors
+  # are defined in laser/tensor/datatypes
+  MetadataArray* {.deprecated: "Use Metadata instead".} = Metadata
+
   Tensor*[T] = object                    # Total stack: 128 bytes = 2 cache-lines
     shape*: Metadata                     # 56 bytes
     strides*: Metadata                   # 56 bytes
@@ -37,6 +41,16 @@ type
     else: # Tensors of strings, other ref types or non-trivial destructors
       raw_buffer*: seq[T]                # 8 bytes (16 for seq v2 backed by destructors?)
 
+proc initMetadataArray*(len: int): MetadataArray {.inline.} =
+  result.len = len
+
+proc toMetadataArray*(s: varargs[int]): MetadataArray {.inline.} =
+  # boundsChecks automatically done for array indexing
+  # when compileOption("boundChecks"):
+  #   assert s.len <= MAXRANK
+  result.len = s.len
+  for i in 0..<s.len:
+    result.data[i] = s[i]
 
 # note: the finalizer has to be here for ARC to like it
 when not defined(gcDestructors):
@@ -89,12 +103,6 @@ proc cpuStorageFromBuffer*[T: KnownSupportsCopyMem](
   storage.memalloc = rawBuffer
   storage.isMemOwner = false
   storage.raw_buffer = cast[ptr UncheckedArray[T]](storage.memalloc)
-
-func rank*(t: Tensor): range[0 .. LASER_MAXRANK] {.inline.} =
-  t.shape.len
-
-func size*(t: Tensor): Natural =
-  t.shape.product
 
 func is_C_contiguous*(t: Tensor): bool =
   ## Check if the tensor follows C convention / is row major

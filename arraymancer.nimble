@@ -67,11 +67,11 @@ template mkl_singleSwitches(switches: var string) =
 # NVCC config
 template cudaSwitches(switches: var string) =
   switches.add " --cincludes:/opt/cuda/include"
-  switches.add " --cc:gcc" # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
-  switches.add " --gcc.exe:/opt/cuda/bin/nvcc"
-  switches.add " --gcc.linkerexe:/opt/cuda/bin/nvcc"
-  switches.add " --gcc.cpp.exe:/opt/cuda/bin/nvcc"
-  switches.add " --gcc.cpp.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --cc:clang" # We trick Nim about nvcc being clang, pending https://github.com/nim-lang/Nim/issues/6372
+  switches.add " --clang.exe:/opt/cuda/bin/nvcc"
+  switches.add " --clang.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --clang.cpp.exe:/opt/cuda/bin/nvcc"
+  switches.add " --clang.cpp.linkerexe:/opt/cuda/bin/nvcc"
   # Due to the __ldg intrinsics in kernels
   # we only support compute capabilities 3.5+
   # See here: http://docs.nvidia.com/cuda/pascal-compatibility-guide/index.html
@@ -85,11 +85,11 @@ template cudaSwitches(switches: var string) =
 template cuda_mkl_openmp(switches: var string) =
   switches.mkl_threadedSwitches()
   switches.add " --cincludes:/opt/cuda/include"
-  switches.add " --cc:gcc" # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
-  switches.add " --gcc.exe:/opt/cuda/bin/nvcc"
-  switches.add " --gcc.linkerexe:/opt/cuda/bin/nvcc"
-  switches.add " --gcc.cpp.exe:/opt/cuda/bin/nvcc"
-  switches.add " --gcc.cpp.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --cc:clang" # We trick Nim about nvcc being clang, pending https://github.com/nim-lang/Nim/issues/6372
+  switches.add " --clang.exe:/opt/cuda/bin/nvcc"
+  switches.add " --clang.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --clang.cpp.exe:/opt/cuda/bin/nvcc"
+  switches.add " --clang.cpp.linkerexe:/opt/cuda/bin/nvcc"
 
   # Note: the switches below might conflict with nim.cfg
   # switches.add " --gcc.options.always:\"-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native\""

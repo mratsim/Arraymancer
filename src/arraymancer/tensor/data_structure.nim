@@ -24,10 +24,6 @@ export nimblas.OrderType, complex
 export datatypes, dynamic_stack_arrays
 
 type
-  # On CPU, the tensor datastructures and basic accessors
-  # are defined in laser/tensor/datatypes
-  MetadataArray* {.deprecated: "Use Metadata instead".} = Metadata
-
   CudaStorage*[T: SomeFloat] = object
     ## Opaque seq-like structure for storage on the Cuda backend.
     ##
@@ -49,8 +45,8 @@ type
     ##   Assignment ```var a = b``` does not copy the data. Data modification on one CudaTensor will be reflected on the other.
     ##   However modification on metadata (shape, strides or offset) will not affect the other tensor.
     ##   Explicit copies can be made with ``clone``: ```var a = b.clone```
-    shape*: MetadataArray
-    strides*: MetadataArray
+    shape*: Metadata
+    strides*: Metadata
     offset*: int
     storage*: CudaStorage[T]
 
@@ -71,8 +67,8 @@ type
     ##   Assignment ```var a = b``` does not copy the data. Data modification on one CudaTensor will be reflected on the other.
     ##   However modification on metadata (shape, strides or offset) will not affect the other tensor.
     ##   Explicit copies can be made with ``clone``: ```var a = b.clone```
-    shape*: MetadataArray
-    strides*: MetadataArray
+    shape*: Metadata
+    strides*: Metadata
     offset*: int
     storage*: ClStorage[T]
 
@@ -87,7 +83,7 @@ proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.deprecated: "Use copyFromRaw ins
   # This is intended for library writer
   assert s.len > 0
   when T is KnownSupportsCopyMem:
-    t.copyFromRaw(s[0].addr, s.len)
+    t.copyFromRaw(s[0].unsafeaddr, s.len)
   else:
     t.storage.raw_buffer = s
 
@@ -95,9 +91,15 @@ proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.deprecated: "Use copyFromRaw ins
 # Tensor Metadata
 # ################
 
-proc shape_to_strides*(shape: MetadataArray, layout: OrderType = rowMajor, result: var MetadataArray) {.noSideEffect.} =
+func rank*(t: AnyTensor): range[0 .. LASER_MAXRANK] {.inline.} =
+  t.shape.len
+
+func size*(t: AnyTensor): Natural {.inline.} =
+  t.shape.product
+
+proc shape_to_strides*(shape: Metadata, layout: OrderType = rowMajor, result: var Metadata) {.noSideEffect.} =
   ## Input:
-  ##     - A shape (MetadataArray), for example [3,5] for a 3x5 matrix
+  ##     - A shape (Metadata), for example [3,5] for a 3x5 matrix
   ##     - Optionally rowMajor (C layout - default) or colMajor (Fortran)
   ## Returns:
   ##     - The strides in C or Fortran order corresponding to this shape and layout
@@ -117,6 +119,17 @@ proc shape_to_strides*(shape: MetadataArray, layout: OrderType = rowMajor, resul
     result[i] = accum
     accum *= shape[i]
   return
+
+func is_C_contiguous*(t: CudaTensor or ClTensor): bool =
+  ## Check if the tensor follows C convention / is row major
+  var cur_size = 1
+  for i in countdown(t.rank - 1,0):
+    # 1. We should ignore strides on dimensions of size 1
+    # 2. Strides always must have the size equal to the product of the next dimensions
+    if t.shape[i] != 1 and t.strides[i] != cur_size:
+        return false
+    cur_size *= t.shape[i]
+  return true
 
 proc is_F_contiguous*(t: AnyTensor): bool {.noSideEffect, inline.}=
   ## Check if the tensor follows Fortran convention / is column major
@@ -138,7 +151,7 @@ proc isContiguous*(t: AnyTensor): bool {.noSideEffect, inline.}=
 # ##################
 
 
-proc get_data_ptr*[T: KnownSupportsCopyMem](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
+proc get_data_ptr*[T: KnownSupportsCopyMem](t: Tensor[T]): ptr T {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
@@ -148,7 +161,7 @@ proc get_data_ptr*[T: KnownSupportsCopyMem](t: AnyTensor[T]): ptr T {.noSideEffe
 proc get_data_ptr*[T: not KnownSupportsCopyMem](t: AnyTensor[T]): ptr T {.error: "`get_data_ptr`" &
   " cannot be safely used for GC'ed types!".}
 
-proc get_offset_ptr*[T: KnownSupportsCopyMem](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
+proc get_offset_ptr*[T: KnownSupportsCopyMem](t: Tensor[T]): ptr T {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
@@ -157,6 +170,20 @@ proc get_offset_ptr*[T: KnownSupportsCopyMem](t: AnyTensor[T]): ptr T {.noSideEf
 
 proc get_offset_ptr*[T: not KnownSupportsCopyMem](t: AnyTensor[T]): ptr T {.error: "`get_offset_ptr`" &
   " cannot be safely used for GC'ed types!".}
+
+proc get_data_ptr*[T](t: CudaTensor[T] or ClTensor[T]): ptr T {.noSideEffect, inline.}=
+  ## Input:
+  ##     - A tensor
+  ## Returns:
+  ##     - A pointer to the real start of its data (no offset)
+  cast[ptr T](t.storage.Fdata)
+
+proc get_offset_ptr*[T](t: CudaTensor[T] or ClTensor[T]): ptr T {.noSideEffect, inline.}=
+  ## Input:
+  ##     - A tensor
+  ## Returns:
+  ##     - A pointer to the offset start of its data
+  t.storage.Fdata[t.offset].unsafeAddr
 
 proc dataArray*[T: KnownSupportsCopyMem](t: Tensor[T]): ptr UncheckedArray[T] {.noSideEffect, inline, deprecated: "Use unsafe_raw_offset instead".}=
   ## Input:

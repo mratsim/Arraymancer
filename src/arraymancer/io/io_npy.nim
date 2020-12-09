@@ -9,7 +9,7 @@ import
   os, streams, strscans, strformat, parseutils, strutils, endians
 
 func get_parser_metadata[T](header_raw: string):
-  tuple[parser: proc(stream: FileStream): T {.nimcall.}, shape: MetadataArray, layout: OrderType] =
+  tuple[parser: proc(stream: FileStream): T {.nimcall.}, shape: Metadata, layout: OrderType] =
 
   var
     npy_type: string

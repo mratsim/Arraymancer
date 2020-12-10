@@ -5,12 +5,11 @@
 import
   ../private/sequninit,
   ../tensor, ./io_stream_readers,
-  ../tensor/private/p_init_cpu,
-  ../tensor/backend/memory_optimization_hints,
+  ../laser/tensor/initialization,
   os, streams, strscans, strformat, parseutils, strutils, endians
 
 func get_parser_metadata[T](header_raw: string):
-  tuple[parser: proc(stream: FileStream): T {.nimcall.}, shape: MetadataArray, layout: OrderType] =
+  tuple[parser: proc(stream: FileStream): T {.nimcall.}, shape: Metadata, layout: OrderType] =
 
   var
     npy_type: string
@@ -104,11 +103,14 @@ proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noInit.} =
   let (parser, shape, layout) = get_parser_metadata[T](header_raw)
 
   # Read the data
-  tensorCpu(shape, result, layout)
-  result.storage.Fdata = newSeqUninit[T](result.size)
+  var size: int
+  if layout == rowMajor:
+    result.initTensorMetadata(size, shape, rowMajor)
+  else:
+    result.initTensorMetadata(size, shape, colMajor)
+  result.storage.allocCPUStorage(size)
 
-  withMemoryOptimHints()
-  let r_ptr {.restrict.}= result.dataArray
+  let r_ptr = result.unsafe_raw_buf()
 
   for i in 0..<result.size:
     r_ptr[i] = stream.parser

@@ -15,39 +15,42 @@
 import ../../src/arraymancer, ../testutils
 import math, unittest
 
+proc main() =
+  suite "Displaying tensors":
+    test "Display compiles":
+      const
+        a = @[1, 2, 3, 4, 5]
+        b = @[1, 2, 3, 4, 5]
 
-testSuite "Displaying tensors":
-  test "Display compiles":
-    const
-      a = @[1, 2, 3, 4, 5]
-      b = @[1, 2, 3, 4, 5]
+      var
+        vandermonde: seq[seq[int]]
+        row: seq[int]
 
-    var
-      vandermonde: seq[seq[int]]
-      row: seq[int]
+      vandermonde = newSeq[seq[int]]()
 
-    vandermonde = newSeq[seq[int]]()
+      for i, aa in a:
+        row = newSeq[int]()
+        vandermonde.add(row)
+        for j, bb in b:
+          vandermonde[i].add(aa^bb)
 
-    for i, aa in a:
-      row = newSeq[int]()
-      vandermonde.add(row)
-      for j, bb in b:
-        vandermonde[i].add(aa^bb)
+      # @[@[1, 1, 1, 1, 1], @[2, 4, 8, 16, 32], @[3, 9, 27, 81, 243], @[4, 16, 64, 256, 1024], @[5, 25, 125, 625, 3125]]
 
-    # @[@[1, 1, 1, 1, 1], @[2, 4, 8, 16, 32], @[3, 9, 27, 81, 243], @[4, 16, 64, 256, 1024], @[5, 25, 125, 625, 3125]]
+      let t_van = vandermonde.toTensor()
+      when not compiles(echo t_van): check: false
 
-    let t_van = vandermonde.toTensor()
-    when not compiles(echo t_van): check: false
+      # Tensor of shape 5x5 of type "int" on backend "Cpu"
+      # |1      1       1       1       1|
+      # |2      4       8       16      32|
+      # |3      9       27      81      243|
+      # |4      16      64      256     1024|
+      # |5      25      125     625     3125|
 
-    # Tensor of shape 5x5 of type "int" on backend "Cpu"
-    # |1      1       1       1       1|
-    # |2      4       8       16      32|
-    # |3      9       27      81      243|
-    # |4      16      64      256     1024|
-    # |5      25      125     625     3125|
+      # TODO: Better display tests
 
-    # TODO: Better display tests
+    test "Disp3d + Concat + SlicerMut bug with empty tensors":
+      let a = [4, 3, 2, 1, 8, 7, 6, 5].toTensor.reshape(2, 1, 4)
+      discard $a
 
-  test "Disp3d + Concat + SlicerMut bug with empty tensors":
-    let a = [4, 3, 2, 1, 8, 7, 6, 5].toTensor.reshape(2, 1, 4)
-    discard $a
+main()
+GC_fullCollect()

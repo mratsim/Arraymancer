@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./backend/metadataArray
+import ../laser/dynamic_stack_arrays
 
 # ## This file adds slicing syntactic sugar.
 # ## Foo being:

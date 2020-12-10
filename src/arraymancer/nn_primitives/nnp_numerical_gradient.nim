@@ -41,4 +41,4 @@ proc numerical_gradient*[T](input: Tensor[T], f: (proc(x: Tensor[T]): T), h = T(
     val = orig_val - h
     let fb = f(x)
     val = orig_val
-    result.data[i] = (fa - fb) / (2.0.T * h)
+    result.unsafe_raw_buf[i] = (fa - fb) / (2.0.T * h)

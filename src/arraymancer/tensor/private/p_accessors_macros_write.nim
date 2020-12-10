@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/[nested_containers, ast_utils],
+import  ../../laser/private/nested_containers,
+        ../../private/ast_utils,
         ../data_structure, ../accessors_macros_syntax,
-        ../backend/metadataArray,
         ./p_accessors_macros_read,
         ./p_checks,
         ./p_accessors,
@@ -83,7 +83,7 @@ template slicerMutImpl_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa
 
   var data = toSeq(flatIter(oa))
   when compileOption("boundChecks"):
-    check_nested_elements(oa.shape, data.len)
+    check_nested_elements(oa.getShape(), data.len)
 
   # Unfortunately we need to loop twice over data/oa
   # Reason 1: we can't check the iterator length before consuming it

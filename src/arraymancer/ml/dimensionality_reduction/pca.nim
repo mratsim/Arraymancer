@@ -189,7 +189,6 @@ proc pca_detailed*[T: SomeFloat](
   let bessel_correction = T(result.n_observations - 1)
   result.explained_variance = map_inline(S):
     x * x / bessel_correction
-  result.explained_variance = result.explained_variance
 
   # Since we are using SVD truncated to `n_components` we need to
   # refer back to the original matrix for total variance

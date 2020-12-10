@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/sequninit,
-        ../backend/metadataArray,
+import  ../../laser/tensor/initialization,
+        ../../private/sequninit,
         ../data_structure, ../higher_order_applymap,
         ../init_cpu,
-        ./p_init_cpu,
         ./p_checks,
         nimblas
 
@@ -24,26 +23,24 @@ proc contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]) 
   if layout == rowMajor:
     result = t.map_inline(x)
   else: # colMajor
-    tensorCpu(t.shape, result, layout)
-    result.data = newSeqUninit[T](result.size)
+    var size: int
+    initTensorMetadata(result, size, t.shape, colMajor)
+    allocCpuStorage(result.storage, size)
     apply2_inline(result, t):
       y
 
-proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|MetadataArray, result: var Tensor[T]) =
+proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|Metadata, result: var Tensor[T]) =
   result = newTensorUninit[T](new_shape)
   result.apply2_inline(t,y)
 
-proc reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor, layout: OrderType) {.noSideEffect.}=
+proc reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|Metadata, result: var AnyTensor, layout: OrderType) {.noSideEffect.}=
   result.shape.copyFrom(new_shape)
   shape_to_strides(result.shape, layout, result.strides)
   result.offset = t.offset
 
-proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: var AnyTensor) =
+proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|Metadata, result: var AnyTensor) =
   when compileOption("boundChecks"):
-    when new_shape is MetadataArray:
-      check_reshape(t, new_shape)
-    else:
-      check_reshape(t, new_shape.toMetadataArray)
+    check_reshape(t, new_shape)
 
   if t.is_C_contiguous:
     reshape_no_copy(t, new_shape, result, rowMajor)
@@ -54,7 +51,7 @@ proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|MetadataArray, result: v
   else:
     reshape_with_copy(t, new_shape, result)
 
-proc broadcastImpl*(t: var AnyTensor, shape: varargs[int]|MetadataArray) {.noSideEffect.}=
+proc broadcastImpl*(t: var AnyTensor, shape: varargs[int]|Metadata) {.noSideEffect.}=
   when compileOption("boundChecks"):
     assert t.rank == shape.len
 
@@ -77,7 +74,7 @@ proc broadcastImpl*(t: var AnyTensor, shape: varargs[int]|MetadataArray) {.noSid
 proc broadcast2Impl*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T]]) {.noSideEffect.}=
   let rank = max(a.rank, b.rank)
 
-  var shapeA, stridesA, shapeB, stridesB = initMetadataArray(rank) # initialized with 0
+  var shapeA, stridesA, shapeB, stridesB = Metadata(len: rank) # initialized with 0
 
   for i in 0..<rank:
     let shape_A_iter = if i < rank: a.shape[i] else: 1
@@ -124,7 +121,7 @@ proc exch_dim*[T](t: Tensor[T], dim1, dim2: int): Tensor[T] {.noInit,noSideEffec
   swap(result.shape[dim1], result.shape[dim2])
 
 proc permuteImpl*[T](result: var Tensor[T], dims: varargs[int]) {.noSideEffect.} =
-  var perm = dims.toMetadataArray
+  var perm = dims.toMetadata
   for i, p in perm:
     if p != i and p != -1:
       var j = i
@@ -134,7 +131,6 @@ proc permuteImpl*[T](result: var Tensor[T], dims: varargs[int]) {.noSideEffect.}
         if perm[j] == i:
           break
       perm[j] = -1
-
 
 proc squeezeImpl*(t: var AnyTensor) {.noSideEffect.} =
   var idx_real_dim = 0

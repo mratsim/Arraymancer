@@ -67,11 +67,11 @@ template mkl_singleSwitches(switches: var string) =
 # NVCC config
 template cudaSwitches(switches: var string) =
   switches.add " --cincludes:/opt/cuda/include"
-  switches.add " --cc:gcc" # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
-  switches.add " --gcc.exe:/opt/cuda/bin/nvcc"
-  switches.add " --gcc.linkerexe:/opt/cuda/bin/nvcc"
-  switches.add " --gcc.cpp.exe:/opt/cuda/bin/nvcc"
-  switches.add " --gcc.cpp.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --cc:clang" # We trick Nim about nvcc being clang, pending https://github.com/nim-lang/Nim/issues/6372
+  switches.add " --clang.exe:/opt/cuda/bin/nvcc"
+  switches.add " --clang.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --clang.cpp.exe:/opt/cuda/bin/nvcc"
+  switches.add " --clang.cpp.linkerexe:/opt/cuda/bin/nvcc"
   # Due to the __ldg intrinsics in kernels
   # we only support compute capabilities 3.5+
   # See here: http://docs.nvidia.com/cuda/pascal-compatibility-guide/index.html
@@ -85,11 +85,11 @@ template cudaSwitches(switches: var string) =
 template cuda_mkl_openmp(switches: var string) =
   switches.mkl_threadedSwitches()
   switches.add " --cincludes:/opt/cuda/include"
-  switches.add " --cc:gcc" # We trick Nim about nvcc being gcc, pending https://github.com/nim-lang/Nim/issues/6372
-  switches.add " --gcc.exe:/opt/cuda/bin/nvcc"
-  switches.add " --gcc.linkerexe:/opt/cuda/bin/nvcc"
-  switches.add " --gcc.cpp.exe:/opt/cuda/bin/nvcc"
-  switches.add " --gcc.cpp.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --cc:clang" # We trick Nim about nvcc being clang, pending https://github.com/nim-lang/Nim/issues/6372
+  switches.add " --clang.exe:/opt/cuda/bin/nvcc"
+  switches.add " --clang.linkerexe:/opt/cuda/bin/nvcc"
+  switches.add " --clang.cpp.exe:/opt/cuda/bin/nvcc"
+  switches.add " --clang.cpp.linkerexe:/opt/cuda/bin/nvcc"
 
   # Note: the switches below might conflict with nim.cfg
   # switches.add " --gcc.options.always:\"-arch=sm_61 --x cu -Xcompiler -fopenmp -Xcompiler -march=native\""
@@ -171,8 +171,18 @@ task all_tests, "Run all tests - Intel MKL + Cuda + OpenCL + OpenMP":
 task test, "Run all tests - Default BLAS & Lapack":
   test "tests_cpu", "", split = false
 
+task test_arc, "Run all tests under ARC - Default BLAS & Lapack":
+  test "tests_cpu", "--gc:arc", split = false
+
+task test_orc, "Run all tests under ORC - Default BLAS & Lapack":
+  test "tests_cpu", "--gc:orc", split = false
+
 task test_no_lapack, "Run all tests - Default BLAS without lapack":
   let switch = " -d:no_lapack"
+  test "tests_cpu", switch, split = false
+
+task test_no_lapack_arc, "Run all tests - Default BLAS without lapack under ARC":
+  let switch = " -d:no_lapack --gc:arc"
   test "tests_cpu", switch, split = false
 
 task test_cpp, "Run all tests - Cpp codegen":
@@ -229,6 +239,11 @@ task test_mkl_omp, "Run all tests - Intel MKL + OpenMP":
 task test_release, "Run all tests - Release mode":
   test "tests_cpu", " -d:release"
 
+task test_arc_release, "Run all tests under ARC - Release mode":
+  test "tests_cpu", " -d:release --gc:arc"
+
+task test_orc_release, "Run all tests under ORC - Release mode":
+  test "tests_cpu", " -d:release --gc:orc"
 
 template canImport(x: untyped): untyped =
   compiles:

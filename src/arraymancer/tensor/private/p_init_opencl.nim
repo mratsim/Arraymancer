@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import  ../backend/opencl_backend,
-        ../backend/metadataArray,
         ../data_structure
 
 
@@ -37,7 +36,7 @@ proc newClTensor*[T: SomeFloat](
   tensorOpenCL(shape, layout, result)
 
 proc newClTensor*[T: SomeFloat](
-  shape: MetadataArray,
+  shape: Metadata,
   layout: OrderType = rowMajor): ClTensor[T] {.noInit.}=
 
   tensorOpenCL(shape, layout, result)

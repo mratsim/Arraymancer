@@ -91,7 +91,7 @@ proc newCudnnConvKernelDesc*[T: SomeFloat](
     addr filters[0]
   )
 
-proc convOutDims*(input, kernel: CudaTensor, padding, strides, dilation: SizeHW): MetadataArray {.inline, noInit.}=
+proc convOutDims*(input, kernel: CudaTensor, padding, strides, dilation: SizeHW): Metadata {.inline, noInit.}=
 
   ## Each dimension of the (nbDims-2)-D images of the output tensor is computed as followed:
   ##   outputDim = 1 + ( inputDim + 2*pad - (((filterDim-1)*upscaleA)+1) )/ convolutionStride;

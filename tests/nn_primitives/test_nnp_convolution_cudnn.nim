@@ -16,7 +16,7 @@
 import ../../src/arraymancer, ../testutils
 import unittest, sugar
 
-template test_conv(T: typedesc[SomeFloat]) =
+proc test_conv(T: typedesc) =
   test "Conv2d Forward [" & $T & ']':
     let input = [
       [1, 2, 0, 0],

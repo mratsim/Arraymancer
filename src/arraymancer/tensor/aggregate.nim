@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./backend/memory_optimization_hints,
-        ./data_structure,
+import  ./data_structure,
         ./init_cpu,
         ./higher_order_foldreduce,
         ./math_functions,
@@ -21,7 +20,7 @@ import  ./backend/memory_optimization_hints,
         ./algorithms,
         ./private/p_empty_tensors,
         math
-        
+
 import complex except Complex64, Complex32
 
 # ### Standard aggregate functions
@@ -154,7 +153,7 @@ proc std*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.} =
   returnEmptyIfEmpty(t)
   sqrt(t.variance(axis))
 
-proc argmax_max*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes: Tensor[T]] {.noInit.} =
+proc argmax_max*[T: SomeNumber](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes: Tensor[T]] {.noInit.} =
   ## Returns (indices, maxes) along an axis
   ##
   ## Input:
@@ -185,9 +184,8 @@ proc argmax_max*[T](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes:
   result.maxes = t.atAxisIndex(axis, 0).clone()
   result.indices = zeros[int](result.maxes.shape)
 
-  withMemoryOptimHints()
-  let dmax{.restrict.} = result.maxes.dataArray
-  let dind{.restrict.} = result.indices.dataArray
+  let dmax = result.maxes.unsafe_raw_buf()
+  let dind = result.indices.unsafe_raw_buf()
 
   for i, subtensor in t.enumerateAxis(axis, 1, t.shape[axis] - 1):
     for j, val in enumerate(subtensor):
@@ -243,7 +241,7 @@ proc percentile*[T](t: Tensor[T], p: int, isSorted = false): float =
       let frac = f - i.float
       result = (a[i].float + (a[i+1] - a[i]).float * frac)
 
-func iqr*[T](t: Tensor[T]): float =
+proc iqr*[T](t: Tensor[T]): float =
   ## Returns the interquartile range of the 1D tensor `t`.
   ##
   ## The interquartile range (IQR) is the distance between the

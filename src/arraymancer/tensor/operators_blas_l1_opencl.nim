@@ -18,8 +18,7 @@ import  clblast
 # TODO error checking in Nim opencl is broken
 # See https://github.com/nim-lang/opencl/pull/3
 
-import  ./backend/metadataArray,
-        ./private/p_kernels_interface_opencl,
+import  ./private/p_kernels_interface_opencl,
         ./private/p_init_opencl,
         ./private/p_checks,
         ./data_structure

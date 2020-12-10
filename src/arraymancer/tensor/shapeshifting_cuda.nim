@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ./backend/metadataArray,
-       ./private/p_kernels_interface_cuda,
+import ./private/p_kernels_interface_cuda,
        ./private/p_init_cuda,
        ./private/p_shapeshifting,
        ./data_structure
@@ -77,7 +76,7 @@ proc broadcast*(t: CudaTensor, shape: varargs[int]): CudaTensor {.noSideEffect.}
   result = t
   result.broadcastImpl(shape)
 
-proc broadcast*(t: CudaTensor, shape: MetadataArray): CudaTensor {.noSideEffect.}=
+proc broadcast*(t: CudaTensor, shape: Metadata): CudaTensor {.noSideEffect.}=
   ## Explicitly broadcast a CudaTensor to the specified shape.
   ## The returned broadcasted CudaTensor share the underlying data with the input.
   ##

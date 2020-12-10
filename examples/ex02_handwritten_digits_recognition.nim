@@ -67,7 +67,7 @@ for epoch in 0 ..< 5:
       # Print status every 200 batches
       echo "Epoch is: " & $epoch
       echo "Batch id: " & $batch_id
-      echo "Loss is:  " & $loss.value.data[0]
+      echo "Loss is:  " & $loss.value
 
     # Compute the gradient (i.e. contribution of each parameter to the loss)
     loss.backprop()
@@ -87,7 +87,7 @@ for epoch in 0 ..< 5:
       let y_pred = model.forward(X_test[i*1000 ..< (i+1)*1000, _]).value.softmax.argmax(axis = 1).squeeze
       score += y_pred.accuracy_score(y_test[i*1000 ..< (i+1)*1000])
 
-      loss += model.forward(X_test[i*1000 ..< (i+1)*1000, _]).sparse_softmax_cross_entropy(y_test[i*1000 ..< (i+1)*1000]).value.data[0]
+      loss += model.forward(X_test[i*1000 ..< (i+1)*1000, _]).sparse_softmax_cross_entropy(y_test[i*1000 ..< (i+1)*1000]).value.unsafe_raw_offset[0]
     score /= 10
     loss /= 10
     echo "Accuracy: " & $(score * 100) & "%"

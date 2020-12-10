@@ -17,7 +17,6 @@
 
 import  ../../private/ast_utils,
         ../data_structure, ../accessors_macros_syntax,
-        ../backend/metadataArray,
         ./p_checks, ./p_accessors,
         sequtils, macros
 

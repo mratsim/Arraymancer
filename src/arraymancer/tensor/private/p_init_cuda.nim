@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import  ../backend/cuda,
-        ../backend/metadataArray,
         ../data_structure
 
 
@@ -41,7 +40,7 @@ proc newCudaTensor*[T: SomeFloat](
   tensorCuda(shape, layout, result)
 
 proc newCudaTensor*[T: SomeFloat](
-  shape: MetadataArray,
+  shape: Metadata,
   layout: OrderType = colMajor): CudaTensor[T] {.noInit, noSideEffect.}=
 
   tensorCuda(shape, layout, result)

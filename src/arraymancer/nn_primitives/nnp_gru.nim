@@ -31,7 +31,7 @@ import
 # we could use a giant loop-fusion to avoid intermediate tensors
 #
 # Note that the CPU prefetcher might not work as well, because
-# between the use of U3h.data[i] and U3h.data[i+1]
+# between the use of U3h.unsafe_raw_buf[i] and U3h.unsafe_raw_buf[i+1]
 # there will be a lot of intermediate computation.
 #
 # Also see here for counterarg: https://software.intel.com/en-us/forums/intel-moderncode-for-parallel-architectures/topic/635075

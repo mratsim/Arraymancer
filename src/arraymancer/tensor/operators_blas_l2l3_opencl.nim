@@ -3,7 +3,7 @@
 # (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 
 import  ./data_structure,
-        ./backend/[opencl_backend, metadataArray],
+        ./backend/opencl_backend,
         ./private/[p_init_opencl, p_checks]
 
 

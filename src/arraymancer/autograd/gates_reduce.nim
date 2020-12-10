@@ -19,7 +19,7 @@ import  ../private/ast_utils,
 
 type MeanGate*[TT] {.final.} = ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
-  cached_input_shape: MetadataArray
+  cached_input_shape: Metadata
   axis: int
 
 proc shape_product(m: MeanGate): int {.inline.} =
@@ -103,7 +103,7 @@ proc mean*[TT](a: Variable[TT], axis: Natural): Variable[TT] =
 
 type SumGate*[TT]{.final.}= ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
-  cached_input_shape: MetadataArray
+  cached_input_shape: Metadata
 
 proc sum_backward_ag[TT](self: SumGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad

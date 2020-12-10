@@ -15,7 +15,6 @@
 import  ../data_structure,
         ./opencl_global_state,
         ./global_config,
-        ./metadataArray,
         nimcl, opencl, clblast, macros
 
 export nimcl, opencl, opencl_global_state, clblast

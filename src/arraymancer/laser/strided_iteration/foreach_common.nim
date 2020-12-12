@@ -4,7 +4,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  macros,
+  std/[macros, strutils],
   ../compiler_optim_hints
 
 template isVar[T: object](x: T): bool =
@@ -14,17 +14,23 @@ template isVar[T: object](x: T): bool =
 
 proc aliasTensor(id: int, tensor: NimNode): NimNode =
   ## Produce an alias variable for a tensor
-  ## Supports identifier and dot call for field access
-  if tensor.kind notin {nnkIdent, nnkSym, nnkDotExpr}:
-    error "Expected a variable identifier but found \"" & tensor.repr() &
+  ## Supports:
+  ## - identifiers
+  ## - dot call for field access
+  ## - foo[1] for array access
+  if tensor.kind notin {nnkIdent, nnkSym, nnkDotExpr, nnkBracketExpr}:
+    error "Expected a variable identifier or field access or array indexing but found \"" & tensor.repr() &
       "\". Please assign to a variable first."
 
   var alias = ""
   var t = tensor
-  while t.kind == nnkDotExpr:
+  while t.kind in {nnkDotExpr, nnkBracketExpr}:
     if t[0].kind notin {nnkIdent, nnkSym}:
       error "Expected a field name but found \"" & t[0].repr()
-    alias.add $t[0] & "_"
+    alias.add $t[0]
+    if t.kind == nnkBracketExpr and validIdentifier(t[1].repr()):
+      alias.add $t[1]
+    alias.add "_"
     t = t[1]
 
   alias &= $t

@@ -12,6 +12,25 @@ template isVar[T: object](x: T): bool =
   ## https://github.com/nim-lang/Nim/issues/9443
   compiles(addr(x))
 
+proc aliasTensor(id: int, tensor: NimNode): NimNode =
+  ## Produce an alias variable for a tensor
+  ## Supports identifier and dot call for field access
+  if tensor.kind notin {nnkIdent, nnkSym, nnkDotExpr}:
+    error "Expected a variable identifier but found \"" & tensor.repr() &
+      "\". Please assign to a variable first."
+
+  var alias = ""
+  var t = tensor
+  while t.kind == nnkDotExpr:
+    if t[0].kind notin {nnkIdent, nnkSym}:
+      error "Expected a field name but found \"" & t[0].repr()
+    alias.add $t[0] & "_"
+    t = t[1]
+
+  alias &= $t
+
+  return newIdentNode($alias & "_alias" & $id & '_')
+
 proc initForEach*(
         params: NimNode,
         values, aliases, raw_ptrs: var NimNode,
@@ -58,10 +77,7 @@ proc initForEach*(
   aliases_stmt.add newCall(bindSym"withCompilerOptimHints")
 
   for i, tensor in tensors:
-    if tensor.kind notin {nnkIdent, nnkSym}:
-      error "Expected a variable identifier but found \"" & tensor.repr() &
-        "\". Please assign to a variable first."
-    let alias = newIdentNode($tensor & "_alias" & $i & '_')
+    let alias = aliasTensor(i, tensor)
     aliases.add alias
     aliases_stmt.add quote do:
       when isVar(`tensor`):
@@ -69,7 +85,7 @@ proc initForEach*(
       else:
         let `alias`{.align_variable.} = `tensor`
 
-    let raw_ptr_i = genSym(nskLet, $tensor & "_raw_data" & $i & '_')
+    let raw_ptr_i = genSym(nskLet, $alias & "_raw_data" & $i & '_')
     raw_ptrs_stmt.add quote do:
       let `raw_ptr_i`{.restrict.} = `alias`.unsafe_raw_offset()
     raw_ptrs.add raw_ptr_i

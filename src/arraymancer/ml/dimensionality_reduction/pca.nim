@@ -3,7 +3,8 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  ../../tensor, ../../linear_algebra
+  ../../tensor, ../../linear_algebra,
+  ../../laser/strided_iteration/foreach
 
 proc pca*[T: SomeFloat](
        X: Tensor[T], n_components = 2, center: static bool = true,
@@ -187,8 +188,10 @@ proc pca_detailed*[T: SomeFloat](
 
   # Variance explained by Singular Values
   let bessel_correction = T(result.n_observations - 1)
-  result.explained_variance = map_inline(S):
-    x * x / bessel_correction
+  result.explained_variance = newTensorUninit[T](S.shape)
+  forEach ev in result.explained_variance,
+          s in S:
+    ev = s*s / bessel_correction
 
   # Since we are using SVD truncated to `n_components` we need to
   # refer back to the original matrix for total variance

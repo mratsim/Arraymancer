@@ -18,12 +18,34 @@ proc aliasTensor(id: int, tensor: NimNode): NimNode =
   ## - identifiers
   ## - dot call for field access
   ## - foo[1] for array access
-  if tensor.kind notin {nnkIdent, nnkSym, nnkDotExpr, nnkBracketExpr}:
+  if tensor.kind notin {nnkIdent, nnkSym, nnkDotExpr, nnkBracketExpr, nnkCall}:
     error "Expected a variable identifier or field access or array indexing but found \"" & tensor.repr() &
       "\". Please assign to a variable first."
 
-  var alias = ""
   var t = tensor
+
+  # nnkCall handles the annoying typed AST we get in generics
+  # Call
+  #   OpenSymChoice
+  #     Sym "[]"
+  #     Sym "[]"
+  #     ...
+  #   DotExpr
+  #     Ident "self"
+  #     Ident "first_moments"
+  #   Ident "i"
+  if tensor.kind == nnkCall:
+    tensor[0].expectKind nnkOpenSymChoice
+    tensor[0][0].expectKind nnkSym
+    doAssert tensor[0][0].eqIdent("[]")
+
+    # Rewrite the AST to untyped
+    t = nnkBracketExpr.newTree(
+      tensor[0][1],
+      tensor[0][2]
+    )
+
+  var alias = ""
   while t.kind in {nnkDotExpr, nnkBracketExpr}:
     if t[0].kind notin {nnkIdent, nnkSym}:
       error "Expected a field name but found \"" & t[0].repr()

@@ -29,14 +29,19 @@ proc sigmoid*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.}=
 
   # stable: proc sigmoid_closure(x: T): T = 0.5.T * (tanh(0.5.T * x) + 1.T)
 
-  result = map_inline(t):
-    sigmoid(x)
+  result = newTensorUninit[T](t.shape)
+  forEach dst in result, src in t:
+    dst = sigmoid(src)
 
 proc relu*[T](t: Tensor[T]): Tensor[T] {.noInit.}=
-  t.map_inline max(0.T,x)
+  result = newTensorUninit[T](t.shape)
+  forEach dst in result, src in t:
+    dst = max(0.T, src)
 
 proc tanh*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.}=
-  t.map_inline tanh(x)
+  result = newTensorUninit[T](t.shape)
+  forEach dst in result, src in t:
+    dst = tanh(src)
 
 # ##################################################################################################
 # In-place forward
@@ -46,32 +51,37 @@ proc msigmoid*[T: SomeFloat](t: var Tensor[T]) =
   ## Note: Canonical sigmoid is not stable for large negative value
 
   # stable: proc sigmoid_closure(x: T): T = 0.5.T * (tanh(0.5.T * x) + 1.T)
-  apply_inline(t):
-    sigmoid(x)
+  forEach x in t:
+    x = sigmoid(x)
 
 proc mrelu*[T](t: var Tensor[T]) =
-  t.apply_inline max(0.T, x)
+  forEach x in t:
+    x = t.apply_inline max(0.T, x)
 
 proc mtanh*[T: SomeFloat](t: var Tensor[T]) =
-  t.apply_inline tanh(x)
+  forEach x in t:
+    x = tanh(x)
 
 # ##################################################################################################
 # Backward
 
 proc sigmoid_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.noInit.}=
-  result = map2_inline(cached_tensor, gradient):
-    x * (1 - x) * y
+  result = newTensorUninit[T](gradient.shape)
+  forEach r in result, c in cached_tensor, g in gradient:
+    r = c*(1-c) * g
 
 proc relu_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.noInit.}=
-  result = map2_inline(cached_tensor, gradient):
-    if x <= 0.T:
-      0.T
+  result = newTensorUninit[T](gradient.shape)
+  forEach r in result, c in cached_tensor, g in gradient:
+    if c <= 0.T:
+      r = 0.T
     else:
-      y
+      r = g
 
 proc tanh_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.noInit.}=
-  result = map2_inline(cached_tensor, gradient):
-    y * (1 - x * x)
+  result = newTensorUninit[T](gradient.shape)
+  forEach r in result, c in cached_tensor, g in gradient:
+    r = g * (1 - c * c)
 
 # ####################################################################################################
 # Documentation

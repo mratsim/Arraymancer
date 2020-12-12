@@ -63,7 +63,6 @@ proc gru_cell_inference*[T: SomeFloat](
     # Slices
     sr = (0 ..< H)|1
     sz = (H ..< 2*H)|1
-    srz = (0 ..< 2*H)|1
     s = (2*H ..< 3*H)|1
 
 
@@ -73,19 +72,29 @@ proc gru_cell_inference*[T: SomeFloat](
   linear(input, W3, bW3, W3x)
   linear(hidden, U3, bU3, U3h)
 
-  # Step 2 - Computing reset (r) and update (z) gate
-  var W2ru = W3x[_, srz] # shape [batch_size, 2*H] - we reuse the previous buffer
-  apply2_inline(W2ru, U3h[_, srz]):
-    sigmoid(x + y)
+  # Step 2 - Fused evaluation of the 4 GRU equations
+  # r  =    σ(Wr * x + bWr +       Ur * h + bUr)
+  # z  =    σ(Wz * x + bWz +       Uz * h + bUz)
+  # n  = tanh(W  * x + bW  + r *. (U  * h + bU ))
+  # h' = (1 - z) *. n + z *. h
 
-  # Step 3 - Computing candidate hidden state ñ
-  var n = W3x[_, s] # shape [batch_size, H] - we reuse the previous buffer
-  apply3_inline(n, W2ru[_, sr], U3h[_, s]):
-    tanh(x + y * z)
+  # shape [batch_size, H] - we reuse the previous buffers
+  forEach wrx in W3x[_, sr], # Wr*x
+          wzx in W3x[_, sz], # Wz*x
+          wx in W3x[_, s],   # W*x
+          urh in U3h[_, sr], # Ur*h
+          uzh in U3h[_, sz], # Uz*h
+          uh in U3h[_, s],   # U*h
+          h in hidden:       # hidden state
+    # Reset (r) gate and Update (z) gate
+    let r = sigmoid(wrx + urh)
+    let z = sigmoid(wzx + uzh)
 
-  # Step 4 - Update the hidden state
-  apply3_inline(hidden, W3x[_, sz], n):
-    (1 - y) * z + y * x
+    # Candidate hidden state ñ
+    let n = tanh(wx + r * uh)
+
+    # h' = (1 - z) *. ñ + z *. h
+    h = (1-z) * n + z*h
 
 proc gru_cell_forward*[T: SomeFloat](
   input,
@@ -124,26 +133,38 @@ proc gru_cell_forward*[T: SomeFloat](
   linear(input, W3, bW3, W3x)
   linear(hidden, U3, bU3, U3h)
 
-  # # Saving for backprop
-  apply2_inline(Uh, U3h[_, s]):
-    y
+  # Step 2 - Fused evaluation of the 4 GRU equations
+  #          and saving for backprop
+  # r  =    σ(Wr * x + bWr +       Ur * h + bUr)
+  # z  =    σ(Wz * x + bWz +       Uz * h + bUz)
+  # n  = tanh(W  * x + bW  + r *. (U  * h + bU ))
+  # h' = (1 - z) *. n + z *. h
 
-  # Step 2 - Computing reset (r) and update (z) gate
-  apply3_inline(r, W3x[_, sr], U3h[_, sr]):
-    sigmoid(y + z)
+  # shape [batch_size, H] - we reuse the previous buffers
+  forEach wrx in W3x[_, sr], # Wr*x
+          wzx in W3x[_, sz], # Wz*x
+          wx in W3x[_, s],   # W*x
+          urh in U3h[_, sr], # Ur*h
+          uzh in U3h[_, sz], # Uz*h
+          uh in U3h[_, s],   # U*h
+          h in hidden,       # hidden state
+          saveUh in Uh,      # U*h cache for backprop
+          reset in r,        # reset gate cache for backprop
+          update in z,       # update gate cache for backprop
+          candidate in n:    # candidate hidden state cache for backprop
 
-  apply3_inline(z, W3x[_, sz], U3h[_, sz]):
-    sigmoid(y + z)
+    # Cache for backprop
+    saveUh = uh
 
-  # Step 3 - Computing candidate hidden state ñ
-  # TODO: need apply4 / loopfusion for efficient
-  # buffer passing in Stacked GRU implementation
-  n = map3_inline(W3x[_, s], r, U3h[_, s]):
-    tanh(x + y * z)
+    # Reset (r) gate and Update (z) gate
+    reset = sigmoid(wrx + urh)
+    update = sigmoid(wzx + uzh)
 
-  # Step 4 - Update the hidden state
-  apply3_inline(hidden, z, n):
-    (1 - y) * z + y * x
+    # Candidate hidden state ñ
+    candidate = tanh(wx + reset * uh)
+
+    # h' = (1 - z) *. ñ + z *. h
+    h = (1-update) * candidate + update*h
 
 proc gru_cell_backward*[T: SomeFloat](
   dx, dh, dW3, dU3,          # input and weights gradients
@@ -162,6 +183,9 @@ proc gru_cell_backward*[T: SomeFloat](
   ##   - dnext: gradient flowing back from the next layer
   ##   - x, h, W3, U3: inputs saved from the forward pass
   ##   - r, z, n, Uh: intermediate results saved from the forward pass of shape [batch_size, hidden_size]
+
+  # TODO: fused backprop with forEach
+
   # Backprop of step 4 - z part
   let dz = (h - n) *. dnext
   let dn = (1.0.T -. z) *. dnext

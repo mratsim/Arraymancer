@@ -7,12 +7,12 @@ import
   std/[macros, strutils],
   ../compiler_optim_hints
 
-template isVar[T: object](x: T): bool =
+template isVar[T](x: T): bool =
   ## Workaround due to `is` operator not working for `var`
   ## https://github.com/nim-lang/Nim/issues/9443
   compiles(addr(x))
 
-proc aliasTensor(id: int, tensor: NimNode): NimNode =
+proc aliasTensor(id: int, tensor: NimNode): tuple[alias: NimNode, isVar: NimNode] =
   ## Produce an alias variable for a tensor
   ## Supports:
   ## - identifiers
@@ -41,11 +41,22 @@ proc aliasTensor(id: int, tensor: NimNode): NimNode =
 
     # Rewrite the AST to untyped
     t = nnkBracketExpr.newTree(
-      tensor[0][1],
-      tensor[0][2]
+      tensor[1]
     )
+    for i in 2 ..< tensor.len:
+      t.add tensor[i]
 
   var alias = ""
+  let isVar = block:
+    # Handle slicing cases like foo[0..<1, 0..<2]
+    # that do not return `var` but are technically `var`
+    # if `foo` is var
+    if t.kind in {nnkDotExpr, nnkBracketExpr}:
+      let t0 = t[0]
+      quote do: isVar(`t0`)
+    else:
+      quote do: isVar(`t`)
+
   while t.kind in {nnkDotExpr, nnkBracketExpr}:
     if t[0].kind notin {nnkIdent, nnkSym}:
       error "Expected a field name but found \"" & t[0].repr()
@@ -57,7 +68,7 @@ proc aliasTensor(id: int, tensor: NimNode): NimNode =
 
   alias &= $t
 
-  return newIdentNode($alias & "_alias" & $id & '_')
+  return (newIdentNode($alias & "_alias" & $id & '_'), isVar)
 
 proc initForEach*(
         params: NimNode,
@@ -105,10 +116,10 @@ proc initForEach*(
   aliases_stmt.add newCall(bindSym"withCompilerOptimHints")
 
   for i, tensor in tensors:
-    let alias = aliasTensor(i, tensor)
+    let (alias, detectVar) = aliasTensor(i, tensor)
     aliases.add alias
     aliases_stmt.add quote do:
-      when isVar(`tensor`):
+      when `detectVar`:
         var `alias`{.align_variable.} = `tensor`
       else:
         let `alias`{.align_variable.} = `tensor`

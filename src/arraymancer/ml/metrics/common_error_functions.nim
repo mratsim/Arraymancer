@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../tensor
+import ../../tensor, ../../laser/strided_iteration/foreach
 
 # ####################################################
 
@@ -22,7 +22,11 @@ proc squared_error*[T](y, y_true: T): T {.inline.} =
 
 proc squared_error*[T](y, y_true: Tensor[T]): Tensor[T] {.noInit.} =
   ## Element-wise squared error for a tensor, |y_true - y| ^2
-  result = map2_inline(y_true, y, squared_error(x,y))
+  result = newTensorUninit[T](y.shape)
+  forEach r in result,
+          testval in y,
+          truthval in y_true:
+    r = squared_error(testval,truthval)
 
 proc mean_squared_error*[T](y, y_true: Tensor[T]): T =
   ## Also known as MSE or L2 loss, mean squared error between elements:
@@ -48,7 +52,11 @@ proc relative_error*[T](y, y_true: Tensor[T]): Tensor[T] {.noInit.} =
   ## Normally the relative error is defined as |y_true - x| / |y_true|,
   ## but here max is used to make it symmetric and to prevent dividing by zero,
   ## guaranteed to return zero in the case when both values are zero.
-  result = map2_inline(y, y_true, relative_error(x,y))
+  result = newTensorUninit[T](y.shape)
+  forEach r in result,
+          testval in y,
+          truthval in y_true:
+    r = relative_error(testval,truthval)
 
 proc mean_relative_error*[T](y, y_true: Tensor[T]): T =
   ## Mean relative error for Tensor, mean of the element-wise
@@ -67,10 +75,14 @@ proc absolute_error*[T: SomeFloat](y, y_true: T): T {.inline.} =
 
 proc absolute_error*[T](y, y_true: Tensor[T]): Tensor[T] {.noInit.} =
   ## Element-wise absolute error for a tensor
-  result = map2_inline(y, y_true, y.absolute_error(x))
+  result = newTensorUninit[T](y.shape)
+  forEach r in result,
+          testval in y,
+          truthval in y_true:
+    r = absolute_error(testval,truthval)
 
 proc mean_absolute_error*[T](y, y_true: Tensor[T]): T =
   ## Also known as L1 loss, absolute error between elements:
   ## sum(|y_true - y|)/m
   ## where m is the number of elements
-  result = map2_inline(y, y_true, y.absolute_error(x)).mean()
+  result = y.absolute_error(y_true).mean()

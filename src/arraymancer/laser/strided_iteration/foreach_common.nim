@@ -24,7 +24,9 @@ proc initForEach*(
   var tensors = nnkBracket.newTree()
 
   template syntaxError() {.dirty.} =
-    error "Syntax error: argument " & ($arg.kind).substr(3) & " in position #" & $i & " was unexpected."
+    error "Syntax error: argument " &
+      ($arg.kind).substr(3) & " in position #" & $i & " was unexpected." &
+      "\n    " & arg.repr()
 
   for i, arg in params:
     if arg.kind == nnkInfix:
@@ -56,6 +58,9 @@ proc initForEach*(
   aliases_stmt.add newCall(bindSym"withCompilerOptimHints")
 
   for i, tensor in tensors:
+    if tensor.kind notin {nnkIdent, nnkSym}:
+      error "Expected a variable identifier but found \"" & tensor.repr() &
+        "\". Please assign to a variable first."
     let alias = newIdentNode($tensor & "_alias" & $i & '_')
     aliases.add alias
     aliases_stmt.add quote do:
@@ -74,7 +79,9 @@ proc initForEach*(
   for i in 1 ..< aliases.len:
     let alias_i = aliases[i]
     test_shapes.add quote do:
-      assert `alias0`.shape == `alias_i`.shape
+      assert `alias0`.shape == `alias_i`.shape,
+        "\n " & astToStr(`alias0`) & ".shape is " & $`alias0`.shape & "\n" &
+        "\n " & astToStr(`alias_i`) & ".shape is " & $`alias_i`.shape & "\n"
 
 template stridedVarsSetup*(): untyped {.dirty.} =
   for i, alias in aliases:

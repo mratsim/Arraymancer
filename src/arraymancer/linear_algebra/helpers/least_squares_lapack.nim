@@ -6,7 +6,8 @@ import
   nimlapack, fenv,
   ./overload, ./init_colmajor,
   ../../private/sequninit,
-  ../../tensor
+  ../../tensor,
+  ../../laser/strided_iteration/foreach
 
 # Least Squares using Recursive Divide & Conquer
 # --------------------------------------------------------------------------------------
@@ -53,11 +54,13 @@ proc gelsd*[T: SomeFloat](
   var b2: Tensor[T]
   b2.newMatrixUninitColMajor(ldb.int, nrhs.int)
 
-  var b2_slice = b2[0 ..< b.shape[0], 0 ..< nrhs] # Workaround because slicing does no produce a var at the moment
-  apply2_inline(b2_slice, b):
-    # paste b in b2.
-    # if b2 is larger, the rest is zeros
-    y
+  var b2_slice = b2[0 ..< b.shape[0], 0 ..< nrhs]
+  if is1d:
+    b2_slice = b2_slice.squeeze(1)
+
+  forEach ib2 in b2_slice,
+          ib in b:
+    ib2 = ib
 
   # Temporary sizes
   const smlsiz = 25'i32 # equal to the maximum size of the subproblems at the bottom of the computation tree

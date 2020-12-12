@@ -27,7 +27,7 @@ proc read_image*(filepath: string): Tensor[uint8] =
   ## Usage example with conversion to [0..1] float:
   ## .. code:: nim
   ##   let raw_img = read_image('path/to/image.png')
-  ##   let img = raw_img.map_inline:
+  ##   let img = forEach x in raw_img:
   ##     x.float32 / 255.0
 
   var width, height, channels: int

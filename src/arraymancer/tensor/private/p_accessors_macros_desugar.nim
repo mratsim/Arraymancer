@@ -24,7 +24,7 @@ const Span = SteppedSlice(b: 1, step: 1, b_from_end: true)
 # #########################################################################
 # Slicing macros - desugaring AST
 
-macro desugar*(args: untyped): typed =
+macro desugar*(args: untyped): void =
   ## Transform all syntactic sugar in arguments to integer or SteppedSlices
   ## It will then be dispatched to "atIndex" (if specific integers)
   ## or "slicer" if there are SteppedSlices

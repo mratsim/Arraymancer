@@ -46,7 +46,7 @@ proc main() =
 
     test "#307 3D slicing with same shape: offset is off":
       let x = zeros[int]([1, 2, 3])
-      expect(IndexError):
+      expect(IndexDefect):
         let y{.used.} = x[1, _, _]
 
     test "#386 Reshaping a contiguous permuted tensor":

@@ -143,7 +143,7 @@ macro desugar*(args: untyped): typed =
       r.add(infix(nnk[1], "..^", infix(newIntLitNode(1), "|", nnk[2][2])))
     elif nnk0_inf_dotdot and nnk20_bar_min and nnk21_joker:
       ## Raise error on [5.._|-1, 3]
-      raise newException(IndexError, "Please use explicit end of range " &
+      raise newException(IndexDefect, "Please use explicit end of range " &
                        "instead of `_` " &
                        "when the steps are negative")
     elif nnk0_inf_dotdot_all and nnk10_hat and nnk20_bar_all:

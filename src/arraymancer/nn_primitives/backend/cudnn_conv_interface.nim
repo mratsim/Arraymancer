@@ -38,7 +38,7 @@ type Algo = cudnnConvolutionFwdAlgo_t or cudnnConvolutionBwdFilterAlgo_t or cudn
 type ConvAlgoSpace*[T: SomeFloat, Algo] = object
   algo*: Algo
   workspace*: ref[ptr T]
-  sizeInBytes*: csize
+  sizeInBytes*: csize_t
 
 # #####################################################################
 # Convolution descriptor

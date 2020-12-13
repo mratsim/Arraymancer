@@ -206,7 +206,7 @@ proc toTensor*(a: openarray, dummy_bugfix: static[int] = 0): auto =
 
   if unlikely(shape.product != data.len):
     raise newException(
-      IndexError,
+      IndexDefect,
       "Each nested sequence at the same level" &
         " must have the same number of elements"
       )

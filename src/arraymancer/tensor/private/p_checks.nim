@@ -24,12 +24,12 @@ func check_nested_elements*(shape: Metadata, len: int) {.inline.}=
   ##   -- A shape (sequence of int)
   ##   -- A length (int)
   if unlikely(shape.product != len):
-    raise newException(IndexError, "Each nested sequence at the same level must have the same number of elements")
+    raise newException(IndexDefect, "Each nested sequence at the same level must have the same number of elements")
 
 func check_index*(t: Tensor, idx: varargs[int]) {.inline.}=
   if unlikely(idx.len != t.rank):
     raise newException(
-      IndexError, "Number of arguments: " &
+      IndexDefect, "Number of arguments: " &
                   $(idx.len) &
                   ", is different from tensor rank: " &
                   $(t.rank)
@@ -37,14 +37,14 @@ func check_index*(t: Tensor, idx: varargs[int]) {.inline.}=
   for i in 0 ..< t.shape.len:
     if unlikely(not(0 <= idx[i] and idx[i] < t.shape[i])):
       raise newException(
-        IndexError, "Out-of-bounds access: " &
+        IndexDefect, "Out-of-bounds access: " &
                     "Tensor of shape " & $t.shape &
                     " being indexed by " & $idx
       )
 
 func check_contiguous_index*(t: Tensor, idx: int) {.inline.}=
   if unlikely(idx < 0 or idx >= t.size):
-    raise newException(IndexError, "Invalid contigous index: " &
+    raise newException(IndexDefect, "Invalid contigous index: " &
                     $idx &
                     " while tensor size is" &
                     $(t.size))
@@ -73,7 +73,7 @@ func check_steps*(a,b, step:int) {.inline.}=
   #   # like shape of (3, 0)
   #   return
   if unlikely((b-a) * step < 0):
-    raise newException(IndexError, "Your slice start: " &
+    raise newException(IndexDefect, "Your slice start: " &
                 $a & ", and stop: " &
                 $b & ", or your step: " &
                 $step &
@@ -83,7 +83,7 @@ func check_steps*(a,b, step:int) {.inline.}=
 
 func check_start_end*(a, b: int, dim_size: int) {.inline.} =
   if unlikely(a < 0 or a >= dim_size or b < 0 or b >= dim_size):
-    raise newException(IndexError, "Your slice start: " &
+    raise newException(IndexDefect, "Your slice start: " &
                 $a & ", or stop: " &
                 $b & " cannot slice a dimension of size " &
                 $dim_size &
@@ -99,7 +99,7 @@ func check_shape*(a: Tensor; b: Tensor|openarray) {.inline.}=
     let b_shape = b.getShape()
 
   if unlikely(a.shape != b_shape):
-    raise newException(IndexError, "Your tensors or openarrays do not have the same shape: " &
+    raise newException(IndexDefect, "Your tensors or openarrays do not have the same shape: " &
                                    $a.shape &
                                    " and " & $b_shape)
 
@@ -144,7 +144,7 @@ func check_matmat*(a, b: AnyTensor) {.inline.}=
   let rowB = b.shape[0]
 
   if unlikely(colA != rowB):
-    raise newException(IndexError, "Number of columns in the first matrix: " &
+    raise newException(IndexDefect, "Number of columns in the first matrix: " &
                     $(colA) &
                     ", must be the same as the number of rows in the second matrix: " &
                     $(rowB))
@@ -154,14 +154,14 @@ func check_matvec*(a, b: AnyTensor) {.inline.}=
   let rowB = b.shape[0]
 
   if unlikely(colA != rowB):
-    raise newException(IndexError, "Number of columns in the matrix: " &
+    raise newException(IndexDefect, "Number of columns in the matrix: " &
                     $(colA) &
                     ", must be the same as the number of rows in the vector: " &
                     $(rowB))
 
 func check_axis_index*(t: AnyTensor, axis, index, len: Natural) {.inline.}=
   if unlikely(not (axis < t.rank and index+len <= t.shape[axis])):
-    raise newException(IndexError, "The axis is out of range, axis requested is " &
+    raise newException(IndexDefect, "The axis is out of range, axis requested is " &
                                     $axis &
                                     " and (index, length) requested (" & $index & ", " & $len &
                                     ") while tensor shape is " & $(t.shape))

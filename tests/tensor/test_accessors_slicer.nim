@@ -134,7 +134,7 @@ proc main() =
 
     when compileOption("boundChecks") and not defined(openmp):
       test "Slice from the end - expect non-negative step error - foo[^1..0, 3]":
-        expect(IndexError):
+        expect(IndexDefect):
           discard t_van[^1..0, 3]
     else:
       echo "Bound-checking is disabled or OpenMP is used. The Slice from end, non-negative step error test has been skipped."
@@ -233,13 +233,13 @@ proc main() =
     when compileOption("boundChecks") and not defined(openmp):
       test "Bounds checking":
         var t_van = t_van_immut.clone
-        expect(IndexError):
+        expect(IndexDefect):
           t_van[0..1,0..1] = [111, 222, 333, 444, 555]
-        expect(IndexError):
+        expect(IndexDefect):
           t_van[0..1,0..1] = [111, 222, 333]
-        expect(IndexError):
+        expect(IndexDefect):
           t_van[^2..^1,2..4] = t_van[1, 4..2|-1]
-        expect(IndexError):
+        expect(IndexDefect):
           t_van[^2..^1,2..4] = t_van[^1..^3|-1, 4..2|-1]
     else:
       echo "Bound-checking is disabled or OpenMP is used. The Out of bound checking test has been skipped."
@@ -285,9 +285,9 @@ proc main() =
 
     when compileOption("boundChecks") and not defined(openmp):
       test "atAxisIndex bounds checking":
-        expect(IndexError):
+        expect(IndexDefect):
           echo a.atAxisIndex(0, 3)
-        expect(IndexError):
+        expect(IndexDefect):
           echo a.atAxisIndex(1, 3, 6)
 
 main()

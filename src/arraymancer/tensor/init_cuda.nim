@@ -28,7 +28,7 @@ proc cuda*[T:SomeFloat](t: Tensor[T]): CudaTensor[T] {.noInit.}=
 
   # TODO: avoid reordering rowMajor tensors. This is only needed for inplace operation in CUBLAS.
   let contig_t = t.asContiguous(colMajor, force = true)
-  let size = csize(result.size * sizeof(T))
+  let size = csize_t(result.size * sizeof(T))
 
   # For host to device we use non-blocking copy
   # Host can proceed with computation.
@@ -49,7 +49,7 @@ proc cpu*[T:SomeFloat](t: CudaTensor[T]): Tensor[T] {.noSideEffect, noInit.}=
   result.offset = t.offset
   result.data = newSeqUninit[T](t.storage.Flen) # We copy over all the memory allocated
 
-  let size = csize(t.storage.Flen * sizeof(T))
+  let size = csize_t(t.storage.Flen * sizeof(T))
 
   check cudaMemCpy( result.get_data_ptr,
                     t.get_data_ptr,

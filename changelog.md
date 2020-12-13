@@ -3,6 +3,7 @@ Arraymancer v0.x.x
 
 Changes (TODO):
   - Fancy Indexing (#434)
+  - ``argmax_max`` obsolete assert to 1D/2D removed. It refered to issues #183 and merged PR #171
 
 Deprecation
   - The dot in broadcasting and elementwise operators has changed place. This was not propagated to logical comparison

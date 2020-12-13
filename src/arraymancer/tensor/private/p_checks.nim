@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../../private/[nested_containers],
-        ../backend/metadataArray,
+import  ../../laser/private/nested_containers,
+        ../../laser/tensor/initialization,
         ../data_structure
 
 include ./p_checks_cuda, ./p_checks_opencl
 
-func check_nested_elements*(shape: MetadataArray, len: int) {.inline.}=
+func check_nested_elements*(shape: Metadata, len: int) {.inline.}=
   ## Compare the detected shape from flatten with the real length of the data
   ## Input:
   ##   -- A shape (sequence of int)
@@ -28,10 +28,19 @@ func check_nested_elements*(shape: MetadataArray, len: int) {.inline.}=
 
 func check_index*(t: Tensor, idx: varargs[int]) {.inline.}=
   if unlikely(idx.len != t.rank):
-    raise newException(IndexError, "Number of arguments: " &
-                    $(idx.len) &
-                    ", is different from tensor rank: " &
-                    $(t.rank))
+    raise newException(
+      IndexError, "Number of arguments: " &
+                  $(idx.len) &
+                  ", is different from tensor rank: " &
+                  $(t.rank)
+    )
+  for i in 0 ..< t.shape.len:
+    if unlikely(not(0 <= idx[i] and idx[i] < t.shape[i])):
+      raise newException(
+        IndexError, "Out-of-bounds access: " &
+                    "Tensor of shape " & $t.shape &
+                    " being indexed by " & $idx
+      )
 
 func check_contiguous_index*(t: Tensor, idx: int) {.inline.}=
   if unlikely(idx < 0 or idx >= t.size):
@@ -84,19 +93,31 @@ func check_start_end*(a, b: int, dim_size: int) {.inline.} =
 func check_shape*(a: Tensor; b: Tensor|openarray) {.inline.}=
   ## Compare shape
 
-  let b_shape = b.shape # There is a shape proc that converts openarray to MetadataArray
+  when b is Tensor:
+    let b_shape = b.shape
+  else:
+    let b_shape = b.getShape()
 
   if unlikely(a.shape != b_shape):
     raise newException(IndexError, "Your tensors or openarrays do not have the same shape: " &
                                    $a.shape &
                                    " and " & $b_shape)
 
-func check_reshape*(t: AnyTensor, new_shape:MetadataArray) {.inline.}=
+func check_reshape*(t: AnyTensor, new_shape: Metadata) {.inline.}=
   if unlikely(t.size != new_shape.product):
     raise newException(ValueError, "The total number of elements in the old (" &
                                     $t.size &
                                     ") and the new (" &
                                     $new_shape.product &
+                                    ") reshaped tensor must be the same")
+
+func check_reshape*(t: AnyTensor, new_shape:varargs[int]) {.inline.}=
+  let product = new_shape.toMetadata.product
+  if unlikely(t.size != product):
+    raise newException(ValueError, "The total number of elements in the old (" &
+                                    $t.size &
+                                    ") and the new (" &
+                                    $product &
                                     ") reshaped tensor must be the same")
 
 func check_concat*(t1, t2: Tensor, axis: int) {.inline.}=

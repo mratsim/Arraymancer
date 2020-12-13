@@ -30,3 +30,6 @@ export  init_cuda,
         operators_blas_l2l3_cuda,
         operators_broadcasted_cuda,
         shapeshifting_cuda
+
+# Override -std=-gnu++14
+{.passC:"-std=c++14".}

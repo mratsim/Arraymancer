@@ -15,15 +15,19 @@
 import ../../src/arraymancer, ../testutils
 import unittest
 
-testSuite "Test the numerical gradient proc":
-  test "Numerical gradient":
-    proc f(x: float): float = x*x + x + 1.0
-    check: numerical_gradient(2.0, f).relative_error(5.0) < 1e-8
+proc main() =
+  suite "Test the numerical gradient proc":
+    test "Numerical gradient":
+      proc f(x: float): float = x*x + x + 1.0
+      check: numerical_gradient(2.0, f).relative_error(5.0) < 1e-8
 
-    proc g(t: Tensor[float]): float =
-      let x = t[0]
-      let y = t[1]
-      x*x + y*y + x*y + x + y + 1.0
-    let input = [2.0, 3.0].toTensor()
-    let grad = [8.0, 9.0].toTensor()
-    check: numerical_gradient(input, g).mean_relative_error(grad) < 1e-8
+      proc g(t: Tensor[float]): float =
+        let x = t[0]
+        let y = t[1]
+        x*x + y*y + x*y + x + y + 1.0
+      let input = [2.0, 3.0].toTensor()
+      let grad = [8.0, 9.0].toTensor()
+      check: numerical_gradient(input, g).mean_relative_error(grad) < 1e-8
+
+main()
+GC_fullCollect()

@@ -12,6 +12,52 @@ Deprecation
     natural operators.
     This also align Arraymancer with other Nim packages: Manu and NumericalNim
 
+Overview (TODO)
+
+This release integrates part of the Laser Backend (https://github.com/numforge/laser) that has been brewing since the end of 2018. The new backend provides the following features:
+- Tensors can now either be a view over a memory buffer or manage the memory (like before).
+  The "view" allows zero-copy with libraries using the same
+  multi-dimensional array/tensor memory layout in particular Numpy,
+  PyTorch and Tensorflow or even image libraries. This can be achieved
+  using the new `fromBuffer` procedures to create a tensor.
+- strings, ref types and types with non-trivial destructors will still always own and manager their memory buffer.
+  Trivial types (plain-old data) like integers, floats or complex can use the zero-copy scheme
+  by setting `isMemOwner` to false and then point `raw_buffer` to the preallocated buffer.
+  In that case, the memory must be freed manually to avoid memory leaks.
+- To keep the benefits of enforcing (im)mutabilility via the type system, procedures like `dataArray` that used to return raw pointers have been deleted or deprecated in favor of
+  routines that return `RawImmutableView` and `RawMutableView` with only appropriate
+  indexing or mutable indexing defined.
+  This is an improvement over raw pointers.
+  Note that at the moment there is no scheme like a borrow-checker to prevent users from using them even after the buffer has been invalidated (borrow-checking).
+  In the future `lent` will be used to provide borrow-checking security.
+
+Breaking changes
+- In the past, it was mentioned in the README that Arraymancer supported up to 6 dimensions.
+  In reality up to 7 dimensions was possible. It has now been changed to 6 by default.
+  It is now possible to configure this via a compiler define `LASER_MAXRANK`
+  For example `nim c -d:LASER_MAXRANK=16 path/to/app` to support up to 16 dimensions.
+  or `nim c -d:LASER_MAXRANK=2 path/to/app` if only 2 dimensions are ever needed and we want to save on stack space and optimize memory cache accesses.
+- The CpuStorage data structure has been completely refactored
+- The routines `data`, `data=` and `toRawSeq` that used to return the `seq` backing the Tensor
+  have been changed in a backward-incompatible way. They now return the canonical row-major
+  representation of a tensor. With the change to a view and decoupling with a lower-level pointer based backend, Arraymancer does not track anymore the whole reserved memory
+  and so cannot return the raw in-memory storage of the tensor.
+  They have been deprecated.
+- Some procedures now have side-effects inherited from Nim's `allocShared`
+  - `variable` from the `autograd` module
+  - `solve` from the `linear_algebra` module
+- `io_hdf5` is not imported automatically anymore if the module is
+  installed. The reason for this is that the HDF5 library runs code in
+  global scope to initialize the HDF5 library. This means dead code
+  elimination does not work and a binary will always depend on the
+  HDF5 shared library if the `nimhdf5` is installed, even if not used.
+  Simply import using `import arraymancer/io/io_hdf5`.
+
+Deprecation
+- `MetadataArray` is now `Metadata`
+- `dataArray` has been deprecated in favor on mutability-safe
+  `unsafe_raw_offset`
+
 Arraymancer v0.6.0 Jan. 09 2020
 =====================================================
 

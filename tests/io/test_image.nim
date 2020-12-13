@@ -5,43 +5,49 @@
 import ../../src/arraymancer, ../testutils
 import unittest, os
 
-testSuite "[IO] Reading and writing images":
-  const
-    imgpath = "./tests/io/images/nim_in_action_cover.jpg"
-    outpng = "./build/test_img_out.png"
-    outjpg = "./build/test_img_out.jpg"
-    rwpng = "./build/test_img_read_write.png"
+proc main() =
 
-  test "[IO] Reading images":
-    let img = read_image(imgpath)
+  suite "[IO] Reading and writing images":
+    const
+      imgpath = "./tests/io/images/nim_in_action_cover.jpg"
+      outpng = "./build/test_img_out.png"
+      outjpg = "./build/test_img_out.jpg"
+      rwpng = "./build/test_img_read_write.png"
 
-    let channels = 3
-    let width = 767
-    let height = 964
+    test "[IO] Reading images":
+      let img = read_image(imgpath)
 
-    check: img.shape == [channels, height, width].toMetadataArray
+      let channels = 3
+      let width = 767
+      let height = 964
 
-  test "[IO] Writing images":
-    let img = read_image(imgpath)
+      check: img.shape == [channels, height, width].toMetadataArray
 
-    img.write_png(outpng)
-    img.write_jpg(outjpg, quality = 70)
+    test "[IO] Writing images":
+      let img = read_image(imgpath)
 
-  test "[IO] Reading and Writing images are equal":
-    let
-        gray_1_6_8 = @[
-                  [
-                    [0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0],
-                    [0,0,0,0,0,0,0,0],
-                    [255,255,255,255,255,255,255,255],
-                    [255,255,255,255,255,255,255,255],
-                    [255,255,255,255,255,255,255,255],
-                  ],
-                ].toTensor.astype(uint8)
-    check: gray_1_6_8.shape == @[1,6,8]
+      img.write_png(outpng)
+      img.write_jpg(outjpg, quality = 70)
 
-    gray_1_6_8.write_png(rwpng)
-    let rwimg = read_image(rwpng)
+    test "[IO] Reading and Writing images are equal":
+      let
+          gray_1_6_8 = @[
+                    [
+                      [0,0,0,0,0,0,0,0],
+                      [0,0,0,0,0,0,0,0],
+                      [0,0,0,0,0,0,0,0],
+                      [255,255,255,255,255,255,255,255],
+                      [255,255,255,255,255,255,255,255],
+                      [255,255,255,255,255,255,255,255],
+                    ],
+                  ].toTensor.astype(uint8)
+      check: gray_1_6_8.shape == @[1,6,8]
 
-    check: gray_1_6_8 == rwimg
+      gray_1_6_8.write_png(rwpng)
+      let rwimg = read_image(rwpng)
+
+      check: gray_1_6_8 == rwimg
+
+
+main()
+GC_fullCollect()

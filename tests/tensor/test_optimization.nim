@@ -15,9 +15,14 @@
 import ../../src/arraymancer, ../testutils
 import unittest, sequtils
 
-testSuite "Optimization":
-  test "Test if contiguous slices are detected as contiguous":
-    let a = [[1, 2, 3, 4, 5],
-            [6, 7, 8, 9, 10]].toTensor
+proc main() =
+  suite "Optimization":
+    test "Test if contiguous slices are detected as contiguous":
+      let a = [[1, 2, 3, 4, 5],
+              [6, 7, 8, 9, 10]].toTensor
 
-    check: a[1, 2..3].isContiguous == true
+      check: a[1, 2..3].isContiguous == true
+
+
+main()
+GC_fullCollect()

@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./backend/metadataArray,
-        ./backend/memory_optimization_hints,
+import  ./backend/memory_optimization_hints,
         ./backend/openmp,
         ./private/p_checks,
         ./private/p_accessors_macros_write,
@@ -27,7 +26,7 @@ import  ./backend/metadataArray,
 # Indexed axis
 # --------------------------------------------------------------------------------------------
 
-func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int, indices: Tensor[Idx]): Tensor[T] {.noInit.} =
+proc index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int, indices: Tensor[Idx]): Tensor[T] {.noInit.} =
   ## Take elements from a tensor along an axis using the indices Tensor.
   ## This is equivalent to NumPy `take`.
   ## The result does not share the input storage, there are copies.
@@ -46,7 +45,7 @@ func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int,
     var t_slice = t.atAxisIndex(axis, int(index))
     r_slice.copyFrom(t_slice)
 
-func index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int, indices: openarray[Idx]): Tensor[T] {.noInit.} =
+proc index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int, indices: openarray[Idx]): Tensor[T] {.noInit.} =
   ## Take elements from a tensor along an axis using the indices Tensor.
   ## This is equivalent to NumPy `take`.
   ## The result does not share the input storage, there are copies.
@@ -86,7 +85,7 @@ proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: in
 # Mask full tensor
 # --------------------------------------------------------------------------------------------
 
-func masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
+proc masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
   ## Take elements from a tensor according to the provided boolean mask
   ##
   ## Returns a **flattened** tensor which is the concatenation of values for which the mask is true.
@@ -114,7 +113,7 @@ func masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
       inc idx
   assert idx == size
 
-func masked_select*[T](t: Tensor[T], mask: openarray): Tensor[T] {.noInit.} =
+proc masked_select*[T](t: Tensor[T], mask: openarray): Tensor[T] {.noInit.} =
   ## Take elements from a tensor according to the provided boolean mask
   ##
   ## The boolean mask must be

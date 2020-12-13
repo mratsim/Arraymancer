@@ -54,7 +54,7 @@ template `[]`*[TT](v: Variable[TT], args: varargs[untyped]): Variable[TT] =
 # #############################################
 
 type ReshapeGate*[TT] {.final.} = ref object of Gate[TT]
-  cached_input_shape: MetadataArray
+  cached_input_shape: Metadata
 
 proc reshape_backward_ag[TT](self: ReshapeGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   let gradient = payload.variable.grad
@@ -80,7 +80,7 @@ proc reshape_cache[TT](result: Variable[TT], a: Variable[TT]) =
     a
   )
 
-proc reshapeImpl[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
+proc reshapeImpl[TT](a: Variable[TT], shape: Metadata): Variable[TT] =
   # Resulting var
   new result
   result.context = a.context
@@ -94,9 +94,9 @@ proc reshape*[TT](a: Variable[TT], shape: varargs[int]): Variable[TT] =
   ## Input:
   ##   - A variable
   ##   - A shape
-  reshapeImpl(a, shape.toMetadataArray)
+  reshapeImpl(a, shape.toMetadata)
 
-proc reshape*[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
+proc reshape*[TT](a: Variable[TT], shape: Metadata): Variable[TT] =
   ## Input:
   ##   - A variable
   ##   - A shape
@@ -105,7 +105,7 @@ proc reshape*[TT](a: Variable[TT], shape: MetadataArray): Variable[TT] =
 proc flatten*[TT](a: Variable[TT]): Variable[TT] =
   ## Input:
   ##   - A variable
-  reshapeImpl(a, [a.value.shape[0], a.value.size div a.value.shape[0]].toMetadataArray)
+  reshapeImpl(a, [a.value.shape[0], a.value.size div a.value.shape[0]].toMetadata)
 
 # ############################################################
 #

@@ -65,7 +65,7 @@ template gen_write_image(proc_name: untyped): untyped {.dirty.}=
       h = img.shape[0]
       w = img.shape[1]
       c = img.shape[2]
-    success = proc_name(filepath, w, h, c, img.storage.Fdata)
+    success = proc_name(filepath, w, h, c, toOpenArray(img.storage.raw_buffer, 0, img.size-1))
 
     doAssert success
 
@@ -82,6 +82,6 @@ proc write_jpg*(img: Tensor[uint8], filepath: string, quality = 100) =
     h = img.shape[0]
     w = img.shape[1]
     c = img.shape[2]
-  success = write_jpg(filepath, w, h, c, img.storage.Fdata, quality)
+  success = write_jpg(filepath, w, h, c, toOpenArray(img.storage.raw_buffer, 0, img.size-1), quality)
 
   doAssert success

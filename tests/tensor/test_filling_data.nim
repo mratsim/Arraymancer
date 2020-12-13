@@ -17,18 +17,21 @@ import ../../src/arraymancer, ../testutils
 import unittest, math
 import complex except Complex64, Complex32
 
+proc main() =
+  suite "Testing miscellaneous data functions":
+    test "Copy data from source":
+      let a = [[1,2],[3,4]].toTensor.reshape(4, 1)
 
-testSuite "Testing miscellaneous data functions":
-  test "Copy data from source":
-    let a = [[1,2],[3,4]].toTensor.reshape(2,2)
+      var b = ones[int](4, 1)
 
-    var b = ones[int](4,1)
+      b.copyFrom(a)
 
-    b.copy_from(a)
+      check: b == [[1], [2], [3], [4]].toTensor
+      block:
+        let a = [[1,2],[3,4]].toTensor.reshape(4, 1).astype(Complex[float64])
+        var b = ones[Complex[float64]](4, 1)
+        b.copyFrom(a)
+        check: b == [[1], [2], [3], [4]].toTensor.astype(Complex[float64])
 
-    check: b == [[1],[2], [3], [4]].toTensor
-    block:
-      let a = [[1,2],[3,4]].toTensor.reshape(2,2).astype(Complex[float64])
-      var b = ones[Complex[float64]](4,1)
-      b.copy_from(a)
-      check: b == [[1],[2], [3], [4]].toTensor.astype(Complex[float64])
+main()
+GC_fullCollect()

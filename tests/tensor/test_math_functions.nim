@@ -16,73 +16,77 @@ import ../../src/arraymancer, ../testutils
 import unittest, math
 import complex except Complex64, Complex32
 
-testSuite "Math functions":
-  test "Reciprocal (element-wise 1/x)":
-    var a = [1.0, 10, 20, 30].toTensor.reshape(4,1)
-    var a_c = [1.0, 10, 20, 30].toTensor.reshape(4,1).astype(Complex[float64])
-
-
-    check: a.reciprocal == [[1.0],
-                            [1.0/10.0],
-                            [1.0/20.0],
-                            [1.0/30.0]].toTensor
-    check: a_c.reciprocal == [[1.0],
-                            [1.0/10.0],
-                            [1.0/20.0],
-                            [1.0/30.0]].toTensor.astype(Complex[float64])
-
-    a.mreciprocal
-    a_c.mreciprocal
-
-    check: a == [[1.0],
-                [1.0/10.0],
-                [1.0/20.0],
-                [1.0/30.0]].toTensor
-    check: a_c == [[1.0],
-                [1.0/10.0],
-                [1.0/20.0],
-                [1.0/30.0]].toTensor.astype(Complex[float64])
-
-  test "Negate elements (element-wise -x)":
-    block: # Out of place
+proc main() =
+  suite "Math functions":
+    test "Reciprocal (element-wise 1/x)":
       var a = [1.0, 10, 20, 30].toTensor.reshape(4,1)
+      var a_c = [1.0, 10, 20, 30].toTensor.reshape(4,1).astype(Complex[float64])
 
 
-      check: a.negate == [[-1.0],
-                          [-10.0],
-                          [-20.0],
-                          [-30.0]].toTensor
+      check: a.reciprocal == [[1.0],
+                              [1.0/10.0],
+                              [1.0/20.0],
+                              [1.0/30.0]].toTensor
+      check: a_c.reciprocal == [[1.0],
+                              [1.0/10.0],
+                              [1.0/20.0],
+                              [1.0/30.0]].toTensor.astype(Complex[float64])
 
-      a.mnegate
+      a.mreciprocal
+      a_c.mreciprocal
 
-      check: a == [[-1.0],
-                  [-10.0],
-                  [-20.0],
-                  [-30.0]].toTensor
+      check: a == [[1.0],
+                  [1.0/10.0],
+                  [1.0/20.0],
+                  [1.0/30.0]].toTensor
+      check: a_c == [[1.0],
+                  [1.0/10.0],
+                  [1.0/20.0],
+                  [1.0/30.0]].toTensor.astype(Complex[float64])
 
-  test "Clamp":
-    var a = [-5,2,3,5,10,0,1,-1].toTensor()
-    let target = [-2,2,2,2,2,0,1,-1].toTensor()
-    check: a.clamp(-2,2) == target
-    a.mclamp(-2,2)
-    check: a == target
+    test "Negate elements (element-wise -x)":
+      block: # Out of place
+        var a = [1.0, 10, 20, 30].toTensor.reshape(4,1)
 
-  test "Absolute value":
-    var a = [1.0, -10, -20, 30].toTensor.reshape(4,1)
-    var a_c = [1.0, -10, -20, 30].toTensor.reshape(4,1).astype(Complex[float64])
 
-    check: a.abs == [[1.0],
-                      [10.0],
-                      [20.0],
-                      [30.0]].toTensor
-    check: a_c.abs == [[1.0],
-                      [10.0],
-                      [20.0],
-                      [30.0]].toTensor.astype(float64)
+        check: a.negate == [[-1.0],
+                            [-10.0],
+                            [-20.0],
+                            [-30.0]].toTensor
 
-    a.mabs
+        a.mnegate
 
-    check: a == [[1.0],
-                [10.0],
-                [20.0],
-                [30.0]].toTensor
+        check: a == [[-1.0],
+                    [-10.0],
+                    [-20.0],
+                    [-30.0]].toTensor
+
+    test "Clamp":
+      var a = [-5,2,3,5,10,0,1,-1].toTensor()
+      let target = [-2,2,2,2,2,0,1,-1].toTensor()
+      check: a.clamp(-2,2) == target
+      a.mclamp(-2,2)
+      check: a == target
+
+    test "Absolute value":
+      var a = [1.0, -10, -20, 30].toTensor.reshape(4,1)
+      var a_c = [1.0, -10, -20, 30].toTensor.reshape(4,1).astype(Complex[float64])
+
+      check: a.abs == [[1.0],
+                        [10.0],
+                        [20.0],
+                        [30.0]].toTensor
+      check: a_c.abs == [[1.0],
+                        [10.0],
+                        [20.0],
+                        [30.0]].toTensor.astype(float64)
+
+      a.mabs
+
+      check: a == [[1.0],
+                  [10.0],
+                  [20.0],
+                  [30.0]].toTensor
+
+main()
+GC_fullCollect()

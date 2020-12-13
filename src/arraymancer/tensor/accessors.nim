@@ -12,19 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./private/p_accessors,
-        ./private/p_checks,
-        ./data_structure
+import ./private/p_accessors,
+       ./private/p_checks,
+       ./data_structure
 
 proc atContiguousIndex*[T](t: Tensor[T], idx: int): T {.noSideEffect,inline.} =
   ## Return value of tensor at contiguous index
   ## i.e. as treat the tensor as flattened
-  return t.data[t.getContiguousIndex(idx)]
+  when T is KnownSupportsCopyMem:
+    return t.unsafe_raw_buf[t.getContiguousIndex(idx)]
+  else:
+    return t.storage.raw_buffer[t.getContiguousIndex(idx)]
 
 proc atContiguousIndex*[T](t: var Tensor[T], idx: int): var T {.noSideEffect,inline.} =
   ## Return value of tensor at contiguous index (mutable)
   ## i.e. as treat the tensor as flattened
-  return t.data[t.getContiguousIndex(idx)]
+  when T is KnownSupportsCopyMem:
+    return t.unsafe_raw_buf[t.getContiguousIndex(idx)]
+  else:
+    return t.storage.raw_buffer[t.getContiguousIndex(idx)]
 
 proc atAxisIndex*[T](t: Tensor[T], axis, idx: int, length = 1): Tensor[T] {.noInit,inline.} =
   ## Returns a sliced tensor in the given axis index

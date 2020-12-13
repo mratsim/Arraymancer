@@ -75,7 +75,7 @@ script:
     - nimble install -y
     - if [[$BLIS]];
         then nimble test_blis;
-        else nimble test;
+        else nimble test; nimble test_arc;
         fi
 
     # TODO:

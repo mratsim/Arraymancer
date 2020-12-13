@@ -72,3 +72,24 @@ proc replaceSymsByIdents*(ast: NimNode): NimNode =
     else:
       letsGoDeeper()
   result = inspect(ast)
+
+proc replaceNodes*(ast: NimNode, replacements: NimNode, to_replace: NimNode): NimNode =
+  # Args:
+  #   - The full syntax tree
+  #   - an array of replacement value
+  #   - an array of identifiers to replace
+  proc inspect(node: NimNode): NimNode =
+    case node.kind:
+    of {nnkIdent, nnkSym}:
+      for i, c in to_replace:
+        if node.eqIdent($c):
+          return replacements[i]
+      return node
+    of nnkEmpty: return node
+    of nnkLiterals: return node
+    else:
+      var rTree = node.kind.newTree()
+      for child in node:
+        rTree.add inspect(child)
+      return rTree
+  result = inspect(ast)

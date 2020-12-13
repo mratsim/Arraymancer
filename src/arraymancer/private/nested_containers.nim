@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../tensor/backend/metadataArray
+import ../laser/tensor/datatypes
 
 # Tools to manipulate deep nested containers
 

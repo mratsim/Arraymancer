@@ -644,7 +644,7 @@ macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
 
 when isMainModule:
   import
-    ./data_structure, ./init_cpu, ./ufunc, ./backend/metadataArray,
+    ./data_structure, ./init_cpu, ./ufunc,
     ./accessors_macros_read, ./accessors_macros_write
 
   let c0 = toSeq(11..34).toTensor.astype(float)

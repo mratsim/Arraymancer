@@ -13,15 +13,35 @@
 # limitations under the License.
 
 import ./data_structure
+import ../private/sequninit
 import sequtils
 
-proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect.} =
+proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect, deprecated: "This proc cannot be reimplemented in a backward compatible way.".} =
   ## Convert a tensor to the raw sequence of data.
+  ## Important:
+  ##   Up to v0.6.0, Arraymancer always took full ownership of the data it operated on.
+  ##   In particular, even after slicing, it kept tracked of the full memory allocated initially.
+  ##
+  ##   This proc used to return the raw in-memory representation of the data
+  ##   without reshaping due to views/slices and offsets
+  ##   This is not true anymore.
+  ##
+  ##   It instead returns the canonical row-major serialization of the data.
+  ##
+  ## It is recommended that you implement your own serialization using
+  ## Arraymancer's unsafe_raw_buf + shape + strides + offset
+  ## or that you raise your use-case in the issue tracker https://github.com/mratsim/Arraymancer/issues
+  ## so that more suitable primitives can be crafted
 
   # Due to forward declaration this proc must be declared
   # after "cpu" proc are declared in init_cuda
   when t is Tensor:
-    return t.data
+    result = newSeqUninit[T](t.size)
+    for i in 0 ..< t.size:
+      when T is KnownSupportsCopyMem:
+        result[i] = t.unsafe_raw_offset()[i]
+      else:
+        result[i] = t.storage.raw_buffer[i]
   elif t is CudaTensor:
     return t.cpu.data
 
@@ -38,7 +58,7 @@ proc export_tensor*[T](t: Tensor[T]):
 
   result.shape = contig_t.shape
   result.strides = contig_t.strides
-  result.data = contig_t.data
+  result.data = contig_t.toRawSeq
 
 proc toSeq2D*[T](t: Tensor[T]): seq[seq[T]] =
   ## Exports a rank-2 tensor to a 2D sequence.

@@ -17,7 +17,7 @@
 
 # This configures the maximum number of dimensions supported by Arraymancer
 # On x86-64, a cache line can contain 8 int64. Hence for best performance
-# MetadataArray should be an array of 7 elements + 1 int for length
+# Metadata should be an array of 7 elements + 1 int for length
 # In deep learning the max rank needed is 6 for 3D videos: [batch, time, color/feature channels, Depth, Height, Width]
 const MAXRANK* = 7
 

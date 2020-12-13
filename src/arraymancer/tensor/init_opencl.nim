@@ -47,7 +47,7 @@ proc cpu*[T:SomeFloat](t: ClTensor[T]): Tensor[T] {.noInit.}=
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset
-  result.data = newSeqUninit[T](t.storage.Flen) # We copy over all the memory allocated (without prior asContiguous)
+  result.storage.allocCpuStorage(t.storage.Flen)
 
   let size = t.storage.Flen * sizeof(T)
 

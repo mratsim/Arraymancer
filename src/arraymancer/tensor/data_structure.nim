@@ -12,41 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./backend/metadataArray,
-        nimblas, complex
+import
+  ../laser/dynamic_stack_arrays,
+  ../laser/tensor/datatypes,
+  ../private/sequninit,
+  nimblas,
+  # Standard library
+  std/[complex, typetraits]
 
 export nimblas.OrderType, complex
+export datatypes, dynamic_stack_arrays
 
 type
-  CpuStorage*[T] {.shallow.} = object
-    ## Opaque data storage for Tensors
-    ## Currently implemented as a seq with reference semantics (shallow copy on assignment).
-    ## It may change in the future for a custom memory managed and 64 bit aligned solution.
-    ##
-    ## Warning ⚠:
-    ##   Do not use Fdata directly, direct access will be removed in 0.4.0.
-
-    # `Fdata` will be transformed into an opaque type once `unsafeToTensorReshape` is removed.
-    Fdata*: seq[T]
-
-  Tensor*[T] = object
-    ## Tensor data structure stored on Cpu
-    ##   - ``shape``: Dimensions of the tensor
-    ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
-    ##   - ``offset``: Offset to get the first item of the tensor. Note: offset can be negative, in particular for slices.
-    ##   - ``storage``: An opaque data storage for the tensor
-    ## Fields are public so that external libraries can easily construct a Tensor.
-    ## You can use ``.data`` to access the opaque data storage.
-    ##
-    ## Warning ⚠:
-    ##   Assignment ```var a = b``` does not copy the data. Data modification on one tensor will be reflected on the other.
-    ##   However modification on metadata (shape, strides or offset) will not affect the other tensor.
-    ##   Explicit copies can be made with ``clone``: ```var a = b.clone```
-    shape*: MetadataArray
-    strides*: MetadataArray
-    offset*: int
-    storage*: CpuStorage[T]
-
   CudaStorage*[T: SomeFloat] = object
     ## Opaque seq-like structure for storage on the Cuda backend.
     ##
@@ -68,8 +45,8 @@ type
     ##   Assignment ```var a = b``` does not copy the data. Data modification on one CudaTensor will be reflected on the other.
     ##   However modification on metadata (shape, strides or offset) will not affect the other tensor.
     ##   Explicit copies can be made with ``clone``: ```var a = b.clone```
-    shape*: MetadataArray
-    strides*: MetadataArray
+    shape*: Metadata
+    strides*: Metadata
     offset*: int
     storage*: CudaStorage[T]
 
@@ -90,8 +67,8 @@ type
     ##   Assignment ```var a = b``` does not copy the data. Data modification on one CudaTensor will be reflected on the other.
     ##   However modification on metadata (shape, strides or offset) will not affect the other tensor.
     ##   Explicit copies can be made with ``clone``: ```var a = b.clone```
-    shape*: MetadataArray
-    strides*: MetadataArray
+    shape*: Metadata
+    strides*: Metadata
     offset*: int
     storage*: ClStorage[T]
 
@@ -101,47 +78,28 @@ type
 # Field accessors
 # ###############
 
-proc data*[T](t: Tensor[T]): seq[T] {.inline, noSideEffect, noInit.} =
-  # Get tensor raw data
-  # This is intended for library writer
-  shallowCopy(result, t.storage.Fdata)
-
-proc data*[T](t: var Tensor[T]): var seq[T] {.inline, noSideEffect, noInit.} =
-  # Get mutable tensor raw data
-  # This is intended for library writer
-  shallowCopy(result, t.storage.Fdata)
-
-proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.inline, noSideEffect.}=
+proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.deprecated: "Use copyFromRaw instead".} =
   # Set tensor raw data
   # This is intended for library writer
-  t.storage.Fdata = s
+  assert s.len > 0
+  when T is KnownSupportsCopyMem:
+    t.copyFromRaw(s[0].unsafeaddr, s.len)
+  else:
+    t.storage.raw_buffer = s
 
 # ################
 # Tensor Metadata
 # ################
 
-proc rank*(t: AnyTensor): int {.noSideEffect, inline.}=
-  ## Input:
-  ##     - A tensor
-  ## Returns:
-  ##     - Its rank
-  ##
-  ##   - 0 for scalar (unfortunately cannot be stored)
-  ##   - 1 for vector
-  ##   - 2 for matrices
-  ##   - N for N-dimension array
+func rank*(t: AnyTensor): range[0 .. LASER_MAXRANK] {.inline.} =
   t.shape.len
 
-proc size*(t: AnyTensor): int {.noSideEffect, inline.}=
-  ## Input:
-  ##     - A tensor
-  ## Returns:
-  ##     - The total number of elements it contains
+func size*(t: AnyTensor): Natural {.inline.} =
   t.shape.product
 
-proc shape_to_strides*(shape: MetadataArray, layout: OrderType = rowMajor, result: var MetadataArray) {.noSideEffect.} =
+proc shape_to_strides*(shape: Metadata, layout: OrderType = rowMajor, result: var Metadata) {.noSideEffect.} =
   ## Input:
-  ##     - A shape (MetadataArray), for example [3,5] for a 3x5 matrix
+  ##     - A shape (Metadata), for example [3,5] for a 3x5 matrix
   ##     - Optionally rowMajor (C layout - default) or colMajor (Fortran)
   ## Returns:
   ##     - The strides in C or Fortran order corresponding to this shape and layout
@@ -162,15 +120,15 @@ proc shape_to_strides*(shape: MetadataArray, layout: OrderType = rowMajor, resul
     accum *= shape[i]
   return
 
-proc is_C_contiguous*(t: AnyTensor): bool {.noSideEffect, inline.}=
+func is_C_contiguous*(t: CudaTensor or ClTensor): bool =
   ## Check if the tensor follows C convention / is row major
-  var z = 1
-  for i in countdown(t.shape.high,0):
+  var cur_size = 1
+  for i in countdown(t.rank - 1,0):
     # 1. We should ignore strides on dimensions of size 1
-    # 2. Strides always must have the size equal to the product of the next dimensons
-    if t.shape[i] != 1 and t.strides[i] != z:
+    # 2. Strides always must have the size equal to the product of the next dimensions
+    if t.shape[i] != 1 and t.strides[i] != cur_size:
         return false
-    z *= t.shape[i]
+    cur_size *= t.shape[i]
   return true
 
 proc is_F_contiguous*(t: AnyTensor): bool {.noSideEffect, inline.}=
@@ -193,24 +151,47 @@ proc isContiguous*(t: AnyTensor): bool {.noSideEffect, inline.}=
 # ##################
 
 
-proc get_data_ptr*[T](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
+proc get_data_ptr*[T: KnownSupportsCopyMem](t: Tensor[T]): ptr T {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the real start of its data (no offset)
-  unsafeAddr(t.storage.Fdata[0])
+  cast[ptr T](t.storage.raw_buffer)
 
-proc get_offset_ptr*[T](t: AnyTensor[T]): ptr T {.noSideEffect, inline.}=
+proc get_data_ptr*[T: not KnownSupportsCopyMem](t: AnyTensor[T]): ptr T {.error: "`get_data_ptr`" &
+  " cannot be safely used for GC'ed types!".}
+
+proc get_offset_ptr*[T: KnownSupportsCopyMem](t: Tensor[T]): ptr T {.noSideEffect, inline.}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the offset start of its data
-  unsafeAddr(t.storage.Fdata[t.offset])
+  t.storage.raw_buffer[t.offset].unsafeAddr
 
-proc dataArray*[T](t: Tensor[T]): ptr UncheckedArray[T] {.noSideEffect, inline.}=
+proc get_offset_ptr*[T: not KnownSupportsCopyMem](t: AnyTensor[T]): ptr T {.error: "`get_offset_ptr`" &
+  " cannot be safely used for GC'ed types!".}
+
+proc get_data_ptr*[T](t: CudaTensor[T] or ClTensor[T]): ptr T {.noSideEffect, inline.}=
+  ## Input:
+  ##     - A tensor
+  ## Returns:
+  ##     - A pointer to the real start of its data (no offset)
+  cast[ptr T](t.storage.Fdata)
+
+proc get_offset_ptr*[T](t: CudaTensor[T] or ClTensor[T]): ptr T {.noSideEffect, inline.}=
+  ## Input:
+  ##     - A tensor
+  ## Returns:
+  ##     - A pointer to the offset start of its data
+  t.storage.Fdata[t.offset].unsafeAddr
+
+proc dataArray*[T: KnownSupportsCopyMem](t: Tensor[T]): ptr UncheckedArray[T] {.noSideEffect, inline, deprecated: "Use unsafe_raw_offset instead".}=
   ## Input:
   ##     - A tensor
   ## Returns:
   ##     - A pointer to the offset start of the data.
   ##       Return value supports array indexing.
-  cast[ptr UncheckedArray[T]](t.storage.Fdata[t.offset].unsafeAddr)
+  cast[ptr UncheckedArray[T]](t.unsafe_raw_offset[t.offset].unsafeAddr)
+
+proc dataArray*[T: not KnownSupportsCopyMem](t: Tensor[T]): ptr UncheckedArray[T] {.error: "`dataArray` " &
+  " is deprecated for mem copyable types and not supported for GC'ed types!".}

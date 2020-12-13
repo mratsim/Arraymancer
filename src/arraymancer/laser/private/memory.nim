@@ -3,10 +3,10 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
-import ../compiler_optim_hints, typetraits
+import ../compiler_optim_hints, typetraits, ../tensor/datatypes
 
 func align_raw_data*(T: typedesc, p: pointer): ptr UncheckedArray[T] =
-  static: assert T.supportsCopyMem
+  static: assert T is KnownSupportsCopyMem
   withCompilerOptimHints()
 
   let address = cast[ByteAddress](p)

@@ -16,6 +16,8 @@
 ##  @brief Status code for any NNPACK function call.
 ##
 
+import ../../std_version_types
+
 {.passl: "-lnnpack -lpthreadpool -lpthread".}
 
 type

@@ -14,6 +14,7 @@
 
 import  ../../laser/private/nested_containers,
         ../../laser/tensor/initialization,
+        ../../std_version_types,
         ../data_structure
 
 include ./p_checks_cuda, ./p_checks_opencl

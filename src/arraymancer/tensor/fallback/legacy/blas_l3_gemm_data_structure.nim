@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ../../../std_version_types
 
 # Custom data structure to force alignment of the buffer arrays
 type

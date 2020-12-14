@@ -10,6 +10,7 @@ import
   ../dynamic_stack_arrays,
   ../private/nested_containers,
   ./datatypes,
+  ../../std_version_types,
   # Standard library
   typetraits, sequtils,
   # Third-party

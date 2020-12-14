@@ -18,6 +18,7 @@
 import  ../../private/ast_utils,
         ../data_structure, ../accessors_macros_syntax,
         ./p_checks, ./p_accessors,
+        ../../std_version_types,
         sequtils, macros
 
 from ../init_cpu import toTensor

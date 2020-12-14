@@ -14,6 +14,7 @@
 
 
 import  ../accessors_macros_syntax,
+        ../../std_version_types,
         macros
 
 # span is equivalent to `:` in Python. It returns the whole axis range.

@@ -18,6 +18,7 @@
 
 import  ../../tensor/backend/cuda,
         ../../tensor,
+        ../../std_version_types,
         ./cudnn
 
 # #####################################################################

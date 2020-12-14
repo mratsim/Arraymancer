@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import  ../private/sequninit,
+        ../std_version_types,
         ./private/p_init_cuda,
         ./backend/cuda,
         ./backend/cuda_global_state,

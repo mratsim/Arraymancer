@@ -5,17 +5,17 @@ matrix:
 
 environment:
   matrix:
-    - NIM_ARCHIVE: nim-1.4.0_x64.zip
-      NIM_DIR: nim-1.4.0
-      NIM_URL: https://nim-lang.org/download/nim-1.4.0_x64.zip
+    - NIM_ARCHIVE: nim-1.0.6_x64.zip
+      NIM_DIR: nim-1.0.6
+      NIM_URL: https://nim-lang.org/download/nim-1.0.6_x64.zip
       MINGW_PATH: C:\mingw-w64\x86_64-6.3.0-posix-seh-rt_v5-rev1\mingw64\bin
       LAPACK_URL: http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win64/liblapack.dll
       BLAS_PLATFORM: x64
       platform: x64
 
-    - NIM_ARCHIVE: nim-1.4.0_x32.zip
-      NIM_DIR: nim-1.4.0
-      NIM_URL: https://nim-lang.org/download/nim-1.4.0_x32.zip
+    - NIM_ARCHIVE: nim-1.0.6_x32.zip
+      NIM_DIR: nim-1.0.6
+      NIM_URL: https://nim-lang.org/download/nim-1.0.6_x32.zip
       MINGW_PATH: C:\mingw-w64\i686-6.3.0-posix-dwarf-rt_v5-rev1\mingw32\bin
       LAPACK_URL: http://icl.cs.utk.edu/lapack-for-windows/libraries/VisualStudio/3.7.0/Dynamic-MINGW/Win32/liblapack.dll
       BLAS_PLATFORM: win32

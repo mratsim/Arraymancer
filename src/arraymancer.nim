@@ -38,6 +38,9 @@ export  tensor,
         nlp,
         einsum
 
+when (NimMajor, NimMinor, NimPatch) < (1, 4, 0):
+  type IndexDefect* = IndexError
+
 when not defined(no_lapack):
   # The ml module also does not export everything is LAPACK is not available
   import ./arraymancer/linear_algebra

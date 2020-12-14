@@ -23,7 +23,9 @@ import  ./arraymancer/tensor,
         ./arraymancer/ml,
         ./arraymancer/stats/[stats, distributions, kde],
         ./arraymancer/nlp,
-        ./arraymancer/tensor/einsum
+        ./arraymancer/tensor/einsum,
+        ./arraymancer/linear_algebra,
+        ./arraymancer/std_version_types
 
 export  tensor,
         nn_primitives,
@@ -36,15 +38,8 @@ export  tensor,
         ml,
         stats, distributions, kde,
         nlp,
-        einsum
-
-when (NimMajor, NimMinor, NimPatch) < (1, 4, 0):
-  # IndexDefect was introduced in 1.4.0
-  type IndexDefect* = IndexError
-
-when (NimMajor, NimMinor, NimPatch) < (1, 2, 0):
-  # csize_t was introduced in 1.2.0
-  type csize_t* {.importc: "size_t", nodecl.} = uint
+        einsum,
+        std_version_types
 
 when not defined(no_lapack):
   # The ml module also does not export everything is LAPACK is not available

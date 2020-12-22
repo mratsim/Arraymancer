@@ -101,7 +101,7 @@ proc read_mnist_images*(imgsPath: string): Tensor[uint8] {.noInit.}=
   ##     - W, width
   ##
   ## MNIST data can be downloaded here: http://yann.lecun.com/exdb/mnist/
-  if not existsFile(imgsPath):
+  if not fileExists(imgsPath):
     raise newException(IOError, "MNIST images file \"" & imgsPath & "\" does not exist")
 
   let stream = newGzFileStream(imgsPath, mode = fmRead)
@@ -135,7 +135,7 @@ proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noInit.}=
   ##   - A tensor of labels with shape (N)
   ##     - N, number of images
   ## MNIST data can be downloaded here: http://yann.lecun.com/exdb/mnist/
-  if not existsFile(labelsPath):
+  if not fileExists(labelsPath):
     raise newException(IOError, "MNIST labels file \"" & labelsPath & "\" does not exist")
 
   let stream = newGzFileStream(labelsPath, mode = fmRead)
@@ -183,7 +183,7 @@ proc load_mnist*(cache: static bool = true): Mnist =
     cache_dir = get_cache_dir()
     files = cache_dir.mnistFilesPath
 
-  if not files.all(x => x.existsFile):
+  if not files.all(x => x.fileExists):
     create_cache_dirs_if_necessary()
     download_mnist_files(files)
 

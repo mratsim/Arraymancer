@@ -10,6 +10,7 @@ import
   ../dynamic_stack_arrays,
   ../private/nested_containers,
   ./datatypes,
+  ../../std_version_types,
   # Standard library
   typetraits, sequtils,
   # Third-party
@@ -206,7 +207,7 @@ proc toTensor*(a: openarray, dummy_bugfix: static[int] = 0): auto =
 
   if unlikely(shape.product != data.len):
     raise newException(
-      IndexError,
+      IndexDefect,
       "Each nested sequence at the same level" &
         " must have the same number of elements"
       )

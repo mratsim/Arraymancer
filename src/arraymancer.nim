@@ -23,7 +23,9 @@ import  ./arraymancer/tensor,
         ./arraymancer/ml,
         ./arraymancer/stats/[stats, distributions, kde],
         ./arraymancer/nlp,
-        ./arraymancer/tensor/einsum
+        ./arraymancer/tensor/einsum,
+        ./arraymancer/linear_algebra,
+        ./arraymancer/std_version_types
 
 export  tensor,
         nn_primitives,
@@ -36,7 +38,8 @@ export  tensor,
         ml,
         stats, distributions, kde,
         nlp,
-        einsum
+        einsum,
+        std_version_types
 
 when not defined(no_lapack):
   # The ml module also does not export everything is LAPACK is not available

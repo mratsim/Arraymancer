@@ -3,6 +3,8 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
+import arraymancer/std_version_types
+
 const LASER_MEM_ALIGN*{.intdefine.} = 64
 static:
   assert LASER_MEM_ALIGN != 0, "Alignment " & $LASER_MEM_ALIGN & "must be a power of 2"
@@ -43,7 +45,7 @@ type
     # 3 - L1 and L2 cache eviction level
 
 when withBuiltins:
-  proc builtin_assume_aligned(data: pointer, alignment: csize): pointer {.importc: "__builtin_assume_aligned", noDecl.}
+  proc builtin_assume_aligned(data: pointer, alignment: csize_t): pointer {.importc: "__builtin_assume_aligned", noDecl.}
   proc builtin_prefetch(data: pointer, rw: PrefetchRW, locality: PrefetchLocality) {.importc: "__builtin_prefetch", noDecl.}
 
 when defined(cpp):

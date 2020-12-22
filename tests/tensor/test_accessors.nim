@@ -38,14 +38,14 @@ proc main() =
     when compileOption("boundChecks") and not defined(openmp):
       test "Out of bounds checking":
         var a = newTensor[int](@[2,3,4])
-        expect(IndexError):
+        expect(IndexDefect):
           a[2,0,0] = 200
         var b = newTensor[int](@[3,4])
-        expect(IndexError):
+        expect(IndexDefect):
           b[3,4] = 999
-        expect(IndexError):
+        expect(IndexDefect):
           echo b[-1,0] # We don't use discard here because with the C++ backend it is optimized away.
-        expect(IndexError):
+        expect(IndexDefect):
           echo b[0,-2]
     else:
       echo "Bound-checking is disabled or OpenMP is used. The out-of-bounds checking test has been skipped."

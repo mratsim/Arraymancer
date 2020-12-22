@@ -173,10 +173,6 @@ proc argmax_max*[T: SomeNumber](t: Tensor[T], axis: int): tuple[indices: Tensor[
   ##                                     [1],
   ##                                     [1]].toTensor
 
-  assert axis in {0, 1}, "Only 1D and 2D tensors are supported at the moment for argmax"
-  # TODO: Reimplement parallel Argmax (introduced by https://github.com/mratsim/Arraymancer/pull/171)
-  #       must be done with care: https://github.com/mratsim/Arraymancer/issues/183
-
   if t.size == 0:
     result.indices.reset()
     result.maxes.reset()

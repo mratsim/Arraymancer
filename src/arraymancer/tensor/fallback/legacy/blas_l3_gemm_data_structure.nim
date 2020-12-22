@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import ../../../std_version_types
 
 # Custom data structure to force alignment of the buffer arrays
 type
@@ -44,7 +45,7 @@ proc newBlasBuffer[T](size: int): BlasBufferArray[T] =
 
 proc check_index(a: BlasBufferArray, idx: int) {.inline, noSideEffect.}=
   if idx < 0 or idx >= a.len:
-    raise newException(IndexError,  "Index out of bounds, index was " & $idx &
+    raise newException(IndexDefect,  "Index out of bounds, index was " & $idx &
                                       " while length of the array is " & $a)
 
 proc `[]`[T](a: BlasBufferArray[T], idx: int): T {.inline, noSideEffect.} =

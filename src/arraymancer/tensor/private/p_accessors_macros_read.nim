@@ -18,6 +18,7 @@
 import  ../../private/ast_utils,
         ../data_structure, ../accessors_macros_syntax,
         ./p_checks, ./p_accessors,
+        ../../std_version_types,
         sequtils, macros
 
 from ../init_cpu import toTensor
@@ -28,7 +29,7 @@ template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSl
   when compileOption("boundChecks"):
     if unlikely(slices.len > result.rank):
       raise newException(
-        IndexError,
+        IndexDefect,
         "Rank of slice expression (" & $slices.len &
           ") is larger than the tensor rank. Tensor shape" & $result.shape & "."
       )

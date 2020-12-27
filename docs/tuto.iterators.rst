@@ -1,6 +1,6 @@
-==============================
+===================
 Tutorial: Iterators
-==============================
+===================
 
 Tensors can be iterated in the proper order. Arraymancer provides:
 

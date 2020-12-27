@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-## *
+##
 ##  @brief Status code for any NNPACK function call.
 ##
 
@@ -64,7 +64,7 @@ const
   nnp_status_invalid_activation* = nnp_status_invalid_pooling_size
   nnp_status_invalid_activation_parameters* = nnp_status_invalid_pooling_stride
 
-## *
+##
 ##  @brief Activation applied applied after a convolutional or fully-connected layer.
 ##
 
@@ -74,7 +74,7 @@ type
     nnp_activation_relu = 1
 
 
-## *
+##
 ##  @brief Algorithm for computing convolutional layers.
 ##
 
@@ -106,7 +106,7 @@ const
   nnp_convolution_transform_strategy_block_based* = nnp_convolution_transform_strategy_compute
   nnp_convolution_transform_strategy_tuple_based* = nnp_convolution_transform_strategy_compute
 
-## *
+##
 ##  @brief Size of images, kernels, and pooling filters in NNPACK.
 ##
 
@@ -116,7 +116,7 @@ type
     ## * Height (vertical size) of an image, kernel, or pooling filter.
     height*: csize_t
 
-## *
+##
 ##  @brief Padding of images in NNPACK.
 ##
 
@@ -128,7 +128,7 @@ type
     bottom*: csize_t             ## * Padding on the left of image data
     left*: csize_t
 
-## *
+##
 ##  @brief Profiling information about time spent in different phases of a function call.
 ##
 
@@ -144,7 +144,7 @@ type
 
 proc nnp_initialize*(): nnp_status {.cdecl, importc: "nnp_initialize".}
 proc nnp_deinitialize*(): nnp_status {.cdecl, importc: "nnp_deinitialize".}
-## *
+##
 ##  @brief Computes output of a 2D convolutional layer from input and kernel tensors.
 ##  @details This function targets training of convolutional neural networks and performs forward propagation.
 ##           It is optimized for moderate minibatch sizes (64-128) and can be inefficient on a small minibatch.
@@ -189,7 +189,7 @@ proc nnp_convolution_output*(algorithm: nnp_convolution_algorithm;
                             activation_parameters: pointer=nil;
                             threadpool: pthreadpool_t=nil; profile: ptr nnp_profile=nil): nnp_status {.
     cdecl, importc: "nnp_convolution_output".}
-## *
+##
 ##  @brief Computes gradient of input of a 2D convolutional layer from gradient of output and kernel tensors.
 ##  @details This function targets training of convolutional neural networks and performs backward propagation.
 ##           It is optimized for moderate minibatch sizes (64-128) and can be inefficient on a small minibatch.
@@ -237,7 +237,7 @@ proc nnp_convolution_input_gradient*(algorithm: nnp_convolution_algorithm;
                                     threadpool: pthreadpool_t = nil;
                                     profile: ptr nnp_profile = nil): nnp_status {.cdecl,
     importc: "nnp_convolution_input_gradient".}
-## *
+##
 ##  @brief Computes gradient of kernel of a 2D convolutional layer from gradient of output and input tensors.
 ##  @details This function targets training of convolutional neural networks and performs backward propagation.
 ##           It is optimized for moderate minibatch sizes (64-128) and can be inefficient on a small minibatch.
@@ -284,7 +284,7 @@ proc nnp_convolution_kernel_gradient*(algorithm: nnp_convolution_algorithm;
                                      threadpool: pthreadpool_t = nil;
                                      profile: ptr nnp_profile = nil): nnp_status {.cdecl,
     importc: "nnp_convolution_kernel_gradient".}
-## *
+##
 ##  @brief Computes output of a 2D convolutional layer for a single input image and a kernel tensor.
 ##  @details This function targets prediction with convolutional neural networks and performs forward propagation.
 ##  @param algorithm The type of algorithm to use for convolution. Possible values are:
@@ -351,7 +351,7 @@ proc nnp_convolution_inference*(algorithm: nnp_convolution_algorithm;
                                activation_parameters: pointer;
                                threadpool: pthreadpool_t; profile: ptr nnp_profile): nnp_status {.
     cdecl, importc: "nnp_convolution_inference".}
-## *
+##
 ##  @brief Computes output of a fully connected layer from input and kernel matrices.
 ##  @details This function targets training of convolutional neural networks and performs forward propagation.
 ##           It is optimized for moderate minibatch sizes (64-128) and can be inefficient on a small minibatch.
@@ -372,7 +372,7 @@ proc nnp_fully_connected_output*(batch_size: csize_t; input_channels: csize_t;
                                 threadpool: pthreadpool_t;
                                 profile: ptr nnp_profile): nnp_status {.cdecl,
     importc: "nnp_fully_connected_output".}
-## *
+##
 ##  @brief Computes output of a fully connected layer for a single input vector and a kernel matrix.
 ##  @details This function targets prediction with convolutional neural networks and performs forward propagation.
 ##  @param input_channels The number of channels (AKA features, dimensions) in the input vector.
@@ -388,7 +388,7 @@ proc nnp_fully_connected_inference*(input_channels: csize_t; output_channels: cs
                                    input: ptr cfloat; kernel: ptr cfloat;
                                    output: ptr cfloat; threadpool: pthreadpool_t): nnp_status {.
     cdecl, importc: "nnp_fully_connected_inference".}
-## *
+##
 ##  @brief Computes output of a fully connected layer for a single input vector and a kernel matrix.
 ##  @details This function targets prediction with convolutional neural networks and performs forward propagation.
 ##  @param input_channels The number of channels (AKA features, dimensions) in the input vector.
@@ -404,7 +404,7 @@ proc nnp_fully_connected_inference_f16f32*(input_channels: csize_t;
     output_channels: csize_t; input: ptr cfloat; kernel: pointer; output: ptr cfloat;
     threadpool: pthreadpool_t): nnp_status {.cdecl,
     importc: "nnp_fully_connected_inference_f16f32".}
-## *
+##
 ##  @brief Computes output of a max-pooling layer for an input tensor.
 ##  @details This function targets both prediction and training of convolutional neural networks and performs forward
 ##           propagation. Is is optimized for both large and small minibatch sizes.
@@ -433,7 +433,7 @@ proc nnp_max_pooling_output*(batch_size: csize_t; channels: csize_t;
                             input: ptr cfloat; output: ptr cfloat;
                             threadpool: pthreadpool_t): nnp_status {.cdecl,
     importc: "nnp_max_pooling_output".}
-## *
+##
 ##  @brief Computes output of a softmax layer for an input matrix.
 ##  @details This function targets both prediction and training of convolutional neural networks and performs forward
 ##           propagation. Is is optimized for both large and small minibatch sizes.
@@ -448,7 +448,7 @@ proc nnp_max_pooling_output*(batch_size: csize_t; channels: csize_t;
 proc nnp_softmax_output*(batch_size: csize_t; channels: csize_t; input: ptr cfloat;
                         output: ptr cfloat; threadpool: pthreadpool_t): nnp_status {.
     cdecl, importc: "nnp_softmax_output".}
-## *
+##
 ##  @brief Computes output of a rectified linear unit (ReLU) layer for an input matrix.
 ##  @details This function targets both prediction and training of convolutional neural networks and performs forward
 ##           propagation. Is is optimized for both large and small minibatch sizes.
@@ -464,7 +464,7 @@ proc nnp_relu_output*(batch_size: csize_t; channels: csize_t; input: ptr cfloat;
                      output: ptr cfloat; negative_slope: cfloat;
                      threadpool: pthreadpool_t): nnp_status {.cdecl,
     importc: "nnp_relu_output".}
-## *
+##
 ##  @brief Computes gradient of input of a rectified linear unit (ReLU) layer from gradient of output and input matrices.
 ##  @details This function targets training of convolutional neural networks and performs backward propagation.
 ##           Is is optimized for both large and small minibatch sizes.

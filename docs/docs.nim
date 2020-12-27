@@ -304,8 +304,10 @@ proc genNimdocCfg*(path: string) =
   # fill the HTML generation template from the filenames
   let htmlTmpl = headerTmpl % [ spans[0], spans[1], spans[2],
                                 spans[3], spans[4], spans[5],
-                                spans[6]]
+                                spans[6] ]
   # first "header"
+  ## NOTE: the variables used here `gitUrl`, `docItemSeeSrc` are defined in
+  ## `nimDocTemplates.nim`!
   var fdata = ""
   fdata.add("# Arraymancer documentation generation\n\n")
   fdata.add(&"git.url = \"{gitUrl}\"\n\n")

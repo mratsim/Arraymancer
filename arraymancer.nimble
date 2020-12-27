@@ -258,10 +258,10 @@ when canImport(docs / docs):
   task gen_docs, "Generate Arraymancer documentation":
     # generate nimdoc.cfg file so we can generate the correct header for the
     # index.html page without having to mess with the HTML manually.
-    genNimdocCfg("src/")
+    genNimdocCfg("src/arraymancer/")
     # build the actual docs and the index
     buildDocs(
-      "src/", "docs/build",
+      "src/arraymancer/", "docs/build",
       defaultFlags = "--hints:off --warnings:off"
     )
     # Copy our stylesheets

@@ -43,13 +43,13 @@ proc nnpack_conv2d*(input, weight, bias: Tensor[float32], padding, stride: Size2
 
   let status = nnp_convolution_output(
     algorithm=nnp_convolution_algorithm_auto,
-    batch_size=batch_size,
-    input_channels=input.nchw_channels,
-    output_channels=output_channels,
-    input_size=nnp_size(height: input.nchw_height, width: input.nchw_width),
-    input_padding=nnp_padding(top: padding.height, bottom: padding.height,
-                              left: padding.width, right: padding.width),
-    kernel_size=nnp_size(height:weight.nchw_height, width: weight.nchw_width),
+    batch_size=batch_size.csize_t,
+    input_channels=input.nchw_channels.csize_t,
+    output_channels=output_channels.csize_t,
+    input_size=nnp_size(height: input.nchw_height.csize_t, width: input.nchw_width.csize_t),
+    input_padding=nnp_padding(top: padding.height.csize_t, bottom: padding.height.csize_t,
+                              left: padding.width.csize_t, right: padding.width.csize_t),
+    kernel_size=nnp_size(height:weight.nchw_height.csize_t, width: weight.nchw_width.csize_t),
     input=cast[ptr cfloat](input.get_offset_ptr),
     kernel=cast[ptr cfloat](weight.get_offset_ptr),
     bias=cast[ptr cfloat](bias_nonnil.get_offset_ptr),
@@ -68,10 +68,10 @@ proc nnpack_conv2d_gradient*[T](input, weight: Tensor[float32], padding, stride:
     output_channels = weight.shape[^4]
     output_height = (2*padding.height + input.nchw_height) - (weight.nchw_height - 1)
     output_width = (2*padding.width + input.nchw_width) - (weight.nchw_width - 1)
-    nninput_size = nnp_size(height: input.nchw_height, width: input.nchw_width)
-    nnpadding = nnp_padding(top: padding.height, bottom: padding.height,
-                              left: padding.width, right: padding.width)
-    nnkernel_size = nnp_size(height:weight.nchw_height, width: weight.nchw_width)
+    nninput_size = nnp_size(height: input.nchw_height.csize_t, width: input.nchw_width.csize_t)
+    nnpadding = nnp_padding(top: padding.height.csize_t, bottom: padding.height.csize_t,
+                              left: padding.width.csize_t, right: padding.width.csize_t)
+    nnkernel_size = nnp_size(height:weight.nchw_height.csize_t, width: weight.nchw_width.csize_t)
 
   # Check if grad output shape looks correct
   assert grad_output.nchw_width == output_width and grad_output.nchw_height == output_height
@@ -82,9 +82,9 @@ proc nnpack_conv2d_gradient*[T](input, weight: Tensor[float32], padding, stride:
   grad_input = zeros[T](input.shape)
   var status = nnp_convolution_input_gradient(
     algorithm=nnp_convolution_algorithm_auto,
-    batch_size=batch_size,
-    input_channels=input_channels,
-    output_channels=output_channels,
+    batch_size=batch_size.csize_t,
+    input_channels=input_channels.csize_t,
+    output_channels=output_channels.csize_t,
     input_size=nninput_size,
     input_padding=nnpadding,
     kernel_size=nnkernel_size,
@@ -97,9 +97,9 @@ proc nnpack_conv2d_gradient*[T](input, weight: Tensor[float32], padding, stride:
   grad_weight = zeros[T](weight.shape)
   status = nnp_convolution_kernel_gradient(
     algorithm=nnp_convolution_algorithm_auto,
-    batch_size=batch_size,
-    input_channels=input_channels,
-    output_channels=output_channels,
+    batch_size=batch_size.csize_t,
+    input_channels=input_channels.csize_t,
+    output_channels=output_channels.csize_t,
     input_size=nninput_size,
     input_padding=nnpadding,
     kernel_size=nnkernel_size,

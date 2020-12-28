@@ -1,6 +1,6 @@
-==============================
+===================================================
 Spellbook: How to convert a tensor underlying type?
-==============================
+===================================================
 
 A type conversion fonction ``astype`` is provided for convenience
 

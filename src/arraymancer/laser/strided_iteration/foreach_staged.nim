@@ -10,7 +10,7 @@ import
   macros,
   tables, sets,
   ./foreach_common,
-  ../private/ast_utils,
+  ../../private/ast_utils,
   ../openmp,
   ../compiler_optim_hints
 export omp_suffix

@@ -1,6 +1,6 @@
-==============================
+====================================================
 Tutorial: Higher-order functions (Map, Reduce, Fold)
-==============================
+====================================================
 
 
 Arraymancer supports efficient higher-order functions on the whole

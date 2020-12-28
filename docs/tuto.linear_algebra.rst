@@ -1,6 +1,6 @@
-==============================
+=======================================
 Tutorial: Matrix and vectors operations
-==============================
+=======================================
 
 The following linear algebra operations are supported for tensors of
 rank 1 (vectors) and 2 (matrices):
@@ -17,8 +17,7 @@ Note: Matrix operations for floats are accelerated using BLAS (Intel
 MKL, OpenBLAS, Apple Accelerate …). Unfortunately there is no
 acceleration routine for integers. Integer matrix-matrix and
 matrix-vector multiplications are implemented via semi-optimized
-routines, see the `benchmarks
-section. <#micro-benchmark-int64-matrix-multiplication>`__
+routines, see the `benchmarks section. <#micro-benchmark-int64-matrix-multiplication>`__
 
 .. code:: nim
 

@@ -16,7 +16,7 @@ import  ../../autograd,
         ../../tensor,
         ../../nn_primitives
 
-type TanhActivation*[TT ]{.final.} = ref object of Gate[TT]
+type TanhActivation*[TT]{.final.} = ref object of Gate[TT]
   cache: TT
 
 proc tanh_backward_ag[TT](self: TanhActivation[TT], payload: Payload[TT]): SmallDiffs[TT] =
@@ -50,7 +50,7 @@ proc tanh*[TT](a: Variable[TT]): Variable[TT] =
   # Resulting var
   new result
   result.context = a.context
-  result.value = tanh a.value
+  result.value = ufunc.tanh(a.value)
 
   # Caching for backprop
   if a.is_grad_needed:

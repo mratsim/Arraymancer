@@ -179,7 +179,8 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
 
   if normalize:
     let normFactor = 1.0 / (result.sum * (maxT - minT) / nsamples.float)
-    result.apply_inline(normFactor * x)
+    forEach x in result:
+      x *= normFactor
 
 proc kde*[T: SomeNumber; U: KernelKind | string; V: int | Tensor[SomeNumber] | openArray[SomeNumber]](
     t: Tensor[T],

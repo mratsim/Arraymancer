@@ -56,7 +56,7 @@ proc msigmoid*[T: SomeFloat](t: var Tensor[T]) =
 
 proc mrelu*[T](t: var Tensor[T]) =
   forEach x in t:
-    x = t.apply_inline max(0.T, x)
+    x = max(0.T, x)
 
 proc mtanh*[T: SomeFloat](t: var Tensor[T]) =
   forEach x in t:

@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./backend/openmp,
+import  ../laser/strided_iteration/foreach,
+        ./backend/openmp,
         ./private/p_checks,
         ./data_structure, ./init_cpu, ./accessors, ./accessors_macros_write
 
+export foreach
 import sugar except enumerate
 
 # ####################################################################
@@ -206,10 +208,8 @@ proc apply*[T: KnownSupportsCopyMem](t: var Tensor[T], f: proc(x:var T)) =
   ##       x += 1
   ##     a.apply(pluseqone) # Apply the in-place function pluseqone
   ## ``apply`` is especially useful to do multiple element-wise operations on a tensor in a single loop over the data.
-
-  omp_parallel_blocks(block_offset, block_size, t.size):
-    for x in t.mitems(block_offset, block_size):
-      f(x)
+  forEach x in t:
+    f(x)
 
 proc map2*[T, U; V: KnownSupportsCopyMem](t1: Tensor[T],
                                           f: (T,U) -> V,

@@ -136,14 +136,20 @@ proc copyFromRaw*[T](dst: var Tensor[T], buffer: ptr T, len: Natural) =
     withCompilerOptimHints()
     doAssert dst.size == len, "Tensor size and buffer length should be the same"
     let buf{.restrict.} = cast[ptr UncheckedArray[T]](buffer)
-    omp_parallel_chunks(
-            len, chunk_offset, chunk_size,
-            OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
-        copyMem(
-          dst.unsafe_raw_offset[chunk_offset].addr,
-          buf[chunk_offset].unsafeAddr,
-          chunk_size * sizeof(T)
-        )
+    # No OpenMP - unexplained overhead https://github.com/mratsim/Arraymancer/issues/485
+    # omp_parallel_chunks(
+    #         len, chunk_offset, chunk_size,
+    #         OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
+    #     copyMem(
+    #       dst.unsafe_raw_offset[chunk_offset].addr,
+    #       buf[chunk_offset].unsafeAddr,
+    #       chunk_size * sizeof(T)
+    #     )
+    copyMem(
+      dst.unsafe_raw_offset[0].addr,
+      buf[0].unsafeAddr,
+      len * sizeof(T)
+    )
   else:
     {.fatal: "Only non-ref types and types with trivial destructors can be raw copied.".}
 

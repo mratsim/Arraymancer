@@ -212,8 +212,8 @@ proc gru_cell_backward*[T: SomeFloat](
   linear_backward(h, U3, dU3h, dh, dU3, dbU3)
 
   # Backprop of step 4 - h part
-  apply3_inline(dh, dnext, z):
-    x + y * z
+  forEach dhi in dh, dni in dnext, zi in z:
+    dhi += dni * zi
 
 proc gru_inference*[T: SomeFloat](
   input: Tensor[T],

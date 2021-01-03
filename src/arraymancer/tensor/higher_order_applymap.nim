@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../laser/strided_iteration/foreach,
+import  ../laser/strided_iteration/[foreach, foreach_staged],
         ./backend/openmp,
         ./private/p_checks,
         ./data_structure, ./init_cpu, ./accessors, ./accessors_macros_write
 
-export foreach
+export foreach, foreach_staged
 import sugar except enumerate
 
 # ####################################################################

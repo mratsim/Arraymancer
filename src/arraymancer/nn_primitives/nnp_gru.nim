@@ -375,10 +375,6 @@ proc gru_forward*[T: SomeFloat](
         n_lts = ns[layer, timestep, _, _].squeeze(0).squeeze(0)
         Uh_lts = Uhs[layer, timestep, _, _].squeeze(0).squeeze(0)
 
-      # TODO: gru_cell_forward will detach `nl``
-      # due to a missing apply4/loop-fusion operation
-      var n_tmp = n_lts
-
       let input_ts = block:
             if layer == 0:
               input[timestep, _, _].squeeze(0)
@@ -388,14 +384,10 @@ proc gru_forward*[T: SomeFloat](
       gru_cell_forward(
         input_ts,
         W3l, U3l, bW3l, bU3l,
-        r_lts, z_lts, n_tmp, Uh_lts,
+        r_lts, z_lts, n_lts, Uh_lts,
         hiddenl
       )
       output[timestep, _, _] = hiddenl.unsqueeze(0)
-      # TODO: apply/loop-fusion
-      # copy n_tmpl back to nl
-      apply2_inline(n_lts, n_tmp):
-        y
 
 proc gru_backward*[T: SomeFloat](
   dInput, dHidden0,                    # Input and starting hidden state gradient

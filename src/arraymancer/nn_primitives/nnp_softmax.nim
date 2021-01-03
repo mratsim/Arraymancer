@@ -29,10 +29,11 @@ proc softmax*[T](input: Tensor[T]): Tensor[T] {.noInit.} =
   let batch_size = input.shape[0]
   result = zeros_like(input)
 
+  # TODO: the performance of nested parallel regions is highly suspect
   for i in 0||(batch_size-1):
     let (max, sumexp) = input[i, _].streaming_max_sumexp
 
     var res_slice = result[i, _]
 
-    apply2_inline(res_slice, input[i, _]):
-      stable_softmax(y, max, sumexp)
+    forEachSerial r in res_slice, inpi in input[i, _]:
+      r = stable_softmax(inpi, max, sumexp)

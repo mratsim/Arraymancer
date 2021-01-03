@@ -185,13 +185,14 @@ proc sparse_softmax_cross_entropy_backward*[T; Idx: SomeNumber or byte or char o
   for i, truth_idx in enumerate(target):
     result[i, int(truth_idx)] = -1
 
+  # TODO: the performance of nested parallel regions is highly suspect
   for i in 0||(batch_size-1):
     let (max, sumexp) = cached_tensor[i, _].streaming_max_sumexp
 
     var res_slice = result[i, _]
 
-    apply2_inline(res_slice, cached_tensor[i, _]):
-      grad * (stable_softmax(y, max, sumexp) + x) / T(batch_size)
+    forEachSerial r in res_slice, ci in cached_tensor[i, _]:
+      r = grad * (stable_softmax(ci, max, sumexp) + r) / T(batch_size)
 
 
 # ################################################

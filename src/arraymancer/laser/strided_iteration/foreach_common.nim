@@ -46,7 +46,6 @@ proc aliasTensor(id: int, tensor: NimNode): tuple[alias: NimNode, isVar: NimNode
     for i in 2 ..< tensor.len:
       t.add tensor[i]
 
-  var alias = ""
   let isVar = block:
     # Handle slicing cases like foo[0..<1, 0..<2]
     # that do not return `var` but are technically `var`
@@ -57,16 +56,18 @@ proc aliasTensor(id: int, tensor: NimNode): tuple[alias: NimNode, isVar: NimNode
     else:
       quote do: isVar(`t`)
 
-  while t.kind in {nnkDotExpr, nnkBracketExpr}:
-    if t[0].kind notin {nnkIdent, nnkSym}:
-      error "Expected a field name but found \"" & t[0].repr()
-    alias.add $t[0]
-    if t.kind == nnkBracketExpr and validIdentifier(t[1].repr()):
-      alias.add $t[1]
-    alias.add "_"
-    t = t[1]
+  proc flattenedName(node: NimNode): string =
+    if node.kind in {nnkDotExpr, nnkBracketExpr}:
+      result = flattenedName(node[0])
+      result &= '_'
+      result &= flattenedName(node[1])
+    elif node.kind in {nnkIdent, nnkSym}:
+      result = $node
+    else:
+      error "Expected a field nameor dot expression or array access but found \"" &
+        t.repr()
 
-  alias &= $t
+  let alias = flattenedName(t)
 
   return (newIdentNode($alias & "_alias" & $id & '_'), isVar)
 

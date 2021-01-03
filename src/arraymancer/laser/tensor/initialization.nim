@@ -166,14 +166,19 @@ proc setZero*[T](t: var Tensor[T], check_contiguous: static bool = true) =
   when not (T is KnownSupportsCopyMem):
     t.storage.raw_buffer.reset()
     t.storage.raw_buffer.setLen(t.size)
-  else:
-    omp_parallel_chunks(
-          t.size, chunk_offset, chunk_size,
-          OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
-      zeroMem(
-        t.unsafe_raw_offset[chunk_offset].addr,
-        chunk_size * sizeof(T)
-      )
+  else: # if setZero or newTensor are used in OpenMP parallel regions
+        # making this parallel will kill performance.
+    # omp_parallel_chunks(
+    #       t.size, chunk_offset, chunk_size,
+    #       OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
+    #   zeroMem(
+    #     t.unsafe_raw_offset[chunk_offset].addr,
+    #     chunk_size * sizeof(T)
+    #   )
+    zeroMem(
+      t.unsafe_raw_offset[0].addr,
+      t.size * sizeof(T)
+    )
 
 proc newTensor*[T](shape: varargs[int]): Tensor[T] =
   var size: int

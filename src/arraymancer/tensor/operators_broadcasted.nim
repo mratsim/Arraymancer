@@ -61,8 +61,9 @@ proc `+.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b
   ## Only the right hand side tensor can be broadcasted.
   # shape check done in apply2 proc
 
-  let tmp_b = b.broadcast(a.shape)
-  apply2_inline(a, tmp_b, x + y)
+  var (tmp_a, tmp_b) = broadcast2(a, b)
+  forEach x in tmp_a, y in tmp_b:
+    x += y
 
 proc `-.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor broadcasted in-place substraction.
@@ -70,8 +71,9 @@ proc `-.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b
   ## Only the right hand side tensor can be broadcasted.
   # shape check done in apply2 proc
 
-  let tmp_b = b.broadcast(a.shape)
-  apply2_inline(a, tmp_b, x - y)
+  var (tmp_a, tmp_b) = broadcast2(a, b)
+  forEach x in tmp_a, y in tmp_b:
+    x -= y
 
 proc `*.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor broadcasted in-place multiplication (Hadamard product)
@@ -79,8 +81,9 @@ proc `*.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b
   ## Only the right hand side tensor can be broadcasted
   # shape check done in apply2 proc
 
-  let tmp_b = b.broadcast(a.shape)
-  apply2_inline(a, tmp_b, x * y)
+  var (tmp_a, tmp_b) = broadcast2(a, b)
+  forEach x in tmp_a, y in tmp_b:
+    x *= y
 
 proc `/.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor broadcasted in-place division.
@@ -88,11 +91,13 @@ proc `/.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b
   ## Only the right hand side tensor can be broadcasted.
   # shape check done in apply2 proc
 
-  let tmp_b = b.broadcast(a.shape)
+  var (tmp_a, tmp_b) = broadcast2(a, b)
   when T is SomeInteger:
-    apply2_inline(a, tmp_b, x div y)
+    forEach x in tmp_a, y in tmp_b:
+      x = x div y
   else:
-    apply2_inline(a, tmp_b, x / y)
+    forEach x in tmp_a, y in tmp_b:
+      x /= y
 
 # ##############################################
 # # Broadcasting Tensor-Scalar and Scalar-Tensor

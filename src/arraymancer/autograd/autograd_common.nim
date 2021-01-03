@@ -14,7 +14,8 @@
 
 import
   typetraits, macros,
-  ../private/sequninit
+  ../private/sequninit,
+  ../tensor
 
 # ############################################################
 #
@@ -238,7 +239,7 @@ proc backprop*[TT](v: Variable[TT]) =
     for i, diff in diffs:
       let parent_i = curNode.parents[i]
       if parent_i.requires_grad:
-        parent_i.grad += diff
+        parent_i.grad +.= diff
 
 func newParents*[TT](num: Natural): Parents[TT] {.inline.} =
   newSeqUninit[Variable[TT]](num)

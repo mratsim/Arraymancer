@@ -189,7 +189,7 @@ proc assign_labels[T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0
         # Update the counts
         counts[min_label] += 1
         # Update the running total
-        totals[min_label] += x[row_idx, _]
+        totals[min_label] += x.at(row_idx, _)
 
       # Stopping criteria
       if (inertia - previous_inertia) <= tol or (iters >= max_iters):

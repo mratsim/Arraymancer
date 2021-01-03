@@ -53,7 +53,9 @@ proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|Metadata, result: var An
 
 proc broadcastImpl*(t: var AnyTensor, shape: varargs[int]|Metadata) {.noSideEffect.}=
   when compileOption("boundChecks"):
-    assert t.rank == shape.len
+    assert t.rank == shape.len,
+      "Rank was " & $t.rank & ", source shape was " & $t.shape &
+      " while target broadcast shape was " & $shape
 
   for i in 0..<t.rank:
     if t.shape[i] == 1:
@@ -76,29 +78,38 @@ proc broadcast2Impl*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T]
 
   var shapeA, stridesA, shapeB, stridesB = Metadata(len: rank) # initialized with 0
 
+  var aa, bb = 0 # tensor specific current dimension
   for i in 0..<rank:
-    let shape_A_iter = if i < rank: a.shape[i] else: 1
-    let shape_B_iter = if i < rank: b.shape[i] else: 1
+    let shape_A_iter = if i < rank: a.shape[aa] else: 1
+    let shape_B_iter = if i < rank: b.shape[bb] else: 1
 
     if shape_A_iter == shape_B_iter:
       shapeA[i] = shape_A_iter
       shapeB[i] = shape_A_iter
 
-      stridesA[i] = a.strides[i]
-      stridesB[i] = b.strides[i]
+      stridesA[i] = a.strides[aa]
+      stridesB[i] = b.strides[bb]
 
+      inc aa
+      inc bb
     elif shape_A_iter == 1:
       shapeA[i] = shape_B_iter
       shapeB[i] = shape_B_iter
 
       # stridesA[i] is already 0
       stridesB[i] = b.strides[i]
+
+      inc aa
+      # don't increment bb
     elif shape_B_iter == 1:
       shapeA[i] = shape_A_iter
       shapeB[i] = shape_A_iter
 
       stridesA[i] = a.strides[i]
       # stridesB[i] is already 0
+
+      # don't increment aa
+      inc bb
     else:
       raise newException(ValueError, "Broadcasting error: non-singleton dimensions must be the same in both tensors. Tensors' shapes were: " &
         $a.shape & " and " & $b.shape)

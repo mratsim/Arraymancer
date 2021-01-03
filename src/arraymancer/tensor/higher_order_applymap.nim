@@ -168,6 +168,7 @@ proc map*[T; U](t: Tensor[T], f: T -> U): Tensor[U] {.noInit.} =
   ## For types that are not mem-copyable types (ref, string, etc.) a non OpenMP accelerated version of
   ## `apply2_inline` is used internally!
   result = newTensorUninit[U](t.shape)
+  # TODO: forEach for non memcopyable types
   result.apply2_inline(t, f(y))
 
 proc apply*[T](t: var Tensor[T], f: T -> T) =

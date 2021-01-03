@@ -510,7 +510,7 @@ proc gru_backward*[T: SomeFloat](
         dW3s0 += dW3s_lts
       else:
         var tmp = dW3sN[layer - 1, _, _]
-        tmp += dW3s_lts
+        tmp += dW3s_lts.unsqueeze(0)
 
       var tmp = dU3s[layer, _, _]
       tmp += dU3s_lts.unsqueeze(0)

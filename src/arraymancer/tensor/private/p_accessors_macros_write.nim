@@ -141,6 +141,7 @@ template slicerMutImpl_T[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2:
   when compileOption("boundChecks"):
     check_shape(sliced, t2)
 
+  # TODO: forEach for non memcopyable types
   apply2_inline(sliced, t2):
     y
 

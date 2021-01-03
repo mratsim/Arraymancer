@@ -143,20 +143,9 @@ proc masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
     return
   check_elementwise(t, mask)
 
-  # Due to requiring unnecessary assigning `x` for a `false` mask
-  # apply2_inline is a bit slower for very sparse mask.
-  # As this is a critical operation, especially on dataframes, we use the lower level construct.
-  #
-  # t.apply2_inline(mask):
-  #   if y:
-  #     value
-  #   else:
-  #     x
-  omp_parallel_blocks(block_offset, block_size, t.size):
-    for tElem, maskElem in mzip(t, mask, block_offset, block_size):
-      if maskElem:
-        tElem = value
-
+  forEach x in t, m in mask:
+    if m:
+      x = value
 
 proc masked_fill*[T](t: var Tensor[T], mask: openarray, value: T) =
   ## For the index of each element of t.

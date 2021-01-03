@@ -55,11 +55,13 @@ proc `-`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Ten
 
 proc `+=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor in-place addition
-  a.apply2_inline(b, x + y)
+  forEach x in a, y in b:
+    x += y
 
 proc `-=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor in-place substraction
-  a.apply2_inline(b, x - y)
+  forEach x in a, y in b:
+    x -= y
 
 # #########################################################
 # # Tensor-scalar linear algebra

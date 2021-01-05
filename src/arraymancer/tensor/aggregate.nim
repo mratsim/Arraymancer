@@ -257,12 +257,9 @@ proc cumsum*[T](t: Tensor[T], axis:int): Tensor[T] = # from hugogranstrom
   for i, tAxis in enumerateAxis(t, axis):
     var temp = result.atAxisIndex(axis, i)
     if i == 0:
-    #   result.atAxisIndex(axis, i) = tAxis
       temp[_] = tAxis
     else:
-    #   result.atAxisIndex(axis, i) = result.atAxisIndex(axis, i-1) + tAxis
       temp[_] = result.atAxisIndex(axis, i-1) + tAxis
-    # result.atAxisIndex(axis, i) = temp
 
 proc cumprod*[T](t: Tensor[T], axis:int): Tensor[T] = # from hugogranstrom
   ## Calculates the cumulative sum of a rank-n Tensor.
@@ -275,9 +272,6 @@ proc cumprod*[T](t: Tensor[T], axis:int): Tensor[T] = # from hugogranstrom
   for i, tAxis in enumerateAxis(t, axis):
     var temp = result.atAxisIndex(axis, i)
     if i == 0:
-    #   result.atAxisIndex(axis, i) = tAxis
       temp[_] = tAxis
     else:
-    #   result.atAxisIndex(axis, i) = result.atAxisIndex(axis, i-1) + tAxis
       temp[_] = result.atAxisIndex(axis, i-1) *. tAxis
-    # result.atAxisIndex(axis, i) = temp

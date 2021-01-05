@@ -245,3 +245,39 @@ proc iqr*[T](t: Tensor[T]): float =
   let tS = t.sorted
   result = percentile(tS, 75, isSorted = true) -
            percentile(tS, 25, isSorted = true)
+
+proc cumsum*[T](t: Tensor[T], axis:int): Tensor[T] = # from hugogranstrom
+  ## Calculates the cumulative sum of a rank-n Tensor.
+  ## Inputs:
+  ##  - t: a rank-n tensor to cumulatively sum
+  ##  - axis: int
+  ## Returns:
+  ##  - A tensor cumulatively summed at axis, that is, add each value to
+  result = zeros_like(t)
+  for i, tAxis in enumerateAxis(t, axis):
+    var temp = result.atAxisIndex(axis, i)
+    if i == 0:
+    #   result.atAxisIndex(axis, i) = tAxis
+      temp[_] = tAxis
+    else:
+    #   result.atAxisIndex(axis, i) = result.atAxisIndex(axis, i-1) + tAxis
+      temp[_] = result.atAxisIndex(axis, i-1) + tAxis
+    # result.atAxisIndex(axis, i) = temp
+
+proc cumprod*[T](t: Tensor[T], axis:int): Tensor[T] = # from hugogranstrom
+  ## Calculates the cumulative sum of a rank-n Tensor.
+  ## Inputs:
+  ##  - t: a rank-n tensor to cumulatively sum
+  ##  - axis: int
+  ## Returns:
+  ##  - A tensor cumulatively summed at axis, that is, add each value to
+  result = zeros_like(t)
+  for i, tAxis in enumerateAxis(t, axis):
+    var temp = result.atAxisIndex(axis, i)
+    if i == 0:
+    #   result.atAxisIndex(axis, i) = tAxis
+      temp[_] = tAxis
+    else:
+    #   result.atAxisIndex(axis, i) = result.atAxisIndex(axis, i-1) + tAxis
+      temp[_] = result.atAxisIndex(axis, i-1) *. tAxis
+    # result.atAxisIndex(axis, i) = temp

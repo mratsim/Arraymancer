@@ -176,6 +176,10 @@ proc main() =
         check: cumsum(a, 1) == [[0, 4, 11],
                                 [1, 10, 15],
                                 [3, 7, 8]].toTensor
+      test "cumprod":
+        let a = [[0, 4, 7],
+                 [1, 9, 5],
+                 [3, 4, 1]].toTensor
 
         check: cumprod(a, 0) == [[0, 4,   7],
                                  [0, 36,  35],

@@ -253,6 +253,7 @@ proc cumsum*[T](t: Tensor[T], axis:int): Tensor[T] = # from hugogranstrom
   ##  - axis: int
   ## Returns:
   ##  - A tensor cumulatively summed at axis, that is, add each value to
+  mixin `_`
   result = zeros_like(t)
   for i, tAxis in enumerateAxis(t, axis):
     var temp = result.atAxisIndex(axis, i)
@@ -268,6 +269,7 @@ proc cumprod*[T](t: Tensor[T], axis:int): Tensor[T] = # from hugogranstrom
   ##  - axis: int
   ## Returns:
   ##  - A tensor cumulatively summed at axis, that is, add each value to
+  mixin `_`
   result = zeros_like(t)
   for i, tAxis in enumerateAxis(t, axis):
     var temp = result.atAxisIndex(axis, i)

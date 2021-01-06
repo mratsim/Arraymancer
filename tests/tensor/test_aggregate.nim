@@ -164,5 +164,27 @@ proc main() =
         [[3], [3], [3]], [[3], [3], [3]]
       ].toTensor
 
+      test "cumsum":
+        let a = [[0, 4, 7],
+                 [1, 9, 5],
+                 [3, 4, 1]].toTensor
+
+        check: cumsum(a, 0) == [[0, 4,  7],
+                                [1, 13, 12],
+                                [4, 17, 13]].toTensor
+        
+        check: cumsum(a, 1) == [[0, 4, 11],
+                                [1, 10, 15],
+                                [3, 7, 8]].toTensor
+
+        check: cumprod(a, 0) == [[0, 4,   7],
+                                 [0, 36,  35],
+                                 [0, 144, 35]].toTensor
+        
+        check: cumprod(a, 1) == [[0, 0, 0],
+                                 [1, 9, 45],
+                                 [3, 12, 12]].toTensor
+
+
 main()
 GC_fullCollect()

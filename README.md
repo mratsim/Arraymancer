@@ -1,4 +1,4 @@
-[![Join the chat at https://gitter.im/Arraymancer/Lobby](https://badges.gitter.im/Arraymancer/Lobby.svg)](https://gitter.im/Arraymancer/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Linux Build Status (Travis)](https://img.shields.io/travis/mratsim/Arraymancer/master.svg?label=Linux%20/%20macOS "Linux/macOS build status (Travis)")](https://travis-ci.org/mratsim/Arraymancer) [![Windows build status (Appveyor)](https://img.shields.io/appveyor/ci/mratsim/arraymancer/master.svg?label=Windows "Windows build status (Appveyor)")](https://ci.appveyor.com/project/mratsim/arraymancer) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![Stability](https://img.shields.io/badge/stability-experimental-orange.svg)
+[![Join the chat on Discord #nim-science](https://img.shields.io/discord/371759389889003530?color=blue&label=nim-science&logo=discord&logoColor=gold&style=flat-square)](https://discord.gg/f5hA9UK3dY) [![Linux Build Status (Travis)](https://img.shields.io/travis/mratsim/Arraymancer/master.svg?label=Linux%20/%20macOS "Linux/macOS build status (Travis)")](https://travis-ci.org/mratsim/Arraymancer) [![Windows build status (Appveyor)](https://img.shields.io/appveyor/ci/mratsim/arraymancer/master.svg?label=Windows "Windows build status (Appveyor)")](https://ci.appveyor.com/project/mratsim/arraymancer) [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) ![Stability](https://img.shields.io/badge/stability-experimental-orange.svg)
 
 # Arraymancer - A n-dimensional tensor (ndarray) library.
 
@@ -233,7 +233,7 @@ Of them; she's murder'd of your galla?
     - [A researcher workflow is a fight against inefficiencies](#a-researcher-workflow-is-a-fight-against-inefficiencies)
     - [Can be distributed almost dependency free](#can-be-distributed-almost-dependency-free)
     - [Bridging the gap between deep learning research and production](#bridging-the-gap-between-deep-learning-research-and-production)
-    - [So why Arraymancer ?](#so-why-arraymancer)
+    - [So why Arraymancer ?](#so-why-arraymancer-)
   - [Future ambitions](#future-ambitions)
 
 <!-- /TOC -->

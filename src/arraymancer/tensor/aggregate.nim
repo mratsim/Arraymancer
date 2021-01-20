@@ -15,6 +15,7 @@
 import  ./data_structure,
         ./init_cpu,
         ./higher_order_foldreduce,
+        ./operators_broadcasted,
         ./math_functions,
         ./accessors,
         ./algorithms,

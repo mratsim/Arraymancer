@@ -6,7 +6,8 @@ import
   nimlapack, fenv,
   ./overload, ./init_colmajor,
   ../../private/sequninit,
-  ../../tensor
+  ../../tensor,
+  math
 
 # Least Squares using Recursive Divide & Conquer
 # --------------------------------------------------------------------------------------

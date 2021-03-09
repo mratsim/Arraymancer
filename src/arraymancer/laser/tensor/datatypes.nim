@@ -177,7 +177,7 @@ func unsafe_raw_offset*[T: KnownSupportsCopyMem](t: var Tensor[T], aligned: stat
   ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
   unsafe_raw_offset_impl(t.offset)
 
-func unsafe_raw_data*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): UncheckedArray[T] {.inline.} =
+func unsafe_raw_data*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): ptr UncheckedArray[T] {.inline.} =
   ## Returns a ``ptr UncheckedArray`` to the start of the valid data.
   ## Avoid writing to the returned pointer. Use ``fromBuffer`` instead to write Tensor data from a pointer.
   ##

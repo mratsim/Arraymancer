@@ -177,6 +177,17 @@ func unsafe_raw_offset*[T: KnownSupportsCopyMem](t: var Tensor[T], aligned: stat
   ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
   unsafe_raw_offset_impl(t.offset)
 
+func unsafe_raw_data*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): UncheckedArray[T] {.inline.} =
+  ## Returns a ``ptr UncheckedArray`` to the start of the valid data.
+  ## Avoid writing to the returned pointer. Use ``fromBuffer`` instead to write Tensor data from a pointer.
+  ##
+  ##
+  ## Unsafe: the pointer can outlive the input tensor
+  ## For optimization purposes, Laser will hint the compiler that
+  ## while the pointer is valid, all data accesses will be through it (no aliasing)
+  ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
+  unsafe_raw_offset(t, aligned).distinctBase()
+
 func unsafe_raw_buf*[T: not KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): ptr UncheckedArray[T]  {.error: "Access via raw pointer forbidden for non mem copyable types!".}
 
 func unsafe_raw_offset*[T: not KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): ptr UncheckedArray[T] {.error: "Access via raw pointer forbidden for non mem copyable types!".}

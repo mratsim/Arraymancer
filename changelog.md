@@ -1,7 +1,7 @@
 Arraymancer v0.6.X
 =====================================================
 Changes :
-  - Add ``unsafe_raw_data`` as replacement of ``dataArray`` to return a ``ptr UncheckedArray`` 
+  - Add ``toUnsafeView`` as replacement of ``dataArray`` to return a ``ptr UncheckedArray``
 
 
 Arraymancer v0.6.2 Dec. 22 2020

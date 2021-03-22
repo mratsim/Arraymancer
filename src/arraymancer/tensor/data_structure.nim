@@ -185,7 +185,7 @@ proc get_offset_ptr*[T](t: CudaTensor[T] or ClTensor[T]): ptr T {.noSideEffect, 
   ##     - A pointer to the offset start of its data
   t.storage.Fdata[t.offset].unsafeAddr
 
-proc dataArray*[T: KnownSupportsCopyMem](t: Tensor[T]): ptr UncheckedArray[T] {.noSideEffect, inline, deprecated: "Use unsafe_raw_data instead".}=
+proc dataArray*[T: KnownSupportsCopyMem](t: Tensor[T]): ptr UncheckedArray[T] {.noSideEffect, inline, deprecated: "Use toUnsafeView instead".}=
   ## Input:
   ##     - A tensor
   ## Returns:

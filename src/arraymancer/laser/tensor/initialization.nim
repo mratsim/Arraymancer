@@ -234,6 +234,8 @@ proc fromBuffer*[T](rawBuffer: ptr UncheckedArray[T], shape: varargs[int]): Tens
   ## If you type cast a raw `pointer` to `ptr UncheckedArray[T]` before handing it to this
   ## proc, make sure to cast to the correct type as we cannot check the validity of
   ## the type!
+  ##
+  ## Its counterpart ``toUnsafeView`` can be used to obtain ``ptr UncheckedArray`` from a Tensor.
   var size: int
   initTensorMetadata(result, size, shape)
   cpuStorageFromBuffer(result.storage, rawBuffer, size)
@@ -242,6 +244,16 @@ proc fromBuffer*[T](rawBuffer: pointer, shape: varargs[int]): Tensor[T] =
   ## Creates a `Tensor[T]` from a raw `pointer`. Make sure that the explicit type
   ## given to this proc actually matches the data stored behind the pointer!
   ## The size derived from the given shape must match the size of the buffer!
+  ##
+  ## Its counterpart ``toUnsafeView`` can be used to obtain ``ptr UncheckedArray`` from a Tensor.
   var size: int
   initTensorMetadata(result, size, shape)
   cpuStorageFromBuffer(result.storage, rawBuffer, size)
+
+func toUnsafeView*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): ptr UncheckedArray[T] {.inline.} =
+  ## Returns an unsafe view of the valid data as a ``ptr UncheckedArray``.
+  ## Its counterpart ``fromBuffer`` can be used to create a Tensor from``ptr UncheckedArray``.
+  ##
+  ## Unsafe: the pointer can outlive the input tensor.
+  unsafe_raw_offset(t, aligned).distinctBase()
+

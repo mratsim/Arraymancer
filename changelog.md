@@ -1,7 +1,13 @@
-Arraymancer v0.x.x
+Arraymancer v0.6.X
+=====================================================
+Changes :
+  - Add ``toUnsafeView`` as replacement of ``dataArray`` to return a ``ptr UncheckedArray``
+
+
+Arraymancer v0.6.2 Dec. 22 2020
 =====================================================
 
-Changes (TODO):
+Changes :
   - Fancy Indexing (#434)
   - ``argmax_max`` obsolete assert to 1D/2D removed. It refered to issues #183 and merged PR #171
 

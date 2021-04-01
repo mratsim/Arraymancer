@@ -4,13 +4,72 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  macros,
+  std/[macros, strutils],
   ../compiler_optim_hints
 
-template isVar[T: object](x: T): bool =
+template isVar[T](x: T): bool =
   ## Workaround due to `is` operator not working for `var`
   ## https://github.com/nim-lang/Nim/issues/9443
   compiles(addr(x))
+
+proc aliasTensor(id: int, tensor: NimNode): tuple[alias: NimNode, isVar: NimNode] =
+  ## Produce an alias variable for a tensor
+  ## Supports:
+  ## - identifiers
+  ## - dot call for field access
+  ## - foo[1] for array access
+  if tensor.kind notin {nnkIdent, nnkSym, nnkDotExpr, nnkBracketExpr, nnkCall}:
+    error "Expected a variable identifier or field access or array indexing but found \"" & tensor.repr() &
+      "\". Please assign to a variable first."
+
+  var t = tensor
+
+  # nnkCall handles the annoying typed AST we get in generics
+  # Call
+  #   OpenSymChoice
+  #     Sym "[]"
+  #     Sym "[]"
+  #     ...
+  #   DotExpr
+  #     Ident "self"
+  #     Ident "first_moments"
+  #   Ident "i"
+  if tensor.kind == nnkCall:
+    tensor[0].expectKind nnkOpenSymChoice
+    tensor[0][0].expectKind nnkSym
+    doAssert tensor[0][0].eqIdent("[]")
+
+    # Rewrite the AST to untyped
+    t = nnkBracketExpr.newTree(
+      tensor[1]
+    )
+    for i in 2 ..< tensor.len:
+      t.add tensor[i]
+
+  let isVar = block:
+    # Handle slicing cases like foo[0..<1, 0..<2]
+    # that do not return `var` but are technically `var`
+    # if `foo` is var
+    if t.kind in {nnkDotExpr, nnkBracketExpr}:
+      let t0 = t[0]
+      quote do: isVar(`t0`)
+    else:
+      quote do: isVar(`t`)
+
+  proc flattenedName(node: NimNode): string =
+    if node.kind in {nnkDotExpr, nnkBracketExpr}:
+      result = flattenedName(node[0])
+      result &= '_'
+      result &= flattenedName(node[1])
+    elif node.kind in {nnkIdent, nnkSym}:
+      result = $node
+    else:
+      error "Expected a field nameor dot expression or array access but found \"" &
+        t.repr()
+
+  let alias = flattenedName(t)
+
+  return (newIdentNode($alias & "_alias" & $id & '_'), isVar)
 
 proc initForEach*(
         params: NimNode,
@@ -24,7 +83,9 @@ proc initForEach*(
   var tensors = nnkBracket.newTree()
 
   template syntaxError() {.dirty.} =
-    error "Syntax error: argument " & ($arg.kind).substr(3) & " in position #" & $i & " was unexpected."
+    error "Syntax error: argument " &
+      ($arg.kind).substr(3) & " in position #" & $i & " was unexpected." &
+      "\n    " & arg.repr()
 
   for i, arg in params:
     if arg.kind == nnkInfix:
@@ -56,15 +117,15 @@ proc initForEach*(
   aliases_stmt.add newCall(bindSym"withCompilerOptimHints")
 
   for i, tensor in tensors:
-    let alias = newIdentNode($tensor & "_alias" & $i & '_')
+    let (alias, detectVar) = aliasTensor(i, tensor)
     aliases.add alias
     aliases_stmt.add quote do:
-      when isVar(`tensor`):
+      when `detectVar`:
         var `alias`{.align_variable.} = `tensor`
       else:
         let `alias`{.align_variable.} = `tensor`
 
-    let raw_ptr_i = genSym(nskLet, $tensor & "_raw_data" & $i & '_')
+    let raw_ptr_i = genSym(nskLet, $alias & "_raw_data" & $i & '_')
     raw_ptrs_stmt.add quote do:
       let `raw_ptr_i`{.restrict.} = `alias`.unsafe_raw_offset()
     raw_ptrs.add raw_ptr_i
@@ -74,7 +135,9 @@ proc initForEach*(
   for i in 1 ..< aliases.len:
     let alias_i = aliases[i]
     test_shapes.add quote do:
-      assert `alias0`.shape == `alias_i`.shape
+      assert `alias0`.shape == `alias_i`.shape,
+        "\n " & astToStr(`alias0`) & ".shape is " & $`alias0`.shape & "\n" &
+        "\n " & astToStr(`alias_i`) & ".shape is " & $`alias_i`.shape & "\n"
 
 template stridedVarsSetup*(): untyped {.dirty.} =
   for i, alias in aliases:

@@ -90,16 +90,19 @@ proc `*=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], a:
   ## Element-wise multiplication by a scalar (in-place)
   if t.size == 0:
     return
-  t.apply_inline(x * a)
+  forEach x in t:
+    x *= a
 
 proc `/=`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: var Tensor[T], a: T) =
   ## Element-wise division by a scalar (in-place)
   if t.size == 0:
     return
-  t.apply_inline(x / a)
+  forEach x in t:
+    x /= a
 
 proc `/=`*[T: SomeInteger](t: var Tensor[T], a: T) =
   ## Element-wise division by a scalar (in-place)
   if t.size == 0:
     return
-  t.apply_inline(x div a)
+  forEach x in t:
+    x = x div a

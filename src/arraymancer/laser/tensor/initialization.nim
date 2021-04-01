@@ -136,14 +136,20 @@ proc copyFromRaw*[T](dst: var Tensor[T], buffer: ptr T, len: Natural) =
     withCompilerOptimHints()
     doAssert dst.size == len, "Tensor size and buffer length should be the same"
     let buf{.restrict.} = cast[ptr UncheckedArray[T]](buffer)
-    omp_parallel_chunks(
-            len, chunk_offset, chunk_size,
-            OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
-        copyMem(
-          dst.unsafe_raw_offset[chunk_offset].addr,
-          buf[chunk_offset].unsafeAddr,
-          chunk_size * sizeof(T)
-        )
+    # No OpenMP - unexplained overhead https://github.com/mratsim/Arraymancer/issues/485
+    # omp_parallel_chunks(
+    #         len, chunk_offset, chunk_size,
+    #         OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
+    #     copyMem(
+    #       dst.unsafe_raw_offset[chunk_offset].addr,
+    #       buf[chunk_offset].unsafeAddr,
+    #       chunk_size * sizeof(T)
+    #     )
+    copyMem(
+      dst.unsafe_raw_offset[0].addr,
+      buf[0].unsafeAddr,
+      len * sizeof(T)
+    )
   else:
     {.fatal: "Only non-ref types and types with trivial destructors can be raw copied.".}
 
@@ -166,14 +172,19 @@ proc setZero*[T](t: var Tensor[T], check_contiguous: static bool = true) =
   when not (T is KnownSupportsCopyMem):
     t.storage.raw_buffer.reset()
     t.storage.raw_buffer.setLen(t.size)
-  else:
-    omp_parallel_chunks(
-          t.size, chunk_offset, chunk_size,
-          OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
-      zeroMem(
-        t.unsafe_raw_offset[chunk_offset].addr,
-        chunk_size * sizeof(T)
-      )
+  else: # if setZero or newTensor are used in OpenMP parallel regions
+        # making this parallel will kill performance.
+    # omp_parallel_chunks(
+    #       t.size, chunk_offset, chunk_size,
+    #       OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
+    #   zeroMem(
+    #     t.unsafe_raw_offset[chunk_offset].addr,
+    #     chunk_size * sizeof(T)
+    #   )
+    zeroMem(
+      t.unsafe_raw_offset[0].addr,
+      t.size * sizeof(T)
+    )
 
 proc newTensor*[T](shape: varargs[int]): Tensor[T] =
   var size: int

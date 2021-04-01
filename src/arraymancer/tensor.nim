@@ -17,6 +17,7 @@ import nimblas
 export OrderType
 
 import  ./laser/dynamic_stack_arrays,
+        ./laser/strided_iteration/foreach,
         ./tensor/data_structure,
         ./tensor/init_cpu,
         ./tensor/init_copy_cpu,
@@ -45,6 +46,7 @@ import  ./laser/dynamic_stack_arrays,
         ./tensor/exporting
 
 export  dynamic_stack_arrays,
+        foreach,
         data_structure,
         init_cpu,
         init_copy_cpu,

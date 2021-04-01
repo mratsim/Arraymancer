@@ -176,6 +176,7 @@ proc softmax_cross_entropy_backward1[T](
 
   result = zeros_like(cached_tensor)
 
+  # TODO: nested parallelism has suspect performance
   for i in 0||(batch_size-1):
     let (max, sumexp) = cached_tensor[i,_].streaming_max_sumexp
 

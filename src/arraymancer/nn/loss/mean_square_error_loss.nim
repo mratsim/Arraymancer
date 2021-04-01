@@ -30,8 +30,10 @@ proc mse_backward_ag[TT](self: MSELoss[TT], payload: Payload[TT]): SmallDiffs[TT
                                                   # See also Stanford course: http://theory.stanford.edu/~tim/s15/l/l15.pdf
 
   result = newDiffs[TT](1)
-  result[0] = map2_inline(self.cache.value, self.target):
-    norm * (x - y)
+  forEach r0 in result[0],
+          v in self.cache.value,
+          t in self.target:
+    r0 = norm * (v - t)
 
 proc mse_cache[TT](result: Variable[TT], input: Variable[TT], target: TT) =
   ## We expect input with shape [batch_size, features]

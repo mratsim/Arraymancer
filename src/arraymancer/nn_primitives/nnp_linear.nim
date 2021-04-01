@@ -24,7 +24,6 @@ proc linear*[T](input, weight: Tensor[T], bias: Tensor[T], output: var Tensor[T]
   #   - bias tensor shape [1, out_features]
   # Output does not need to be initialized to 0 or the proper shape, data will be overwritten
   # Output is: Y = x * W.transpose + b
-
   output = input * weight.transpose # TODO: with the transpose the non-matching rows and cols is confusing
   output +.= bias
 

@@ -47,8 +47,9 @@ proc update*(self: Sgd) =
   for v in self.params:
     # v.value -= learning rate * grad
     if v.requires_grad:
-      apply2_inline(v.value, v.grad):
-        x - self.lr * y
+      forEach val in v.value,
+              g in v.grad:
+        val -= self.lr * g
       # Zero the gradient
       v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
 
@@ -128,19 +129,23 @@ proc update*(self: var SgdMomentum) =
       # This implementation of both kinds of momentum follows that of Tensorflow
       # and closely mirrors the formulation of Sustkever et. al.
       # Update the moments with the previous update.
-      apply2_inline(self.moments[i], v.grad):
-        self.momentum * x - self.lr * y
+      forEach mi in self.moments[i],
+              g in v.grad:
+        mi = self.momentum * mi - self.lr * g
 
       # When momentum = 0 this acts identically to SGD without momentum.
       if self.nesterov:
         # Update the params with formula Value = value - lr * gradient + momentum * v
         # where v = - lr * gradient + momentum * moment
-        apply3_inline(v.value, v.grad, self.moments[i]):
-          x - self.lr * y + self.momentum * z
+        forEach val in v.value,
+                g in v.grad,
+                mi in self.moments[i]:
+          val += -(self.lr * g) + self.momentum * mi
       else:
         # Update the params with formula Value = value - lr * gradient + momentum * moment
-        apply2_inline(v.value, self.moments[i]):
-          x + y
+        forEach val in v.value,
+                mi in self.moments[i]:
+          val += mi
 
       # Zero the gradient
       v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
@@ -212,19 +217,21 @@ proc update*(self: var Adam) =
     let v = self.params[i]
     if v.requires_grad:
       # Update biaised first moment estimate
-      apply2_inline(self.first_moments[i], v.grad):
-        self.beta1 * x + (1 - self.beta1) * y
+      forEach fmi in self.first_moments[i], g in v.grad:
+        fmi = self.beta1 * fmi + (1 - self.beta1) * g
       # Update biaised second moment estimate
-      apply2_inline(self.second_moments[i], v.grad):
-        self.beta2 * x + (1 - self.beta2) * y * y
+      forEach smi in self.second_moments[i], g in v.grad:
+        smi = self.beta2 * smi + (1 - self.beta2) * g * g
       # Adjust weight
-      apply3_inline(v.value, self.first_moments[i], self.second_moments[i]):
-        x - lr_t * y / (z.sqrt + self.epsilon)
+      forEach val in v.value,
+              fmi in self.first_moments[i],
+              smi in self.second_moments[i]:
+        val -= lr_t * fmi / (smi.sqrt + self.epsilon)
 
       # Zero the gradient
       v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
 
-func optimizerAdam*[M, T](
+proc optimizerAdam*[M, T](
         model: M,
         learning_rate: T = T(0.001),
         beta1 = T(0.9), beta2 = T(0.999),

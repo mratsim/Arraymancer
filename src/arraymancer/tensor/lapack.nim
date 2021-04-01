@@ -17,6 +17,16 @@ import  ./data_structure,
         ./higher_order_applymap
 
 proc frobenius_inner_prod*[T](a,b: Tensor[T]): T =
-  sum:
-    map2_inline(a,b):
-      x * y
+  # sum:
+  #   map2_inline(a,b):
+  #     x * y
+  forEachStaged ai in a, bi in b:
+    openmp_config:
+      use_simd: true
+    before_loop:
+      var local_sum{.exportc.} = 0.T
+    in_loop:
+      local_sum += ai * bi
+    after_loop:
+      {.emit: "#pragma omp atomic".}
+      {.emit: "`result` += `local_sum`;".}

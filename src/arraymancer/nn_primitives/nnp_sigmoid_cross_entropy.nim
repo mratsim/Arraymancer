@@ -41,14 +41,20 @@ proc sigmoid_cross_entropy*[T](input, target: Tensor[T]): T =
 
   # ln1p(x) does ln(1 + x) but avoids catastrophic cancellation if x << 1.
 
-  # result = 0.T
-  # for xi, ti in zip(input, target):
-  #   result += (-ti * xi +  max(xi,0) + ln1p(exp(-abs(xi))) ) / T(input.shape[1])
+  result = 0.T
+  for xi, ti in zip(input, target):
+    result += (-ti * xi +  max(xi,0) + ln1p(exp(-abs(xi))) ) / T(input.shape[1])
 
-  # We need parallel fused map2 -> reduce for all loss functions
-  result = sum:
-    map2_inline(input, target):
-      -y * x +  max(x,0) + ln1p(exp(-abs(x))) # This leverage the logsumexp trick to improve numerical stability
+  # TODO - Parallel fused map-reduce, openmp issue - https://github.com/mratsim/Arraymancer/issues/485
+  # forEachStaged ii in input, ti in target:
+  #   before_loop:
+  #     var local_sum{.exportc.} = 0.T
+  #   in_loop:
+  #     # This leverage the logsumexp trick to improve numerical stability
+  #     local_sum += -ti * ii +  max(ii,0) + ln1p(exp(-abs(ii)))
+  #   after_loop:
+  #     {.emit: "#pragma omp atomic".}
+  #     {.emit: "`result` += `local_sum`;".}
 
   # Normalize by batch_size
   result /= T(batch_size)

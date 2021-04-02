@@ -38,7 +38,7 @@ type
 
   LayerKind* = enum
     lkInput, lkConv2D, lkLinear, lkMaxPool2D, lkFlatten,
-    lkGRU
+    lkGRU, lkGCN
 
   LayerTopology* = object
     ## Describe a layer topology

@@ -206,6 +206,19 @@ proc topoFromLinear(self: var TopoTable, ident: NimNode, desc: NimNode) =
                                 in_shape: in_shape,
                                 out_shape: desc[2])
 
+proc topoFromGCN(self: var TopoTable, ident: NimNode, desc: NimNode) =
+
+
+  if desc.len != 3:
+    incorrect(desc) ## Placeholder to specify padding stride in the future
+
+  var in_shape = self.replaceInputNodes(desc[1])
+  in_shape = quote do: `in_shape`
+
+  self[ident] = LayerTopology(kind: lkGCN,
+                                in_shape: in_shape,
+                                out_shape: desc[2])
+
 proc topoFromFlatten(self: var TopoTable, ident: NimNode, desc: NimNode) =
 
   # Call
@@ -268,6 +281,8 @@ proc topoFromLayer(self: var TopoTable, ident: NimNode, desc: NimNode) =
     self.topoFromMaxPool2D(ident, desc)
   elif eqIdent(desc[0], "Linear"):
     self.topoFromLinear(ident, desc)
+  elif eqIdent(desc[0], "GCN"):
+    self.topoFromGCN(ident, desc)
   elif eqIdent(desc[0], "Input"):
     self.topoFromInput(ident, desc)
   elif eqIdent(desc[0], "Flatten"):

@@ -34,6 +34,14 @@ proc shortcutLinear(self: Neuromancer, field_name: NimNode, topo: LayerTopology)
 
   self.forward_templates.add shortcut
 
+proc shortcutGCN(self: Neuromancer, field_name: NimNode, topo: LayerTopology) =
+  let shortcut = quote do:
+    template `field_name`(adj: Variable, x: Variable): Variable =
+      x.gcn(adj, self.`field_name`.weight, self.`field_name`.bias)
+
+  self.forward_templates.add shortcut
+
+
 proc shortcutFlatten(self: Neuromancer, field_name: NimNode, topo: LayerTopology) =
   let shortcut = quote do:
     template `field_name`(x: Variable): Variable =
@@ -59,6 +67,7 @@ proc genTemplateShortcuts*(self: Neuromancer) =
     case v.kind:
     of lkConv2D: self.shortcutConv2D(k, v)
     of lkLinear: self.shortcutLinear(k, v)
+    of lkGCN: self.shortcutGCN(k, v)
     of lkMaxPool2D: self.shortcutMaxPool2D(k, v)
     of lkFlatten: self.shortcutFlatten(k, v)
     of lkGRU: self.shortcutGRU(k, v)

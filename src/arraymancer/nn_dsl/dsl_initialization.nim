@@ -82,6 +82,44 @@ proc trainParamsLinear(self: Neuromancer, field_name: NimNode, topo: LayerTopolo
 
   self.trainparams.add linearConfig
 
+proc trainParamsGCN(self: Neuromancer, field_name: NimNode, topo: LayerTopology) =
+
+  # 1. Create the object field
+  var linearConfig: ModelField
+
+  linearConfig.field_name = field_name
+  linearConfig.field_type = nnkBracketExpr.newTree(
+      ident("LinearLayer"), self.subtype
+    )
+
+  # 2. Configure weight and bias
+  let
+    topo = self.topoTable.getOrDefault(field_name)
+    sst = self.subtype[1] # we need to get the subsubtype float32/float64
+
+    in_shape = topo.in_shape
+    out_shape = topo.out_shape
+
+    w_shape = quote do: [`out_shape`, `in_shape`]
+    b_shape = quote do: [1, `out_shape`]
+
+    w = quote do: kaiming_normal(`w_shape`, `sst`)
+    b = quote do: zeros[`sst`](`b_shape`)
+  linearConfig.init_call = newStmtList()
+
+  let ctx = self.context
+
+  linearConfig.init_call.add quote do:
+    result.`field_name`.weight = `ctx`.variable(
+      `w`, requires_grad = true # TODO allow freezing
+    )
+
+    result.`field_name`.bias = `ctx`.variable(
+      `b`, requires_grad = true # TODO allow freezing
+    )
+
+  self.trainparams.add linearConfig
+
 proc trainParamsGRU(self: Neuromancer, field_name: NimNode, topo: LayerTopology) =
 
   # 1. Create the object field
@@ -155,6 +193,7 @@ proc genModelFieldInit*(self: Neuromancer) =
     case v.kind:
     of lkConv2D: self.trainParamsConv2D(k, v)
     of lkLinear: self.trainParamsLinear(k, v)
+    of lkGCN: self.trainParamsGCN(k, v)
     of lkGRU: self.trainParamsGRU(k, v)
     else:
       discard

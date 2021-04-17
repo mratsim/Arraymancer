@@ -24,7 +24,7 @@ proc mse_backward_ag[TT](self: MSELoss[TT], payload: Payload[TT]): SmallDiffs[TT
   let gradient = payload.variable.grad
   # Gradient is a tensor of shape 1
   assert gradient.shape == [1]
-  let grad = gradient.data[gradient.offset]
+  let grad = gradient.unsafe_raw_offset[0]
 
   let norm = grad * 2'f32 / gradient.size.float32 # TODO divide by total number of elements or by batch size? https://github.com/pytorch/pytorch/issues/3322
                                                   # See also Stanford course: http://theory.stanford.edu/~tim/s15/l/l15.pdf

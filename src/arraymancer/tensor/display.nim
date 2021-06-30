@@ -18,14 +18,12 @@ import  ./private/p_display,
 
 proc `$`*[T](t: Tensor[T]): string =
   ## Pretty-print a tensor (when using ``echo`` for example)
-  let desc = t.type.name & " of shape " & $t.shape & "\" on backend \"" & "Cpu" & "\""
+  let desc = t.type.name & " of shape \"" & $t.shape & "\" on backend \"" & "Cpu" & "\""
   if t.size() == 0:
     return desc & "\n    [] (empty)"
   elif t.rank <= 2:
     return desc & "\n" & t.disp2d
-  elif t.rank == 3:
-    return desc & "\n" & t.disp3d
-  elif t.rank == 4:
-    return desc & "\n" & t.disp4d
   else:
-    return desc & "\n" & " -- NotImplemented: Display not implemented for tensors of rank > 4"
+    return desc & "\n" & t.prettyImpl()
+
+proc pretty*[T](t: Tensor[T]): string = t.prettyImpl()

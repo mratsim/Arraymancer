@@ -13,16 +13,21 @@
 # limitations under the License.
 
 import  ../../private/functional, ../higher_order_applymap,
-        ../shapeshifting, ../data_structure,
-        sugar, sequtils
+        ../shapeshifting, ../data_structure, p_accessors,
+        ../accessors,
+        sugar, sequtils, strutils
 
 proc bounds_display(t: Tensor,
-          idx_data: tuple[val: string, idx: int]
+                    idx_data: tuple[val: string, idx: int],
+                    alignBy, alignSpacing: int,
           ): string {.noSideEffect.}=
   ## Internal routine, compare an index with the strides of a Tensor
   ## to check beginning and end of lines
   ## Add the delimiter "|" and line breaks at beginning and end of lines
-  ## TODO: improve 3+D-tensors display
+  ##
+  ## `alignBy` is the total fill for each "column" in a 2D print. `alignSpacing`
+  ## is the spacing that is ``added`` to the largest element in the original tensor.
+  ## Need it to remove that in the first column of each row.
   let (val,idx) = idx_data
   let s = t.shape.reversed
 
@@ -31,10 +36,14 @@ proc bounds_display(t: Tensor,
 
   for i,j in s[0 .. s.len-2]: # We don't take the last element (the row in C convention)
     if idx mod j == 0:
-      return "\t" & $val & "|\n"
+      return "" & align(val, alignBy) & "|\n"
     if idx mod j == 1:
-      return "|" & $val
-  return "\t" & $val
+      # for the first element  we want to align by only the size of the "largest value" in
+      # the tensor, ``not`` the additional spacing we add to space ``between`` numbers.
+      # `alignSpacing` is that additional space.
+      return "|" & alignLeft(val, alignBy - alignSpacing)
+
+  return "" & align(val, alignBy)
 
 # TODO: Create a generic n-dimensional display function using nested tables.
 # Example code in hTensor: https://github.com/albertoruiz/hTensor/blob/b36c3748b211c7f41c9af9d486c6ef320e2b7585/lib/Numeric/LinearAlgebra/Array/Display.hs#L92
@@ -66,7 +75,7 @@ proc bounds_display(t: Tensor,
 # let b = toSeq(1..72).toTensor.reshape(2,3,3,4)
 # echo b
 
-proc disp2d*(t: Tensor): string {.noSideEffect.} =
+proc disp2d*(t: Tensor, alignBy = 6, alignSpacing = 3): string {.noSideEffect.} =
   ## Display a 2D-tensor
 
   # Add a position index to each value in the Tensor.
@@ -77,7 +86,8 @@ proc disp2d*(t: Tensor): string {.noSideEffect.} =
                                     # if done alone there is no issue
 
   # Create a closure to apply the boundaries transformation for the specific input
-  proc curry_bounds(tup: (string,int)): string {.noSideEffect.}= t.bounds_display(tup)
+  proc curry_bounds(tup: (string,int)): string {.noSideEffect.} =
+    t.bounds_display(tup, alignBy = alignBy, alignSpacing = alignSpacing)
 
   return indexed_data.concatMap(curry_bounds)
 
@@ -132,3 +142,100 @@ proc disp4d*(t: Tensor): string =
               axis = 0
               )
   return vbuffer.disp2d
+
+proc zipStrings(s1, s2: string, sep = "", allowEmpty = false): string =
+  ## zips two strings line by line to a combined string
+  let s1S = s1.splitLines
+  let s2S = s2.splitLines
+  if s1S.len == 1: return s2
+  elif s2S.len == 1: return s1
+  for (x, y) in zip(s1S, s2S):
+    if not allowEmpty and (x.len == 0 and y.len == 0):
+      continue
+    result.add $x & $sep & $y & "\n"
+
+proc genSep(rank: int, lineLen = 0, xaxis = false): string =
+  ## generate horizontal / vertical separator lines based on the axis and tensor rank
+  var sepLine = ""
+  let drawInEven = rank mod 2 == 0
+  for i in 2 ..< rank:
+    if drawInEven and i mod 2 == 0:
+      if not xaxis:
+        sepLine.add " "
+      else:
+        sepLine.add repeat("-", lineLen)
+    elif drawInEven and i mod 2 != 0:
+      if not xaxis:
+        sepLine.add " | "
+      else:
+        sepLine.add repeat(" ", lineLen)
+    elif not drawInEven and i mod 2 == 0:
+      if not xaxis:
+        sepLine.add " "
+      else:
+        sepLine.add repeat("-", lineLen)
+    else:
+      if not xaxis:
+        sepLine.add " | "
+      else:
+        sepLine.add repeat(" ", lineLen)
+    if i < rank and xaxis:
+      sepLine.add "\n"
+  result = sepLine
+
+proc genLeftIdx(axIdx: string, s: string): string =
+  ## Take the input, center index in the middle and then split them by whitespace.
+  ## Can use this to have row centered entry
+  let tmp = center(axIdx & " ", s.splitLines.len).split()
+  for i in 0 ..< tmp.high:
+    let l = tmp[i]
+    if l.len > 0:
+      result.add l & " "
+    else:
+      result.add repeat(" ", ($axIdx).len) & " "
+    if i < tmp.high - 1:
+      result.add "\n"
+
+proc prettyImpl*[T](t: Tensor[T], inputRank = 0, alignBy = 0, alignSpacing = 4): string =
+  ## Pretty printing implementation that aligns N dimensional tensors as a
+  ## table. Odd dimensions are stacked horizontally and even dimensions
+  ## vertically.
+  var alignBy = alignBy
+  var inputRank = inputRank
+  if inputRank == 0:
+    inputRank = t.rank
+    let largestElement = t.map_inline(($x).len).max
+    alignBy = max(6, largestElement + alignSpacing)
+  # for tensors of rank larger 2, walk axis 0 and stack vertically (even dim)
+  # or stack horizontally (odd dim)
+  if t.rank > 2:
+    var axIdx = 0
+    var res = ""
+    let oddRank = t.rank mod 2 != 0
+    for ax in axis(t, 0):
+      if oddRank:
+        # 1. get next "column"
+        var toZip = prettyImpl(ax.squeeze, inputRank, alignBy = alignBy)
+        # 2. center current "column" index to width of `toZip`, put on top
+        toZip = center($axIdx, toZip.splitLines[0].len) & "\n" & toZip
+        # 3. generate separator of "columns" and zip together
+        let sep = t.rank.genSep()
+        res = res.zipStrings(toZip, sep = sep, allowEmpty = false)
+      else:
+        # 1. get next "row"
+        var toStack = prettyImpl(ax.squeeze, inputRank, alignBy = alignBy)
+        # 2. center current "row" index to height of `toStack`
+        let leftIdx = genLeftIdx($axIdx, toStack)
+        # 3. zip index and "row"
+        toStack = zipStrings(leftIdx, toStack, allowEmpty = true)
+        # 4. stack on top of current result
+        res.add toStack
+      inc axIdx
+    # finally add a horizontal separator if we are not at "top" level
+    if t.rank mod 2 != 0 and t.rank != inputRank:
+      let sepLine = t.rank.genSep(res.splitLines[0].len, true)
+      res.add sepLine
+    result.add res
+  else:
+    result = t.disp2d(alignBy = alignBy,
+                      alignSpacing = alignSpacing).strip

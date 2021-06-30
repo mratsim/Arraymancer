@@ -134,6 +134,10 @@ proc copyFromRaw*[T](dst: var Tensor[T], buffer: ptr T, len: Natural) =
   ## Destination tensor size and buffer length should be the same
   when T is KnownSupportsCopyMem:
     withCompilerOptimHints()
+    mixin size
+      # either this or `from ../../tensor/data_structure import size` is needed
+      # as can be seen with: `type tmp = typeof(Tensor[int].default.size)` which
+      # would fail at top-level
     doAssert dst.size == len, "Tensor size and buffer length should be the same"
     let buf{.restrict.} = cast[ptr UncheckedArray[T]](buffer)
     omp_parallel_chunks(
@@ -167,6 +171,7 @@ proc setZero*[T](t: var Tensor[T], check_contiguous: static bool = true) =
     t.storage.raw_buffer.reset()
     t.storage.raw_buffer.setLen(t.size)
   else:
+    mixin size
     omp_parallel_chunks(
           t.size, chunk_offset, chunk_size,
           OMP_MEMORY_BOUND_GRAIN_SIZE * 4):

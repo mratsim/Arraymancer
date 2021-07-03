@@ -91,57 +91,6 @@ proc disp2d*(t: Tensor, alignBy = 6, alignSpacing = 3): string {.noSideEffect.} 
 
   return indexed_data.concatMap(curry_bounds)
 
-proc disp3d*(t: Tensor): string =
-  ## Display a 3D-tensor
-
-  let sep: seq[string] = @["|"]
-  let empty: seq[string] = @[""]
-
-  var buffer = empty.repeat(t.shape[1]).toTensor()
-
-  {.push hint[Pattern]: off.} # Remove Pattern hint for toTensor.reshape
-  for t0 in t.axis(0):
-    buffer = buffer.concat(
-              sep.repeat(t0.shape[1]).toTensor().reshape(t.shape[1],1),
-              t0.map((x:type(t0[0]))->string => $x).reshape(t.shape[1], t.shape[2]),
-              axis = 1
-              )
-
-  return buffer.disp2d
-
-proc disp4d*(t: Tensor): string =
-  ## Display a 4D-tensor
-
-  let sep: seq[string] = @["|"]
-  let sepv: seq[string] = @["-"]
-  let empty: seq[string] = @[""]
-
-  # First create seq of tensor to concat horizontally
-  var hbuffer = newSeqWith(t.shape[0], empty.repeat(t.shape[2]).toTensor())
-
-  {.push hint[Pattern]: off.} # Remove Pattern hint for toTensor.reshape
-  var i = 0
-  for s0 in t.axis(0):
-    let s0r = s0.reshape(t.shape[1],t.shape[2],t.shape[3])
-    for s1 in s0r.axis(0):
-      hbuffer[i] = hbuffer[i].concat(
-                sep.repeat(t.shape[2]).toTensor().reshape(t.shape[2],1),
-                s1.reshape(t.shape[2], t.shape[3]).map((x:type(s1[0]))->string => $x),
-                axis = 1
-                )
-    inc i
-
-
-  # Then concat vertically
-  var vbuffer = empty.repeat(hbuffer[0].shape[1]).toTensor.reshape(1, hbuffer[0].shape[1])
-
-  for h in hbuffer:
-    vbuffer = vbuffer.concat(
-              sepv.repeat(hbuffer[0].shape[1]).toTensor().reshape(1, hbuffer[0].shape[1]),
-              h.map((x:type(h[0]))->string => $x).reshape(hbuffer[0].shape[0], hbuffer[0].shape[1]),
-              axis = 0
-              )
-  return vbuffer.disp2d
 
 proc zipStrings(s1, s2: string, sep = "", allowEmpty = false): string =
   ## zips two strings line by line to a combined string

@@ -1,0 +1,295 @@
+name: Arraymancer CI
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        branch: [version-1-0, version-1-2, version-1-4] # [devel]
+        target:
+          - os: linux
+            cpu: amd64
+          # TODO: https://github.com/mratsim/Arraymancer/issues/511
+          # - os: linux
+          #   cpu: i386
+          - os: macos
+            cpu: amd64
+          # TODO: install openblas or lapack
+          # - os: windows
+          #   cpu: amd64
+          # - os: windows
+          #   cpu: i386
+        test_lang: [c] # cpp not configured
+        include:
+          - target:
+              os: linux
+            builder: ubuntu-18.04
+            shell: bash
+          - target:
+              os: macos
+            builder: macos-10.15
+            shell: bash
+          # - target:
+          #     os: windows
+          #   builder: windows-2019
+          #   shell: msys2 {0}
+
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+
+    name: '${{ matrix.target.os }}-${{ matrix.target.cpu }}-${{ matrix.test_lang }} (${{ matrix.branch }})'
+    runs-on: ${{ matrix.builder }}
+    steps:
+      - name: Get branch name
+        shell: bash
+        run: |
+          if [[ '${{  github.event_name }}' == 'pull_request' ]]; then
+            echo "##[set-output name=branch_name;]$(echo ${GITHUB_HEAD_REF})"
+            echo "Branch found (PR): ${GITHUB_HEAD_REF}"
+          else
+            echo "##[set-output name=branch_name;]$(echo ${GITHUB_REF#refs/heads/})"
+            echo "Branch found (not PR): ${GITHUB_REF#refs/heads/}"
+          fi
+        id: get_branch
+
+      - name: Cancel Previous Runs (except master)
+        if: >
+          steps.get_branch.outputs.branch_name != 'master'
+        uses: styfle/cancel-workflow-action@0.5.0
+        with:
+          access_token: ${{ github.token }}
+
+      - name: Checkout arraymancer
+        uses: actions/checkout@v2
+        with:
+          path: arraymancer
+          submodules: true
+
+      - name: Install build dependencies (Linux i386)
+        if: runner.os == 'Linux' && matrix.target.cpu == 'i386'
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-fast update -qq
+          sudo DEBIAN_FRONTEND='noninteractive' apt-fast install \
+            --no-install-recommends -yq gcc-multilib g++-multilib \
+            libssl-dev:i386
+          mkdir -p external/bin
+          cat << EOF > external/bin/gcc
+          #!/bin/bash
+          exec $(which gcc) -m32 "\$@"
+          EOF
+          cat << EOF > external/bin/g++
+          #!/bin/bash
+          exec $(which g++) -m32 "\$@"
+          EOF
+          chmod 755 external/bin/gcc external/bin/g++
+          echo '${{ github.workspace }}/external/bin' >> $GITHUB_PATH
+
+      - name: MSYS2 (Windows i386)
+        if: runner.os == 'Windows' && matrix.target.cpu == 'i386'
+        uses: msys2/setup-msys2@v2
+        with:
+          path-type: inherit
+          msystem: MINGW32
+          # update: true
+          install: >-
+            base-devel
+            git
+            mingw-w64-i686-toolchain
+
+      - name: MSYS2 (Windows amd64)
+        if: runner.os == 'Windows' && matrix.target.cpu == 'amd64'
+        uses: msys2/setup-msys2@v2
+        with:
+          path-type: inherit
+          # update: true
+          install: >-
+            base-devel
+            git
+            mingw-w64-x86_64-toolchain
+
+      - name: Restore Nim DLLs dependencies (Windows) from cache
+        if: runner.os == 'Windows'
+        id: windows-dlls-cache
+        uses: actions/cache@v2
+        with:
+          path: external/dlls
+          key: 'dlls'
+
+      - name: Install DLL dependencies (Windows)
+        if: >
+          steps.windows-dlls-cache.outputs.cache-hit != 'true' &&
+          runner.os == 'Windows'
+        run: |
+          mkdir external
+          curl -L "https://nim-lang.org/download/windeps.zip" -o external/windeps.zip
+          7z x external/windeps.zip -oexternal/dlls
+
+      - name: Path to cached dependencies (Windows)
+        if: >
+          runner.os == 'Windows'
+        run: |
+          echo '${{ github.workspace }}'"/external/dlls" >> $GITHUB_PATH
+
+      - name: Derive environment variables
+        run: |
+          if [[ '${{ matrix.target.cpu }}' == 'amd64' ]]; then
+            PLATFORM=x64
+          else
+            PLATFORM=x86
+          fi
+          echo "PLATFORM=${PLATFORM}" >> $GITHUB_ENV
+
+          if [[ '${{ matrix.target.os }}' == 'windows' ]]; then
+            MAKE_CMD="mingw32-make"
+          else
+            MAKE_CMD="make"
+          fi
+          echo "MAKE_CMD=$MAKE_CMD" >> $GITHUB_ENV
+
+          ncpu=''
+          case '${{ runner.os }}' in
+          'Linux')
+            ncpu=$(nproc)
+            ;;
+          'macOS')
+            ncpu=$(sysctl -n hw.ncpu)
+            ;;
+          'Windows')
+            ncpu=${NUMBER_OF_PROCESSORS}
+            ;;
+          esac
+          [[ -z "$ncpu" || $ncpu -le 0 ]] && ncpu=1
+          echo "ncpu=${ncpu}" >> $GITHUB_ENV
+
+      - name: Setup environment
+        shell: bash
+        run: echo '${{ github.workspace }}/nim/bin' >> $GITHUB_PATH
+
+      - name: Get latest Nim commit hash
+        id: versions
+        shell: bash
+        run: |
+          getHash() {
+            git ls-remote "https://github.com/$1" "${2:-HEAD}" | cut -f 1
+          }
+          nimHash=$(getHash nim-lang/Nim '${{ matrix.branch }}')
+          csourcesHash=$(getHash nim-lang/csources)
+          echo "::set-output name=nim::$nimHash"
+          echo "::set-output name=csources::$csourcesHash"
+
+      - name: Restore prebuilt Nim from cache
+        id: nim-cache
+        uses: actions/cache@v1
+        with:
+          path: nim
+          key: 'nim-${{ matrix.target.os }}-${{ matrix.target.cpu }}-${{ steps.versions.outputs.nim }}'
+
+      - name: Restore prebuilt csources from cache
+        if: steps.nim-cache.outputs.cache-hit != 'true'
+        id: csources-cache
+        uses: actions/cache@v1
+        with:
+          path: csources/bin
+          key: 'csources-${{ matrix.target.os }}-${{ matrix.target.cpu }}-${{ steps.versions.outputs.csources }}'
+
+      - name: Checkout Nim csources
+        if: >
+          steps.csources-cache.outputs.cache-hit != 'true' &&
+          steps.nim-cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: nim-lang/csources
+          path: csources
+          ref: ${{ steps.versions.outputs.csources }}
+
+      - name: Checkout Nim
+        if: steps.nim-cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@v2
+        with:
+          repository: nim-lang/Nim
+          path: nim
+          ref: ${{ steps.versions.outputs.nim }}
+
+      - name: Build Nim and associated tools
+        if: steps.nim-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          ncpu=
+          ext=
+          case '${{ runner.os }}' in
+          'Linux')
+            ncpu=$(nproc)
+            ;;
+          'macOS')
+            ncpu=$(sysctl -n hw.ncpu)
+            ;;
+          'Windows')
+            ncpu=$NUMBER_OF_PROCESSORS
+            ext=.exe
+            ;;
+          esac
+          [[ -z "$ncpu" || $ncpu -le 0 ]] && ncpu=1
+          if [[ ! -e csources/bin/nim$ext ]]; then
+            make -C csources -j $ncpu CC=gcc ucpu='${{ matrix.target.cpu }}'
+          else
+            echo 'Using prebuilt csources'
+          fi
+          cp -v csources/bin/nim$ext nim/bin
+          cd nim
+          nim c koch
+          ./koch boot -d:release
+          ./koch tools -d:release
+          # clean up to save cache space
+          rm koch
+          rm -rf nimcache
+          rm -rf dist
+          rm -rf .git
+
+      - name: Install dependencies (Linux 32-bit)
+        if: runner.os == 'Linux' && matrix.target.cpu == 'i386'
+        run: |
+          sudo DEBIAN_FRONTEND='noninteractive' apt-fast install \
+          --no-install-recommends -yq \
+          libopenblas-dev:i386
+
+      # Apple Accelerate installed by default
+      # - name: Install dependencies (macOS)
+      #   if: runner.os == 'macOS'
+      #   run: brew install openblas
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows' && matrix.target.cpu == 'amd64'
+        shell: msys2 {0}
+        run: |
+          pacman -S --needed --noconfirm mingw-w64-x86_64-​lapack
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows' && matrix.target.cpu == 'i386'
+        shell: msys2 {0}
+        run: |
+          pacman -S --needed --noconfirm mingw-w64-i686-​lapack
+
+      - name: Restore datasets cache
+        id: datasets-cache
+        uses: actions/cache@v1
+        with:
+          path: ~/.cache/arraymancer
+          key: 'datasets'
+
+      - name: Run Arraymancer tests
+        working-directory: arraymancer
+        run: |
+          export ARRAYMANCER_TEST_LANG=${{ matrix.test_lang }}
+          nimble install -y --depsOnly
+          # Run the tests.
+          nimble test

@@ -99,6 +99,7 @@ jobs:
         with:
           path-type: inherit
           msystem: MINGW32
+          update: true
           install: >-
             base-devel
             git
@@ -109,6 +110,7 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           path-type: inherit
+          update: true
           install: >-
             base-devel
             git

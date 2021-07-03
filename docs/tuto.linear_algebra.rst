@@ -22,9 +22,9 @@ routines, see the `benchmarks section. <#micro-benchmark-int64-matrix-multiplica
 .. code:: nim
 
     echo foo_float * foo_float # Accelerated Matrix-Matrix multiplication (needs float)
-    # Tensor of shape 5x5 of type "float" on backend "Cpu"
-    # |15.0    55.0    225.0    979.0     4425.0|
-    # |258.0   1146.0  5274.0   24810.0   118458.0|
-    # |1641.0  7653.0  36363.0  174945.0  849171.0|
-    # |6372.0  30340.0 146244.0 710980.0  3478212.0|
-    # |18555.0 89355.0 434205.0 2123655.0 10436805.0|
+    # Tensor[float] of shape "[5, 5]" on backend "Cpu"
+    # |15.0         55.0      225.0       979.0       4425.0|
+    # |258.0      1146.0     5274.0     24810.0     118458.0|
+    # |1641.0     7653.0    36363.0    174945.0     849171.0|
+    # |6372.0    30340.0   146244.0    710980.0    3478212.0|
+    # |18555.0   89355.0   434205.0   2123655.0   10436805.0|

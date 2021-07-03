@@ -30,47 +30,47 @@ rows), reversing dimensions, counting from the end.
 
     echo foo
 
-    # Tensor of shape 5x5 of type "int" on backend "Cpu"
-    # |1      1       1       1       1|
-    # |2      4       8       16      32|
-    # |3      9       27      81      243|
-    # |4      16      64      256     1024|
+    # Tensor[int] of shape "[5, 5]" on backend "Cpu"
+    # |1       1        1       1        1|
+    # |2       4        8      16       32|
+    # |3       9       27      81      243|
+    # |4      16       64     256     1024|
     # |5      25      125     625     3125|
 
     echo foo[1..2, 3..4] # slice
 
-    # Tensor of shape 2x2 of type "int" on backend "Cpu"
-    # |16     32|
+    # Tensor[int] of shape "[2, 2]" on backend "Cpu"
+    # |16      32|
     # |81     243|
 
     echo foo[3.._, _] # Span slice
 
-    # Tensor of shape 2x5 of type "int" on backend "Cpu"
-    # |4      16      64      256     1024|
+    # Tensor[int] of shape "[2, 5]" on backend "Cpu"
+    # |4      16       64     256     1024|
     # |5      25      125     625     3125|
 
     echo foo[_..^3, _] # Slice until (inclusive, consistent with Nim)
 
-    # Tensor of shape 3x5 of type "int" on backend "Cpu"
-    # |1      1       1       1       1|
-    # |2      4       8       16      32|
-    # |3      9       27      81      243|
+    # Tensor[int] of shape "[3, 5]" on backend "Cpu"
+    # |1      1        1       1       1|
+    # |2      4        8      16      32|
+    # |3      9       27      81     243|
 
     echo foo[_.._|2, _] # Step
 
-    # Tensor of shape 3x5 of type "int" on backend "Cpu"
-    # |1      1       1       1       1|
-    # |3      9       27      81      243|
+    # Tensor[int] of shape "[3, 5]" on backend "Cpu"
+    # |1       1        1       1        1|
+    # |3       9       27      81      243|
     # |5      25      125     625     3125|
 
     echo foo[^1..0|-1, _] # Reverse step
 
-    # Tensor of shape 5x5 of type "int" on backend "Cpu"
+    # Tensor[int] of shape "[5, 5]" on backend "Cpu"
     # |5      25      125     625     3125|
-    # |4      16      64      256     1024|
-    # |3      9       27      81      243|
-    # |2      4       8       16      32|
-    # |1      1       1       1       1|
+    # |4      16       64     256     1024|
+    # |3       9       27      81      243|
+    # |2       4        8      16       32|
+    # |1       1        1       1        1|
 
 Slice mutations
 ~~~~~~~~~~~~~~~
@@ -107,46 +107,45 @@ an example and the explanation below.
 
     echo foo
 
-    # Tensor of shape 5x5 of type "int" on backend "Cpu"
-    # |1      1       1       1       1|
-    # |2      4       8       16      32|
-    # |3      9       27      81      243|
-    # |4      16      64      256     1024|
+    # Tensor[int] of shape "[5, 5]" on backend "Cpu"
+    # |1       1        1       1        1|
+    # |2       4        8      16       32|
+    # |3       9       27      81      243|
+    # |4      16       64     256     1024|
     # |5      25      125     625     3125|
 
     # Mutation with a single value
     foo[1..2, 3..4] = 999
 
     echo foo
-    # Tensor of shape 5x5 of type "int" on backend "Cpu"
-    # |1      1       1       1       1|
-    # |2      4       8       999     999|
-    # |3      9       27      999     999|
-    # |4      16      64      256     1024|
-    # |5      25      125     625     3125|
+    # Tensor[int] of shape "[5, 5]" on backend "Cpu"
+    # |1       1        1       1       1|
+    # |2       4        8     999     999|
+    # |3       9       27     999     999|
+    # |4      16       64     256    1024|
+    # |5      25      125     625    3125|
 
     # Mutation with nested array or nested seq
     foo[0..1,0..1] = [[111, 222], [333, 444]]
 
     echo foo
-    # Tensor of shape 5x5 of type "int" on backend "Cpu"
-    # |111    222     1       1       1|
-    # |333    444     8       999     999|
-    # |3      9       27      999     999|
-    # |4      16      64      256     1024|
-    # |5      25      125     625     3125|
+    # Tensor[int] of shape "[5, 5]" on backend "Cpu"
+    # |111    222       1       1       1|
+    # |333    444       8     999     999|
+    # |3        9      27     999     999|
+    # |4       16      64     256    1024|
+    # |5       25     125     625    3125|
 
     # Mutation with a tensor or tensor slice.
     foo[^2..^1,2..4] = foo[^1..^2|-1, 4..2|-1]
 
     echo foo
     # Tensor[system.int] of shape [5, 5]" on backend "Cpu"
-    # |111    222     1       1       1|
-    # |333    444     8       999     999|
-    # |3      9       27      999     999|
-    # |4      16      3125    625     125|
-    # |5      25      125     625     3125|
-
+    # |111    222       1      1       1|
+    # |333    444       8    999     999|
+    # |3        9      27    999     999|
+    # |4       16    3125    625     125|
+    # |5       25     125    625    3125|
 
 The careful reader might have expected a different result for the
 final mutation `foo[^2..^1,2..4] = foo[^1..^2|-1, 4..2|-1]`. Namely,
@@ -163,7 +162,7 @@ the following result:
 .. code:: nim
 
      # |3125    625     125|
-     # |1024    256     64|
+     # |1024    256      64|
 
 However, this result would only be obtained, if slicing mutation used
 a temporary copy of the input tensor. To see what happens exactly,
@@ -182,27 +181,27 @@ consider the following code. Here `foo` is foo as it was computed
      echo foo[^1..^2|-1, 4..2|-1]
      # Tensor[system.int] of shape [2, 3]" on backend "Cpu"
      # |3125   625     125|
-     # |1024   256     64|
+     # |1024   256      64|
 
      # this means we first perform this:
      foo[^2, 2..4] = foo[^1, 4..2|-1]
      echo foo
      # Tensor[system.int] of shape [5, 5]" on backend "Cpu"
-     # |111    222     1       1       1|
-     # |333    444     8       999     999|
-     # |3      9       27      999     999|
-     # |4      16      3125    625     125|
-     # |5      25      125     625     3125|
+     # |111    222       1      1       1|
+     # |333    444       8    999     999|
+     # |3        9      27    999     999|
+     # |4       16    3125    625     125|
+     # |5       25     125    625    3125|
 
      # and then the following. At this step (compare output
      foo[^1, 2..4] = foo[^2, 4..2|-1]
      echo foo
      # Tensor[system.int] of shape [5, 5]" on backend "Cpu"
-     # |111    222     1       1       1|
-     # |333    444     8       999     999|
-     # |3      9       27      999     999|
-     # |4      16      3125    625     125|
-     # |5      25      125     625     3125|
+     # |111    222       1      1       1|
+     # |333    444       8    999     999|
+     # |3        9      27    999     999|
+     # |4       16    3125    625     125|
+     # |5       25     125    625    3125|
 
 In effect it makes it seem like the final mutation does not even do
 anything! But that is only, because we are somewhat "inverting" doing

@@ -22,7 +22,7 @@ a sequence of numbers of steps to get the next item along a dimension. -
     let d = [[1, 2, 3], [4, 5, 6]].toTensor()
 
     echo d
-    # Tensor of shape 2x3 of type "int" on backend "Cpu"
+    # Tensor[int] of shape "[2, 3]" on backend "Cpu"
     # |1      2       3|
     # |4      5       6|
 
@@ -64,9 +64,10 @@ arrays of sequences.
             ].toTensor()
     echo c
 
-    # Tensor of shape 4x2x3 of type "int" on backend "Cpu"
-    #  |      1       2       3 |     11      22      33 |    111     222     333 |   1111    2222    3333|
-    #  |      4       5       6 |     44      55      66 |    444     555     666 |   4444    5555    6666|
+    # Tensor[system.int] of shape "[4, 2, 3]" on backend "Cpu"
+    #           0                      1                      2                      3
+    # |1          2       3| |11        22      33| |111      222     333| |1111    2222    3333|
+    # |4          5       6| |44        55      66| |444      555     666| |4444    5555    6666|
 
 ``newTensor`` procedure can be used to initialize a tensor of a specific
 shape with a default value. (0 for numbers, false for bool …)
@@ -80,34 +81,34 @@ tensor of the same shape but filled with 0 and 1 respectively.
 .. code:: nim
 
     let e = newTensor[bool]([2, 3])
-    # Tensor of shape 2x3 of type "bool" on backend "Cpu"
+    # Tensor[bool] of shape "[2, 3]" on backend "Cpu"
     # |false  false   false|
     # |false  false   false|
 
     let f = zeros[float]([4, 3])
-    # Tensor of shape 4x3 of type "float" on backend "Cpu"
+    # Tensor[float] of shape "[4, 3]" on backend "Cpu"
     # |0.0    0.0     0.0|
     # |0.0    0.0     0.0|
     # |0.0    0.0     0.0|
     # |0.0    0.0     0.0|
 
     let g = ones[float]([4, 3])
-    # Tensor of shape 4x3 of type "float" on backend "Cpu"
-    # |1.0    1.0     1.0|
-    # |1.0    1.0     1.0|
-    # |1.0    1.0     1.0|
-    # |1.0    1.0     1.0|
+    # Tensor[float] of shape "[4, 3]" on backend "Cpu"
+    # |1.0    1.0     1.0|
+    # |1.0    1.0     1.0|
+    # |1.0    1.0     1.0|
+    # |1.0    1.0     1.0|
 
     let tmp = [[1,2],[3,4]].toTensor()
     let h = tmp.zeros_like
-    # Tensor of shape 2x2 of type "int" on backend "Cpu"
+    # Tensor[int] of shape "[2, 2]" on backend "Cpu"
     # |0      0|
     # |0      0|
 
     let i = tmp.ones_like
-    # Tensor of shape 2x2 of type "int" on backend "Cpu"
-    # |1      1|
-    # |1      1|
+    # Tensor[int] of shape "[2, 2]" on backend "Cpu"
+    # |1      1|
+    # |1      1|
 
 Accessing and modifying a value
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -119,20 +120,22 @@ Tensors value can be retrieved or set with array brackets.
     var a = toSeq(1..24).toTensor().reshape(2,3,4)
 
     echo a
-    # Tensor of shape 2x3x4 of type "int" on backend "Cpu"
-    #  |      1       2       3       4 |     13      14      15      16|
-    #  |      5       6       7       8 |     17      18      19      20|
-    #  |      9       10      11      12 |    21      22      23      24|
+    # Tensor[system.int] of shape "[2, 3, 4]" on backend "Cpu"
+    #           0                      1
+    # |1      2     3     4| |13    14    15    16|
+    # |5      6     7     8| |17    18    19    20|
+    # |9     10    11    12| |21    22    23    24|
 
     echo a[1, 1, 1]
     # 18
 
     a[1, 1, 1] = 999
     echo a
-    # Tensor of shape 2x3x4 of type "int" on backend "Cpu"
-    #  |      1       2       3       4 |     13      14      15      16|
-    #  |      5       6       7       8 |     17      999     19      20|
-    #  |      9       10      11      12 |    21      22      23      24|
+    # Tensor[system.int] of shape "[2, 3, 4]" on backend "Cpu"
+    #             0                          1
+    # |1        2      3      4| |13      14     15     16|
+    # |5        6      7      8| |17     999     19     20|
+    # |9       10     11     12| |21      22     23     24|
 
 Copying
 ~~~~~~~

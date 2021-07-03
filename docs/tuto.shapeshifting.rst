@@ -23,10 +23,14 @@ For example:
 
     let a = toSeq(1..24).toTensor().reshape(2,3,4)
 
-    # Tensor of shape 2x3x4 of type "int" on backend "Cpu"
-    #  |      1       2       3       4 |     13      14      15      16|
-    #  |      5       6       7       8 |     17      18      19      20|
-    #  |      9       10      11      12 |    21      22      23      24|
+    # Tensor[system.int] of shape "[2, 3, 4]" on backend "Cpu"
+    #           0                      1
+    # |1      2     3     4| |13    14    15    16|
+    # |5      6     7     8| |17    18    19    20|
+    # |9     10    11    12| |21    22    23    24|
+
+The ``0`` and ``1`` correspond to the index along the first dimension
+of the reshaped tensor.
 
 Permuting - Reordering dimension
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -39,18 +43,21 @@ tensor and the new dimension order
     let a = toSeq(1..24).toTensor.reshape(2,3,4)
     echo a
 
-    # Tensor of shape 2x3x4 of type "int" on backend "Cpu"
-    #  |      1       2       3       4 |     13      14      15      16|
-    #  |      5       6       7       8 |     17      18      19      20|
-    #  |      9       10      11      12 |    21      22      23      24|
+    # Tensor[system.int] of shape "[2, 3, 4]" on backend "Cpu"
+    #           0                      1
+    # |1      2     3     4| |13    14    15    16|
+    # |5      6     7     8| |17    18    19    20|
+    # |9     10    11    12| |21    22    23    24|
 
-    echo a.permute(0,2,1) # dim 0 stays at 0, dim 1 becomes dim 2 and dim 2 becomes dim 1
+    echo a.permute(0,2,1) # dim 0 stays at 0, dim 1 becomes dim 2 and
+    dim 2 becomes dim 1
 
-    # Tensor of shape 2x4x3 of type "int" on backend "Cpu"
-    #  |      1       5       9 |     13      17      21|
-    #  |      2       6       10 |    14      18      22|
-    #  |      3       7       11 |    15      19      23|
-    #  |      4       8       12 |    16      20      24|
+    # Tensor[system.int] of shape "[2, 4, 3]" on backend "Cpu"
+    #        0                1
+    # |1      5     9| |13    17    21|
+    # |2      6    10| |14    18    22|
+    # |3      7    11| |15    19    23|
+    # |4      8    12| |16    20    24|
 
 Concatenation
 ^^^^^^^^^^^^^
@@ -71,16 +78,16 @@ Tensors can be concatenated along an axis with the ``concat`` proc.
     let c1 = c.reshape(2,3)
 
     echo concat(a,b,c0, axis = 0)
-    # Tensor of shape 7x2 of type "int" on backend "Cpu"
-    # |1      2|
-    # |3      4|
-    # |5      6|
-    # |7      8|
-    # |11     12|
-    # |13     14|
-    # |15     16|
+    # Tensor[system.int] of shape "[7, 2]" on backend "Cpu"
+    # |1       2|
+    # |3       4|
+    # |5       6|
+    # |7       8|
+    # |11     12|
+    # |13     14|
+    # |15     16|
 
     echo concat(a,b,c1, axis = 1)
-    # Tensor of shape 2x7 of type "int" on backend "Cpu"
-    # |1      2       5       6       11      12      13|
-    # |3      4       7       8       14      15      16|
+    # Tensor[system.int] of shape "[2, 7]" on backend "Cpu"
+    # |1       2     5     6    11    12    13|
+    # |3       4     7     8    14    15    16|

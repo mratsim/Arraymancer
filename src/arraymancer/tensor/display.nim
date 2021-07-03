@@ -16,14 +16,17 @@ import  ./private/p_display,
         ./data_structure,
         typetraits
 
-proc `$`*[T](t: Tensor[T]): string =
-  ## Pretty-print a tensor (when using ``echo`` for example)
+proc pretty*[T](t: Tensor[T], precision = -1): string =
+  ## Pretty-print a Tensor with the option to set a custom `precision`
+  ## for float values.
   let desc = t.type.name & " of shape \"" & $t.shape & "\" on backend \"" & "Cpu" & "\""
   if t.size() == 0:
     return desc & "\n    [] (empty)"
   elif t.rank <= 2:
-    return desc & "\n" & t.disp2d
+    return desc & "\n" & t.disp2d(precision = precision)
   else:
-    return desc & "\n" & t.prettyImpl()
+    return desc & "\n" & t.prettyImpl(precision = precision)
 
-proc pretty*[T](t: Tensor[T]): string = t.prettyImpl()
+proc `$`*[T](t: Tensor[T]): string =
+  ## Pretty-print a tensor (when using ``echo`` for example)
+  t.pretty()

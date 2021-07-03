@@ -265,10 +265,16 @@ jobs:
       #   run: brew install openblas
 
       - name: Install dependencies (Windows)
-        if: runner.os == 'Windows'
+        if: runner.os == 'Windows' && matrix.target.cpu == 'amd64'
         shell: msys2 {0}
         run: |
-          pacman -S --needed --noconfirm openblas
+          pacman -S --needed --noconfirm mingw-w64-x86_64-​openblas
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows' && matrix.target.cpu == 'i386'
+        shell: msys2 {0}
+        run: |
+          pacman -S --needed --noconfirm mingw-w64-i686-​openblas
 
       - name: Restore datasets cache
         id: datasets-cache

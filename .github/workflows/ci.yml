@@ -23,8 +23,8 @@ jobs:
             cpu: amd64
           - os: windows
             cpu: amd64
-          - os: windows
-            cpu: i386
+          # - os: windows
+          #   cpu: i386
         test_lang: [c] # cpp not configured
         include:
           - target:
@@ -250,6 +250,25 @@ jobs:
           rm -rf nimcache
           rm -rf dist
           rm -rf .git
+
+      - name: Install dependencies (Linux 32-bit)
+        if: runner.os == 'Linux' && matrix.target.cpu == 'i386'
+        run: |
+          sudo DEBIAN_FRONTEND='noninteractive' apt-fast install \
+          --no-install-recommends -yq \
+          libopenblas-dev:i386
+
+      # Apple Accelerate installed by default
+      # - name: Install dependencies (macOS)
+      #   if: runner.os == 'macOS'
+      #   run: brew install openblas
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          choco install msys2
+          pacman -S mingw-w64-x86_64-openblas
 
       - name: Run Arraymancer tests
         working-directory: arraymancer

@@ -17,8 +17,9 @@ jobs:
         target:
           - os: linux
             cpu: amd64
-          - os: linux
-            cpu: i386
+          # TODO: https://github.com/mratsim/Arraymancer/issues/511
+          # - os: linux
+          #   cpu: i386
           - os: macos
             cpu: amd64
           - os: windows
@@ -263,12 +264,22 @@ jobs:
       #   if: runner.os == 'macOS'
       #   run: brew install openblas
 
-      - name: Install dependencies (Windows)
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          choco install msys2
-          pacman -S mingw-w64-x86_64-openblas
+      - name: Install dependencies (Windows i386)
+        if: runner.os == 'Windows' && matrix.target.cpu == 'i386'
+        uses: msys2/setup-msys2@v2
+        with:
+          path-type: inherit
+          msystem: MINGW32
+          install: >-
+            openblas
+
+      - name: MSYS2 (Windows amd64)
+        if: runner.os == 'Windows' && matrix.target.cpu == 'amd64'
+        uses: msys2/setup-msys2@v2
+        with:
+          path-type: inherit
+          install: >-
+            openblas
 
       - name: Run Arraymancer tests
         working-directory: arraymancer

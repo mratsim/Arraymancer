@@ -17,10 +17,10 @@ import  ../../private/functional, ../higher_order_applymap,
         ../accessors,
         sugar, sequtils, strutils
 
-proc bounds_display(t: Tensor,
+func bounds_display(t: Tensor,
                     idx_data: tuple[val: string, idx: int],
-                    alignBy, alignSpacing: int,
-          ): string {.noSideEffect.}=
+                    alignBy, alignSpacing: int
+          ): string =
   ## Internal routine, compare an index with the strides of a Tensor
   ## to check beginning and end of lines
   ## Add the delimiter "|" and line breaks at beginning and end of lines
@@ -75,24 +75,32 @@ proc bounds_display(t: Tensor,
 # let b = toSeq(1..72).toTensor.reshape(2,3,3,4)
 # echo b
 
-proc disp2d*(t: Tensor, alignBy = 6, alignSpacing = 3): string {.noSideEffect.} =
+func disp2d*[T](t: Tensor[T], alignBy = 6, alignSpacing = 3,
+                precision = -1): string =
   ## Display a 2D-tensor
 
   # Add a position index to each value in the Tensor.
   var indexed_data: seq[(string,int)] = @[]
   for i, value in t.enumerate:
-    indexed_data.add(($value,i+1))  # TODO Note: the $conversion is unstable if the whole test suite is done.
-                                    # it fails at the test_load_openmp.
-                                    # if done alone there is no issue
+    when T is SomeFloat:
+      var val: string
+      if precision > -1:
+        val = formatBiggestFloat(value, precision = precision)
+      else:
+        val = formatBiggestFloat(value)
+    else:
+      let val = $value
+    indexed_data.add((val, i+1))  # TODO Note: the $conversion is unstable if the whole test suite is done.
+                                  # it fails at the test_load_openmp.
+                                  # if done alone there is no issue
 
   # Create a closure to apply the boundaries transformation for the specific input
-  proc curry_bounds(tup: (string,int)): string {.noSideEffect.} =
+  func curry_bounds(tup: (string,int)): string =
     t.bounds_display(tup, alignBy = alignBy, alignSpacing = alignSpacing)
 
   return indexed_data.concatMap(curry_bounds)
 
-
-proc zipStrings(s1, s2: string, sep = "", allowEmpty = false): string =
+func zipStrings(s1, s2: string, sep = "", allowEmpty = false): string =
   ## zips two strings line by line to a combined string
   let s1S = s1.splitLines
   let s2S = s2.splitLines
@@ -103,7 +111,7 @@ proc zipStrings(s1, s2: string, sep = "", allowEmpty = false): string =
       continue
     result.add $x & $sep & $y & "\n"
 
-proc genSep(rank: int, lineLen = 0, xaxis = false): string =
+func genSep(rank: int, lineLen = 0, xaxis = false): string =
   ## generate horizontal / vertical separator lines based on the axis and tensor rank
   var sepLine = ""
   let drawInEven = rank mod 2 == 0
@@ -132,7 +140,7 @@ proc genSep(rank: int, lineLen = 0, xaxis = false): string =
       sepLine.add "\n"
   result = sepLine
 
-proc genLeftIdx(axIdx: string, s: string): string =
+func genLeftIdx(axIdx: string, s: string): string =
   ## Take the input, center index in the middle and then split them by whitespace.
   ## Can use this to have row centered entry
   let tmp = center(axIdx & " ", s.splitLines.len).split()
@@ -145,15 +153,36 @@ proc genLeftIdx(axIdx: string, s: string): string =
     if i < tmp.high - 1:
       result.add "\n"
 
-proc prettyImpl*[T](t: Tensor[T], inputRank = 0, alignBy = 0, alignSpacing = 4): string =
+proc determineLargestElement[T](t: Tensor[T], precision: int): int =
+  ## Determines the length of the "largest" element in the tensor after
+  ## string conversion. This is to align our output table nicely.
+  when T is SomeFloat:
+    if precision > -1:
+      result = t.map_inline((x.formatBiggestFloat(precision = precision)).len).max
+    else:
+      result = t.map_inline((x.formatBiggestFloat()).len).max
+  else:
+    result = t.map_inline(($x).len).max
+
+proc prettyImpl*[T](t: Tensor[T],
+                    inputRank = 0, alignBy = 0, alignSpacing = 4,
+                    precision = -1): string =
   ## Pretty printing implementation that aligns N dimensional tensors as a
   ## table. Odd dimensions are stacked horizontally and even dimensions
   ## vertically.
+  ##
+  ## `inputRank` is used to keep track of the original tensor's rank. `alignBy`
+  ## is the spacing given each column in a sub-tensor. `alignSpacing` is the
+  ## amount of space we want at least between the different columns. It's given
+  ## separately for the special case of first columns (as they are left aligned
+  ## and all others right aligned).
+  ##
+  ## `precision` sets the floating point precision.
   var alignBy = alignBy
   var inputRank = inputRank
   if inputRank == 0:
     inputRank = t.rank
-    let largestElement = t.map_inline(($x).len).max
+    let largestElement = t.determineLargestElement(precision)
     alignBy = max(6, largestElement + alignSpacing)
   # for tensors of rank larger 2, walk axis 0 and stack vertically (even dim)
   # or stack horizontally (odd dim)
@@ -164,7 +193,8 @@ proc prettyImpl*[T](t: Tensor[T], inputRank = 0, alignBy = 0, alignSpacing = 4):
     for ax in axis(t, 0):
       if oddRank:
         # 1. get next "column"
-        var toZip = prettyImpl(ax.squeeze, inputRank, alignBy = alignBy)
+        var toZip = prettyImpl(ax.squeeze, inputRank, alignBy = alignBy,
+                               precision = precision)
         # 2. center current "column" index to width of `toZip`, put on top
         toZip = center($axIdx, toZip.splitLines[0].len) & "\n" & toZip
         # 3. generate separator of "columns" and zip together
@@ -172,7 +202,8 @@ proc prettyImpl*[T](t: Tensor[T], inputRank = 0, alignBy = 0, alignSpacing = 4):
         res = res.zipStrings(toZip, sep = sep, allowEmpty = false)
       else:
         # 1. get next "row"
-        var toStack = prettyImpl(ax.squeeze, inputRank, alignBy = alignBy)
+        var toStack = prettyImpl(ax.squeeze, inputRank, alignBy = alignBy,
+                                 precision = precision)
         # 2. center current "row" index to height of `toStack`
         let leftIdx = genLeftIdx($axIdx, toStack)
         # 3. zip index and "row"
@@ -187,4 +218,5 @@ proc prettyImpl*[T](t: Tensor[T], inputRank = 0, alignBy = 0, alignSpacing = 4):
     result.add res
   else:
     result = t.disp2d(alignBy = alignBy,
-                      alignSpacing = alignSpacing).strip
+                      alignSpacing = alignSpacing,
+                      precision = precision).strip

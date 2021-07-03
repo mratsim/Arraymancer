@@ -99,7 +99,7 @@ jobs:
         with:
           path-type: inherit
           msystem: MINGW32
-          update: true
+          # update: true
           install: >-
             base-devel
             git
@@ -110,7 +110,7 @@ jobs:
         uses: msys2/setup-msys2@v2
         with:
           path-type: inherit
-          update: true
+          # update: true
           install: >-
             base-devel
             git
@@ -270,13 +270,13 @@ jobs:
         if: runner.os == 'Windows' && matrix.target.cpu == 'amd64'
         shell: msys2 {0}
         run: |
-          pacman -S --needed --noconfirm mingw-w64-x86_64-​openblas
+          pacman -S --needed --noconfirm mingw-w64-x86_64-​lapack
 
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows' && matrix.target.cpu == 'i386'
         shell: msys2 {0}
         run: |
-          pacman -S --needed --noconfirm mingw-w64-i686-​openblas
+          pacman -S --needed --noconfirm mingw-w64-i686-​lapack
 
       - name: Restore datasets cache
         id: datasets-cache

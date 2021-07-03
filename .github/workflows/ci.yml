@@ -281,6 +281,13 @@ jobs:
           install: >-
             openblas
 
+      - name: Restore datasets cache
+        id: datasets-cache
+        uses: actions/cache@v1
+        with:
+          path: ~/.cache/arraymancer
+          key: 'datasets'
+
       - name: Run Arraymancer tests
         working-directory: arraymancer
         run: |

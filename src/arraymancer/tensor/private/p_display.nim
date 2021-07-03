@@ -83,11 +83,7 @@ func disp2d*[T](t: Tensor[T], alignBy = 6, alignSpacing = 3,
   var indexed_data: seq[(string,int)] = @[]
   for i, value in t.enumerate:
     when T is SomeFloat:
-      var val: string
-      if precision > -1:
-        val = formatBiggestFloat(value, precision = precision)
-      else:
-        val = formatBiggestFloat(value)
+      let val = formatBiggestFloat(value, precision = precision)
     else:
       let val = $value
     indexed_data.add((val, i+1))  # TODO Note: the $conversion is unstable if the whole test suite is done.
@@ -157,10 +153,7 @@ proc determineLargestElement[T](t: Tensor[T], precision: int): int =
   ## Determines the length of the "largest" element in the tensor after
   ## string conversion. This is to align our output table nicely.
   when T is SomeFloat:
-    if precision > -1:
-      result = t.map_inline((x.formatBiggestFloat(precision = precision)).len).max
-    else:
-      result = t.map_inline((x.formatBiggestFloat()).len).max
+    result = t.map_inline((x.formatBiggestFloat(precision = precision)).len).max
   else:
     result = t.map_inline(($x).len).max
 

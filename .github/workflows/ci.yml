@@ -22,8 +22,9 @@ jobs:
           #   cpu: i386
           - os: macos
             cpu: amd64
-          - os: windows
-            cpu: amd64
+          # TODO: install openblas or lapack
+          # - os: windows
+          #   cpu: amd64
           # - os: windows
           #   cpu: i386
         test_lang: [c] # cpp not configured
@@ -36,10 +37,10 @@ jobs:
               os: macos
             builder: macos-10.15
             shell: bash
-          - target:
-              os: windows
-            builder: windows-2019
-            shell: msys2 {0}
+          # - target:
+          #     os: windows
+          #   builder: windows-2019
+          #   shell: msys2 {0}
 
     defaults:
       run:

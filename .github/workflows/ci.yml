@@ -1,4 +1,4 @@
-name: CI
+name: Arraymancer CI
 on:
   push:
     branches:
@@ -182,7 +182,7 @@ jobs:
           csourcesHash=$(getHash nim-lang/csources)
           echo "::set-output name=nim::$nimHash"
           echo "::set-output name=csources::$csourcesHash"
-          
+
       - name: Restore prebuilt Nim from cache
         id: nim-cache
         uses: actions/cache@v1

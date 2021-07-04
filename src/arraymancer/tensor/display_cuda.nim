@@ -16,7 +16,7 @@ import  ./private/p_display,
         ./data_structure,
         typetraits
 
-func pretty*[T](t: CudaTensor[T], precision = -1): string = t.prettyImpl()
+proc pretty*[T](t: CudaTensor[T], precision = -1): string =
   ## Pretty-print a CudaTensor with the option to set a custom `precision`
   ## for float values.
   let desc = t.type.name & " of shape \"" & $t.shape & "\" on backend \"" & "Cuda" & "\""
@@ -28,6 +28,6 @@ func pretty*[T](t: CudaTensor[T], precision = -1): string = t.prettyImpl()
   else:
     return desc & "\n" & cpu_t.prettyImpl(precision = precision)
 
-func `$`*[T](t: CudaTensor[T]): string =
+proc `$`*[T](t: CudaTensor[T]): string =
   ## Pretty-print a CudaTensor (when using ``echo`` for example)
   t.pretty()

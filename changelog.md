@@ -1,6 +1,12 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.1 Jul. 4 2021
+=====================================================
+
+Hotfix release fixing CUDA tensor printing. The code as pushed in #509
+was broken.
+
 Arraymancer v0.7.0 Jul. 4 2021 "Memories of Ice"
 =====================================================
 

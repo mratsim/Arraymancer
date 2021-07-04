@@ -1,8 +1,26 @@
-Arraymancer v0.6.X
+Arraymancer v0.7.x
 =====================================================
+
+Arraymancer v0.7.0 Jul. 4 2021 "Memories of Ice"
+=====================================================
+
+> This release is named after "Memories of Ice" (2001), the third book of Steven Erikson epic dark fantasy masterpiece "The Malazan Book of the Fallen".
+
 Changes :
   - Add ``toUnsafeView`` as replacement of ``dataArray`` to return a ``ptr UncheckedArray``
+  - Doc generation fixes
+  - `cumsum`, `cumprod`
+  - Fix least square solver
+  - Fix mean square error backpropagation
+  - Adapt to upstream symbol resolution changes
+  - Basic Graph Convolution Network
+  - Slicing tutorial revamp
+  - n-dimensional tensor pretty printing
+  - Compilation fixes to handle Nim v1.0 to Nim devel
 
+Thanks to @Vindaar for maintaining the repo, the docs, pretty-printing and answering many many questions on Discord while I took a step back.
+Thanks to @filipeclduarte for the cumsum/cumprod, @Clonkk for updating raw data accesses, @struggle for finding a bug in mean square error backprop,
+@timotheecour for spreading new upstream requirements downstream and @anon767 for Graph Neural Network.
 
 Arraymancer v0.6.2 Dec. 22 2020
 =====================================================
@@ -65,8 +83,10 @@ Deprecation
 - `dataArray` has been deprecated in favor on mutability-safe
   `unsafe_raw_offset`
 
-Arraymancer v0.6.0 Jan. 09 2020
+Arraymancer v0.6.0 Jan. 09 2020 - "Windwalkers"
 =====================================================
+
+> This release is named after "Windwalkers" (2004, French "La Horde du Contrevent"), by Alain Damasio.
 
 Changes:
   - The ``symeig`` proc to compute eigenvectors of a symmetric matrix

@@ -16,17 +16,18 @@ import  ./private/p_display,
         ./data_structure,
         typetraits
 
-proc `$`*[T](t: CudaTensor[T]): string =
-  ## Pretty-print a CudaTensor (when using ``echo`` for example)
-  let desc = t.type.name & " of shape " & $t.shape & " of type \"" & T.name & "\" on backend \"" & "Cuda" & "\""
-
+func pretty*[T](t: CudaTensor[T], precision = -1): string = t.prettyImpl()
+  ## Pretty-print a CudaTensor with the option to set a custom `precision`
+  ## for float values.
+  let desc = t.type.name & " of shape \"" & $t.shape & "\" on backend \"" & "Cuda" & "\""
   let cpu_t = t.cpu()
-
-  if t.rank <= 2:
-    return desc & "\n" & cpu_t.disp2d
-  elif t.rank == 3:
-    return desc & "\n" & cpu_t.disp3d
-  elif t.rank == 4:
-    return desc & "\n" & cpu_t.disp4d
+  if cpu_t.size() == 0:
+    return desc & "\n    [] (empty)"
+  elif cpu_t.rank <= 2:
+    return desc & "\n" & cpu_t.disp2d(precision = precision)
   else:
-    return desc & "\n" & " -- NotImplemented: Display not implemented for tensors of rank > 4"
+    return desc & "\n" & cpu_t.prettyImpl(precision = precision)
+
+func `$`*[T](t: CudaTensor[T]): string =
+  ## Pretty-print a CudaTensor (when using ``echo`` for example)
+  t.pretty()

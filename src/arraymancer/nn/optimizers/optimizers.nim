@@ -224,7 +224,7 @@ proc update*(self: var Adam) =
       # Zero the gradient
       v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
 
-func optimizerAdam*[M, T](
+proc optimizerAdam*[M, T](
         model: M,
         learning_rate: T = T(0.001),
         beta1 = T(0.9), beta2 = T(0.999),

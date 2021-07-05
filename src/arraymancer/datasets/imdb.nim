@@ -87,7 +87,7 @@ proc read_imdb(path: string): Imdb =
 
 
 proc load_imdb*(cache: static bool = true): Imdb =
-  let cache_dir = get_cache_dir()
+  let cache_dir = util.get_cache_dir()
 
   if not dirExists( cache_dir / folder_name):
     create_cache_dirs_if_necessary()

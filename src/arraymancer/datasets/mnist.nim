@@ -180,7 +180,7 @@ proc load_mnist*(cache: static bool = true): Mnist =
   ## - delete the downloaded files if cache is false
 
   let
-    cache_dir = get_cache_dir()
+    cache_dir = util.get_cache_dir()
     files = cache_dir.mnistFilesPath
 
   if not files.all(x => x.fileExists):

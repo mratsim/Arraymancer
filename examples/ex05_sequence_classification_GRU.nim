@@ -23,7 +23,7 @@ func classify(input: Tensor[float32], id: int): SeqKind =
 proc gen3(): array[3, float32] =
   # Generate monotonic sequence with more than 25% probability
   # Note that if NonMonotonic is drawn, it's just plain random
-  let kind = rand([Increasing, Decreasing, NonMonotonic, NonMonotonic])
+  let kind = sample([Increasing, Decreasing, NonMonotonic, NonMonotonic])
 
   result[0] = rand(1.0)
   for i in 1..2:

@@ -143,6 +143,15 @@ proc test(name, switches = "", split = false, lang = "c") =
     exec "nim " & lang & " -o:build/" & name & switches & " -r tests/" & name & ".nim"
   else:
     exec "nim " & lang & " -o:build/" & name & switches & " -r tests/_split_tests/" & name & ".nim"
+  # try to compile (not run) all examples to avoid regressions
+  let examples = @["ex01_xor_perceptron_from_scratch.nim",
+                   "ex02_handwritten_digits_recognition.nim",
+                   "ex03_simple_two_layers.nim",
+                   "ex04_fizzbuzz_interview_cheatsheet.nim",
+                   "ex05_sequence_classification_GRU.nim",
+                   "ex06_shakespeare_generator.nim"]
+  for ex in examples:
+    exec "nim " & lang & " -o:build/" & name & switches & " examples/" & $ex
 
 task all_tests, "Run all tests - Intel MKL + Cuda + OpenCL + OpenMP":
   var switches = " -d:cuda -d:opencl -d:openmp"

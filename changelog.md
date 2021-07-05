@@ -1,6 +1,15 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.2 Jul. 5 2021
+=====================================================
+
+- fixes issue #459, ambiguity in `tanh` activation layer
+- fixes issue #514, make all examples compile again
+- compile all examples during CI to avoid further regressions at a
+  compilation level (thanks @Anuken)
+
+
 Arraymancer v0.7.1 Jul. 4 2021
 =====================================================
 

@@ -1,4 +1,4 @@
-import arraymancer
+import ../../src/arraymancer
 import unittest
 
 suite "Regression test - issue 459":

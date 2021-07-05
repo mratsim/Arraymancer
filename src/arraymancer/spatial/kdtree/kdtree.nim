@@ -8,6 +8,7 @@ type
 
   Node[T] = ref object
     #level: int
+    id: int
     idx: Tensor[int]
     split_dim: int
     split: float
@@ -39,7 +40,7 @@ proc `<`[T](n1, n2: Node[T]): bool =
   ## later nodes will end up at later positions in memory. Why not just add an id field
   ## to the node, which is a unique identifier? This here is ugly, unsafe and I'm not
   ## convinced it will work under all circumstances.
-  result = cast[int](n1.unsafeAddr) < cast[int](n2.unsafeAddr)
+  result = n1.id < n2.id #cast[int](n1.unsafeAddr) < cast[int](n2.unsafeAddr)
 
 proc `<`[T](s1, s2: seq[T]): bool =
   ## just an internal comparison of two seqs, which assumes that the order of two
@@ -64,22 +65,30 @@ proc allEqual[T](t: Tensor[T], val: T): bool =
 
 proc build[T](tree: KDTree[T],
               idx: Tensor[int],
+              nodeId: var int,
               #startIdx, endIdx: int
               maxes, mins: Tensor[T]): Node[T] =
               #useMedian: static bool,
               #createCompact: static bool) =
   ## recursively build the KD tree
+  ##
+  ## `startId` is the current ID the latest node was built with.
   if idx.size <= tree.leafSize:
-    result = Node[T](kind: tnLeaf,
+    inc nodeId
+    result = Node[T](id: nodeId,
+                     kind: tnLeaf,
                      idx: idx,
                      children: idx.size)
+
   else:
     var data = tree.data[idx]
     let d = argmax((maxes .- mins).squeeze, axis = 0)[0]
     let maxVal = maxes[d]
     let minVal = mins[d]
     if maxVal == minVal:
-      return Node[T](kind: tnLeaf,
+      inc nodeId
+      return Node[T](id: nodeId,
+                     kind: tnLeaf,
                      idx: idx,
                      children: idx.size)
     data = squeeze(data[_, d])
@@ -111,17 +120,24 @@ proc build[T](tree: KDTree[T],
     var greatermins = mins.clone()
     greatermins[d] = split
 
-    result = Node[T](kind: tnInner,
+    inc nodeId
+    let lesser = tree.build(idx[lessIdx.squeeze], nodeId, lessmaxes, mins)
+    # greater starts at lesser's ID
+    let greater = tree.build(idx[greaterIdx.squeeze], nodeId, maxes, greatermins)
+    result = Node[T](id: nodeId,
+                     kind: tnInner,
                      split_dim: d,
                      split: split,
-                     lesser: tree.build(idx[lessIdx.squeeze], lessmaxes, mins),
-                     greater: tree.build(idx[greaterIdx.squeeze], maxes, greatermins))
+                     lesser: lesser,
+                     greater: greater)
 
 proc buildKdTree[T](tree: var KDTree[T],
                     startIdx: Tensor[int],
                     useMedian: static bool,
                     createCompact: static bool) =
+  var nodeId = 0
   tree.tree = tree.build(idx = startIdx,
+                         nodeId = nodeId,
                          maxes = tree.maxes,
                          mins = tree.mins)
 
@@ -149,7 +165,7 @@ proc kdTree[T](data: Tensor[T], ## data must be 2D tensor (n, m)
                      useMedian = balancedTree,
                      createCompact = compactNodes)
 
-func minkowski_distance_p[T](x, y: Tensor[T], p = 2.0): Tensor[T] =
+proc minkowski_distance_p[T](x, y: Tensor[T], p = 2.0): Tensor[T] =
   let ax = x.shape.len - 1
   if classify(p) == fcInf:
     result = max(abs(y .- x), axis = ax)
@@ -158,7 +174,7 @@ func minkowski_distance_p[T](x, y: Tensor[T], p = 2.0): Tensor[T] =
   else:
     result = sum(abs(y .- x).map_inline(pow(x, p)), axis = ax)
 
-func minkowski_distance[T](x, y: Tensor[T], p = 2.0): Tensor[T] =
+proc minkowski_distance[T](x, y: Tensor[T], p = 2.0): Tensor[T] =
   if classify(p) == fcInf or p == 1:
     result = minkowski_distance_p(x, y, p)
   else:
@@ -236,7 +252,8 @@ proc query[T](tree: KDTree[T],
     case node.kind
     of tnLeaf:
       # brute force for remaining
-      data = tree.data[node.idx]
+      let ni = node.idx
+      data = tree.data[ni]
       let ds = minkowski_distance_p(data, x.unsqueeze(axis = 0), p).squeeze
       for i in 0 ..< ds.size:
         if ds[i] < distance_upper_bound:
@@ -273,9 +290,41 @@ proc query[T](tree: KDTree[T],
 
   result = toTensorTuple(neighbors, retType = T, p = p)
 
+import ggplotnim
+
+proc extractXYId[T](n: Node[T]): (seq[Tensor[int]], seq[int]) =
+  echo "n ", n.id
+  echo n.split, " in dim ", n.split_dim
+  case n.kind
+  of tnLeaf:
+    result = (@[n.idx], @[n.id])
+  of tnInner:
+    var (data, ids) = extractXYId(n.lesser)
+    echo ids
+    result[0].add data
+    result[1].add ids
+    (data, ids) = extractXYId(n.greater)
+    result[0].add data
+    result[1].add ids
+
+proc walkTree(kd: KdTree): DataFrame =
+  let (data, ids) = extractXYId(kd.tree)
+  #?doAssert data[0].rank == 2, " is " & $data[0].rank
+  var x = newSeq[float]()
+  var y = newSeq[float]()
+  var ids2 = newSeq[int]()
+  for i in 0 ..< data.len:
+    for j in data[i]:
+      x.add kd.data[j, 0]
+      y.add kd.data[j, 1]
+      ids2.add ids[i]
+
+  result = seqsToDf({ "x" : x,
+                      "y" : y,
+                      "id" : ids2 })
+
 when isMainModule:
   import arraymancer, nimpy
-
   let xs = randomTensor(1000, 1.0)
   let ys = randomTensor(1000, 1.0)
   let t = stack([xs, ys]).transpose
@@ -289,6 +338,19 @@ when isMainModule:
   let nimResTup = kd.query(ps, k = 3)
   let nimRes = zip(nimResTup[0].toRawSeq,
                    nimResTup[1].toRawSeq).sortedByIt(it[1])
+
+  echo "MAXES"
+  echo kd.maxes
+  echo kd.mins
+  echo kd.size
+  let df = kd.walkTree()
+  echo df
+  ggplot(df, aes("x", "y", color = factor("id"))) +
+    geom_point() +
+    ggsave("/tmp/kdtree.pdf")
+
+
+
 
   echo nimRes
   let scipy = pyImport("scipy.spatial")

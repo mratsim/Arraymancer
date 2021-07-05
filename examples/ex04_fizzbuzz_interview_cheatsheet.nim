@@ -13,7 +13,7 @@ import ../src/arraymancer, math, strformat
 # We want to input a number and output the correct "fizzbuzz" representation
 # ideally the input is a represented by a vector of real values between 0 and 1
 # One way to do that is by using the binary representation of number
-func binary_encode(i: int, num_digits: int): Tensor[float32] =
+proc binary_encode(i: int, num_digits: int): Tensor[float32] =
   result = newTensor[float32](1, num_digits)
   for d in 0 ..< num_digits:
     result[0, d] = float32(i shr d and 1)

@@ -56,7 +56,7 @@ const
 #
 # ################################################################
 
-func strToTensor(str: string|TaintedString): Tensor[PrintableIdx] =
+proc strToTensor(str: string|TaintedString): Tensor[PrintableIdx] =
   result = newTensor[PrintableIdx](str.len)
 
   # For each x in result, map the corresponding char index
@@ -72,15 +72,6 @@ func strToTensor(str: string|TaintedString): Tensor[PrintableIdx] =
 #   Note: during text generation we only work with
 #         a batch size of 1 so for simplicity we use
 #         seq and openarrays instead of tensors
-
-func cumsum[T](x: openarray[T]): seq[T] =
-  ## Cumulative sum of a 1D array/seq
-  #
-  # Note: this will have a proper and faster implementation for tensors in the future
-  result = newSeq[T](x.len)
-  result[0] = x[0]
-  for i in 1 ..< x.len:
-    result[i] = x[i] + result[i-1]
 
 proc searchsorted[T](x: openarray[T], value: T, leftSide: static bool = true): int =
   ## Returns the index corresponding to where the input value would be inserted at.
@@ -117,15 +108,15 @@ proc sample[T](probs: Tensor[T]): int =
   # We use a separate RNG for our sampling
   var rng {.global.} = initRand(0xDEADBEEF)
 
-  # We pass our 1D Tensor as an openarray to avoid copies
-  let p = cast[ptr UncheckedArray[T]](probs.get_data_ptr)
-
   # Get a sample from an uniform distribution
   let u = T(rng.rand(1.0))
 
   # Get the Cumulative Distribution Function of our probabilities
-  let cdf = cumsum p.toOpenArray(0, probs.shape[0] - 1)
-  result = cdf.searchsorted(u, leftSide = false)
+  let cdf = cumsum(probs, axis = 0)
+
+  # We pass our 1D Tensor as an openarray to `searchsorted` avoid copies
+  let cdfA = cast[ptr UncheckedArray[T]](cdf.unsafe_raw_offset)
+  result = cdfA.toOpenArray(0, cdf.size - 1).searchsorted(u, leftSide = false)
 
 # ################################################################
 #

@@ -292,23 +292,27 @@ proc query[T](tree: KDTree[T],
 
 import ggplotnim
 
-proc extractXYId[T](n: Node[T]): (seq[Tensor[int]], seq[int]) =
+proc extractXYId[T](n: Node[T]): (seq[Tensor[int]], seq[int], seq[float], seq[int]) =
   echo "n ", n.id
   echo n.split, " in dim ", n.split_dim
   case n.kind
   of tnLeaf:
-    result = (@[n.idx], @[n.id])
+    result = (@[n.idx], @[n.id], @[], @[])
   of tnInner:
-    var (data, ids) = extractXYId(n.lesser)
-    echo ids
-    result[0].add data
-    result[1].add ids
-    (data, ids) = extractXYId(n.greater)
-    result[0].add data
-    result[1].add ids
+    template dostuff(field: untyped): untyped =
+      var (data, ids, split, split_dim) = extractXYId(field)
+      echo ids
+      result[0].add data
+      result[1].add ids
+      result[2].add split
+      result[3].add split_dim
+    doStuff(n.lesser)
+    doStuff(n.greater)
+    result[2].add n.split
+    result[3].add n.split_dim
 
 proc walkTree(kd: KdTree): DataFrame =
-  let (data, ids) = extractXYId(kd.tree)
+  let (data, ids, splits, splitDims) = extractXYId(kd.tree)
   #?doAssert data[0].rank == 2, " is " & $data[0].rank
   var x = newSeq[float]()
   var y = newSeq[float]()
@@ -318,6 +322,7 @@ proc walkTree(kd: KdTree): DataFrame =
       x.add kd.data[j, 0]
       y.add kd.data[j, 1]
       ids2.add ids[i]
+  echo "SPLIT ", splits
 
   result = seqsToDf({ "x" : x,
                       "y" : y,

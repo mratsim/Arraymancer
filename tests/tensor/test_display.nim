@@ -15,7 +15,7 @@
 import ../../src/arraymancer, ../testutils
 import math, unittest, sequtils, strutils
 
-proc compareStrings(t1, t2: string) =
+template compareStrings(t1, t2: string) =
   let t1S = t1.splitLines
   let t2S = t2.splitLines
   check t1S.len == t2S.len
@@ -24,7 +24,34 @@ proc compareStrings(t1, t2: string) =
 
 proc main() =
   suite "Displaying tensors":
-    test "Display compiles":
+    test "Display 1D tensor":
+      block:
+        let t = [0.9532932, 0.12945823].toTensor
+        compareStrings($t, """
+Tensor[system.float] of shape "[2]" on backend "Cpu"
+    0.953293    0.129458""")
+      block:
+        let t = [1, 2, 3, 4].toTensor
+        compareStrings($t, """Tensor[system.int] of shape "[4]" on backend "Cpu"
+    1     2     3     4""")
+      block:
+        let t = ["foo", "bar", "hello world", "baz"].toTensor
+        compareStrings($t, """Tensor[system.string] of shape "[4]" on backend "Cpu"
+    foo            bar    hello world            baz""")
+      block:
+        # sequence of tensors still look a bit funky
+        var ts = newSeq[Tensor[float]]()
+        let t = [0.9532932, 0.12945823].toTensor
+        for i in 0 ..< 4:
+          ts.add t
+        compareStrings($ts, """
+@[Tensor[system.float] of shape "[2]" on backend "Cpu"
+    0.953293    0.129458, Tensor[system.float] of shape "[2]" on backend "Cpu"
+    0.953293    0.129458, Tensor[system.float] of shape "[2]" on backend "Cpu"
+    0.953293    0.129458, Tensor[system.float] of shape "[2]" on backend "Cpu"
+    0.953293    0.129458]""")
+
+    test "Display 2D tensor":
       const
         a = @[1, 2, 3, 4, 5]
         b = @[1, 2, 3, 4, 5]
@@ -47,14 +74,13 @@ proc main() =
       let t_van = vandermonde.toTensor()
       when not compiles(echo t_van): check: false
 
-      check $t_van == """
+      compareStrings($t_van, """
 Tensor[system.int] of shape "[5, 5]" on backend "Cpu"
-|1       1     1     1     1|
-|2       4     8    16    32|
-|3       9    27    81   243|
-|4      16    64   256  1024|
-|5      25   125   625  3125|
-"""
+|1          1       1       1       1|
+|2          4       8      16      32|
+|3          9      27      81     243|
+|4         16      64     256    1024|
+|5         25     125     625    3125|""")
 
     test "Disp3d + Concat + SlicerMut bug with empty tensors":
       let a = [4, 3, 2, 1, 8, 7, 6, 5].toTensor.reshape(2, 1, 4)

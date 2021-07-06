@@ -22,8 +22,8 @@ proc pretty*[T](t: Tensor[T], precision = -1): string =
   let desc = t.type.name & " of shape \"" & $t.shape & "\" on backend \"" & "Cpu" & "\""
   if t.size() == 0:
     return desc & "\n    [] (empty)"
-  elif t.rank <= 2:
-    return desc & "\n" & t.disp2d(precision = precision)
+  elif t.rank == 1: # for rank 1 we want an indentation, because we have no `|`
+    return desc & "\n    " & t.prettyImpl(precision = precision)
   else:
     return desc & "\n" & t.prettyImpl(precision = precision)
 

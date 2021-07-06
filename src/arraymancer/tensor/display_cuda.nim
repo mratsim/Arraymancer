@@ -23,7 +23,7 @@ proc pretty*[T](t: CudaTensor[T], precision = -1): string =
   let cpu_t = t.cpu()
   if cpu_t.size() == 0:
     return desc & "\n    [] (empty)"
-  elif t.rank == 1: # for rank 1 we want an indentation, because we have no `|`
+  elif cpu_t.rank == 1: # for rank 1 we want an indentation, because we have no `|`
     return desc & "\n    " & cpu_t.prettyImpl(precision = precision)
   else:
     return desc & "\n" & cpu_t.prettyImpl(precision = precision)

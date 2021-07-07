@@ -24,7 +24,7 @@ template compare(nimResTup, expDists, expIdxs: untyped): untyped =
     check nimRes[i][0] =~= expRes[i][0]
     check nimRes[i][1] == expRes[i][1]
 
-when true:
+when false:
   # for expected numbers
   import nimpy
 

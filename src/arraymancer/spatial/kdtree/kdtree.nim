@@ -1,6 +1,17 @@
 import ../../tensor
 import sequtils, math, heapqueue, algorithm, typetraits
 
+#[
+
+This module implements a k-d tree.
+
+The code is mostly a port of the python based k-d tree in scipy (before scipy version
+v1.6.0 there was a pure python k-d tree implementation).
+
+The python code this is based on, can be found here:
+https://github.com/scipy/scipy/blob/maintenance/1.5.x/scipy/spatial/kdtree.py
+
+]#
 
 type
   TreeNodeKind = enum

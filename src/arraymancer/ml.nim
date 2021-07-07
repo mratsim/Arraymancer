@@ -14,8 +14,7 @@
 
 import  ./ml/metrics/accuracy_score,
         ./ml/metrics/common_error_functions,
-        ./ml/clustering/kmeans
-        ./metrics/common_error_functions,
+        ./ml/clustering/kmeans,
         ./ml/clustering/dbscan
 
 export  accuracy_score,

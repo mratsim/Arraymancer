@@ -1,9 +1,8 @@
 import algorithm
 import sequtils
 
-import ../../tensor/tensor
-import ../metrics/distance
-
+import ../tensor
+import ./distance
 
 proc argsort[T: SomeFloat](x: seq[T]): seq[int] =
   result = toSeq(0..high(x))

@@ -1,5 +1,5 @@
-import ../../tensor
-import sequtils, math, heapqueue, algorithm, typetraits
+import ../tensor
+import sequtils, math, heapqueue, typetraits
 
 #[
 
@@ -47,9 +47,18 @@ proc `<`[T](n1, n2: Node[T]): bool =
   ## the *lesser* splitting.
   result = n1.id < n2.id
 
-proc `<`[T](s1, s2: Tensor[T]): bool =
+type
+  TensorCompare*[T] = distinct Tensor[T]
+
+proc toTensorCompare[T](t: Tensor[T]): TensorCompare[T] = cast[TensorCompare[T]](t)
+proc toTensorNormal[T](t: TensorCompare[T]): Tensor[T] = cast[Tensor[T]](t)
+proc `==`*[T](s1C, s2C: TensorCompare[T]): bool = s1C.toTensorNormal == s2C.toTensorNormal
+
+proc `<`*[T](s1C, s2C: TensorCompare[T]): bool =
   ## just an internal comparison of two Tensors, which assumes that the order of two
   ## seqs matters.
+  let s1 = s1C.toTensorNormal
+  let s2 = s2C.toTensorNormal
   doAssert s1.size == s2.size
   result = false
   for i in 0 ..< s1.size:
@@ -276,8 +285,8 @@ proc queryImpl[T](
   # - min distance between cell and target
   # - distance between nearest side of cell and target
   # - head node of cell
-  var q = initHeapQueue[(T, Tensor[T], Node[T])]()
-  q.push (min_distance, side_distances.clone, tree.tree)
+  var q = initHeapQueue[(T, TensorCompare[T], Node[T])]()
+  q.push (min_distance, side_distances.clone.toTensorCompare, tree.tree)
 
   # priority queue for nearest neighbors, i.e. our result
   # - (- distance ** p) from input `x` to current point
@@ -298,8 +307,10 @@ proc queryImpl[T](
     distanceUpperBound = pow(distanceUpperBound, p)
 
   var node: Node[T]
+  var sdt: TensorCompare[T] # stupid helper
   while q.len > 0:
-    (min_distance, side_distances, node) = pop q
+    (min_distance, sdt, node) = pop q
+    side_distances = sdt.toTensorNormal
     case node.kind
     of tnLeaf:
       # brute force for remaining elements in leaf node
@@ -325,7 +336,7 @@ proc queryImpl[T](
         (near, far) = (node.lesser, node.greater)
       else:
         (near, far) = (node.greater, node.lesser)
-      q.push( (min_distance, side_distances.clone, near) )
+      q.push( (min_distance, side_distances.clone.toTensorCompare, near) )
 
       var sd = side_distances.clone # clone to avoid reference semantic issues
       if classify(p) == fcInf:
@@ -338,7 +349,7 @@ proc queryImpl[T](
         min_distance = min_distance - side_distances[node.split_dim] + sd[node.split_dim]
 
       if min_distance <= distanceUpperBound * epsfac:
-        q.push( (min_distance, sd, far) )
+        q.push( (min_distance, sd.toTensorCompare, far) )
   # extract all information from heap queue and return as tuple
   result = toTensorTuple(neighbors, retType = T, p = p)
 

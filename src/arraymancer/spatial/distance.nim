@@ -2,7 +2,7 @@ import math
 import sets
 import sequtils
 
-import ../../tensor/tensor
+import ../tensor
 
 
 type

@@ -35,17 +35,21 @@ proc sorted*[T](t: Tensor[T], order = SortOrder.Ascending): Tensor[T] =
   result = t.clone
   result.sort(order = order)
 
-proc argsort*[T](t: Tensor[T], order = SortOrder.Ascending): Tensor[int] =
+proc argsort*[T](t: Tensor[T], order = SortOrder.Ascending, toCopy = false): Tensor[int] =
   ## Returns the indices which would sort `t`. Useful to apply the same sorting to
   ## multiple tensors based on the order of the tensor `t`.
   ##
-  ## Sorts the raw underlying data!
+  ## If `toCopy` is `true` the input tensor is cloned. Else it is already sorted.
   # TODO: should we clone `t` so that if `t` is a view we don't access the whole
   # data?
   assert t.rank == 1, "Only 1D tensors can be sorted at the moment!"
   proc cmpIdxTup(x, y: (T, int)): int = system.cmp(x[0], y[0])
   # make a tuple of input & indices
-  var mt = t.dataArray # without this we get an error that the openArray is immutable?
+  var mt: Tensor[T]
+  if toCopy:
+    mt = t.clone.dataArray # without this we get an error that the openArray is immutable?
+  else:
+    mt = t.dataArray # without this we get an error that the openArray is immutable?
   var tups = zip(toOpenArray(mt, 0, t.size - 1),
                  toSeq(0 ..< t.size))
   # sort by custom sort proc

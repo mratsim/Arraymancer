@@ -143,6 +143,10 @@ proc test(name, switches = "", split = false, lang = "c") =
     exec "nim " & lang & " -o:build/" & name & switches & " -r tests/" & name & ".nim"
   else:
     exec "nim " & lang & " -o:build/" & name & switches & " -r tests/_split_tests/" & name & ".nim"
+
+  # run kdtree test, as it makes use of RNG and needs a flag for backward compatilibty reasons
+  exec "nim " & lang & " -o:build/test_kdtree" & switches &
+    " -d:nimLegacyRandomInitRand -r tests/spatial/test_kdtree.nim"
   # try to compile (not run) all examples to avoid regressions
   let examples = @["ex01_xor_perceptron_from_scratch.nim",
                    "ex02_handwritten_digits_recognition.nim",

@@ -54,7 +54,10 @@ import ../src/arraymancer,
         ./ml/test_clustering,
         ./stats/test_stats,
         ./stats/test_distributions,
-        ./spatial/test_kdtree,
+        # NOTE: the `kdtree` test ``cannot`` be run together with the others ``unless`` the code is
+        # run with the `-d:nimLegacyRandomInitRand` flag. For backward compatibility reasons we
+        # generated the numbers using that flag.
+        # ./spatial/test_kdtree,
         ./test_bugtracker,
         ./test_indep_import
 

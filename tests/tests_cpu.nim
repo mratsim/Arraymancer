@@ -54,6 +54,7 @@ import ../src/arraymancer,
         ./ml/test_clustering,
         ./stats/test_stats,
         ./stats/test_distributions,
+        ./spatial/test_kdtree,
         ./test_bugtracker,
         ./test_indep_import
 

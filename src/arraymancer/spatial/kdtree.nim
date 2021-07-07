@@ -211,7 +211,7 @@ proc minkowski_distance_p[T](x, y: Tensor[T], p = 2.0): Tensor[T] =
   else:
     result = sum(abs(y -. x).map_inline(pow(x, p)), axis = ax)
 
-proc minkowski_distance[T](x, y: Tensor[T], p = 2.0): Tensor[T] =
+proc minkowski_distance*[T](x, y: Tensor[T], p = 2.0): Tensor[T] =
   ## Compute the minkowski distance with power `p`
   ## It is defined as:
   ##

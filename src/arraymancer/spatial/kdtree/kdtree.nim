@@ -1,6 +1,6 @@
-#import ../tensor/tensor
-import arraymancer
-import sequtils, math, heapqueue, sugar, algorithm, typetraits
+import ../../tensor
+import sequtils, math, heapqueue, algorithm, typetraits
+
 
 type
   TreeNodeKind = enum

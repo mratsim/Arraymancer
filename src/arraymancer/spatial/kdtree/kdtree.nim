@@ -213,6 +213,7 @@ proc query[T](tree: KDTree[T],
   var side_distancesT = map2_inline(x .- tree.maxes,
                                     tree.mins .- x):
     max(0, max(x, y))
+
   var min_distance: T
   var distance_upper_bound = distance_upper_bound
   if classify(p) != fcInf:
@@ -222,6 +223,7 @@ proc query[T](tree: KDTree[T],
     min_distance = max(side_distancesT) # , axis = 0)
 
   var side_distances = side_distancesT.toRawSeq
+  echo "SIDE ", side_distances
   # priority queue for chasing nodes
   # - min distance between cell and target
   # - distance between nearest side of cell and target
@@ -290,6 +292,91 @@ proc query[T](tree: KDTree[T],
 
   result = toTensorTuple(neighbors, retType = T, p = p)
 
+proc query_ball_point[T](tree: KDTree[T],
+                      x: Tensor[T], # point to search around
+                      r: float, # hyperradius around `x`
+                      eps = 0.0,
+                      p = 2.0
+                      ): tuple[dist: Tensor[T],
+                               idx: Tensor[int]] =
+  var side_distancesT = map2_inline(x .- tree.maxes,
+                                    tree.mins .- x):
+    max(0, max(x, y))
+
+  var min_distance: T
+  var distance_upper_bound = r
+  if classify(p) != fcInf:
+    side_distancesT = side_distancesT.map_inline(pow(x, p))
+    min_distance = sum(side_distancesT)
+  else:
+    min_distance = max(side_distancesT) # , axis = 0)
+
+  var side_distances = side_distancesT.toRawSeq
+  echo "SIDE ", side_distances
+  # priority queue for chasing nodes
+  # - min distance between cell and target
+  # - distance between nearest side of cell and target
+  # - head node of cell
+  var q = initHeapQueue[(T, seq[T], Node[T])]()
+  q.push (min_distance, side_distances, tree.tree)
+
+  # priority queue for nearest neighbors
+  # - (- distance ** p)
+  # - index
+  var neighbors = initHeapQueue[(T, int)]()
+
+  var epsfac: T
+  if eps == 0.T:
+    epsfac = 1.T
+  elif classify(p) == fcInf:
+    epsfac = T(1 / (1 + eps))
+  else:
+    epsfac = T(1 / pow(1 + eps, p))
+
+  if classify(p) != fcInf and classify(distance_upper_bound) != fcInf:
+    distance_upper_bound = pow(distance_upper_bound, p)
+
+  var node: Node[T]
+  var data: Tensor[T]
+  while q.len > 0:
+    (min_distance, side_distances, node) = pop q
+    case node.kind
+    of tnLeaf:
+      # brute force for remaining
+      let ni = node.idx
+      data = tree.data[ni]
+      let ds = minkowski_distance_p(data, x.unsqueeze(axis = 0), p).squeeze
+      for i in 0 ..< ds.size:
+        if ds[i] < distance_upper_bound:
+          neighbors.push( (-ds[i], node.idx[i]) )
+    of tnInner:
+      if min_distance > distance_upper_bound * epsfac:
+        # nearest cell, done, bail out
+        break
+      # compute min distance to children, push them
+      var near: Node[T]
+      var far: Node[T]
+      if x[node.split_dim] < node.split:
+        (near, far) = (node.lesser, node.greater)
+      else:
+        (near, far) = (node.greater, node.lesser)
+      q.push( (min_distance, side_distances, near) )
+
+      var sd = side_distances
+      if classify(p) == fcInf:
+        min_distance = max(min_distance, abs(node.split - x[node.split_dim]))
+      elif p == 1:
+        sd[node.split_dim] = abs(node.split - x[node.split_dim])
+        min_distance = min_distance - side_distances[node.split_dim] + sd[node.split_dim]
+      else:
+        sd[node.split_dim] = pow(abs(node.split - x[node.split_dim]), p)
+        min_distance = min_distance - side_distances[node.split_dim] + sd[node.split_dim]
+
+      if min_distance <= distance_upper_bound * epsfac:
+        q.push( (min_distance, sd, far) )
+
+  result = toTensorTuple(neighbors, retType = T, p = p)
+
 import ggplotnim
 
 proc extractXYId[T](n: Node[T]): (seq[Tensor[int]], seq[int], seq[float], seq[int]) =
@@ -312,13 +399,13 @@ proc extractXYId[T](n: Node[T]): (seq[Tensor[int]], seq[int], seq[float], seq[in
     result[3].add n.split_dim
 
 proc walkTree(kd: KdTree): DataFrame =
-  let (data, ids, splits, splitDims) = extractXYId(kd.tree)
+  let (idxs, ids, splits, splitDims) = extractXYId(kd.tree)
   #?doAssert data[0].rank == 2, " is " & $data[0].rank
   var x = newSeq[float]()
   var y = newSeq[float]()
   var ids2 = newSeq[int]()
-  for i in 0 ..< data.len:
-    for j in data[i]:
+  for i in 0 ..< idxs.len:
+    for j in idxs[i]:
       x.add kd.data[j, 0]
       y.add kd.data[j, 1]
       ids2.add ids[i]
@@ -326,6 +413,7 @@ proc walkTree(kd: KdTree): DataFrame =
 
   result = seqsToDf({ "x" : x,
                       "y" : y,
+                      "idxs" : idxs.concat(axis = 0),
                       "id" : ids2 })
 
 when isMainModule:
@@ -344,16 +432,6 @@ when isMainModule:
   let nimRes = zip(nimResTup[0].toRawSeq,
                    nimResTup[1].toRawSeq).sortedByIt(it[1])
 
-  echo "MAXES"
-  echo kd.maxes
-  echo kd.mins
-  echo kd.size
-  let df = kd.walkTree()
-  echo df
-  ggplot(df, aes("x", "y", color = factor("id"))) +
-    geom_point() +
-    ggsave("/tmp/kdtree.pdf")
-
 
 
 
@@ -371,3 +449,36 @@ when isMainModule:
   for i in 0 ..< nimRes.len:
     doAssert nimRes[i][0] == scipyRes[i][0]
     doAssert nimRes[i][1] == scipyRes[i][1]
+
+  echo "PYTHON "
+  let pdt = tree.query_ball_point(ps.toRawSeq, 0.1)
+  var idx = 0
+  var pythonSet = initHashSet[int]()
+  for x in pdt:
+    echo x
+    pythonSet.incl x.to(int)
+    inc idx
+  echo idx
+  echo "NIM "
+  let ndt = kd.query_ball_point(ps, 0.1)
+  echo ndt
+  echo ndt[0].size
+  let nimSet = ndt[1].toHashSet
+
+  echo nimSet == pythonSet
+
+
+  echo "MAXES"
+  echo kd.maxes
+  echo kd.mins
+  echo kd.size
+  var df = kd.walkTree()
+    .mutate(f{int: "inCirle" ~ `idxs` in nimSet})
+  echo df
+  df.add((ps[0], ps[1], 0, 0, true))
+  echo df
+
+
+  ggplot(df, aes("x", "y", color = factor("id"), shape = "inCirle")) +
+    geom_point() +
+    ggsave("/tmp/kdtree.pdf")

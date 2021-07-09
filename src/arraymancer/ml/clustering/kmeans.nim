@@ -106,7 +106,6 @@ proc assign_labels[T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0
     n_rows = x.shape[0]
     n_cols = x.shape[1]
   assert x.rank == 2
-  assert n_clusters <= n_cols
 
   var
     iters: int
@@ -187,7 +186,7 @@ proc kmeans*[T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0001, n
   ##    - Inertia: the sum of sq distances from each point to its centroid
   let n_cols = x.shape[1]
   assert x.rank == 2
-  assert n_clusters <= n_cols
+
   var
     inertias = newTensor[T](n_init)
     labels = newSeq[Tensor[int]](n_init)

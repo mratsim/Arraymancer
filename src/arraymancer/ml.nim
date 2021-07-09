@@ -18,7 +18,6 @@ import  ./ml/metrics/accuracy_score,
         ./ml/clustering/dbscan
 
 export  accuracy_score,
-        distance,
         common_error_functions,
         kmeans,
         dbscan

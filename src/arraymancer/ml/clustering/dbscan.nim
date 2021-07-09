@@ -1,9 +1,10 @@
 import deques
 import sequtils
 
-import ../../spatial/distance
-import ../../spatial/neighbors
-import ../../tensor
+import ../../spatial/[distance, neighbors],
+       ../../tensor
+
+export distances
 
 proc findCorePoints(neighborhoods: seq[seq[int]], minSamples: int): seq[bool] =
   let nSamples = len(neighborhoods)

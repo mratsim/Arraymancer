@@ -29,6 +29,8 @@ proc nearestNeighbors*[T](X: Tensor[T], eps: float, metric: typedesc[AnyMetric],
   ## If `useNaiveNearestNeighbor` is set to `true` a naive nearest neighbor computation is
   ## performed. This is not advised, as it is significantly slower than the default approach
   ## using a k-d tree.
+  # TODO: extend k-d tree to allow usage of all our metrics defined in `distances.nim`! Otherwise
+  # the metric given is useless for the k-d tree case.
   when not useNaiveNearestNeighbor:
     let kd = kdtree(X)
     for v in axis(X, 0):

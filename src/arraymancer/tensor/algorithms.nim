@@ -45,7 +45,7 @@ proc argsort*[T](t: Tensor[T], order = SortOrder.Ascending, toCopy = false): Ten
   assert t.rank == 1, "Only 1D tensors can be sorted at the moment!"
   proc cmpIdxTup(x, y: (T, int)): int = system.cmp(x[0], y[0])
   # make a tuple of input & indices
-  var mt: Tensor[T]
+  var mt: ptr UncheckedArray[T]
   if toCopy:
     mt = t.clone.dataArray # without this we get an error that the openArray is immutable?
   else:

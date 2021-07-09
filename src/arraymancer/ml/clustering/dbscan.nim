@@ -1,7 +1,7 @@
 import deques
 import sequtils
 
-import ../../spatial/[distance, neighbors],
+import ../../spatial/[distances, neighbors],
        ../../tensor
 
 export distances

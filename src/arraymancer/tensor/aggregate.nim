@@ -248,7 +248,7 @@ proc iqr*[T](t: Tensor[T]): float =
   result = percentile(tS, 75, isSorted = true) -
            percentile(tS, 25, isSorted = true)
 
-proc cumsum*[T](t: Tensor[T], axis:int): Tensor[T] = # from hugogranstrom
+proc cumsum*[T](t: Tensor[T], axis: int = 0): Tensor[T] = # from hugogranstrom
   ## Calculates the cumulative sum of a rank-n Tensor.
   ## Inputs:
   ##  - t: a rank-n tensor to cumulatively sum
@@ -264,7 +264,7 @@ proc cumsum*[T](t: Tensor[T], axis:int): Tensor[T] = # from hugogranstrom
     else:
       temp[_] = result.atAxisIndex(axis, i-1) + tAxis
 
-proc cumprod*[T](t: Tensor[T], axis:int): Tensor[T] = # from hugogranstrom
+proc cumprod*[T](t: Tensor[T], axis: int = 0): Tensor[T] = # from hugogranstrom
   ## Calculates the cumulative sum of a rank-n Tensor.
   ## Inputs:
   ##  - t: a rank-n tensor to cumulatively sum

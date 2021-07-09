@@ -2,7 +2,7 @@ import algorithm
 import sequtils
 
 import ../tensor
-import ./distance
+import ./distances
 
 proc neighborsFromDistanceMatrix[T](X: Tensor[T], eps: float): seq[int] =
   for j in argsort(X, toCopy = true):

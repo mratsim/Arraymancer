@@ -12,6 +12,10 @@ type
 
   AnyMetric* = Euclidean | Manhattan | Minkowski | Jaccard
 
+when (NimMajor, NimMinor, NimPatch) < (1, 4, 0):
+  # have to export sets for 1.0, because `bind` didn't exist apparently
+  export sets
+
 proc toHashSet[T](t: Tensor[T]): HashSet[T] =
   result = initHashSet[T](t.size)
   for x in t:
@@ -83,7 +87,9 @@ proc distance*(metric: typedesc[Jaccard], v, w: Tensor[float]): float =
   let sx = toHashSet(v)
   let sy = toHashSet(w)
   # bind items for sets here to make it work w/o sets imported
-  bind sets.items
+  when (NimMajor, NimMinor, NimPatch) >= (1, 4, 0):
+    # can only `bind` from 1.2, as it didn't exist in 1.0?
+    bind sets.items
   result = 1 - intersection(sx, sy).card.float / union(sx, sy).card.float
 
 proc pairwiseDistances*(metric: typedesc[AnyMetric],

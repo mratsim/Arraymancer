@@ -58,6 +58,7 @@ import ../src/arraymancer,
         # run with the `-d:nimLegacyRandomInitRand` flag. For backward compatibility reasons we
         # generated the numbers using that flag.
         # ./spatial/test_kdtree,
+        ./spatial/test_distances,
         ./test_bugtracker,
         ./test_indep_import
 

@@ -82,7 +82,9 @@ proc distance*(metric: typedesc[Jaccard], v, w: Tensor[float]): float =
   # Note: doesn't this make the most sense for non floating point tensors?
   let sx = toHashSet(v)
   let sy = toHashSet(w)
-  result = 1 - len(intersection(sx, sy)) / len(union(sx, sy))
+  # bind items for sets here to make it work w/o sets imported
+  bind sets.items
+  result = 1 - intersection(sx, sy).card.float / union(sx, sy).card.float
 
 proc pairwiseDistances*(metric: typedesc[AnyMetric],
                         x, y: Tensor[float],
@@ -109,7 +111,7 @@ proc pairwiseDistances*(metric: typedesc[AnyMetric],
   ## Result is a tensor of rank 1, with one element for each distance.
   let n_obs = max(x.shape[0], y.shape[0])
   result = newTensorUninit[float](n_obs)
-  if x.shape[0] == y.shape[0]:
+  if x.rank == y.rank and x.shape[0] == y.shape[0]:
     for idx in 0 ..< n_obs:
       when metric is Minkowski:
         result[idx] = Minkowski.distance(x[idx, _].squeeze, y[idx, _].squeeze,
@@ -121,18 +123,18 @@ proc pairwiseDistances*(metric: typedesc[AnyMetric],
         result[idx] = metric.distance(x[idx, _].squeeze, y[idx, _].squeeze)
   else:
     # determine which is one is 1 along n_observations
-    let nx = if x.shape[0] == n_obs: x else: y
-    let ny = if x.shape[0] == n_obs: y else: x
+    let nx = if x.rank == 2 and x.shape[0] == n_obs: x else: y
+    let ny = if x.rank == 2 and x.shape[0] == n_obs: y else: x
     # in this case compute distance between all `nx` and single `ny`
     for idx in 0 ..< n_obs:
       when metric is Minkowski:
-        result[idx] = Minkowski.distance(x[idx, _].squeeze, y.squeeze,
+        result[idx] = Minkowski.distance(nx[idx, _].squeeze, ny.squeeze,
                                          p = p, squared = squared)
       elif metric is Euclidean:
-        result[idx] = Euclidean.distance(x[idx, _].squeeze, y.squeeze,
+        result[idx] = Euclidean.distance(nx[idx, _].squeeze, ny.squeeze,
                                          squared = squared)
       else:
-        result[idx] = metric.distance(x[idx, _].squeeze, y.squeeze)
+        result[idx] = metric.distance(nx[idx, _].squeeze, ny.squeeze)
 
 proc distanceMatrix*(metric: typedesc[AnyMetric],
                      x, y: Tensor[float],

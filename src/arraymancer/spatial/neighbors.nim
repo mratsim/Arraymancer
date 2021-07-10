@@ -31,9 +31,12 @@ proc nearestNeighbors*[T](X: Tensor[T], eps: float, metric: typedesc[AnyMetric],
   ## using a k-d tree.
   when not useNaiveNearestNeighbor:
     let kd = kdtree(X)
+    result = newSeq[Tensor[int]](X.shape[0])
+    var idx = 0
     for v in axis(X, 0):
       let (dist, idxs) = kd.query_ball_point(v.squeeze, radius = eps, metric = metric)
-      result.add idxs
+      result[idx] = idxs
+      inc idx
   else:
     when metric is Minkowski:
       let distances = distanceMatrix(metric, X, X, p = 2)

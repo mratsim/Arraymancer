@@ -14,11 +14,13 @@
 
 import  ./ml/metrics/accuracy_score,
         ./ml/metrics/common_error_functions,
-        ./ml/clustering/kmeans
+        ./ml/clustering/kmeans,
+        ./ml/clustering/dbscan
 
 export  accuracy_score,
         common_error_functions,
-        kmeans
+        kmeans,
+        dbscan
 
 when not defined(no_lapack):
   import ./ml/dimensionality_reduction/pca

@@ -1,5 +1,7 @@
-import ../tensor
 import sequtils, math, heapqueue, typetraits
+
+import ../tensor
+import ./distances
 
 #[
 
@@ -200,32 +202,6 @@ proc kdTree*[T](data: Tensor[T],
   result.buildKdTree(arange[int](result.n),
                      useMedian = balancedTree)
 
-proc minkowski_distance_p[T](x, y: Tensor[T], p = 2.0): Tensor[T] =
-  ## Implementation of the minkowski distance that computes the `p` power
-  ## of the distance.
-  let ax = x.shape.len - 1
-  if classify(p) == fcInf:
-    result = max(abs(y -. x), axis = ax)
-  elif p == 1:
-    result = sum(abs(y -. x), axis = ax)
-  else:
-    result = sum(abs(y -. x).map_inline(pow(x, p)), axis = ax)
-
-proc minkowski_distance*[T](x, y: Tensor[T], p = 2.0): Tensor[T] =
-  ## Compute the minkowski distance with power `p`
-  ## It is defined as:
-  ##
-  ## d_M = (Σ_i |x_i - y_i|^p)^(1/p)
-  ##
-  ## where `i` runs over all dimensions of the points `x` and `y`.
-  ##
-  ## which reduces to the manhatten distance for p = 1 and the euclidean
-  ## distance for p = 2.
-  if classify(p) == fcInf or p == 1:
-    result = minkowski_distance_p(x, y, p)
-  else:
-    result = minkowski_distance_p(x, y, p).map_inline(pow(x, 1.0 / p))
-
 proc toTensorTuple[T, U](q: var HeapQueue[T],
                          retType: typedesc[U],
                          p = Inf): tuple[dist: Tensor[U],
@@ -260,6 +236,7 @@ proc queryImpl[T](
   x: Tensor[T], # data point to query around
   k: int, # number of neighbors to yield
   radius: T, # radius to yield in. If `k` given is the upper search radius
+  metric: typedesc[AnyMetric],
   eps: float,
   p: float,
   yieldNumber: static bool # if true yield `k` closest neighbors, else all in `radius`
@@ -315,7 +292,8 @@ proc queryImpl[T](
     of tnLeaf:
       # brute force for remaining elements in leaf node
       let ni = node.idx
-      let ds = minkowski_distance_p(tree.data[ni], x.unsqueeze(axis = 0), p).squeeze
+      let ds = metric.pairwiseDistances(tree.data[ni], x.unsqueeze(axis = 0), p,
+                                        squared = true).squeeze
       for i in 0 ..< ds.size:
         if ds[i] < distanceUpperBound:
           when yieldNumber:
@@ -357,6 +335,7 @@ proc query*[T](tree: KDTree[T],
                x: Tensor[T],
                k = 1, # number of neighbors to yield
                eps = 0.0,
+               metric: typedesc[AnyMetric] = Euclidean,
                p = 2.0,
                distanceUpperBound = Inf): tuple[dist: Tensor[T],
                                                 idx: Tensor[int]] =
@@ -367,30 +346,36 @@ proc query*[T](tree: KDTree[T],
   ##
   ## `eps` is the relative epsilon for distance comparison by which `distanceUpperBound` is scaled.
   ##
-  ## `p` is the power to use in the Minkowski metric. This affects the way distances between points
-  ## are computed.
-  ## Typical values:
+  ## `metric` is the distance metric to be used to compute the distances between points. By default
+  ## we use the Euclidean metric.
+  ##
+  ## If the Minkowski metric is used, `p` is the used power. This affects the way distances between points
+  ## are computed. For certain values other metrics are recovered:
   ## - p = 1: Manhattan distance
   ## - p = 2: Euclidean distance
   result = tree.queryImpl(x = x, k = k, radius = distanceUpperBound,
                           eps = eps,
                           p = p,
+                          metric = metric,
                           yieldNumber = true)
 
 proc query_ball_point*[T](tree: KDTree[T],
                           x: Tensor[T], # point to search around
                           radius: float, # hyperradius around `x`
                           eps = 0.0,
-                          p = 2.0
+                          metric: typedesc[AnyMetric] = Euclidean,
+                          p = 2.0,
                          ): tuple[dist: Tensor[T],
                                   idx: Tensor[int]] =
   ## Queries the k-d `tree` around point `x` for all points within the hyperradius `radius`.
   ##
   ## `eps` is the relative epsilon for distance comparison by which `distanceUpperBound` is scaled.
   ##
-  ## `p` is the power to use in the Minkowski metric. This affects the way distances between points
-  ## are computed and thus directly affects what a "radius" is.
-  ## Typical values:
+  ## `metric` is the distance metric to be used to compute the distances between points. By default
+  ## we use the euclidean metric.
+  ##
+  ## If the Minkowski metric is used, `p` is the used power. This affects the way distances between points
+  ## are computed. For certain values other metrics are recovered:
   ## - p = 1: Manhattan distance
   ## - p = 2: Euclidean distance
   # TODO: this might better be implemented using a hyperrectangle to ignore more parts of
@@ -399,4 +384,5 @@ proc query_ball_point*[T](tree: KDTree[T],
                           radius = radius,
                           eps = eps,
                           p = p,
+                          metric = metric,
                           yieldNumber = false)

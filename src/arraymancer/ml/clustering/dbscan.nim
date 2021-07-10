@@ -19,6 +19,8 @@ proc findCorePoints(neighborhoods: seq[Tensor[int]], minSamples: int): seq[bool]
       result[i] = true
 
 proc assignLabels(is_core: seq[bool], neighborhoods: seq[Tensor[int]]): seq[int] =
+  ## Assigns the cluster labels to all input points based on their neighborhood
+  ## and whether they are core points as determined in `findCorePoints`.
   let nSamples = len(neighborhoods)
   var
     label_num, j, v: int
@@ -41,17 +43,30 @@ proc assignLabels(is_core: seq[bool], neighborhoods: seq[Tensor[int]]): seq[int]
               stack.addLast(v)
       if len(stack) == 0:
         break
-      j = peekLast(stack)
-      popLast(stack)
+      j = popLast(stack)
     label_num += 1
   result = labels
 
 proc dbscan*[T: SomeFloat](X: Tensor[T], eps: float, minSamples: int,
-                           metric: typedesc[Manhattan | Euclidean | Minkowski | Jaccard],
+                           metric: typedesc[AnyMetric] = Euclidean,
                            p = 2.0): seq[int] =
-  when metric is Minkowski:
-    let neighborhoods = nearestNeighbors(X, eps, metric, p = p)
-  else:
-    let neighborhoods = nearestNeighbors(X, eps, metric)
+  ## Performs `DBSCAN` clustering on the input data `X`. `X` needs to be a tensor
+  ## of rank 2 with the following shape:
+  ##
+  ## - `[n_observations, n_dimensions]`
+  ##
+  ## so that we have `n_observations` points that each have a dimensionality of
+  ## `n_dimensions` (or sometimes called number of features).
+  ##
+  ## `eps` is the radius in which we search for neighbors around each point using
+  ## the give `metric`.
+  ##
+  ## `minSamples` is the minimum number of elements that need to be in the search
+  ## radius `eps` to consider a set of points a proto-cluster (the "core points"),
+  ## from which to compute the final clusters.
+  ##
+  ## If we use the Minkowski metric, `p` is the power to use in it. Otherwise
+  ## the value is ignored.
+  let neighborhoods = nearestNeighbors(X, eps, metric, p = p)
   let isCore = findCorePoints(neighborhoods, minSamples)
   result = assignLabels(isCore, neighborhoods)

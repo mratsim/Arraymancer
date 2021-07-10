@@ -12,18 +12,6 @@ type
 
   AnyMetric* = Euclidean | Manhattan | Minkowski | Jaccard
 
-## Calculates the euclidean distance
-#  ## Inputs:
-#  ##  - u: a tensor of shape (nb samples, nb features)
-#  ##  - v: a tensor of shape (nb samples, nb features)
-#  ##  - squared: whether or not to square the result
-#  ##
-#  ## sqrt( (u - v) dot (u - v) )
-#  ## which can be reformulated
-#  ## sqrt((u dot u) - 2 * (u dot v) + (v dot v))
-#  ##
-#  ## Returns:
-#  ##  - A tensor of shape (nb samples)
 proc toHashSet[T](t: Tensor[T]): HashSet[T] =
   result = initHashSet[T](t.size)
   for x in t:
@@ -37,8 +25,8 @@ proc distance*(metric: typedesc[Manhattan], v, w: Tensor[float]): float =
   ## The Manhattan metric is defined as:
   ##
   ## ``d = Σ_i | v_i - w_i |``
-  assert v.rank == 1
-  assert w.rank == 1
+  assert v.squeeze.rank == 1
+  assert w.squeeze.rank == 1
   result = sum(abs(v -. w))
 
 proc distance*(metric: typedesc[Minkowski], v, w: Tensor[float], p = 2.0,
@@ -58,10 +46,15 @@ proc distance*(metric: typedesc[Minkowski], v, w: Tensor[float], p = 2.0,
   ## this is the square of the distance, hence the name.
   assert v.squeeze.rank == 1
   assert w.squeeze.rank == 1
-  when squared:
-    result = sum( abs(v -. w).map_inline(pow(x, p)) )
+  if classify(p) == fcInf:
+    result = max(abs(v -. w))
+  elif p == 1:
+    result = sum(abs(v -. w))
   else:
-    result = pow( sum( abs(v -. w).map_inline(pow(x, p)) ), 1.0 / p )
+    when squared:
+      result = sum( abs(v -. w).map_inline(pow(x, p)) )
+    else:
+      result = pow( sum( abs(v -. w).map_inline(pow(x, p)) ), 1.0 / p )
 
 proc distance*(metric: typedesc[Euclidean], v, w: Tensor[float], squared: static bool = false): float =
   ## Computes the Euclidean distance between points `v` and `w`. Both need to
@@ -102,6 +95,11 @@ proc pairwiseDistances*(metric: typedesc[AnyMetric],
   ##
   ## we compute the distance between each observation `x_i` and `y_i`.
   ##
+  ## One of the arguments may have only 1 observation and thus be of shape
+  ## `[1, n_dimensions]`. In this case all distances between this point and
+  ## all in the other input will be computed so that the result is always of
+  ## shape `[n_observations]`.
+  ##
   ## The first argument is the metric to compute the distance under. If the Minkowski metric
   ## is selected the power `p` is used.
   ##
@@ -109,19 +107,32 @@ proc pairwiseDistances*(metric: typedesc[AnyMetric],
   ## the `p`-th power of the distances.
   ##
   ## Result is a tensor of rank 1, with one element for each distance.
-  assert x.rank == 2
-  assert y.rank == 2
-  let n_obs = x.shape[0]
+  let n_obs = max(x.shape[0], y.shape[0])
   result = newTensorUninit[float](n_obs)
-  for idx in 0 ..< n_obs:
-    when metric is Minkowski:
-      result[idx] = distance(metric, x[idx, _].squeeze, y[idx, _].squeeze,
-                             p = p, squared = squared)
-    elif metric is Euclidean:
-      result[idx] = distance(metric, x[idx, _].squeeze, y[idx, _].squeeze,
-                             squared = squared)
-    else:
-      result[idx] = distance(metric, x[idx, _].squeeze, y[idx, _].squeeze)
+  if x.shape[0] == y.shape[0]:
+    for idx in 0 ..< n_obs:
+      when metric is Minkowski:
+        result[idx] = Minkowski.distance(x[idx, _].squeeze, y[idx, _].squeeze,
+                                         p = p, squared = squared)
+      elif metric is Euclidean:
+        result[idx] = Euclidean.distance(x[idx, _].squeeze, y[idx, _].squeeze,
+                                         squared = squared)
+      else:
+        result[idx] = metric.distance(x[idx, _].squeeze, y[idx, _].squeeze)
+  else:
+    # determine which is one is 1 along n_observations
+    let nx = if x.shape[0] == n_obs: x else: y
+    let ny = if x.shape[0] == n_obs: y else: x
+    # in this case compute distance between all `nx` and single `ny`
+    for idx in 0 ..< n_obs:
+      when metric is Minkowski:
+        result[idx] = Minkowski.distance(x[idx, _].squeeze, y.squeeze,
+                                         p = p, squared = squared)
+      elif metric is Euclidean:
+        result[idx] = Euclidean.distance(x[idx, _].squeeze, y.squeeze,
+                                         squared = squared)
+      else:
+        result[idx] = metric.distance(x[idx, _].squeeze, y.squeeze)
 
 proc distanceMatrix*(metric: typedesc[AnyMetric],
                      x, y: Tensor[float],

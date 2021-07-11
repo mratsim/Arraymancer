@@ -54,7 +54,7 @@ proc gelsd*[T: SomeFloat](
   var b2: Tensor[T]
   b2.newMatrixUninitColMajor(ldb.int, nrhs.int)
 
-  var b2_slice = b2[0 ..< b.shape[0], 0 ..< nrhs] # Workaround because slicing does no produce a var at the moment
+  var b2_slice = b2[0 ..< b.shape[0], 0 ..< nrhs] # Workaround because slicing does not produce a var at the moment
   apply2_inline(b2_slice, b):
     # paste b in b2.
     # if b2 is larger, the rest is zeros

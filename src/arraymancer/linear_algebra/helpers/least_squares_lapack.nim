@@ -54,7 +54,7 @@ proc gelsd*[T: SomeFloat](
   var b2: Tensor[T]
   b2.newMatrixUninitColMajor(ldb.int, nrhs.int)
 
-  var b2_slice = b2[0 ..< b.shape[0], 0 ..< nrhs] # Workaround because slicing does no produce a var at the moment
+  var b2_slice = b2[0 ..< b.shape[0], 0 ..< nrhs] # Workaround because slicing does not produce a var at the moment
   apply2_inline(b2_slice, b):
     # paste b in b2.
     # if b2 is larger, the rest is zeros
@@ -71,8 +71,8 @@ proc gelsd*[T: SomeFloat](
   singular_values = newTensorUninit[T](minmn) # will hold the singular values of A
 
   var # Temporary parameter values
-    # Condition for a float to be considered 0
-    rcond = epsilon(T) * a.shape.max.T * a.max
+    # Condition for singular values considered to be zero, s(i) <= rcond * s(i) are treated as zero
+    rcond = epsilon(T)
     lwork = max(1, 12 * m + 2 * m * smlsiz + 8 * m * nlvl + m * nrhs + (smlsiz + 1) ^ 2)
     work = newSeqUninit[T](lwork)
     iwork = newSeqUninit[cint](liwork)

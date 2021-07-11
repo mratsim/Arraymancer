@@ -31,3 +31,19 @@ proc hilbert*(n: int, T: typedesc[SomeFloat]): Tensor[T] =
 
   # TODO: scipy has a very fast hilbert matrix generation
   #       via Hankel Matrix and fancy 2D indexing
+
+proc vandermonde*[T](x: Tensor[T], order: int): Tensor[float] =
+  ## Returns a Vandermonde matrix of the input `x` up to the given `order`.
+  ##
+  ## A vandermonde matrix consists of the input `x` split into multiple
+  ## rows where each row contains all powers from 0 to `order` of `x_i`.
+  ##
+  ## `V_ij = x_i ^ order_j`
+  ##
+  ## where `order_j` runs from 0 to `order`.
+  assert x.squeeze.rank == 1
+  let x = x.squeeze.asType(float)
+  result = newTensorUninit[float]([x.size.int, order.int])
+  let orders = arange(order.float)
+  for i, ax in enumerateAxis(result, axis = 1):
+    result[_, i] = (x ^. orders[i]).unsqueeze(axis = 1)

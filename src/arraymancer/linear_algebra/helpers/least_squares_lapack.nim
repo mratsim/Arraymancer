@@ -71,8 +71,8 @@ proc gelsd*[T: SomeFloat](
   singular_values = newTensorUninit[T](minmn) # will hold the singular values of A
 
   var # Temporary parameter values
-    # Condition for a float to be considered 0
-    rcond = epsilon(T) * a.shape.max.T * a.max
+    # Condition for singular values considered to be zero, s(i) <= rcond * s(i) are treated as zero
+    rcond = epsilon(T)
     lwork = max(1, 12 * m + 2 * m * smlsiz + 8 * m * nlvl + m * nrhs + (smlsiz + 1) ^ 2)
     work = newSeqUninit[T](lwork)
     iwork = newSeqUninit[cint](liwork)

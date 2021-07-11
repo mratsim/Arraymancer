@@ -16,6 +16,7 @@ import  ./data_structure,
         ./init_cpu,
         ./higher_order_foldreduce,
         ./operators_broadcasted,
+        ./higher_order_applymap,
         ./math_functions,
         ./accessors,
         ./algorithms,
@@ -278,3 +279,53 @@ proc cumprod*[T](t: Tensor[T], axis:int): Tensor[T] = # from hugogranstrom
       temp[_] = tAxis
     else:
       temp[_] = result.atAxisIndex(axis, i-1) *. tAxis
+
+proc nonzero*[T](t: Tensor[T]): Tensor[int] =
+  ## Returns the indices, which are non zero as a `Tensor[int]`.
+  ##
+  ## The resulting tensor is 2 dimensional and has one element for each
+  ## dimension in ``t``. Each of those elements contains the indicies along
+  ## the corresponding axis (element 0 == axis 0), which are non zero.
+  ##
+  ## Input:
+  ##   - A tensor
+  ##
+  ## Returns:
+  ##   - A 2D tensor with N elements, where N is the rank of ``t``
+  ##
+  ## Example:
+  ##   .. code:: nim
+  ##      let a = [[3, 0, 0],
+  ##               [0, 4, 0],
+  ##               [5, 6, 0]].toTensor()
+  ##      assert a.nonzero == [[0, 1, 2, 2], [0, 1, 0, 1]].toTensor
+  ##      #                    ^-- indices.. ^ ..for  axis 0
+  ##      #                                  |-- indices for axis 1
+  ##      # axis 0: [0, 1, 2, 2] refers to:
+  ##      # - 0 -> 3 in row 0
+  ##      # - 1 -> 4 in row 1
+  ##      # - 2 -> 5 in row 2
+  ##      # - 2 -> 6 in row 2
+  ##      # axis 1: [0, 1, 0, 1] refers to:
+  ##      # - 0 -> 3 in col 0
+  ##      # - 1 -> 4 in col 1
+  ##      # - 0 -> 5 in col 0
+  ##      # - 1 -> 6 in col 1
+  var count = 0 # number of non zero elements
+  let mask = map_inline(t):
+    block:
+      let cond = x != 0.T
+      if cond:
+        inc count
+      cond
+
+  result = newTensor[int]([t.shape.len, count])
+  var ax = 0 # current axis
+  var k = 0 # counter for indices in one axis
+  for idx, x in mask:
+    if x:
+      ax = 0
+      for j in idx:
+        result[ax, k] = j
+        inc ax
+      inc k

@@ -1,6 +1,16 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.3 Jul. 11 2021
+=====================================================
+
+- fix memory allocation to not zero initialize the memory for tensors
+  (which we do manually). This made `newTensorUninit` not do what it
+  was supposed to (PR #517).
+- add `vandermonde` matrix constructor (PR #519)
+- change `rcond` argument to `gelsd` for linear least squares solver
+  to use simple `epsilon` (PR #519)
+
 Arraymancer v0.7.2 Jul. 5 2021
 =====================================================
 

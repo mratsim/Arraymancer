@@ -22,6 +22,17 @@ proc main() =
             check:
               a[i-1, j-1] == 1 / (i.float64 + j.float64 - 1)
 
+    test "Vandermonde matrix":
+      let x = [1, 2, 3, 4].toTensor
+      let A = vandermonde(x, 3)
+      for i, ax in enumerateAxis(A, axis = 0):
+        var order = 0
+        var el = x[i]
+        let axSq = ax.squeeze
+        for j in 0 ..< axSq.size:
+          check axSq[j] == pow(el.float, order.float)
+          inc order
+
     test "Linear equation solver using least squares":
       block: # "Single equation"
             # Example from Numpy documentation

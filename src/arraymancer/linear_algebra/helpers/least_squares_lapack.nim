@@ -19,9 +19,15 @@ proc gelsd*[T: SomeFloat](
       a, b: Tensor[T],
       solution, residuals: var Tensor[T],
       singular_values: var Tensor[T],
-      matrix_rank: var int
+      matrix_rank: var int,
+      rcond = -1.T
     ) =
-
+  ## Wrapper around LAPACK's `gelsd` taking tensors and preparing the required work space.
+  ##
+  ## `rcond` is the condition for singular values to be considered zero,
+  ## `s(i) <= rcond * s(i)` are treated as zero.
+  ##
+  ## If `rcond = -1` is used, it determines the size automatically (to the machine precision).
   assert a.rank == 2 and b.rank in {1, 2} and a.shape[0] > 0 and a.shape[0] == b.shape[0]
   # We need to copy the input as Lapack will destroy A and replace B with its result.
   # Furthermore it expects a column major ordering.
@@ -71,19 +77,30 @@ proc gelsd*[T: SomeFloat](
   singular_values = newTensorUninit[T](minmn) # will hold the singular values of A
 
   var # Temporary parameter values
-    # Condition for singular values considered to be zero, s(i) <= rcond * s(i) are treated as zero
-    rcond = epsilon(T)
-    lwork = max(1, 12 * m + 2 * m * smlsiz + 8 * m * nlvl + m * nrhs + (smlsiz + 1) ^ 2)
-    work = newSeqUninit[T](lwork)
     iwork = newSeqUninit[cint](liwork)
     info, rank: int32
+    lwork: int32 = -1
 
-  # Solve the equations A*X = B
+  # call `gelsd` once with `lwork = -1` as that gives us the optimal size for the `work` array
+  var workSize: T
   gelsd(
     m.addr, n.addr, nrhs.addr,
     a.get_data_ptr, m.addr, # lda
     b2.get_data_ptr, ldb.addr,
-    singular_values[0].addr, rcond.addr, rank.addr,
+    singular_values[0].addr, rcond.unsafeAddr, rank.addr,
+    workSize.addr, lwork.addr,
+    iwork[0].addr, info.addr
+  )
+  # now use `work` value to create enough memory
+  var work = newSeqUninit[T](workSize.int)
+  # stort the now correct size in `lwork`
+  lWork = workSize.int32
+  # And solve the equations A*X = B
+  gelsd(
+    m.addr, n.addr, nrhs.addr,
+    a.get_data_ptr, m.addr, # lda
+    b2.get_data_ptr, ldb.addr,
+    singular_values[0].addr, rcond.unsafeAddr, rank.addr,
     work[0].addr, lwork.addr,
     iwork[0].addr, info.addr
   )

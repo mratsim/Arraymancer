@@ -51,13 +51,13 @@ import ../src/arraymancer,
         ./autograd/test_gate_hadamard,
         ./autograd/test_gate_shapeshifting,
         ./ml/test_metrics,
-        ./ml/test_clustering,
         ./stats/test_stats,
         ./stats/test_distributions,
-        # NOTE: the `kdtree` test ``cannot`` be run together with the others ``unless`` the code is
-        # run with the `-d:nimLegacyRandomInitRand` flag. For backward compatibility reasons we
-        # generated the numbers using that flag.
+        # NOTE: the `kdtree` & `clustering` test ``cannot`` be run together with the others ``unless``
+        # the code is run with the `-d:nimLegacyRandomInitRand` flag. For backward compatibility reasons
+        # we generated the numbers using that flag.
         # ./spatial/test_kdtree,
+        # ./ml/test_clustering,
         ./spatial/test_distances,
         ./test_bugtracker,
         ./test_indep_import

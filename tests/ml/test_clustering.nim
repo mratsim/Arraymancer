@@ -90,7 +90,7 @@ proc main() =
           inc curIdx
         check lLabs[l] == rLabs[r]
 
-    test "DBSCAN  - Centroids":
+    test "DBSCAN - Centroids":
       let res = randomClusters.dbscan(eps = 0.05, minSamples = 10, Euclidean)
 
       check res.deduplicate.len == 4 # we have a few pixels not within a cluster

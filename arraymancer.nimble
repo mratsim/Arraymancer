@@ -18,6 +18,9 @@ requires "nim >= 1.0.0",
 ## Install files
 srcDir = "src"
 
+# for tests that require backward compatible RNG
+from os import extractFilename
+
 ########################################################
 # External libs configuration
 
@@ -144,9 +147,12 @@ proc test(name, switches = "", split = false, lang = "c") =
   else:
     exec "nim " & lang & " -o:build/" & name & switches & " -r tests/_split_tests/" & name & ".nim"
 
-  # run kdtree test, as it makes use of RNG and needs a flag for backward compatilibty reasons
-  exec "nim " & lang & " -o:build/test_kdtree" & switches &
-    " -d:nimLegacyRandomInitRand -r tests/spatial/test_kdtree.nim"
+  # run tests that require old RNG for backward compat. reasos
+  let rngTests = ["spatial/test_kdtree",
+                  "ml/test_clustering"]
+  for t in rngTests:
+    exec "nim " & lang & " -o:build/" & t.extractFilename & switches &
+      " -d:nimLegacyRandomInitRand -r tests/" & $t & ".nim"
   # try to compile (not run) all examples to avoid regressions
   let examples = @["ex01_xor_perceptron_from_scratch.nim",
                    "ex02_handwritten_digits_recognition.nim",

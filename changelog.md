@@ -1,6 +1,18 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.4 ???. ?? 2021
+=====================================================
+
+- add k-d tree (PR #447)
+- add DBSCAN clustering (PR #413 / PR #518), thanks to @abieler
+- `argsort` now has a `toCopy` argument to avoid sorting the argument
+  tensor in place if not desired
+- `cumsum`, `cumprod` now use axis 0 by default if no axis given
+- as part of DBSCAN + k-d tree a `distances.nim` submodule was added
+  that adds Manhattan, Minkowski, Euclidean and Jaccard distances
+- `nonzero` was added to get indices of non zero elements in a tensor
+
 Arraymancer v0.7.3 Jul. 11 2021
 =====================================================
 

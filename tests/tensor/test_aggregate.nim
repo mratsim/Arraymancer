@@ -172,7 +172,7 @@ proc main() =
         check: cumsum(a, 0) == [[0, 4,  7],
                                 [1, 13, 12],
                                 [4, 17, 13]].toTensor
-        
+
         check: cumsum(a, 1) == [[0, 4, 11],
                                 [1, 10, 15],
                                 [3, 7, 8]].toTensor
@@ -184,11 +184,24 @@ proc main() =
         check: cumprod(a, 0) == [[0, 4,   7],
                                  [0, 36,  35],
                                  [0, 144, 35]].toTensor
-        
+
         check: cumprod(a, 1) == [[0, 0, 0],
                                  [1, 9, 45],
                                  [3, 12, 12]].toTensor
 
+
+  test "Nonzero":
+    block:
+      let a = [[3, 0, 0], [0, 4, 0], [5, 6, 0]].toTensor()
+      let exp = [[0, 1, 2, 2], [0, 1, 0, 1]].toTensor
+      check a.nonzero == exp
+
+    block:
+      let a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]].toTensor
+      let mask = a >. 3
+      echo mask
+      let exp = [[1, 1, 1, 2, 2, 2], [0, 1, 2, 0, 1, 2]].toTensor
+      check nonzero(mask) == exp
 
 main()
 GC_fullCollect()

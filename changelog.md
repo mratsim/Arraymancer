@@ -1,6 +1,14 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.5 Jul. 26 2021
+=====================================================
+
+- change least squares wrapper around `gelsd` to have workspace
+  computed by LAPACK and set `rcond` to default `-1`. But we also make
+  it an argument for users to change (PR #520)
+
+
 Arraymancer v0.7.4 Jul. 20 2021
 =====================================================
 

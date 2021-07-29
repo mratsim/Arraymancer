@@ -292,8 +292,9 @@ proc queryImpl[T](
     of tnLeaf:
       # brute force for remaining elements in leaf node
       let ni = node.idx
-      let ds = metric.pairwiseDistances(tree.data[ni], x.unsqueeze(axis = 0), p,
-                                        squared = true).squeeze
+      var ds = metric.pairwiseDistances(tree.data[ni], x.unsqueeze(axis = 0), p,
+                                        squared = true)
+      assert ds.rank == 1
       for i in 0 ..< ds.size:
         if ds[i] < distanceUpperBound:
           when yieldNumber:

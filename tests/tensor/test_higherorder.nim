@@ -20,6 +20,9 @@ type
   Nest = enum
     a, b, c
 
+  Value = ref object
+    val: int
+
 proc main() =
   suite "[Core] Testing higher-order functions":
     let t = [[0, 1, 2],
@@ -111,10 +114,27 @@ proc main() =
 
     test "map_inline works with non-memcopyable types of N > 1 shape":
       # Underlying issue of #523
-      let ar = newTensor[Nest]([3, 3])
-      let br = ar.map_inline(b)
-      for x in br:
-        check x == b
+      block:
+        let ar = newTensor[Nest]([3, 3])
+        let br = ar.map_inline(b)
+        for x in br:
+          check x == b
+      block:
+        # check sliced tensors work fine
+        proc `==`(x, y: Value): bool = x.val == y.val
+        var x = newSeq[Value](100)
+        for i in 0 ..< 100:
+          x[i] = Value(val: i)
+        let ar = x.toTensor.reshape(25, 4)
+        # slice every second row and add 1
+        let br = ar[0 .. 24 | 2, _].map_inline:
+          Value(val: x.val + 1)
+        var exp = 1
+        for i in 0 ..< 13:
+          for j in 0 ..< 4:
+            check br[i, j].val == exp
+            inc exp
+          inc exp, 4
 
     test "map2_inline works with non-memcopyable types of N > 1 shape":
       # Underlying issue of #523

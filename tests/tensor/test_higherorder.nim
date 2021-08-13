@@ -16,6 +16,10 @@ import ../../src/arraymancer, ../testutils
 import unittest, math, sugar, sequtils
 import complex except Complex32, Complex64
 
+type
+  Nest = enum
+    a, b, c
+
 proc main() =
   suite "[Core] Testing higher-order functions":
     let t = [[0, 1, 2],
@@ -104,6 +108,33 @@ proc main() =
         x mod y == 0
 
       check: isMultiple == [false, false, true, true].toTensor
+
+    test "map_inline works with non-memcopyable types of N > 1 shape":
+      # Underlying issue of #523
+      let ar = newTensor[Nest]([3, 3])
+      let br = ar.map_inline(b)
+      for x in br:
+        check x == b
+
+    test "map2_inline works with non-memcopyable types of N > 1 shape":
+      # Underlying issue of #523
+      let ar = newTensor[Nest]([3, 3])
+      let br = newTensor[Nest]([3, 3]).map_inline(b)
+      let cr = map2_inline(ar, br):
+        Nest(ord(x) + ord(y) + 1) # gives 2 == c
+      for x in cr:
+        check x == c
+
+    test "map3_inline works with non-memcopyable types of N > 1 shape":
+      # Underlying issue of #523
+      let ar = newTensor[Nest]([3, 3])
+      let br = newTensor[Nest]([3, 3]).map_inline(b)
+      let cr = newTensor[Nest]([3, 3]).map_inline(c)
+      let dr = map3_inline(ar, br, cr):
+        Nest((ord(x) + ord(y) + ord(z)) mod 2) # gives 1 == c
+      for x in dr:
+        check x == b
+
 
 main()
 GC_fullCollect()

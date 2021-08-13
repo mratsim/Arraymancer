@@ -37,7 +37,7 @@ import ../src/arraymancer,
         ./tensor/test_einsum_failed,
         ./io/test_csv,
         ./io/test_numpy,
-        ./datasets/test_mnist,
+        # ./datasets/test_mnist, # this test is too flaky. Download often fails w/ 503
         ./datasets/test_imdb,
         ./nn_primitives/test_nnp_numerical_gradient,
         ./nn_primitives/test_nnp_convolution,

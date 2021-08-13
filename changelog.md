@@ -1,6 +1,17 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.6 Aug. 13 2021
+=====================================================
+
+- remove the MNIST download test from the default test cases, as it is
+  too flaky for a CI
+- fix issue #523 by fixing how `map_inline` works for rank > 1
+  tensors. Access the data storage at correct indices instead of using
+  the regular tensor `[]` accessor (which requires N indices for a
+  rank N tensor)
+
+
 Arraymancer v0.7.5 Jul. 26 2021
 =====================================================
 

@@ -19,6 +19,10 @@ import complex except Complex64, Complex32
 type TestObject = object
   x: Tensor[float]
 
+type
+  Nest = enum
+    a, b, c
+
 proc main() =
   suite "Creating a new Tensor":
     test "Creating from sequence":
@@ -202,6 +206,12 @@ proc main() =
         check t.rank == 1
         check t.shape[0] == 100
       deallocShared(buf)
+
+    test "Clone works as expected on non-memcopyable types":
+      # Ref: issue #523
+      let ar = newTensor[Nest]([3, 3])
+      let br = ar.clone()
+      check ar == br
 
 main()
 GC_fullCollect()

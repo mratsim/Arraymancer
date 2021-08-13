@@ -82,7 +82,8 @@ template map_inline*[T](t: Tensor[T], op:untyped): untyped =
   else:
     var dest = newTensorUninit[outType](z.shape)
     for i, x {.inject.} in enumerate(z):
-      dest[i] = op
+      ## NOTE: we assign to the raw buffer directly as enumerate yields the indices as contiguous
+      dest.storage.raw_buffer[i] = op
   dest
 
 template map2_inline*[T, U](t1: Tensor[T], t2: Tensor[U], op:untyped): untyped =
@@ -112,7 +113,7 @@ template map2_inline*[T, U](t1: Tensor[T], t2: Tensor[U], op:untyped): untyped =
   else:
     var dest = newTensorUninit[outType](z1.shape)
     for i, x {.inject.}, y {.inject.} in enumerateZip(z1, z2):
-      dest[i] = op
+      dest.storage.raw_buffer[i] = op
   dest
 
 template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:untyped): untyped =
@@ -142,8 +143,7 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
   else:
     var dest = newTensorUninit[outType](z1.shape)
     for i, x {.inject.}, y {.inject.}, z {.inject.} in enumerateZip(z1, z2, z3):
-      dest[i] = op
-
+      dest.storage.raw_buffer[i] = op
   dest
 
 proc map*[T; U](t: Tensor[T], f: T -> U): Tensor[U] {.noInit.} =

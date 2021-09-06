@@ -1,6 +1,6 @@
 import arraymancer, strformat, os
 
-discard """
+#[
 A fully-connected ReLU network with one hidden layer, trained to predict y from x
 by minimizing squared Euclidean distance.
 
@@ -8,7 +8,7 @@ by minimizing squared Euclidean distance.
 save/load models. We can do this by defining our own model class
 and forward procedure, then defining procedures to save/load the model. ***
 
-"""
+]#
 
 # ##################################################################
 # Environment variables

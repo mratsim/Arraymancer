@@ -61,7 +61,7 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
 type SubGate*[TT] {.final.} = ref object of Gate[TT]
 
 proc sub_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
-  let self = SubGate[TT](self)
+  # NOTE: we do ``not`` convert `self` to `SubGate` here, as that leads to an `ObjectConversionError`!
   let gradient = payload.variable.grad
   result = newSeq[TT](2)
   result[0] = gradient

@@ -1,6 +1,16 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.7 Oct. 14 2021
+=====================================================
+
+- fix autograd code after changes in the Nim compiler from version 1.4
+  on. Requires to keep the procedure signatures using the base type
+  and then convert to the specific type in the procedure (#528)
+- fixes an issue when creating a laser tensor within a generic, in
+  which case one might see "undeclared identifier `rank`"
+
+
 Arraymancer v0.7.6 Aug. 13 2021
 =====================================================
 

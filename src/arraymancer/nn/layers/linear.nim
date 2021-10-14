@@ -20,10 +20,11 @@ type LinearGate*[TT] {.final.} = ref object of Gate[TT]
   ## TODO: use fused AddMatMul gate: C <- alpha AB + beta C
   input, weight, bias: Variable[TT]
 
-proc linear_backward_ag[TT](self: LinearGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc linear_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
   # result[0] grad w.r.t. input
   # result[1] grad w.r.t. weight
   # result[2] grad w.r.t. bias
+  let self = LinearGate[TT](self)
 
   let gradOutput = payload.variable.grad
   if self.bias.isNil:

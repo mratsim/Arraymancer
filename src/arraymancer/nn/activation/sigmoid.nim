@@ -1,3 +1,4 @@
+
 # Copyright 2017 the Arraymancer contributors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +20,8 @@ import  ../../autograd,
 type SigmoidActivation*[TT] {.final.} = ref object of Gate[TT]
   cache: TT
 
-proc sigmoid_backward_ag[TT](self: SigmoidActivation[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc sigmoid_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = SigmoidActivation[TT](self)
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient.sigmoid_backward(self.cache)

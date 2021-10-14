@@ -28,7 +28,8 @@ proc shape_product(m: MeanGate): int {.inline.} =
     if i != m.axis:
       result *= v
 
-proc mean_backward_ag[TT](self: MeanGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc mean_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = MeanGate[TT](self)
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient / getSubType(TT)(self.cached_input_shape.product) # Conversion to subtype T, oh Higher kinded-types ...
@@ -37,7 +38,8 @@ proc mean_backward_ag[TT](self: MeanGate[TT], payload: Payload[TT]): SmallDiffs[
   let z_shape = newSeqWith(self.cached_input_shape.len, 1)
   result[0] = result[0].reshape(z_shape).broadcast(self.cached_input_shape)
 
-proc mean_with_axis_backward_ag[TT](self: MeanGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc mean_with_axis_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = MeanGate[TT](self)
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = (gradient / getSubType(TT)(self.shape_product)).broadcast(self.cached_input_shape)
@@ -105,7 +107,8 @@ type SumGate*[TT]{.final.}= ref object of Gate[TT]
   ## TODO: generalize to C <- alpha AB + C
   cached_input_shape: Metadata
 
-proc sum_backward_ag[TT](self: SumGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc sum_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = SumGate[TT](self)
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
 

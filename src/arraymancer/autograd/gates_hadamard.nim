@@ -19,7 +19,8 @@ type HadamardGate*[TT]{.final.} = ref object of Gate[TT]
   a: Variable[TT]
   b: Variable[TT]
 
-proc hadamard_backward_ag[TT](self: HadamardGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc hadamard_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = HadamardGate[TT](self)
   let gradient = payload.variable.grad
   result = newSeq[TT](2)
   result[0] = gradient     *. self.b.value

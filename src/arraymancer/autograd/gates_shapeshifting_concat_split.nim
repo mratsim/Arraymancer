@@ -22,7 +22,8 @@ type StackGate[TT] {.final.} = ref object of Gate[TT]
   axis: int
   nb_grads: int
 
-proc stack_backward_ag[TT](self: StackGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc stack_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = StackGate[TT](self)
   let gradient = payload.variable.grad
   result = newDiffs[TT](self.nb_grads)
   for i in 0 ..< gradient.shape[self.axis]:
@@ -89,7 +90,8 @@ proc chunk_inference[TT](result: var seq[Variable[TT]], x: Variable[TT], nb_chun
     Variable[TT](context: x.context, value: it)
   )
 
-proc chunk_backward_ag[TT](self: ChunkSplitGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc chunk_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = ChunkSplitGate[TT](self)
   let gradients = payload.sequence.mapIt(it.grad) # TODO: inefficient to create an intermediate sequence
   result = newDiffs[TT](1)
   result[0] = concat(gradients, self.axis)

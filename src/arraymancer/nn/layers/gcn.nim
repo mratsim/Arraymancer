@@ -19,8 +19,8 @@ import  ../../tensor,
 type GCNGate*[TT] {.final.} = ref object of Gate[TT]
   adjacency, input, weight, bias: Variable[TT]
 
-proc gcn_backward_ag[TT](self: GCNGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
-
+proc gcn_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = GCNGate[TT](self)
   let gradOutput = payload.variable.grad
   if self.bias.isNil:
     result = newDiffs[TT](2)

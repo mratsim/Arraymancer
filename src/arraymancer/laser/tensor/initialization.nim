@@ -16,6 +16,9 @@ import
   # Third-party
   nimblas
 
+from ../../tensor/data_structure import rank, size
+
+
 ## Initialization and copy routines
 
 func toMetadata*(s: varargs[int]): Metadata =
@@ -31,6 +34,7 @@ template initTensorMetadataImpl(
     layout: static OrderType) =
   ## We don't use a proc directly due to https://github.com/nim-lang/Nim/issues/6529
   result.shape = shape.toMetadata
+  mixin rank
   result.strides.len = result.rank
 
   size = 1

@@ -24,8 +24,9 @@ type EmbeddingGate*[TT; scaled: static bool; Idx: SomeNumber or byte or char or 
     # and have a separate proc for padding and no padding (to avoid costly checks within a tight loop)
 
 proc embedding_backward_ag[TT; scaled: static bool, Idx](
-        self: EmbeddingGate[TT, scaled, Idx],
+        self: Gate[TT],
         payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+  let self = EmbeddingGate[TT, scaled, Idx](self)
   result = newDiffs[TT](1)
   result[0] = zeros_like(self.weight.value)
   let gradOutput = payload.variable.grad

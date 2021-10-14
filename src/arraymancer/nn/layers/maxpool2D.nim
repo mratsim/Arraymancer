@@ -36,7 +36,8 @@ proc maxpool2D_inference[TT](
                                 padding,
                                 stride)
 
-proc maxpool2D_backward_ag[TT](self: MaxPool2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc maxpool2D_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = MaxPool2DGate[TT](self)
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = maxpool2d_backward(

@@ -15,6 +15,7 @@
 import  ../../laser/private/nested_containers,
         ../../private/ast_utils,
         ../data_structure, ../accessors_macros_syntax,
+        ../higher_order_applymap,
         ./p_accessors_macros_read,
         ./p_checks,
         ./p_accessors,

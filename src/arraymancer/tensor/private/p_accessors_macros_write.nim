@@ -227,7 +227,10 @@ macro slice_typed_dispatch_mut*(t: typed, args: varargs[typed], val: typed): unt
     for slice in args:
       if isInt(slice):
         ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
-        result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
+        # Constructing via `infix` can cause issues with resolution of `|` in some generic contexts
+        #result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
+        result.add quote do:
+          SteppedSlice(a: `slice`, b: `slice`, step: 1)
       else:
         result.add(slice)
     result.add(val)

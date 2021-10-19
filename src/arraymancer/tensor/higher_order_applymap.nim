@@ -14,7 +14,7 @@
 
 import  ./backend/openmp,
         ./private/p_checks,
-        ./data_structure, ./init_cpu, ./accessors, ./accessors_macros_write
+        ./data_structure, ./init_cpu, ./accessors
 
 import sugar except enumerate
 

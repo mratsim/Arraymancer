@@ -1,6 +1,12 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.8 Oct. 19 2021
+=====================================================
+
+- further fix undeclared identifier issues present for certain
+  generics context, in this case for the `|` identifier when slicing
+
 Arraymancer v0.7.7 Oct. 14 2021
 =====================================================
 

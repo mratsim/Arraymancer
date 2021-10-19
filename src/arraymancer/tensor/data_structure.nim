@@ -91,10 +91,10 @@ proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.deprecated: "Use copyFromRaw ins
 # Tensor Metadata
 # ################
 
-func rank*(t: AnyTensor): range[0 .. LASER_MAXRANK] {.inline.} =
+func rank*[T](t: CudaTensor[T] or ClTensor[T]): range[0 .. LASER_MAXRANK] {.inline.} =
   t.shape.len
 
-func size*(t: AnyTensor): Natural {.inline.} =
+func size*[T](t: CudaTensor[T] or ClTensor[T]): Natural {.inline.} =
   t.shape.product
 
 proc shape_to_strides*(shape: Metadata, layout: OrderType = rowMajor, result: var Metadata) {.noSideEffect.} =

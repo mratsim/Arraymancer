@@ -34,7 +34,7 @@ template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSl
           ") is larger than the tensor rank. Tensor shape" & $result.shape & "."
       )
 
-  for i, slice in slices:
+  for i, slice in pairs(slices): # explicitly calling `pairs` is required for ident resolution
     # Check if we start from the end
     let a = if slice.a_from_end: result.shape[i] - slice.a
             else: slice.a

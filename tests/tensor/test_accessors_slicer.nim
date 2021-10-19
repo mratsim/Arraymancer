@@ -73,7 +73,7 @@ proc main() =
       proc foo[T](exp: Tensor[T], data: seq[seq[int]]) =
         var res = newTensor[T](5, 1)
         for i, el in data:
-          res[i, _] = el.toTensor
+          res[i, _] = el.toTensor.unsqueeze(0)
         check: exp == res
 
       let test = @[@[1],@[16],@[81],@[256],@[625]]

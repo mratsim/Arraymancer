@@ -52,6 +52,12 @@ proc toMetadataArray*(s: varargs[int]): MetadataArray {.inline.} =
   for i in 0..<s.len:
     result.data[i] = s[i]
 
+func rank*[T](t: Tensor[T]): range[0 .. LASER_MAXRANK] {.inline.} =
+  t.shape.len
+
+func size*[T](t: Tensor[T]): Natural {.inline.} =
+  t.shape.product
+
 # note: the finalizer has to be here for ARC to like it
 when not defined(gcDestructors):
   proc finalizer[T](storage: CpuStorage[T]) =

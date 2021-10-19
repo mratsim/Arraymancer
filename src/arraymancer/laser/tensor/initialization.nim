@@ -16,9 +16,6 @@ import
   # Third-party
   nimblas
 
-from ../../tensor/data_structure import rank, size
-
-
 ## Initialization and copy routines
 
 func toMetadata*(s: varargs[int]): Metadata =

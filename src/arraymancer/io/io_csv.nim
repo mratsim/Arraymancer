@@ -16,9 +16,21 @@
 import  os, parsecsv, streams, strutils, sequtils, algorithm,
         ../tensor
 
+proc countLinesAndCols(file: string, sep: char, quote: char,
+                       skipHeader: bool): tuple[rows: int, cols: int] =
+  var csv: CsvParser
+  csv.open(file, separator = sep, quote = quote, skipInitialSpace = true)
+  csv.readHeaderRow()
+  let colNum = csv.headers.len
+  var rowNum = if skipHeader: 0
+               else: 1
+  while csv.readRow:
+    inc rowNum
+  result = (rows: rowNum, cols: colNum)
+
 proc read_csv*[T: SomeNumber|bool|string](
        csvPath: string,
-       skip_header = false,
+       skipHeader = false,
        separator = ',',
        quote = '\"'
        ): Tensor[T] {.noInit.} =
@@ -28,26 +40,31 @@ proc read_csv*[T: SomeNumber|bool|string](
   ##
   ## Input:
   ##   - csvPath: a path to the csvfile
-  ##   - skip_header: should read_csv skip the first row
+  ##   - skipHeader: should read_csv skip the first row
   ##   - separator: a char, default ','
   ##   - quote: a char, default '\"' (single and double quotes must be escaped).
   ##     Separators inside quoted strings are ignored, for example: `"foo", "bar, baz"` corresponds to 2 columns not 3.
 
   var parser: proc(x:string): T {.nimcall.}
   when T is SomeSignedInt:
-    parser = proc(x:string): T = x.parseInt.T
+    parser = proc(x: string): T = x.parseInt.T
   elif T is SomeUnsignedInt:
-    parser = proc(x:string): T = x.parseUInt.T
+    parser = proc(x: string): T = x.parseUInt.T
   elif T is SomeFloat:
-    parser = proc(x:string): T = x.parseFloat.T
+    parser = proc(x: string): T = x.parseFloat.T
   elif T is bool:
     parser = parseBool
   elif T is string:
     parser = proc(x: string): string = shallowCopy(result, x) # no-op
 
+  # TODO: fully done via an individual `open`, as any way I can think of to reset
+  # the stream / lexer breaks
+  # 1. count number of lines and columns
+  let (numRows, numCols) = countLinesAndCols(csvPath, separator, quote, skipHeader)
+
+  # 2. prepare CSV parser
   var csv: CsvParser
   let stream = newFileStream(csvPath, mode = fmRead)
-
   csv.open( stream, csvPath,
             separator = separator,
             quote = quote,
@@ -55,29 +72,17 @@ proc read_csv*[T: SomeNumber|bool|string](
           )
   defer: csv.close
 
-  if skip_header:
-    discard csv.readRow
+  # 3. possibly skip the header
+  if skipHeader:
+    csv.readHeaderRow()
 
-  # Initialization, count cols:
-  discard csv.readRow #TODO what if there is only one line.
-  var
-    num_cols = csv.row.len
-    csvdata: seq[T] = @[]
-  for val in csv.row:
-    csvdata.add parser(val)
-
-  # Processing
+  # 4. init data storage for each type & process all rows
+  result = newTensorUninit[T]([numRows, numCols])
+  var curRow = 0
   while csv.readRow:
-    for val in csv.row:
-      csvdata.add parser(val)
-
-  # Finalizing
-  let num_rows= if skip_header: csv.processedRows - 2
-                else: csv.processedRows - 1
-
-  result = newTensorUninit[T](num_rows, num_cols)
-  shallowCopy(result.storage.Fdata, csvdata)
-
+    for i, val in csv.row:
+      result[curRow, i] = parser val
+    inc curRow
 
 proc to_csv*[T](
     tensor: Tensor[T],

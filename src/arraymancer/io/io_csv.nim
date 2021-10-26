@@ -15,18 +15,34 @@
 
 import  os, parsecsv, streams, strutils, sequtils, algorithm,
         ../tensor
+from memfiles as mf import nil
 
 proc countLinesAndCols(file: string, sep: char, quote: char,
                        skipHeader: bool): tuple[rows: int, cols: int] =
-  var csv: CsvParser
-  csv.open(file, separator = sep, quote = quote, skipInitialSpace = true)
-  csv.readHeaderRow()
-  let colNum = csv.headers.len
-  var rowNum = if skipHeader: 0
-               else: 1
-  while csv.readRow:
-    inc rowNum
-  result = (rows: rowNum, cols: colNum)
+  ## Counts the number of lines and columns in the given `file`.
+  ##
+  ## This uses the `memfiles` interface for performance reasons to avoid
+  ## unnecessary overhead purely for counting lines. Ideally, the actual
+  ## CSV parsing would also use the same interface.
+  var memf = mf.open(file)
+  defer: mf.close(memf)
+  var countedCols = false
+  var nCols = 1 # at least 1 column
+  var nRows = 0
+  var cstr: cstring
+  for slice in mf.memSlices(memf):
+    cstr = cast[cstring](slice.data)
+    if slice.size > 0 and unlikely(not countedCols): # count number of columns
+      for idx in 0 ..< slice.size:
+        if cstr[idx] == sep:                         # a separator means another column
+          inc nCols
+      inc nRows
+      countedCols = true
+    elif slice.size > 0:                             # only count non empty lines from here
+      inc nRows
+  if skipHeader:
+    dec nRows
+  result = (rows: nRows, cols: nCols)
 
 proc read_csv*[T: SomeNumber|bool|string](
        csvPath: string,

@@ -65,6 +65,14 @@ dimension_1,value
 
 """
 
+  let csv_semicolon_short = """dimension_1;value
+0;1
+1;2
+2;3
+3;4
+4;5
+"""
+
 
   let test_file_path = getTempDir() / "arraymancer_test.csv"
 
@@ -106,7 +114,14 @@ dimension_1,value
     test "CSV parsing ignores empty lines":
       writeFile(test_file_path, csv_empty_lines)
       let tRead = readCsv[int](test_file_path, skipHeader = true)
-      echo tRead
+      let tExp = @[@[0, 1], @[1, 2], @[2, 3], @[3, 4], @[4, 5]].toTensor()
+      check tExp == tRead
+
+    test "CSV parsing of different (semicolon) separators works":
+      writeFile(test_file_path, csv_semicolon_short)
+      let tRead = readCsv[int](test_file_path, separator = ';', skipHeader = true)
+      let tExp = @[@[0, 1], @[1, 2], @[2, 3], @[3, 4], @[4, 5]].toTensor()
+      check tExp == tRead
 
 main()
 GC_fullCollect()

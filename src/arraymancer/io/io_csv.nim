@@ -81,9 +81,7 @@ proc read_csv*[T: SomeNumber|bool|string](
   elif T is string:
     parser = proc(x: string): string = shallowCopy(result, x) # no-op
 
-  # TODO: fully done via an individual `open`, as any way I can think of to reset
-  # the stream / lexer breaks
-  # 1. count number of lines and columns
+  # 1. count number of lines and columns using memfile interface
   let (numRows, numCols) = countLinesAndCols(csvPath, separator, quote, skipHeader)
 
   # 2. prepare CSV parser

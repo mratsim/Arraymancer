@@ -33,7 +33,7 @@ proc countLinesAndCols(file: string, sep: char, quote: char,
   for slice in mf.memSlices(memf):
     cstr = cast[cstring](slice.data)
     if slice.size > 0 and unlikely(not countedCols): # count number of columns
-      for idx in 0 ..< slice.size:
+      for idx in 0 ..< slice.size:                   # need to be careful to only access to `size`
         if cstr[idx] == sep:                         # a separator means another column
           inc nCols
       inc nRows
@@ -53,6 +53,14 @@ proc read_csv*[T: SomeNumber|bool|string](
   ## Load a csv into a Tensor. All values must be of the same type.
   ##
   ## If there is a header row, it can be skipped.
+  ##
+  ## The reading of CSV files currently ``does not`` handle parsing a tensor
+  ## created with `toCsv`. This is because the dimensional information becomes
+  ## part of the CSV output and the parser has no option to reconstruct the
+  ## correct tensor shape.
+  ## Instead of a NxMx...xZ tensor we always construct a NxM tensor, where N-1
+  ## is the rank of the original tensor and M is the total size (total number of
+  ## elements) of the original tensor!
   ##
   ## Input:
   ##   - csvPath: a path to the csvfile

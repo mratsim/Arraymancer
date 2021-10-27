@@ -73,6 +73,17 @@ dimension_1,value
 4;5
 """
 
+  let csv_with_quoted = """dimension_1,value
+0,A
+1,B
+2,"hello, this is a string
+with a line break, ugh
+"
+3,D
+4,E
+"""
+
+
 
   let test_file_path = getTempDir() / "arraymancer_test.csv"
 
@@ -121,6 +132,18 @@ dimension_1,value
       writeFile(test_file_path, csv_semicolon_short)
       let tRead = readCsv[int](test_file_path, separator = ';', skipHeader = true)
       let tExp = @[@[0, 1], @[1, 2], @[2, 3], @[3, 4], @[4, 5]].toTensor()
+      check tExp == tRead
+
+    test "CSV parsing of file with quoted content works":
+      writeFile(test_file_path, csv_with_quoted)
+      let tRead = readCsv[string](test_file_path, quote = '\"', skipHeader = true)
+      let tExp = @[@["0", "A"],
+                   @["1", "B"],
+                   @["2", """hello, this is a string
+with a line break, ugh
+"""],
+                   @["3", "D"],
+                   @["4", "E"]].toTensor()
       check tExp == tRead
 
 main()

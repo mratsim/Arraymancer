@@ -19,7 +19,10 @@ import  ./private/p_display,
 proc pretty*[T](t: CudaTensor[T], precision = -1): string =
   ## Pretty-print a CudaTensor with the option to set a custom `precision`
   ## for float values.
-  let desc = t.type.name & " of shape \"" & $t.shape & "\" on backend \"" & "Cuda" & "\""
+  var desc = t.type.name & " of shape \"" & $t.shape & "\" on backend \"" & "Cuda" & "\""
+  if t.storage.Fdata.isNil: # return useful message for uninit'd tensors instead of crashing
+    return "Uninitialized " & $desc
+
   let cpu_t = t.cpu()
   if cpu_t.size() == 0:
     return desc & "\n    [] (empty)"

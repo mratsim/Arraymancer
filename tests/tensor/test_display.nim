@@ -234,5 +234,16 @@ Tensor[system.string] of shape "[2, 3, 3, 4]" on backend "Cpu"
   --------------------------------------------------------------------------------------------------------------------------------------------------------
 """)
 
+    test "Displaying of unininitialized tensors works":
+      template checkTypes(typ: untyped): untyped =
+        var x: Tensor[typ]
+        var exp = "Uninitialized Tensor[system." & astToStr(typ) & """] of shape "[]" on backend "Cpu""""
+        check $x == exp
+      checkTypes(int)
+      checkTypes(char)
+      checkTypes(float)
+      checkTypes(uint64)
+      checkTypes(string)
+
 main()
 GC_fullCollect()

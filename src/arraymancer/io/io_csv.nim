@@ -30,6 +30,7 @@ proc countLinesAndCols(file: string, sep: char, quote: char,
   var nCols = 1 # at least 1 column
   var nRows = 0
   var cstr: cstring
+  var quoted = false
   for slice in mf.memSlices(memf):
     cstr = cast[cstring](slice.data)
     if slice.size > 0 and unlikely(not countedCols): # count number of columns
@@ -39,7 +40,11 @@ proc countLinesAndCols(file: string, sep: char, quote: char,
       inc nRows
       countedCols = true
     elif slice.size > 0:                             # only count non empty lines from here
-      inc nRows
+      for idx in 0 ..< slice.size:
+        if cstr[idx] == quote:
+          quoted = not quoted
+      if not quoted:
+        inc nRows
   if skipHeader:
     dec nRows
   result = (rows: nRows, cols: nCols)

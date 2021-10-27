@@ -15,10 +15,43 @@
 
 import  os, parsecsv, streams, strutils, sequtils, algorithm,
         ../tensor
+from memfiles as mf import nil
+
+proc countLinesAndCols(file: string, sep: char, quote: char,
+                       skipHeader: bool): tuple[rows: int, cols: int] =
+  ## Counts the number of lines and columns in the given `file`.
+  ##
+  ## This uses the `memfiles` interface for performance reasons to avoid
+  ## unnecessary overhead purely for counting lines. Ideally, the actual
+  ## CSV parsing would also use the same interface.
+  var memf = mf.open(file)
+  defer: mf.close(memf)
+  var countedCols = false
+  var nCols = 1 # at least 1 column
+  var nRows = 0
+  var cstr: cstring
+  var quoted = false
+  for slice in mf.memSlices(memf):
+    cstr = cast[cstring](slice.data)
+    if slice.size > 0 and unlikely(not countedCols): # count number of columns
+      for idx in 0 ..< slice.size:                   # need to be careful to only access to `size`
+        if cstr[idx] == sep:                         # a separator means another column
+          inc nCols
+      inc nRows
+      countedCols = true
+    elif slice.size > 0:                             # only count non empty lines from here
+      for idx in 0 ..< slice.size:
+        if cstr[idx] == quote:
+          quoted = not quoted
+      if not quoted:
+        inc nRows
+  if skipHeader:
+    dec nRows
+  result = (rows: nRows, cols: nCols)
 
 proc read_csv*[T: SomeNumber|bool|string](
        csvPath: string,
-       skip_header = false,
+       skipHeader = false,
        separator = ',',
        quote = '\"'
        ): Tensor[T] {.noInit.} =
@@ -26,28 +59,39 @@ proc read_csv*[T: SomeNumber|bool|string](
   ##
   ## If there is a header row, it can be skipped.
   ##
+  ## The reading of CSV files currently ``does not`` handle parsing a tensor
+  ## created with `toCsv`. This is because the dimensional information becomes
+  ## part of the CSV output and the parser has no option to reconstruct the
+  ## correct tensor shape.
+  ## Instead of a NxMx...xZ tensor we always construct a NxM tensor, where N-1
+  ## is the rank of the original tensor and M is the total size (total number of
+  ## elements) of the original tensor!
+  ##
   ## Input:
   ##   - csvPath: a path to the csvfile
-  ##   - skip_header: should read_csv skip the first row
+  ##   - skipHeader: should read_csv skip the first row
   ##   - separator: a char, default ','
   ##   - quote: a char, default '\"' (single and double quotes must be escaped).
   ##     Separators inside quoted strings are ignored, for example: `"foo", "bar, baz"` corresponds to 2 columns not 3.
 
   var parser: proc(x:string): T {.nimcall.}
   when T is SomeSignedInt:
-    parser = proc(x:string): T = x.parseInt.T
+    parser = proc(x: string): T = x.parseInt.T
   elif T is SomeUnsignedInt:
-    parser = proc(x:string): T = x.parseUInt.T
+    parser = proc(x: string): T = x.parseUInt.T
   elif T is SomeFloat:
-    parser = proc(x:string): T = x.parseFloat.T
+    parser = proc(x: string): T = x.parseFloat.T
   elif T is bool:
     parser = parseBool
   elif T is string:
     parser = proc(x: string): string = shallowCopy(result, x) # no-op
 
+  # 1. count number of lines and columns using memfile interface
+  let (numRows, numCols) = countLinesAndCols(csvPath, separator, quote, skipHeader)
+
+  # 2. prepare CSV parser
   var csv: CsvParser
   let stream = newFileStream(csvPath, mode = fmRead)
-
   csv.open( stream, csvPath,
             separator = separator,
             quote = quote,
@@ -55,29 +99,17 @@ proc read_csv*[T: SomeNumber|bool|string](
           )
   defer: csv.close
 
-  if skip_header:
-    discard csv.readRow
+  # 3. possibly skip the header
+  if skipHeader:
+    csv.readHeaderRow()
 
-  # Initialization, count cols:
-  discard csv.readRow #TODO what if there is only one line.
-  var
-    num_cols = csv.row.len
-    csvdata: seq[T] = @[]
-  for val in csv.row:
-    csvdata.add parser(val)
-
-  # Processing
+  # 4. init data storage for each type & process all rows
+  result = newTensorUninit[T]([numRows, numCols])
+  var curRow = 0
   while csv.readRow:
-    for val in csv.row:
-      csvdata.add parser(val)
-
-  # Finalizing
-  let num_rows= if skip_header: csv.processedRows - 2
-                else: csv.processedRows - 1
-
-  result = newTensorUninit[T](num_rows, num_cols)
-  shallowCopy(result.storage.Fdata, csvdata)
-
+    for i, val in csv.row:
+      result[curRow, i] = parser val
+    inc curRow
 
 proc to_csv*[T](
     tensor: Tensor[T],

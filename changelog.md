@@ -1,13 +1,15 @@
 Arraymancer v0.7.x
 =====================================================
 
-Arraymancer v0.7.8 Oct. 19 2021
+Arraymancer v0.7.8 Oct. 27 2021
 =====================================================
 
 - further fix undeclared identifier issues present for certain
   generics context, in this case for the `|` identifier when slicing
 - fix printing of uninitialized tensors. Instead of crashing these now
   print as "Unitialized Tensor[T] ...".
+- fix CSV parsing regression (still used `Fdata` field access) and
+  improved efficiency of the parser
 
 Arraymancer v0.7.7 Oct. 14 2021
 =====================================================

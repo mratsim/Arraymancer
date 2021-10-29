@@ -59,21 +59,23 @@ func size*[T](t: Tensor[T]): Natural {.inline.} =
   t.shape.product
 
 # note: the finalizer has to be here for ARC to like it
-when not defined(gcDestructors):
-  proc finalizer[T](storage: CpuStorage[T]) =
-    static: assert T is KnownSupportsCopyMem, "Tensors of seq, strings, ref types and types with non-trivial destructors cannot be finalized by this proc"
+# when not defined(gcDestructors):
+#   proc finalizer[T](storage: CpuStorage[T]) =
+#     static: assert T is KnownSupportsCopyMem, "Tensors of seq, strings, ref types and types with non-trivial destructors cannot be finalized by this proc"
+#     if storage.isMemOwner and not storage.memalloc.isNil:
+#       storage.memalloc.deallocShared()
+#       storage.memalloc = nil
+# else:
+proc `=destroy`[T](storage: var CpuStorageObj[T]) =
+  when T is KnownSupportsCopyMem:
     if storage.isMemOwner and not storage.memalloc.isNil:
       storage.memalloc.deallocShared()
       storage.memalloc = nil
-else:
-  proc `=destroy`[T](storage: var CpuStorageObj[T]) =
-    when T is KnownSupportsCopyMem:
-      if storage.isMemOwner and not storage.memalloc.isNil:
-        storage.memalloc.deallocShared()
-        storage.memalloc = nil
-    else:
-      `=destroy`(storage.raw_buffer)
-  proc `=`[T](a: var CpuStorageObj[T]; b: CpuStorageObj[T]) {.error.}
+  else:
+    `=destroy`(storage.raw_buffer)
+
+proc `=copy`[T](a: var CpuStorageObj[T]; b: CpuStorageObj[T]) {.error.}
+proc `=sink`[T](a: var CpuStorageObj[T]; b: CpuStorageObj[T]) {.error.}
 
 
 proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
@@ -82,10 +84,10 @@ proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
   ## I.e. Tensors of seq, strings, ref types or types with non-trivial destructors
   ## are always zero-initialized. This prevents potential GC issues.
   when T is KnownSupportsCopyMem:
-    when not defined(gcDestructors):
-      new(storage, finalizer[T])
-    else:
-      new(storage)
+    # when not defined(gcDestructors):
+    #   new(storage, finalizer[T])
+    # else:
+    new(storage)
     storage.memalloc = allocShared(sizeof(T) * size + LASER_MEM_ALIGN - 1)
     storage.isMemOwner = true
     storage.raw_buffer = align_raw_data(T, storage.memalloc)
@@ -102,10 +104,10 @@ proc cpuStorageFromBuffer*[T: KnownSupportsCopyMem](
   ## marked as not owned by the `CpuStorage`.
   ##
   ## The input buffer must be a raw `pointer`.
-  when not defined(gcDestructors):
-    new(storage, finalizer[T])
-  else:
-    new(storage)
+  # when not defined(gcDestructors):
+  #   new(storage, finalizer[T])
+  # else:
+  new(storage)
   storage.memalloc = rawBuffer
   storage.isMemOwner = false
   storage.raw_buffer = cast[ptr UncheckedArray[T]](storage.memalloc)

@@ -189,21 +189,21 @@ func unsafe_raw_buf*[T: not KnownSupportsCopyMem](t: Tensor[T], aligned: static 
 
 func unsafe_raw_offset*[T: not KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): ptr UncheckedArray[T] {.error: "Access via raw pointer forbidden for non mem copyable types!".}
 
-macro raw_data_unaligned*(body: untyped): untyped =
-  ## Within this code block, all raw data accesses will not be
-  ## assumed aligned by default (LASER_MEM_ALIGN is 64 by default).
-  ## Use this when interfacing with external buffers of unknown alignment.
-  ##
-  ## ⚠️ Warning:
-  ##     At the moment Nim's builtin term-rewriting macros are not scoped.
-  ##     All processing within the file this is called will be considered
-  ##     unaligned. https://github.com/nim-lang/Nim/issues/7214#issuecomment-431567894.
-  block:
-    template trmUnsafeRawBuf{unsafe_raw_buf(x, aligned)}(x, aligned): auto =
-      {.noRewrite.}: unsafe_raw_buf(x, false)
-    template trmUnsafeRawOffset{unsafe_raw_offset(x, aligned)}(x, aligned): auto =
-      {.noRewrite.}: unsafe_raw_offset(x, false)
-    body
+# macro raw_data_unaligned*(body: untyped): untyped =
+#   ## Within this code block, all raw data accesses will not be
+#   ## assumed aligned by default (LASER_MEM_ALIGN is 64 by default).
+#   ## Use this when interfacing with external buffers of unknown alignment.
+#   ##
+#   ## ⚠️ Warning:
+#   ##     At the moment Nim's builtin term-rewriting macros are not scoped.
+#   ##     All processing within the file this is called will be considered
+#   ##     unaligned. https://github.com/nim-lang/Nim/issues/7214#issuecomment-431567894.
+#   block:
+#     template trmUnsafeRawBuf{unsafe_raw_buf(x, aligned)}(x, aligned): auto =
+#       {.noRewrite.}: unsafe_raw_buf(x, false)
+#     template trmUnsafeRawOffset{unsafe_raw_offset(x, aligned)}(x, aligned): auto =
+#       {.noRewrite.}: unsafe_raw_offset(x, false)
+#     body
 
 template `[]`*[T](v: RawImmutableView[T], idx: int): T =
   bind distinctBase

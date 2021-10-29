@@ -61,7 +61,7 @@ proc export_tensor*[T](t: Tensor[T]):
   result.strides = contig_t.strides
   result.data = contig_t.toRawSeq
 
-proc toSeq*[T](t: Tensor[T]) : seq[T] =
+proc toFlatSeq*[T](t: Tensor[T]) : seq[T] =
   ## Export the data of the Tensor flattened as a Seq
   result = newSeq[T](t.size)
   for i, e in enumerate(t):

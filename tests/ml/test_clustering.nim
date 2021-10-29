@@ -28,6 +28,14 @@ proc generateRandomClusters(): (Tensor[float], seq[int]) =
   result = (stack([xs.toTensor, ys.toTensor]).transpose,
             labels)
 
+when false:
+  # download broken cluster data from gist.github.com (need to compile with `-d:ssl`)
+  const url = "https://gist.githubusercontent.com/Vindaar/27101232eb033462aabceb8883ad8176/raw/7e214baffbb2ee3b8b89dd16c975bd35ac5f50ca/cluster_breaking_dbscan.csv"
+  import httpclient
+  var client = newHttpClient()
+  const outpath = "./tests/ml/data/input/broken_cluster.csv"
+  writeFile(outpath, client.getContent(url))
+
 proc main() =
   suite "[ML] Clustering":
     # Fishers Iris dataset - sans species column
@@ -106,6 +114,20 @@ proc main() =
           check res[i] == -1
         else:
           check res[i] == randomLabels[i]
+
+    test "DBSCAN - Cluster causing out of bounds access":
+      # prior to #521 this cluster caused out of bounds access during k-d tree construction
+      let path = "./tests/ml/data/input/broken_cluster"
+      when false: # if rerunning the download `when false` block from the top
+        let t = readCsv[int](path & ".csv", skipHeader = true)
+        t.writeNpy(path & ".npy")
+      let expPath = "./tests/ml/data/expected/broken_cluster_expected_clustering.npy"
+      let tExp = readNpy[int](expPath)
+      let tRes = readNpy[int](path & ".npy")
+      when not defined(release):
+        echo "HINT: This test may take a while as we're clustering ~11,000 points"
+      check dbscan(tRes.asType(float), eps = 30.0, minSamples = 3).toTensor == tExp
+
 
 main()
 GC_fullCollect()

@@ -9,6 +9,8 @@ import
   ../dynamic_stack_arrays, ../compiler_optim_hints, ../private/memory,
   typetraits, complex
 
+const MAXRANK = 7
+
 when NimVersion < "1.1.0":
   # For distinctBase
   import sugar
@@ -46,8 +48,8 @@ proc initMetadataArray*(len: int): MetadataArray {.inline.} =
 
 proc toMetadataArray*(s: varargs[int]): MetadataArray {.inline.} =
   # boundsChecks automatically done for array indexing
-  # when compileOption("boundChecks"):
-  #   assert s.len <= MAXRANK
+  when compileOption("boundChecks"):
+    assert s.len <= MAXRANK
   result.len = s.len
   for i in 0..<s.len:
     result.data[i] = s[i]
@@ -59,23 +61,23 @@ func size*[T](t: Tensor[T]): Natural {.inline.} =
   t.shape.product
 
 # note: the finalizer has to be here for ARC to like it
-# when not defined(gcDestructors):
-#   proc finalizer[T](storage: CpuStorage[T]) =
-#     static: assert T is KnownSupportsCopyMem, "Tensors of seq, strings, ref types and types with non-trivial destructors cannot be finalized by this proc"
-#     if storage.isMemOwner and not storage.memalloc.isNil:
-#       storage.memalloc.deallocShared()
-#       storage.memalloc = nil
-# else:
-proc `=destroy`[T](storage: var CpuStorageObj[T]) =
-  when T is KnownSupportsCopyMem:
+when not defined(gcDestructors) and NimVersion < "1.6.0":
+  proc finalizer[T](storage: CpuStorage[T]) =
+    static: assert T is KnownSupportsCopyMem, "Tensors of seq, strings, ref types and types with non-trivial destructors cannot be finalized by this proc"
     if storage.isMemOwner and not storage.memalloc.isNil:
       storage.memalloc.deallocShared()
       storage.memalloc = nil
-  else:
-    `=destroy`(storage.raw_buffer)
+else:
+  proc `=destroy`[T](storage: var CpuStorageObj[T]) =
+    when T is KnownSupportsCopyMem:
+      if storage.isMemOwner and not storage.memalloc.isNil:
+        storage.memalloc.deallocShared()
+        storage.memalloc = nil
+    else:
+      `=destroy`(storage.raw_buffer)
 
-proc `=copy`[T](a: var CpuStorageObj[T]; b: CpuStorageObj[T]) {.error.}
-proc `=sink`[T](a: var CpuStorageObj[T]; b: CpuStorageObj[T]) {.error.}
+  proc `=copy`[T](a: var CpuStorageObj[T]; b: CpuStorageObj[T]) {.error.}
+  proc `=sink`[T](a: var CpuStorageObj[T]; b: CpuStorageObj[T]) {.error.}
 
 
 proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
@@ -84,13 +86,13 @@ proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
   ## I.e. Tensors of seq, strings, ref types or types with non-trivial destructors
   ## are always zero-initialized. This prevents potential GC issues.
   when T is KnownSupportsCopyMem:
-    # when not defined(gcDestructors):
-    #   new(storage, finalizer[T])
-    # else:
-    new(storage)
-    storage.memalloc = allocShared(sizeof(T) * size + LASER_MEM_ALIGN - 1)
-    storage.isMemOwner = true
-    storage.raw_buffer = align_raw_data(T, storage.memalloc)
+    when not defined(gcDestructors) and NimVersion < "1.6.0":
+      new(storage, finalizer[T])
+    else:
+      new(storage)
+      storage.memalloc = allocShared(sizeof(T) * size + LASER_MEM_ALIGN - 1)
+      storage.isMemOwner = true
+      storage.raw_buffer = align_raw_data(T, storage.memalloc)
   else: # Always 0-initialize Tensors of seq, strings, ref types and types with non-trivial destructors
     new(storage)
     storage.raw_buffer.newSeq(size)
@@ -104,13 +106,13 @@ proc cpuStorageFromBuffer*[T: KnownSupportsCopyMem](
   ## marked as not owned by the `CpuStorage`.
   ##
   ## The input buffer must be a raw `pointer`.
-  # when not defined(gcDestructors):
-  #   new(storage, finalizer[T])
-  # else:
-  new(storage)
-  storage.memalloc = rawBuffer
-  storage.isMemOwner = false
-  storage.raw_buffer = cast[ptr UncheckedArray[T]](storage.memalloc)
+  when not defined(gcDestructors) and NimVersion < "1.6.0":
+    new(storage, finalizer[T])
+  else:
+    new(storage)
+    storage.memalloc = rawBuffer
+    storage.isMemOwner = false
+    storage.raw_buffer = cast[ptr UncheckedArray[T]](storage.memalloc)
 
 func is_C_contiguous*(t: Tensor): bool =
   ## Check if the tensor follows C convention / is row major

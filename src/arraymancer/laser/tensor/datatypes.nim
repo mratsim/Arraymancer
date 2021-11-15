@@ -90,9 +90,9 @@ proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
       new(storage, finalizer[T])
     else:
       new(storage)
-      storage.memalloc = allocShared(sizeof(T) * size + LASER_MEM_ALIGN - 1)
-      storage.isMemOwner = true
-      storage.raw_buffer = align_raw_data(T, storage.memalloc)
+    storage.memalloc = allocShared(sizeof(T) * size + LASER_MEM_ALIGN - 1)
+    storage.isMemOwner = true
+    storage.raw_buffer = align_raw_data(T, storage.memalloc)
   else: # Always 0-initialize Tensors of seq, strings, ref types and types with non-trivial destructors
     new(storage)
     storage.raw_buffer.newSeq(size)
@@ -110,9 +110,9 @@ proc cpuStorageFromBuffer*[T: KnownSupportsCopyMem](
     new(storage, finalizer[T])
   else:
     new(storage)
-    storage.memalloc = rawBuffer
-    storage.isMemOwner = false
-    storage.raw_buffer = cast[ptr UncheckedArray[T]](storage.memalloc)
+  storage.memalloc = rawBuffer
+  storage.isMemOwner = false
+  storage.raw_buffer = cast[ptr UncheckedArray[T]](storage.memalloc)
 
 func is_C_contiguous*(t: Tensor): bool =
   ## Check if the tensor follows C convention / is row major

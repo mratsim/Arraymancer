@@ -9,7 +9,7 @@ import
   ../dynamic_stack_arrays, ../compiler_optim_hints, ../private/memory,
   typetraits, complex
 
-const MAXRANK = 7
+# const MAXRANK = 7
 
 when NimVersion < "1.1.0":
   # For distinctBase
@@ -31,7 +31,7 @@ type
     shape*: Metadata                     # 56 bytes
     strides*: Metadata                   # 56 bytes
     offset*: int                         # 8 bytes
-    storage*: CpuStorage[T]              # 8 bytes
+    storage* {.cursor.}: CpuStorage[T]   # 8 bytes
 
   CpuStorage*[T] {.shallow.} = ref CpuStorageObj[T] # Total heap: 25 bytes = 1 cache-line
   CpuStorageObj[T] {.shallow.} = object
@@ -48,8 +48,8 @@ proc initMetadataArray*(len: int): MetadataArray {.inline.} =
 
 proc toMetadataArray*(s: varargs[int]): MetadataArray {.inline.} =
   # boundsChecks automatically done for array indexing
-  when compileOption("boundChecks"):
-    assert s.len <= MAXRANK
+  # when compileOption("boundChecks"):
+  #   assert s.len <= MAXRANK
   result.len = s.len
   for i in 0..<s.len:
     result.data[i] = s[i]
@@ -61,7 +61,7 @@ func size*[T](t: Tensor[T]): Natural {.inline.} =
   t.shape.product
 
 # note: the finalizer has to be here for ARC to like it
-when not defined(gcDestructors) and NimVersion < "1.6.0":
+when not defined(gcDestructors):
   proc finalizer[T](storage: CpuStorage[T]) =
     static: assert T is KnownSupportsCopyMem, "Tensors of seq, strings, ref types and types with non-trivial destructors cannot be finalized by this proc"
     if storage.isMemOwner and not storage.memalloc.isNil:
@@ -86,7 +86,7 @@ proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =
   ## I.e. Tensors of seq, strings, ref types or types with non-trivial destructors
   ## are always zero-initialized. This prevents potential GC issues.
   when T is KnownSupportsCopyMem:
-    when not defined(gcDestructors) and NimVersion < "1.6.0":
+    when not defined(gcDestructors):
       new(storage, finalizer[T])
     else:
       new(storage)
@@ -106,7 +106,7 @@ proc cpuStorageFromBuffer*[T: KnownSupportsCopyMem](
   ## marked as not owned by the `CpuStorage`.
   ##
   ## The input buffer must be a raw `pointer`.
-  when not defined(gcDestructors) and NimVersion < "1.6.0":
+  when not defined(gcDestructors):
     new(storage, finalizer[T])
   else:
     new(storage)

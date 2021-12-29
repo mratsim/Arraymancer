@@ -1,6 +1,23 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.9 Dec. 29 2021
+=====================================================
+
+- fixes `einsum` in generic contexts by allowing `nnkCall` and
+  `nnkOpenSymChoice`, PR #539
+- add test for `einsum` showing cross product, PR #538
+- add test for display of uninitialized tensor, PR #540
+- allow `CustomMetric` as user defined metric in `distances`, PR #541. User
+  must provide their own `distance` procedure for the metric with
+  signature:
+  ```nim
+  proc distance*(metric: typedesc[CustomMetric], v, w: Tensor[float]): float
+  ```
+- disable AVX512 support by default. Add the `-d:avx512` compilation
+  flag to activate it. Note: this activates it for all CPUs as it
+  hands `-mavx512dq` to gcc / clang!
+
 Arraymancer v0.7.8 Oct. 27 2021
 =====================================================
 

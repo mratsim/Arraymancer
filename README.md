@@ -31,6 +31,12 @@ Reminder of supported compilation flags:
   See [nimblas](https://github.com/unicredit/nimblas) for further configuration.
 - `-d:cuda`: Build with Cuda support
 - `-d:cudnn`: Build with CuDNN support, implies `cuda`.
+- `-d:avx512`: Build with AVX512 support by supplying the
+  `-mavx512dq` flag to gcc / clang. Without this flag the
+  resulting binary does not use AVX512 even on CPUs that support
+  it. Handing this flag however, makes the binary incompatible with
+  CPUs that do *not* support it. See the comments in #505 for a
+  discussion (from `v0.7.9`).
 - You might want to tune library paths in [nim.cfg](nim.cfg) after installation for OpenBLAS, MKL and Cuda compilation.
   The current defaults should work on Mac and Linux.
 

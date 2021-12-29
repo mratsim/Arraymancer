@@ -31,7 +31,7 @@ Reminder of supported compilation flags:
   See [nimblas](https://github.com/unicredit/nimblas) for further configuration.
 - `-d:cuda`: Build with Cuda support
 - `-d:cudnn`: Build with CuDNN support, implies `cuda`.
-  - `-d:avx512`: Build with AVX512 support by supplying the
+- `-d:avx512`: Build with AVX512 support by supplying the
   `-mavx512dq` flag to gcc / clang. Without this flag the
   resulting binary does not use AVX512 even on CPUs that support
   it. Handing this flag however, makes the binary incompatible with

@@ -168,6 +168,17 @@ proc main() =
       let res = [0.0, 4.0, 8.0].toTensor
       doAssert res == b
 
+    test "`einsum` in a generic context":
+      proc do_einsum[T](x, y: Tensor[T]): T =
+        let r = einsum(x, y):
+          x[i, k] * y[i, k]
+        result = r
+
+      let a = [[0, 0, 1], [1, 0, 0], [1, 1, 0]].toTensor.astype(float32)
+      let b = [[0, 0, 1], [0, 1, 0], [0, 0, 1]].toTensor.astype(float32)
+
+      let res = do_einsum(a, b)
+      doAssert res == 1.0'f32
 
 main()
 GC_fullCollect()

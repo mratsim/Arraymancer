@@ -192,17 +192,27 @@ proc main() =
       let res = [0.0, 4.0, 8.0].toTensor
       doAssert res == b
 
-    test "`einsum` in a generic context":
-      proc do_einsum[T](x, y: Tensor[T]): T =
-        let r = einsum(x, y):
+    test "`einsum` with scalar output in a generic context":
+      proc einsumWithScalarOutput[T](x, y: Tensor[T]): T =
+        result = einsum(x, y):
           x[i, k] * y[i, k]
-        result = r
 
-      let a = [[0, 0, 1], [1, 0, 0], [1, 1, 0]].toTensor.astype(float32)
-      let b = [[0, 0, 1], [0, 1, 0], [0, 0, 1]].toTensor.astype(float32)
+      let a = [[0, 0, 1], [1, 0, 0], [1, 1, 0]].toTensor.asType(float32)
+      let b = [[0, 0, 1], [0, 1, 0], [0, 0, 1]].toTensor.asType(float32)
 
-      let res = do_einsum(a, b)
+      let res = einsumWithScalarOutput(a, b)
       doAssert res == 1.0'f32
+
+    test "`einsum` with Tensor output in a generic context":
+      proc einsumWithTensorOutput[T](x, y: Tensor[T]): Tensor[T] =
+        result = einsum(x, y):
+          r[i] = x[i, k] * y[i, k]
+
+      let a = [[0, 0, 1], [1, 0, 0], [1, 1, 0]].toTensor.asType(float32)
+      let b = [[0, 0, 1], [0, 1, 0], [0, 0, 1]].toTensor.asType(float32)
+
+      let res = einsumWithTensorOutput(a, b)
+      doAssert res == [1, 0, 0].toTensor.asType(float32)
 
 main()
 GC_fullCollect()

@@ -240,6 +240,8 @@ proc checkStatement(stmts: NimNode): StatementKind =
     result = skAuto
   of nnkAsgn:
     result = skAssign
+  of nnkCall: # for generic `[]=` assignment
+    result = skAssign
   else:
     error("`einsum` statement must not be of kind `" & $stmt.kind & "`!")
 
@@ -257,11 +259,8 @@ proc getTensorIdx(tensors: NimNode, tensorArgument: seq[NimNode]): seq[TensorIdx
     of nnkBracketExpr: # regular `[]`
       tC = n[0]
       tIdx = slice(n, 1 .. ^1)
-    of nnkCall: # for call to `[]` in generic via open sym choice
-      tC = n[1]
-      tIdx = slice(tensors, 2 .. ^1)
     else:
-      doAssert false, "Invalid branch in `einsum`. Kind " & $n.kind & " not allowed!"
+      error("Invalid branch in `einsum`. Kind " & $n.kind & " not allowed!")
     doAssert $tC == $compare, " was " & $tC & " and "  & $compare
     result = TensorIdx(t: tC, idx: tIdx)
 
@@ -279,12 +278,6 @@ proc getTensorIdx(tensors: NimNode, tensorArgument: seq[NimNode]): seq[TensorIdx
     else:
       result.add getTensorIdx(tensors[1], @[tensorArgument[0]])
       result.add getTensorIdx(tensors[2], @[tensorArgument[1]])
-  of nnkCall:
-    doAssert tensors[0].kind == nnkOpenSymChoice # can it be closed sym choice?
-    doAssert tensors[0].toStrLit.strVal == "[]"
-    doAssert tensorArgument.len == 1, "If only a single tensor is used in the " &
-      "statement of `einsum`, only a single argument may be given!"
-    result = @[extractIdentIdx(tensors, tensorArgument[0])]
   else:
     error("Unsupported kind " & $tensors.kind)
 
@@ -296,6 +289,8 @@ proc findIdx(tensorSeq: seq[TensorIdx], idx: string): (NimNode, int) =
     let resIdx = find(idxStr, idx)
     if resIdx >= 0:
       result = (tIdx.t, resIdx)
+  if result[0].kind == nnkNilLit:
+    error("Could not find a tensor corresponding to index: " & idx & " in " & $tensorSeq)
 
 proc toDuplicates[T](s: seq[T]): OrderedSet[T] =
   ## creates a set of elements ``only`` consisting of the duplicate elements
@@ -342,15 +337,73 @@ proc replaceRhsByContig(rhs: NimNode): NimNode =
         result[i] = replaceRhsByContig(result[i])
       of nnkBracketExpr:
         result[i][0] = makeContigIdent(result[i][0])
-      of nnkCall: # for `[]` in generic context
-        doAssert result[i][0].toStrLit.strVal == "[]"
-        result[i][1] = makeContigIdent(result[i][1])
       else:
         error("Unsupported kind for `einsum` RHS statement " & $result[i].kind)
   of nnkBracketExpr:
     result[0] = makeContigIdent(result[0])
   else:
     error("Unsupported kind for `einsum` RHS statement " & $result.kind)
+
+proc callToBracket(n: NimNode): NimNode =
+  ## Turns a (possibly nested, containing infix) set of calls using
+  ## `[]` into bracket expressions
+  # we turn AST like the following:
+  # c[i] = x[i, k] * y[i, k]
+  # Call
+  #   OpenSymChoice 11 "[]="
+  #   Ident "c"
+  #   Ident "i"
+  #   Infix
+  #     OpenSymChoice 21 "*"
+  #     Call
+  #       OpenSymChoice 18 "[]"
+  #       Ident "x"
+  #       Ident "i"
+  #       Ident "k"
+  #     Call
+  #       OpenSymChoice 18 "[]"
+  #       Ident "y"
+  #       Ident "i"
+  #       Ident "k"
+  # back into:
+  # Asgn
+  #   BracketExpr
+  #     Ident "c"
+  #     Ident "i"
+  #   Infix
+  #     Ident "*"
+  #     BracketExpr
+  #       Ident "x"
+  #       Ident "i"
+  #       Ident "k"
+  #     BracketExpr
+  #       Ident "y"
+  #       Ident "i"
+  #       Ident "k"
+  # this way we don't have to change any of the main macro logic to handle generic contexts
+  case n.kind
+  of nnkCall:
+    let str = n[0].toStrLit.strVal
+    if str == "[]":                     # bracket expression
+      result = nnkBracketExpr.newTree()
+      for i in 1 ..< n.len:
+        result.add callToBracket(n[i])
+    elif str == "[]=":                  # assignment
+      result = nnkBracketExpr.newTree()
+      for i in 1 ..< n.len - 1:         # first handle arguments to LHS
+        result.add callToBracket(n[i])
+      result = nnkAsgn.newTree(result)
+      result.add callToBracket(n[^1])   # now handle RHS
+  of nnkOpenSymChoice:
+    let str = n.toStrLit.strVal
+    doAssert str == "*"
+    result = ident"*"
+  of nnkSym, nnkIdent: result = n
+  else:
+    if n.len == 0: return n
+    result = newTree(n.kind)
+    for i in 0 ..< n.len:
+      result.add callToBracket(n[i])
 
 proc splitLhsRhs(stmtKind: StatementKind,
                  stmt: NimNode): (NimNode, OrderedSet[string], NimNode) =
@@ -366,18 +419,29 @@ proc splitLhsRhs(stmtKind: StatementKind,
   var idxLHS: OrderedSet[string]
   if stmtKind == skAssign:
     # in case of assign, slice off the infix part
-    rhsStmt = stmt[0][1]
-    lhsStmt = stmt[0][0]
-    case lhsStmt.kind
-    of nnkIdent:
-      # left is an ident, so result supposed to be a scalar. Indidces empty set
-      idxLHS = initOrderedSet[string]()
-    of nnkBracketExpr:
-      idxLHS = toOrderedSet(slice(lhsStmt, 1 .. ^1).mapIt($it))
+    case stmt.kind
+    of nnkStmtList:
+      doAssert stmt.len == 1, "nnkStmtList may only contain a single child"
+      return splitLhsRhs(stmtKind, stmt[0]) # ``recurse`` on child of stmt list
+    of nnkAsgn:
+      rhsStmt = stmt[1]
+      lhsStmt = stmt[0]
+      case lhsStmt.kind
+      of nnkIdent:
+        # left is an ident, so result supposed to be a scalar. Indidces empty set
+        idxLHS = initOrderedSet[string]()
+      of nnkBracketExpr:
+        idxLHS = toOrderedSet(slice(lhsStmt, 1 .. ^1).mapIt($it))
+      else:
+        error("Unsupported kind for `einsum` LHS statement " & $lhsStmt.kind)
+    of nnkCall: # open sym choice in generic context for `[]=`
+      doAssert stmt[0].toStrLit.strVal == "[]="
+      lhsStmt = callToBracket(stmt)
+      return splitLhsRhs(stmtKind, lhsStmt) # ``recurse`` on rewritten AST
     else:
-      error("Unsupported kind for `einsum` LHS statement " & $lhsStmt.kind)
+      error("Unsupported kind for `einsum` LHS statement " & $stmt.kind)
   else:
-    rhsStmt = stmt[0]
+    rhsStmt = callToBracket(stmt[0]) # potentially convert generics
   # now patch `rhsStmt` to use the local contiguous tensors
   rhsStmt = replaceRhsByContig(rhsStmt)
   result = (lhsStmt, idxLhs, rhsStmt)

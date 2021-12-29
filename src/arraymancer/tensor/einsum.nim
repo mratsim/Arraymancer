@@ -250,10 +250,21 @@ proc getTensorIdx(tensors: NimNode, tensorArgument: seq[NimNode]): seq[TensorIdx
   ## Returns a sequence of TensorIdx objects, i.e. a tensor ident together with the
   ## associated indices.
   proc extractIdentIdx(n: NimNode, compare: NimNode): TensorIdx =
-    let tC = n[0]
+    var
+      tC: NimNode        # the node of the referring tensor
+      tIdx: seq[NimNode] # the accessed indices
+    case n.kind
+    of nnkBracketExpr: # regular `[]`
+      tC = n[0]
+      tIdx = slice(n, 1 .. ^1)
+    of nnkCall: # for call to `[]` in generic via open sym choice
+      tC = n[1]
+      tIdx = slice(tensors, 2 .. ^1)
+    else:
+      doAssert false, "Invalid branch in `einsum`. Kind " & $n.kind & " not allowed!"
     doAssert $tC == $compare, " was " & $tC & " and "  & $compare
-    let tIdx = slice(n, 1 .. ^1)
     result = TensorIdx(t: tC, idx: tIdx)
+
   case tensors.kind
   of nnkBracketExpr:
     # only a single tensor, probably in an `skAssign` statement
@@ -261,13 +272,19 @@ proc getTensorIdx(tensors: NimNode, tensorArgument: seq[NimNode]): seq[TensorIdx
       "statement of `einsum`, only a single argument may be given!"
     result = @[extractIdentIdx(tensors, tensorArgument[0])]
   of nnkInfix:
-    doAssert tensors[0].eqIdent"*"
+    doAssert tensors[0].eqIdent"*", "Only multiplication allowed in `einsum`"
     if tensors[1].kind == nnkInfix:
       result.add getTensorIdx(tensors[1], tensorArgument)
       result.add getTensorIdx(tensors[2], @[tensorArgument[^1]])
     else:
       result.add getTensorIdx(tensors[1], @[tensorArgument[0]])
       result.add getTensorIdx(tensors[2], @[tensorArgument[1]])
+  of nnkCall:
+    doAssert tensors[0].kind == nnkOpenSymChoice # can it be closed sym choice?
+    doAssert tensors[0].toStrLit.strVal == "[]"
+    doAssert tensorArgument.len == 1, "If only a single tensor is used in the " &
+      "statement of `einsum`, only a single argument may be given!"
+    result = @[extractIdentIdx(tensors, tensorArgument[0])]
   else:
     error("Unsupported kind " & $tensors.kind)
 
@@ -320,11 +337,14 @@ proc replaceRhsByContig(rhs: NimNode): NimNode =
   of nnkInfix:
     for i in 0 ..< result.len:
       case result[i].kind
-      of nnkIdent: discard
+      of nnkIdent, nnkOpenSymChoice: discard
       of nnkInfix:
         result[i] = replaceRhsByContig(result[i])
       of nnkBracketExpr:
         result[i][0] = makeContigIdent(result[i][0])
+      of nnkCall: # for `[]` in generic context
+        doAssert result[i][0].toStrLit.strVal == "[]"
+        result[i][1] = makeContigIdent(result[i][1])
       else:
         error("Unsupported kind for `einsum` RHS statement " & $result[i].kind)
   of nnkBracketExpr:
@@ -507,7 +527,6 @@ proc genContiguous(ts: seq[NimNode], subType: NimNode): (seq[NimNode], NimNode) 
       let `tcIdent` = asContiguous[`subType`](`t`, layout = rowMajor, force = true)
     tsCont.add tcIdent
   result = (tsCont, res)
-  # echo res.treeRepr
 
 macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
   ## Performs Einstein summation of the given `tensors` defined by the `stmt`.

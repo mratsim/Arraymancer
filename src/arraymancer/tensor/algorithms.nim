@@ -26,7 +26,7 @@ proc sort*[T](t: var Tensor[T], order = SortOrder.Ascending) =
   ## Sorts the raw underlying data!
   # TODO: if `t` is a view, this will sort everything
   assert t.rank == 1, "Only 1D tensors can be sorted at the moment!"
-  var mt = t.dataArray # without this we get an error that the openArray is immutable?
+  var mt = t.toUnsafeView # without this we get an error that the openArray is immutable?
   sort(toOpenArray(mt, 0, t.size - 1), order = order)
 
 proc sorted*[T](t: Tensor[T], order = SortOrder.Ascending): Tensor[T] =
@@ -47,9 +47,9 @@ proc argsort*[T](t: Tensor[T], order = SortOrder.Ascending, toCopy = false): Ten
   # make a tuple of input & indices
   var mt: ptr UncheckedArray[T]
   if toCopy:
-    mt = t.clone.dataArray # without this we get an error that the openArray is immutable?
+    mt = t.clone.toUnsafeView # without this we get an error that the openArray is immutable?
   else:
-    mt = t.dataArray # without this we get an error that the openArray is immutable?
+    mt = t.toUnsafeView # without this we get an error that the openArray is immutable?
   var tups = zip(toOpenArray(mt, 0, t.size - 1),
                  toSeq(0 ..< t.size))
   # sort by custom sort proc

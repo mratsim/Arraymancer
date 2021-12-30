@@ -1,6 +1,15 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.10 Dec. 30 2021
+=====================================================
+
+- fixes `einsum` in more general generic contexts by replacing the
+  logic introduced in PR #539 by a rewrite from typed AST to
+  `untyped`. This makes it work in (all?) generic contexts, PR #545
+- add element wise exponentiation `^.` for scalar base to all elements
+  of a tensor, i.e. `2^.t` for a tensor `t`, thanks to @asnt PR #546.
+
 Arraymancer v0.7.9 Dec. 29 2021
 =====================================================
 

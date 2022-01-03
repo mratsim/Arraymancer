@@ -35,13 +35,12 @@ let
 # Configuration of the neural network
 network ctx, DemoNet:
   layers:
-    x:          Input([1, 28, 28])
-    cv1:        Conv2D(x.out_shape, 20, 5, 5)
-    mp1:        MaxPool2D(cv1.out_shape, (2,2), (0,0), (2,2))
-    cv2:        Conv2D(mp1.out_shape, 50, 5, 5)
+    cv1:        Conv2D(@[1, 28, 28], 20, (5, 5))
+    mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
+    cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
     mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
     fl:         Flatten(mp2.out_shape)
-    hidden:     Linear(fl.out_shape, 500)
+    hidden:     Linear(fl.out_shape[0], 500)
     classifier: Linear(500, 10)
   forward x:
     x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
@@ -67,7 +66,7 @@ for epoch in 0 ..< 5:
       # Print status every 200 batches
       echo "Epoch is: " & $epoch
       echo "Batch id: " & $batch_id
-      echo "Loss is:  " & $loss.value
+      echo "Loss is:  " & $loss.value[0]
 
     # Compute the gradient (i.e. contribution of each parameter to the loss)
     loss.backprop()

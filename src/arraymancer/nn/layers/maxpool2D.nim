@@ -110,3 +110,54 @@ proc maxpool2d*[TT](input: Variable[TT],
     result.maxpool2D_forward(input, kernel, padding, stride)
   else:
     result.maxpool2D_inference(input, kernel, padding, stride)
+
+type
+  MaxPool2D*[T] = object
+    kernel: Size2D
+    padding: Size2D
+    stride: Size2D
+    in_shape: seq[int]
+
+proc init*[T](
+  ctx: Context[Tensor[T]],
+  layer_type: typedesc[MaxPool2D[T]],
+  in_shape: seq[int],
+  kernel, padding, stride: Size2D
+): MaxPool2D[T] =
+  result = MaxPool2D[T](
+    kernel: kernel,
+    padding: padding,
+    stride: stride
+  )
+  assert in_shape.len == 3
+  result.in_shape = in_shape
+
+
+proc forward*[T](self: MaxPool2D[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
+  input.maxpool2D(
+    kernel = self.kernel,
+    padding = self.padding,
+    stride = self.stride
+  )
+
+proc out_shape*[T](self: MaxPool2D[T]): seq[int] =
+  template C: int = self.in_shape[0]
+  template H: int = self.in_shape[1]
+  template W: int = self.in_shape[2]
+
+  template kH: int = self.kernel.height
+  template kW: int = self.kernel.width
+  template pH: int = self.padding.height
+  template pW: int = self.padding.width
+  template sH: int = self.stride.height
+  template sW: int = self.stride.width
+
+  @[
+    C,
+    (H + (2 * pH) - kH) div sH + 1,
+    (W + (2 * pW) - kW) div sW + 1
+  ]
+
+proc in_shape*[T](self: MaxPool2D[T]): seq[int] =
+  self.in_shape
+

@@ -33,7 +33,7 @@ let
   y_test = mnist.test_labels.astype(int)
 
 # Configuration of the neural network
-network ctx, DemoNet:
+network DemoNet:
   layers:
     cv1:        Conv2D(@[1, 28, 28], 20, (5, 5))
     mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))

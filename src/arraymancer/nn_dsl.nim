@@ -4,12 +4,7 @@
 
 import
   macros, tables,
-  private/ast_utils,
   autograd
-
-macro ctxSubtype*(context: Context): untyped =
-  ## Extract the subtype from a Context
-  result = replaceSymsByIdents(context.getTypeInst[1])
 
 proc splitSections(config: NimNode): tuple[layers, forward: NimNode] =
   template unknown =
@@ -59,7 +54,7 @@ func createLayerInfo(layers: NimNode): seq[LayerInfo] =
     if layer[1][0].len >= 2:
       result[^1].arguments = layer[1][0][1..^1]
 
-func createModelType(layerInfos: seq[LayerInfo], modelName: NimNode, ctxSubtype: NimNode): NimNode =
+func createModelType(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
   var recList = newNimNode(nnkRecList)
   for layerInfo in layerInfos:
     doAssert layerInfo.name.kind == nnkIdent
@@ -68,16 +63,20 @@ func createModelType(layerInfos: seq[LayerInfo], modelName: NimNode, ctxSubtype:
       layerInfo.name,
       newNimNode(nnkBracketExpr).add(
         layerInfo.typeName,
-        ctxSubtype[1]
+        ident"T"
       )
     )
   
   doAssert modelName.kind == nnkIdent
-  doAssert ctxSubtype.kind == nnkBracketExpr
   result = newNimNode(nnkTypeSection).add(
     newNimNode(nnkTypeDef).add(
       modelName,
-      newEmptyNode(),
+      newNimNode(nnkGenericParams).add(
+        newIdentDefs(
+          ident"T",
+          newEmptyNode()
+        )
+      ),
       newNimNode(nnkObjectTy).add(
         newEmptyNode(),
         newEmptyNode(),
@@ -86,9 +85,8 @@ func createModelType(layerInfos: seq[LayerInfo], modelName: NimNode, ctxSubtype:
     )
   )
   
-func createInitProc(layerInfos: seq[LayerInfo], modelName, ctxSubtype: NimNode): NimNode =
+func createInitProc(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
   doAssert modelName.kind == nnkIdent
-  doAssert ctxSubtype.kind == nnkBracketExpr
 
   var body = newNimNode(nnkStmtList)
   for layerInfo in layerInfos:
@@ -117,7 +115,7 @@ func createInitProc(layerInfos: seq[LayerInfo], modelName, ctxSubtype: NimNode):
           ident"ctx",
           newNimNode(nnkBracketExpr).add(
             layerInfo.typeName,
-            ctxSubtype[1]
+            ident"T"
           )
         ).add(layerInfo.arguments)
       )
@@ -126,26 +124,42 @@ func createInitProc(layerInfos: seq[LayerInfo], modelName, ctxSubtype: NimNode):
   result = newProc(
     name = ident"init",
     params = @[
-      modelName,
+      newNimNode(nnkBracketExpr).add(
+        modelName,
+        ident"T"
+      ),
       newIdentDefs(
         ident"ctx",
         newNimNode(nnkBracketExpr).add(
           ident"Context",
-          ctxSubtype
+          newNimNode(nnkBracketExpr).add(
+            ident"AnyTensor",
+            ident"T"
+          )
         )
       ),
       newIdentDefs(
         ident"model_type",
         newNimNode(nnkBracketExpr).add(
           ident"typedesc",
-          modelName
+          newNimNode(nnkBracketExpr).add(
+            modelName,
+            ident"T"
+          )
         )
       )
     ],
     body = body
   )
+  # GenericParams
+  result[2] = newNimNode(nnkGenericParams).add(
+    newIdentDefs(
+      ident"T",
+      newEmptyNode()
+    )
+  )
 
-func createForwardProc(layerInfos: seq[LayerInfo], forward, modelName, ctxSubtype: NimNode): NimNode =
+func createForwardProc(layerInfos: seq[LayerInfo], forward, modelName: NimNode): NimNode =
 
   doAssert forward.kind == nnkCommand
   doAssert forward.len == 3
@@ -189,7 +203,10 @@ func createForwardProc(layerInfos: seq[LayerInfo], forward, modelName, ctxSubtyp
 
   let inOutType = newNimNode(nnkBracketExpr).add(
     ident"Variable",
-    ctxSubtype
+    newNimNode(nnkBracketExpr).add(
+      ident"AnyTensor",
+      ident"T"
+    )
   )
 
   result = newProc(
@@ -198,7 +215,10 @@ func createForwardProc(layerInfos: seq[LayerInfo], forward, modelName, ctxSubtyp
       inOutType,
       newIdentDefs(
         ident"self",
-        modelName
+        newNimNode(nnkBracketExpr).add(
+          modelName,
+          ident"T"
+        )
       ),
       newIdentDefs(
         inputIdent,
@@ -207,24 +227,31 @@ func createForwardProc(layerInfos: seq[LayerInfo], forward, modelName, ctxSubtyp
     ],
     body = body
   )
+  # GenericParams
+  result[2] = newNimNode(nnkGenericParams).add(
+    newIdentDefs(
+      ident"T",
+      newEmptyNode()
+    )
+  )
 
 
-macro network*(ctx: Context, model_name: untyped, config: untyped): untyped =
+macro network*(model_name: untyped, config: untyped): untyped =
   ## Declare a neural network.
   ##
   ## Example usage:
   ##    .. code:: nim
-  ##         network ctx, DemoNet:
-  ##           layers:
-  ##             cv1:        Conv2D(@[1, 28, 28], 20, (5, 5))
-  ##             mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
-  ##             cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
-  ##             mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
-  ##             fl:         Flatten(mp2.out_shape)
-  ##             hidden:     Linear(fl.out_shape[0], 500)
-  ##             classifier: Linear(500, 10)
-  ##           forward x:
-  ##             x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
+  ##          network DemoNet:
+  ##            layers:
+  ##              cv1:        Conv2D(@[1, 28, 28], 20, (5, 5))
+  ##              mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
+  ##              cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
+  ##              mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
+  ##              fl:         Flatten(mp2.out_shape)
+  ##              hidden:     Linear(fl.out_shape[0], 500)
+  ##              classifier: Linear(500, 10)
+  ##            forward x:
+  ##              x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
 
   # TODO fix doc
   # TODO better doc
@@ -236,15 +263,14 @@ macro network*(ctx: Context, model_name: untyped, config: untyped): untyped =
   let layerInfos = sections.layers.createLayerInfo()
 
   # 2. create model type
-  let ctxSubtype = getAST(ctxSubtype(ctx))
-  let modelType = createModelType(layerInfos, model_name, ctxSubtype)
+  let modelType = createModelType(layerInfos, model_name)
 
   # 3. create init proc
-  let initProc = createInitProc(layerInfos, model_name, ctxSubtype)
+  let initProc = createInitProc(layerInfos, model_name)
 
   # 4. create forward proc
 
-  let forwardProc = createForwardProc(layerInfos, sections.forward, model_name, ctxSubtype)
+  let forwardProc = createForwardProc(layerInfos, sections.forward, model_name)
 
   # 5. combine everything into a statement
 

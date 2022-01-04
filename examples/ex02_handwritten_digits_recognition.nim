@@ -34,8 +34,8 @@ let
 
 # Configuration of the neural network
 network DemoNet:
-  layers d, g:
-    cv1:        Conv2D(@[1, 28, 28], 20, (5, 5))
+  layers h, w:
+    cv1:        Conv2D(@[1, h, w], 20, (5, 5))
     mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
     cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
     mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
@@ -45,13 +45,13 @@ network DemoNet:
   forward x:
     x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
 
-let model = ctx.init(DemoNet, "hi", 4)
+let model = ctx.init(DemoNet, 28, 28)
 
 # Stochastic Gradient Descent (API will change)
 let optim = model.optimizerSGD(learning_rate = 0.01'f32)
 
 # Learning loop
-for epoch in 0 ..< 5:
+for epoch in 0 ..< 2:
   for batch_id in 0 ..< X_train.value.shape[0] div n: # some at the end may be missing, oh well ...
     # minibatch offset in the Tensor
     let offset = batch_id * n
@@ -126,12 +126,12 @@ for epoch in 0 ..< 5:
 # Epoch is: 0
 # Batch id: 1800
 # Loss is:  0.2068064212799072
-# 
+
 # Epoch #0 done. Testing accuracy
 # Accuracy: 96.82000000000001%
 # Loss:     0.09608472418040037
-# 
-# 
+
+
 # Epoch is: 1
 # Batch id: 0
 # Loss is:  0.03820636868476868
@@ -162,122 +162,14 @@ for epoch in 0 ..< 5:
 # Epoch is: 1
 # Batch id: 1800
 # Loss is:  0.1373588591814041
-# 
+
 # Epoch #1 done. Testing accuracy
 # Accuracy: 97.74000000000001%
 # Loss:     0.06817570002749562
-# 
-# 
-# Epoch is: 2
-# Batch id: 0
-# Loss is:  0.01814174652099609
-# Epoch is: 2
-# Batch id: 200
-# Loss is:  0.03460906445980072
-# Epoch is: 2
-# Batch id: 400
-# Loss is:  0.05443669855594635
-# Epoch is: 2
-# Batch id: 600
-# Loss is:  0.04482628405094147
-# Epoch is: 2
-# Batch id: 800
-# Loss is:  0.02421820163726807
-# Epoch is: 2
-# Batch id: 1000
-# Loss is:  0.1148378998041153
-# Epoch is: 2
-# Batch id: 1200
-# Loss is:  0.2140489369630814
-# Epoch is: 2
-# Batch id: 1400
-# Loss is:  0.02446934580802917
-# Epoch is: 2
-# Batch id: 1600
-# Loss is:  0.05318602919578552
-# Epoch is: 2
-# Batch id: 1800
-# Loss is:  0.1024059653282166
-# 
-# Epoch #2 done. Testing accuracy
-# Accuracy: 98.10000000000001%
-# Loss:     0.05548303546383977
-# 
-# 
-# Epoch is: 3
-# Batch id: 0
-# Loss is:  0.01244649291038513
-# Epoch is: 3
-# Batch id: 200
-# Loss is:  0.02020946145057678
-# Epoch is: 3
-# Batch id: 400
-# Loss is:  0.04690191149711609
-# Epoch is: 3
-# Batch id: 600
-# Loss is:  0.03282114863395691
-# Epoch is: 3
-# Batch id: 800
-# Loss is:  0.01641204953193665
-# Epoch is: 3
-# Batch id: 1000
-# Loss is:  0.09525816142559052
-# Epoch is: 3
-# Batch id: 1200
-# Loss is:  0.2170524597167969
-# Epoch is: 3
-# Batch id: 1400
-# Loss is:  0.0137055516242981
-# Epoch is: 3
-# Batch id: 1600
-# Loss is:  0.04224002361297607
-# Epoch is: 3
-# Batch id: 1800
-# Loss is:  0.07904504239559174
-# 
-# Epoch #3 done. Testing accuracy
-# Accuracy: 98.38%
-# Loss:     0.04833780862390995
-# 
-# 
-# Epoch is: 4
-# Batch id: 0
-# Loss is:  0.009280085563659668
-# Epoch is: 4
-# Batch id: 200
-# Loss is:  0.01469701528549194
-# Epoch is: 4
-# Batch id: 400
-# Loss is:  0.04068432748317719
-# Epoch is: 4
-# Batch id: 600
-# Loss is:  0.02430866658687592
-# Epoch is: 4
-# Batch id: 800
-# Loss is:  0.01234877109527588
-# Epoch is: 4
-# Batch id: 1000
-# Loss is:  0.07774896919727325
-# Epoch is: 4
-# Batch id: 1200
-# Loss is:  0.2160461992025375
-# Epoch is: 4
-# Batch id: 1400
-# Loss is:  0.008712261915206909
-# Epoch is: 4
-# Batch id: 1600
-# Loss is:  0.03578883409500122
-# Epoch is: 4
-# Batch id: 1800
-# Loss is:  0.06306551396846771
-# 
-# Epoch #4 done. Testing accuracy
-# Accuracy: 98.48999999999999%
-# Loss:     0.04407740226015448
-# 
-# 
-# 
+
+
+
 # ________________________________________________________
-# Executed in   36.46 mins    fish           external
-#    usr time   36.40 mins  344.00 micros   36.40 mins
-#    sys time    0.01 mins  192.00 micros    0.01 mins
+# Executed in  881.00 secs    fish           external
+#    usr time  879.44 secs    1.06 millis  879.44 secs
+#    sys time    0.49 secs    2.00 millis    0.49 secs

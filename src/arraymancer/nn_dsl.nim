@@ -250,14 +250,15 @@ func createForwardProc(layerInfos: seq[LayerInfo], forward: SectionInfo, modelNa
   )
 
 
+
 macro network*(model_name: untyped, config: untyped): untyped =
   ## Declare a neural network.
   ##
   ## Example usage:
   ##    .. code:: nim
   ##          network DemoNet:
-  ##            layers:
-  ##              cv1:        Conv2D(@[1, 28, 28], 20, (5, 5))
+  ##            layers h, w:
+  ##              cv1:        Conv2D(@[1, h, w], 20, (5, 5))
   ##              mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
   ##              cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
   ##              mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
@@ -267,7 +268,6 @@ macro network*(model_name: untyped, config: untyped): untyped =
   ##            forward x:
   ##              x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
 
-  # TODO fix doc
   # TODO better doc
 
   # 0. separate the configuration into layers and forward part
@@ -295,26 +295,3 @@ macro network*(model_name: untyped, config: untyped): untyped =
   )
 
   echo toStrLit(result)
-
-# TODO document layers
-# TODO write layer types for embedding, gcn, gru
-# TODO try to fix identifier ambiguities inside init and forward function of neural model
-# TODO maybe add error handling to this macro
-# TODO make sure no performance regressions
-# TODO what about layers based on other tensor types?
-
-dumptree:
-  network DemoNet:
-    layers h, j ,k:
-      cv1:        Conv2D(@[1, 28, 28], 20, (5, 5))
-      mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
-      cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
-      mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
-      fl:         Flatten(mp2.out_shape)
-      hidden:     Linear(fl.out_shape[0], 500)
-      classifier: Linear(500, 10)
-    forward x:
-      x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
-
-  proc init[T](ctx: Context[AnyTensor[T]]; model_type: typedesc[DemoNet[T]], d: auto): DemoNet[T] =
-    discard

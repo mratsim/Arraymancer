@@ -6,7 +6,13 @@ import
   macros, tables,
   autograd
 
-proc splitSections(config: NimNode): tuple[layers, forward: NimNode] =
+
+type
+  SectionInfo = object
+    idents: seq[NimNode]
+    body: NimNode
+
+proc splitSections(config: NimNode): tuple[layers, forward: SectionInfo] =
   template unknown =
     error:
       lineInfo(section) &
@@ -14,17 +20,24 @@ proc splitSections(config: NimNode): tuple[layers, forward: NimNode] =
         $section[0] & "\""
 
   for section in config:
-    if section.kind == nnkCall:
+    if section.kind == nnkCall or section.kind == nnkCommand:
+      # We have to deal with layer with multiple inputs like "layer x, y, z:"
+      # so we will sort the different parts of each section beforehand.
+      proc getSectionInfo(nodes: seq[NimNode]): SectionInfo =
+        for i, node in nodes.pairs:
+          if node.kind == nnkIdent:
+            result.idents.add node
+          else:
+            doAssert node.kind == nnkStmtList
+            #if i != nodes.len - 2:
+            #  #echo treeRep nodes
+            doAssert i == nodes.len - 1
+            result.body = node 
+
       if eqIdent(section[0], "layers"):
-        result.layers = section[1]
-      else:
-        unknown()
-    elif section.kind == nnkCommand:
-      if eqIdent(section[0], "forward"):
-        # For forward we copy everything.
-        # We have to deal with forward with multiple inputs like "forward x, y, z:"
-        # and we will do that later.
-        result.forward = section
+        result.layers = section[1..^1].getSectionInfo()
+      elif eqIdent(section[0], "forward"):
+        result.forward = section[1..^1].getSectionInfo()
       else:
         unknown()
     else:
@@ -36,8 +49,10 @@ type
     typeName: NimNode
     arguments: seq[NimNode]
 
-func createLayerInfo(layers: NimNode): seq[LayerInfo] =
-  for layer in layers:
+func createLayerInfo(layers: SectionInfo): seq[LayerInfo] =
+  doAssert layers.body.kind == nnkStmtList
+
+  for layer in layers.body:
 
     doAssert layer.kind == nnkCall
     doAssert layer.len == 2
@@ -85,7 +100,7 @@ func createModelType(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
     )
   )
   
-func createInitProc(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
+func createInitProc(layerInfos: seq[LayerInfo], layers: SectionInfo, modelName: NimNode): NimNode =
   doAssert modelName.kind == nnkIdent
 
   var body = newNimNode(nnkStmtList)
@@ -120,35 +135,45 @@ func createInitProc(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
         ).add(layerInfo.arguments)
       )
     )
+
+  var params = @[
+    newNimNode(nnkBracketExpr).add(
+      modelName,
+      ident"T"
+    ),
+    newIdentDefs(
+      ident"ctx",
+      newNimNode(nnkBracketExpr).add(
+        ident"Context",
+        newNimNode(nnkBracketExpr).add(
+          ident"AnyTensor",
+          ident"T"
+        )
+      )
+    ),
+    newIdentDefs(
+      ident"model_type",
+      newNimNode(nnkBracketExpr).add(
+        ident"typedesc",
+        newNimNode(nnkBracketExpr).add(
+          modelName,
+          ident"T"
+        )
+      )
+    )
+  ]
+
+  for inputIdent in layers.idents:
+    params.add(
+      newIdentDefs(
+        inputIdent,
+        ident"auto"
+      )
+    )
     
   result = newProc(
     name = ident"init",
-    params = @[
-      newNimNode(nnkBracketExpr).add(
-        modelName,
-        ident"T"
-      ),
-      newIdentDefs(
-        ident"ctx",
-        newNimNode(nnkBracketExpr).add(
-          ident"Context",
-          newNimNode(nnkBracketExpr).add(
-            ident"AnyTensor",
-            ident"T"
-          )
-        )
-      ),
-      newIdentDefs(
-        ident"model_type",
-        newNimNode(nnkBracketExpr).add(
-          ident"typedesc",
-          newNimNode(nnkBracketExpr).add(
-            modelName,
-            ident"T"
-          )
-        )
-      )
-    ],
+    params = params,
     body = body
   )
   # GenericParams
@@ -159,16 +184,7 @@ func createInitProc(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
     )
   )
 
-func createForwardProc(layerInfos: seq[LayerInfo], forward, modelName: NimNode): NimNode =
-
-  doAssert forward.kind == nnkCommand
-  doAssert forward.len == 3
-  doAssert forward[0].strVal == "forward"
-  
-  let
-    inputIdent = forward[1]
-    forwardCall = forward[2]
-  
+func createForwardProc(layerInfos: seq[LayerInfo], forward: SectionInfo, modelName: NimNode): NimNode =
 
   var body = newNimNode(nnkStmtList)
 
@@ -199,32 +215,30 @@ func createForwardProc(layerInfos: seq[LayerInfo], forward, modelName: NimNode):
         )
       )
     )
-  body.add forwardCall
+  body.add forward.body
 
-  let inOutType = newNimNode(nnkBracketExpr).add(
-    ident"Variable",
-    newNimNode(nnkBracketExpr).add(
-      ident"AnyTensor",
-      ident"T"
+  var params = @[
+    ident"auto",
+    newIdentDefs(
+      ident"self",
+      newNimNode(nnkBracketExpr).add(
+        modelName,
+        ident"T"
+      )
     )
-  )
+  ]
+
+  for inputIdent in forward.idents:
+    params.add(
+      newIdentDefs(
+        inputIdent,
+        ident"auto"
+      )
+    )
 
   result = newProc(
     name = ident"forward",
-    params = @[
-      inOutType,
-      newIdentDefs(
-        ident"self",
-        newNimNode(nnkBracketExpr).add(
-          modelName,
-          ident"T"
-        )
-      ),
-      newIdentDefs(
-        inputIdent,
-        inOutType
-      )
-    ],
+    params = params,
     body = body
   )
   # GenericParams
@@ -266,7 +280,7 @@ macro network*(model_name: untyped, config: untyped): untyped =
   let modelType = createModelType(layerInfos, model_name)
 
   # 3. create init proc
-  let initProc = createInitProc(layerInfos, model_name)
+  let initProc = createInitProc(layerInfos, sections.layers, model_name)
 
   # 4. create forward proc
 
@@ -288,3 +302,19 @@ macro network*(model_name: untyped, config: untyped): untyped =
 # TODO maybe add error handling to this macro
 # TODO make sure no performance regressions
 # TODO what about layers based on other tensor types?
+
+dumptree:
+  network DemoNet:
+    layers h, j ,k:
+      cv1:        Conv2D(@[1, 28, 28], 20, (5, 5))
+      mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
+      cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
+      mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
+      fl:         Flatten(mp2.out_shape)
+      hidden:     Linear(fl.out_shape[0], 500)
+      classifier: Linear(500, 10)
+    forward x:
+      x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
+
+  proc init[T](ctx: Context[AnyTensor[T]]; model_type: typedesc[DemoNet[T]], d: auto): DemoNet[T] =
+    discard

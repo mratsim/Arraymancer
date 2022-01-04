@@ -34,7 +34,7 @@ let
 
 # Configuration of the neural network
 network DemoNet:
-  layers:
+  layers d, g:
     cv1:        Conv2D(@[1, 28, 28], 20, (5, 5))
     mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
     cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
@@ -45,7 +45,7 @@ network DemoNet:
   forward x:
     x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
 
-let model = ctx.init(DemoNet)
+let model = ctx.init(DemoNet, "hi", 4)
 
 # Stochastic Gradient Descent (API will change)
 let optim = model.optimizerSGD(learning_rate = 0.01'f32)

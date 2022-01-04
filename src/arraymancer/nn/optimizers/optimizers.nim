@@ -71,13 +71,14 @@ func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
   result.params = @[]
   result.lr = learning_rate
 
-  for layer in fields(model):
+  func addLayer(result: var Sgd[Tensor[T]], layer: auto) =
     when layer is Variable:
       result.params.add layer
-    else:
-      for field in fields(layer): # TODO recursive for any nesting depth of Model
-        when field is Variable:
-          result.params.add field
+    elif layer is object: # TODO are there other kinds of variable with fields?
+      for field in fields(layer):
+        result.addLayer(field)
+
+  result.addLayer(model)
 
 # ############################################################
 #

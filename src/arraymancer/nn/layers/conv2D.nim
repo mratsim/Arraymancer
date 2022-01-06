@@ -154,12 +154,12 @@ proc init*[T](
   result.weight = ctx.variable(
     kaiming_normal([out_channels, in_channels, kernel_size.height, kernel_size.width], T),
     requires_grad = true
-  )
+  ) # TODO allow freezing
 
   result.bias = ctx.variable(
     zeros[T]([out_channels, 1, 1]),
     requires_grad = true
-  )
+  ) # TODO allow freezing
 
 proc forward*[T](self: Conv2D[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
   assert input.value.shape[1..3] == self.in_shape

@@ -45,6 +45,29 @@ network DemoNet:
   forward x:
     x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
 
+# network SomeConvNet:
+#   layers h, w:
+#     cv1:        Conv2D(@[1, h, w], 20, (5, 5))
+#     mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
+#     cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
+#     mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
+#     fl:         Flatten(mp2.out_shape)
+#   forward x:
+#     x.cv1.relu.mp1.cv2.relu.mp2.fl
+
+# proc out_shape*[T](self: SomeConvNet[T]): seq[int] =
+#   self.fl.out_shape
+# proc in_shape*[T](self: SomeConvNet[T]): seq[int] =
+#   self.cv1.in_shape
+
+# network DemoNet:
+#   layers:
+#     cv:         SomeConvNet(28, 28)
+#     hidden:     Linear(cv.out_shape[0], 500)
+#     classifier: Linear(500, 10)
+#   forward x:
+#     x.cv.hidden.relu.classifier
+
 let model = ctx.init(DemoNet, 28, 28)
 
 # Stochastic Gradient Descent (API will change)

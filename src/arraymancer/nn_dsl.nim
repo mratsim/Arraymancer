@@ -198,7 +198,10 @@ func createForwardProc(layerInfos: seq[LayerInfo], forward: SectionInfo, modelNa
           ident"auto",
           newIdentDefs(
             ident"x",
-            ident"auto"
+            newNimNode(nnkBracketExpr).add(
+              ident"varargs",
+              ident"untyped"
+            )
           )
         ),
         newEmptyNode(),

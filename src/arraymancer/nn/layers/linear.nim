@@ -127,8 +127,8 @@ proc init*[T](
   ## Using Kaiming He initialisation for weights to provide decent performance in most cases.
   ## Biases are usually set to zero.
 
-  result.weight = ctx.variable(kaiming_normal([num_output, num_input], T), requires_grad = true)
-  result.bias = ctx.variable(zeros[T]([1, num_output]), requires_grad = true)
+  result.weight = ctx.variable(kaiming_normal([num_output, num_input], T), requires_grad = true) # TODO allow freezing
+  result.bias = ctx.variable(zeros[T]([1, num_output]), requires_grad = true) # TODO allow freezing
 
 proc forward*[T](self: Linear[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
   input.linear(weight = self.weight, bias = self.bias)

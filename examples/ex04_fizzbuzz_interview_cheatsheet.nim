@@ -45,7 +45,7 @@ let
   ctx = newContext Tensor[float32]
   X   = ctx.variable x_train
 
-network ctx, FizzBuzzNet:
+network FizzBuzzNet:
   layers:
     hidden: Linear(NumDigits, NumHidden)
     output: Linear(NumHidden, 4)

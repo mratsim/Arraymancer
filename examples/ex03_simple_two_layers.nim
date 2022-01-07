@@ -25,7 +25,7 @@ let
 # ##################################################################
 # Define the model.
 
-network ctx, TwoLayersNet:
+network TwoLayersNet:
   layers:
     fc1: Linear(D_in, H)
     fc2: Linear(H, D_out)

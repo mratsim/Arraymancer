@@ -114,7 +114,7 @@ proc init*[T](
   layer_type: typedesc[GCNLayer[T]],
   num_input, num_output: int
 ): GCNLayer[T] =
-  ## Initializes a linear layer with `num_input` input features and `num_output` output features.
+  ## Initializes a graph convolutional layer with `num_input` input features and `num_output` output features.
   ## Using Kaiming He initialisation for weights to provide decent performance in most cases.
   ## Biases are usually set to zero.
 

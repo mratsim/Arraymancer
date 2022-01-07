@@ -21,9 +21,8 @@ let y = y_bool.astype(float32)
 # We will build the following network:
 # Input --> Linear(out_features = 3) --> relu --> Linear(out_features = 1)
 
-network ctx, XorNet:
+network XorNet:
   layers:
-    x:          Input([2])
     hidden:     Linear(2, 3)
     classifier: Linear(3, 1)
   forward x:

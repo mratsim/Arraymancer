@@ -19,7 +19,7 @@
 # TODO: save/reload trained weights
 
 import
-  streams, os, random, times, strformat, algorithm, sequtils, tables,
+  os, random, times, strformat, algorithm, sequtils, tables,
   ../src/arraymancer
 
 # ################################################################
@@ -224,7 +224,8 @@ proc gen_text[T](
 
     # Create a consistent hidden state
     for char_pos in 0 ..< primer.shape[0] - 1:
-      var (_, hidden) = model.forward(primer[char_pos, _], hidden)
+      var (_, hiddenX) = model.forward(primer[char_pos, _], hidden)
+      hidden = hiddenX
 
 
     result = seed_chars

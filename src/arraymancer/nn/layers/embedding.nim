@@ -99,3 +99,42 @@ proc embedding*[TT; Idx: byte or char or SomeInteger](
       input_vocab_id, weight,
       padding_idx, scale_grad_by_freq
     )
+
+type
+  Embedding*[T] = object
+    weight*: Variable[AnyTensor[T]]
+
+proc init*[T](
+  ctx: Context[Tensor[T]],
+  layer_type: typedesc[Embedding[T]],
+  vocab_size, embed_size: int
+): Embedding[T] =
+  result.weight = ctx.variable(
+
+    # TODO: Embedding layer initialisation
+    # - A bag of Useful Tricks for Practical Neural Machine Translation
+    #   Embedding Layer Initialization and Large batch Size
+    #   Heishi et al, http://www.aclweb.org/anthology/W17-5708
+    # - An Exploration of Word Embedding Initialization in deep learning tasks
+    #   Kocmi et al, https://arxiv.org/pdf/1711.09160.pdf
+
+    # initialisation bench https://arxiv.org/pdf/1711.09160.pdf
+    # Convergence is **VERY** sensitive, I can't reproduce the paper.
+    # Best in our case is mean = 0, std = 1.
+
+    # TODO: fix, because it must depend on T
+    randomNormalTensor(vocab_size, embed_size, 0'f32, 1'f32),
+    requires_grad = true
+  )
+
+proc forward*[T; Idx: byte or char or SomeInteger](
+  self: Embedding[T],
+  input: Tensor[Idx],
+  padding_idx: Idx = -1
+): Variable[AnyTensor[T]] =
+  embedding(input, self.weight, padding_idx)
+
+proc out_shape*[T](self: Embedding[T]): seq[int] =
+  @(self.weight.value.shape)
+proc in_shape*[T](self: Embedding[T]): seq[int] =
+  @(self.weight.value.shape)

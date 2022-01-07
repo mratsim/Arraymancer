@@ -16,6 +16,7 @@ import  ../../private/sequninit,
         ../../tensor,
         ../../autograd,
         ../../nn_primitives,
+        ../init,
         sequtils
 
 type GRUGate*[TT]{.final.}= ref object of Gate[TT]
@@ -154,3 +155,40 @@ proc gru*[TT](
     result.gru_forward(input, hidden0, W3s0, W3sN, U3s, bW3s, bU3s)
   else:
     result.gru_inference(input, hidden0, W3s0, W3sN, U3s, bW3s, bU3s)
+
+type
+  GRULayer*[T] = object
+    w3s0*, w3sN*: Variable[AnyTensor[T]]
+    u3s*: Variable[AnyTensor[T]]
+    bW3s*, bU3s*: Variable[AnyTensor[T]]
+
+proc init*[T](
+  ctx: Context[AnyTensor[T]],
+  layer_type: typedesc[GRULayer[T]],
+  num_input_features, hiddenSize, layers: int
+): GRULayer[T] =
+  template weightInit(shape: varargs[int], init_kind: untyped): Variable =
+    # let's not repeat ourself too much.
+    ctx.variable(
+      init_kind(shape, T),
+      requires_grad = true
+    )
+
+  # TODO this is probably all wrong, i need to understand this stuff
+  result.w3s0 = weightInit(            3 * hiddenSize,     num_input_features,  xavier_uniform)
+  result.w3sN = weightInit(layers - 1, 3 * hiddenSize,     hiddenSize,          xavier_uniform)
+  result.u3s  = weightInit(    layers, 3 * hiddenSize,     hiddenSize,          yann_normal)
+
+  result.bW3s = ctx.variable(zeros[T](layers, 1, 3 * hiddenSize), requires_grad = true)
+  result.bU3s = ctx.variable(zeros[T](layers, 1, 3 * hiddenSize), requires_grad = true)
+  # TODO allow freezing
+
+proc forward*[T](self: GRULayer[T], input, hidden0: Variable): tuple[output, hiddenN: Variable] =
+  gru(
+    input, hidden0,
+    self.w3s0, self.w3sN,
+    self.u3s,
+    self.bW3s, self.bU3s
+  )
+
+# TODO maybe some helper functions to easily determine output, input and hidden shape

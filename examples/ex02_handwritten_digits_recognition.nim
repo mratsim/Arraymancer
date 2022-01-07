@@ -64,7 +64,7 @@ network DemoNet:
   layers h, w:
     cv:         SomeConvNet(h, w)
     hidden:     Linear(cv.out_shape[0], 500)
-    classifier: Linear(500, 10)
+    classifier: Linear(hidden.out_shape[0], 10)
   forward x:
     x.cv.hidden.relu.classifier
 

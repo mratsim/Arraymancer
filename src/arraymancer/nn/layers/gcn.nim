@@ -14,7 +14,8 @@
 
 import  ../../tensor,
         ../../nn_primitives,
-        ../../autograd
+        ../../autograd,
+        ../init
 
 type GCNGate*[TT] {.final.} = ref object of Gate[TT]
   adjacency, input, weight, bias: Variable[TT]
@@ -102,3 +103,28 @@ proc gcn*[TT](input, adjacency, weight: Variable[TT], bias: Variable[TT] = nil):
   # Caching for backprop
   if input.is_grad_needed or weight.is_grad_needed or (not bias.isNil and bias.is_grad_needed):
     result.gcn_cache(adjacency, input, weight, bias)
+
+type
+  GCNLayer*[T] = object
+    weight*: Variable[Tensor[T]]
+    bias*: Variable[Tensor[T]]
+
+proc init*[T](
+  ctx: Context[Tensor[T]],
+  layer_type: typedesc[GCNLayer[T]],
+  num_input, num_output: int
+): GCNLayer[T] =
+  ## Initializes a linear layer with `num_input` input features and `num_output` output features.
+  ## Using Kaiming He initialisation for weights to provide decent performance in most cases.
+  ## Biases are usually set to zero.
+
+  result.weight = ctx.variable(kaiming_normal([num_output, num_input], T), requires_grad = true) # TODO allow freezing
+  result.bias = ctx.variable(zeros[T]([1, num_output]), requires_grad = true) # TODO allow freezing
+
+proc forward*[T](self: GCNLayer[T], input, adjacency: Variable[Tensor[T]]): Variable[Tensor[T]] =
+  input.gcn(adjacency = adjacency, weight = self.weight, bias = self.bias)
+
+proc out_shape*[T](self: GCNLayer[T]): seq[int] =
+  @[self.weight.value.shape[0]]
+proc in_shape*[T](self: GCNLayer[T]): seq[int] =
+  @[self.weight.value.shape[1]]

@@ -135,6 +135,6 @@ proc forward*[T; Idx: byte or char or SomeInteger](
   embedding(input, self.weight, padding_idx)
 
 proc out_shape*[T](self: Embedding[T]): seq[int] =
-  @(self.weight.value.shape)
+  @[self.weight.value.shape[1]]
 proc in_shape*[T](self: Embedding[T]): seq[int] =
-  @(self.weight.value.shape)
+  @[self.weight.value.shape[0]]

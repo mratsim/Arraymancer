@@ -131,7 +131,7 @@ proc sample[T](probs: Tensor[T]): int =
 network ShakespeareModel:
   layers:
     encoder:  Embedding(VocabSize, EmbedSize)
-    gru:      GRULayer(EmbedSize, HiddenSize, Layers)
+    gru:      GRULayer(encoder.out_shape[0], HiddenSize, Layers)
     decoder:  Linear(HiddenSize, VocabSize)
   forward input, hidden0:
     let encoded = encoder(input, padding_idx = UnkCharIx)# TODO fix

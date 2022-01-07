@@ -134,6 +134,6 @@ proc forward*[T](self: Linear[T], input: Variable[Tensor[T]]): Variable[Tensor[T
   input.linear(weight = self.weight, bias = self.bias)
 
 proc out_shape*[T](self: Linear[T]): seq[int] =
-  @(self.weight.value.shape)
+  @[self.weight.value.shape[0]]
 proc in_shape*[T](self: Linear[T]): seq[int] =
-  @(self.weight.value.shape)
+  @[self.weight.value.shape[1]]

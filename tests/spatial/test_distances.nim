@@ -104,3 +104,17 @@ suite "Distances: Jaccard distance":
     let t = [[3.0, 4.0], [3.0, 5.0]].toTensor
     let u = [[3.0, 4.0], [3.0, 4.0]].toTensor
     Jaccard.pairwiseDistances(t, u) =~= [0.0, 2.0 / 3.0].toTensor
+
+suite "Distances: `CustomMetric`":
+  let a = [1,2,3].toTensor
+  let b = [4,5,6].toTensor
+  test "CustomMetric of a constant value":
+    proc distance(_: typedesc[CustomMetric], v, w: Tensor[int]): int =
+      result = 100
+    check CustomMetric.distance(a, b) == 100
+
+  test "CustomMetric that is euclidean":
+    proc distance(_: typedesc[CustomMetric], v, w: Tensor[int]): float =
+      result = Euclidean.distance(v.asType(float), w.asType(float))
+
+    check CustomMetric.distance(a, b) == Euclidean.distance(a.asType(float), b.asType(float))

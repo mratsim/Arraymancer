@@ -9,8 +9,9 @@ type
   Manhattan* = object
   Minkowski* = object
   Jaccard* = object
+  CustomMetric* = object
 
-  AnyMetric* = Euclidean | Manhattan | Minkowski | Jaccard
+  AnyMetric* = Euclidean | Manhattan | Minkowski | Jaccard | CustomMetric
 
 when (NimMajor, NimMinor, NimPatch) < (1, 4, 0):
   # have to export sets for 1.0, because `bind` didn't exist apparently

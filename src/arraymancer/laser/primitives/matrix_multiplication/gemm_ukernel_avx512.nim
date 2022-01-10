@@ -9,6 +9,12 @@ import
 
 x86only()
 
+## For the C codegen of AVX512 instructions to be valid, we need the following flag:
+when defined(avx512) and (defined(gcc) or defined(clang)):
+  {.passC: "-mavx512dq".}
+## See: https://stackoverflow.com/a/63711952
+## for a script to find the required compilation flags for specific SIMD functions.
+
 ukernel_generator(
     x86_AVX512,
     typ = float32,

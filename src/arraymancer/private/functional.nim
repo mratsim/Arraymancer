@@ -15,6 +15,9 @@
 # Functional programming and iterator tooling
 import sequtils
 
-proc concatMap*[T](s: seq[T], f: proc(ss: T):string): string  {.noSideEffect.}=
+when not defined(nimHasEffectsOf):
+  {.pragma: effectsOf.}
+
+proc concatMap*[T](s: seq[T], f: proc(ss: T):string): string  {.noSideEffect, effectsOf: f.}=
   ## Map a function to a sequence of T and concatenate the result as string
   return s.foldl(a & f(b), "")

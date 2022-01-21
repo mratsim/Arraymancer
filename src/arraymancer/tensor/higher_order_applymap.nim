@@ -16,7 +16,7 @@ import  ./backend/openmp,
         ./private/p_checks,
         ./data_structure, ./init_cpu, ./accessors
 
-import sugar except enumerate
+import sugar
 
 # ####################################################################
 # Mapping over tensors

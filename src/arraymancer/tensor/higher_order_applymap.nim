@@ -16,10 +16,13 @@ import  ./backend/openmp,
         ./private/p_checks,
         ./data_structure, ./init_cpu, ./accessors
 
-import sugar except enumerate
+import sugar
 
 # ####################################################################
 # Mapping over tensors
+
+when not defined(nimHasEffectsOf):
+  {.pragma: effectsOf.}
 
 template apply_inline*[T: KnownSupportsCopyMem](t: var Tensor[T], op: untyped): untyped =
   # TODO, if t is a result of a function
@@ -146,7 +149,7 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
       dest.storage.raw_buffer[i] = op
   dest
 
-proc map*[T; U](t: Tensor[T], f: T -> U): Tensor[U] {.noInit.} =
+proc map*[T; U](t: Tensor[T], f: T -> U): Tensor[U] {.noInit, effectsOf: f.} =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
   ## Usage with Nim's ``future`` module:
   ##  .. code:: nim
@@ -168,7 +171,7 @@ proc map*[T; U](t: Tensor[T], f: T -> U): Tensor[U] {.noInit.} =
   result = newTensorUninit[U](t.shape)
   result.apply2_inline(t, f(y))
 
-proc apply*[T](t: var Tensor[T], f: T -> T) =
+proc apply*[T](t: var Tensor[T], f: T -> T) {.effectsOf: f.} =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
   ##
   ## Input:
@@ -188,7 +191,7 @@ proc apply*[T](t: var Tensor[T], f: T -> T) =
   ##     a.apply(plusone) # Apply the function plusone in-place
   t.apply_inline(f(x))
 
-proc apply*[T: KnownSupportsCopyMem](t: var Tensor[T], f: proc(x:var T)) =
+proc apply*[T: KnownSupportsCopyMem](t: var Tensor[T], f: proc(x:var T)) {.effectsOf: f.} =
   ## Apply a unary function in an element-wise manner on Tensor[T], in-place.
   ##
   ## Input:
@@ -213,7 +216,7 @@ proc apply*[T: KnownSupportsCopyMem](t: var Tensor[T], f: proc(x:var T)) =
 
 proc map2*[T, U; V: KnownSupportsCopyMem](t1: Tensor[T],
                                           f: (T,U) -> V,
-                                          t2: Tensor[U]): Tensor[V] {.noInit.} =
+                                          t2: Tensor[U]): Tensor[V] {.noInit, effectsOf: f.} =
   ## Apply a binary function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ##
   ## The function is applied on the elements with the same coordinates.
@@ -243,7 +246,7 @@ proc map2*[T, U; V: KnownSupportsCopyMem](t1: Tensor[T],
 
 proc map2*[T, U; V: not KnownSupportsCopyMem](t1: Tensor[T],
                                               f: (T,U) -> V,
-                                              t2: Tensor[U]): Tensor[V] {.noInit,noSideEffect.}=
+                                              t2: Tensor[U]): Tensor[V] {.noInit,noSideEffect, effectsOf: f.}=
   ## Apply a binary function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ##
   ##
@@ -258,7 +261,7 @@ proc map2*[T, U; V: not KnownSupportsCopyMem](t1: Tensor[T],
 
 proc apply2*[T: KnownSupportsCopyMem, U](a: var Tensor[T],
                                          f: proc(x:var T, y:T), # We can't use the nice future syntax here
-                                                b: Tensor[U]) =
+                                                b: Tensor[U]) {.effectsOf: f.} =
   ## Apply a binary in-place function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ## Overload for types that are not mem-copyable.
   ##
@@ -288,7 +291,7 @@ proc apply2*[T: KnownSupportsCopyMem, U](a: var Tensor[T],
 
 proc apply2*[T: not KnownSupportsCopyMem; U](a: var Tensor[T],
                                              f: proc(x:var T, y: T), # We can't use the nice future syntax here
-                                                    b: Tensor[U]) =
+                                                    b: Tensor[U]) {.effectsOf: f.} =
   ## Apply a binary in-place function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ## Overload for types that are not mem-copyable.
   ##

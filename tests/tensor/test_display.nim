@@ -24,6 +24,12 @@ template compareStrings(t1, t2: string) =
 
 proc main() =
   suite "Displaying tensors":
+    test "Display invalid tensor":
+      var t: Tensor[int]
+      let exp = """
+Uninitialized Tensor[system.int] of shape "[]" on backend "Cpu""""
+      check $t == exp
+
     test "Display 1D tensor":
       block:
         let t = [0.9532932, 0.12945823].toTensor

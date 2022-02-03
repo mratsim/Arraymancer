@@ -125,6 +125,30 @@ proc main() =
                 [  6.0,   8.0,  10.0,  12.0]].toTensor
       doAssert res == b
 
+    # Levi-Civita symbol for cross products.
+    # https://en.wikipedia.org/wiki/Levi-Civita_symbol#Three_dimensions
+    let epsilon = [
+      [[0, 0, 0], [0, 0, 1], [0, -1, 0]],
+      [[0, 0, -1], [0, 0, 0], [1, 0, 0]],
+      [[0, 1, 0], [-1, 0, 0], [0, 0, 0]],
+    ].toTensor.asType(float)
+
+    test "Cross product":
+      let v = [1, 0, 0].toTensor.asType(float)
+      let w = [0, 1, 0].toTensor.asType(float)
+      let b = einsum(epsilon, v, w):
+        b[i] = epsilon[i, j, k] * v[j] * w[k]
+      let res = [0.0, 0.0, 1.0].toTensor
+      doAssert res == b
+
+    test "Batch cross product":
+      let v = [[1, 0, 0], [1, 0, 0]].toTensor.asType(float)
+      let w = [[1, 0, 0], [0, 1, 0]].toTensor.asType(float)
+      let b = einsum(epsilon, v, w):
+        b[i, j] = epsilon[j, k, l] * v[i, k] * w[i, l]
+      let res = [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]].toTensor
+      doAssert res == b
+
     test "'Batch' Matrix multiplication (tensor contraction)":
       let m = toSeq(0 .. 29).toTensor.reshape([3, 2, 5]).asType(float)
       let n = toSeq(30 .. 74).toTensor.reshape([3, 5, 3]).asType(float)
@@ -168,6 +192,27 @@ proc main() =
       let res = [0.0, 4.0, 8.0].toTensor
       doAssert res == b
 
+    test "`einsum` with scalar output in a generic context":
+      proc einsumWithScalarOutput[T](x, y: Tensor[T]): T =
+        result = einsum(x, y):
+          x[i, k] * y[i, k]
+
+      let a = [[0, 0, 1], [1, 0, 0], [1, 1, 0]].toTensor.asType(float32)
+      let b = [[0, 0, 1], [0, 1, 0], [0, 0, 1]].toTensor.asType(float32)
+
+      let res = einsumWithScalarOutput(a, b)
+      doAssert res == 1.0'f32
+
+    test "`einsum` with Tensor output in a generic context":
+      proc einsumWithTensorOutput[T](x, y: Tensor[T]): Tensor[T] =
+        result = einsum(x, y):
+          r[i] = x[i, k] * y[i, k]
+
+      let a = [[0, 0, 1], [1, 0, 0], [1, 1, 0]].toTensor.asType(float32)
+      let b = [[0, 0, 1], [0, 1, 0], [0, 0, 1]].toTensor.asType(float32)
+
+      let res = einsumWithTensorOutput(a, b)
+      doAssert res == [1, 0, 0].toTensor.asType(float32)
 
 main()
 GC_fullCollect()

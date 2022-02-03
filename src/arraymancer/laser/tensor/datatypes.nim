@@ -9,8 +9,6 @@ import
   ../dynamic_stack_arrays, ../compiler_optim_hints, ../private/memory,
   typetraits, complex
 
-# const MAXRANK = 7
-
 when NimVersion < "1.1.0":
   # For distinctBase
   import sugar

@@ -15,6 +15,9 @@ when NimVersion < "1.1.0":
   # For distinctBase
   import sugar
 
+when not defined(nimHasCursor):
+  {.pragma: cursor.}
+
 type
   KnownSupportsCopyMem* = SomeNumber | char | Complex[float64] | Complex[float32] | bool
 

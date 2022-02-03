@@ -248,7 +248,7 @@ proc fromBuffer*[T](rawBuffer: ptr UncheckedArray[T], shape: varargs[int], layou
 
 proc fromBuffer*[T](rawBuffer: ptr UncheckedArray[T], shape: varargs[int]): Tensor[T] =
   ## Call `fromBuffer` with layout = rowMajor
-  fromBuffer(rawBuffer, shape, rowMajor)
+  fromBuffer[T](rawBuffer, shape, rowMajor)
 
 proc fromBuffer*[T](rawBuffer: pointer, shape: varargs[int], layout: static OrderType ): Tensor[T] =
   ## Creates a `Tensor[T]` from a raw `pointer`. Make sure that the explicit type
@@ -262,7 +262,7 @@ proc fromBuffer*[T](rawBuffer: pointer, shape: varargs[int], layout: static Orde
 
 proc fromBuffer*[T](rawBuffer: pointer, shape: varargs[int]): Tensor[T] =
   ## Call `fromBuffer` with layout = rowMajor
-  fromBuffer(rawBuffer, shape, rowMajor)
+  fromBuffer[T](rawBuffer, shape, rowMajor)
 
 func toUnsafeView*[T: KnownSupportsCopyMem](t: Tensor[T], offset: int = 0, aligned: static bool = true): ptr UncheckedArray[T] {.inline.} =
   ## Returns an unsafe view of the valid data as a ``ptr UncheckedArray``.

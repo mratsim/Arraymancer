@@ -1,6 +1,9 @@
 Arraymancer v0.7.x
 =====================================================
 
+- Add cursor annotation for CPU Tensor fixing #535
+- Add toFlatSeq (flatten data and export it as a seq) and toSeq1D which export a rank-1 Tensor into a seq
+
 Arraymancer v0.7.10 Dec. 30 2021
 =====================================================
 

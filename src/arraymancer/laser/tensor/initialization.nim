@@ -264,10 +264,10 @@ proc fromBuffer*[T](rawBuffer: pointer, shape: varargs[int]): Tensor[T] =
   ## Call `fromBuffer` with layout = rowMajor
   fromBuffer[T](rawBuffer, shape, rowMajor)
 
-func toUnsafeView*[T: KnownSupportsCopyMem](t: Tensor[T], offset: int = 0, aligned: static bool = true): ptr UncheckedArray[T] {.inline.} =
+func toUnsafeView*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): ptr UncheckedArray[T] {.inline.} =
   ## Returns an unsafe view of the valid data as a ``ptr UncheckedArray``.
   ## Its counterpart ``fromBuffer`` can be used to create a Tensor from``ptr UncheckedArray``.
   ##
   ## Unsafe: the pointer can outlive the input tensor.
-  unsafe_raw_offset(t, offset, aligned).distinctBase()
+  unsafe_raw_offset(t, aligned).distinctBase()
 

@@ -52,7 +52,6 @@ proc forEachContiguousImpl(
                   replacements = elems_contiguous,
                   to_replace = values
                   )
-
   if use_openmp:
     result = quote do:
       omp_parallel_for_default(`index`, `size`):
@@ -188,7 +187,6 @@ template forEachTemplate(use_openmp: static bool) {.dirty.} =
         `contiguous_body`
       else:
         `strided_body`
-
 
 macro forEachContiguous*(args: varargs[untyped]): untyped =
   ## Parallel iteration over one or more **contiguous** tensors.

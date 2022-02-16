@@ -117,6 +117,7 @@ proc pairwiseDistances*(metric: typedesc[AnyMetric],
   ## Result is a tensor of rank 1, with one element for each distance.
   let n_obs = max(x.shape[0], y.shape[0])
   result = newTensorUninit[float](n_obs)
+
   if x.rank == y.rank and x.shape[0] == y.shape[0]:
     for idx in 0 ..< n_obs:
       when metric is Minkowski:
@@ -132,15 +133,18 @@ proc pairwiseDistances*(metric: typedesc[AnyMetric],
     let nx = if x.rank == 2 and x.shape[0] == n_obs: x else: y
     let ny = if x.rank == 2 and x.shape[0] == n_obs: y else: x
     # in this case compute distance between all `nx` and single `ny`
-    for idx in 0 ..< n_obs:
+
+    var idx = 0
+    for ax in axis(nx, 0):
       when metric is Minkowski:
-        result[idx] = Minkowski.distance(nx[idx, _].squeeze, ny.squeeze,
+        result[idx] = Minkowski.distance(ax.squeeze, ny.squeeze,
                                          p = p, squared = squared)
       elif metric is Euclidean:
-        result[idx] = Euclidean.distance(nx[idx, _].squeeze, ny.squeeze,
+        result[idx] = Euclidean.distance(ax.squeeze, ny.squeeze,
                                          squared = squared)
       else:
-        result[idx] = metric.distance(nx[idx, _].squeeze, ny.squeeze)
+        result[idx] = metric.distance(ax.squeeze, ny.squeeze)
+      inc idx
 
 proc distanceMatrix*(metric: typedesc[AnyMetric],
                      x, y: Tensor[float],

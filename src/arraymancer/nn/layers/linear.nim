@@ -133,7 +133,7 @@ proc init*[T](
 proc forward*[T](self: Linear[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
   input.linear(weight = self.weight, bias = self.bias)
 
-proc outShape*[T](self: Linear[T]): seq[int] =
+func outShape*[T](self: Linear[T]): seq[int] =
   @[self.weight.value.shape[0]]
-proc inShape*[T](self: Linear[T]): seq[int] =
+func inShape*[T](self: Linear[T]): seq[int] =
   @[self.weight.value.shape[1]]

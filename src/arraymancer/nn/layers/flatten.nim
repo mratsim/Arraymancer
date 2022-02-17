@@ -16,10 +16,10 @@ proc init*[T](
 proc forward*[T](self: Flatten[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
   input.flatten()
 
-proc outShape*[T](self: Flatten[T]): seq[int] =
+func outShape*[T](self: Flatten[T]): seq[int] =
   result = @[1]
   for i in self.inShape:
       result[0] *= i
 
-proc inShape*[T](self: Flatten[T]): seq[int] =
+func inShape*[T](self: Flatten[T]): seq[int] =
   self.inShape

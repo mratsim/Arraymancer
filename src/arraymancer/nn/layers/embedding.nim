@@ -137,7 +137,7 @@ proc forward*[T; Idx: VocabIdx](
 ): Variable[AnyTensor[T]] =
   embedding(input, self.weight, cast[Idx](self.paddingIdx))
 
-proc outShape*[T](self: Embedding[T]): seq[int] =
+func outShape*[T](self: Embedding[T]): seq[int] =
   @[self.weight.value.shape[1]]
-proc inShape*[T](self: Embedding[T]): seq[int] =
+func inShape*[T](self: Embedding[T]): seq[int] =
   @[self.weight.value.shape[0]]

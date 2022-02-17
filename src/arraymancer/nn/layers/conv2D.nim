@@ -170,7 +170,7 @@ proc forward*[T](self: Conv2D[T], input: Variable[Tensor[T]]): Variable[Tensor[T
     stride = self.stride
   )
 
-proc outShape*[T](self: Conv2D[T]): seq[int] =
+func outShape*[T](self: Conv2D[T]): seq[int] =
   assert self.weight.value.shape.len == 4
   template kH(): int = self.weight.value.shape[2]
   template kW(): int = self.weight.value.shape[3]
@@ -190,5 +190,5 @@ proc outShape*[T](self: Conv2D[T]): seq[int] =
     1 + (iW + 2*pW - (((kW-1) * dW) + 1)) div sW,  # W
   ]
 
-proc inShape*[T](self: Conv2D[T]): seq[int] =
+func inShape*[T](self: Conv2D[T]): seq[int] =
   self.inShape

@@ -140,7 +140,7 @@ proc forward*[T](self: MaxPool2D[T], input: Variable[Tensor[T]]): Variable[Tenso
     stride = self.stride
   )
 
-proc outShape*[T](self: MaxPool2D[T]): seq[int] =
+func outShape*[T](self: MaxPool2D[T]): seq[int] =
   template C: int = self.inShape[0]
   template H: int = self.inShape[1]
   template W: int = self.inShape[2]
@@ -158,6 +158,6 @@ proc outShape*[T](self: MaxPool2D[T]): seq[int] =
     (W + (2 * pW) - kW) div sW + 1
   ]
 
-proc inShape*[T](self: MaxPool2D[T]): seq[int] =
+func inShape*[T](self: MaxPool2D[T]): seq[int] =
   self.inShape
 

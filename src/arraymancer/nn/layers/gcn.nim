@@ -124,7 +124,7 @@ proc init*[T](
 proc forward*[T](self: GCNLayer[T], input, adjacency: Variable[Tensor[T]]): Variable[Tensor[T]] =
   input.gcn(adjacency = adjacency, weight = self.weight, bias = self.bias)
 
-proc outShape*[T](self: GCNLayer[T]): seq[int] =
+func outShape*[T](self: GCNLayer[T]): seq[int] =
   @[self.weight.value.shape[0]]
-proc inShape*[T](self: GCNLayer[T]): seq[int] =
+func inShape*[T](self: GCNLayer[T]): seq[int] =
   @[self.weight.value.shape[1]]

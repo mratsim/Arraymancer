@@ -158,12 +158,12 @@ proc gru*[TT](
 
 type
   GRULayer*[T] = object
-    w3s0*, w3sN*: Variable[AnyTensor[T]]
-    u3s*: Variable[AnyTensor[T]]
-    bW3s*, bU3s*: Variable[AnyTensor[T]]
+    w3s0*, w3sN*: Variable[Tensor[T]]
+    u3s*: Variable[Tensor[T]]
+    bW3s*, bU3s*: Variable[Tensor[T]]
 
 proc init*[T](
-  ctx: Context[AnyTensor[T]],
+  ctx: Context[Tensor[T]],
   layer_type: typedesc[GRULayer[T]],
   num_input_features, hiddenSize, layers: int
 ): GRULayer[T] =

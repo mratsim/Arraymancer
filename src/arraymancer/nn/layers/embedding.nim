@@ -16,12 +16,14 @@ import  ../../tensor,
         ../../autograd,
         ../../nn_primitives
 
-type EmbeddingGate*[TT; scaled: static bool; Idx: SomeNumber or byte or char or enum] {.final.} = ref object of Gate[TT]
-  cached_input_vocab_id: Tensor[Idx]
-  weight: Variable[TT]
-  padding_idx: Idx
-    # We special-case -1 to mean no padding. Ideally we should use an option,
-    # and have a separate proc for padding and no padding (to avoid costly checks within a tight loop)
+type
+  VocabIdx = SomeInteger or byte or char or enum
+  EmbeddingGate*[TT; scaled: static bool; Idx: VocabIdx] {.final.} = ref object of Gate[TT]
+    cached_input_vocab_id: Tensor[Idx]
+    weight: Variable[TT]
+    padding_idx: Idx
+      # We special-case -1 to mean no padding. Ideally we should use an option,
+      # and have a separate proc for padding and no padding (to avoid costly checks within a tight loop)
 
 proc embedding_backward_ag[TT; scaled: static bool, Idx](
         self: Gate[TT],
@@ -64,7 +66,7 @@ proc embedding_cache[TT, Idx](
   )
 
 
-proc embedding*[TT; Idx: byte or char or SomeInteger](
+proc embedding*[TT; Idx: VocabIdx](
         input_vocab_id: Tensor[Idx],
         weight: Variable[TT],
         padding_idx: Idx = -1,
@@ -123,11 +125,11 @@ proc init*[T](
     # Best in our case is mean = 0, std = 1.
 
     # TODO: fix, because it must depend on T
-    randomNormalTensor(vocab_size, embed_size, 0'f32, 1'f32),
+    randomNormalTensor(vocab_size, embed_size, 0.T, 1.T),
     requires_grad = true
   )
 
-proc forward*[T; Idx: byte or char or SomeInteger](
+proc forward*[T; Idx: VocabIdx](
   self: Embedding[T],
   input: Tensor[Idx],
   padding_idx: Idx = -1

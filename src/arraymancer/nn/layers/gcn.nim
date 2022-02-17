@@ -116,7 +116,7 @@ proc init*[T](
 ): GCNLayer[T] =
   ## Initializes a graph convolutional layer with `num_input` input features and `num_output` output features.
   ## Using Kaiming He initialisation for weights to provide decent performance in most cases.
-  ## Biases are usually set to zero.
+  ## Biases are set to zero.
 
   result.weight = ctx.variable(kaiming_normal([num_output, num_input], T), requires_grad = true) # TODO allow freezing
   result.bias = ctx.variable(zeros[T]([1, num_output]), requires_grad = true) # TODO allow freezing

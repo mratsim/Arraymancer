@@ -3,8 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  macros, tables,
-  autograd
+  macros
 
 
 type
@@ -12,7 +11,7 @@ type
     idents: seq[NimNode]
     body: NimNode
 
-proc splitSections(config: NimNode): tuple[layers, forward: SectionInfo] =
+func splitSections(config: NimNode): tuple[layers, forward: SectionInfo] =
   template unknown =
     error:
       lineInfo(section) &
@@ -21,18 +20,16 @@ proc splitSections(config: NimNode): tuple[layers, forward: SectionInfo] =
 
   for section in config:
     if section.kind == nnkCall or section.kind == nnkCommand:
-      # We have to deal with layer with multiple inputs like "layer x, y, z:"
-      # so we will sort the different parts of each section beforehand.
+      # We have to deal with forward/init with multiple inputs like "forward x, y, z:"
+      # so we will handle these now.
       proc getSectionInfo(nodes: seq[NimNode]): SectionInfo =
         for i, node in nodes.pairs:
           if node.kind == nnkIdent:
             result.idents.add node
+          elif node.kind == nnkStmtList and i == nodes.len - 1:
+            result.body = node
           else:
-            doAssert node.kind == nnkStmtList
-            #if i != nodes.len - 2:
-            #  #echo treeRep nodes
-            doAssert i == nodes.len - 1
-            result.body = node 
+            unknown()
 
       if eqIdent(section[0], "layers"):
         result.layers = section[1..^1].getSectionInfo()
@@ -49,19 +46,30 @@ type
     typeName: NimNode
     arguments: seq[NimNode]
 
-func createLayerInfo(layers: SectionInfo): seq[LayerInfo] =
-  doAssert layers.body.kind == nnkStmtList
+func createLayerInfo(sectionInfo: SectionInfo): seq[LayerInfo] =
+  
+  # sectionInfo.idents contains constains a list of identifiers that will be used
+  # as function parameters for the init funxtion
+  # sectionInfo.body contains the description of layers, e.g.:
+  #    cv:        Conv2D(mp1.out_shape, 50, (5, 5))
+  #    mp:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
+  #    fl:         Flatten(mp2.out_shape)
+  #    hidden:     Linear(fl.out_shape[0], 500)´
 
-  for layer in layers.body:
+  doAssert sectionInfo.body.kind == nnkStmtList
 
-    doAssert layer.kind == nnkCall
-    doAssert layer.len == 2
-    doAssert layer[0].kind == nnkIdent
-    doAssert layer[1].kind == nnkStmtList
-    doAssert layer[1].len == 1
-    doAssert layer[1][0].kind == nnkCall
-    doAssert layer[1][0].len >= 1
-    doAssert layer[1][0][0].kind == nnkIdent
+  for layer in sectionInfo.body:
+
+    if layer.kind != nnkCall or
+    layer.len != 2 or
+    layer[0].kind != nnkIdent or
+    layer[1].kind != nnkStmtList or
+    layer[1].len != 1 or
+    layer[1][0].kind != nnkCall or
+    layer[1][0].len < 1 or
+    layer[1][0][0].kind != nnkIdent:
+      error("Unknown configuration of layer section: \"" & $toStrLit(layer) & "\"", layer)
+
     result.add LayerInfo(
       name: layer[0],
       typeName: layer[1][0][0]
@@ -70,6 +78,15 @@ func createLayerInfo(layers: SectionInfo): seq[LayerInfo] =
       result[^1].arguments = layer[1][0][1..^1]
 
 func createModelType(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
+
+  # creates the type defintion of the model, e.g.:
+  #  type
+  #    SomeConvNet[T] = object
+  #      cv: Conv2D[T]
+  #      mp: Maxpool2D[T]
+  #      fl: Flatten[T]
+
+  let underlyingTypeSymbol = genSym(nskType, "T")
   var recList = newNimNode(nnkRecList)
   for layerInfo in layerInfos:
     doAssert layerInfo.name.kind == nnkIdent
@@ -78,17 +95,18 @@ func createModelType(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
       layerInfo.name,
       newNimNode(nnkBracketExpr).add(
         layerInfo.typeName,
-        ident"T"
+        underlyingTypeSymbol
       )
     )
   
   doAssert modelName.kind == nnkIdent
+
   result = newNimNode(nnkTypeSection).add(
     newNimNode(nnkTypeDef).add(
       modelName,
       newNimNode(nnkGenericParams).add(
         newIdentDefs(
-          ident"T",
+          underlyingTypeSymbol,
           newEmptyNode()
         )
       ),
@@ -100,7 +118,20 @@ func createModelType(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
     )
   )
   
-func createInitProc(layerInfos: seq[LayerInfo], layers: SectionInfo, modelName: NimNode): NimNode =
+func createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelName: NimNode): NimNode =
+
+  # creates init function of the model, e.g.:
+  #   proc init[T](ctx: Context[AnyTensor[T]], model_type: typedesc[SomeConvNet[T]], h: auto; w: auto): SomeConvNet[T] =
+  #     template cv(): auto =
+  #       result.cv
+  #     template mp(): auto =
+  #       result.mp
+  #     template fl(): auto =
+  #       result.fl
+  #     cv = init(ctx, Conv2D[T], @[1, h, w], 20, (5, 5))
+  #     mp = init(ctx, Maxpool2D[T], cv1.out_shape, (2, 2), (0, 0), (2, 2))
+  #     fl = init(ctx, Flatten[T], mp.out_shape)
+
   doAssert modelName.kind == nnkIdent
 
   var body = newNimNode(nnkStmtList)
@@ -121,16 +152,20 @@ func createInitProc(layerInfos: seq[LayerInfo], layers: SectionInfo, modelName: 
         )
       )
     )
+
+  let
+    ctxSymbol = genSym(nskParam, "ctx")
+    underlyingTypeSymbol = ident($toStrLit(genSym(nskGenericParam, "T")))# TODO bad issue fix it
   for layerInfo in layerInfos:
     body.add(
       newAssignment(
         layerInfo.name,
         newCall(
           ident"init",
-          ident"ctx",
+          ctxSymbol,
           newNimNode(nnkBracketExpr).add(
             layerInfo.typeName,
-            ident"T"
+            underlyingTypeSymbol
           )
         ).add(layerInfo.arguments)
       )
@@ -139,31 +174,31 @@ func createInitProc(layerInfos: seq[LayerInfo], layers: SectionInfo, modelName: 
   var params = @[
     newNimNode(nnkBracketExpr).add(
       modelName,
-      ident"T"
+      underlyingTypeSymbol
     ),
     newIdentDefs(
-      ident"ctx",
+      ctxSymbol,
       newNimNode(nnkBracketExpr).add(
         ident"Context",
         newNimNode(nnkBracketExpr).add(
           ident"AnyTensor",
-          ident"T"
+          ident($toStrLit(underlyingTypeSymbol))# TODO bad issue fix it
         )
       )
     ),
     newIdentDefs(
-      ident"model_type",
+      genSym(nskParam, "model_type"),
       newNimNode(nnkBracketExpr).add(
         ident"typedesc",
         newNimNode(nnkBracketExpr).add(
           modelName,
-          ident"T"
+          underlyingTypeSymbol
         )
       )
     )
   ]
 
-  for inputIdent in layers.idents:
+  for inputIdent in sectionInfo.idents:
     params.add(
       newIdentDefs(
         inputIdent,
@@ -179,16 +214,34 @@ func createInitProc(layerInfos: seq[LayerInfo], layers: SectionInfo, modelName: 
   # GenericParams
   result[2] = newNimNode(nnkGenericParams).add(
     newIdentDefs(
-      ident"T",
+      underlyingTypeSymbol,
       newEmptyNode()
     )
   )
 
 func createForwardProc(layerInfos: seq[LayerInfo], forward: SectionInfo, modelName: NimNode): NimNode =
 
+  # create the forward function, e.g.:
+  # proc forward[T](self: SomeConvNet[T]; x: auto): auto =
+  #   template cv1(x: varargs[untyped]): auto =
+  #     forward(self.cv1, x)
+  # 
+  #   template mp1(x: varargs[untyped]): auto =
+  #     forward(self.mp1, x)
+  # 
+  #   template fl(x: varargs[untyped]): auto =
+  #     forward(self.fl, x)
+  # 
+  #   x.cv1.relu.mp1.cv2.relu.mp2.fl
+
+  let
+    selfSymbol = genSym(nskParam, "self")
+    underlyingTypeSymbol = genSym(nskGenericParam, "T")
+
   var body = newNimNode(nnkStmtList)
 
   for layerInfo in layerInfos:
+    let xSymbol = genSym(nskParam, "input")
     body.add(
       newNimNode(nnkTemplateDef).add(
         layerInfo.name,
@@ -197,7 +250,7 @@ func createForwardProc(layerInfos: seq[LayerInfo], forward: SectionInfo, modelNa
         newNimNode(nnkFormalParams).add(
           ident"auto",
           newIdentDefs(
-            ident"x",
+            xSymbol,
             newNimNode(nnkBracketExpr).add(
               ident"varargs",
               ident"untyped"
@@ -210,10 +263,10 @@ func createForwardProc(layerInfos: seq[LayerInfo], forward: SectionInfo, modelNa
           newCall(
             ident"forward",
             newDotExpr(
-              ident"self",
+              selfSymbol,
               layerInfo.name,
             ),
-            ident"x"
+            xSymbol
           )
         )
       )
@@ -223,10 +276,10 @@ func createForwardProc(layerInfos: seq[LayerInfo], forward: SectionInfo, modelNa
   var params = @[
     ident"auto",
     newIdentDefs(
-      ident"self",
+      selfSymbol,
       newNimNode(nnkBracketExpr).add(
         modelName,
-        ident"T"
+        underlyingTypeSymbol
       )
     )
   ]
@@ -247,7 +300,7 @@ func createForwardProc(layerInfos: seq[LayerInfo], forward: SectionInfo, modelNa
   # GenericParams
   result[2] = newNimNode(nnkGenericParams).add(
     newIdentDefs(
-      ident"T",
+      underlyingTypeSymbol,
       newEmptyNode()
     )
   )
@@ -272,6 +325,9 @@ macro network*(model_name: untyped, config: untyped): untyped =
   ##              x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
 
   # TODO better doc
+  
+  if model_name.kind != nnkIdent:
+    error("Name of model must be an identifier: \"" & $toStrLit(modelName) & "\"", modelName)
 
   # 0. separate the configuration into layers and forward part
   let sections = config.splitSections()

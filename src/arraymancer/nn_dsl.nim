@@ -51,12 +51,13 @@ func createLayerInfo(sectionInfo: SectionInfo): seq[LayerInfo] =
   # sectionInfo.idents contains constains a list of identifiers that will be used
   # as function parameters for the init funxtion
   # sectionInfo.body contains the description of layers, e.g.:
-  #    cv:        Conv2D(mp1.out_shape, 50, (5, 5))
-  #    mp:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
-  #    fl:         Flatten(mp2.out_shape)
-  #    hidden:     Linear(fl.out_shape[0], 500)´
+  #    cv:        Conv2D(mp1.outShape, 50, (5, 5))
+  #    mp:        MaxPool2D(cv2.outShape, (2,2), (0,0), (2,2))
+  #    fl:         Flatten(mp2.outShape)
+  #    hidden:     Linear(fl.outShape[0], 500)
 
-  doAssert sectionInfo.body.kind == nnkStmtList
+  if sectionInfo.body.kind != nnkStmtList:
+    error("Layer body must be a statement list: \"" & $toStrLit(sectionInfo.body) & "\"", sectionInfo.body)
 
   for layer in sectionInfo.body:
 
@@ -121,7 +122,7 @@ func createModelType(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
 func createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelName: NimNode): NimNode =
 
   # creates init function of the model, e.g.:
-  #   proc init[T](ctx: Context[AnyTensor[T]], model_type: typedesc[SomeConvNet[T]], h: auto; w: auto): SomeConvNet[T] =
+  #   proc init[T](ctx: Context[AnyTensor[T]], modelType: typedesc[SomeConvNet[T]], h: auto; w: auto): SomeConvNet[T] =
   #     template cv(): auto =
   #       result.cv
   #     template mp(): auto =
@@ -129,8 +130,8 @@ func createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelN
   #     template fl(): auto =
   #       result.fl
   #     cv = init(ctx, Conv2D[T], @[1, h, w], 20, (5, 5))
-  #     mp = init(ctx, Maxpool2D[T], cv1.out_shape, (2, 2), (0, 0), (2, 2))
-  #     fl = init(ctx, Flatten[T], mp.out_shape)
+  #     mp = init(ctx, Maxpool2D[T], cv1.outShape, (2, 2), (0, 0), (2, 2))
+  #     fl = init(ctx, Flatten[T], mp.outShape)
 
   doAssert modelName.kind == nnkIdent
 
@@ -187,7 +188,7 @@ func createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelN
       )
     ),
     newIdentDefs(
-      genSym(nskParam, "model_type"),
+      genSym(nskParam, "modelType"),
       newNimNode(nnkBracketExpr).add(
         ident"typedesc",
         newNimNode(nnkBracketExpr).add(
@@ -307,7 +308,7 @@ func createForwardProc(layerInfos: seq[LayerInfo], forward: SectionInfo, modelNa
 
 
 
-macro network*(model_name: untyped, config: untyped): untyped =
+macro network*(modelName: untyped, config: untyped): untyped =
   ## Declare a neural network.
   ##
   ## Example usage:
@@ -315,18 +316,18 @@ macro network*(model_name: untyped, config: untyped): untyped =
   ##          network DemoNet:
   ##            layers h, w:
   ##              cv1:        Conv2D(@[1, h, w], 20, (5, 5))
-  ##              mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
-  ##              cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
-  ##              mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
-  ##              fl:         Flatten(mp2.out_shape)
-  ##              hidden:     Linear(fl.out_shape[0], 500)
+  ##              mp1:        Maxpool2D(cv1.outShape, (2,2), (0,0), (2,2))
+  ##              cv2:        Conv2D(mp1.outShape, 50, (5, 5))
+  ##              mp2:        MaxPool2D(cv2.outShape, (2,2), (0,0), (2,2))
+  ##              fl:         Flatten(mp2.outShape)
+  ##              hidden:     Linear(fl.outShape[0], 500)
   ##              classifier: Linear(500, 10)
   ##            forward x:
   ##              x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
 
   # TODO better doc
   
-  if model_name.kind != nnkIdent:
+  if modelName.kind != nnkIdent:
     error("Name of model must be an identifier: \"" & $toStrLit(modelName) & "\"", modelName)
 
   # 0. separate the configuration into layers and forward part
@@ -336,14 +337,14 @@ macro network*(model_name: untyped, config: untyped): untyped =
   let layerInfos = sections.layers.createLayerInfo()
 
   # 2. create model type
-  let modelType = createModelType(layerInfos, model_name)
+  let modelType = createModelType(layerInfos, modelName)
 
   # 3. create init proc
-  let initProc = createInitProc(layerInfos, sections.layers, model_name)
+  let initProc = createInitProc(layerInfos, sections.layers, modelName)
 
   # 4. create forward proc
 
-  let forwardProc = createForwardProc(layerInfos, sections.forward, model_name)
+  let forwardProc = createForwardProc(layerInfos, sections.forward, modelName)
 
   # 5. combine everything into a statement
 

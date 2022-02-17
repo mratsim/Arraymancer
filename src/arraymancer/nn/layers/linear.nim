@@ -120,20 +120,20 @@ type
 
 proc init*[T](
   ctx: Context[Tensor[T]],
-  layer_type: typedesc[Linear[T]],
-  num_input, num_output: int
+  layerType: typedesc[Linear[T]],
+  numInput, numOutput: int
 ): Linear[T] =
-  ## Initializes a linear layer with `num_input` input features and `num_output` output features.
+  ## Initializes a linear layer with `numInput` input features and `numOutput` output features.
   ## Using Kaiming He initialisation for weights to provide decent performance in most cases.
   ## Biases are usually set to zero.
 
-  result.weight = ctx.variable(kaiming_normal([num_output, num_input], T), requires_grad = true) # TODO allow freezing
-  result.bias = ctx.variable(zeros[T]([1, num_output]), requires_grad = true) # TODO allow freezing
+  result.weight = ctx.variable(kaimingNormal([numOutput, numInput], T), requiresGrad = true) # TODO allow freezing
+  result.bias = ctx.variable(zeros[T]([1, numOutput]), requiresGrad = true) # TODO allow freezing
 
 proc forward*[T](self: Linear[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
   input.linear(weight = self.weight, bias = self.bias)
 
-proc out_shape*[T](self: Linear[T]): seq[int] =
+proc outShape*[T](self: Linear[T]): seq[int] =
   @[self.weight.value.shape[0]]
-proc in_shape*[T](self: Linear[T]): seq[int] =
+proc inShape*[T](self: Linear[T]): seq[int] =
   @[self.weight.value.shape[1]]

@@ -131,38 +131,38 @@ type
   Conv2D*[T] = object
     weight*: Variable[Tensor[T]]
     bias*: Variable[Tensor[T]]
-    padding: Size2D
-    stride: Size2D
-    in_shape: seq[int]
+    padding*: Size2D
+    stride*: Size2D
+    inShape*: seq[int]
 
 proc init*[T](
   ctx: Context[Tensor[T]],
-  layer_type: typedesc[Conv2D[T]],
-  in_shape: seq[int],
-  out_channels: int,
-  kernel_size: Size2D,
+  layerType: typedesc[Conv2D[T]],
+  inShape: seq[int],
+  outChannels: int,
+  kernelSize: Size2D,
   padding: Size2D = (0,0),
   stride: Size2D = (1,1)
 ): Conv2D[T] =
 
   result.padding = padding
   result.stride = stride
-  assert in_shape.len == 3
-  result.in_shape = in_shape
+  assert inShape.len == 3
+  result.inShape = inShape
 
-  let in_channels = in_shape[0]
+  let inChannels = inShape[0]
   result.weight = ctx.variable(
-    kaiming_normal([out_channels, in_channels, kernel_size.height, kernel_size.width], T),
-    requires_grad = true
+    kaimingNormal([outChannels, inChannels, kernelSize.height, kernelSize.width], T),
+    requiresGrad = true
   ) # TODO allow freezing
 
   result.bias = ctx.variable(
-    zeros[T]([out_channels, 1, 1]),
-    requires_grad = true
+    zeros[T]([outChannels, 1, 1]),
+    requiresGrad = true
   ) # TODO allow freezing
 
 proc forward*[T](self: Conv2D[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
-  assert input.value.shape[1..3] == self.in_shape
+  assert input.value.shape[1..3] == self.inShape
   input.conv2d(
     weight = self.weight,
     bias = self.bias,
@@ -170,7 +170,7 @@ proc forward*[T](self: Conv2D[T], input: Variable[Tensor[T]]): Variable[Tensor[T
     stride = self.stride
   )
 
-proc out_shape*[T](self: Conv2D[T]): seq[int] =
+proc outShape*[T](self: Conv2D[T]): seq[int] =
   assert self.weight.value.shape.len == 4
   template kH(): int = self.weight.value.shape[2]
   template kW(): int = self.weight.value.shape[3]
@@ -179,8 +179,8 @@ proc out_shape*[T](self: Conv2D[T]): seq[int] =
   template sH(): int = self.stride.height
   template sW(): int = self.stride.width
 
-  template iH(): int = self.in_shape[1]
-  template iW(): int = self.in_shape[2]
+  template iH(): int = self.inShape[1]
+  template iW(): int = self.inShape[2]
   template dH(): int = 1 # dilation # TODO
   template dW(): int = 1 # dilation
 
@@ -190,5 +190,5 @@ proc out_shape*[T](self: Conv2D[T]): seq[int] =
     1 + (iW + 2*pW - (((kW-1) * dW) + 1)) div sW,  # W
   ]
 
-proc in_shape*[T](self: Conv2D[T]): seq[int] =
-  self.in_shape
+proc inShape*[T](self: Conv2D[T]): seq[int] =
+  self.inShape

@@ -8,18 +8,18 @@ type
 
 proc init*[T](
   ctx: Context[Tensor[T]],
-  layer_type: typedesc[Flatten[T]],
-  in_shape: seq[int]
+  layerType: typedesc[Flatten[T]],
+  inShape: seq[int]
 ): Flatten[T] =
-  result.in_shape = in_shape
+  result.inShape = inShape
 
 proc forward*[T](self: Flatten[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
   input.flatten()
 
-proc out_shape*[T](self: Flatten[T]): seq[int] =    
+proc outShape*[T](self: Flatten[T]): seq[int] =
   result = @[1]
-  for i in self.in_shape:
+  for i in self.inShape:
       result[0] *= i
 
-proc in_shape*[T](self: Flatten[T]): seq[int] =
-  self.in_shape
+proc inShape*[T](self: Flatten[T]): seq[int] =
+  self.inShape

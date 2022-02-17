@@ -105,13 +105,13 @@ proc embedding*[TT; Idx: VocabIdx](
 type
   Embedding*[T] = object
     weight*: Variable[AnyTensor[T]]
-    padding_idx: BiggestInt
+    paddingIdx*: BiggestInt
 
 proc init*[T](
   ctx: Context[Tensor[T]],
-  layer_type: typedesc[Embedding[T]],
-  vocab_size, embed_size: int,
-  padding_idx: VocabIdx
+  layerType: typedesc[Embedding[T]],
+  vocabSize, embedSize: int,
+  paddingIdx: VocabIdx
 ): Embedding[T] =
   result.weight = ctx.variable(
 
@@ -126,19 +126,18 @@ proc init*[T](
     # Convergence is **VERY** sensitive, I can't reproduce the paper.
     # Best in our case is mean = 0, std = 1.
 
-    # TODO: fix, because it must depend on T
-    randomNormalTensor(vocab_size, embed_size, 0.T, 1.T),
-    requires_grad = true
+    randomNormalTensor(vocabSize, embedSize, 0.T, 1.T),
+    requiresGrad = true
   )
-  result.paddingIdx = cast[BiggestInt](padding_idx)
+  result.paddingIdx = cast[BiggestInt](paddingIdx)
 
 proc forward*[T; Idx: VocabIdx](
   self: Embedding[T],
   input: Tensor[Idx]
 ): Variable[AnyTensor[T]] =
-  embedding(input, self.weight, cast[Idx](self.padding_idx))
+  embedding(input, self.weight, cast[Idx](self.paddingIdx))
 
-proc out_shape*[T](self: Embedding[T]): seq[int] =
+proc outShape*[T](self: Embedding[T]): seq[int] =
   @[self.weight.value.shape[1]]
-proc in_shape*[T](self: Embedding[T]): seq[int] =
+proc inShape*[T](self: Embedding[T]): seq[int] =
   @[self.weight.value.shape[0]]

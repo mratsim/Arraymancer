@@ -164,23 +164,22 @@ type
 
 proc init*[T](
   ctx: Context[Tensor[T]],
-  layer_type: typedesc[GRULayer[T]],
-  num_input_features, hiddenSize, layers: int
+  layerType: typedesc[GRULayer[T]],
+  numInputFeatures, hiddenSize, layers: int
 ): GRULayer[T] =
-  template weightInit(shape: varargs[int], init_kind: untyped): Variable =
+  template weightInit(shape: varargs[int], initKind: untyped): Variable =
     # let's not repeat ourself too much.
     ctx.variable(
-      init_kind(shape, T),
-      requires_grad = true
+      initKind(shape, T),
+      requiresGrad = true
     )
 
-  # TODO this is probably all wrong, i need to understand this stuff
-  result.w3s0 = weightInit(            3 * hiddenSize,     num_input_features,  xavier_uniform)
-  result.w3sN = weightInit(layers - 1, 3 * hiddenSize,     hiddenSize,          xavier_uniform)
-  result.u3s  = weightInit(    layers, 3 * hiddenSize,     hiddenSize,          yann_normal)
+  result.w3s0 = weightInit(            3 * hiddenSize,     numInputFeatures,    xavierUniform)
+  result.w3sN = weightInit(layers - 1, 3 * hiddenSize,     hiddenSize,          xavierUniform)
+  result.u3s  = weightInit(    layers, 3 * hiddenSize,     hiddenSize,          yannNormal)
 
-  result.bW3s = ctx.variable(zeros[T](layers, 1, 3 * hiddenSize), requires_grad = true)
-  result.bU3s = ctx.variable(zeros[T](layers, 1, 3 * hiddenSize), requires_grad = true)
+  result.bW3s = ctx.variable(zeros[T](layers, 1, 3 * hiddenSize), requiresGrad = true)
+  result.bU3s = ctx.variable(zeros[T](layers, 1, 3 * hiddenSize), requiresGrad = true)
   # TODO allow freezing
 
 proc forward*[T](self: GRULayer[T], input, hidden0: Variable): tuple[output, hiddenN: Variable] =
@@ -190,5 +189,3 @@ proc forward*[T](self: GRULayer[T], input, hidden0: Variable): tuple[output, hid
     self.u3s,
     self.bW3s, self.bU3s
   )
-
-# TODO maybe some helper functions to easily determine output, input and hidden shape

@@ -116,12 +116,12 @@ type
     kernel: Size2D
     padding: Size2D
     stride: Size2D
-    in_shape: seq[int]
+    inShape: seq[int]
 
 proc init*[T](
   ctx: Context[Tensor[T]],
-  layer_type: typedesc[MaxPool2D[T]],
-  in_shape: seq[int],
+  layerType: typedesc[MaxPool2D[T]],
+  inShape: seq[int],
   kernel, padding, stride: Size2D
 ): MaxPool2D[T] =
   result = MaxPool2D[T](
@@ -129,8 +129,8 @@ proc init*[T](
     padding: padding,
     stride: stride
   )
-  assert in_shape.len == 3
-  result.in_shape = in_shape
+  assert inShape.len == 3
+  result.inShape = inShape
 
 
 proc forward*[T](self: MaxPool2D[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
@@ -140,10 +140,10 @@ proc forward*[T](self: MaxPool2D[T], input: Variable[Tensor[T]]): Variable[Tenso
     stride = self.stride
   )
 
-proc out_shape*[T](self: MaxPool2D[T]): seq[int] =
-  template C: int = self.in_shape[0]
-  template H: int = self.in_shape[1]
-  template W: int = self.in_shape[2]
+proc outShape*[T](self: MaxPool2D[T]): seq[int] =
+  template C: int = self.inShape[0]
+  template H: int = self.inShape[1]
+  template W: int = self.inShape[2]
 
   template kH: int = self.kernel.height
   template kW: int = self.kernel.width
@@ -158,6 +158,6 @@ proc out_shape*[T](self: MaxPool2D[T]): seq[int] =
     (W + (2 * pW) - kW) div sW + 1
   ]
 
-proc in_shape*[T](self: MaxPool2D[T]): seq[int] =
-  self.in_shape
+proc inShape*[T](self: MaxPool2D[T]): seq[int] =
+  self.inShape
 

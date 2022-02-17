@@ -130,12 +130,11 @@ proc sample[T](probs: Tensor[T]): int =
 
 network ShakespeareModel:
   layers:
-    encoder:  Embedding(VocabSize, EmbedSize)
+    encoder:  Embedding(VocabSize, EmbedSize, padding_idx = UnkCharIx)
     gru:      GRULayer(encoder.out_shape[0], HiddenSize, Layers)
     decoder:  Linear(HiddenSize, VocabSize)
   forward input, hidden0:
-    let encoded = encoder(input, padding_idx = UnkCharIx)# TODO fix
-    let (output, hiddenN) = encoded.gru(hidden0)
+    let (output, hiddenN) = input.encoder.gru(hidden0)
     # result.output is of shape [Sequence, BatchSize, HiddenSize]
     # In our case the sequence is 1 so we can simply flatten
     let flattened = output.reshape(output.value.shape[1], HiddenSize)

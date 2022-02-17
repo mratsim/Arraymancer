@@ -105,11 +105,13 @@ proc embedding*[TT; Idx: VocabIdx](
 type
   Embedding*[T] = object
     weight*: Variable[AnyTensor[T]]
+    padding_idx: BiggestInt
 
 proc init*[T](
   ctx: Context[Tensor[T]],
   layer_type: typedesc[Embedding[T]],
-  vocab_size, embed_size: int
+  vocab_size, embed_size: int,
+  padding_idx: VocabIdx
 ): Embedding[T] =
   result.weight = ctx.variable(
 
@@ -128,13 +130,13 @@ proc init*[T](
     randomNormalTensor(vocab_size, embed_size, 0.T, 1.T),
     requires_grad = true
   )
+  result.paddingIdx = cast[BiggestInt](padding_idx)
 
 proc forward*[T; Idx: VocabIdx](
   self: Embedding[T],
-  input: Tensor[Idx],
-  padding_idx: Idx = -1
+  input: Tensor[Idx]
 ): Variable[AnyTensor[T]] =
-  embedding(input, self.weight, padding_idx)
+  embedding(input, self.weight, cast[Idx](self.padding_idx))
 
 proc out_shape*[T](self: Embedding[T]): seq[int] =
   @[self.weight.value.shape[1]]

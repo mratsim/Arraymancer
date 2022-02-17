@@ -323,6 +323,24 @@ proc getrf*[T: SomeFloat](lu: var Tensor[T], pivot_indices: var seq[int32]) =
 when isMainModule:
   import ../../ml/metrics/common_error_functions
 
+  block:
+    let a = [[ 1.0, 2.0],
+             [ 2.0, 1.0]].toTensor()
+
+    let expected_eigvals = [-1.0, 3.0].toTensor()
+    let expected_eigvecs = [[-0.7071067811865475, 0.7071067811865475],
+                            [0.7071067811865475, 0.7071067811865475]].toTensor()
+
+    var scratchspace: seq[float64]
+    var A = a.clone(colMajor)
+    var eigenval: Tensor[float64]
+    var eigenvec: Tensor[float64]
+
+    syevr(A, 'U', true, 0, a.shape[0] - 1, eigenval, eigenvec, scratchspace)
+
+    doAssert expected_eigvals.mean_absolute_error(eigenval) < 1e-15
+    doAssert expected_eigvecs.mean_absolute_error(eigenvec) < 1e-15
+
   block: # QR decompositions
     # Adapted from: https://www.ibm.com/support/knowledgecenter/en/SSFHY8_6.2/reference/am5gr_hdgeqrf.html
 

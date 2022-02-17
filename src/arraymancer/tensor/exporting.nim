@@ -14,7 +14,8 @@
 
 import ./data_structure
 import ../private/sequninit
-import sequtils
+import ./accessors
+import std/sequtils
 
 proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect, deprecated: "This proc cannot be reimplemented in a backward compatible way.".} =
   ## Convert a tensor to the raw sequence of data.
@@ -59,6 +60,20 @@ proc export_tensor*[T](t: Tensor[T]):
   result.shape = contig_t.shape
   result.strides = contig_t.strides
   result.data = contig_t.toRawSeq
+
+proc toFlatSeq*[T](t: Tensor[T]) : seq[T] =
+  ## Export the data of the Tensor flattened as a Seq
+  result = newSeq[T](t.size)
+  for i, e in enumerate(t):
+    result[i] = e
+
+proc toSeq1D*[T](t: Tensor[T]): seq[T] =
+  ## Exports a rank-1 tensor to a 1D sequence
+  if t.rank != 1:
+    raise newException(ValueError, "Tensor must be of rank 1")
+  result = newSeq[T](t.shape[0])
+  for i in 0 ..< t.shape[0]:
+    result[i] = t[i]
 
 proc toSeq2D*[T](t: Tensor[T]): seq[seq[T]] =
   ## Exports a rank-2 tensor to a 2D sequence.

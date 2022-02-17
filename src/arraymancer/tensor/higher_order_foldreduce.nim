@@ -16,6 +16,10 @@ import  ./backend/openmp,
         ./data_structure, ./init_copy_cpu, ./accessors,
         sugar
 
+
+when not defined(nimHasEffectsOf):
+  {.pragma: effectsOf.}
+
 template reduce_inline*[T](t: Tensor[T], op: untyped): untyped =
   let z = t # ensure that if t is the result of a function it is not called multiple times
   var reduced: T
@@ -69,7 +73,7 @@ template fold_axis_inline*[T](t: Tensor[T], accumType: typedesc, fold_axis: int,
 proc fold*[U, T](t: Tensor[U],
                 start_val: T,
                 f:(T, U) -> T,
-                ): T =
+                ): T {.effectsOf: f.}=
   ## Chain result = f(result, element) over all elements of the Tensor
   ## Input:
   ##     - A tensor to aggregate on
@@ -91,7 +95,7 @@ proc fold*[U, T](t: Tensor[U],
                 start_val: Tensor[T],
                 f: (Tensor[T], Tensor[U]) -> Tensor[T],
                 axis: int
-                ): Tensor[T] =
+                ): Tensor[T] {.effectsOf: f.} =
   ## Chain result = f(result, element) over all elements of the Tensor
   ## Input:
   ##     - A tensor to aggregate on
@@ -107,7 +111,7 @@ proc fold*[U, T](t: Tensor[U],
 
 proc reduce*[T](t: Tensor[T],
                 f: (T, T) -> T
-                ): T =
+                ): T {.effectsOf: f.} =
   ## Chain result = f(result, element) over all elements of the Tensor.
   ##
   ## The starting value is the first element of the Tensor.
@@ -126,7 +130,7 @@ proc reduce*[T](t: Tensor[T],
 proc reduce*[T](t: Tensor[T],
                 f: (Tensor[T], Tensor[T]) -> Tensor[T],
                 axis: int
-                ): Tensor[T] {.noInit.} =
+                ): Tensor[T] {.noInit, effectsOf: f.} =
   ## Chain result = f(result, element) over all elements of the Tensor.
   ##
   ## The starting value is the first element of the Tensor.

@@ -183,7 +183,7 @@ func createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelN
         ident"Context",
         newNimNode(nnkBracketExpr).add(
           ident"AnyTensor",
-          ident($toStrLit(underlyingTypeSymbol))# TODO bad issue fix it
+          copy underlyingTypeSymbol # needs to be copied for workaround for https://github.com/nim-lang/Nim/issues/19542
         )
       )
     ),

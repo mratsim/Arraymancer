@@ -312,18 +312,69 @@ macro network*(modelName: untyped, config: untyped): untyped =
   ## Declare a neural network.
   ##
   ## Example usage:
-  ##    .. code:: nim
-  ##          network DemoNet:
-  ##            layers h, w:
-  ##              cv1:        Conv2D(@[1, h, w], 20, (5, 5))
-  ##              mp1:        Maxpool2D(cv1.outShape, (2,2), (0,0), (2,2))
-  ##              cv2:        Conv2D(mp1.outShape, 50, (5, 5))
-  ##              mp2:        MaxPool2D(cv2.outShape, (2,2), (0,0), (2,2))
-  ##              fl:         Flatten(mp2.outShape)
-  ##              hidden:     Linear(fl.outShape[0], 500)
-  ##              classifier: Linear(500, 10)
-  ##            forward x:
-  ##              x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
+  ## 
+  ## .. code:: nim
+  ##   network DemoNet:
+  ##     layers h, w:
+  ##       cv1:        Conv2D(@[1, h, w], 20, (5, 5))
+  ##       mp1:        Maxpool2D(cv1.outShape, (2,2), (0,0), (2,2))
+  ##       cv2:        Conv2D(mp1.outShape, 50, (5, 5))
+  ##       mp2:        MaxPool2D(cv2.outShape, (2,2), (0,0), (2,2))
+  ##       fl:         Flatten(mp2.outShape)
+  ##       hidden:     Linear(fl.outShape[0], 500)
+  ##       classifier: Linear(500, 10)
+  ##     forward x:
+  ##       x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
+  ## 
+  ##   let
+  ##     ctx = newContext Tensor[float32]
+  ##     model = ctx.init(DemoNet, 28, 28)
+  ##
+  ## 
+  ## Custom layers can be created by providing a type, an init-function, and a forward-function.
+  ## The type could look like this:
+  ## 
+  ## .. code:: nim
+  ##   type
+  ##     MyLayer*[T] = object
+  ##       someWeights*: Variable[Tensor[T]]
+  ##       importantInfo*: seq[int]
+  ## 
+  ## It is important that the type has exactly one generic parameter which corresponds to the
+  ## underlying type (e.g., ``float32`` or ``int8``).
+  ## The init-function is required to adhere to the following structure:
+  ## 
+  ## .. code:: nim
+  ##   proc init*[T](
+  ##     ctx: Context[Tensor[T]], # could also be Context[AnyTensor[T]] for example
+  ##     layerType: typedesc[MyLayer[T]],
+  ##     myInitParam: string
+  ##     # ... here you can add all the necessary init parameters, like shapes and number of output features
+  ##   ): MyLayer[T] =
+  ##     discard # your init stuff
+  ## 
+  ## The only requirement for the forward function is that the first parameter must be of your layer type like this:
+  ## 
+  ## .. code:: nim
+  ##   proc forward*[T](self: MyLayer[T], myInput: SpecialInputType, doNothing: bool): Variable[Tensor[T]] =
+  ##     if not doNothing:
+  ##       result = myInput.yourComputations(self.importantInfo, self.someWeights)
+  ##     
+  ## 
+  ## Often it is also useful to provide ``proc outShape(m: MyLayer): seq[int]`` and possibly
+  ## ``proc inShape(m: MyLayer): seq[int]`` functions.
+  ## 
+  ## Your custom layer can then be used for example like this:
+  ## 
+  ## .. code:: nim
+  ##   network DemoNet2:
+  ##     layers:
+  ##       myLayer:    MyLayer(myInitParam = "hello!")
+  ##       fl:         Flatten(myLayer.outShape)
+  ##       hidden:     Linear(fl.outShape[0], 500)
+  ##       classifier: Linear(500, 10)
+  ##     forward x:
+  ##       x.myLayer(doNothing = false).fl.hidden.relu.classifier
 
   # TODO better doc
   

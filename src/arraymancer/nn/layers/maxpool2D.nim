@@ -124,6 +124,17 @@ proc init*[T](
   inShape: seq[int],
   kernel, padding, stride: Size2D
 ): MaxPool2D[T] =
+
+  ## Creates an 2d maxpool layer.
+  ## Input:
+  ##     - ``inShape`` Expected shape if input in the form of ``[C, H_in, W_in]``
+  ##     - ``kernel`` Height and width of the pooling kernel.
+  ##     - ``padding`` Size2D tuple with height and width of the padding
+  ##     - ``stride`` Size2D tuple with height and width of the stride
+  ## 
+  ## Returns the created ``MaxPool2D``.
+
+
   result = MaxPool2D[T](
     kernel: kernel,
     padding: padding,

@@ -167,6 +167,15 @@ proc init*[T](
   layerType: typedesc[GRULayer[T]],
   numInputFeatures, hiddenSize, layers: int
 ): GRULayer[T] =
+
+  ## Creates an gated recurrent layer.
+  ## Input:
+  ##     - ``numInputFeatures`` Number of features of the input.
+  ##     - ``hiddenSize`` size of the hidden layer(s)
+  ##     - ``layers`` Number of stacked layers
+  ## 
+  ## Returns the created ``GRULayer``.
+
   template weightInit(shape: varargs[int], initKind: untyped): Variable =
     # let's not repeat ourself too much.
     ctx.variable(
@@ -183,6 +192,7 @@ proc init*[T](
   # TODO allow freezing
 
 proc forward*[T](self: GRULayer[T], input, hidden0: Variable): tuple[output, hiddenN: Variable] =
+  # TODO better documentation
   gru(
     input, hidden0,
     self.w3s0, self.w3sN,

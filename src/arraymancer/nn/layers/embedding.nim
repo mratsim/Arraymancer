@@ -111,8 +111,17 @@ proc init*[T](
   ctx: Context[Tensor[T]],
   layerType: typedesc[Embedding[T]],
   vocabSize, embedSize: int,
-  paddingIdx: VocabIdx
+  paddingIdx: VocabIdx = -1
 ): Embedding[T] =
+
+  ## Creates an embedding layer.
+  ## Input:
+  ##     - ``vocabSize`` Size of the vocabulary
+  ##     - ``embedSize`` Embedding size
+  ##     - ``paddingIdx`` Optional parameter for when an index corresponds to the absence of words
+  ## 
+  ## Returns the created ``Embedding``.
+
   result.weight = ctx.variable(
 
     # TODO: Embedding layer initialisation
@@ -135,6 +144,10 @@ proc forward*[T; Idx: VocabIdx](
   self: Embedding[T],
   input: Tensor[Idx]
 ): Variable[AnyTensor[T]] =
+
+  ## Runs input through embedding layer.
+  ## Each item in your vocabulary/input must be encoded into an unique integer before being passed to the Embedding layer.
+
   embedding(input, self.weight, cast[Idx](self.paddingIdx))
 
 func outShape*[T](self: Embedding[T]): seq[int] =

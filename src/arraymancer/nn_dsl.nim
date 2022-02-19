@@ -405,4 +405,4 @@ macro network*(modelName: untyped, config: untyped): untyped =
     forwardProc
   )
 
-  echo toStrLit(result)
+  # echo toStrLit(result)

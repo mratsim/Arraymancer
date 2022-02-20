@@ -163,7 +163,7 @@ let
 # ##################################################################
 # Define the model.
 
-network ctx, TwoLayersNet:
+network TwoLayersNet:
   layers:
     fc1: Linear(D_in, H)
     fc2: Linear(H, D_out)
@@ -297,18 +297,17 @@ const
   NumDigits = 10
   NumHidden = 100
 
-let ctx = newContext Tensor[float32]
-
-network ctx, FizzBuzzNet:
+network FizzBuzzNet:
   layers:
     hidden: Linear(NumDigits, NumHidden)
     output: Linear(NumHidden, 4)
   forward x:
     x.hidden.relu.output
 
-let model = ctx.init(FizzBuzzNet)
-let optim = model.optimizerSGD(0.05'f32)
-
+let
+  ctx = newContext Tensor[float32]
+  model = ctx.init(FizzBuzzNet)
+  optim = model.optimizerSGD(0.05'f32)
 # ....
 echo answer
 # @["1", "2", "fizz", "4", "buzz", "6", "7", "8", "fizz", "10",
@@ -327,23 +326,28 @@ echo answer
 Neural network definition extracted from [example 2](examples/ex02_handwritten_digits_recognition.nim).
 
 ```Nim
-let ctx = newContext Tensor[float32] # Autograd/neural network graph
-
-network ctx, DemoNet:
-  layers:
-    x:          Input([1, 28, 28])
-    cv1:        Conv2D(x.out_shape, 20, 5, 5)
-    mp1:        MaxPool2D(cv1.out_shape, (2,2), (0,0), (2,2))
-    cv2:        Conv2D(mp1.out_shape, 50, 5, 5)
+network SomeConvNet:
+  layers h, w:
+    cv1:        Conv2D(@[1, h, w], 20, (5, 5))
+    mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
+    cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
     mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
     fl:         Flatten(mp2.out_shape)
-    hidden:     Linear(fl.out_shape, 500)
-    classifier: Linear(500, 10)
   forward x:
-    x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
+    x.cv1.relu.mp1.cv2.relu.mp2.fl
 
-let model = ctx.init(DemoNet)
-let optim = model.optimizerSGD(learning_rate = 0.01'f32)
+network DemoNet:
+  layers h, w:
+    cv:         SomeConvNet(h, w)
+    hidden:     Linear(cv.fl.out_shape[0], 500)
+    classifier: Linear(hidden.out_shape[0], 10)
+  forward x:
+    x.cv.hidden.relu.classifier
+
+let
+  ctx = newContext Tensor[float32] # Autograd/neural network graph
+  model = ctx.init(DemoNet, 28, 28)
+  optim = model.optimizerSGD(learning_rate = 0.01'f32)
 
 # ...
 # Accuracy over 90% in a couple minutes on a laptop CPU
@@ -358,13 +362,10 @@ const
   Layers = 4
   BatchSize = 512
 
-let ctx = newContext Tensor[float32]
 
-network ctx, TheGreatSequencer:
+network TheGreatSequencer:
   layers:
-    # Note input_shape will only require the number of features in the future
-    # Input shape = [seq_len, batch_size, features]
-    gru1: GRU([3, Batch_size, 1], HiddenSize, 4) # (input_shape, hidden_size, stacked_layers)
+    gru1: GRULayer(1, HiddenSize, 4) # (num_input_features, hidden_size, stacked_layers)
     fc1: Linear(HiddenSize, 32)                  # 1 classifier per GRU layer
     fc2: Linear(HiddenSize, 32)
     fc3: Linear(HiddenSize, 32)
@@ -379,14 +380,16 @@ network ctx, TheGreatSequencer:
       clf4 = hiddenN[3, _, _].squeeze(0).fc4.relu
 
     # Concat all
-    #   Since concat backprop is not implemented we cheat by stacking
-    #   then flatten
+    # Since concat backprop is not implemented we cheat by stacking
+    # Then flatten
     result = stack(clf1, clf2, clf3, clf4, axis = 2)
     result = classifier(result.flatten)
 
 # Allocate the model
-let model = ctx.init(TheGreatSequencer)
-let optim = model.optimizerSGD(0.01'f32)
+let
+  ctx = newContext Tensor[float32]
+  model = ctx.init(TheGreatSequencer)
+  optim = model.optimizerSGD(0.01'f32)
 
 # ...
 let exam = ctx.variable([

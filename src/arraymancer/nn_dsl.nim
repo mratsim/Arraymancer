@@ -156,7 +156,7 @@ func createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelN
 
   let
     ctxSymbol = genSym(nskParam, "ctx")
-    underlyingTypeSymbol = ident($toStrLit(genSym(nskGenericParam, "T")))# TODO bad issue fix it
+    underlyingTypeSymbol = ident($toStrLit(genSym(nskGenericParam, "T")))# TODO fix this
   for layerInfo in layerInfos:
     body.add(
       newAssignment(
@@ -398,7 +398,6 @@ macro network*(modelName: untyped, config: untyped): untyped =
   let forwardProc = createForwardProc(layerInfos, sections.forward, modelName)
 
   # 5. combine everything into a statement
-
   result = newStmtList(
     modelType,
     initProc,

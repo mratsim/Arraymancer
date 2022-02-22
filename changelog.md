@@ -1,8 +1,16 @@
 Arraymancer v0.7.x
 =====================================================
 
-- Add cursor annotation for CPU Tensor fixing #535
-- Add toFlatSeq (flatten data and export it as a seq) and toSeq1D which export a rank-1 Tensor into a seq
+
+Arraymancer v0.7.11 Feb. 22 2022
+=====================================================
+
+- Add cursor annotation for CPU Tensor fixing #535 (PR #533)
+- Add `toFlatSeq` (flatten data and export it as a seq) and `toSeq1D`
+  which export a rank-1 Tensor into a `seq` (PR #533)
+- add test for `syevr` (PR #552)
+- introduce CI for Nim 1.6 and switch to Github Action task for Nim
+  binaries (PR #551)
 
 Arraymancer v0.7.10 Dec. 30 2021
 =====================================================

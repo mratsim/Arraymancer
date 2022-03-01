@@ -22,7 +22,8 @@ type Conv2DGate*[TT]{.final.} = ref object of Gate[TT]
   padding, stride: Size2D
   # TODO: store the algorithm (NNPACK / im2col)
 
-proc conv2d_backward_ag[TT](self: Conv2DGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc conv2d_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = Conv2DGate[TT](self)
   let gradient = payload.variable.grad
   if self.bias.isNil:
     result = newDiffs[TT](2)

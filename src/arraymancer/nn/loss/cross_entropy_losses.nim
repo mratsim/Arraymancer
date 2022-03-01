@@ -24,7 +24,8 @@ template gen_cross_entropy_loss(LossType, forward_proc, backward_proc: untyped) 
     target: TT
     cache: Variable[TT]
 
-  proc `forward_proc _ backward _ ag`[TT](self: LossType[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  proc `forward_proc _ backward _ ag`[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+    let self = LossType[TT](self)
     let gradient = payload.variable.grad
     result = newDiffs[TT](1)
     result[0] = backward_proc(gradient, self.cache.value, self.target)
@@ -68,7 +69,8 @@ type SparseSoftmaxCrossEntropyLoss*[TT; Idx: SomeNumber or byte or char or enum]
   target: Tensor[Idx]
   cache: Variable[TT]
 
-proc sparse_softmax_ce_backward_ag[TT, Idx](self: SparseSoftmaxCrossEntropyLoss[TT, Idx], payload: Payload[TT]): SmallDiffs[TT] =
+proc sparse_softmax_ce_backward_ag[TT, Idx](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = SparseSoftmaxCrossEntropyLoss[TT, Idx](self)
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = sparse_softmax_crossentropy_backward(gradient, self.cache.value, self.target)

@@ -19,7 +19,8 @@ import  ../../autograd,
 type SoftmaxActivation* [TT] = ref object of Gate[TT]
   cache: TT
 
-proc softmax_backward_ag[TT](self: SoftmaxActivation[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc softmax_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = SoftmaxActivation[TT](Gate)
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient.softmax_backward(self.cache)

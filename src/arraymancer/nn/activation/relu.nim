@@ -19,7 +19,8 @@ import  ../../tensor,
 type ReluActivation*[TT] {.final.} = ref object of Gate[TT]
   cache: TT
 
-proc relu_backward_ag[TT](self: ReluActivation[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc relu_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = ReluActivation[TT](self)
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
   result[0] = gradient.relu_backward(self.cache)

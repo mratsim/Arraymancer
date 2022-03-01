@@ -1,6 +1,63 @@
 Arraymancer v0.7.x
 =====================================================
 
+
+Arraymancer v0.7.11 Feb. 22 2022
+=====================================================
+
+- Add cursor annotation for CPU Tensor fixing #535 (PR #533)
+- Add `toFlatSeq` (flatten data and export it as a seq) and `toSeq1D`
+  which export a rank-1 Tensor into a `seq` (PR #533)
+- add test for `syevr` (PR #552)
+- introduce CI for Nim 1.6 and switch to Github Action task for Nim
+  binaries (PR #551)
+
+Arraymancer v0.7.10 Dec. 30 2021
+=====================================================
+
+- fixes `einsum` in more general generic contexts by replacing the
+  logic introduced in PR #539 by a rewrite from typed AST to
+  `untyped`. This makes it work in (all?) generic contexts, PR #545
+- add element wise exponentiation `^.` for scalar base to all elements
+  of a tensor, i.e. `2^.t` for a tensor `t`, thanks to @asnt PR #546.
+
+Arraymancer v0.7.9 Dec. 29 2021
+=====================================================
+
+- fixes `einsum` in generic contexts by allowing `nnkCall` and
+  `nnkOpenSymChoice`, PR #539
+- add test for `einsum` showing cross product, PR #538
+- add test for display of uninitialized tensor, PR #540
+- allow `CustomMetric` as user defined metric in `distances`, PR #541. User
+  must provide their own `distance` procedure for the metric with
+  signature:
+  ```nim
+  proc distance*(metric: typedesc[CustomMetric], v, w: Tensor[float]): float
+  ```
+- disable AVX512 support by default. Add the `-d:avx512` compilation
+  flag to activate it. Note: this activates it for all CPUs as it
+  hands `-mavx512dq` to gcc / clang!
+
+Arraymancer v0.7.8 Oct. 27 2021
+=====================================================
+
+- further fix undeclared identifier issues present for certain
+  generics context, in this case for the `|` identifier when slicing
+- fix printing of uninitialized tensors. Instead of crashing these now
+  print as "Unitialized Tensor[T] ...".
+- fix CSV parsing regression (still used `Fdata` field access) and
+  improved efficiency of the parser
+
+Arraymancer v0.7.7 Oct. 14 2021
+=====================================================
+
+- fix autograd code after changes in the Nim compiler from version 1.4
+  on. Requires to keep the procedure signatures using the base type
+  and then convert to the specific type in the procedure (#528)
+- fixes an issue when creating a laser tensor within a generic, in
+  which case one might see "undeclared identifier `rank`"
+
+
 Arraymancer v0.7.6 Aug. 13 2021
 =====================================================
 

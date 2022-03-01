@@ -67,6 +67,19 @@ proc main() =
       let test = @[@[1],@[16],@[81],@[256],@[625]]
       check: t_van[_, 3] == test.toTensor()
 
+    test "Span slices in generics - foo[_, 3]":
+      ## NOTE: this test does not exactly reproduce the issue that was present
+      ## in `numericalnim`, but will keep this in
+      proc foo[T](exp: Tensor[T], data: seq[seq[int]]) =
+        var res = newTensor[T](5, 1)
+        for i, el in data:
+          res[i, _] = el.toTensor.unsqueeze(0)
+        check: exp == res
+
+      let test = @[@[1],@[16],@[81],@[256],@[625]]
+      let exp = test.toTensor
+      foo(exp, test)
+
     test "Span slices - foo[1.._, 3]":
       let test = @[@[16],@[81],@[256],@[625]]
       check: t_van[1.._, 3] == test.toTensor()

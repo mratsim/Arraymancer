@@ -24,6 +24,12 @@ template compareStrings(t1, t2: string) =
 
 proc main() =
   suite "Displaying tensors":
+    test "Display invalid tensor":
+      var t: Tensor[int]
+      let exp = """
+Uninitialized Tensor[system.int] of shape "[]" on backend "Cpu""""
+      check $t == exp
+
     test "Display 1D tensor":
       block:
         let t = [0.9532932, 0.12945823].toTensor
@@ -233,6 +239,17 @@ Tensor[system.string] of shape "[2, 3, 3, 4]" on backend "Cpu"
   |Value: 45    Value: 46    Value: 47    Value: 48| |Value: 57    Value: 58    Value: 59    Value: 60| |Value: 69    Value: 70    Value: 71    Value: 72|
   --------------------------------------------------------------------------------------------------------------------------------------------------------
 """)
+
+    test "Displaying of unininitialized tensors works":
+      template checkTypes(typ: untyped): untyped =
+        var x: Tensor[typ]
+        var exp = "Uninitialized Tensor[system." & astToStr(typ) & """] of shape "[]" on backend "Cpu""""
+        check $x == exp
+      checkTypes(int)
+      checkTypes(char)
+      checkTypes(float)
+      checkTypes(uint64)
+      checkTypes(string)
 
 main()
 GC_fullCollect()

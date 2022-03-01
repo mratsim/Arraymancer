@@ -19,7 +19,9 @@ import  ./private/p_display,
 proc pretty*[T](t: Tensor[T], precision = -1): string =
   ## Pretty-print a Tensor with the option to set a custom `precision`
   ## for float values.
-  let desc = t.type.name & " of shape \"" & $t.shape & "\" on backend \"" & "Cpu" & "\""
+  var desc = t.type.name & " of shape \"" & $t.shape & "\" on backend \"" & "Cpu" & "\""
+  if t.storage.isNil: # return useful message for uninit'd tensors instead of crashing
+    return "Uninitialized " & $desc
   if t.size() == 0:
     return desc & "\n    [] (empty)"
   elif t.rank == 1: # for rank 1 we want an indentation, because we have no `|`

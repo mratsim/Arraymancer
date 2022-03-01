@@ -13,6 +13,9 @@ when NimVersion < "1.1.0":
   # For distinctBase
   import sugar
 
+when not defined(nimHasCursor):
+  {.pragma: cursor.}
+
 type
   KnownSupportsCopyMem* = SomeNumber | char | Complex[float64] | Complex[float32] | bool
 
@@ -29,7 +32,7 @@ type
     shape*: Metadata                     # 56 bytes
     strides*: Metadata                   # 56 bytes
     offset*: int                         # 8 bytes
-    storage*: CpuStorage[T]              # 8 bytes
+    storage* {.cursor.}: CpuStorage[T]   # 8 bytes
 
   CpuStorage*[T] {.shallow.} = ref CpuStorageObj[T] # Total heap: 25 bytes = 1 cache-line
   CpuStorageObj[T] {.shallow.} = object
@@ -52,6 +55,12 @@ proc toMetadataArray*(s: varargs[int]): MetadataArray {.inline.} =
   for i in 0..<s.len:
     result.data[i] = s[i]
 
+func rank*[T](t: Tensor[T]): range[0 .. LASER_MAXRANK] {.inline.} =
+  t.shape.len
+
+func size*[T](t: Tensor[T]): Natural {.inline.} =
+  t.shape.product
+
 # note: the finalizer has to be here for ARC to like it
 when not defined(gcDestructors):
   proc finalizer[T](storage: CpuStorage[T]) =
@@ -67,7 +76,9 @@ else:
         storage.memalloc = nil
     else:
       `=destroy`(storage.raw_buffer)
-  proc `=`[T](a: var CpuStorageObj[T]; b: CpuStorageObj[T]) {.error.}
+
+  proc `=copy`[T](a: var CpuStorageObj[T]; b: CpuStorageObj[T]) {.error.}
+  proc `=sink`[T](a: var CpuStorageObj[T]; b: CpuStorageObj[T]) {.error.}
 
 
 proc allocCpuStorage*[T](storage: var CpuStorage[T], size: int) =

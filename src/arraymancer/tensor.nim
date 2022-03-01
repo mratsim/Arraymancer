@@ -72,8 +72,8 @@ export  dynamic_stack_arrays,
         exporting
 
 when defined(cuda) or defined(nimdoc) or defined(nimsuggest):
-  import ./tensor/tensor_cuda
-  export tensor_cuda
+  import ./tensor/[tensor_cuda, display_cuda]
+  export tensor_cuda, display_cuda
 
 when defined(opencl) or defined(nimdoc) or defined(nimsuggest):
   import ./tensor/tensor_opencl

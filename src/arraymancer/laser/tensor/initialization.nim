@@ -1,4 +1,4 @@
-  # Laser
+# Laser
 # Copyright (c) 2018 Mamy André-Ratsimbazafy
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
@@ -31,6 +31,7 @@ template initTensorMetadataImpl(
     layout: static OrderType) =
   ## We don't use a proc directly due to https://github.com/nim-lang/Nim/issues/6529
   result.shape = shape.toMetadata
+  mixin rank
   result.strides.len = result.rank
 
   size = 1
@@ -143,11 +144,11 @@ proc copyFromRaw*[T](dst: var Tensor[T], buffer: ptr T, len: Natural) =
     omp_parallel_chunks(
             len, chunk_offset, chunk_size,
             OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
-        copyMem(
-          dst.unsafe_raw_offset[chunk_offset].addr,
-          buf[chunk_offset].unsafeAddr,
-          chunk_size * sizeof(T)
-        )
+      copyMem(
+        dst.unsafe_raw_offset[chunk_offset].addr,
+        buf[chunk_offset].unsafeAddr,
+        chunk_size * sizeof(T)
+      )
   else:
     {.fatal: "Only non-ref types and types with trivial destructors can be raw copied.".}
 
@@ -232,7 +233,7 @@ proc toTensor*(a: openarray, dummy_bugfix: static[int] = 0): auto =
 
   result = t
 
-proc fromBuffer*[T](rawBuffer: ptr UncheckedArray[T], shape: varargs[int]): Tensor[T] =
+proc fromBuffer*[T](rawBuffer: ptr UncheckedArray[T], shape: varargs[int], layout: static OrderType): Tensor[T] =
   ## Creates a `Tensor[T]` from a raw buffer, cast as `ptr UncheckedArray[T]`. The
   ## size derived from the given shape must match the size of the buffer!
   ##
@@ -242,18 +243,26 @@ proc fromBuffer*[T](rawBuffer: ptr UncheckedArray[T], shape: varargs[int]): Tens
   ##
   ## Its counterpart ``toUnsafeView`` can be used to obtain ``ptr UncheckedArray`` from a Tensor.
   var size: int
-  initTensorMetadata(result, size, shape)
+  initTensorMetadata(result, size, shape, layout)
   cpuStorageFromBuffer(result.storage, rawBuffer, size)
 
-proc fromBuffer*[T](rawBuffer: pointer, shape: varargs[int]): Tensor[T] =
+proc fromBuffer*[T](rawBuffer: ptr UncheckedArray[T], shape: varargs[int]): Tensor[T] =
+  ## Call `fromBuffer` with layout = rowMajor
+  fromBuffer[T](rawBuffer, shape, rowMajor)
+
+proc fromBuffer*[T](rawBuffer: pointer, shape: varargs[int], layout: static OrderType): Tensor[T] =
   ## Creates a `Tensor[T]` from a raw `pointer`. Make sure that the explicit type
   ## given to this proc actually matches the data stored behind the pointer!
   ## The size derived from the given shape must match the size of the buffer!
   ##
   ## Its counterpart ``toUnsafeView`` can be used to obtain ``ptr UncheckedArray`` from a Tensor.
   var size: int
-  initTensorMetadata(result, size, shape)
+  initTensorMetadata(result, size, shape, layout)
   cpuStorageFromBuffer(result.storage, rawBuffer, size)
+
+proc fromBuffer*[T](rawBuffer: pointer, shape: varargs[int]): Tensor[T] =
+  ## Call `fromBuffer` with layout = rowMajor
+  fromBuffer[T](rawBuffer, shape, rowMajor)
 
 func toUnsafeView*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): ptr UncheckedArray[T] {.inline.} =
   ## Returns an unsafe view of the valid data as a ``ptr UncheckedArray``.

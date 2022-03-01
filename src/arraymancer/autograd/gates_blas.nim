@@ -20,7 +20,8 @@ type MatMulGate*[TT] {.final.} = ref object of Gate[TT]
   a: Variable[TT]
   b: Variable[TT]
 
-proc matmul_backward_ag[TT](self: MatMulGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc matmul_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = MatMulGate[TT](self)
   let gradient = payload.variable.grad
   result = newDiffs[TT](2)
   result[0] = gradient * self.b.value.transpose

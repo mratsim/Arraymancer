@@ -52,8 +52,45 @@ proc main() =
 1;1;4.0
 """
 
+  let csv_empty_lines = """
+
+
+dimension_1,value
+0,1
+1,2
+2,3
+3,4
+4,5
+
+
+"""
+
+  let csv_semicolon_short = """dimension_1;value
+0;1
+1;2
+2;3
+3;4
+4;5
+"""
+
+  let csv_with_quoted = """dimension_1,value
+0,A
+1,B
+2,"hello, this is a string
+with a line break, ugh
+"
+3,D
+4,E
+"""
+
+
+
   let test_file_path = getTempDir() / "arraymancer_test.csv"
 
+  ## NOTE: the reading of CSV files in arraymancer currently ``does not`` handle parsing its own
+  ## CSV files as the dimensional information becomes part of the CSV output. I.e. instead of constructing
+  ## a NxMx...xZ tensor we always construct a NxM tensor, where N-1 is the rank of the original tensor
+  ## and M is the total size (total number of elements) of the original.
   suite "[IO] CSV support":
 
     test "Should export 1d Tensor":
@@ -61,6 +98,11 @@ proc main() =
       t.to_csv(test_file_path)
       let content = readFile(test_file_path)
       check content == expected_output_1d
+
+    test "Read 1D serialized tensor":
+      let tRead = readCsv[int](test_file_path, skipHeader = true)
+      let tExp = @[@[0, 1], @[1, 2], @[2, 3], @[3, 4], @[4, 5]].toTensor()
+      check tExp == tRead
 
     test "Should export 2d Tensor":
       let t = @[@[1, 2, 3], @[4, 5, 6]].toTensor()
@@ -79,6 +121,30 @@ proc main() =
       t.to_csv(test_file_path, separator=';')
       let content = readFile(test_file_path)
       check content == expected_output_semicolon
+
+    test "CSV parsing ignores empty lines":
+      writeFile(test_file_path, csv_empty_lines)
+      let tRead = readCsv[int](test_file_path, skipHeader = true)
+      let tExp = @[@[0, 1], @[1, 2], @[2, 3], @[3, 4], @[4, 5]].toTensor()
+      check tExp == tRead
+
+    test "CSV parsing of different (semicolon) separators works":
+      writeFile(test_file_path, csv_semicolon_short)
+      let tRead = readCsv[int](test_file_path, separator = ';', skipHeader = true)
+      let tExp = @[@[0, 1], @[1, 2], @[2, 3], @[3, 4], @[4, 5]].toTensor()
+      check tExp == tRead
+
+    test "CSV parsing of file with quoted content works":
+      writeFile(test_file_path, csv_with_quoted)
+      let tRead = readCsv[string](test_file_path, quote = '\"', skipHeader = true)
+      let tExp = @[@["0", "A"],
+                   @["1", "B"],
+                   @["2", """hello, this is a string
+with a line break, ugh
+"""],
+                   @["3", "D"],
+                   @["4", "E"]].toTensor()
+      check tExp == tRead
 
 main()
 GC_fullCollect()

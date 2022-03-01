@@ -20,7 +20,8 @@ import  ../tensor,
 
 type AddGate*[TT] {.final.} = ref object of Gate[TT]
 
-proc add_backward_ag[TT](self: AddGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc add_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = AddGate[TT](self)
   let gradient = payload.variable.grad
   result = newSeq[TT](2)
   result[0] = gradient
@@ -59,7 +60,8 @@ proc `+`*[TT](a, b: Variable[TT]): Variable[TT] =
 
 type SubGate*[TT] {.final.} = ref object of Gate[TT]
 
-proc sub_backward_ag[TT](self: SubGate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc sub_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  # NOTE: we do ``not`` convert `self` to `SubGate` here, as that leads to an `ObjectConversionError`!
   let gradient = payload.variable.grad
   result = newSeq[TT](2)
   result[0] = gradient

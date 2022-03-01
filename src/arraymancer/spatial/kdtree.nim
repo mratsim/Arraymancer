@@ -79,6 +79,16 @@ proc allEqual[T](t: Tensor[T], val: T): bool =
     if x != val:
       return false
 
+proc nonZeroWrapper(t: Tensor[bool]): Tensor[int] =
+  ## Wrapper around `nonzero` that takes care of not accessing the `_` in the
+  ## second dimension for the case that `nonzero` returns a tensor of shape
+  ## `[n, 0]`
+  result = nonzero(t)
+  if result.shape[0] > 0 and result.shape[1] > 0:
+    result = result[0, _]
+  else:
+    result = newTensor[int](0) # empty tensor
+
 proc build[T](tree: KDTree[T],
               idx: Tensor[int],
               nodeId: var int,
@@ -121,16 +131,16 @@ proc build[T](tree: KDTree[T],
       var split = (maxVal + minVal) / 2.0 # take mean between min / max
     # we (ab)use nonzero to get the indices for the mask along the
     # first axis
-    var lessIdx = nonzero(data <=. split)[0, _]
-    var greaterIdx = nonzero(data >. split)[0, _]
+    var lessIdx = nonzeroWrapper(data <=. split)
+    var greaterIdx = nonzeroWrapper(data >. split)
     if lessIdx.size == 0:
       split = min(data)
-      lessIdx = nonzero(data <=. split)[0, _]
-      greaterIdx = nonzero(data >. split)[0, _]
+      lessIdx = nonzeroWrapper(data <=. split)
+      greaterIdx = nonzeroWrapper(data >. split)
     if greaterIdx.size == 0:
       split = max(data)
-      lessIdx = nonzero(data <. split)[0, _]
-      greaterIdx = nonzero(data >=. split)[0, _]
+      lessIdx = nonzeroWrapper(data <. split)
+      greaterIdx = nonzeroWrapper(data >=. split)
     if lessIdx.size == 0:
       # still zero, all must have same value
       if not allEqual(data, data[0]):
@@ -292,8 +302,9 @@ proc queryImpl[T](
     of tnLeaf:
       # brute force for remaining elements in leaf node
       let ni = node.idx
-      let ds = metric.pairwiseDistances(tree.data[ni], x.unsqueeze(axis = 0), p,
-                                        squared = true).squeeze
+      var ds = metric.pairwiseDistances(tree.data[ni], x.unsqueeze(axis = 0), p,
+                                        squared = true)
+      assert ds.rank == 1
       for i in 0 ..< ds.size:
         if ds[i] < distanceUpperBound:
           when yieldNumber:

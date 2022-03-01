@@ -20,7 +20,8 @@ type MSELoss*[TT] {.final.} = ref object of Gate[TT]
   target: TT
   cache: Variable[TT]
 
-proc mse_backward_ag[TT](self: MSELoss[TT], payload: Payload[TT]): SmallDiffs[TT] =
+proc mse_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = MSELoss[TT](self)
   let gradient = payload.variable.grad
   # Gradient is a tensor of shape 1
   assert gradient.shape == [1]

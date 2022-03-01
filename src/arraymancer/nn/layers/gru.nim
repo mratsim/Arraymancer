@@ -40,9 +40,10 @@ proc gru_inference[TT](
   )
 
 proc gru_backward_ag[TT](
-          self: GRUGate[TT],
+          self: Gate[TT],
           payload: Payload[TT],
         ): SmallDiffs[TT] {.noInit.}=
+  let self = GRUGate[TT](self)
   let gradients = payload.sequence
   result = newDiffs[TT](7)
   gru_backward(

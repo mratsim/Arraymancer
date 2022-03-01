@@ -134,9 +134,14 @@ proc `/.`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], val: T
     result = t.map_inline(x / val)
 
 proc `^.`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T], exponent: T): Tensor[T] {.noInit.} =
-  ## Compute element-wise exponentiation
+  ## Compute element-wise exponentiation: tensor ^ scalar.
   returnEmptyIfEmpty(t)
   result = t.map_inline pow(x, exponent)
+
+proc `^.`*[T: SomeFloat|Complex[float32]|Complex[float64]](base: T, t: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Broadcasted exponentiation: scalar ^ tensor.
+  returnEmptyIfEmpty(t)
+  result = t.map_inline pow(base, x)
 
 # #####################################
 # # Broadcasting in-place Tensor-Scalar

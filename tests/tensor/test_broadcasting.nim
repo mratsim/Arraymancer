@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer, ../testutils
-import unittest, sequtils
+import unittest, sequtils, math
 import complex except Complex64, Complex32
 
 proc main() =
@@ -56,7 +56,7 @@ proc main() =
         check b == [[1,1],
                     [2,2]].toTensor()
 
-    test "Implicit tensor-tensor broadcasting - basic operations +., -., *., ./, .^":
+    test "Implicit tensor-tensor broadcasting - basic operations +., -., *., /., ^.":
       block: # Addition
         let a = [0, 10, 20, 30].toTensor().reshape(4,1)
         let b = [0, 1, 2].toTensor().reshape(1,3)
@@ -140,6 +140,11 @@ proc main() =
                             [1.0/10.0],
                             [1.0/20.0],
                             [1.0/30.0]].toTensor
+
+        check: 2.0 ^. a == [[pow(2.0, 1.0)],
+                            [pow(2.0, 10.0)],
+                            [pow(2.0, 20.0)],
+                            [pow(2.0, 30.0)]].toTensor
 
         check: a.astype(Complex[float64]) ^. complex64(-1.0,0.0) == [[1.0],
                             [1.0/10.0],

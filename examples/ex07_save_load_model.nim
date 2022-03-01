@@ -69,7 +69,7 @@ proc load(ctx: Context[Tensor[float32]]): ExampleNetwork =
 
 
 let
-  model = if fileExists("hiddenwight.npy"): ctx.load() else: ctx.newExampleNetwork()
+  model = if fileExists("hiddenweight.npy"): ctx.load() else: ctx.newExampleNetwork()
   # quick prototype for model variable assignment.
   # if a numpy file exists in the currentDir you will load the model, otherwise create a new model
   optim = model.optimizerSGD(learning_rate = 1e-4'f32)

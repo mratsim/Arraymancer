@@ -3,11 +3,9 @@ import ../src/arraymancer, strformat, os
 #[
 A fully-connected ReLU network with one hidden layer, trained to predict y from x
 by minimizing squared Euclidean distance.
-
 *** this example is modified from the simple2layers example to show how to
 save/load models. We can do this by defining our own model class
 and forward procedure, then defining procedures to save/load the model. ***
-
 ]#
 
 # ##################################################################
@@ -68,7 +66,7 @@ proc load(ctx: Context[Tensor[float32]]): ExampleNetwork =
   result.output.bias   = ctx.variable(read_npy[float32]("outputbias.npy"), requires_grad = true)
 
 
-let
+var
   model = if fileExists("hiddenweight.npy"): ctx.load() else: ctx.newExampleNetwork()
   # quick prototype for model variable assignment.
   # if a numpy file exists in the currentDir you will load the model, otherwise create a new model
@@ -90,4 +88,7 @@ for t in 0 ..< 250:
 # save model
 model.save()
 
-
+# simple sanity check for loading model (validates that the model is saved correctly)
+var hidden_weights = model.hidden.weight.value
+let newModel = ctx.load()
+doAssert newModel.hidden.weight.value == hidden_weights, "loaded model weights do not match with original model"

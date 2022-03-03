@@ -159,7 +159,8 @@ proc test(name, switches = "", split = false, lang = "c") =
                    "ex03_simple_two_layers.nim",
                    "ex04_fizzbuzz_interview_cheatsheet.nim",
                    "ex05_sequence_classification_GRU.nim",
-                   "ex06_shakespeare_generator.nim"]
+                   "ex06_shakespeare_generator.nim",
+                   "ex07_save_load_model.nim"]
   for ex in examples:
     exec "nim " & lang & " -o:build/" & name & switches & " examples/" & $ex
 

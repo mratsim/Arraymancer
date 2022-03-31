@@ -279,7 +279,7 @@ proc main() =
   let ctx = newContext Tensor[float32]
 
   # Build our model and initialize its weights
-  let model = ctx.init(ShakespeareModel)#ctx.newShakespeareNet()
+  let model = ctx.init(ShakespeareModel)
 
   # Optimizer
   # let optim = model.optimizerSGD(learning_rate = LearningRate)

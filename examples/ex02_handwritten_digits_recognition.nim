@@ -33,42 +33,19 @@ let
   y_test = mnist.test_labels.astype(int)
 
 # Configuration of the neural network
-# network DemoNet:
-#   layers h, w:
-#     cv1:        Conv2D(@[1, h, w], 20, (5, 5))
-#     mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
-#     cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
-#     mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
-#     fl:         Flatten(mp2.out_shape)
-#     hidden:     Linear(fl.out_shape[0], 500)
-#     classifier: Linear(500, 10)
-#   forward x:
-#     x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
-
-network SomeConvNet:
-  layers h, w:
-    cv1:        Conv2D(@[1, h, w], 20, (5, 5))
-    mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
-    cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
-    mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
-    fl:         Flatten(mp2.out_shape)
-  forward x:
-    x.cv1.relu.mp1.cv2.relu.mp2.fl
-
-proc out_shape*[T](self: SomeConvNet[T]): seq[int] =
-  self.fl.out_shape
-proc in_shape*[T](self: SomeConvNet[T]): seq[int] =
-  self.cv1.in_shape
-
 network DemoNet:
-  layers h, w:
-    cv:         SomeConvNet(h, w)
-    hidden:     Linear(cv.out_shape[0], 500)
-    classifier: Linear(hidden.out_shape[0], 10)
+  layers:
+    cv1:        Conv2D(@[1, 28, 28], out_channels = 20, kernel_size = (5, 5))
+    mp1:        Maxpool2D(cv1.out_shape, kernel_size = (2,2), padding = (0,0), stride = (2,2))
+    cv2:        Conv2D(mp1.out_shape, out_channels = 50, kernel_size = (5, 5))
+    mp2:        MaxPool2D(cv2.out_shape, kernel_size = (2,2), padding = (0,0), stride = (2,2))
+    fl:         Flatten(mp2.out_shape)
+    hidden:     Linear(fl.out_shape[0], 500)
+    classifier: Linear(500, 10)
   forward x:
-    x.cv.hidden.relu.classifier
+    x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
 
-let model = ctx.init(DemoNet, 28, 28)
+let model = ctx.init(DemoNet)
 
 # Stochastic Gradient Descent (API will change)
 let optim = model.optimizerSGD(learning_rate = 0.01'f32)

@@ -326,27 +326,21 @@ echo answer
 Neural network definition extracted from [example 2](examples/ex02_handwritten_digits_recognition.nim).
 
 ```Nim
-network SomeConvNet:
-  layers h, w:
-    cv1:        Conv2D(@[1, h, w], 20, (5, 5))
-    mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
-    cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
-    mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
-    fl:         Flatten(mp2.out_shape)
-  forward x:
-    x.cv1.relu.mp1.cv2.relu.mp2.fl
-
 network DemoNet:
-  layers h, w:
-    cv:         SomeConvNet(h, w)
-    hidden:     Linear(cv.fl.out_shape[0], 500)
-    classifier: Linear(hidden.out_shape[0], 10)
+  layers:
+    cv1:        Conv2D(@[1, 28, 28], out_channels = 20, kernel_size = (5, 5))
+    mp1:        Maxpool2D(cv1.out_shape, kernel_size = (2,2), padding = (0,0), stride = (2,2))
+    cv2:        Conv2D(mp1.out_shape, out_channels = 50, kernel_size = (5, 5))
+    mp2:        MaxPool2D(cv2.out_shape, kernel_size = (2,2), padding = (0,0), stride = (2,2))
+    fl:         Flatten(mp2.out_shape)
+    hidden:     Linear(fl.out_shape[0], 500)
+    classifier: Linear(500, 10)
   forward x:
-    x.cv.hidden.relu.classifier
+    x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
 
 let
   ctx = newContext Tensor[float32] # Autograd/neural network graph
-  model = ctx.init(DemoNet, 28, 28)
+  model = ctx.init(DemoNet)
   optim = model.optimizerSGD(learning_rate = 0.01'f32)
 
 # ...
@@ -413,6 +407,45 @@ echo answer.unsqueeze(1)
 # 	  Decreasing|
 # 	  NonMonotonic|
 ```
+
+#### Composing models
+Network models can also act as layers in other network definitions.
+The handwritten-digit-recognition model above can also be written like this:
+
+```Nim
+
+network SomeConvNet:
+  layers h, w:
+    cv1:        Conv2D(@[1, h, w], 20, (5, 5))
+    mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
+    cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
+    mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
+    fl:         Flatten(mp2.out_shape)
+  forward x:
+    x.cv1.relu.mp1.cv2.relu.mp2.fl
+
+# this model could be initialized like this: let model = ctx.init(SomeConvNet, h = 28, w = 28)
+
+# functions `out_shape` and `in_shape` returning a `seq[int]` are convention (but not strictly necessary)
+# for layers/models that have clearly defined output and input size
+proc out_shape*[T](self: SomeConvNet[T]): seq[int] =
+  self.fl.out_shape
+proc in_shape*[T](self: SomeConvNet[T]): seq[int] =
+  self.cv1.in_shape
+
+network DemoNet:
+  layers:
+  # here we use the previously defined SomeConvNet as a layer
+    cv:         SomeConvNet(28, 28) 
+    hidden:     Linear(cv.out_shape[0], 500)
+    classifier: Linear(hidden.out_shape[0], 10)
+  forward x:
+    x.cv.hidden.relu.classifier
+```
+
+#### Custom layers
+It is also possible to create fully custom layers.
+The documentation for this can be found in the [official API documentation](https://mratsim.github.io/Arraymancer/nn_dsl.html).
 
 ### Tensors on CPU, on Cuda and OpenCL
 Tensors, CudaTensors and CLTensors do not have the same features implemented yet.

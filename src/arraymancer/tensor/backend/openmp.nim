@@ -92,7 +92,7 @@ template omp_parallel_reduce_blocks*[T](reduced: T, block_offset, block_size: un
           let num_blocks = min(min(ompsize, omp_get_max_threads()), OMP_MAX_REDUCE_BLOCKS)
           if num_blocks > 1:
             withMemoryOptimHints()
-            var results {.align64.}: array[OMP_MAX_REDUCE_BLOCKS * maxItemsPerCacheLine, type(reduced)]
+            var results {.align64, noInit.}: array[OMP_MAX_REDUCE_BLOCKS * maxItemsPerCacheLine, type(reduced)]
             let bsize = ompsize div num_blocks
 
             if bsize > 1:

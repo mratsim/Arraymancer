@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./global_config,
+import ./global_config,
         ./memory_optimization_hints
 
 when defined(openmp):
@@ -20,7 +20,7 @@ when defined(openmp):
     {.passC: "-fopenmp".} # behind -Xcompiler -fopenmp
     {.passL: "-fopenmp".}
 
-  {.pragma: omp, header:"omp.h".}
+  {.pragma: omp, header: "omp.h".}
 
   proc omp_set_num_threads*(x: cint) {.omp.}
   proc omp_get_num_threads*(): cint {.omp.}
@@ -39,18 +39,17 @@ else:
   const OMP_FOR_ANNOTATION = "parallel for simd if(ompsize > " & $OMP_FOR_THRESHOLD & ")"
 
 template omp_parallel_countup*(i: untyped, size: Natural, body: untyped): untyped =
-  let ompsize{.exportc:"ompsize".} = size # ensure that if size is computed it is only called once
+  let ompsize{.exportc: "ompsize".} = size # ensure that if size is computed it is only called once
   for i in `||`(0, ompsize, OMP_FOR_ANNOTATION):
     body
 
 template omp_parallel_forup*(i: untyped, start, size: Natural, body: untyped): untyped =
-  let ompsize{.exportc:"ompsize".} = size # ensure that if size is computed it is only called once
+  let ompsize{.exportc: "ompsize".} = size # ensure that if size is computed it is only called once
   for i in `||`(start, ompsize, OMP_FOR_ANNOTATION):
     body
 
 template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, body: untyped): untyped =
   let ompsize = size # ensure that if size is computed it is only called once
-
   if likely(ompsize > 0):
     block ompblocks:
       when defined(openmp):
@@ -65,6 +64,7 @@ template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, 
               block:
                 body
             break ompblocks
+      # END OMP BLOCK
 
       # block_offset and block_size are injected into the calling proc
       let block_offset = 0
@@ -74,7 +74,6 @@ template omp_parallel_blocks*(block_offset, block_size: untyped, size: Natural, 
 
 
 template omp_parallel_reduce_blocks*[T](reduced: T, block_offset, block_size: untyped, size, weight: Natural, op_final, op_init, op_middle: untyped): untyped =
-
 
   # To prevent false sharing, results will be stored in an array but
   # padded to be a cache line apart atleast.
@@ -87,12 +86,13 @@ template omp_parallel_reduce_blocks*[T](reduced: T, block_offset, block_size: un
 
   if likely(ompsize > 0):
     block ompblocks:
-      when defined(openmp):
+      # There is an issue with using array[SIZE, T] inside an openmp loop with --mm:arc|orc
+      when defined(openmp) and not defined(gcDestructors):
         if ompsize * weight >= OMP_FOR_THRESHOLD:
           let num_blocks = min(min(ompsize, omp_get_max_threads()), OMP_MAX_REDUCE_BLOCKS)
           if num_blocks > 1:
             withMemoryOptimHints()
-            var results{.align64, noInit.}: array[OMP_MAX_REDUCE_BLOCKS * maxItemsPerCacheLine, type(reduced)]
+            var results {.align64.}: array[OMP_MAX_REDUCE_BLOCKS * maxItemsPerCacheLine, type(reduced)]
             let bsize = ompsize div num_blocks
 
             if bsize > 1:
@@ -136,6 +136,7 @@ template omp_parallel_reduce_blocks*[T](reduced: T, block_offset, block_size: un
                   op_final
 
               break ompblocks
+      # END OMP BLOCK
 
       # Fallback normal sequential reduce
       block:

@@ -32,7 +32,7 @@ type
     shape*: Metadata                     # 56 bytes
     strides*: Metadata                   # 56 bytes
     offset*: int                         # 8 bytes
-    storage* {.cursor.}: CpuStorage[T]   # 8 bytes
+    storage*: CpuStorage[T]              # 8 bytes
 
   CpuStorage*[T] {.shallow.} = ref CpuStorageObj[T] # Total heap: 25 bytes = 1 cache-line
   CpuStorageObj[T] {.shallow.} = object

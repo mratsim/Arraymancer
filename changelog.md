@@ -1,6 +1,13 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.12 Apr. 12 2022
+=====================================================
+
+- Remove cursor annotation for CPU Tensor again as it causes memory
+  leaks (PR #555)
+- disable OpenMP in reducing contexts if ARC/ORC is used as it leads
+  to segfaults (PR #555)
 
 Arraymancer v0.7.11 Feb. 22 2022
 =====================================================

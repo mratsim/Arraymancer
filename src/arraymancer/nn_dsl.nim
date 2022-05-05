@@ -11,7 +11,7 @@ type
     idents: seq[NimNode]
     body: NimNode
 
-func splitSections(config: NimNode): tuple[layers, forward: SectionInfo] =
+proc splitSections(config: NimNode): tuple[layers, forward: SectionInfo] =
   template unknown =
     error:
       lineInfo(section) &
@@ -46,7 +46,7 @@ type
     typeName: NimNode
     arguments: seq[NimNode]
 
-func createLayerInfo(sectionInfo: SectionInfo): seq[LayerInfo] =
+proc createLayerInfo(sectionInfo: SectionInfo): seq[LayerInfo] =
   
   # sectionInfo.idents contains constains a list of identifiers that will be used
   # as function parameters for the init funxtion
@@ -78,7 +78,7 @@ func createLayerInfo(sectionInfo: SectionInfo): seq[LayerInfo] =
     if layer[1][0].len >= 2:
       result[^1].arguments = layer[1][0][1..^1]
 
-func createModelType(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
+proc createModelType(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
 
   # creates the type defintion of the model, e.g.:
   #  type
@@ -119,7 +119,7 @@ func createModelType(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
     )
   )
   
-func createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelName: NimNode): NimNode =
+proc createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelName: NimNode): NimNode =
 
   # creates init function of the model, e.g.:
   #   proc init[T](ctx: Context[AnyTensor[T]], modelType: typedesc[SomeConvNet[T]], h: auto; w: auto): SomeConvNet[T] =
@@ -220,7 +220,7 @@ func createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelN
     )
   )
 
-func createForwardProc(layerInfos: seq[LayerInfo], forward: SectionInfo, modelName: NimNode): NimNode =
+proc createForwardProc(layerInfos: seq[LayerInfo], forward: SectionInfo, modelName: NimNode): NimNode =
 
   # create the forward function, e.g.:
   # proc forward[T](self: SomeConvNet[T]; x: auto): auto =

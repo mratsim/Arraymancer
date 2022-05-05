@@ -156,7 +156,8 @@ proc createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelN
 
   let
     ctxSymbol = genSym(nskParam, "ctx")
-    underlyingTypeSymbol = ident($toStrLit(genSym(nskGenericParam, "T")))# TODO fix this
+    # TODO fix this (part of workaround for https://github.com/nim-lang/Nim/issues/19542):
+    underlyingTypeSymbol = ident($toStrLit(genSym(nskGenericParam, "T")))
   for layerInfo in layerInfos:
     body.add(
       newAssignment(
@@ -394,7 +395,6 @@ macro network*(modelName: untyped, config: untyped): untyped =
   let initProc = createInitProc(layerInfos, sections.layers, modelName)
 
   # 4. create forward proc
-
   let forwardProc = createForwardProc(layerInfos, sections.forward, modelName)
 
   # 5. combine everything into a statement

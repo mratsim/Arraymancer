@@ -31,7 +31,7 @@ Actually no, this would create lots of temporary and loops across the
 data: - ``temp1 = -x`` - ``temp2 = math.exp(temp1)`` -
 ``temp3 = 1 + temp2`` - ``temp4 = 1 / temp3``
 
-So you suddenly get a o(4*n) algorithm.
+So you suddenly get a `O(4*n)` algorithm.
 
 Arraymancer can do the same using the explicit broadcast operator ``/.``
 and ``+.``. (To avoid name conflict we change the logistic sigmoid name)

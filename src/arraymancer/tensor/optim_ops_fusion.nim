@@ -18,8 +18,8 @@ import  ../laser/private/nested_containers,
         ./operators_blas_l2l3,
         typetraits
 
-#################################################
-## Operations fusion
+# ################################################
+# Operations fusion
 
 # TODO: tests and all linear combination of alpha A*B + beta C
 # TODO: term rewriting have Attempt to read from nil bugs when not using a auto return type
@@ -60,7 +60,6 @@ template rewriteTensor_MultiplyAdd*{C + `*`(A,B)}[T](
   ## Fuse ``C + A * B`` into a single operation.
   ##
   ## Operation fusion leverage the Nim compiler and should not be called explicitly.
-
   # TODO: It doesn't seem to work in this order, precedence rules?
   tensor_multiplyAdd(A, B, C)
 
@@ -71,8 +70,8 @@ template rewriteTensor_MultiplyAdd_inplace*{C += `*`(A,B)}[T](
   ## Operation fusion leverage the Nim compiler and should not be called explicitly.
   tensor_multiplyAdd_inplace(A, B, C)
 
-#################################################
-## initialization
+# ################################################
+# initialization
 
 template toTensorReshapeImpl(oa: typed, shape: varargs[int]): untyped =
   var t: Tensor[typeof(flatIter(oa))]
@@ -87,18 +86,17 @@ template toTensorReshapeImpl(oa: typed, shape: varargs[int]): untyped =
     i += 1
   assert i == size
 
-proc toTensorReshape(oa: string, shape: varargs[int]): auto {.noInit,noSideEffect.}=
+func toTensorReshape(oa: string, shape: varargs[int]): auto {.noInit.}=
   ## Fuse toTensor and reshape in one operation.
   ##
   ## Deal specifically with strings/seq[char]
-
   toTensorReshapeImpl(oa, shape)
 
-proc toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto {.noInit,noSideEffect.}=
+func toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto {.noInit.}=
   ## Fuse toTensor and reshape in one operation
   ##
   # Dummy_bugfix param is necessary due to: https://github.com/nim-lang/Nim/issues/6343
-  # TODO: remove 'dummy_bugfix'
+  # TODO: remove 'dummy_bugfix'. Well, the issue is still open, it's only 2022 now.
   toTensorReshapeImpl(oa, shape)
 
 template rewriteToTensorReshape*{reshape(toTensor(oa, dummy_bugfix), shape)}(

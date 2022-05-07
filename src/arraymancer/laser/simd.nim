@@ -315,7 +315,7 @@ when defined(i386) or defined(amd64):
     ## imm8 = {bits76, bits54, bits32, bits10}
     ## d0 will refer a.lo[bits10]
     ## d1            a.lo[bits32]
-    ## ...
+    ## `...`
     ## d4 will refer a.hi[bits10]
     ## d5            a.hi[bits32]
 
@@ -329,7 +329,7 @@ when defined(i386) or defined(amd64):
 
   func mm256_movemask_epi8*(a: m256i): int32 {.importc: "_mm256_movemask_epi8", x86.}
     ## Returns the most significant bit
-    ## of each 8-bit elements in `a`
+    ## of each 8-bit elements in `a`
 
   func mm256_cmpgt_epi32*(a, b: m256i): m256i {.importc: "_mm256_cmpgt_epi32", x86.}
     ## Compare a greater than b
@@ -415,13 +415,13 @@ when defined(i386) or defined(amd64):
   func mm512_maskz_set1_epi32*(k: mmask16, a: cint): m512i {.importc: "_mm512_maskz_set1_epi32", x86.}
     ## Compare a greater than b
     ## Broadcast 32-bit integer a to all elements of dst using zeromask k
-    ## (elements are zeroed out when the corresponding mask bit is not set).
+    ## (elements are zeroed out when the corresponding mask bit is not set).
 
   func mm512_movm_epi32*(a: mmask16): m512i {.importc: "_mm512_movm_epi32", x86.}
 
   func mm512_movepi8_mask*(a: m512i): mmask64 {.importc: "_mm512_movepi8_mask", x86.}
     ## Returns the most significant bit
-    ## of each 8-bit elements in `a`
+    ## of each 8-bit elements in `a`
 
   func mm512_srli_epi32*(a: m512i, count: int32): m512i {.importc: "_mm512_srli_epi32", x86.}
   func mm512_slli_epi32*(a: m512i, count: int32): m512i {.importc: "_mm512_slli_epi32", x86.}

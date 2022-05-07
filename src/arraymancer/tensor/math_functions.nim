@@ -100,7 +100,7 @@ proc mclamp*[T](t: var Tensor[T], min, max: T) =
   t.apply_inline(clamp(x, min, max))
 
 proc square*[T](x: T): T {.inline.} =
-  ## Return x*x
+  ## Return `x*x`
   x*x
 
 makeUniversal(square)

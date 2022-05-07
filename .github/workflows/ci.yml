@@ -215,3 +215,25 @@ jobs:
           nimble install -y --depsOnly
           # Run the tests.
           nimble test
+
+      - name: Build docs
+        if: >
+          github.event_name == 'push' && github.ref == 'refs/heads/master' &&
+          matrix.target == 'linux' && matrix.branch == 'version-1-6'
+        shell: bash
+        run: |
+          cd arraymancer
+          # need to call `develop`, otherwise `docs.nim` logic breaks
+          nimble develop -y
+          nimble gen_docs
+          cp docs/build/{the,}index.html || true
+
+      - name: Publish docs
+        if: >
+          github.event_name == 'push' && github.ref == 'refs/heads/master' &&
+          matrix.target == 'linux' && matrix.branch == 'version-1-6'
+        uses: crazy-max/ghaction-github-pages@v1
+        with:
+          build_dir: arraymancer/docs/build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

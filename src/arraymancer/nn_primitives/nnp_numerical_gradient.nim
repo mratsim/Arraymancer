@@ -18,7 +18,7 @@ proc numerical_gradient*[T](input: T, f: (proc(x: T): T), h = T(1e-5)): T {.inli
   ## Compute numerical gradient for any function w.r.t. to an input value,
   ## useful for gradient checking, recommend using float64 types to assure
   ## numerical precision. The gradient is calculated as:
-  ## (f(x + h) - f(x - h)) / (2*h)
+  ## `(f(x + h) - f(x - h)) / (2*h)`
   ## where h is a small number, typically 1e-5.
   result = (f(input + h) - f(input - h)) / (2.0.T * h)
 
@@ -26,7 +26,7 @@ proc numerical_gradient*[T](input: Tensor[T], f: (proc(x: Tensor[T]): T), h = T(
   ## Compute numerical gradient for any function w.r.t. to an input Tensor,
   ## useful for gradient checking, recommend using float64 types to assure
   ## numerical precision. The gradient is calculated as:
-  ## (f(x + h) - f(x - h)) / (2*h)
+  ## `(f(x + h) - f(x - h)) / (2*h)`
   ## where h is a small number, typically 1e-5
   ## f(x) will be called for each input elements with +h and -h pertubation.
   # Iterate over all elements calculating each partial derivative

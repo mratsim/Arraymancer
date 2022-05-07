@@ -15,7 +15,7 @@ proc least_squares_solver*[T: SomeFloat](a, b: Tensor[T],
   ] {.noInit.} =
   ## Solves the given linear least squares problem:
   ##
-  ## `minimize | Ax - y | `
+  ## `minimize | Ax - y |`
   ##
   ## where the matrix `A` is our input tensor `a` and the resulting vector `y` is
   ## given by our input tensor `b`.

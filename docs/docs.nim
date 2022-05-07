@@ -15,7 +15,6 @@ This file is a slightly modified version of the same file of `nimterop`:
 https://github.com/nimterop/nimterop/blob/master/nimterop/docs.nim
 ]#
 
-
 proc getNimRootDir(): string =
   #[
   hack, but works
@@ -24,7 +23,7 @@ proc getNimRootDir(): string =
   import "$nim/testament/lib/stdtest/specialpaths.nim"
   nimRootDir
   ]#
-  fmt"{currentSourcePath}".parentDir.parentDir.parentDir
+  getCurrentCompilerExe().parentDir.parentDir
 
 const
   DirSep = when defined(windows): '\\' else: '/'
@@ -75,7 +74,7 @@ proc getFiles*(path: string): seq[string] =
 
 import nimDocTemplates
 
-proc buildDocs*(path: string, docPath: string, baseDir = getProjectPath() & $DirSep,
+proc buildDocs*(path: string, docPath: string, baseDir = getCurrentDir() & $DirSep,
                 defaultFlags = "",
                 masterBranch = "master",
                 defines: openArray[string] = @[]) =
@@ -150,7 +149,7 @@ proc buildDocs*(path: string, docPath: string, baseDir = getProjectPath() & $Dir
       # `git.commit:` to work! Otherwise we sit in `docs` and for some reason the relative path
       # will eat one piece of the resulting `source` links and thereby removing the actual branch
       # and we end up with a broken link!
-      echo execAction(&"cd {getProjectPath()} && {nim} doc {defStr} --git.commit:{masterBranch} -o:{outfile} --index:on {file}")
+      echo execAction(&"cd {getCurrentDir()} && {nim} doc {defStr} --git.commit:{masterBranch} -o:{outfile} --index:on {file}")
       inc idx
     ## now build  the index
     echo execAction(&"{nim} buildIndex -o:{docPath}/theindex.html {docPath}")
@@ -174,7 +173,7 @@ proc buildDocs*(path: string, docPath: string, baseDir = getProjectPath() & $Dir
 
 
 let nameMap = {
-  "dsl_core" : "Neural network: Declaration",
+  "nn_dsl" : "Neural network: Declaration",
   "relu" : "Activation: Relu (Rectified linear Unit)",
   "sigmoid" : "Activation: Sigmoid",
   "tanh" : "Activation: Tanh",
@@ -242,7 +241,6 @@ proc getHeaderMap(path: string): seq[seq[string]] =
   ## all elements to be added to the header at the index. The index
   ## corresponds to the `$N` of the `nimDocTemplates.headerTmpl` field.
   const excludeFiles = [ "nn", # only imports and exports `NN` files
-                         "nn_dsl", # only imports and exports `NN DSL` files
                          "ml", # only imports and exports `ML` files
                          "io", # only imports and exports `io` files
                          "autograd", # only imports and exports `autograd` files
@@ -252,7 +250,6 @@ proc getHeaderMap(path: string): seq[seq[string]] =
   # map of the different header categories
   let catMap = { "tensor" : 1,
                  "nn" : 2,
-                 "nn_dsl" : 2,
                  "linear_algebra" : 3,
                  "stats" : 3,
                  "ml" : 3,
@@ -316,4 +313,4 @@ proc genNimdocCfg*(path: string) =
   fdata.add(&"doc.file = \"\"\"{docFileTmpl}{htmlTmpl}\"\"\"\n")
 
   # now build the content for the spans
-  writeFile(getProjectPath() & $DirSep & "nimdoc.cfg", fdata)
+  writeFile(getCurrentDir() & $DirSep & "nimdoc.cfg", fdata)

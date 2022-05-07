@@ -177,7 +177,7 @@ template stridedIteration*(strider: IterKind, t, iter_offset, iter_size: typed):
     template data: untyped = t
 
   # Optimize for loops in contiguous cases
-  if t.is_C_Contiguous:
+  if t.is_C_contiguous:
     for i in iter_offset..<(iter_offset+iter_size):
       stridedIterationYield(strider, data, i, i)
   else:
@@ -211,8 +211,8 @@ template dualStridedIterationYield*(strider: IterKind, t1data, t2data, i, t1_ite
 template dualStridedIteration*(strider: IterKind, t1, t2, iter_offset, iter_size: typed): untyped =
   ## Iterate over two Tensors, displaying data as in C order, whatever the strides.
 
-  let t1_contiguous = t1.is_C_Contiguous()
-  let t2_contiguous = t2.is_C_Contiguous()
+  let t1_contiguous = t1.is_C_contiguous()
+  let t2_contiguous = t2.is_C_contiguous()
 
   when getSubType(type(t1)) is KnownSupportsCopyMem:
     let t1data = t1.unsafe_raw_offset()
@@ -253,9 +253,9 @@ template tripleStridedIterationYield*(strider: IterKind, t1data, t2data, t3data,
 
 template tripleStridedIteration*(strider: IterKind, t1, t2, t3, iter_offset, iter_size: typed): untyped =
   ## Iterate over two Tensors, displaying data as in C order, whatever the strides.
-  let t1_contiguous = t1.is_C_Contiguous()
-  let t2_contiguous = t2.is_C_Contiguous()
-  let t3_contiguous = t3.is_C_Contiguous()
+  let t1_contiguous = t1.is_C_contiguous()
+  let t2_contiguous = t2.is_C_contiguous()
+  let t3_contiguous = t3.is_C_contiguous()
 
   # Get tensor data address with offset builtin
   withMemoryOptimHints()

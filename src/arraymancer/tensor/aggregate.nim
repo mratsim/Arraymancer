@@ -89,7 +89,7 @@ proc mean*[T: Complex[float32] or Complex[float64]](t: Tensor[T], axis: int): Te
 
 proc min*[T](t: Tensor[T]): T =
   ## Compute the min of all elements
-  t.reduce_inline():
+  reduce_inline(t):
     x = min(x,y)
 
 proc min*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =

@@ -219,7 +219,7 @@ jobs:
       - name: Build docs
         if: >
           github.event_name == 'push' && github.ref == 'refs/heads/master' &&
-          matrix.target == 'linux' && matrix.nim == 'version-1-6'
+          matrix.target.os == 'linux' && matrix.nim == 'version-1-6'
         shell: bash
         run: |
           cd arraymancer
@@ -231,7 +231,7 @@ jobs:
       - name: Publish docs
         if: >
           github.event_name == 'push' && github.ref == 'refs/heads/master' &&
-          matrix.target == 'linux' && matrix.nim == 'version-1-6'
+          matrix.target.os == 'linux' && matrix.nim == 'version-1-6'
         uses: crazy-max/ghaction-github-pages@v1
         with:
           build_dir: arraymancer/docs/build

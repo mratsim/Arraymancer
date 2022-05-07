@@ -224,6 +224,7 @@ jobs:
         run: |
           cd arraymancer
           # need to call `develop`, otherwise `docs.nim` logic breaks
+          nimble install -y nimhdf5
           nimble develop -y
           nimble gen_docs
           cp docs/build/{the,}index.html || true

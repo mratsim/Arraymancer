@@ -110,3 +110,65 @@ proc maxpool2d*[TT](input: Variable[TT],
     result.maxpool2D_forward(input, kernel, padding, stride)
   else:
     result.maxpool2D_inference(input, kernel, padding, stride)
+
+type
+  MaxPool2D*[T] = object
+    kernelSize: Size2D
+    padding: Size2D
+    stride: Size2D
+    inShape: seq[int]
+
+proc init*[T](
+  ctx: Context[Tensor[T]],
+  layerType: typedesc[MaxPool2D[T]],
+  inShape: seq[int],
+  kernelSize, padding, stride: Size2D
+): MaxPool2D[T] =
+
+  ## Creates an 2d maxpool layer.
+  ## Input:
+  ##     - ``inShape`` Expected shape if input in the form of ``[C, H_in, W_in]``
+  ##     - ``kernelSize`` Height and width of the pooling kernel.
+  ##     - ``padding`` Size2D tuple with height and width of the padding
+  ##     - ``stride`` Size2D tuple with height and width of the stride
+  ## 
+  ## Returns the created ``MaxPool2D``.
+
+
+  result = MaxPool2D[T](
+    kernelSize: kernelSize,
+    padding: padding,
+    stride: stride
+  )
+  assert inShape.len == 3
+  result.inShape = inShape
+
+
+proc forward*[T](self: MaxPool2D[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
+  input.maxpool2D(
+    kernel = self.kernelSize,
+    padding = self.padding,
+    stride = self.stride
+  )
+
+func outShape*[T](self: MaxPool2D[T]): seq[int] =
+  template C: int = self.inShape[0]
+  template H: int = self.inShape[1]
+  template W: int = self.inShape[2]
+
+  template kH: int = self.kernelSize.height
+  template kW: int = self.kernelSize.width
+  template pH: int = self.padding.height
+  template pW: int = self.padding.width
+  template sH: int = self.stride.height
+  template sW: int = self.stride.width
+
+  @[
+    C,
+    (H + (2 * pH) - kH) div sH + 1,
+    (W + (2 * pW) - kW) div sW + 1
+  ]
+
+func inShape*[T](self: MaxPool2D[T]): seq[int] =
+  self.inShape
+

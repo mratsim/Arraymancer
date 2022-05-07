@@ -33,15 +33,14 @@ let
   y_test = mnist.test_labels.astype(int)
 
 # Configuration of the neural network
-network ctx, DemoNet:
+network DemoNet:
   layers:
-    x:          Input([1, 28, 28])
-    cv1:        Conv2D(x.out_shape, 20, 5, 5)
-    mp1:        MaxPool2D(cv1.out_shape, (2,2), (0,0), (2,2))
-    cv2:        Conv2D(mp1.out_shape, 50, 5, 5)
-    mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
+    cv1:        Conv2D(@[1, 28, 28], out_channels = 20, kernel_size = (5, 5))
+    mp1:        Maxpool2D(cv1.out_shape, kernel_size = (2,2), padding = (0,0), stride = (2,2))
+    cv2:        Conv2D(mp1.out_shape, out_channels = 50, kernel_size = (5, 5))
+    mp2:        MaxPool2D(cv2.out_shape, kernel_size = (2,2), padding = (0,0), stride = (2,2))
     fl:         Flatten(mp2.out_shape)
-    hidden:     Linear(fl.out_shape, 500)
+    hidden:     Linear(fl.out_shape[0], 500)
     classifier: Linear(500, 10)
   forward x:
     x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
@@ -52,7 +51,7 @@ let model = ctx.init(DemoNet)
 let optim = model.optimizerSGD(learning_rate = 0.01'f32)
 
 # Learning loop
-for epoch in 0 ..< 5:
+for epoch in 0 ..< 2:
   for batch_id in 0 ..< X_train.value.shape[0] div n: # some at the end may be missing, oh well ...
     # minibatch offset in the Tensor
     let offset = batch_id * n
@@ -67,7 +66,7 @@ for epoch in 0 ..< 5:
       # Print status every 200 batches
       echo "Epoch is: " & $epoch
       echo "Batch id: " & $batch_id
-      echo "Loss is:  " & $loss.value
+      echo "Loss is:  " & $loss.value[0]
 
     # Compute the gradient (i.e. contribution of each parameter to the loss)
     loss.backprop()
@@ -99,71 +98,78 @@ for epoch in 0 ..< 5:
 
 # Epoch is: 0
 # Batch id: 0
-# Loss is:  3.133937835693359
+# Loss is:  2.613911151885986
 # Epoch is: 0
 # Batch id: 200
-# Loss is:  0.3546932339668274
+# Loss is:  0.310189962387085
 # Epoch is: 0
 # Batch id: 400
-# Loss is:  0.1979422867298126
+# Loss is:  0.1142476052045822
 # Epoch is: 0
 # Batch id: 600
-# Loss is:  0.1619873046875
+# Loss is:  0.1852415204048157
 # Epoch is: 0
 # Batch id: 800
-# Loss is:  0.1561944484710693
+# Loss is:  0.1070618182420731
 # Epoch is: 0
 # Batch id: 1000
-# Loss is:  0.2481455355882645
+# Loss is:  0.2025316953659058
 # Epoch is: 0
 # Batch id: 1200
-# Loss is:  0.1929974257946014
+# Loss is:  0.1810623109340668
 # Epoch is: 0
 # Batch id: 1400
-# Loss is:  0.09381495416164398
+# Loss is:  0.09978601336479187
 # Epoch is: 0
 # Batch id: 1600
-# Loss is:  0.08794669061899185
+# Loss is:  0.09480990469455719
 # Epoch is: 0
 # Batch id: 1800
-# Loss is:  0.2013712525367737
+# Loss is:  0.2068064212799072
 
 # Epoch #0 done. Testing accuracy
-# Accuracy: 97.18000000000001%
-# Loss:     0.09510207045823335
+# Accuracy: 96.82000000000001%
+# Loss:     0.09608472418040037
 
 
 # Epoch is: 1
 # Batch id: 0
-# Loss is:  0.05660493671894073
+# Loss is:  0.03820636868476868
 # Epoch is: 1
 # Batch id: 200
-# Loss is:  0.05254033207893372
+# Loss is:  0.05903942883014679
 # Epoch is: 1
 # Batch id: 400
-# Loss is:  0.09177093207836151
+# Loss is:  0.06314512342214584
 # Epoch is: 1
 # Batch id: 600
-# Loss is:  0.0544213205575943
+# Loss is:  0.07504448294639587
 # Epoch is: 1
 # Batch id: 800
-# Loss is:  0.03129085898399353
+# Loss is:  0.03850477933883667
 # Epoch is: 1
 # Batch id: 1000
-# Loss is:  0.1740589588880539
+# Loss is:  0.1440025717020035
 # Epoch is: 1
 # Batch id: 1200
-# Loss is:  0.1218579858541489
+# Loss is:  0.2018975913524628
 # Epoch is: 1
 # Batch id: 1400
-# Loss is:  0.04907236993312836
+# Loss is:  0.04561902582645416
 # Epoch is: 1
 # Batch id: 1600
-# Loss is:  0.04116201400756836
+# Loss is:  0.07066516578197479
 # Epoch is: 1
 # Batch id: 1800
-# Loss is:  0.1408360302448273
+# Loss is:  0.1373588591814041
 
 # Epoch #1 done. Testing accuracy
-# Accuracy: 98.00000000000001%
-# Loss:     0.06425597975030542
+# Accuracy: 97.74000000000001%
+# Loss:     0.06817570002749562
+
+
+
+# ________________________________________________________
+# Executed in  881.00 secs    fish           external
+#    usr time  879.44 secs    1.06 millis  879.44 secs
+#    sys time    0.49 secs    2.00 millis    0.49 secs

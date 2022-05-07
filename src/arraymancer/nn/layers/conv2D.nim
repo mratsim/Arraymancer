@@ -14,7 +14,8 @@
 
 import  ../../tensor,
         ../../autograd,
-        ../../nn_primitives
+        ../../nn_primitives,
+        ../init
 
 type Conv2DGate*[TT]{.final.} = ref object of Gate[TT]
   cached_input: Variable[TT]
@@ -125,3 +126,79 @@ proc conv2d*[TT]( input, weight: Variable[TT],
         input, weight, bias,
         padding, stride
       )
+
+type
+  Conv2D*[T] = object
+    weight*: Variable[Tensor[T]]
+    bias*: Variable[Tensor[T]]
+    padding*: Size2D
+    stride*: Size2D
+    inShape*: seq[int]
+
+proc init*[T](
+  ctx: Context[Tensor[T]],
+  layerType: typedesc[Conv2D[T]],
+  inShape: seq[int],
+  outChannels: int,
+  kernelSize: Size2D,
+  padding: Size2D = (0,0),
+  stride: Size2D = (1,1)
+): Conv2D[T] =
+
+  ## Creates a 2D convolutional layer.
+  ## Input:
+  ##     - ``inShape`` Shape of the expected input tensor in the form of ``[N, C_in, H_in, W_in]``
+  ##     - ``outChannels`` Number of channels in the output
+  ##     - ``kernelSize`` Shape of the kernel ``(width, height)``
+  ##     - ``padding`` Padding, defaults to ``(0, 0)``
+  ##     - ``stride`` Stride, defaults to ``(1, 1)``
+  ## 
+  ## Returns the created ``Conv2D``.
+
+  result.padding = padding
+  result.stride = stride
+  assert inShape.len == 3
+  result.inShape = inShape
+
+  let inChannels = inShape[0]
+  result.weight = ctx.variable(
+    kaimingNormal([outChannels, inChannels, kernelSize.height, kernelSize.width], T),
+    requiresGrad = true
+  ) # TODO allow freezing
+
+  result.bias = ctx.variable(
+    zeros[T]([outChannels, 1, 1]),
+    requiresGrad = true
+  ) # TODO allow freezing
+
+proc forward*[T](self: Conv2D[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
+  assert input.value.shape[1..3] == self.inShape
+  input.conv2d(
+    weight = self.weight,
+    bias = self.bias,
+    padding = self.padding,
+    stride = self.stride
+  )
+
+func outShape*[T](self: Conv2D[T]): seq[int] =
+  assert self.weight.value.shape.len == 4
+  template kH(): int = self.weight.value.shape[2]
+  template kW(): int = self.weight.value.shape[3]
+  template pH(): int = self.padding.height
+  template pW(): int = self.padding.width
+  template sH(): int = self.stride.height
+  template sW(): int = self.stride.width
+
+  template iH(): int = self.inShape[1]
+  template iW(): int = self.inShape[2]
+  template dH(): int = 1 # dilation # TODO
+  template dW(): int = 1 # dilation
+
+  @[
+    self.weight.value.shape[0],                    # C
+    1 + (iH + 2*pH - (((kH-1) * dH) + 1)) div sH,  # H
+    1 + (iW + 2*pW - (((kW-1) * dW) + 1)) div sW,  # W
+  ]
+
+func inShape*[T](self: Conv2D[T]): seq[int] =
+  self.inShape

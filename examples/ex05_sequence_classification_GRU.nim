@@ -64,11 +64,9 @@ let
 # Check our shape
 doAssert X.value.shape == [3, DataSize, 1]
 
-network ctx, TheGreatSequencer:
+network TheGreatSequencer:
   layers:
-    # Note input_shape will only require the number of features in the future
-    # Input shape = [seq_len, Batch, features]
-    gru1: GRU([3, Batch_size, 1], HiddenSize, 4) # ([input_shape], hidden_size, stacked_layers)
+    gru1: GRULayer(1, HiddenSize, 4) # (num_input_features, hidden_size, stacked_layers)
     fc1: Linear(HiddenSize, 32)                  # 1 classifier per GRU layer
     fc2: Linear(HiddenSize, 32)
     fc3: Linear(HiddenSize, 32)

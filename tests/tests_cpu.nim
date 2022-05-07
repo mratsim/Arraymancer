@@ -71,6 +71,7 @@ when not defined(no_lapack):
         ./ml/test_dimensionality_reduction
 
 import  ./stability_tests/test_stability_openmp,
-        # /end_to_end/examples_compile
-        ./end_to_end/examples_run
+        #./end_to_end/examples_compile,
+        ./end_to_end/examples_run,
+        ./end_to_end/gcn
 {.pop.}

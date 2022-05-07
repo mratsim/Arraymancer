@@ -19,7 +19,7 @@
 # TODO: save/reload trained weights
 
 import
-  streams, os, random, times, strformat, algorithm, sequtils, tables,
+  os, random, times, strformat, algorithm, sequtils, tables,
   ../src/arraymancer
 
 # ################################################################
@@ -124,121 +124,23 @@ proc sample[T](probs: Tensor[T]): int =
 #
 # ################################################################
 
-# Create our model and the weights to train
-#
-#     Due too much convenience, the neural net declaration mini-language
-#     used in examples 2 to 5
-#     only accepts Variable[Tensor[float32]] (for a Tensor[float32] context)
-#     but we also need a Tensor[char] input for embedding.
-#     So much for trying to be too clever ¯\_(ツ)_/¯.
-#
-#     Furthermore, you don't have flexibility in the return variables
-#     while we need to also return the hidden state of our text generation model.
-#
-#     So we need to do everything manually...
-
 # We use a classic Encoder-Decoder architecture, with text encoded into an internal representation
 # and then decoded back into text.
 # So we need to train the encoder, the internal representation and the decoder.
 
-type
-  ## The following is normally unnecessary when using the NN mini-lang
-  LinearLayer[TT] = object
-    weight: Variable[TT]
-    bias: Variable[TT]
-  GRULayer[TT] = object
-    W3s0, W3sN: Variable[TT]
-    U3s: Variable[TT]
-    bW3s, bU3s: Variable[TT]
-  EmbeddingLayer[TT] = object
-    weight: Variable[TT]
+network ShakespeareModel:
+  layers:
+    encoder:  Embedding(VocabSize, EmbedSize, padding_idx = UnkCharIx)
+    gru:      GRULayer(encoder.out_shape[0], HiddenSize, Layers)
+    decoder:  Linear(HiddenSize, VocabSize)
+  forward input, hidden0:
+    let (output, hiddenN) = input.encoder.gru(hidden0)
+    # result.output is of shape [Sequence, BatchSize, HiddenSize]
+    # In our case the sequence is 1 so we can simply flatten
+    let flattened = output.reshape(output.value.shape[1], HiddenSize)
 
-  ShakespeareNet[TT] = object
-    # Embedding weight = Encoder
-    encoder: EmbeddingLayer[TT]
-    # GRU RNN = Internal representation
-    gru: GRULayer[TT]
-    # Linear layer weight and bias = Decoder
-    decoder: LinearLayer[TT]
-
-template weightInit(shape: varargs[int], init_kind: untyped): Variable =
-  ## Even though we need to do the initialisation manually
-  ## let's not repeat ourself too much.
-  ctx.variable(
-    init_kind(shape, float32),
-    requires_grad = true
-  )
-
-proc newShakespeareNet[TT](ctx: Context[TT]): ShakespeareNet[TT] =
-  ## Initialise a model with random weights.
-  ## Normally this is done for you with the `network` macro
-
-  # Embedding layer
-  #   Input: [SeqLen, BatchSize, VocabSize]
-  #   Output: [SeqLen, BatchSize, EmbedSize]
-  result.encoder.weight = ctx.variable(
-    # initialisation bench https://arxiv.org/pdf/1711.09160.pdf
-    # Convergence is **VERY** sensitive, I can't reproduce the paper.
-    # Best in our case is mean = 0, std = 1.
-    randomNormalTensor(VocabSize, EmbedSize, 0'f32, 1'f32),
-    requires_grad = true
-  )
-  # Fill the padding/unknown character mapping with 0
-  result.encoder.weight.value[UnkCharIx, _] = 0
-
-  # GRU layer
-  #   Input:   [SeqLen, BatchSize, EmbedSize]
-  #   Hidden0: [Layers, BatchSize, HiddenSize]
-  #
-  #   Output:  [SeqLen, BatchSize, HiddenSize]
-  #   HiddenN: [Layers, BatchSize, HiddenSize]
-
-  # GRU have 5 weights/biases that can be trained.
-  # This initialisation is normally hidden from you.
-  result.gru.W3s0 = weightInit(            3 * HiddenSize,      EmbedSize, xavier_uniform)
-  result.gru.W3sN = weightInit(Layers - 1, 3 * HiddenSize,     HiddenSize, xavier_uniform)
-  result.gru.U3s  = weightInit(    Layers, 3 * HiddenSize,     HiddenSize, yann_normal)
-
-  result.gru.bW3s = ctx.variable(zeros[float32](Layers, 1, 3 * HiddenSize), requires_grad = true)
-  result.gru.bU3s = ctx.variable(zeros[float32](Layers, 1, 3 * HiddenSize), requires_grad = true)
-
-  # Linear layer
-  #   Input: [BatchSize, HiddenSize]
-  #   Output: [BatchSize, VocabSize]
-  result.decoder.weight = weightInit(VocabSize, HiddenSize, kaiming_normal)
-  result.decoder.bias   = ctx.variable(zeros[float32](1, VocabSize), requires_grad = true)
-
-# Some wrappers to pass the layer weights
-proc encode[TT](model: ShakespeareNet[TT], x: Tensor[PrintableIdx]): Variable[TT] =
-  embedding(x, model.encoder.weight, padding_idx = UnkCharIx)
-
-proc gru_forward(model: ShakespeareNet, x, hidden0: Variable): tuple[output, hiddenN: Variable] =
-  gru(
-    x, hidden0,
-    model.gru.W3s0, model.gru.W3sN,
-    model.gru.U3s,
-    model.gru.bW3s, model.gru.bU3s
-  )
-
-proc decode(model: ShakespeareNet, x: Variable): Variable =
-  linear(x, model.decoder.weight, model.decoder.bias)
-
-proc forward[TT](
-        model: ShakespeareNet[TT],
-        input: Tensor[PrintableIdx],
-        hidden0: Variable[TT]
-      ): tuple[output, hidden: Variable[TT]] =
-
-  let encoded = model.encode(input)
-  let (output, hiddenN) = model.gru_forward(encoded, hidden0)
-
-  # result.output is of shape [Sequence, BatchSize, HiddenSize]
-  # In our case the sequence is 1 so we can simply flatten
-  let flattened = output.reshape(output.value.shape[1], HiddenSize)
-
-  result.output = model.decode(flattened)
-  result.hidden = hiddenN
-
+    (output: flattened.decoder, hidden: hiddenN)
+  
 # ################################################################
 #
 #                        Training
@@ -267,10 +169,10 @@ proc gen_training_set(
     result.input[_, batch_id] =  data[start_idx ..< end_idx - 1]
     result.target[_, batch_id] = data[start_idx + 1 ..< end_idx]
 
-proc train[TT](
-        ctx: Context[TT],
-        model: ShakespeareNet[TT],
-        optimiser: var Optimizer[TT],
+proc train[T](
+        ctx: Context[AnyTensor[T]],
+        model: ShakespeareModel[T],
+        optimiser: var Optimizer[AnyTensor[T]],
         input, target: Tensor[PrintableIdx]): float32 =
   ## Train a model with an input and the corresponding characters to predict.
   ## Return the loss after the training session
@@ -282,7 +184,7 @@ proc train[TT](
   var seq_loss = ctx.variable(zeros[float32](1), requires_grad = true)
 
   for char_pos in 0 ..< seq_len:
-    var output: Variable[TT]
+    var output: Variable[Tensor[T]]
     (output, hidden) = model.forward(input[char_pos, _], hidden)
     let batch_loss = output.sparse_softmax_cross_entropy(target[char_pos, _].squeeze(0))
 
@@ -299,9 +201,9 @@ proc train[TT](
 #
 # ################################################################
 
-proc gen_text[TT](
-        ctx: Context[TT],
-        model: ShakespeareNet[TT],
+proc gen_text[T](
+        ctx: Context[AnyTensor[T]],
+        model: ShakespeareModel[T],
         seed_chars = "Wh", # Why, What, Who ...
         seq_len = SeqLen,
         temperature = 0.8'f32
@@ -321,14 +223,15 @@ proc gen_text[TT](
 
     # Create a consistent hidden state
     for char_pos in 0 ..< primer.shape[0] - 1:
-      var (_, hidden) = model.forward(primer[char_pos, _], hidden)
+      var (_, hiddenX) = model.forward(primer[char_pos, _], hidden)
+      hidden = hiddenX
 
 
     result = seed_chars
 
     # And start from the last char!
     var input = primer[^1, _]
-    var output: Variable[TT]
+    var output: Variable[Tensor[T]]
 
     for _ in 0 ..< seq_len:
       (output, hidden) = model.forward(input, hidden)
@@ -344,7 +247,8 @@ proc gen_text[TT](
 
       # Sample and append to the generated chars
       let ch_ix = probs.sample().PrintableIdx
-      result &= IxToChar[ch_ix]
+      if ch_ix != UnkCharIx:
+        result &= IxToChar[ch_ix]
 
       # Next char
       input = newTensor[PrintableIdx](1, 1)
@@ -375,7 +279,7 @@ proc main() =
   let ctx = newContext Tensor[float32]
 
   # Build our model and initialize its weights
-  let model = ctx.newShakespeareNet()
+  let model = ctx.init(ShakespeareModel)
 
   # Optimizer
   # let optim = model.optimizerSGD(learning_rate = LearningRate)

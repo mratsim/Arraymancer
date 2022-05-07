@@ -16,12 +16,14 @@ import  ../../tensor,
         ../../autograd,
         ../../nn_primitives
 
-type EmbeddingGate*[TT; scaled: static bool; Idx: SomeNumber or byte or char or enum] {.final.} = ref object of Gate[TT]
-  cached_input_vocab_id: Tensor[Idx]
-  weight: Variable[TT]
-  padding_idx: Idx
-    # We special-case -1 to mean no padding. Ideally we should use an option,
-    # and have a separate proc for padding and no padding (to avoid costly checks within a tight loop)
+type
+  VocabIdx = SomeInteger or byte or char or enum
+  EmbeddingGate*[TT; scaled: static bool; Idx: VocabIdx] {.final.} = ref object of Gate[TT]
+    cached_input_vocab_id: Tensor[Idx]
+    weight: Variable[TT]
+    padding_idx: Idx
+      # We special-case -1 to mean no padding. Ideally we should use an option,
+      # and have a separate proc for padding and no padding (to avoid costly checks within a tight loop)
 
 proc embedding_backward_ag[TT; scaled: static bool, Idx](
         self: Gate[TT],
@@ -64,7 +66,7 @@ proc embedding_cache[TT, Idx](
   )
 
 
-proc embedding*[TT; Idx: byte or char or SomeInteger](
+proc embedding*[TT; Idx: VocabIdx](
         input_vocab_id: Tensor[Idx],
         weight: Variable[TT],
         padding_idx: Idx = -1,
@@ -99,3 +101,56 @@ proc embedding*[TT; Idx: byte or char or SomeInteger](
       input_vocab_id, weight,
       padding_idx, scale_grad_by_freq
     )
+
+type
+  Embedding*[T] = object
+    weight*: Variable[AnyTensor[T]]
+    paddingIdx*: BiggestInt
+
+proc init*[T](
+  ctx: Context[Tensor[T]],
+  layerType: typedesc[Embedding[T]],
+  vocabSize, embedSize: int,
+  paddingIdx: VocabIdx = -1
+): Embedding[T] =
+
+  ## Creates an embedding layer.
+  ## Input:
+  ##     - ``vocabSize`` Size of the vocabulary
+  ##     - ``embedSize`` Embedding size
+  ##     - ``paddingIdx`` Optional parameter for when an index corresponds to the absence of words
+  ## 
+  ## Returns the created ``Embedding``.
+
+  result.weight = ctx.variable(
+
+    # TODO: Embedding layer initialisation
+    # - A bag of Useful Tricks for Practical Neural Machine Translation
+    #   Embedding Layer Initialization and Large batch Size
+    #   Heishi et al, http://www.aclweb.org/anthology/W17-5708
+    # - An Exploration of Word Embedding Initialization in deep learning tasks
+    #   Kocmi et al, https://arxiv.org/pdf/1711.09160.pdf
+
+    # initialisation bench https://arxiv.org/pdf/1711.09160.pdf
+    # Convergence is **VERY** sensitive, I can't reproduce the paper.
+    # Best in our case is mean = 0, std = 1.
+
+    randomNormalTensor(vocabSize, embedSize, 0.T, 1.T),
+    requiresGrad = true
+  )
+  result.paddingIdx = cast[BiggestInt](paddingIdx)
+
+proc forward*[T; Idx: VocabIdx](
+  self: Embedding[T],
+  input: Tensor[Idx]
+): Variable[AnyTensor[T]] =
+
+  ## Runs input through embedding layer.
+  ## Each item in your vocabulary/input must be encoded into an unique integer before being passed to the Embedding layer.
+
+  embedding(input, self.weight, cast[Idx](self.paddingIdx))
+
+func outShape*[T](self: Embedding[T]): seq[int] =
+  @[self.weight.value.shape[1]]
+func inShape*[T](self: Embedding[T]): seq[int] =
+  @[self.weight.value.shape[0]]

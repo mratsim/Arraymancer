@@ -1,6 +1,16 @@
 Arraymancer v0.7.x
 =====================================================
 
+- rewrote neural network DSL to support custom non-macro layers and composition of multiple models (PR #548)
+- syntactic changes to the neural network DSL (PR #548)
+  - autograd context is no longer specified at network definition. It is only used when instantiating a model. E.g.: `network FizzBuzzNet: ... ` instead of `network ctx, FizzBuzzNet: ...`
+  - there is no `Input` layer anymore. All input variables are specified at the beginning of the `forward` declaration
+  - in/output-shapes of layers are generally described as `seq[int]` now, but this depends on the concrete layer type
+  - layer descriptions behave like functions, so function parameters can be specifically named and potentially reordered or omitted. E.g.: `Conv2D(@[1, 28, 28], out_channels = 20, kernel_size = (5, 5))`
+  - the `Conv2D` layer expects the kernel size as a `Size2D` (integer tuple of size 2), instead of passing height and width as separate arguments
+  - when using an `out_shape` function of a previous layer to describe a `Linear` layer, one has to use `out_shape[0]` for the number of input features. E.g.: `Linear(fl.out_shape[0], 500)` instead of `Linear(fl.out_shape, 500)`
+  - `GRU` has been replaced by `GRULayer`, which has now a different description signature: `(num_input_features, hidden_size, stacked_layers)` instead of `([seq_len, Batch, num_input_features], hidden_size, stacked_layers)`
+
 Arraymancer v0.7.12 Apr. 12 2022
 =====================================================
 

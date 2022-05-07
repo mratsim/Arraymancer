@@ -15,13 +15,13 @@ Spellbook: How to do a multilayer perceptron
 
     # We will create a tensor of size 3200 (100 batches of size 32)
     # We create it as int between [0, 2[ and convert to bool
-    let x_train_bool = randomTensor([bsz * 100, 1], 2).astype(bool)
+    let x_train_bool = randomTensor([bsz * 100, 2], 2).astype(bool)
 
     # Let's build our truth labels. We need to apply xor between the 2 columns of the tensors
     let y_bool = x_train_bool[_,0] xor x_train_bool[_,1]
 
     # Convert to float
-    let x_train = ctx.variable(x_train_bool.astype(float32))
+    let x_train = ctx.variable(x_train_bool.astype(float32), requires_grad = true)
     let y = y_bool.astype(float32)
 
     # We will build the following network:
@@ -30,14 +30,16 @@ Spellbook: How to do a multilayer perceptron
     # First hidden layer of 3 neurons, shape [3 out_features, 2 in_features]
     # We initialize with random weights between -1 and 1
     let layer_3neurons = ctx.variable(
-                          randomTensor(3, 2, 2.0f) -. 1.0f
-                          )
+      randomTensor(3, 2, 2.0f) -. 1.0f,
+      requires_grad = true
+    )
 
     # Classifier layer with 1 neuron per feature. (In our case only one neuron overall)
     # We initialize with random weights between -1 and 1
     let classifier_layer = ctx.variable(
-                      randomTensor(1, 3, 2.0f) -. 1.0f
-                      )
+      randomTensor(1, 3, 2.0f) -. 1.0f,
+      requires_grad = true
+    )
 
     # Stochastic Gradient Descent
     let optim = newSGD[float32](

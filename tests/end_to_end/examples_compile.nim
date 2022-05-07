@@ -13,10 +13,12 @@
 # limitations under the License.
 import unittest, ../testutils
 
-# TODO - currently compiles run the code :/
+# TODO - compiles() and import don't work together :/
 
 testSuite "Full examples - compilation check only":
   test "Example 1: XOR Perceptron":
-    check: compiles: import ../../examples/ex01_xor_perceptron_from_scratch
+    check: compiles(import ../../examples/ex01_xor_perceptron_from_scratch)
   test "Example 2: MNIST via Convolutional Neural Net":
-    check: compiles: import ../../examples/ex02_handwritten_digits_recognition
+    check: compiles(import ../../examples/ex02_handwritten_digits_recognition)
+  test "Example 3: Shakespeare generator via GRU":
+    check: compiles(import ../../examples/ex06_shakespeare_generator.nim)

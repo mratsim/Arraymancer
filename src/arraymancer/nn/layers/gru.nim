@@ -16,6 +16,7 @@ import  ../../private/sequninit,
         ../../tensor,
         ../../autograd,
         ../../nn_primitives,
+        ../init,
         sequtils
 
 type GRUGate*[TT]{.final.}= ref object of Gate[TT]
@@ -121,20 +122,25 @@ proc gru*[TT](
       W3s0, W3sN, U3s: Variable[TT],
       bW3s, bU3s: Variable[TT]
       ): tuple[output, hiddenN: Variable[TT]] =
-  ## ⚠️ : Only compile-time known number of layers and timesteps is supported at the moment.
-  ##      Bias cannot be nil at the moment
-  ## Input:
-  ##     - ``input`` Variable wrapping a 3D Tensor of shape [sequence/timesteps, batch, features]
-  ##     - ``hidden0`` the initial hidden state of shape [num_stacked_layers, batch, hidden_size]
-  ##     - ``Timesteps`` A compile-time constant int corresponding to the number of stacker GRU layers
-  ##     - ``W3s0`` and ``W3sN`` Size2D tuple with height and width of the padding
-  ##     - ``stride`` Size2D tuple with height and width of the stride
+  
+  ## ⚠️ API subject to change to match CuDNNs
+  ##
+  ## Bidirectional support is not implemented
+  ##
+  ## Inputs:
+  ##   - `input`: Input tensor of shape [sequence/timesteps, batch, features]
+  ##   - `hidden0` the initial hidden state of shape [num_stacked_layers, batch, hidden_size]
+  ##   - Input weights `W3s` of shapes:
+  ##       - `W3s0`: [3 * hidden_size, features] for the first layer
+  ##       - `W3sN`: [num_stacked_layers - 1, 3 * hidden_size, num_directions * hidden_size] for the following layers
+  ##   - A series of hidden state weights `U3s` of shape [num_stacked_layers, 3 * hidden_size, hidden_size]
+  ##   - A series of biases for input and hidden state weights of shape [num_stacked_layers, 1, 3 * hidden_size]
   ##
   ## Outputs:
   ##   - `output` of shape [sequence/timesteps, batch, num_directions * hidden_size].
   ##     `output` contains the output features `hiddenT` for each T (timesteps)
-  ##   - `hidden` of shape [num_stacked_layers * num_directions, batch, hidden_size].
-  ##     `hidden` contains the hidden state for timestep T == sequence/timesteps length of `input`
+  ##   - `hiddenN` of shape [num_stacked_layers * num_directions, batch, hidden_size].
+  ##     `hiddenN` contains the hidden state for timestep T == sequence/timesteps length of `input`
 
   # Checks - TODO more checks
   doAssert hidden0.value.shape[1] == input.value.shape[1], "input batch_size: " & $input.value.shape[1] & " - hidden0 batch_size: " & $hidden0.value.shape[1]
@@ -154,3 +160,57 @@ proc gru*[TT](
     result.gru_forward(input, hidden0, W3s0, W3sN, U3s, bW3s, bU3s)
   else:
     result.gru_inference(input, hidden0, W3s0, W3sN, U3s, bW3s, bU3s)
+
+type
+  GRULayer*[T] = object
+    w3s0*, w3sN*: Variable[Tensor[T]]
+    u3s*: Variable[Tensor[T]]
+    bW3s*, bU3s*: Variable[Tensor[T]]
+
+proc init*[T](
+  ctx: Context[Tensor[T]],
+  layerType: typedesc[GRULayer[T]],
+  numInputFeatures, hiddenSize, layers: int
+): GRULayer[T] =
+
+  ## Creates an gated recurrent layer.
+  ## Input:
+  ##     - ``numInputFeatures`` Number of features of the input.
+  ##     - ``hiddenSize`` size of the hidden layer(s)
+  ##     - ``layers`` Number of stacked layers
+  ## 
+  ## Returns the created ``GRULayer``.
+
+  template weightInit(shape: varargs[int], initKind: untyped): Variable =
+    # let's not repeat ourself too much.
+    ctx.variable(
+      initKind(shape, T),
+      requiresGrad = true
+    )
+
+  result.w3s0 = weightInit(            3 * hiddenSize,     numInputFeatures,    xavierUniform)
+  result.w3sN = weightInit(layers - 1, 3 * hiddenSize,     hiddenSize,          xavierUniform)
+  result.u3s  = weightInit(    layers, 3 * hiddenSize,     hiddenSize,          yannNormal)
+
+  result.bW3s = ctx.variable(zeros[T](layers, 1, 3 * hiddenSize), requiresGrad = true)
+  result.bU3s = ctx.variable(zeros[T](layers, 1, 3 * hiddenSize), requiresGrad = true)
+  # TODO allow freezing
+
+proc forward*[T](self: GRULayer[T], input, hidden0: Variable): tuple[output, hiddenN: Variable] =
+  
+  ## Inputs:
+  ##   - `input`: Input tensor of shape [sequence/timesteps, batch, features]
+  ##   - `hidden0` the initial hidden state of shape [num_stacked_layers, batch, hidden_size]
+  ##
+  ## Outputs:
+  ##   - `output` of shape [sequence/timesteps, batch, num_directions * hidden_size].
+  ##     `output` contains the output features `hiddenT` for each T (timesteps)
+  ##   - `hiddenN` of shape [num_stacked_layers * num_directions, batch, hidden_size].
+  ##     `hiddenN` contains the hidden state for timestep T == sequence/timesteps length of `input`
+
+  gru(
+    input, hidden0,
+    self.w3s0, self.w3sN,
+    self.u3s,
+    self.bW3s, self.bU3s
+  )

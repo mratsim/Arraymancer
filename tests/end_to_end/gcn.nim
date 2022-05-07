@@ -18,9 +18,9 @@ proc gcntest() =
     y = randomTensor[float32](2, D_out, 1'f32)
 
 
-  network ctx, GCNNet:
+  network GCNNet:
     layers:
-      fc1: GCN(D_in, D_out)
+      fc1: GCNLayer(D_in, D_out)
     forward adj, x:
       fc1(x, adj)
 

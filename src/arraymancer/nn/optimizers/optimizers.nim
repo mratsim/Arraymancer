@@ -71,13 +71,14 @@ func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
   result.params = @[]
   result.lr = learning_rate
 
-  for layer in fields(model):
+  func addLayer(result: var Sgd[Tensor[T]], layer: auto) =
     when layer is Variable:
       result.params.add layer
-    else:
-      for field in fields(layer): # TODO recursive for any nesting depth of Model
-        when field is Variable:
-          result.params.add field
+    elif layer is object or layer is tuple: # TODO are there other kinds of variable with fields?
+      for field in fields(layer):
+        result.addLayer(field)
+
+  result.addLayer(model)
 
 # ############################################################
 #
@@ -171,15 +172,15 @@ func optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0),
   result.decay = decay
   result.nesterov = nesterov
 
-  for layer in fields(model):
+  func addLayer(result: var SgdMomentum[Tensor[T]], layer: auto) =
     when layer is Variable:
       result.params.add layer
       result.moments.add layer.grad.zeros_like
-    else:
-      for field in fields(layer): # TODO recursive for any nesting depth of Model
-        when field is Variable:
-          result.params.add field
-          result.moments.add field.grad.zeros_like
+    elif layer is object or layer is tuple:
+      for field in fields(layer):
+        result.addLayer(field)
+
+  result.addLayer(model)
 
 # ############################################################
 #
@@ -243,17 +244,16 @@ proc optimizerAdam*[M, T](
   result.beta2_t = beta2
   result.epsilon = eps
 
-  for layer in fields(model):
+  proc addLayer(result: var Adam[Tensor[T]], layer: auto) =
     when layer is Variable:
       result.params.add layer
       result.first_moments.add layer.grad.zeros_like
       result.second_moments.add layer.grad.zeros_like
-    else:
-      for field in fields(layer): # TODO recursive for any nesting depth of Model
-        when field is Variable:
-          result.params.add field
-          result.first_moments.add field.grad.zeros_like
-          result.second_moments.add field.grad.zeros_like
+    elif layer is object or layer is tuple:
+      for field in fields(layer):
+        result.addLayer(field)
+
+  result.addLayer(model)
 
 # ############################################################
 #

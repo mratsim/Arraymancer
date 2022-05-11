@@ -172,7 +172,7 @@ network TwoLayersNet:
 
 let
   model = ctx.init(TwoLayersNet)
-  optim = model.optimizerSGD(learning_rate = 1e-4'f32)
+  optim = model.optimize(SGD, learning_rate = 1e-4'f32)
 
 # ##################################################################
 # Training
@@ -307,7 +307,7 @@ network FizzBuzzNet:
 let
   ctx = newContext Tensor[float32]
   model = ctx.init(FizzBuzzNet)
-  optim = model.optimizerSGD(0.05'f32)
+  optim = model.optimize(SGD, 0.05'f32)
 # ....
 echo answer
 # @["1", "2", "fizz", "4", "buzz", "6", "7", "8", "fizz", "10",
@@ -341,7 +341,7 @@ network DemoNet:
 let
   ctx = newContext Tensor[float32] # Autograd/neural network graph
   model = ctx.init(DemoNet)
-  optim = model.optimizerSGD(learning_rate = 0.01'f32)
+  optim = model.optimize(SGD, learning_rate = 0.01'f32)
 
 # ...
 # Accuracy over 90% in a couple minutes on a laptop CPU
@@ -383,7 +383,7 @@ network TheGreatSequencer:
 let
   ctx = newContext Tensor[float32]
   model = ctx.init(TheGreatSequencer)
-  optim = model.optimizerSGD(0.01'f32)
+  optim = model.optimize(SGD, 0.01'f32)
 
 # ...
 let exam = ctx.variable([
@@ -436,7 +436,7 @@ proc in_shape*[T](self: SomeConvNet[T]): seq[int] =
 network DemoNet:
   layers:
   # here we use the previously defined SomeConvNet as a layer
-    cv:         SomeConvNet(28, 28) 
+    cv:         SomeConvNet(28, 28)
     hidden:     Linear(cv.out_shape[0], 500)
     classifier: Linear(hidden.out_shape[0], 10)
   forward x:

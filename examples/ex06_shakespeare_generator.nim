@@ -140,7 +140,7 @@ network ShakespeareModel:
     let flattened = output.reshape(output.value.shape[1], HiddenSize)
 
     (output: flattened.decoder, hidden: hiddenN)
-  
+
 # ################################################################
 #
 #                        Training
@@ -282,8 +282,8 @@ proc main() =
   let model = ctx.init(ShakespeareModel)
 
   # Optimizer
-  # let optim = model.optimizerSGD(learning_rate = LearningRate)
-  var optim = model.optimizerAdam(learning_rate = LearningRate)
+  # let optim = model.optimize(SGD, learning_rate = LearningRate)
+  var optim = model.optimize(Adam, learning_rate = LearningRate)
 
   # We use a different RNG for seq split
   var split_rng = initRand(42)

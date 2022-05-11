@@ -24,7 +24,7 @@ import  ../../tensor/higher_order_applymap,
 # ############################################################
 
 type
-  Sgd*[TT] = object
+  SGD*[TT] = object
     ## Stochastic gradient descent without momentum.
     params*: seq[Variable[TT]]
     lr*: TT.T # Learning rate. T is the generic parameter of Tensor[T]
@@ -32,7 +32,7 @@ type
 proc newSGD*[T](params: varargs[Variable[Tensor[T]]], learning_rate: T): SGD[Tensor[T]] {.deprecated: "Use the optimizer macro instead".}=
   SGD[Tensor[T]](params: @params, lr: learning_rate)
 
-proc update*(self: Sgd) =
+proc update*(self: SGD) =
   ## Performs an optimization update.
   ##
   ## Parameters:
@@ -52,7 +52,10 @@ proc update*(self: Sgd) =
       # Zero the gradient
       v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
 
-func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
+func optimize*[M, T](
+        model: M,
+        OptimizerKind: typedesc[SGD],
+        learning_rate: T): SGD[Tensor[T]] =
   ## Create a SGD optimizer that will update the model weight
   ##
   ## Parameters:
@@ -61,17 +64,11 @@ func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
   ##
   ## Returns:
   ## - A SGD optimizer with the given learning rate.
-  ##
-  ## Future TODO:
-  ##   Rename to ``optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat):``
-
-  # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...
-  # Pending https://github.com/nim-lang/Nim/issues/7734 and https://github.com/nim-lang/Nim/issues/7733
 
   result.params = @[]
   result.lr = learning_rate
 
-  func addLayer(result: var Sgd[Tensor[T]], layer: auto) =
+  func addLayer(result: var SGD[Tensor[T]], layer: auto) =
     when layer is Variable:
       result.params.add layer
     elif layer is object or layer is tuple: # TODO are there other kinds of variable with fields?
@@ -87,7 +84,7 @@ func optimizerSGD*[M, T](model: M, learning_rate: T): Sgd[Tensor[T]] =
 # ############################################################
 
 type
-  SgdMomentum*[TT] = object
+  SGDMomentum*[TT] = object
     ## Stochastic gradient descent with momentum.
     ## Details on Nesterov momentum can be found in
     ## `Sutskever et. al. 2013<http://www.cs.toronto.edu/%7Ehinton/absps/momentum.pdf>`_
@@ -98,7 +95,7 @@ type
     decay: TT.T              ## Learning rate decay
     nesterov: bool           ## Flag for Nesterov momentum
 
-proc update*(self: var SgdMomentum) =
+proc update*(self: var SGDMomentum) =
   ## Performs an optimization update.
   ##
   ## Parameters:
@@ -146,8 +143,13 @@ proc update*(self: var SgdMomentum) =
       # Zero the gradient
       v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
 
-func optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0),
-                                 decay = T(0.0), nesterov = false): SgdMomentum[Tensor[T]] =
+func optimize*[M, T](
+        model: M,
+        OptimizerKind: typedesc[SGDMomentum],
+        learning_rate: T,
+        momentum = T(0.0),
+        decay = T(0.0),
+        nesterov = false): SGDMomentum[Tensor[T]] =
   ## Create a SGD optimizer with optional momentum that will update the model weight
   ##
   ## Parameters:
@@ -159,12 +161,6 @@ func optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0),
   ##
   ## Returns:
   ## - A SGD optimizer with momentum with the given parameters.
-  ##
-  ## Future TODO:
-  ##   Rename to ``optimize[M](model: M, OptimizerKind: typedesc[SGDMomentum], learning_rate: SomeFloat):``
-
-  # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...
-  # Pending https://github.com/nim-lang/Nim/issues/7734 and https://github.com/nim-lang/Nim/issues/7733
 
   result.params = @[]
   result.lr = learning_rate
@@ -172,7 +168,7 @@ func optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0),
   result.decay = decay
   result.nesterov = nesterov
 
-  func addLayer(result: var SgdMomentum[Tensor[T]], layer: auto) =
+  func addLayer(result: var SGDMomentum[Tensor[T]], layer: auto) =
     when layer is Variable:
       result.params.add layer
       result.moments.add layer.grad.zeros_like
@@ -225,16 +221,14 @@ proc update*(self: var Adam) =
       # Zero the gradient
       v.grad = v.value.zeros_like # TODO "setZero" instead of a new allocation
 
-proc optimizerAdam*[M, T](
+proc optimize*[M, T](
         model: M,
+        OptimizerKind: typedesc[Adam],
         learning_rate: T = T(0.001),
         beta1 = T(0.9), beta2 = T(0.999),
         eps = T(1e-8)
       ): Adam[Tensor[T]] =
   ## Create a Adam optimizer that will update the model weight
-
-  # TODO: rename to optimize[M](model: M, OptimizerKind: typedesc[SGD], learning_rate: SomeFloat): ...
-  # Pending https://github.com/nim-lang/Nim/issues/7734 and https://github.com/nim-lang/Nim/issues/7733
 
   result.params = @[]
   result.learning_rate = learning_rate
@@ -262,7 +256,7 @@ proc optimizerAdam*[M, T](
 # ############################################################
 
 type
-  Optimizer*[TT] = Sgd[TT] or Adam[TT]
+  Optimizer*[TT] = SGD[TT] or Adam[TT]
 
 proc zeroGrads*(o: Optimizer) =
   # Reset the gradients of the optimized params

@@ -77,6 +77,9 @@ func optimize*[M, T](
 
   result.addLayer(model)
 
+func optimizerSGD*[M, T](model: M, learning_rate: T): SGD[Tensor[T]] {.deprecated: "Use optimize(model, SGD, learning_rate) instead."} =
+  return optimize(model, SGD, learning_rate)
+
 # ############################################################
 #
 #    SGDMomentum: Stochastic Gradient Descent with Momentum
@@ -168,6 +171,9 @@ func optimize*[M, T](
   result.decay = decay
   result.nesterov = nesterov
 
+func optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0), decay = T(0.0), nesterov = false): SGDMomentum[Tensor[T]] {.deprecated: "Use optimize(model, SGDMomentum, learning_rate) instead."} =
+  return optimize(model, SGDMomentum, learning_rate, momentum, decay, nesterov)
+
   func addLayer(result: var SGDMomentum[Tensor[T]], layer: auto) =
     when layer is Variable:
       result.params.add layer
@@ -225,7 +231,8 @@ proc optimize*[M, T](
         model: M,
         OptimizerKind: typedesc[Adam],
         learning_rate: T = T(0.001),
-        beta1 = T(0.9), beta2 = T(0.999),
+        beta1 = T(0.9),
+        beta2 = T(0.999),
         eps = T(1e-8)
       ): Adam[Tensor[T]] =
   ## Create a Adam optimizer that will update the model weight
@@ -248,6 +255,9 @@ proc optimize*[M, T](
         result.addLayer(field)
 
   result.addLayer(model)
+
+func optimizerAdam*[M, T](model: M, learning_rate: T, beta1 = T(0.9), beta2 = T(0.999), eps = T(1e-8)): Adam[Tensor[T]] {.deprecated: "Use optimize(model, SGDMomentum, learning_rate) instead."} =
+  return optimize(model, Adam, learning_rate, beta1, beta2, eps)
 
 # ############################################################
 #

@@ -171,7 +171,7 @@ proc optimizer*[M, T](
   result.decay = decay
   result.nesterov = nesterov
 
-  func addLayer(result: var SGDMomentum[Tensor[T]], layer: auto) =
+  proc addLayer(result: var SGDMomentum[Tensor[T]], layer: auto) =
     when layer is Variable:
       result.params.add layer
       result.moments.add layer.grad.zeros_like

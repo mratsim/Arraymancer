@@ -79,7 +79,7 @@ proc conv2d*[TT]( input, weight: Variable[TT],
                   padding: Size2D = (0,0),
                   stride: Size2D = (1,1)): Variable[TT] =
   ## Input:
-  ##     - ``input`` Variable wrapping a 4D Tensor batch of images of the size [N,C_in,H_in,W_in]
+  ##     - ``input`` Variable wrapping a 4D Tensor batch of images of the size [C_in,H_in,W_in]
   ##     - ``weight`` Variable wrapping a 4D Tensor convolving kernel weights of the size [C_out,C_in,kH,kW]
   ##     - ``bias`` Nil-able Variable wrapping a 3D Tensor bias of the size [C_out,1,1]
   ##     - ``padding`` Size2D tuple with height and width of the padding
@@ -152,7 +152,7 @@ proc init*[T](
   ##     - ``kernelSize`` Shape of the kernel ``(width, height)``
   ##     - ``padding`` Padding, defaults to ``(0, 0)``
   ##     - ``stride`` Stride, defaults to ``(1, 1)``
-  ## 
+  ##
   ## Returns the created ``Conv2D``.
 
   result.padding = padding

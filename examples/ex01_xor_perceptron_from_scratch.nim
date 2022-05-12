@@ -31,7 +31,7 @@ network XorNet:
 let model = ctx.init(XorNet)
 
 # Stochastic Gradient Descent
-let optim = model.optimize(SGD, learning_rate = 0.01'f32)
+let optim = model.optimizer(SGD, learning_rate = 0.01'f32)
 
 # Learning loop
 for epoch in 0..5:

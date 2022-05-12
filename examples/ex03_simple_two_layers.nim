@@ -34,7 +34,7 @@ network TwoLayersNet:
 
 let
   model = ctx.init(TwoLayersNet)
-  optim = model.optimize(SGD, learning_rate = 1e-4'f32)
+  optim = model.optimizer(SGD, learning_rate = 1e-4'f32)
 
 # ##################################################################
 # Training

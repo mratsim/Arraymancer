@@ -173,7 +173,7 @@ Oh, and for those who wants to see real Nim code for neural networks, here is a 
         x.hidden.relu.output
 
     let model = ctx.init(FizzBuzzNet)
-    let optim = model.optimize(SGD, 0.05'f32)
+    let optim = model.optimizer(SGD, 0.05'f32)
 
     func fizz_buzz(i: int, prediction: int): string =
       [$i, "fizz", "buzz", "fizzbuzz"][prediction]

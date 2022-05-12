@@ -88,7 +88,7 @@ network TheGreatSequencer:
 
 # Allocate the model
 let model = ctx.init(TheGreatSequencer)
-var optim = model.optimize(Adam, 0.01'f32)
+var optim = model.optimizer(Adam, 0.01'f32)
 
 # And let's start training the network
 for epoch in 0 ..< Epochs:

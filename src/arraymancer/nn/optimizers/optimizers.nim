@@ -150,8 +150,8 @@ proc optimizer*[M, T](
         model: M,
         OptimizerKind: typedesc[SGDMomentum],
         learning_rate: T,
-        momentum = T(0.0),
-        decay = T(0.0),
+        momentum: T = T(0.0),
+        decay: T = T(0.0),
         nesterov = false): SGDMomentum[Tensor[T]] =
   ## Create a SGD optimizer with optional momentum that will update the model weight
   ##
@@ -231,9 +231,9 @@ proc optimizer*[M, T](
         model: M,
         OptimizerKind: typedesc[Adam],
         learning_rate: T = T(0.001),
-        beta1 = T(0.9),
-        beta2 = T(0.999),
-        eps = T(1e-8)
+        beta1: T = T(0.9),
+        beta2: T = T(0.999),
+        eps: T = T(1e-8)
       ): Adam[Tensor[T]] =
   ## Create a Adam optimizer that will update the model weight
 
@@ -256,7 +256,7 @@ proc optimizer*[M, T](
 
   result.addLayer(model)
 
-proc optimizerAdam*[M, T](model: M, learning_rate: T, beta1 = T(0.9), beta2 = T(0.999), eps = T(1e-8)): Adam[Tensor[T]] {.deprecated: "Use optimizer(model, SGDMomentum, learning_rate) instead."} =
+proc optimizerAdam*[M, T](model: M, learning_rate: T, beta1: T = T(0.9), beta2: T = T(0.999), eps: T = T(1e-8)): Adam[Tensor[T]] {.deprecated: "Use optimizer(model, SGDMomentum, learning_rate) instead."} =
   return optimizer(model, Adam, learning_rate, beta1, beta2, eps)
 
 # ############################################################

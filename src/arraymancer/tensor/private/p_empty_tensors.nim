@@ -40,10 +40,6 @@ macro returnEmptyIfEmpty*(tensors: varargs[untyped]): untyped =
   result = newStmtList()
   for tensor in tensors: # static for loop
     let isEmptyCall = newCall(bindSym"isEmpty", tensor)
-    # Needed to properly initialize empty the "noInit" proc
-    let buildEmptyTensor = newCall(
-      newCall(ident"typeof", ident("result"))
-    )
     result.add quote do:
       if `isEmptyCall`:
-        return `buildEmptyTensor`
+        return newTensor[getSubType(type(result))](0)

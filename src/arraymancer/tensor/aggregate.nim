@@ -212,6 +212,63 @@ proc argmax*[T](t: Tensor[T], axis: int): Tensor[int] {.inline.}=
   ##                             [1]].toTensor
   argmax_max(t, axis).indices
 
+proc argmin_min*[T: SomeNumber](t: Tensor[T], axis: int): tuple[indices: Tensor[int], mins: Tensor[T]] {.noInit.} =
+  ## Returns (indices, minimums) along an axis
+  ##
+  ## Input:
+  ##   - A tensor
+  ##   - An axis (int)
+  ##
+  ## Returns:
+  ##   - A tuple of tensors (indices, minimums) along this axis
+  ##
+  ## Example:
+  ##   .. code:: nim
+  ##     let a = [[0, 4, 7],
+  ##              [1, 9, 5],
+  ##              [3, 4, 1]].toTensor
+  ##     assert argmax(a, 0) == [[0, 0, 2]].toTensor
+  ##     assert argmax(a, 1) == [[0],
+  ##                             [0],
+  ##                             [2]].toTensor
+ 
+  if t.size == 0:
+    result.indices.reset()
+    result.mins.reset()
+
+  result.mins = t.atAxisIndex(axis, 0).clone()
+  result.indices = zeros[int](result.mins.shape)
+
+  let dmin = result.mins.unsafe_raw_buf()
+  let dind = result.indices.unsafe_raw_buf()
+
+  for i, subtensor in t.enumerateAxis(axis, 1, t.shape[axis] - 1):
+    for j, val in enumerate(subtensor):
+      if val < dmin[j]:
+        dind[j] = i
+        dmin[j] = val
+
+proc argmin*[T](t: Tensor[T], axis: int): Tensor[int] {.inline.}=
+  ## Returns the index of the minimum along an axis
+  ##
+  ## Input:
+  ##   - A tensor
+  ##   - An axis (int)
+  ##
+  ## Returns:
+  ##   - A tensor of index of the minimums along this axis
+  ##
+  ## Example:
+  ##   .. code:: nim
+  ##     let a = [[0, 4, 7],
+  ##              [1, 9, 5],
+  ##              [3, 4, 1]].toTensor
+  ##     assert argmax(a, 0) == [[0, 0, 2]].toTensor
+  ##     assert argmax(a, 1) == [[0],
+  ##                             [0],
+  ##                             [2]].toTensor
+  argmin_min(t, axis).indices
+
 proc percentile*[T](t: Tensor[T], p: int, isSorted = false): float =
   ## statistical percentile value of ``t``, where ``p`` percentile value
   ## is between ``0`` and ``100`` inclusively,

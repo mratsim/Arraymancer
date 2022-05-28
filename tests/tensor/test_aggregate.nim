@@ -110,6 +110,16 @@ proc main() =
         [[3.109126351029605],[3.304037933599835]].toTensor()
       ).abs().sum() < 1e-8
 
+    test "Argmin":
+      let a = [[0, 4, 7],
+               [1, 9, 5],
+               [3, 4, 1]].toTensor
+      assert argmin(a, 0) == [[0, 0, 2]].toTensor
+      assert argmin(a, 1) == [[0],
+                              [0],
+                              [2]].toTensor
+      let b = [5, 3, 4, 3].toTensor
+  
     test "Argmax":
       let a =  [[0, 4, 7],
                 [1, 9, 5],
@@ -118,6 +128,13 @@ proc main() =
       check: argmax(a, 1) == [[2],
                               [1],
                               [1]].toTensor
+
+      block:
+        let a =  [[0, 1, 2],
+                  [3, 4, 5]].toTensor
+        check: argmax(a, 0) == [[1, 1, 1]].toTensor
+        check: argmax(a, 1) == [[2],
+                                [2]].toTensor
 
       block:
         let a =  [[0, 1, 2],

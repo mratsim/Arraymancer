@@ -14,7 +14,8 @@
 
 import
   macros,
-  ../data_structure
+  ../data_structure,
+  ../../private/ast_utils
 
 # Experimental supports for empty tensors
 # ------------------------------------------------------------------------

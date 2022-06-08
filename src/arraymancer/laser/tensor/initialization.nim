@@ -70,10 +70,9 @@ proc deepCopy*[T](dst: var Tensor[T], src: Tensor[T]) =
   ## Note that if x was already initialized with a ``storage``,
   ## the storage will be detached from x. This does not write
   ## into existing storage.
-
   var size: int
   initTensorMetadata(dst, size, src.shape)
-  dst.storage = allocCpuStorage(T, size)
+  allocCpuStorage(dst.storage, size)
 
   when T is KnownSupportsCopyMem:
     # We use memcpy, due to SIMD optimizations in memcpy,
@@ -83,8 +82,8 @@ proc deepCopy*[T](dst: var Tensor[T], src: Tensor[T]) =
             size, chunk_offset, chunk_size,
             OMP_MEMORY_BOUND_GRAIN_SIZE * 4):
         copyMem(
-          dst.unsafe_raw_offset[chunk_offset],
-          src.unsafe_raw_offset[chunk_offset],
+          dst.unsafe_raw_offset[chunk_offset].addr,
+          src.unsafe_raw_offset[chunk_offset].unsafeAddr,
           chunk_size * sizeof(T)
           )
     else:

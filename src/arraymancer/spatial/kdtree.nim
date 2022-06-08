@@ -43,6 +43,29 @@ type
     tree*: Node[T]           ## the root node of the tree
     size*: int               ## number of nodes in the tree
 
+proc clone*[T](n: Node[T]): Node[T] =
+  result = Node[T](level: n.level,
+                   id: n.id,
+                   kind: n.kind)
+  case n.kind
+  of tnInner:
+    result.lesser = n.lesser.clone()
+    result.greater = n.greater.clone()
+    result.split_dim = n.split_dim
+    result.split = n.split
+  of tnLeaf:
+    result.children = n.children
+    result.idx = n.idx.clone()
+
+proc clone*[T](kd: KDTree[T]): KDTree[T] =
+  result = KDTree[T](data: kd.data.clone(),
+                     leafSize: kd.leafSize,
+                     k: kd.k, n: kd.n,
+                     maxes: kd.maxes.clone(),
+                     mins: kd.mins.clone(),
+                     tree: kd.tree.clone(),
+                     size: kd.size)
+
 proc `<`[T](n1, n2: Node[T]): bool =
   ## Comparison of two nodes is done by comparing their `id`. The `id` tells us the
   ## order in which the node was constructed. This is sensible, as we *first* construct

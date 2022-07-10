@@ -1,6 +1,9 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.13 Jul. 10 2022
+=====================================================
+
 - rewrote neural network DSL to support custom non-macro layers and composition of multiple models (PR #548)
 - syntactic changes to the neural network DSL (PR #548)
   - autograd context is no longer specified at network definition. It is only used when instantiating a model. E.g.: `network FizzBuzzNet: ... ` instead of `network ctx, FizzBuzzNet: ...`

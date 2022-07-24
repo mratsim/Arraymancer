@@ -207,9 +207,8 @@ proc toTensor*(a: openarray, dummy_bugfix: static[int] = 0): auto =
   ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
   # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
 
-  let
-    shape = getShape(a)
-    data = toSeq(flatIter(a))
+  let shape = getShape(a)
+  var data = toSeq(flatIter(a))
 
   if unlikely(shape.product != data.len):
     raise newException(
@@ -229,7 +228,10 @@ proc toTensor*(a: openarray, dummy_bugfix: static[int] = 0): auto =
   when T is KnownSupportsCopyMem:
     t.copyFromRaw(data[0].unsafeAddr, data.len)
   else:
-    shallowCopy(t.storage.raw_buffer, data)
+    when defined(gcArc) or defined(gcOrc):
+      t.storage.raw_buffer = move data
+    else:
+      shallowCopy(t.storage.raw_buffer, data)
 
   result = t
 

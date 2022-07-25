@@ -219,7 +219,7 @@ jobs:
       - name: Run Arraymancer tests on ORC (1.6 & devel in release mode)
         if: >
           matrix.target.os == 'linux' && (matrix.nim == 'version-1-6' ||
-          matrix.nim == 'devel'
+          matrix.nim == 'devel')
         working-directory: arraymancer
         run: |
           export ARRAYMANCER_TEST_LANG=${{ matrix.test_lang }}

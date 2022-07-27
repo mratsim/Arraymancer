@@ -53,7 +53,7 @@ network FizzBuzzNet:
     x.hidden.relu.output
 
 let model = ctx.init(FizzBuzzNet)
-let optim = model.optimizerSGD(0.05'f32)
+let optim = model.optimizer(SGD, 0.05'f32)
 
 func fizz_buzz(i: int, prediction: int): string =
   [$i, "fizz", "buzz", "fizzbuzz"][prediction]

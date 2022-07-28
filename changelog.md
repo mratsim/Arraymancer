@@ -1,6 +1,13 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.15 Jul. 28 2022
+=====================================================
+
+- replace explicit `optimizer*` procedures by generic `optimizer` with
+a typed first argument `optimizer(SGD, ...)`, `optimizer(Adam, ...)`
+etc. (PR #557)
+
 Arraymancer v0.7.14 Jul. 25 2022
 =====================================================
 

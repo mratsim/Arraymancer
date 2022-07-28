@@ -45,8 +45,8 @@ type
     # 3 - L1 and L2 cache eviction level
 
 when withBuiltins:
-  proc builtin_assume_aligned(data: pointer, alignment: csize_t): pointer {.importc: "__builtin_assume_aligned", noDecl.}
-  proc builtin_prefetch(data: pointer, rw: PrefetchRW, locality: PrefetchLocality) {.importc: "__builtin_prefetch", noDecl.}
+  proc builtin_assume_aligned(data: pointer, alignment: csize_t): pointer {.importc: "__builtin_assume_aligned", nodecl.}
+  proc builtin_prefetch(data: pointer, rw: PrefetchRW, locality: PrefetchLocality) {.importc: "__builtin_prefetch", nodecl.}
 
 when defined(cpp):
   proc static_cast[T: ptr](input: pointer): T

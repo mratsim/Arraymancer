@@ -31,7 +31,7 @@ template withMemoryOptimHints*() =
 const withBuiltins = defined(gcc) or defined(clang)
 
 when withBuiltins:
-  proc builtin_assume_aligned[T](data: ptr T, n: csize_t): ptr T {.importc: "__builtin_assume_aligned",noDecl.}
+  proc builtin_assume_aligned[T](data: ptr T, n: csize_t): ptr T {.importc: "__builtin_assume_aligned",nodecl.}
 
 when defined(cpp):
   proc static_cast[T](input: T): T

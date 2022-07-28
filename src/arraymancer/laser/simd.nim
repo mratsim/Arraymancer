@@ -13,10 +13,10 @@ when defined(i386) or defined(amd64):
 
   when defined(vcc):
     {.pragma: x86_type, byCopy, header:"<intrin.h>".}
-    {.pragma: x86, noDecl, header:"<intrin.h>".}
+    {.pragma: x86, nodecl, header:"<intrin.h>".}
   else:
     {.pragma: x86_type, byCopy, header:"<x86intrin.h>".}
-    {.pragma: x86, noDecl, header:"<x86intrin.h>".}
+    {.pragma: x86, nodecl, header:"<x86intrin.h>".}
   type
     m128* {.importc: "__m128", x86_type.} = object
       raw: array[4, float32]

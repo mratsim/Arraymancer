@@ -20,7 +20,7 @@ proc main() =
   suite "Exporting":
     test "1D sequence exporting":
       let t = toSeq(1..6).toTensor().reshape(2, 3)
-      check t.toSeq1D == toSeq(1 .. 6)
+      check t.toFlatSeq == toSeq(1 .. 6)
 
     test "Nested sequence exporting":
       block:

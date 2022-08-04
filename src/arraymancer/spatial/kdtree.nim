@@ -296,10 +296,8 @@ proc queryImpl[T](
     distanceUpperBound = pow(distanceUpperBound, p)
 
   var node: Node[T]
-  var sdt: Tensor[T] # stupid helper
   while q.len > 0:
-    (min_distance, sdt, node) = pop q
-    side_distances = sdt
+    (min_distance, side_distances, node) = pop q
     case node.kind
     of tnLeaf:
       # brute force for remaining elements in leaf node

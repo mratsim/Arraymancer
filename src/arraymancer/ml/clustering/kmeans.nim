@@ -164,7 +164,7 @@ proc assign_labels[T: SomeFloat](x: Tensor[T], n_clusters = 10, tol: float = 0.0
       for i in 0 ..< n_clusters:
         # Avoid NaNs
         if counts[i] > 0:
-          var count = @[counts[i]].toTensor.astype(T)
+          var count = @[counts[i]].toTensor.asType(T)
           centroids[i, _] = (totals[i] /. count).reshape(1, n_cols)
 
   return (labels: labels, centroids: centroids, inertia: inertia)

@@ -32,9 +32,9 @@ proc main() =
       let ab = [[ 58.0, 64],
                 [139.0,154]].toTensor()
 
-      let a_c = a.astype(Complex[float64])
-      let b_c = b.astype(Complex[float64])
-      let ab_c = ab.astype(Complex[float64])
+      let a_c = a.asType(Complex[float64])
+      let b_c = b.asType(Complex[float64])
+      let ab_c = ab.asType(Complex[float64])
 
       check: a * b == ab
       check: a_c * b_c == ab_c
@@ -50,8 +50,8 @@ proc main() =
       let uv = [[ 1,-8,-20, -6],
                 [27, 7, 34,-19]].toTensor()
 
-      check: u.astype(float32) * v.astype(float32) == uv.astype(float32)
-      check: u.astype(Complex[float32]) * v.astype(Complex[float32]) == uv.astype(Complex[float32])
+      check: u.asType(float32) * v.asType(float32) == uv.asType(float32)
+      check: u.asType(Complex[float32]) * v.asType(Complex[float32]) == uv.asType(Complex[float32])
 
       # from http://www.calcul.com/show/calculator/matrix-multiplication_;5;5;5;5?matrix1=[[%225%22,%226%22,%225%22,%228%22],[%228%22,%222%22,%228%22,%228%22],[%220%22,%225%22,%224%22,%220%22],[%224%22,%220%22,%225%22,%226%22],[%224%22,%225%22,%220%22,%223%22]]&matrix2=[[%225%22,%223%22,%226%22,%220%22],[%225%22,%222%22,%223%22,%223%22],[%228%22,%228%22,%222%22,%220%22],[%227%22,%227%22,%220%22,%220%22]]&operator=*
       # (M x K) * (K x N) with M > N and M > block-size (4x4)
@@ -71,8 +71,8 @@ proc main() =
                   [102, 94,34, 0],
                   [ 66, 43,39,15]].toTensor()
 
-      check: m1.astype(float) * m2.astype(float) == m1m2.astype(float)
-      check: m1.astype(Complex[float64]) * m2.astype(Complex[float64]) == m1m2.astype(Complex[float64])
+      check: m1.asType(float) * m2.asType(float) == m1m2.asType(float)
+      check: m1.asType(Complex[float64]) * m2.asType(Complex[float64]) == m1m2.asType(Complex[float64])
 
       # from http://www.calcul.com/show/calculator/matrix-multiplication?matrix1=[[%222%22,%224%22,%223%22,%221%22,%223%22,%221%22,%223%22,%221%22],[%221%22,%222%22,%221%22,%221%22,%222%22,%220%22,%224%22,%223%22],[%222%22,%220%22,%220%22,%223%22,%220%22,%224%22,%224%22,%221%22],[%221%22,%221%22,%224%22,%220%22,%223%22,%221%22,%223%22,%220%22],[%223%22,%224%22,%221%22,%221%22,%224%22,%222%22,%223%22,%224%22],[%222%22,%224%22,%220%22,%222%22,%223%22,%223%22,%223%22,%224%22],[%223%22,%220%22,%220%22,%223%22,%221%22,%224%22,%223%22,%221%22],[%224%22,%223%22,%222%22,%224%22,%221%22,%220%22,%220%22,%220%22]]&matrix2=[[%222%22,%222%22,%220%22,%224%22,%220%22,%220%22,%224%22,%222%22],[%222%22,%220%22,%220%22,%221%22,%221%22,%221%22,%223%22,%221%22],[%220%22,%222%22,%222%22,%220%22,%222%22,%222%22,%223%22,%223%22],[%220%22,%220%22,%221%22,%220%22,%224%22,%222%22,%224%22,%221%22],[%220%22,%220%22,%221%22,%223%22,%224%22,%222%22,%224%22,%222%22],[%224%22,%223%22,%224%22,%221%22,%224%22,%224%22,%220%22,%223%22],[%223%22,%223%22,%220%22,%222%22,%221%22,%222%22,%223%22,%223%22],[%222%22,%221%22,%222%22,%221%22,%222%22,%224%22,%224%22,%221%22]]&operator=*
       # (N x N) * (N x N) with N multiple of block size
@@ -105,8 +105,8 @@ proc main() =
                   [33,28,22,26,37,34,41,33],
                   [14,12, 9,22,27,17,51,23]].toTensor()
 
-      check: n1.astype(float) * n2.astype(float) == n1n2.astype(float)
-      check: n1.astype(Complex[float64]) * n2.astype(Complex[float64]) == n1n2.astype(Complex[float64])
+      check: n1.asType(float) * n2.asType(float) == n1n2.asType(float)
+      check: n1.asType(Complex[float64]) * n2.asType(Complex[float64]) == n1n2.asType(Complex[float64])
 
     when compileOption("boundChecks") and not defined(openmp):
       test "GEMM - Bounds checking":
@@ -140,7 +140,7 @@ proc main() =
       let expected = @[@[58.0,64],@[139.0,154]].toTensor()
 
       check: transpose(at) * b == expected
-      check: transpose(at.astype(Complex[float64])) * b.astype(Complex[float64]) == expected.astype(Complex[float64])
+      check: transpose(at.asType(Complex[float64])) * b.asType(Complex[float64]) == expected.asType(Complex[float64])
 
       let bt = @[@[7.0, 9, 11],@[8.0, 10, 12]].toTensor()
 
@@ -216,7 +216,7 @@ proc main() =
 
       let ufl_expected = @[2'f64, 6, -10].toTensor()
       check: ufl_expected / 2 == u_float
-      check: ufl_expected.astype(Complex[float64]) / complex(2'f64) == u_float.astype(Complex[float64])
+      check: ufl_expected.asType(Complex[float64]) / complex(2'f64) == u_float.asType(Complex[float64])
 
     test "Multiplication/division by scalar (inplace)":
       var u_int = @[1, 3, -5].toTensor()
@@ -258,8 +258,8 @@ proc main() =
 
       check: u_int + v_int == expected_add
       check: u_int - v_int == expected_sub
-      check: u_int.astype(Complex[float64]) + v_int.astype(Complex[float64]) == expected_add.astype(Complex[float64])
-      check: u_int.astype(Complex[float64]) - v_int.astype(Complex[float64]) == expected_sub.astype(Complex[float64])
+      check: u_int.asType(Complex[float64]) + v_int.asType(Complex[float64]) == expected_add.asType(Complex[float64])
+      check: u_int.asType(Complex[float64]) - v_int.asType(Complex[float64]) == expected_sub.asType(Complex[float64])
 
     test "Tensor addition and substraction (inplace)":
       var u_int = @[1, 3, -5].toTensor()
@@ -274,10 +274,10 @@ proc main() =
       u_int -= v_int
       check: u_int == expected_sub
       block:
-        var u_complex = @[1, 3, -5].toTensor().astype(Complex[float64])
-        let v_complex = @[1, 1, 1].toTensor().astype(Complex[float64])
-        let expected_add = @[2, 4, -4].toTensor().astype(Complex[float64])
-        let expected_sub = @[0, 2, -6].toTensor().astype(Complex[float64])
+        var u_complex = @[1, 3, -5].toTensor().asType(Complex[float64])
+        let v_complex = @[1, 1, 1].toTensor().asType(Complex[float64])
+        let expected_add = @[2, 4, -4].toTensor().asType(Complex[float64])
+        let expected_sub = @[0, 2, -6].toTensor().asType(Complex[float64])
 
         u_complex += v_complex
         check: u_complex == expected_add
@@ -295,13 +295,13 @@ proc main() =
     test "Addition-Substraction - slices":
       let a = @[@[1.0,2,3],@[4.0,5,6], @[7.0,8,9]].toTensor()
       let a_t = a.transpose()
-      let a_c = a.astype(Complex[float64])
-      let a_tc = a_t.astype(Complex[float64])
+      let a_c = a.asType(Complex[float64])
+      let a_tc = a_t.asType(Complex[float64])
 
       check: a[0..1, 0..1] + a_t[0..1, 0..1] == [[2.0, 6], [6.0, 10]].toTensor()
       check: a[1..2, 1..2] - a_t[1..2, 1..2] == [[0.0, -2], [2.0, 0]].toTensor()
-      check: a_c[0..1, 0..1] + a_tc[0..1, 0..1] == [[2.0, 6], [6.0, 10]].toTensor().astype(Complex[float64])
-      check: a_c[1..2, 1..2] - a_tc[1..2, 1..2] == [[0.0, -2], [2.0, 0]].toTensor().astype(Complex[float64])
+      check: a_c[0..1, 0..1] + a_tc[0..1, 0..1] == [[2.0, 6], [6.0, 10]].toTensor().asType(Complex[float64])
+      check: a_c[1..2, 1..2] - a_tc[1..2, 1..2] == [[0.0, -2], [2.0, 0]].toTensor().asType(Complex[float64])
 
     when compileOption("boundChecks") and not defined(openmp):
       # OpenMP backend is crashing when exceptions are thrown due to GC alloc.
@@ -450,12 +450,12 @@ proc main() =
       # [[1. + 1.j, 2. + 2.j, 3. + 3.j]    [[1. + 1.j, 4. + 4.j],     [[0. + 28.j, 0. + 64.j],
       #  [4. +4.j, 5. + 5.j, 6. + 6.j]] *  [2. + 2.j, 5. +5.j],  ==  [0. + 64.j, 0. + 154.j]
       #                               [3. + 3.j, 6. + 6.j]]
-      let m1 = [[1,2,3],[4,5,6]].toTensor().astype(Complex[float64])
+      let m1 = [[1,2,3],[4,5,6]].toTensor().asType(Complex[float64])
       let m2 = m1 * complex64(0,1)
       let m3 = m1+m2
       let m4 = m3.transpose()
       let m5 = m3 * m4
-      let m6 = [[28,64],[64,154]].toTensor().astype(Complex[float64])
+      let m6 = [[28,64],[64,154]].toTensor().asType(Complex[float64])
       check: m5 == m6 * complex64(0,1)
 
 main()

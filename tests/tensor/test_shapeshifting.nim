@@ -21,7 +21,7 @@ proc main() =
     test "Contiguous conversion":
       block:
         let a = [7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0].toTensor.reshape([3,6])
-        let a_c = [7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0].toTensor.reshape([3,6]).astype(Complex[float64])
+        let a_c = [7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0].toTensor.reshape([3,6]).asType(Complex[float64])
 
         # Tensor of shape 3x6 of type "int" on backend "Cpu"
         # |7      4       3       1       8       6|

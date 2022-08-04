@@ -19,7 +19,7 @@ import  ./data_structure,
 
 ## NOTE: This should be `{.noinit.}`, but this is blocked by:
 ## https://github.com/nim-lang/Nim/issues/16253
-proc astype*[T; U: not Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] =
+proc asType*[T; U: not Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] =
   ## Apply type conversion on the whole tensor. This is a no-op if `T` is the same
   ## as `U`.
   when T is U:
@@ -29,7 +29,7 @@ proc astype*[T; U: not Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] =
     result = t.map(x => x.U)
 
 ## NOTE: This should be `{.noinit.}`, see above.
-proc astype*[T: SomeNumber, U: Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] =
+proc asType*[T: SomeNumber, U: Complex](t: Tensor[T], typ: typedesc[U]): Tensor[U] =
   ## Apply type conversion on the whole tensor
   returnEmptyIfEmpty(t)
   when T is SomeNumber and U is Complex[float32]:

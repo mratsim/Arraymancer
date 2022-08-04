@@ -165,7 +165,7 @@ proc main() =
                 [-3, -2],
                 [ 1,  1],
                 [ 2,  1],
-                [ 3,  2]].toTensor().astype(float64)
+                [ 3,  2]].toTensor().asType(float64)
 
         let pca_result = pca_detailed(X, n_components = 2)
 
@@ -223,7 +223,7 @@ proc main() =
                 [-3, -2, -10],
                 [ 1,  1, 0],
                 [ 2,  1, 7],
-                [ 3,  2, 3]].toTensor().astype(float64)
+                [ 3,  2, 3]].toTensor().asType(float64)
 
         let pca_result = pca_detailed(X, n_components = 2)
 

@@ -74,7 +74,7 @@ when isMainModule:
   const nb_iter = 1_000
 
   echo "Warmup and sanity check, result should be 9.4585514"
-  let foo = toSeq(1..<10).toTensor.astype(float32)
+  let foo = toSeq(1..<10).toTensor.asType(float32)
   echo logsumexp foo
   echo logsumexp_stream foo
 

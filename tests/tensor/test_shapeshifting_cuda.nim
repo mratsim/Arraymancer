@@ -20,7 +20,7 @@ testSuite "CUDA: Shapeshifting":
   test "Contiguous conversion":
     let a = [7, 4, 3, 1, 8, 6,
              8, 1, 6, 2, 6, 6,
-             2, 0, 4, 3, 2, 0].toTensor.reshape([3,6]).astype(float).cuda
+             2, 0, 4, 3, 2, 0].toTensor.reshape([3,6]).asType(float).cuda
 
     # Tensor of shape 3x6 of type "int" on backend "Cpu"
     # |7      4       3       1       8       6|
@@ -50,7 +50,7 @@ testSuite "CUDA: Shapeshifting":
 
   test "Unsafe reshape":
     block:
-      let a = toSeq(1..4).toTensor().astype(float).cuda
+      let a = toSeq(1..4).toTensor().asType(float).cuda
       var a_view = a.reshape(2,2)
       check: a_view.cpu == [[1.0,2],[3.0,4]].toTensor()
 
@@ -63,7 +63,7 @@ testSuite "CUDA: Shapeshifting":
       # not that 'a' here a let variable, however
       # unsafeView and reshape allow us to
       # modify its elements value
-      let a = toSeq(1..4).toTensor().astype(float).cuda
+      let a = toSeq(1..4).toTensor().asType(float).cuda
       var a_view = a[1..2].reshape(1,2)
       check: a_view.cpu == [[2.0,3]].toTensor()
 

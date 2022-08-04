@@ -44,7 +44,7 @@ proc main() =
     # |5      25      125     625     3125|
     test "Basic indexing - foo[2, 3]":
       check: t_van[2, 3] == 81
-      check: t_van.astype(Complex[float64])[2, 3] == complex(81.0)
+      check: t_van.asType(Complex[float64])[2, 3] == complex(81.0)
 
     test "Basic indexing - foo[1+1, 2*2*1]":
       check: t_van[1+1, 2*2*1] == 243

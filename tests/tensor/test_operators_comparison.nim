@@ -36,7 +36,7 @@ proc main() =
           vandermonde[i].add(aa^bb)
 
       let t_van = vandermonde.toTensor()
-      let t_van_complex = t_van.astype(Complex[float64])
+      let t_van_complex = t_van.asType(Complex[float64])
 
       # Tensor of shape 5x5 of type "int" on backend "Cpu"
       # |1      1       1       1       1|
@@ -47,7 +47,7 @@ proc main() =
 
       let test = @[@[4, 8, 16], @[9, 27, 81], @[16, 64, 256]]
       let t_test = test.toTensor()
-      let t_test_complex = t_test.astype(Complex[float64])
+      let t_test_complex = t_test.asType(Complex[float64])
 
       check: t_van[1..^2,1..3] == t_test
       check: t_van[1..3,1..3] == t_test
@@ -58,8 +58,8 @@ proc main() =
       let
         a = [0, 2, 1, 3].toTensor
         b = [0, 1, 2, 3].toTensor
-        a_complex = a.astype(Complex[float64])
-        b_complex = b.astype(Complex[float64])
+        a_complex = a.asType(Complex[float64])
+        b_complex = b.asType(Complex[float64])
 
       check: (a ==. b) == [true, false, false, true].toTensor
       check: (a >. b)  == [false, true, false, false].toTensor

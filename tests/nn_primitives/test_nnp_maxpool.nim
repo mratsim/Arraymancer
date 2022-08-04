@@ -36,8 +36,8 @@ proc main() =
       proc mpool(t: Tensor[float]): float =
         maxpool2d(t, (2,2), (0,0), (2,2)).maxpooled.sum()
 
-      let expected_grad = a.astype(float) *. numerical_gradient(a.astype(float), mpool)
-      let grad = maxpool2d_backward(a.shape, max_indices, pooled).astype(float)
+      let expected_grad = a.asType(float) *. numerical_gradient(a.asType(float), mpool)
+      let grad = maxpool2d_backward(a.shape, max_indices, pooled).asType(float)
 
       check: grad.mean_relative_error(expected_grad) < 1e-6
 

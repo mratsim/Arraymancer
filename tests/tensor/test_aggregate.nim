@@ -22,7 +22,7 @@ proc main() =
             [3, 4, 5],
             [6, 7, 8],
             [9, 10, 11]].toTensor()
-    let t_c = t.astype(Complex[float64])
+    let t_c = t.asType(Complex[float64])
 
     test "Sum":
       check: t.sum == 66
@@ -34,11 +34,11 @@ proc main() =
                     [30]].toTensor()
       check: t.sum(axis=0) == row_sum
       check: t.sum(axis=1) == col_sum
-      check: t_c.sum(axis=0) == row_sum.astype(Complex[float64])
-      check: t_c.sum(axis=1) == col_sum.astype(Complex[float64])
+      check: t_c.sum(axis=0) == row_sum.asType(Complex[float64])
+      check: t_c.sum(axis=1) == col_sum.asType(Complex[float64])
 
     test "Mean":
-      check: t.astype(float).mean == 5.5 # Note: may fail due to float rounding
+      check: t.asType(float).mean == 5.5 # Note: may fail due to float rounding
       check: t_c.mean == complex(5.5) # Note: may fail due to float rounding
 
       let row_mean = [[4.5, 5.5, 6.5]].toTensor()
@@ -46,45 +46,45 @@ proc main() =
                       [4.0],
                       [7.0],
                       [10.0]].toTensor()
-      check: t.astype(float).mean(axis=0) == row_mean
-      check: t.astype(float).mean(axis=1) == col_mean
-      check: t_c.mean(axis=0) == row_mean.astype(Complex[float64])
-      check: t_c.mean(axis=1) == col_mean.astype(Complex[float64])
+      check: t.asType(float).mean(axis=0) == row_mean
+      check: t.asType(float).mean(axis=1) == col_mean
+      check: t_c.mean(axis=0) == row_mean.asType(Complex[float64])
+      check: t_c.mean(axis=1) == col_mean.asType(Complex[float64])
 
     test "Product":
       let a = [[1,2,4],[8,16,32]].toTensor()
-      let a_c = a.astype(Complex[float64])
+      let a_c = a.asType(Complex[float64])
       check: t.product() == 0
       check: a.product() == 32768
-      check: a.astype(float).product() == 32768.0
+      check: a.asType(float).product() == 32768.0
       check: a.product(0) == [[8,32,128]].toTensor()
       check: a.product(1) == [[8],[4096]].toTensor()
       check: t_c.product() == complex(0.0)
       check: a_c.product() == complex(32768.0)
-      check: a_c.product(0) == [[8,32,128]].toTensor().astype(Complex[float64])
-      check: a_c.product(1) == [[8],[4096]].toTensor().astype(Complex[float64])
+      check: a_c.product(0) == [[8,32,128]].toTensor().asType(Complex[float64])
+      check: a_c.product(1) == [[8],[4096]].toTensor().asType(Complex[float64])
 
     test "Min":
       let a = [2,-1,3,-3,5,0].toTensor()
       check: a.min() == -3
-      check: a.astype(float32).min() == -3.0f
+      check: a.asType(float32).min() == -3.0f
 
       let b = [[1,2,3,-4],[0,4,-2,5]].toTensor()
       check: b.min(0) == [[0,2,-2,-4]].toTensor()
       check: b.min(1) == [[-4],[-2]].toTensor()
-      check: b.astype(float32).min(0) == [[0.0f,2,-2,-4]].toTensor()
-      check: b.astype(float32).min(1) == [[-4.0f],[-2.0f]].toTensor()
+      check: b.asType(float32).min(0) == [[0.0f,2,-2,-4]].toTensor()
+      check: b.asType(float32).min(1) == [[-4.0f],[-2.0f]].toTensor()
 
     test "Max":
       let a = [2,-1,3,-3,5,0].toTensor()
       check: a.max() == 5
-      check: a.astype(float32).max() == 5.0f
+      check: a.asType(float32).max() == 5.0f
 
       let b = [[1,2,3,-4],[0,4,-2,5]].toTensor()
       check: b.max(0) == [[1,4,3,5]].toTensor()
       check: b.max(1) == [[3],[5]].toTensor()
-      check: b.astype(float32).max(0) == [[1.0f,4,3,5]].toTensor()
-      check: b.astype(float32).max(1) == [[3.0f],[5.0f]].toTensor()
+      check: b.asType(float32).max(0) == [[1.0f,4,3,5]].toTensor()
+      check: b.asType(float32).max(1) == [[3.0f],[5.0f]].toTensor()
 
     test "Variance":
       let a = [-3.0,-2,-1,0,1,2,3].toTensor()

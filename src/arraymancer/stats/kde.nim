@@ -120,13 +120,13 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
   ## contribution of the custom kernel is very small (or 0) outside that range.
   let N = t.size
   # `t` not sorted here yet, but does not matter
-  var t = t.astype(float)
+  var t = t.asType(float)
   let A = min(std(t),
               iqr(t) / 1.34)
   let bwAct = if classify(bw) != fcNan: bw
               else: 0.9 * A * pow(N.float, -1.0/5.0)
 
-  var weights = weights.astype(float)
+  var weights = weights.asType(float)
   if weights.size > 0:
     doAssert weights.size == t.size
     let sortIdx = t.argsort()
@@ -135,16 +135,16 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
     t = t[sortIdx].clone()
     weights = weights[sortIdx].clone()
   else:
-    t = t.astype(float).sorted
+    t = t.asType(float).sorted
   let (minT, maxT) = (min(t), max(t))
   when U is int:
     let x = linspace(minT, maxT, samples)
     let nsamples = samples
   elif U is seq | array:
-    let x = toTensor(@samples).astype(float)
+    let x = toTensor(@samples).asType(float)
     let nsamples = x.size
   else:
-    let x = samples.astype(float)
+    let x = samples.asType(float)
     let nsamples = x.size
   result = newTensor[float](nsamples)
   let norm = 1.0 / (N.float * bwAct)

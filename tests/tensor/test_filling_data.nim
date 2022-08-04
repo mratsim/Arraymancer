@@ -28,10 +28,10 @@ proc main() =
 
       check: b == [[1], [2], [3], [4]].toTensor
       block:
-        let a = [[1,2],[3,4]].toTensor.reshape(4, 1).astype(Complex[float64])
+        let a = [[1,2],[3,4]].toTensor.reshape(4, 1).asType(Complex[float64])
         var b = ones[Complex[float64]](4, 1)
         b.copyFrom(a)
-        check: b == [[1], [2], [3], [4]].toTensor.astype(Complex[float64])
+        check: b == [[1], [2], [3], [4]].toTensor.asType(Complex[float64])
 
 main()
 GC_fullCollect()

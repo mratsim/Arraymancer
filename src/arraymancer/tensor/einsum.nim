@@ -730,8 +730,8 @@ when isMainModule:
     ./data_structure, ./init_cpu, ./ufunc,
     ./accessors_macros_read, ./accessors_macros_write
 
-  let c0 = toSeq(11..34).toTensor.astype(float)
-  let d0 = toSeq(1..6).toTensor.astype(float)
+  let c0 = toSeq(11..34).toTensor.asType(float)
+  let d0 = toSeq(1..6).toTensor.asType(float)
   let c = c0.reshape(2, 2, 3, 2)
   let d = d0.reshape(3, 2)
 

@@ -19,8 +19,8 @@ proc main() =
   suite "Autograd of basic operations":
     test "Gradient of tensor addition":
 
-      let a = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
-      let b = toSeq(11..18).toTensor.reshape(2,4).astype(float32)
+      let a = toSeq(1..8).toTensor.reshape(2,4).asType(float32)
+      let b = toSeq(11..18).toTensor.reshape(2,4).asType(float32)
 
       let ctx = newContext Tensor[float32]
 
@@ -38,7 +38,7 @@ proc main() =
 
     test "Gradient of mean":
 
-      let a = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
+      let a = toSeq(1..8).toTensor.reshape(2,4).asType(float32)
 
       let ctx = newContext Tensor[float32]
 
@@ -53,7 +53,7 @@ proc main() =
 
     test "Gradient of mean along one axis":
 
-      let a = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
+      let a = toSeq(1..8).toTensor.reshape(2,4).asType(float32)
 
       let ctx = newContext Tensor[float32]
 

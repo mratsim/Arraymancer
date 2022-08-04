@@ -20,27 +20,27 @@ testSuite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
   test "GEMM - General Matrix to Matrix Multiplication":
     ## TODO: test with slices
     let a = [[1.0,2,3],
-             [4.0,5,6]].toTensor().astype(float32).cuda()
+             [4.0,5,6]].toTensor().asType(float32).cuda()
 
     let b = [[7.0,  8],
              [9.0, 10],
-             [11.0,12]].toTensor().astype(float32).cuda()
+             [11.0,12]].toTensor().asType(float32).cuda()
 
     let ab = [[ 58.0, 64],
-              [139.0,154]].toTensor().astype(float32)
+              [139.0,154]].toTensor().asType(float32)
 
     check: (a * b).cpu == ab
 
     # example from http://www.intmath.com/matrices-determinants/matrix-multiplication-examples.php
     # (M x K) * (K x N) with M < N
     let u = [[-2,-3,-1],
-             [ 3, 0, 4]].toTensor().astype(float32).cuda()
+             [ 3, 0, 4]].toTensor().asType(float32).cuda()
     let v = [[ 1, 5, 2,-1],
              [-3, 0, 3, 4],
-             [ 6,-2, 7,-4]].toTensor().astype(float32).cuda()
+             [ 6,-2, 7,-4]].toTensor().asType(float32).cuda()
 
     let uv = [[ 1,-8,-20, -6],
-              [27, 7, 34,-19]].toTensor().astype(float32)
+              [27, 7, 34,-19]].toTensor().asType(float32)
 
     check: (u * v).cpu == uv
 
@@ -50,17 +50,17 @@ testSuite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
               [8,2,8,8],
               [0,5,4,0],
               [4,0,5,6],
-              [4,5,0,3]].toTensor().astype(float).cuda()
+              [4,5,0,3]].toTensor().asType(float).cuda()
     let m2 = [[5,3,6,0],
               [5,2,3,3],
               [8,8,2,0],
-              [7,7,0,0]].toTensor().astype(float).cuda()
+              [7,7,0,0]].toTensor().asType(float).cuda()
 
     let m1m2 = [[151,123,58,18],
                 [170,148,70, 6],
                 [ 57, 42,23,15],
                 [102, 94,34, 0],
-                [ 66, 43,39,15]].toTensor().astype(float)
+                [ 66, 43,39,15]].toTensor().asType(float)
 
     check: (m1 * m2).cpu == m1m2
 
@@ -74,7 +74,7 @@ testSuite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
               [3, 4,  1,  1,  4,  2,  3,  4],
               [2, 4,  0,  2,  3,  3,  3,  4],
               [3, 0,  0,  3,  1,  4,  3,  1],
-              [4, 3,  2,  4,  1,  0,  0,  0]].toTensor().astype(float32).cuda()
+              [4, 3,  2,  4,  1,  0,  0,  0]].toTensor().asType(float32).cuda()
 
 
     let n2 = [[2, 2,  0,  4,  0,  0,  4,  2],
@@ -84,7 +84,7 @@ testSuite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
               [0, 0,  1,  3,  4,  2,  4,  2],
               [4, 3,  4,  1,  4,  4,  0,  3],
               [3, 3,  0,  2,  1,  2,  3,  3],
-              [2, 1,  2,  1,  2,  4,  4,  1]].toTensor().astype(float32).cuda()
+              [2, 1,  2,  1,  2,  4,  4,  1]].toTensor().asType(float32).cuda()
 
     let n1n2 = [[27,23,16,29,35,32,58,37],
                 [24,19,11,23,26,30,49,27],
@@ -93,7 +93,7 @@ testSuite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
                 [39,27,23,40,45,46,72,41],
                 [41,26,25,34,47,48,65,38],
                 [33,28,22,26,37,34,41,33],
-                [14,12, 9,22,27,17,51,23]].toTensor().astype(float32)
+                [14,12, 9,22,27,17,51,23]].toTensor().asType(float32)
 
     check: (n1 * n2).cpu == n1n2
 
@@ -137,21 +137,21 @@ testSuite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
                        [2,4,8],
                        [3,9,27]]
 
-    let t = vandermonde.toTensor.astype(float32)
+    let t = vandermonde.toTensor.asType(float32)
 
     var z = t.transpose.cuda()
     z += z
 
     check: z.cpu == [[2,4,6],
                      [2,8,18],
-                     [2,16,54]].toTensor.astype(float32)
+                     [2,16,54]].toTensor.asType(float32)
 
-    let t2 = vandermonde.toTensor.astype(float32).cuda
+    let t2 = vandermonde.toTensor.asType(float32).cuda
     z += t2
 
     check: z.cpu == [[3,5,7],
                      [4,12,26],
-                     [5,25,81]].toTensor.astype(float32)
+                     [5,25,81]].toTensor.asType(float32)
 
     # Check size mismatch
     expect(ValueError):

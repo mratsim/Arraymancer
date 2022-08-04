@@ -126,7 +126,7 @@ proc main() =
       let tRes = readNpy[int](path & ".npy")
       when not defined(release):
         echo "HINT: This test may take a while as we're clustering ~11,000 points"
-      check dbscan(tRes.astype(float), eps = 30.0, minSamples = 3).toTensor == tExp
+      check dbscan(tRes.asType(float), eps = 30.0, minSamples = 3).toTensor == tExp
 
 
 main()

@@ -40,7 +40,7 @@ proc main() =
                       [255,255,255,255,255,255,255,255],
                       [255,255,255,255,255,255,255,255],
                     ],
-                  ].toTensor.astype(uint8)
+                  ].toTensor.asType(uint8)
       check: gray_1_6_8.shape == @[1,6,8]
 
       gray_1_6_8.write_png(rwpng)

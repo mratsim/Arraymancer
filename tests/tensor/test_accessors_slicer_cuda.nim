@@ -34,7 +34,7 @@ testSuite "CUDA: Testing indexing and slice syntax":
     for j, bb in b:
       vandermonde[i].add(aa^bb)
 
-  let t_van = vandermonde.toTensor().astype(float32).cuda()
+  let t_van = vandermonde.toTensor().asType(float32).cuda()
 
   # TODO: Indexing (not slicing) is not yet supported on CUDA
   #  # Tensor of shape 5x5 of type "int" on backend "Cpu"
@@ -57,80 +57,80 @@ testSuite "CUDA: Testing indexing and slice syntax":
   #  #     check: t_van[^1, 3] == 256
   test "Basic slicing - foo[1..2, 3]":
     let test = @[@[16],@[81]]
-    check: t_van[1..2, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[1..2, 3].cpu == test.toTensor().asType(float32)
 
   test "Basic slicing - foo[1+1..4, 3-2..2]":
     let test = @[@[9,27],@[16, 64],@[25, 125]]
-    check: t_van[1+1..4, 3-2..2].cpu == test.toTensor().astype(float32)
+    check: t_van[1+1..4, 3-2..2].cpu == test.toTensor().asType(float32)
 
   test "Span slices - foo[_, 3]":
     let test = @[@[1],@[16],@[81],@[256],@[625]]
-    check: t_van[_, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[_, 3].cpu == test.toTensor().asType(float32)
 
   test "Span slices - foo[1.._, 3]":
     let test = @[@[16],@[81],@[256],@[625]]
-    check: t_van[1.._, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[1.._, 3].cpu == test.toTensor().asType(float32)
 
     ## Check with extra operators
-    check: t_van[0+1.._, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[0+1.._, 3].cpu == test.toTensor().asType(float32)
 
   test "Span slices - foo[_..3, 3]":
     let test = @[@[1],@[16],@[81],@[256]]
-    check: t_van[_..3, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[_..3, 3].cpu == test.toTensor().asType(float32)
 
     ## Check with extra operators
-    check: t_van[_..5-2, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[_..5-2, 3].cpu == test.toTensor().asType(float32)
 
   test "Span slices - foo[_.._, 3]":
     let test = @[@[1],@[16],@[81],@[256],@[625]]
-    check: t_van[_.._, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[_.._, 3].cpu == test.toTensor().asType(float32)
 
   test "Stepping - foo[1..3|2, 3]":
     let test = @[@[16],@[256]]
-    check: t_van[1..3|2, 3].cpu == test.toTensor().astype(float32)
-    check: t_van[1..3|+2, 3].cpu == test.toTensor().astype(float32)
-    check: t_van[1*(0+1)..2+1|(5-3), 3].cpu == test.toTensor().astype(float32)
+    check: t_van[1..3|2, 3].cpu == test.toTensor().asType(float32)
+    check: t_van[1..3|+2, 3].cpu == test.toTensor().asType(float32)
+    check: t_van[1*(0+1)..2+1|(5-3), 3].cpu == test.toTensor().asType(float32)
 
   test "Span stepping - foo[_.._|2, 3]":
     let test = @[@[1],@[81],@[625]]
-    check: t_van[_.._|2, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[_.._|2, 3].cpu == test.toTensor().asType(float32)
 
   test "Span stepping - foo[_.._|+2, 3]":
     let test = @[@[1],@[81],@[625]]
-    check: t_van[_.._|+2, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[_.._|+2, 3].cpu == test.toTensor().asType(float32)
 
   test "Span stepping - foo[1.._|1, 2..3]":
     let test = @[@[8, 16],@[27, 81],@[64, 256], @[125, 625]]
-    check: t_van[1.._|1, 2..3].cpu == test.toTensor().astype(float32)
+    check: t_van[1.._|1, 2..3].cpu == test.toTensor().asType(float32)
 
   test "Span stepping - foo[_..<4|2, 3]":
     let test = @[@[1],@[81]]
-    check: t_van[_..<4|2, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[_..<4|2, 3].cpu == test.toTensor().asType(float32)
 
   test "Slicing until at n from the end - foo[0..^4, 3]":
     let test = @[@[1],@[16]]
-    check: t_van[0..^4, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[0..^4, 3].cpu == test.toTensor().asType(float32)
     ## Check with extra operators
-    check: t_van[0..^2+2, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[0..^2+2, 3].cpu == test.toTensor().asType(float32)
 
   test "Span Slicing until at n from the end - foo[_..^2, 3]":
     let test = @[@[1],@[16],@[81],@[256]]
-    check: t_van[_..^2, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[_..^2, 3].cpu == test.toTensor().asType(float32)
     ## Check with extra operators
-    check: t_van[_..^1+1, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[_..^1+1, 3].cpu == test.toTensor().asType(float32)
 
   test "Stepped Slicing until at n from the end - foo[1..^1|2, 3]":
     let test = @[@[16],@[256]]
-    check: t_van[1..^1|2, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[1..^1|2, 3].cpu == test.toTensor().asType(float32)
     ## Check with extra operators
-    check: t_van[1..^1|(1+1), 3].cpu == test.toTensor().astype(float32)
+    check: t_van[1..^1|(1+1), 3].cpu == test.toTensor().asType(float32)
 
   test "Slice from the end - foo[^1..0|-1, 3]":
     let test = @[@[625],@[256],@[81],@[16],@[1]]
-    check: t_van[^1..0|-1, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[^1..0|-1, 3].cpu == test.toTensor().asType(float32)
     ## Check with extra operators
     let test2 = @[@[256],@[81],@[16],@[1]]
-    check: t_van[^(4-2)..0|-1, 3].cpu == test2.toTensor().astype(float32)
+    check: t_van[^(4-2)..0|-1, 3].cpu == test2.toTensor().asType(float32)
 
   when compileOption("boundChecks") and not defined(openmp):
     test "Slice from the end - expect non-negative step error - foo[^1..0, 3]":
@@ -141,8 +141,8 @@ testSuite "CUDA: Testing indexing and slice syntax":
 
   test "Slice from the end - foo[^(2*2)..2*2, 3]":
     let test = @[@[16],@[81],@[256],@[625]]
-    check: t_van[^(2*2)..2*2, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[^(2*2)..2*2, 3].cpu == test.toTensor().asType(float32)
 
   test "Slice from the end - foo[^3..^2, 3]":
     let test = @[@[81],@[256]]
-    check: t_van[^3..^2, 3].cpu == test.toTensor().astype(float32)
+    check: t_van[^3..^2, 3].cpu == test.toTensor().asType(float32)

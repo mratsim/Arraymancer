@@ -6,10 +6,10 @@ import ../src/arraymancer
 let ctx = newContext Tensor[float32]
 let bsz = 32 # batch size
 
-let x_train_bool = randomTensor([bsz * 100, 2], 1).astype(bool)
+let x_train_bool = randomTensor([bsz * 100, 2], 1).asType(bool)
 let y_bool = x_train_bool[_,0] xor x_train_bool[_,1]
-let x_train = ctx.variable(x_train_bool.astype(float32))
-let y = y_bool.astype(float32)
+let x_train = ctx.variable(x_train_bool.asType(float32))
+let y = y_bool.asType(float32)
 
 # We will build the following network:
 # Input --> Linear(out_features = 3) --> relu --> Linear(out_features = 1) --> Sigmoid --> Cross-Entropy Loss

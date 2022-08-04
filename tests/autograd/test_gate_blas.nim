@@ -32,8 +32,8 @@ proc main() =
   suite "Autograd of BLAS operations":
     test "Gradient of matrix multiplication":
 
-      let W = toSeq(1..8).toTensor.reshape(2,4).astype(float32)
-      let X = toSeq(11..22).toTensor.reshape(4,3).astype(float32)
+      let W = toSeq(1..8).toTensor.reshape(2,4).asType(float32)
+      let X = toSeq(11..22).toTensor.reshape(4,3).asType(float32)
 
       let ctx = newContext Tensor[float32]
 

@@ -115,6 +115,6 @@ suite "Distances: `CustomMetric`":
 
   test "CustomMetric that is euclidean":
     proc distance(_: typedesc[CustomMetric], v, w: Tensor[int]): float =
-      result = Euclidean.distance(v.astype(float), w.astype(float))
+      result = Euclidean.distance(v.asType(float), w.asType(float))
 
-    check CustomMetric.distance(a, b) == Euclidean.distance(a.astype(float), b.astype(float))
+    check CustomMetric.distance(a, b) == Euclidean.distance(a.asType(float), b.asType(float))

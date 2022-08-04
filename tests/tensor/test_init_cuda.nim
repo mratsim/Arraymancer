@@ -20,7 +20,7 @@ testSuite "Cuda init":
   test "Clone function":
     let a = [ 7, 4, 3, 1, 8, 6,
               8, 1, 6, 2, 6, 6,
-              2, 0, 4, 3, 2, 0].toTensor.reshape([3,6]).astype(float).cuda
+              2, 0, 4, 3, 2, 0].toTensor.reshape([3,6]).asType(float).cuda
 
     # Tensor of shape 3x6 of type "int" on backend "Cpu"
     # |7      4       3       1       8       6|

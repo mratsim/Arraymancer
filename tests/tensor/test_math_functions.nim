@@ -20,7 +20,7 @@ proc main() =
   suite "Math functions":
     test "Reciprocal (element-wise 1/x)":
       var a = [1.0, 10, 20, 30].toTensor.reshape(4,1)
-      var a_c = [1.0, 10, 20, 30].toTensor.reshape(4,1).astype(Complex[float64])
+      var a_c = [1.0, 10, 20, 30].toTensor.reshape(4,1).asType(Complex[float64])
 
 
       check: a.reciprocal == [[1.0],
@@ -30,7 +30,7 @@ proc main() =
       check: a_c.reciprocal == [[1.0],
                               [1.0/10.0],
                               [1.0/20.0],
-                              [1.0/30.0]].toTensor.astype(Complex[float64])
+                              [1.0/30.0]].toTensor.asType(Complex[float64])
 
       a.mreciprocal
       a_c.mreciprocal
@@ -42,7 +42,7 @@ proc main() =
       check: a_c == [[1.0],
                   [1.0/10.0],
                   [1.0/20.0],
-                  [1.0/30.0]].toTensor.astype(Complex[float64])
+                  [1.0/30.0]].toTensor.asType(Complex[float64])
 
     test "Negate elements (element-wise -x)":
       block: # Out of place
@@ -70,7 +70,7 @@ proc main() =
 
     test "Absolute value":
       var a = [1.0, -10, -20, 30].toTensor.reshape(4,1)
-      var a_c = [1.0, -10, -20, 30].toTensor.reshape(4,1).astype(Complex[float64])
+      var a_c = [1.0, -10, -20, 30].toTensor.reshape(4,1).asType(Complex[float64])
 
       check: a.abs == [[1.0],
                         [10.0],
@@ -79,7 +79,7 @@ proc main() =
       check: a_c.abs == [[1.0],
                         [10.0],
                         [20.0],
-                        [30.0]].toTensor.astype(float64)
+                        [30.0]].toTensor.asType(float64)
 
       a.mabs
 

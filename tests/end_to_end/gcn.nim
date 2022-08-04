@@ -14,7 +14,7 @@ proc gcntest() =
   # Create adjacency matrix to represent graph topological structure
   let
     x = ctx.variable(randomTensor[float32](2, D_in, 1'f32))
-    adj = ctx.variable([[0,0], [0,1]].toTensor().astype(float32))
+    adj = ctx.variable([[0,0], [0,1]].toTensor().asType(float32))
     y = randomTensor[float32](2, D_out, 1'f32)
 
 

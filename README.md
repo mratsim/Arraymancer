@@ -14,12 +14,6 @@ It can also use the OpenMP, Cuda or OpenCL backends.
 
 Note: While Nim is compiled and does not offer an interactive REPL yet (like Jupyter), it allows much faster prototyping than C++ due to extremely fast compilation times. Arraymancer compiles in about 5 seconds on my dual-core MacBook.
 
-## Performance notice on Nim 0.20 & compilation flags
-
-In Nim 0.20, the `-d:release` flag does not disable runtime checks like array bounds-checking anymore. This has a signigicant performance impact (5x slowdown in tight loop).
-
-Compile with `-d:release -d:danger` to get the same performance as in 0.19.x.
-
 Reminder of supported compilation flags:
 - `-d:release`: Nim release mode (no stacktraces and debugging information)
 - `-d:danger`: No runtime checks like array bound checking

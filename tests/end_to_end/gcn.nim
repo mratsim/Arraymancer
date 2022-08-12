@@ -26,7 +26,7 @@ proc gcntest() =
 
   let
     model = ctx.init(GCNNet)
-    optim = model.optimizerSGD(learning_rate = 1e-4'f32)
+    optim = model.optimizer(SGD, learning_rate = 1e-4'f32)
 
   let
       y_pred = model.forward(x, adj)

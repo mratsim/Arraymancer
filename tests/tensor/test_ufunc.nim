@@ -95,6 +95,11 @@ proc main() =
       let c = [-2.0,-1,0,1,2].toTensor().astype(Complex[float64])
       check abs(c) == [2.0,1,0,1,2].toTensor().astype(float64)
 
+    test "As type with empty tensor returns empty tensor":
+      let a = newTensor[int](0)
+      let b = a.astype(float)
+      check b.size() == 0
+
 
 main()
 GC_fullCollect()

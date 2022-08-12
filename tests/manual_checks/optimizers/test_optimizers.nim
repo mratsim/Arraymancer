@@ -86,7 +86,7 @@ testSuite "[Optimizer] Optimizer on the Rosenbrock function":
       y: ctx.variable(src_y.clone, requires_grad = true)
     )
 
-    let optim = optimizerSGD(model, learning_rate = 1e-4)
+    let optim = optimizer(SGD, model, learning_rate = 1e-4)
 
     echo "SGD - trying to optimize the Rosenbrock function"
     for epoch in 0 ..< Epochs:
@@ -103,7 +103,7 @@ testSuite "[Optimizer] Optimizer on the Rosenbrock function":
       y: ctx.variable(src_y.clone, requires_grad = true)
     )
 
-    var optim = optimizerAdam(model, learning_rate = 1e-4)
+    var optim = optimizer(Adam, model, learning_rate = 1e-4)
 
     echo "Adam - trying to optimize the Rosenbrock function"
     for epoch in 0 ..< Epochs:

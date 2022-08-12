@@ -48,7 +48,7 @@ network DemoNet:
 let model = ctx.init(DemoNet)
 
 # Stochastic Gradient Descent (API will change)
-let optim = model.optimizerSGD(learning_rate = 0.01'f32)
+let optim = model.optimizer(SGD, learning_rate = 0.01'f32)
 
 # Learning loop
 for epoch in 0 ..< 2:

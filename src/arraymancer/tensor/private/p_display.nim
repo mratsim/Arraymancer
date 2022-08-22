@@ -36,7 +36,10 @@ func bounds_display(t: Tensor,
 
   for i,j in s[0 .. s.len-2]: # We don't take the last element (the row in C convention)
     if idx mod j == 0:
-      return "" & align(val, alignBy) & "|\n"
+      if t.rank == 2 and t.shape[1] == 1:
+        return "|" & align(val, alignBy - alignSpacing) & "|\n"
+      else:
+        return "" & align(val, alignBy) & "|\n"
     if idx mod j == 1:
       # for the first element  we want to align by only the size of the "largest value" in
       # the tensor, ``not`` the additional spacing we add to space ``between`` numbers.

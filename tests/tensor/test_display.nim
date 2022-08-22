@@ -57,7 +57,22 @@ Tensor[system.float] of shape "[2]" on backend "Cpu"
     0.953293    0.129458, Tensor[system.float] of shape "[2]" on backend "Cpu"
     0.953293    0.129458]""")
 
-    test "Display 2D tensor":
+    test "Display 2D tensor (single-column)":
+      block:
+        let t_single_row = [[1, 2, 3, 4, 5]].toTensor()
+        compareStrings($t_single_row, """
+Tensor[system.int] of shape "[1, 5]" on backend "Cpu"
+|1      2     3     4     5|""")
+        let t_single_column = t_single_row.transpose()
+        compareStrings($t_single_column, """
+Tensor[system.int] of shape "[5, 1]" on backend "Cpu"
+| 1|
+| 2|
+| 3|
+| 4|
+| 5|""")
+
+    test "Display 2D tensor (multi-column)":
       const
         a = @[1, 2, 3, 4, 5]
         b = @[1, 2, 3, 4, 5]

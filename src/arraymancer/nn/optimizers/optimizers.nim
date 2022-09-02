@@ -171,10 +171,7 @@ proc optimizer*[M, T](
   result.decay = decay
   result.nesterov = nesterov
 
-proc optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0), decay = T(0.0), nesterov = false): SGDMomentum[Tensor[T]] {.deprecated: "Use optimizer(model, SGDMomentum, learning_rate) instead."} =
-  return optimizer(model, SGDMomentum, learning_rate, momentum, decay, nesterov)
-
-  func addLayer(result: var SGDMomentum[Tensor[T]], layer: auto) =
+  proc addLayer(result: var SGDMomentum[Tensor[T]], layer: auto) =
     when layer is Variable:
       result.params.add layer
       result.moments.add layer.grad.zeros_like
@@ -183,6 +180,9 @@ proc optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0), 
         result.addLayer(field)
 
   result.addLayer(model)
+
+proc optimizerSGDMomentum*[M, T](model: M, learning_rate: T, momentum = T(0.0), decay = T(0.0), nesterov = false): SGDMomentum[Tensor[T]] {.deprecated: "Use optimizer(model, SGDMomentum, learning_rate) instead."} =
+  return optimizer(model, SGDMomentum, learning_rate, momentum, decay, nesterov)
 
 # ############################################################
 #

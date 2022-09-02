@@ -12,7 +12,8 @@ proc init*[T](
   inShape: seq[int]
 ): Flatten[T] =
 
-  ## Creates an flattening layer. ``inShape`` describes the expected shape of input.
+  ## Creates a flattening layer, which "flattens" its input by reshaping it into a one-dimensional tensor.
+  ## ``inShape`` describes the expected shape of the input.
   result.inShape = inShape
 
 proc forward*[T](self: Flatten[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =

@@ -106,7 +106,7 @@ proc masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
   withMemoryOptimHints()
 
   var idx = 0
-  let dst{.restrict.} = result.dataArray
+  let dst{.restrict.} = result.toUnsafeView
   for value, take in zip(t, mask):
     if take:
       dst[idx] = value

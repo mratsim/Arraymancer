@@ -89,6 +89,22 @@ proc slicer*[T](t: AnyTensor[T],
   let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
   slicerImpl(result, full_slices)
 
+proc slicer*[T](t: AnyTensor[T],
+                slices1: SteppedSlice,
+                ellipsis: Ellipsis,
+                slices2: SteppedSlice
+                ): AnyTensor[T] {.noInit,noSideEffect.}=
+  ## Take a Tensor, Ellipsis and SteppedSlices
+  ## Returns:
+  ##    A copy of the original Tensor
+  ##    Offset and strides are changed to achieve the desired effect.
+
+  result = t
+  let full_slices = concat(slices1.toArrayOfSlices,
+                            initSpanSlices(t.rank - slices1.len - slices2.len),
+                            slices2.toArrayOfSlices)
+  slicerImpl(result, full_slices)
+
 proc slicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:

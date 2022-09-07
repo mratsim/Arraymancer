@@ -101,7 +101,7 @@ proc slicer*[T](t: AnyTensor[T],
 
   result = t
   let full_slices = concat(slices1.toArrayOfSlices,
-                            initSpanSlices(t.rank - slices1.len - slices2.len),
+                            initSpanSlices(t.rank - 1 - 1),
                             slices2.toArrayOfSlices)
   slicerImpl(result, full_slices)
 

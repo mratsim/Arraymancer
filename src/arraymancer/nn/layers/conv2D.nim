@@ -147,12 +147,12 @@ proc init*[T](
 
   ## Creates a 2D convolutional layer.
   ## Input:
-  ##     - ``inShape`` Shape of the expected input tensor in the form of ``[N, C_in, H_in, W_in]``
+  ##     - ``inShape`` Shape of the expected input tensor in the form of ``[C_in, H_in, W_in]``
   ##     - ``outChannels`` Number of channels in the output
   ##     - ``kernelSize`` Shape of the kernel ``(width, height)``
   ##     - ``padding`` Padding, defaults to ``(0, 0)``
   ##     - ``stride`` Stride, defaults to ``(1, 1)``
-  ## 
+  ##
   ## Returns the created ``Conv2D``.
 
   result.padding = padding

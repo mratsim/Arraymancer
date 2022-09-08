@@ -32,12 +32,12 @@ template slicerMutImpl_val[T](t: var Tensor[T], slices: ArrayOfSlices, val: T): 
   for old_val in sliced.mitems:
     old_val = val
 
-proc slicerMut*[T](t: var Tensor[T], slices: varargs[SteppedSlice], val: T) {.noSideEffect.}=
+proc slicerMut*[T](t: var Tensor[T], slices: openArray[SteppedSlice], val: T) {.noSideEffect.}=
   ## Assign the value to the whole slice
   slicerMutImpl_val(t, slices.toArrayOfSlices, val)
 
 proc slicerMut*[T](t: var Tensor[T],
-                slices: varargs[SteppedSlice],
+                slices: openArray[SteppedSlice],
                 ellipsis: Ellipsis,
                 val: T) {.noSideEffect.}=
   ## Take a var Tensor, SteppedSlices, Ellipsis and a value
@@ -49,7 +49,7 @@ proc slicerMut*[T](t: var Tensor[T],
 
 proc slicerMut*[T](t: var Tensor[T],
                 ellipsis: Ellipsis,
-                slices: varargs[SteppedSlice],
+                slices: openArray[SteppedSlice],
                 val: T) {.noSideEffect.}=
   ## Take a var Tensor, SteppedSlices, Ellipsis and a value
   ## Assign the value to the whole slice
@@ -59,9 +59,9 @@ proc slicerMut*[T](t: var Tensor[T],
   slicerMutImpl_val(t, full_slices, val)
 
 proc slicerMut*[T](t: var Tensor[T],
-                slices1: varargs[SteppedSlice],
+                slices1: openArray[SteppedSlice],
                 ellipsis: Ellipsis,
-                slices2: varargs[SteppedSlice],
+                slices2: openArray[SteppedSlice],
                 val: T) {.noSideEffect.}=
   ## Take a var Tensor, Ellipsis, SteppedSlices, Ellipsis and a value
   ## Assign the value to the whole slice
@@ -75,7 +75,7 @@ proc slicerMut*[T](t: var Tensor[T],
 # ###########################################################################
 # Assign value from an openarray of the same shape
 
-template slicerMutImpl_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) =
+template slicerMutImpl_oa[T](t: var Tensor[T], slices: openArray[SteppedSlice], oa: openarray) =
   ## Assign value from openarrays
 
   var sliced = t.slicer(slices)
@@ -92,13 +92,13 @@ template slicerMutImpl_oa[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa
   for i, x in sliced.menumerate:
     x = data[i]
 
-proc slicerMut*[T](t: var Tensor[T], slices: varargs[SteppedSlice], oa: openarray) {.noSideEffect.}=
+proc slicerMut*[T](t: var Tensor[T], slices: openArray[SteppedSlice], oa: openarray) {.noSideEffect.}=
   ## Assign value from openarrays
   ## The openarray must have the same shape as the slice
   slicerMutImpl_oa(t, slices, oa)
 
 proc slicerMut*[T](t: var Tensor[T],
-                  slices: varargs[SteppedSlice],
+                  slices: openArray[SteppedSlice],
                   ellipsis: Ellipsis,
                   oa: openarray) {.noSideEffect.}=
   ## Assign value from openarrays
@@ -109,7 +109,7 @@ proc slicerMut*[T](t: var Tensor[T],
 
 proc slicerMut*[T](t: var Tensor[T],
                   ellipsis: Ellipsis,
-                  slices: varargs[SteppedSlice],
+                  slices: openArray[SteppedSlice],
                   oa: openarray) {.noSideEffect.}=
   ## Assign value from openarrays
   ## The openarray must have the same shape as the slice
@@ -119,9 +119,9 @@ proc slicerMut*[T](t: var Tensor[T],
 
 
 proc slicerMut*[T](t: var Tensor[T],
-                slices1: varargs[SteppedSlice],
+                slices1: openArray[SteppedSlice],
                 ellipsis: Ellipsis,
-                slices2: varargs[SteppedSlice],
+                slices2: openArray[SteppedSlice],
                 oa: openarray) {.noSideEffect.}=
   ## Assign value from openarrays
   ## The openarray must have the same shape as the slice
@@ -134,7 +134,7 @@ proc slicerMut*[T](t: var Tensor[T],
 # #########################################################################
 # Setting from a Tensor
 
-template slicerMutImpl_T[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T]) =
+template slicerMutImpl_T[T](t: var Tensor[T], slices: openArray[SteppedSlice], t2: Tensor[T]) =
   ## Assign the value to the whole slice
 
   var sliced = t.slicer(slices)
@@ -145,12 +145,12 @@ template slicerMutImpl_T[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2:
   apply2_inline(sliced, t2):
     y
 
-proc slicerMut*[T](t: var Tensor[T], slices: varargs[SteppedSlice], t2: Tensor[T])=
+proc slicerMut*[T](t: var Tensor[T], slices: openArray[SteppedSlice], t2: Tensor[T])=
   ## Assign the value to the whole slice
   slicerMutImpl_T(t, slices, t2)
 
 proc slicerMut*[T](t: var Tensor[T],
-                  slices: varargs[SteppedSlice],
+                  slices: openArray[SteppedSlice],
                   ellipsis: Ellipsis,
                   t2: Tensor[T]) =
   ## Assign the value to the whole slice
@@ -160,7 +160,7 @@ proc slicerMut*[T](t: var Tensor[T],
 
 proc slicerMut*[T](t: var Tensor[T],
                   ellipsis: Ellipsis,
-                  slices: varargs[SteppedSlice],
+                  slices: openArray[SteppedSlice],
                   t2: Tensor[T]) =
   ## Assign the value to the whole slice
   # TODO: tests
@@ -168,9 +168,9 @@ proc slicerMut*[T](t: var Tensor[T],
   slicerMutImpl_T(t, slices, t2)
 
 proc slicerMut*[T](t: var Tensor[T],
-                  slices1: varargs[SteppedSlice],
+                  slices1: openArray[SteppedSlice],
                   ellipsis: Ellipsis,
-                  slices2: varargs[SteppedSlice],
+                  slices2: openArray[SteppedSlice],
                   t2: Tensor[T]) =
   ## Assign the value to the whole slice
   # TODO: tests
@@ -224,15 +224,8 @@ macro slice_typed_dispatch_mut*(t: typed, args: varargs[typed], val: typed): unt
   # -----------------------------------------------------------------
   if fancy == FancyNone:
     result = newCall(bindSym"slicerMut", t)
-    for slice in args:
-      if isInt(slice):
-        ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
-        # Constructing via `infix` can cause issues with resolution of `|` in some generic contexts
-        #result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
-        result.add quote do:
-          SteppedSlice(a: `slice`, b: `slice`, step: 1)
-      else:
-        result.add(slice)
+    sliceDispatchImpl(result, args, false)
+
     result.add(val)
     return
 
@@ -268,7 +261,7 @@ macro slice_typed_dispatch_mut*(t: typed, args: varargs[typed], val: typed): unt
 #
 # Unused: Nim support for var return types is problematic
 
-proc slicer_var[T](t: var AnyTensor[T], slices: varargs[SteppedSlice]): var AnyTensor[T] {.noInit,noSideEffect.}=
+proc slicer_var[T](t: var AnyTensor[T], slices: openArray[SteppedSlice]): var AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -278,7 +271,7 @@ proc slicer_var[T](t: var AnyTensor[T], slices: varargs[SteppedSlice]): var AnyT
   slicerImpl(result, slices)
 
 proc slicer_var[T](t: var AnyTensor[T],
-                slices: varargs[SteppedSlice],
+                slices: openArray[SteppedSlice],
                 ellipsis: Ellipsis): var AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor, SteppedSlices and Ellipsis
   ## Returns:
@@ -291,7 +284,7 @@ proc slicer_var[T](t: var AnyTensor[T],
 
 proc slicer_var[T](t: var AnyTensor[T],
                 ellipsis: Ellipsis,
-                slices: varargs[SteppedSlice]
+                slices: openArray[SteppedSlice]
                 ): var AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor, Ellipsis and SteppedSlices
   ## Returns:
@@ -303,9 +296,9 @@ proc slicer_var[T](t: var AnyTensor[T],
   slicerImpl(result, full_slices)
 
 proc slicer_var[T](t: var AnyTensor[T],
-                slices1: varargs[SteppedSlice],
+                slices1: openArray[SteppedSlice],
                 ellipsis: Ellipsis,
-                slices2: varargs[SteppedSlice]
+                slices2: openArray[SteppedSlice]
                 ): var AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor, Ellipsis and SteppedSlices
   ## Returns:
@@ -330,9 +323,4 @@ macro slice_typed_dispatch_var*(t: typed, args: varargs[typed]): untyped =
       result.add(slice)
   else:
     result = newCall(bindSym("slicer_var"), t)
-    for slice in args:
-      if isInt(slice):
-        ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
-        result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
-      else:
-        result.add(slice)
+    sliceDispatchImpl(result, args, true)

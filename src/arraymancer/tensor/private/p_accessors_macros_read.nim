@@ -55,7 +55,7 @@ template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSl
     result.strides[i] *= slice.step
     result.shape[i] = abs((b-a) div slice.step) + 1
 
-proc slicer*[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.noInit,noSideEffect.}=
+proc slicer*[T](t: AnyTensor[T], slices: openArray[SteppedSlice]): AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -65,7 +65,7 @@ proc slicer*[T](t: AnyTensor[T], slices: varargs[SteppedSlice]): AnyTensor[T] {.
   slicerImpl(result, slices.toArrayOfSlices)
 
 proc slicer*[T](t: AnyTensor[T],
-                slices: varargs[SteppedSlice],
+                slices: openArray[SteppedSlice],
                 ellipsis: Ellipsis): AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor, SteppedSlices and Ellipsis
   ## Returns:
@@ -78,7 +78,7 @@ proc slicer*[T](t: AnyTensor[T],
 
 proc slicer*[T](t: AnyTensor[T],
                 ellipsis: Ellipsis,
-                slices: varargs[SteppedSlice]
+                slices: openArray[SteppedSlice]
                 ): AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor, Ellipsis and SteppedSlices
   ## Returns:
@@ -90,9 +90,9 @@ proc slicer*[T](t: AnyTensor[T],
   slicerImpl(result, full_slices)
 
 proc slicer*[T](t: AnyTensor[T],
-                slices1: varargs[SteppedSlice],
+                slices1: openArray[SteppedSlice],
                 ellipsis: Ellipsis,
-                slices2: varargs[SteppedSlice]
+                slices2: openArray[SteppedSlice]
                 ): AnyTensor[T] {.noInit,noSideEffect.}=
   ## Take a Tensor, Ellipsis and SteppedSlices
   ## Returns:
@@ -193,6 +193,29 @@ proc getFancySelector*(ast: NimNode, axis: var int, selector: var NimNode): Fanc
   # type mismatches
   selector = replaceSymsByIdents(selector)
 
+proc sliceDispatchImpl*(result: NimNode, args: NimNode, isRead: bool) =
+  var collection = newNimNode(nnkBracket)
+
+  for slice in args:
+    if isInt(slice):
+      if isRead:
+        collection.add infix(slice, "..", infix(slice, "|", newIntLitNode(1)))
+      else:
+        collection.add quote do:
+          SteppedSlice(a: `slice`, b: `slice`, step: 1)
+    elif slice.kind == nnkSym and slice.strVal == "...":
+      if collection.len > 0:
+        result.add(collection)
+        result.add(slice)
+        collection = newNimNode(nnkBracket)
+      else:
+        result.add(slice)
+    else:
+      collection.add(slice)
+
+  if collection.len > 0:
+    result.add collection
+
 macro slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
   ## Typed macro so that isAllInt has typed context and we can dispatch.
   ## If args are all int, we dispatch to atIndex and return T
@@ -235,12 +258,7 @@ macro slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
   # -----------------------------------------------------------------
   if fancy == FancyNone:
     result = newCall(bindSym"slicer", t)
-    for slice in args:
-      if isInt(slice):
-        ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
-        result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
-      else:
-        result.add(slice)
+    sliceDispatchImpl(result, args, true)
     return
 
   # Fancy bug in Nim compiler

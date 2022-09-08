@@ -199,8 +199,12 @@ proc sliceDispatchImpl*(result: NimNode, args: NimNode, isRead: bool) =
   for slice in args:
     if isInt(slice):
       if isRead:
+        ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
         collection.add infix(slice, "..", infix(slice, "|", newIntLitNode(1)))
       else:
+        ## Convert [10, 1..10|1] to [10..10|1, 1..10|1]
+        # Constructing via `infix` can cause issues with resolution of `|` in some generic contexts
+        #result.add(infix(slice, "..", infix(slice, "|", newIntLitNode(1))))
         collection.add quote do:
           SteppedSlice(a: `slice`, b: `slice`, step: 1)
     elif slice.kind == nnkSym and slice.strVal == "...":

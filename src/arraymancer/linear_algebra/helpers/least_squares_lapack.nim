@@ -77,7 +77,7 @@ proc gelsd*[T: SomeFloat](
   singular_values = newTensorUninit[T](minmn) # will hold the singular values of A
 
   var # Temporary parameter values
-    iwork = newSeqUninit[cint](liwork)
+    iwork = newSeqUninit[int32](liwork)
     info, rank: int32
     lwork: int32 = -1
 

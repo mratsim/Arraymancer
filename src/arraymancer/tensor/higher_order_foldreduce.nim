@@ -125,7 +125,10 @@ proc reduce*[T](t: Tensor[T],
   ##     a.reduce(max) ## This returns the maximum value in the Tensor.
 
   t.reduce_inline():
-    shallowCopy(x, f(x,y))
+    when defined(gcArc) or defined(gcOrc):
+      x = f(x,y) # hopefully nvro will work
+    else:
+      shallowCopy(x, f(x,y))
 
 proc reduce*[T](t: Tensor[T],
                 f: (Tensor[T], Tensor[T]) -> Tensor[T],
@@ -142,4 +145,7 @@ proc reduce*[T](t: Tensor[T],
   ##     - A tensor aggregate of the function called all elements of the tensor
 
   t.reduce_axis_inline(axis):
-    shallowCopy(x, f(x,y))
+    when defined(gcArc) or defined(gcOrc):
+      x = f(x,y) # hopefully nvro will work
+    else:
+      shallowCopy(x, f(x,y))

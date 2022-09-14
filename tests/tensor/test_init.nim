@@ -183,7 +183,8 @@ proc main() =
         var t: TestObject
         t.x = @[1.0, 2, 3, 4].toTensor()
         t.x = t.x
-        doAssert not t.x.storage.isNil
+        when (NimMajor, NimMinor) >= (1, 6): # works since 1.6; see https://github.com/nim-lang/Nim/issues/16185
+          doAssert not t.x.storage.isNil
 
     test "Init tensor from raw buffer":
       let size = 100

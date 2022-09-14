@@ -183,8 +183,7 @@ proc main() =
         var t: TestObject
         t.x = @[1.0, 2, 3, 4].toTensor()
         t.x = t.x
-        doAssert t.x.storage.isNil, "If you see this message, bug Nim #16185 is fixed." &
-          " Remove this test or set it to `not t.x.isNil`!"
+        doAssert not t.x.storage.isNil
 
     test "Init tensor from raw buffer":
       let size = 100

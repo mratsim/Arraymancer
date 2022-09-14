@@ -84,7 +84,7 @@ proc syevr*[T: SomeFloat](a: var Tensor[T], uplo: static char, return_eigenvecto
 
   # Setting up output
   var
-    isuppz: seq[cint] # unused
+    isuppz: seq[int32] # unused
     isuppz_ptr: ptr int32
 
   eigenval = newTensorUninit[T](a.shape[0]) # Even if less eigenval are selected Lapack requires this much workspace

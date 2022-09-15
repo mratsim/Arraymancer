@@ -84,7 +84,11 @@ proc read_csv*[T: SomeNumber|bool|string](
   elif T is bool:
     parser = parseBool
   elif T is string:
-    parser = proc(x: string): string = shallowCopy(result, x) # no-op
+    parser = proc(x: string): string =
+      when defined(gcArc) or defined(gcOrc):
+        result = x
+      else:
+        shallowCopy(result, x) # no-op
 
   # 1. count number of lines and columns using memfile interface
   let (numRows, numCols) = countLinesAndCols(csvPath, separator, quote, skipHeader)

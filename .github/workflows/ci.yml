@@ -14,7 +14,7 @@ jobs:
       max-parallel: 20
       matrix:
         # branch: [version-1-0, version-1-2, version-1-4, version-1-6] # [devel]
-        nim: ['version-1-4', 'version-1-6'] # 'devel'
+        nim: ['version-1-4', 'version-1-6', 'devel'] # 'devel'
         target:
           - os: linux
             cpu: amd64
@@ -215,6 +215,14 @@ jobs:
           nimble install -y --depsOnly
           # Run the tests.
           nimble test
+
+      - name: Run Arraymancer tests with ORC
+        working-directory: arraymancer
+        run: |
+          export ARRAYMANCER_TEST_LANG=${{ matrix.test_lang }}
+          nimble install -y --depsOnly
+          # Run the tests.
+          nimble test_orc_release
 
       - name: Build docs
         if: >

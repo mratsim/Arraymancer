@@ -69,7 +69,7 @@ proc syevr*[T: SomeFloat](a: var Tensor[T], uplo: static char, return_eigenvecto
     lwork: int32 = -1  # dimension of a workspace array
     work_size: T
     liwork: int32 = -1 # dimension of a second workspace array
-    iwork: seq[cint]
+    iwork: seq[int32]
     iwork_size: int32
     info: int32
 
@@ -84,7 +84,7 @@ proc syevr*[T: SomeFloat](a: var Tensor[T], uplo: static char, return_eigenvecto
 
   # Setting up output
   var
-    isuppz: seq[cint] # unused
+    isuppz: seq[int32] # unused
     isuppz_ptr: ptr int32
 
   eigenval = newTensorUninit[T](a.shape[0]) # Even if less eigenval are selected Lapack requires this much workspace
@@ -246,7 +246,7 @@ proc gesdd*[T: SomeFloat](a: var Tensor[T], U, S, Vh: var Tensor[T], scratchspac
     work_size: T
     lwork = -1'i32 # size query
     info: int32
-    iwork = newSeqUninit[cint](8 * k)
+    iwork = newSeqUninit[int32](8 * k)
 
   U.newMatrixUninitColMajor(ldu, ucol)
   S = newTensorUninit[T](k.int)

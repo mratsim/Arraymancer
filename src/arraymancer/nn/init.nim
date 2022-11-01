@@ -49,7 +49,7 @@ func compute_fans(shape: varargs[int]): tuple[fan_in, fan_out: int] =
   #   - A shape [features_out, features_in] for a linear layer
   #   - or a shape [C_out, C_in, kernel_height, kernel_width] for a convolution 2D layer
 
-  assert shape.len in {2..5}, "Only Linear and Convolutions are supported"
+  assert shape.len in 2..5, "Only Linear and Convolutions are supported"
 
   result.fan_out = shape[0]
   result.fan_in = shape[1]

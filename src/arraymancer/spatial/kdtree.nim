@@ -43,34 +43,34 @@ type
     tree*: Node[T]           ## the root node of the tree
     size*: int               ## number of nodes in the tree
 
+proc clone*[T](n: Node[T]): Node[T] =
+  result = Node[T](level: n.level,
+                   id: n.id,
+                   kind: n.kind)
+  case n.kind
+  of tnInner:
+    result.lesser = n.lesser.clone()
+    result.greater = n.greater.clone()
+    result.split_dim = n.split_dim
+    result.split = n.split
+  of tnLeaf:
+    result.children = n.children
+    result.idx = n.idx.clone()
+
+proc clone*[T](kd: KDTree[T]): KDTree[T] =
+  result = KDTree[T](data: kd.data.clone(),
+                     leafSize: kd.leafSize,
+                     k: kd.k, n: kd.n,
+                     maxes: kd.maxes.clone(),
+                     mins: kd.mins.clone(),
+                     tree: kd.tree.clone(),
+                     size: kd.size)
+
 proc `<`[T](n1, n2: Node[T]): bool =
   ## Comparison of two nodes is done by comparing their `id`. The `id` tells us the
   ## order in which the node was constructed. This is sensible, as we *first* construct
   ## the *lesser* splitting.
   result = n1.id < n2.id
-
-type
-  TensorCompare*[T] = distinct Tensor[T]
-
-proc toTensorCompare[T](t: Tensor[T]): TensorCompare[T] = cast[TensorCompare[T]](t)
-proc toTensorNormal[T](t: TensorCompare[T]): Tensor[T] = cast[Tensor[T]](t)
-proc `==`*[T](s1C, s2C: TensorCompare[T]): bool = s1C.toTensorNormal == s2C.toTensorNormal
-
-proc `<`*[T](s1C, s2C: TensorCompare[T]): bool =
-  ## just an internal comparison of two Tensors, which assumes that the order of two
-  ## seqs matters.
-  let s1 = s1C.toTensorNormal
-  let s2 = s2C.toTensorNormal
-  doAssert s1.size == s2.size
-  result = false
-  for i in 0 ..< s1.size:
-    if s1[i] == s2[i]:
-      # may still be decided, equal up to here
-      continue
-    elif s1[i] < s2[i]:
-      return true
-    elif s1[i] > s2[i]:
-      return false
 
 proc allEqual[T](t: Tensor[T], val: T): bool =
   ## checks if all elements of `t` are `val`
@@ -241,6 +241,7 @@ proc toTensorTuple[T, U](q: var HeapQueue[T],
       inc i
   result = (vals, idxs)
 
+import ./tensor_compare_helper
 proc queryImpl[T](
   tree: KDTree[T],
   x: Tensor[T], # data point to query around
@@ -272,8 +273,9 @@ proc queryImpl[T](
   # - min distance between cell and target
   # - distance between nearest side of cell and target
   # - head node of cell
-  var q = initHeapQueue[(T, TensorCompare[T], Node[T])]()
-  q.push (min_distance, side_distances.clone.toTensorCompare, tree.tree)
+  bind tensor_compare_helper.`<`
+  var q = initHeapQueue[(T, Tensor[T], Node[T])]()
+  q.push (min_distance, side_distances.clone, tree.tree)
 
   # priority queue for nearest neighbors, i.e. our result
   # - (- distance ** p) from input `x` to current point
@@ -294,10 +296,8 @@ proc queryImpl[T](
     distanceUpperBound = pow(distanceUpperBound, p)
 
   var node: Node[T]
-  var sdt: TensorCompare[T] # stupid helper
   while q.len > 0:
-    (min_distance, sdt, node) = pop q
-    side_distances = sdt.toTensorNormal
+    (min_distance, side_distances, node) = pop q
     case node.kind
     of tnLeaf:
       # brute force for remaining elements in leaf node
@@ -325,7 +325,7 @@ proc queryImpl[T](
         (near, far) = (node.lesser, node.greater)
       else:
         (near, far) = (node.greater, node.lesser)
-      q.push( (min_distance, side_distances.clone.toTensorCompare, near) )
+      q.push( (min_distance, side_distances.clone, near) )
 
       var sd = side_distances.clone # clone to avoid reference semantic issues
       if classify(p) == fcInf:
@@ -338,7 +338,7 @@ proc queryImpl[T](
         min_distance = min_distance - side_distances[node.split_dim] + sd[node.split_dim]
 
       if min_distance <= distanceUpperBound * epsfac:
-        q.push( (min_distance, sd.toTensorCompare, far) )
+        q.push( (min_distance, sd, far) )
   # extract all information from heap queue and return as tuple
   result = toTensorTuple(neighbors, retType = T, p = p)
 

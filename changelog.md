@@ -1,6 +1,11 @@
 Arraymancer v0.7.x
 =====================================================
 
+- add `clone` operation for k-d tree
+- remove `TensorHelper` type in k-d tree implementation, instead
+  `bind` a custom `<`
+- fix `deepCopy` for tensors
+
 Arraymancer v0.7.15 Jul. 28 2022
 =====================================================
 

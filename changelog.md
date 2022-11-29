@@ -1,10 +1,25 @@
 Arraymancer v0.7.x
 =====================================================
 
-- add `clone` operation for k-d tree
+
+Arraymancer v0.7.16 Nov. 29 2022
+=====================================================
+
+- replace usages of `varargs` by `openArray` thanks to upstream fixes
+  (PR #572)
+- remove usages of dataArray (PRs #569 and #570)
+- fix issue displaying some 2D tensors (PR #567)
+-
+- add `clone` operation for k-d tree (PR #565)
 - remove `TensorHelper` type in k-d tree implementation, instead
-  `bind` a custom `<`
-- fix `deepCopy` for tensors
+  `bind` a custom `<` (PR #565)
+- fix `deepCopy` for tensors (PR #565)
+- misc fixes for current devel with ORC (PR #573)
+- replace badly defined `contains` check of integer in `set[uint16]`
+  (PR #575)
+- unify all usages of identifiers with different capitalizations to
+  remove many compile time hints / warnings and add
+  `styleCheck:usages` to `nim.cfg` (PR #564)
 
 Arraymancer v0.7.15 Jul. 28 2022
 =====================================================

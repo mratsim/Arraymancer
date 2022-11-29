@@ -9,11 +9,11 @@ proc ex01() =
   let ctx = newContext Tensor[float32]
 
   let bsz = 32
-  let x_train_bool = randomTensor([bsz * 10, 2], 1).astype(bool)
+  let x_train_bool = randomTensor([bsz * 10, 2], 1).asType(bool)
   let y_bool = x_train_bool[_,0] xor x_train_bool[_,1]
 
-  let x_train = ctx.variable(x_train_bool.astype(float32))
-  let y = y_bool.astype(float32)
+  let x_train = ctx.variable(x_train_bool.asType(float32))
+  let y = y_bool.asType(float32)
 
   let layer_3neurons = ctx.variable(
                         randomTensor(3, 2, 2.0f) -. 1.0f,
@@ -59,21 +59,21 @@ proc ex02() =
 
   let
     mnist = load_mnist(cache = true)
-    x_train = mnist.train_images.astype(float32) / 255'f32
+    x_train = mnist.train_images.asType(float32) / 255'f32
     X_train = ctx.variable x_train.unsqueeze(1)
-    y_train = mnist.train_labels.astype(int)
-    x_test = mnist.test_images.astype(float32) / 255'f32
+    y_train = mnist.train_labels.asType(int)
+    x_test = mnist.test_images.asType(float32) / 255'f32
     X_test = ctx.variable x_test.unsqueeze(1)
-    y_test = mnist.test_labels.astype(int)
+    y_test = mnist.test_labels.asType(int)
 
   network DemoNet:
     layers h, w:
       cv1:        Conv2D(@[1, h, w], 20, (5, 5))
-      mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
-      cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
-      mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
-      fl:         Flatten(mp2.out_shape)
-      hidden:     Linear(fl.out_shape[0], 500)
+      mp1:        MaxPool2D(cv1.outShape, (2,2), (0,0), (2,2))
+      cv2:        Conv2D(mp1.outShape, 50, (5, 5))
+      mp2:        MaxPool2D(cv2.outShape, (2,2), (0,0), (2,2))
+      fl:         Flatten(mp2.outShape)
+      hidden:     Linear(fl.outShape[0], 500)
       classifier: Linear(500, 10)
     forward x:
       x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier

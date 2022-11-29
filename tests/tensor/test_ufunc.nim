@@ -12,18 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer, ../testutils
-import math, unittest, complex
+import ../../src/arraymancer
+import math, unittest
 import complex except Complex64, Complex32
 
 proc main() =
   suite "Universal functions":
     test "As type with slicing":
       let a = [1, 2, 3, 4].toTensor()
-      let b = a[1..2].astype(float)
+      let b = a[1..2].asType(float)
       check b == [2.0'f64,3.0'f64].toTensor()
 
-      let c = a[1..2].astype(Complex[float64])
+      let c = a[1..2].asType(Complex[float64])
       check c == [complex64(2.0'f64,0'f64), complex64(3.0'f64,0'f64)].toTensor()
 
     test "Common math functions are exported":
@@ -54,7 +54,7 @@ proc main() =
 
       let c = @[@[2,4,8],@[3,9,27]]
       let tc = c.toTensor()
-      let tcc = tc.astype(Complex[float64])
+      let tcc = tc.asType(Complex[float64])
 
       let expected_c = @[@[5, 17, 65],@[10, 82, 730]]
       let expected_cc = @[@[complex64(5'f64,0.0), complex64(17'f64,0.0), complex64(65'f64,0.0)],
@@ -92,12 +92,12 @@ proc main() =
       let b = [-2.0,-1,0,1,2].toTensor()
       check abs(b) == [2.0,1,0,1,2].toTensor()
       # abs complex -> float
-      let c = [-2.0,-1,0,1,2].toTensor().astype(Complex[float64])
-      check abs(c) == [2.0,1,0,1,2].toTensor().astype(float64)
+      let c = [-2.0,-1,0,1,2].toTensor().asType(Complex[float64])
+      check abs(c) == [2.0,1,0,1,2].toTensor().asType(float64)
 
     test "As type with empty tensor returns empty tensor":
       let a = newTensor[int](0)
-      let b = a.astype(float)
+      let b = a.asType(float)
       check b.size() == 0
 
 

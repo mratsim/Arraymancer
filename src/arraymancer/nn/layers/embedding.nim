@@ -27,7 +27,7 @@ type
 
 proc embedding_backward_ag[TT; scaled: static bool, Idx](
         self: Gate[TT],
-        payload: Payload[TT]): SmallDiffs[TT] {.noInit.}=
+        payload: Payload[TT]): SmallDiffs[TT] {.noinit.}=
   let self = EmbeddingGate[TT, scaled, Idx](self)
   result = newDiffs[TT](1)
   result[0] = zeros_like(self.weight.value)
@@ -119,7 +119,7 @@ proc init*[T](
   ##     - ``vocabSize`` Size of the vocabulary
   ##     - ``embedSize`` Embedding size
   ##     - ``paddingIdx`` Optional parameter for when an index corresponds to the absence of words
-  ## 
+  ##
   ## Returns the created ``Embedding``.
 
   result.weight = ctx.variable(

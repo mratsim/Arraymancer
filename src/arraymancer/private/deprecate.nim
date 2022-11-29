@@ -36,7 +36,7 @@ proc overloadSingleSym(oldName, replacement: NimNode, exported: bool): NimNode =
     pragmas = nnkPragma.newTree()
 
   # pragmas.add ident"inline"
-  # pragmas.add ident"noInit"
+  # pragmas.add ident"noinit"
   pragmas.add nnkExprColonExpr.newTree(
     ident"deprecated",
     newLit("Use `" & $replacement & "` instead")
@@ -56,7 +56,7 @@ proc overloadSingleSym(oldName, replacement: NimNode, exported: bool): NimNode =
       else: # unbound - can this happen?
         genParam.expectKind(nnkIdentDefs)
 
-  let name = if exported: nnkPostFix.newTree(ident"*", oldName)
+  let name = if exported: nnkPostfix.newTree(ident"*", oldName)
             else: oldName
 
   result = nnkProcDef.newTree(

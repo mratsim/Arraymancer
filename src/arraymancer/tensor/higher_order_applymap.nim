@@ -72,7 +72,7 @@ template map_inline*[T](t: Tensor[T], op:untyped): untyped =
 
   type outType = type((
     block:
-      var x{.inject.}: type(items(z));
+      var x{.inject, used.}: type(items(z));
       op
   ))
 
@@ -149,7 +149,7 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
       dest.storage.raw_buffer[i] = op
   dest
 
-proc map*[T; U](t: Tensor[T], f: T -> U): Tensor[U] {.noInit, effectsOf: f.} =
+proc map*[T; U](t: Tensor[T], f: T -> U): Tensor[U] {.noinit, effectsOf: f.} =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
   ## Usage with Nim's ``future`` module:
   ##  .. code:: nim
@@ -216,7 +216,7 @@ proc apply*[T: KnownSupportsCopyMem](t: var Tensor[T], f: proc(x:var T)) {.effec
 
 proc map2*[T, U; V: KnownSupportsCopyMem](t1: Tensor[T],
                                           f: (T,U) -> V,
-                                          t2: Tensor[U]): Tensor[V] {.noInit, effectsOf: f.} =
+                                          t2: Tensor[U]): Tensor[V] {.noinit, effectsOf: f.} =
   ## Apply a binary function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ##
   ## The function is applied on the elements with the same coordinates.
@@ -246,7 +246,7 @@ proc map2*[T, U; V: KnownSupportsCopyMem](t1: Tensor[T],
 
 proc map2*[T, U; V: not KnownSupportsCopyMem](t1: Tensor[T],
                                               f: (T,U) -> V,
-                                              t2: Tensor[U]): Tensor[V] {.noInit,noSideEffect, effectsOf: f.}=
+                                              t2: Tensor[U]): Tensor[V] {.noinit,noSideEffect, effectsOf: f.}=
   ## Apply a binary function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ##
   ##

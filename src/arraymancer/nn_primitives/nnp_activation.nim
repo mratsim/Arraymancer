@@ -22,7 +22,7 @@ import  ../tensor,
 # ##################################################################################################
 # Forward
 
-proc sigmoid*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.}=
+proc sigmoid*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noinit.}=
   ## Logistic sigmoid activation function, :math:`f(x) = 1 / (1 + \exp(-x))`
   ## Note: Canonical sigmoid is not stable for large negative value
   ## Please use sigmoid_cross_entropy for the final layer for better stability and performance
@@ -32,10 +32,10 @@ proc sigmoid*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.}=
   result = map_inline(t):
     sigmoid(x)
 
-proc relu*[T](t: Tensor[T]): Tensor[T] {.noInit.}=
+proc relu*[T](t: Tensor[T]): Tensor[T] {.noinit.}=
   t.map_inline max(0.T,x)
 
-proc tanh*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noInit.}=
+proc tanh*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noinit.}=
   t.map_inline tanh(x)
 
 # ##################################################################################################
@@ -58,18 +58,18 @@ proc mtanh*[T: SomeFloat](t: var Tensor[T]) =
 # ##################################################################################################
 # Backward
 
-proc sigmoid_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.noInit.}=
+proc sigmoid_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.noinit.}=
   result = map2_inline(cached_tensor, gradient):
     x * (1 - x) * y
 
-proc relu_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.noInit.}=
+proc relu_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.noinit.}=
   result = map2_inline(cached_tensor, gradient):
     if x <= 0.T:
       0.T
     else:
       y
 
-proc tanh_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.noInit.}=
+proc tanh_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.noinit.}=
   result = map2_inline(cached_tensor, gradient):
     y * (1 - x * x)
 

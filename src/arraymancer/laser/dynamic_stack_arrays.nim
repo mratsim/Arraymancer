@@ -133,7 +133,7 @@ func reversed*(a: DynamicStackArray, result: var DynamicStackArray) =
     result[i] = 0
   result.len = a.len
 
-func `==`*[T](a: DynamicStackArray[T], s: openarray[T]): bool =
+func `==`*[T](a: DynamicStackArray[T], s: openArray[T]): bool =
   if a.len != s.len:
     return false
   for i in 0..<s.len:

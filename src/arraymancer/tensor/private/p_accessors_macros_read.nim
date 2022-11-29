@@ -18,8 +18,10 @@
 import  ../../private/ast_utils,
         ../data_structure, ../accessors_macros_syntax,
         ./p_checks, ./p_accessors,
-        ../../std_version_types,
         sequtils, macros
+
+when (NimMajor, NimMinor) < (1, 4):
+  import ../../std_version_types
 
 from ../init_cpu import toTensor
 
@@ -55,7 +57,7 @@ template slicerImpl*[T](result: AnyTensor[T]|var AnyTensor[T], slices: ArrayOfSl
     result.strides[i] *= slice.step
     result.shape[i] = abs((b-a) div slice.step) + 1
 
-proc slicer*[T](t: AnyTensor[T], slices: openArray[SteppedSlice]): AnyTensor[T] {.noInit,noSideEffect.}=
+proc slicer*[T](t: AnyTensor[T], slices: openArray[SteppedSlice]): AnyTensor[T] {.noinit,noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -66,7 +68,7 @@ proc slicer*[T](t: AnyTensor[T], slices: openArray[SteppedSlice]): AnyTensor[T] 
 
 proc slicer*[T](t: AnyTensor[T],
                 slices: openArray[SteppedSlice],
-                ellipsis: Ellipsis): AnyTensor[T] {.noInit,noSideEffect.}=
+                ellipsis: Ellipsis): AnyTensor[T] {.noinit,noSideEffect.}=
   ## Take a Tensor, SteppedSlices and Ellipsis
   ## Returns:
   ##    A copy of the original Tensor
@@ -79,7 +81,7 @@ proc slicer*[T](t: AnyTensor[T],
 proc slicer*[T](t: AnyTensor[T],
                 ellipsis: Ellipsis,
                 slices: openArray[SteppedSlice]
-                ): AnyTensor[T] {.noInit,noSideEffect.}=
+                ): AnyTensor[T] {.noinit,noSideEffect.}=
   ## Take a Tensor, Ellipsis and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -93,7 +95,7 @@ proc slicer*[T](t: AnyTensor[T],
                 slices1: openArray[SteppedSlice],
                 ellipsis: Ellipsis,
                 slices2: openArray[SteppedSlice]
-                ): AnyTensor[T] {.noInit,noSideEffect.}=
+                ): AnyTensor[T] {.noinit,noSideEffect.}=
   ## Take a Tensor, Ellipsis and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -105,7 +107,7 @@ proc slicer*[T](t: AnyTensor[T],
                             slices2.toArrayOfSlices)
   slicerImpl(result, full_slices)
 
-proc slicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noInit,noSideEffect.}=
+proc slicer*[T](t: Tensor[T], slices: ArrayOfSlices): Tensor[T] {.noinit,noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A view of the original Tensor

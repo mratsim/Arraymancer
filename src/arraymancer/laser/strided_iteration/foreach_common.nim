@@ -35,7 +35,7 @@ proc initForEach*(
       # In generic proc, symbols are resolved early
       # the "in" symbol will be transformed into an opensymchoice of "contains"
       # Note that arg order in "contains" is inverted compared to "in"
-      if arg[0].kind == nnkCall and arg[0][0].kind == nnkOpenSymChoice and eqident(arg[0][0][0], "contains"):
+      if arg[0].kind == nnkCall and arg[0][0].kind == nnkOpenSymChoice and eqIdent(arg[0][0][0], "contains"):
         values.add arg[0][2]
         tensors.add arg[0][1]
       else:
@@ -78,7 +78,7 @@ proc initForEach*(
 
 template stridedVarsSetup*(): untyped {.dirty.} =
   for i, alias in aliases:
-    let iter_pos_i = gensym(nskVar, "iter" & $i & "_pos_")
+    let iter_pos_i = genSym(nskVar, "iter" & $i & "_pos_")
     iter_pos.add iter_pos_i
     init_strided_iteration.add newVarStmt(iter_pos_i, newLit 0)
     iter_start_offset.add quote do:

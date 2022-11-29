@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, sequtils
 import complex except Complex64, Complex32
 
 proc main() =
   suite "Exporting":
-    # TODO Deprecated: toRawSeq cannot be re-implemented in a backward compatible way to v0.6.0
-    test "Raw sequence exporting":
+    test "1D sequence exporting":
       let t = toSeq(1..6).toTensor().reshape(2, 3)
-      check t.toRawSeq == toSeq(1 .. 6)
+      check t.toFlatSeq == toSeq(1 .. 6)
 
     test "Nested sequence exporting":
       block:

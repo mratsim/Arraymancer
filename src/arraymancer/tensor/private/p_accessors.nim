@@ -135,8 +135,8 @@ template initStridedIteration*(coord, backstrides, iter_pos: untyped, t, iter_of
   ## Iterator init
   var iter_pos = 0
   withMemoryOptimHints() # MAXRANK = 8, 8 ints = 64 Bytes, cache line = 64 Bytes --> profit !
-  var coord {.align64, noInit.}: array[MAXRANK, int]
-  var backstrides {.align64, noInit.}: array[MAXRANK, int]
+  var coord {.align64, noinit.}: array[MAXRANK, int]
+  var backstrides {.align64, noinit.}: array[MAXRANK, int]
   for i in 0..<t.rank:
     backstrides[i] = t.strides[i]*(t.shape[i]-1)
     coord[i] = 0

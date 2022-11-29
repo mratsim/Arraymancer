@@ -14,8 +14,10 @@
 
 
 import  ../accessors_macros_syntax,
-        ../../std_version_types,
         macros
+
+when (NimMajor, NimMinor) < (1, 4):
+  import ../../std_version_types
 
 # span is equivalent to `:` in Python. It returns the whole axis range.
 # Tensor[_, 3] will be replaced by Tensor[span, 3]
@@ -32,7 +34,7 @@ macro desugar*(args: untyped): void =
 
   # echo "\n------------------\nOriginal tree"
   # echo args.treerepr
-  var r = newNimNode(nnkArglist)
+  var r = newNimNode(nnkArgList)
 
   for nnk in children(args):
 
@@ -51,7 +53,7 @@ macro desugar*(args: untyped): void =
     let nnk0_inf_dotdot_alt = (
       nnk.kind == nnkInfix and (
         eqIdent(nnk[0], "..<") or
-        eqident(nnk[0], "..^")
+        eqIdent(nnk[0], "..^")
       )
     )
 
@@ -77,20 +79,20 @@ macro desugar*(args: untyped): void =
     let nnk10_hat = (
       nnk.kind == nnkInfix and
       nnk[1].kind == nnkPrefix and
-      eqident(nnk[1][0], "^")
+      eqIdent(nnk[1][0], "^")
     )
 
     # Node is of the form "* `op` _"
     let nnk2_joker = (
       nnk.kind == nnkInfix and
-      eqident(nnk[2], "_")
+      eqIdent(nnk[2], "_")
     )
 
     # Node is of the form "* `op` * | *" or "* `op` * |+ *"
     let nnk20_bar_pos = (
       nnk.kind == nnkInfix and
       nnk[2].kind == nnkInfix and (
-        eqident(nnk[2][0], "|") or
+        eqIdent(nnk[2][0], "|") or
         eqIdent(nnk[2][0], "|+")
       )
     )

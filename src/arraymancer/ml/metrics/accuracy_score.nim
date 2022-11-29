@@ -23,4 +23,4 @@ proc accuracy_score*[T](y_pred, y_true: Tensor[T]): float =
   ## Returns:
   ##   - The proportion of correctly classified samples (as float).
 
-  result = (y_true ==. y_pred).astype(float).mean
+  result = (y_true ==. y_pred).asType(float).mean

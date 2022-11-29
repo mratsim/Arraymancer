@@ -8,6 +8,9 @@ import
   ./gemm_ukernel_generator, ./gemm_tiling,
   ../../simd
 
+# mark as used to avoid unused import warnings
+{.used.}
+
 x86only()
 
 template int32x4_muladd_unfused_sse4_1(a, b, c: m128i): m128i =

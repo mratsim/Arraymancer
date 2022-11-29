@@ -20,7 +20,7 @@ proc maxpool2d*[T](input: Tensor[T],
                 kernel: Size2D,
                 padding: Size2D = (0,0),
                 stride: Size2D = (1,1)
-                ): tuple[max_indices: Tensor[int], maxpooled: Tensor[T]] {.noInit.}=
+                ): tuple[max_indices: Tensor[int], maxpooled: Tensor[T]] {.noinit.}=
   ## MaxPool 2D forward pass
 
   assert input.rank == 4 and input.is_C_contiguous
@@ -37,8 +37,8 @@ proc maxpool2d*[T](input: Tensor[T],
     outH = (H + (2 * padding.height) - kH) div stride.height + 1
     outW = (W + (2 * padding.width ) - kW) div stride.width  + 1
 
-  result.max_indices = newTensoruninit[int](N * C * outH * outW)
-  result.maxpooled   = newTensoruninit[ T ](N, C, outH, outW)
+  result.max_indices = newTensorUninit[int](N * C * outH * outW)
+  result.maxpooled   = newTensorUninit[ T ](N, C, outH, outW)
 
   let idata = input.unsafe_raw_offset()
   let idx_data = result.max_indices.unsafe_raw_offset()
@@ -66,10 +66,10 @@ proc maxpool2d*[T](input: Tensor[T],
           idx_data[oidx] = argmax
 
 proc maxpool2d_backward*[T](
-  cached_input_shape: openarray[int]|Metadata,
+  cached_input_shape: openArray[int]|Metadata,
   cached_max_indices: Tensor[int],
   gradOutput: Tensor[T]
-  ): Tensor[T] {.noInit.}=
+  ): Tensor[T] {.noinit.}=
 
   assert gradOutput.size == cached_max_indices.size
 

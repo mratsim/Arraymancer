@@ -1,5 +1,5 @@
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, strutils, times
 
 proc main() =

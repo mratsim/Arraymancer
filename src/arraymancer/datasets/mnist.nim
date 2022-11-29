@@ -66,7 +66,7 @@ const MNISTFilenames = [
     "t10k-labels-idx1-ubyte.gz"
   ]
 
-proc read_mnist_images(stream: Stream): Tensor[uint8] {.noInit.}=
+proc read_mnist_images(stream: Stream): Tensor[uint8] {.noinit.}=
   ## Load MNIST images into a Tensor[uint8] from a stream
   ## Input:
   ##   - A stream of MNIST image data
@@ -89,7 +89,7 @@ proc read_mnist_images(stream: Stream): Tensor[uint8] {.noInit.}=
   result = newTensorUninit[uint8](n_imgs, n_rows, n_cols)
   discard stream.readData(result.get_data_ptr, result.size)
 
-proc read_mnist_images*(imgsPath: string): Tensor[uint8] {.noInit.}=
+proc read_mnist_images*(imgsPath: string): Tensor[uint8] {.noinit.}=
   ## Load MNIST images into a Tensor[uint8]
   ## Input:
   ##   - A path to a MNIST images file
@@ -107,7 +107,7 @@ proc read_mnist_images*(imgsPath: string): Tensor[uint8] {.noInit.}=
   let stream = newGzFileStream(imgsPath, mode = fmRead)
   return read_mnist_images(stream)
 
-proc read_mnist_labels*(stream: Stream): Tensor[uint8] {.noInit.}=
+proc read_mnist_labels*(stream: Stream): Tensor[uint8] {.noinit.}=
   ## Load MNIST labels into a Tensor[uint8] from a file
   ## Input:
   ##   - A stream of MNIST labels data
@@ -126,7 +126,7 @@ proc read_mnist_labels*(stream: Stream): Tensor[uint8] {.noInit.}=
   result = newTensorUninit[uint8](n_labels)
   discard stream.readData(result.get_data_ptr, result.size)
 
-proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noInit.}=
+proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noinit.}=
   ## Load MNIST labels into a Tensor[uint8] from a file
   ## Input:
   ##   - A path to a MNIST labels file
@@ -143,7 +143,7 @@ proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noInit.}=
 
 func mnistFilesPath(cache_dir: string): array[4, string] =
   for idx, val in result.mpairs:
-    val = cache_dir / MNISTFileNames[idx]
+    val = cache_dir / MNISTFilenames[idx]
 
 proc download_mnist_files(files: array[4, string]) =
   ## Download the MNIST files from http://yann.lecun.com/exdb/mnist/

@@ -22,28 +22,28 @@ import  ./data_structure,
 # #############################
 # logical ops
 
-proc `and`*(a, b: Tensor[bool]): Tensor[bool] {.noInit.} =
+proc `and`*(a, b: Tensor[bool]): Tensor[bool] {.noinit.} =
   ## Tensor element-wise boolean and.
   ##
   ## Returns:
   ##   - A tensor of boolean
   result = map2_inline(a, b, x and y)
 
-proc `or`*(a, b: Tensor[bool]): Tensor[bool] {.noInit.} =
+proc `or`*(a, b: Tensor[bool]): Tensor[bool] {.noinit.} =
   ## Tensor element-wise boolean or.
   ##
   ## Returns:
   ##   - A tensor of boolean
   result = map2_inline(a, b, x or y)
 
-proc `xor`*(a, b: Tensor[bool]): Tensor[bool] {.noInit.} =
+proc `xor`*(a, b: Tensor[bool]): Tensor[bool] {.noinit.} =
   ## Tensor element-wise boolean xor.
   ##
   ## Returns:
   ##   - A tensor of boolean
   result = map2_inline(a, b, x xor y)
 
-proc `not`*(a: Tensor[bool]): Tensor[bool] {.noInit.} =
+proc `not`*(a: Tensor[bool]): Tensor[bool] {.noinit.} =
   ## Tensor element-wise boolean and.
   ##
   ## Returns:

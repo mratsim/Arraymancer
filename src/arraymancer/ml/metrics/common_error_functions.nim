@@ -20,7 +20,7 @@ proc squared_error*[T](y, y_true: T): T {.inline.} =
   ## Squared error for a single value, |y_true - y| ^2
   result = square(y_true - y)
 
-proc squared_error*[T](y, y_true: Tensor[T]): Tensor[T] {.noInit.} =
+proc squared_error*[T](y, y_true: Tensor[T]): Tensor[T] {.noinit.} =
   ## Element-wise squared error for a tensor, |y_true - y| ^2
   result = map2_inline(y_true, y, squared_error(x,y))
 
@@ -43,7 +43,7 @@ proc relative_error*[T: SomeFloat](y, y_true: T): T {.inline.} =
     return 0.T
   result = abs(y_true - y) / denom
 
-proc relative_error*[T](y, y_true: Tensor[T]): Tensor[T] {.noInit.} =
+proc relative_error*[T](y, y_true: Tensor[T]): Tensor[T] {.noinit.} =
   ## Relative error for Tensor, element-wise |y_true - x|/max(|y_true|, |x|)
   ## Normally the relative error is defined as |y_true - x| / |y_true|,
   ## but here max is used to make it symmetric and to prevent dividing by zero,
@@ -65,7 +65,7 @@ proc absolute_error*[T: SomeFloat](y, y_true: T): T {.inline.} =
   # We require float (and not complex as complex.abs will cause issue)
   result = abs(y_true - y)
 
-proc absolute_error*[T](y, y_true: Tensor[T]): Tensor[T] {.noInit.} =
+proc absolute_error*[T](y, y_true: Tensor[T]): Tensor[T] {.noinit.} =
   ## Element-wise absolute error for a tensor
   result = map2_inline(y, y_true, y.absolute_error(x))
 

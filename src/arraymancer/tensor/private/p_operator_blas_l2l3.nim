@@ -154,7 +154,7 @@ proc blasMM_C_eq_aAB_p_bC*[T: SomeFloat|Complex[float32]|Complex[float64]](
   assert c.isContiguous()
 
   var lda, ldb: int
-  var tA, tb: TransposeType
+  var tA, tB: TransposeType
 
   # General Matrix Multiply from nimblas.
   if c.is_C_contiguous():   # [M, N]

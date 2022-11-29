@@ -55,15 +55,6 @@ proc getCutoff(bw: float, kind: KernelKind): float =
   of knGauss: result = 3.0 * bw # 3 sigma amounts to 99.7% of gaussian kernel contribution
   of knCustom: doAssert false, "`getCutoff` must not be called with custom kernel!"
 
-proc getKernelFunc(kind: KernelKind): KernelFunc =
-  case kind
-  of knBox: result = boxKernel
-  of knTriangular: result = triangularKernel
-  of knTrig: result = trigonometricKernel
-  of knEpanechnikov: result = epanechnikovKernel
-  of knGauss: result = gaussKernel
-  of knCustom: doAssert false, "`getKernelFunc` must not be called with custom kernel!"
-
 proc findWindow[T](dist: T, s: T, t: Tensor[T], oldStart = 0, oldStop = 0): (int, int) =
   ## returns the index (start or stop) given a distance `dist` that
   ## is allowed between s - x[j]
@@ -132,7 +123,7 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
   var t = t.asType(float)
   let A = min(std(t),
               iqr(t) / 1.34)
-  let bwAct = if classify(bw) != fcNaN: bw
+  let bwAct = if classify(bw) != fcNan: bw
               else: 0.9 * A * pow(N.float, -1.0/5.0)
 
   var weights = weights.asType(float)

@@ -416,7 +416,7 @@ proc splitLhsRhs(stmtKind: StatementKind,
   var rhsStmt: NimNode
   # node of LHS, ``iff`` `stmtKind` is `skAssign`
   var lhsStmt: NimNode
-  var idxLHS: OrderedSet[string]
+  var idxLhs: OrderedSet[string]
   if stmtKind == skAssign:
     # in case of assign, slice off the infix part
     case stmt.kind
@@ -429,9 +429,9 @@ proc splitLhsRhs(stmtKind: StatementKind,
       case lhsStmt.kind
       of nnkIdent:
         # left is an ident, so result supposed to be a scalar. Indidces empty set
-        idxLHS = initOrderedSet[string]()
+        idxLhs = initOrderedSet[string]()
       of nnkBracketExpr:
-        idxLHS = toOrderedSet(slice(lhsStmt, 1 .. ^1).mapIt($it))
+        idxLhs = toOrderedSet(slice(lhsStmt, 1 .. ^1).mapIt($it))
       else:
         error("Unsupported kind for `einsum` LHS statement " & $lhsStmt.kind)
     of nnkCall: # open sym choice in generic context for `[]=`
@@ -588,8 +588,8 @@ proc genContiguous(ts: seq[NimNode], subType: NimNode): (seq[NimNode], NimNode) 
     let tCIdent = makeContigIdent(t)
     res.add quote do:
       # TODO: Nim inference bug that require the subtype
-      let `tcIdent` = asContiguous[`subType`](`t`, layout = rowMajor, force = true)
-    tsCont.add tcIdent
+      let `tCIdent` = asContiguous[`subType`](`t`, layout = rowMajor, force = true)
+    tsCont.add tCIdent
   result = (tsCont, res)
 
 macro einsum*(tensors: varargs[typed], stmt: untyped): untyped =
@@ -730,8 +730,8 @@ when isMainModule:
     ./data_structure, ./init_cpu, ./ufunc,
     ./accessors_macros_read, ./accessors_macros_write
 
-  let c0 = toSeq(11..34).toTensor.astype(float)
-  let d0 = toSeq(1..6).toTensor.astype(float)
+  let c0 = toSeq(11..34).toTensor.asType(float)
+  let d0 = toSeq(1..6).toTensor.asType(float)
   let c = c0.reshape(2, 2, 3, 2)
   let d = d0.reshape(3, 2)
 

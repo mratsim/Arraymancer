@@ -25,7 +25,7 @@ func `+`*(p: ptr, offset: int): type(p) {.inline.}=
 import ../../compiler_optim_hints
 
 template to_ptr*(AB: typed, MR, NR: static int, T: typedesc): untyped =
-  assume_aligned cast[ptr array[MR, array[NR, T]]](AB[0][0].unsafeaddr)
+  assume_aligned cast[ptr array[MR, array[NR, T]]](AB[0][0].unsafeAddr)
 
 # ############################################################
 #

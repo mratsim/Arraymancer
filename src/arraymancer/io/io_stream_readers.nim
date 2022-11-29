@@ -13,11 +13,11 @@ proc readInt64BE*(stream: Stream): int64 {.inline.}=
   bigEndian64(addr result, addr raw_bytes)
 
 proc readUInt32BE*(stream: Stream): uint32 {.inline.}=
-  var raw_bytes = stream.readUInt32
+  var raw_bytes = stream.readUint32
   bigEndian32(addr result, addr raw_bytes)
 
 proc readUInt64BE*(stream: Stream): uint64 {.inline.}=
-  var raw_bytes = stream.readUInt64
+  var raw_bytes = stream.readUint64
   bigEndian64(addr result, addr raw_bytes)
 
 proc readFloat32BE*(stream: Stream): float32 {.inline.}=
@@ -37,15 +37,15 @@ proc readInt64LE*(stream: Stream): int64 {.inline.}=
   littleEndian64(addr result, addr raw_bytes)
 
 proc readUInt16LE*(stream: Stream): uint16 {.inline.}=
-  var raw_bytes = stream.readUInt16
+  var raw_bytes = stream.readUint16
   littleEndian16(addr result, addr raw_bytes)
 
 proc readUInt32LE*(stream: Stream): uint32 {.inline.}=
-  var raw_bytes = stream.readUInt32
+  var raw_bytes = stream.readUint32
   littleEndian32(addr result, addr raw_bytes)
 
 proc readUInt64LE*(stream: Stream): uint64 {.inline.}=
-  var raw_bytes = stream.readUInt64
+  var raw_bytes = stream.readUint64
   littleEndian64(addr result, addr raw_bytes)
 
 proc readFloat32LE*(stream: Stream): float32 {.inline.}=

@@ -1,6 +1,5 @@
 import math
 import sets
-import sequtils
 
 import ../tensor
 

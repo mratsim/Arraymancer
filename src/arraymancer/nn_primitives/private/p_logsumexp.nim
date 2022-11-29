@@ -38,7 +38,7 @@ proc streaming_max_sumexp*[T](t: Tensor[T]): tuple[max:T, sumexp: T] {.noSideEff
       result.sumexp = result.sumexp * exp(result.max - x) + 1
       result.max = x
 
-proc streaming_max_sumexp*[T](t: Tensor[T], axis: int): Tensor[tuple[max:T, sumexp: T]] {.noInit.}=
+proc streaming_max_sumexp*[T](t: Tensor[T], axis: int): Tensor[tuple[max:T, sumexp: T]] {.noinit.}=
   # Only 2D tensor are supported for now. (i.e. no 3D Softmax)
   assert axis in {0, 1} # TODO proper error message/check
 

@@ -99,7 +99,7 @@ template genClInfixOp*( T: typedesc,
   ##   - The C kernel name (this only helps debugging the C code)
   ##   - The C operation (+, -, ...)
 
-  proc procName(a, b: ClTensor[T]): ClTensor[T] {.noInit.}=
+  proc procName(a, b: ClTensor[T]): ClTensor[T] {.noinit.}=
     when compileOption("boundChecks"):
           check_elementwise(a,b)
 

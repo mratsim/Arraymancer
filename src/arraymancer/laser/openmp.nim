@@ -108,7 +108,7 @@ template detachGC*(): untyped =
   ## Note: this creates too strange error messages
   ## when --threads is not on: https://github.com/nim-lang/Nim/issues/9489
   if(omp_get_thread_num()!=0):
-    teardownForeignThreadGc()
+    tearDownForeignThreadGc()
 
 template omp_parallel*(body: untyped): untyped =
   ## Starts an openMP parallel section
@@ -407,5 +407,5 @@ macro omp_flush*(variables: varargs[untyped]): untyped =
   listvars.add ')'
   result = quote do:
     {.emit: ["""
-    
+
     #pragma omp flush " & `listvars`"""].}

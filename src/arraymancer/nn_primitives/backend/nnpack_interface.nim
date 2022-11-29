@@ -15,7 +15,7 @@
 import ../../tensor, ../private/p_nnp_types
 import ./nnpack
 
-proc nnpack_conv2d*(input, weight, bias: Tensor[float32], padding, stride: Size2D): Tensor[float32] {.noInit.}= # TODO use a single convention, return value or var result
+proc nnpack_conv2d*(input, weight, bias: Tensor[float32], padding, stride: Size2D): Tensor[float32] {.noinit.}= # TODO use a single convention, return value or var result
   # Only accepts stride 1
   assert stride.width == 1 and stride.height == 1 # TODO CHange to a check + exception
 

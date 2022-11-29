@@ -21,7 +21,6 @@ import  ../tensor,
 type AddGate*[TT] {.final.} = ref object of Gate[TT]
 
 proc add_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
-  let self = AddGate[TT](self)
   let gradient = payload.variable.grad
   result = newSeq[TT](2)
   result[0] = gradient

@@ -1,6 +1,3 @@
-import algorithm
-import sequtils
-
 import ../tensor
 import ./distances
 import kdtree
@@ -30,7 +27,7 @@ proc nearestNeighbors*[T](X: Tensor[T], eps: float, metric: typedesc[AnyMetric],
   ## performed. This is not advised, as it is significantly slower than the default approach
   ## using a k-d tree.
   when not useNaiveNearestNeighbor:
-    let kd = kdtree(X)
+    let kd = kdTree(X)
     result = newSeq[Tensor[int]](X.shape[0])
     var idx = 0
     for v in axis(X, 0):

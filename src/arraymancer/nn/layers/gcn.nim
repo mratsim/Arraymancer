@@ -118,7 +118,7 @@ proc init*[T](
   ## Using Kaiming He initialisation for weights to provide decent performance in most cases.
   ## Biases are set to zero.
 
-  result.weight = ctx.variable(kaimingNormal([numOutput, numInput], T), requiresGrad = true) # TODO allow freezing
+  result.weight = ctx.variable(kaiming_normal([numOutput, numInput], T), requiresGrad = true) # TODO allow freezing
   result.bias = ctx.variable(zeros[T]([1, numOutput]), requiresGrad = true) # TODO allow freezing
 
 proc forward*[T](self: GCNLayer[T], input, adjacency: Variable[Tensor[T]]): Variable[Tensor[T]] =

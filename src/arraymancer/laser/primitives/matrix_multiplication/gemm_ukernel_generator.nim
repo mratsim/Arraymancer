@@ -32,7 +32,7 @@ template ukernel_simd_proc(ukernel_name, epilogue_name: NimNode, edge: bool) {.d
             mr, nr, kc: int,
             alpha: `T`, packedA, packedB: ptr UncheckedArray[`T`],
             beta: `T`, vC: MatrixView[`T`]
-          ) =
+          ) {.used.} =
 
         let AB{.align_variable.} = ukernel_simd_impl(
           ukernel, `V`, packedA, packedB, kc,
@@ -53,7 +53,7 @@ template ukernel_simd_proc(ukernel_name, epilogue_name: NimNode, edge: bool) {.d
             kc: int,
             alpha: `T`, packedA, packedB: ptr UncheckedArray[`T`],
             beta: `T`, vC: MatrixView[`T`]
-          ) =
+          ) {.used.} =
         let AB{.align_variable.} = ukernel_simd_impl(
           ukernel, `V`, packedA, packedB, kc,
           `simd_setZero`, `simd_load_aligned`, `simd_broadcast_value`, `simd_fma`
@@ -77,7 +77,7 @@ template epilogue() {.dirty.} =
     proc `epilogue_name`[MR, NbVecs: static int](
             alpha: `T`, AB: array[MR, array[NbVecs, `V`]],
             beta: `T`, vC: MatrixView[`T`]
-          ) =
+          ) {.used.} =
       template C(i,j: int): untyped {.dirty.} =
         vC.buffer[i*vC.rowStride + j*`nb_scalars`]
 
@@ -192,10 +192,10 @@ macro ukernel_simd_impl*(
     var declBody = newStmtList()
     for a in rA:
       declBody.add quote do:
-        var `a`{.noInit.}: `V`
+        var `a`{.noinit.}: `V`
     for b in rB:
       declBody.add quote do:
-        var `b`{.noInit.}: `V`
+        var `b`{.noinit.}: `V`
     for i in 0 ..< MR:
       for j in 0 ..< NbVecs:
         let ab = rAB[i][j]

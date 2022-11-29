@@ -126,7 +126,7 @@ proc softmax_cross_entropy_backward*[T](
         gradient: Tensor[T] or T,
         cached_tensor: Tensor[T],
         target: Tensor[T]
-        ): Tensor[T] {.noInit.}=
+        ): Tensor[T] {.noinit.}=
   ## Derivatives of softmax_cross_entropy
   ## Input:
   ##   - The input gradient as a scalar or a Tensor
@@ -159,7 +159,7 @@ proc sparse_softmax_cross_entropy_backward*[T; Idx: SomeNumber or byte or char o
         gradient: Tensor[T] or T,
         cached_tensor: Tensor[T],
         target: Tensor[Idx]
-        ): Tensor[T] {.noInit.}=
+        ): Tensor[T] {.noinit.}=
   ## Derivatives of sparse_softmax_cross_entropy
   ## Input:
   ##   - The input gradient as a scalar or a Tensor

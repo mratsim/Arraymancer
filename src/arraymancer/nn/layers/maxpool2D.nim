@@ -131,7 +131,7 @@ proc init*[T](
   ##     - ``kernelSize`` Height and width of the pooling kernel.
   ##     - ``padding`` Size2D tuple with height and width of the padding
   ##     - ``stride`` Size2D tuple with height and width of the stride
-  ## 
+  ##
   ## Returns the created ``MaxPool2D``.
 
 
@@ -145,7 +145,7 @@ proc init*[T](
 
 
 proc forward*[T](self: MaxPool2D[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
-  input.maxpool2D(
+  input.maxpool2d(
     kernel = self.kernelSize,
     padding = self.padding,
     stride = self.stride
@@ -171,4 +171,3 @@ func outShape*[T](self: MaxPool2D[T]): seq[int] =
 
 func inShape*[T](self: MaxPool2D[T]): seq[int] =
   self.inShape
-

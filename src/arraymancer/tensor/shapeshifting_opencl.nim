@@ -15,7 +15,7 @@
 import  ./private/p_shapeshifting,
         ./data_structure
 
-proc broadcast2*[T](a, b: ClTensor[T]): tuple[a, b: ClTensor[T]] {.noSideEffect, noInit.}=
+proc broadcast2*[T](a, b: ClTensor[T]): tuple[a, b: ClTensor[T]] {.noSideEffect, noinit.}=
   ## Broadcast 2 tensors so they have compatible shapes for element-wise computations.
   ##
   ## Tensors in the tuple can be accessed with output.a and output.b

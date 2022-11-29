@@ -24,7 +24,6 @@ import  ./arraymancer/tensor,
         ./arraymancer/spatial/kdtree,
         ./arraymancer/nlp,
         ./arraymancer/tensor/einsum,
-        ./arraymancer/linear_algebra,
         ./arraymancer/std_version_types
 
 export  tensor,

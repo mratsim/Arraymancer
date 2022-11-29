@@ -57,7 +57,7 @@ proc sigmoid_cross_entropy_backward*[T](
         gradient: Tensor[T] or T,
         cached_tensor: Tensor[T],
         target: Tensor[T]
-        ): Tensor[T] {.noInit.}=
+        ): Tensor[T] {.noinit.}=
   ## Derivatives of sigmoid_cross_entropy
   ## Input:
   ##   - The input gradient as a scalar or a Tensor

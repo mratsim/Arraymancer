@@ -2,7 +2,7 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, tables, sequtils, strutils
 
 proc main() =
@@ -153,7 +153,7 @@ proc main() =
         NbWords   =  42
         EmbedSize =  11
       let
-        vocab: Tensor[int] = randomTensor([BatchSize, Seqlen], NbWords-1)
+        vocab: Tensor[int] = randomTensor([BatchSize, SeqLen], NbWords-1)
         embed_matrix: Tensor[float64] = randomTensor([NbWords, EmbedSize], 1.0)
 
       proc embed(embed_matrix: Tensor[float64]): float64 =

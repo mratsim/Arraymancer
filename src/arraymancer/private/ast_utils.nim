@@ -28,7 +28,7 @@ proc isBool*(x: NimNode): bool {. compileTime .} =
   ## Compile-time type checking
   hasType(x, "bool")
 
-proc isOpenarray*(x: NimNode): bool {. compileTime .} =
+proc isOpenArray*(x: NimNode): bool {. compileTime .} =
   ## Compile-time type checking
   doAssert false, "This is broken for generics https://github.com/nim-lang/Nim/issues/14021"
   hasType(x, "array") or hasType(x, "seq") or hasType(x, "openArray")

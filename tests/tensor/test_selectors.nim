@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest
 
 proc main() =
@@ -141,18 +141,18 @@ proc main() =
         # x[~np.isnan(x)]
         # array([ 1.,  2.,  3.])
         let x = [[1.0, 2.0],
-                [Nan, 3.0],
-                [Nan, Nan]].toTensor
+                [NaN, 3.0],
+                [NaN, NaN]].toTensor
 
-        let r = x.masked_select(x.isNotNan)
+        let r = x.masked_select(x.isNotNaN)
 
         let expected = [1.0, 2.0, 3.0].toTensor()
         check: r == expected
 
       block: # with regular arrays/sequences
         let x = [[1.0, 2.0],
-                [Nan, 3.0],
-                [Nan, Nan]].toTensor
+                [NaN, 3.0],
+                [NaN, NaN]].toTensor
 
         let r = x.masked_select(
             [[true,  true],
@@ -172,18 +172,18 @@ proc main() =
         # x
         # np.array([[1., 2.], [-1, 3.], [-1, -1]])
         var x = [[1.0, 2.0],
-                [Nan, 3.0],
-                [Nan, Nan]].toTensor
+                [NaN, 3.0],
+                [NaN, NaN]].toTensor
 
-        x.masked_fill(x.isNan, -1.0)
+        x.masked_fill(x.isNaN, -1.0)
 
         let expected = [[1.0, 2.0], [-1.0, 3.0], [-1.0, -1.0]].toTensor()
         check: x == expected
 
       block: # with regular arrays/sequences
         var x = [[1.0, 2.0],
-                [Nan, 3.0],
-                [Nan, Nan]].toTensor
+                [NaN, 3.0],
+                [NaN, NaN]].toTensor
 
         x.masked_fill(
           [[false,  false],
@@ -225,6 +225,7 @@ proc main() =
                 [2, 2]].toTensor
 
         let rowsum = x.sum(axis = 1)
+        check rowsum.transpose.squeeze == [1, 2, 4].toTensor
         let cond = [true,
                     true,
                     false]
@@ -232,6 +233,7 @@ proc main() =
 
         let expected = [[0, 1],
                         [1, 1]].toTensor
+        check r == expected
 
     test "Masked_axis_fill with value":
       block: # Numpy

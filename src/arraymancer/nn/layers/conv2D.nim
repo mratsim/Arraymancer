@@ -112,16 +112,17 @@ proc conv2d*[TT]( input, weight: Variable[TT],
   # Resulting var
   new result
   result.context = input.context
-  result.value = conv2D(input.value,
-                        weight.value,
-                        bias.value, # Todo, case when there is no bias
-                        padding,
-                        stride
-                      )
+  result.value = conv2d(
+    input.value,
+    weight.value,
+    bias.value, # Todo, case when there is no bias
+    padding,
+    stride
+  )
 
   # Caching for backprop:
   if input.is_grad_needed or weight.is_grad_needed or (not bias.isNil and bias.is_grad_needed):
-    conv2D_cache(
+    conv2d_cache(
         result,
         input, weight, bias,
         padding, stride
@@ -162,7 +163,7 @@ proc init*[T](
 
   let inChannels = inShape[0]
   result.weight = ctx.variable(
-    kaimingNormal([outChannels, inChannels, kernelSize.height, kernelSize.width], T),
+    kaiming_normal([outChannels, inChannels, kernelSize.height, kernelSize.width], T),
     requiresGrad = true
   ) # TODO allow freezing
 

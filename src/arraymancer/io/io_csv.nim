@@ -54,7 +54,7 @@ proc read_csv*[T: SomeNumber|bool|string](
        skipHeader = false,
        separator = ',',
        quote = '\"'
-       ): Tensor[T] {.noInit.} =
+       ): Tensor[T] {.noinit.} =
   ## Load a csv into a Tensor. All values must be of the same type.
   ##
   ## If there is a header row, it can be skipped.

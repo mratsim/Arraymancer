@@ -59,7 +59,7 @@ let
   ctx = newContext Tensor[float32]
   # GRU needs this shape[sequence, batch, features]
   X = ctx.variable dataset_X.transpose.unsqueeze(2)
-  y = dataset_y.astype(int)
+  y = dataset_y.asType(int)
 
 # Check our shape
 doAssert X.value.shape == [3, DataSize, 1]
@@ -176,7 +176,7 @@ block:
                 .softmax
                 .argmax(axis = 1)
                 .squeeze
-                .astype(SeqKind)
+                .asType(SeqKind)
 
   echo "\nTesting the model with:"
   echo exam.value.squeeze(2).transpose()

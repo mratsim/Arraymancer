@@ -71,9 +71,9 @@ proc strToTensor(str: string|TaintedString): Tensor[PrintableIdx] =
 # Weighted random sampling / multinomial sampling
 #   Note: during text generation we only work with
 #         a batch size of 1 so for simplicity we use
-#         seq and openarrays instead of tensors
+#         seq and openArrays instead of tensors
 
-proc searchsorted[T](x: openarray[T], value: T, leftSide: static bool = true): int =
+proc searchsorted[T](x: openArray[T], value: T, leftSide: static bool = true): int =
   ## Returns the index corresponding to where the input value would be inserted at.
   ## Input must be a sorted 1D seq/array.
   ## In case of exact match, leftSide indicates if we put the value
@@ -114,7 +114,7 @@ proc sample[T](probs: Tensor[T]): int =
   # Get the Cumulative Distribution Function of our probabilities
   let cdf = cumsum(probs, axis = 0)
 
-  # We pass our 1D Tensor as an openarray to `searchsorted` avoid copies
+  # We pass our 1D Tensor as an openArray to `searchsorted` avoid copies
   let cdfA = cast[ptr UncheckedArray[T]](cdf.unsafe_raw_offset)
   result = cdfA.toOpenArray(0, cdf.size - 1).searchsorted(u, leftSide = false)
 

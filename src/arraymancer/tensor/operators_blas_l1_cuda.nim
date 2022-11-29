@@ -48,7 +48,7 @@ proc `+=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
 
 cuda_binary_glue("cuda_Add", "AddOp", cuda_Add)
 
-proc `+`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.}=
+proc `+`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noinit.}=
   ## CudaTensor addition
 
   when compileOption("boundChecks"):
@@ -72,7 +72,7 @@ proc `-=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
 
 cuda_binary_glue("cuda_Sub", "SubOp", cuda_Sub)
 
-proc `-`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+proc `-`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noinit.} =
   ## CudaTensor substraction
 
   when compileOption("boundChecks"):
@@ -89,7 +89,7 @@ proc `*=`*[T:SomeFloat](t: var CudaTensor[T]; a: T) {.inline.}=
   # Hence we use the whole allocated length and a stride of 1
   cublas_scal(t.storage.Flen, a, t.get_data_ptr, 1)
 
-proc `*`*[T:SomeFloat](a: T, t: CudaTensor[T]): CudaTensor[T] {.noInit, inline.}=
+proc `*`*[T:SomeFloat](a: T, t: CudaTensor[T]): CudaTensor[T] {.noinit, inline.}=
   ## CudaTensor multiplication by a scalar
 
   # TODO replace by a custom kernel
@@ -98,7 +98,7 @@ proc `*`*[T:SomeFloat](a: T, t: CudaTensor[T]): CudaTensor[T] {.noInit, inline.}
   result = t.clone()
   result *= a
 
-proc `*`*[T:SomeFloat](t: CudaTensor[T], a: T): CudaTensor[T] {.noInit, inline.}=
+proc `*`*[T:SomeFloat](t: CudaTensor[T], a: T): CudaTensor[T] {.noinit, inline.}=
   ## CudaTensor multiplication by a scalar
   a * t
 
@@ -110,7 +110,7 @@ proc `/=`*[T:SomeFloat](t: var CudaTensor[T]; a: T) {.inline.}=
 
 cuda_rscal_glue("cuda_rscalDiv","RscalDiv", cuda_rscalDiv)
 
-proc `/`*[T: SomeFloat](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
+proc `/`*[T: SomeFloat](t: CudaTensor[T], val: T): CudaTensor[T] {.noinit.} =
   ## CudaTensor division by a scalar
   result = newCudaTensor[T](t.shape)
   cuda_rscal_call(cuda_rscalDiv, result, t, val)

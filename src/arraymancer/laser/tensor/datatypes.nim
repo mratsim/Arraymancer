@@ -44,10 +44,10 @@ type
     else: # Tensors of strings, other ref types or non-trivial destructors
       raw_buffer*: seq[T]                # 8 bytes (16 for seq v2 backed by destructors?)
 
-proc initMetadataArray*(len: int): MetadataArray {.inline.} =
+proc initMetadataArray*(len: int): Metadata {.inline.} =
   result.len = len
 
-proc toMetadataArray*(s: varargs[int]): MetadataArray {.inline.} =
+proc toMetadataArray*(s: varargs[int]): Metadata {.inline.} =
   # boundsChecks automatically done for array indexing
   # when compileOption("boundChecks"):
   #   assert s.len <= MAXRANK
@@ -141,15 +141,15 @@ func is_C_contiguous*(t: Tensor): bool =
 # Another anti-escape could be the "var T from container" and "lent T from container"
 # mentionned here: https://nim-lang.org/docs/manual.html#var-return-type-future-directions
 
-template unsafe_raw_offset_impl(offset: int) {.dirty.} =
+template unsafe_raw_offset_impl(x: Tensor, offset: int) {.dirty.} =
   bind KnownSupportsCopyMem, withCompilerOptimHints, assume_aligned
   static: assert T is KnownSupportsCopyMem, "unsafe_raw access only supported for " &
     "mem-copyable types!"
   withCompilerOptimHints()
   when aligned:
-    let raw_pointer{.restrict.} = assume_aligned t.storage.raw_buffer
+    let raw_pointer{.restrict.} = assume_aligned x.storage.raw_buffer
   else:
-    let raw_pointer{.restrict.} = t.storage.raw_buffer
+    let raw_pointer{.restrict.} = x.storage.raw_buffer
   result = cast[type result](raw_pointer[offset].addr)
 
 func unsafe_raw_buf*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): RawImmutableView[T] {.inline.} =
@@ -159,7 +159,7 @@ func unsafe_raw_buf*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool
   ## For optimization purposes, Laser will hint the compiler that
   ## while the pointer is valid, all data accesses will be through it (no aliasing)
   ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
-  unsafe_raw_offset_impl(0)
+  t.unsafe_raw_offset_impl(0)
 
 func unsafe_raw_buf*[T: KnownSupportsCopyMem](t: var Tensor[T], aligned: static bool = true): RawMutableView[T] {.inline.} =
   ## Returns a view to the start of the data buffer
@@ -168,7 +168,7 @@ func unsafe_raw_buf*[T: KnownSupportsCopyMem](t: var Tensor[T], aligned: static 
   ## For optimization purposes, Laser will hint the compiler that
   ## while the pointer is valid, all data accesses will be through it (no aliasing)
   ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
-  unsafe_raw_offset_impl(0)
+  t.unsafe_raw_offset_impl(0)
 
 func unsafe_raw_offset*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): RawImmutableView[T] {.inline.} =
   ## Returns a view to the start of the valid data
@@ -177,7 +177,7 @@ func unsafe_raw_offset*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static b
   ## For optimization purposes, Laser will hint the compiler that
   ## while the pointer is valid, all data accesses will be through it (no aliasing)
   ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
-  unsafe_raw_offset_impl(t.offset)
+  t.unsafe_raw_offset_impl(t.offset)
 
 func unsafe_raw_offset*[T: KnownSupportsCopyMem](t: var Tensor[T], aligned: static bool = true): RawMutableView[T] {.inline.} =
   ## Returns a view to the start of the valid data
@@ -186,7 +186,7 @@ func unsafe_raw_offset*[T: KnownSupportsCopyMem](t: var Tensor[T], aligned: stat
   ## For optimization purposes, Laser will hint the compiler that
   ## while the pointer is valid, all data accesses will be through it (no aliasing)
   ## and that the data is aligned by LASER_MEM_ALIGN (default 64).
-  unsafe_raw_offset_impl(t.offset)
+  t.unsafe_raw_offset_impl(t.offset)
 
 func unsafe_raw_buf*[T: not KnownSupportsCopyMem](t: Tensor[T], aligned: static bool = true): ptr UncheckedArray[T]  {.error: "Access via raw pointer forbidden for non mem copyable types!".}
 
@@ -202,9 +202,9 @@ macro raw_data_unaligned*(body: untyped): untyped =
   ##     All processing within the file this is called will be considered
   ##     unaligned. https://github.com/nim-lang/Nim/issues/7214#issuecomment-431567894.
   block:
-    template trmUnsafeRawBuf{unsafe_raw_buf(x, aligned)}(x, aligned): auto =
+    template trmUnsafeRawBuf{unsafe_raw_buf(x, aligned)}(x, aligned): auto {.used} =
       {.noRewrite.}: unsafe_raw_buf(x, false)
-    template trmUnsafeRawOffset{unsafe_raw_offset(x, aligned)}(x, aligned): auto =
+    template trmUnsafeRawOffset{unsafe_raw_offset(x, aligned)}(x, aligned): auto {.used.} =
       {.noRewrite.}: unsafe_raw_offset(x, false)
     body
 

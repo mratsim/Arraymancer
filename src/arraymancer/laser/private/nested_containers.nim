@@ -12,7 +12,7 @@ import
 iterator flatIter*(s: string): string {.noSideEffect.} =
   yield s
 
-iterator flatIter*[T](s: openarray[T]): auto {.noSideEffect.}=
+iterator flatIter*[T](s: openArray[T]): auto {.noSideEffect.}=
   ## Inline iterator on any-depth seq or array
   ## Returns values in order
   for item in s:
@@ -23,7 +23,7 @@ iterator flatIter*[T](s: openarray[T]): auto {.noSideEffect.}=
       yield item
 
 func getShape*(s: string, parent_shape = Metadata()): Metadata =
-  ## Handle strings / avoid interpretation as openarray[char]
+  ## Handle strings / avoid interpretation as openArray[char]
   const z = default(Metadata)
   if parent_shape == z:
     result = z
@@ -31,7 +31,7 @@ func getShape*(s: string, parent_shape = Metadata()): Metadata =
     result[0] = 1
   else: return parent_shape
 
-func getShape*[T](s: openarray[T], parent_shape = Metadata()): Metadata =
+func getShape*[T](s: openArray[T], parent_shape = Metadata()): Metadata =
   ## Get the shape of nested seqs/arrays
   ## Important ⚠: at each nesting level, only the length
   ##   of the first element is used for the shape.

@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import  ../../private/functional, ../higher_order_applymap,
-        ../shapeshifting, ../data_structure, p_accessors,
+        ../shapeshifting, ../data_structure,
         ../accessors,
-        sugar, sequtils, strutils
+        sequtils, strutils
 
 func bounds_display(t: Tensor,
                     idx_data: tuple[val: string, idx: int],

@@ -43,12 +43,12 @@ proc gru_inference[TT](
 proc gru_backward_ag[TT](
           self: Gate[TT],
           payload: Payload[TT],
-        ): SmallDiffs[TT] {.noInit.}=
+        ): SmallDiffs[TT] {.noinit.}=
   let self = GRUGate[TT](self)
   let gradients = payload.sequence
   result = newDiffs[TT](7)
   gru_backward(
-    result[0], result[1],                 # Result   dinput, dhidden,
+    result[0], result[1],                 # Result   dinput, dHidden,
     result[2], result[3],                 # Result   dW3s0, dW3sN,
     result[4], result[5], result[6],      # Result   dU3s, dbW3s, dbU3s
     gradients[0].grad, gradients[1].grad, # Incoming dOutput, dHiddenN
@@ -122,7 +122,7 @@ proc gru*[TT](
       W3s0, W3sN, U3s: Variable[TT],
       bW3s, bU3s: Variable[TT]
       ): tuple[output, hiddenN: Variable[TT]] =
-  
+
   ## ⚠️ API subject to change to match CuDNNs
   ##
   ## Bidirectional support is not implemented
@@ -178,7 +178,7 @@ proc init*[T](
   ##     - ``numInputFeatures`` Number of features of the input.
   ##     - ``hiddenSize`` size of the hidden layer(s)
   ##     - ``layers`` Number of stacked layers
-  ## 
+  ##
   ## Returns the created ``GRULayer``.
 
   template weightInit(shape: varargs[int], initKind: untyped): Variable =
@@ -188,16 +188,16 @@ proc init*[T](
       requiresGrad = true
     )
 
-  result.w3s0 = weightInit(            3 * hiddenSize,     numInputFeatures,    xavierUniform)
-  result.w3sN = weightInit(layers - 1, 3 * hiddenSize,     hiddenSize,          xavierUniform)
-  result.u3s  = weightInit(    layers, 3 * hiddenSize,     hiddenSize,          yannNormal)
+  result.w3s0 = weightInit(            3 * hiddenSize,     numInputFeatures,    xavier_uniform)
+  result.w3sN = weightInit(layers - 1, 3 * hiddenSize,     hiddenSize,          xavier_uniform)
+  result.u3s  = weightInit(    layers, 3 * hiddenSize,     hiddenSize,          yann_normal)
 
   result.bW3s = ctx.variable(zeros[T](layers, 1, 3 * hiddenSize), requiresGrad = true)
   result.bU3s = ctx.variable(zeros[T](layers, 1, 3 * hiddenSize), requiresGrad = true)
   # TODO allow freezing
 
 proc forward*[T](self: GRULayer[T], input, hidden0: Variable): tuple[output, hiddenN: Variable] =
-  
+
   ## Inputs:
   ##   - `input`: Input tensor of shape [sequence/timesteps, batch, features]
   ##   - `hidden0` the initial hidden state of shape [num_stacked_layers, batch, hidden_size]

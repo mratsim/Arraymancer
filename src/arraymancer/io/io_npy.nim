@@ -3,7 +3,6 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  ../private/sequninit,
   ../tensor, ./io_stream_readers,
   ../laser/tensor/initialization,
   os, streams, strscans, strformat, parseutils, strutils, endians
@@ -62,7 +61,7 @@ func get_parser_metadata[T](header_raw: string):
     else:
       raise newException(ValueError, &"Invalid token '{npy_fortran}' in numpy description {header_raw}")
 
-proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noInit.} =
+proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noinit.} =
   ## Reads a .npy file and returns a Tensor of the specified type.
   ## If the ndarray is stored in a different type inside the file, it will be converted.
   ##
@@ -108,7 +107,7 @@ proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noInit.} =
     result.initTensorMetadata(size, shape, rowMajor)
   else:
     result.initTensorMetadata(size, shape, colMajor)
-  result.storage.allocCPUStorage(size)
+  result.storage.allocCpuStorage(size)
 
   let r_ptr = result.unsafe_raw_buf()
 

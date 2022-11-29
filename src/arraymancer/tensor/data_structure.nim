@@ -15,10 +15,9 @@
 import
   ../laser/dynamic_stack_arrays,
   ../laser/tensor/datatypes,
-  ../private/sequninit,
   nimblas,
   # Standard library
-  std/[complex, typetraits]
+  std/[complex]
 
 export nimblas.OrderType, complex
 export datatypes, dynamic_stack_arrays
@@ -83,7 +82,7 @@ proc `data=`*[T](t: var Tensor[T], s: seq[T]) {.deprecated: "Use copyFromRaw ins
   # This is intended for library writer
   assert s.len > 0
   when T is KnownSupportsCopyMem:
-    t.copyFromRaw(s[0].unsafeaddr, s.len)
+    t.copyFromRaw(s[0].unsafeAddr, s.len)
   else:
     t.storage.raw_buffer = s
 

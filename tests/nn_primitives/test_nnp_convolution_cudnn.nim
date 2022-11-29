@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Please compile with -d:cuda switch
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, sugar
 
 proc test_conv(T: typedesc) =
@@ -22,17 +22,17 @@ proc test_conv(T: typedesc) =
       [1, 2, 0, 0],
       [5, 3, 0, 4],
       [0, 0, 0, 7],
-      [9, 3, 0, 0]].toTensor().reshape(1,1,4,4).astype(T).cuda
+      [9, 3, 0, 0]].toTensor().reshape(1,1,4,4).asType(T).cuda
     let kernel = [
       [1, 1, 1],
       [1, 1, 0],
-      [1, 0, 0]].toTensor().reshape(1,1,3,3).astype(T).cuda
+      [1, 0, 0]].toTensor().reshape(1,1,3,3).asType(T).cuda
     let target = [
       [1,  8,  5,  0],
       [8, 11,  5,  4],
       [8, 17, 10, 11],
-      [9, 12, 10,  7]].toTensor().reshape(1,1,4,4).astype(T)
-    let bias = [0].toTensor().reshape(1,1,1).astype(T).cuda
+      [9, 12, 10,  7]].toTensor().reshape(1,1,4,4).asType(T)
+    let bias = [0].toTensor().reshape(1,1,1).asType(T).cuda
 
     # TODO: padding should accept a tuple (i.e. unify Size2D and SizeHW)
     check: input.conv2d(kernel, bias, padding=[1,1]).cpu
@@ -53,9 +53,9 @@ proc test_conv(T: typedesc) =
     let # Check gradient with cpu convolution.
         # Note: codegen for numerical gradient float32 is not working properly
         # FFT/Winograd in float vs double may be quite different
-      dinput = input.cpu.astype(float64)
-      dkernel = kernel.cpu.astype(float64)
-      dbias = bias.cpu.astype(float64)
+      dinput = input.cpu.asType(float64)
+      dkernel = kernel.cpu.asType(float64)
+      dbias = bias.cpu.asType(float64)
       dpad = (1, 1) # TODO unify cudnn sizeHW and cpu size2D
       dstride = (1, 1)
 
@@ -81,9 +81,9 @@ proc test_conv(T: typedesc) =
     # Ideally we would need a Cuda numerical_gradient
     # In practice it is not relevant as we can use low precision (float16) without issue in deep learning
 
-    check: grad_bias.cpu.mean_relative_error(target_grad_bias.astype(T)) < 1e-6
-    check: grad_kernel.cpu.mean_relative_error(target_grad_kernel.astype(T)) < 0.2
-    check: grad_input.cpu.mean_relative_error(target_grad_input.astype(T)) < 0.2
+    check: grad_bias.cpu.mean_relative_error(target_grad_bias.asType(T)) < 1e-6
+    check: grad_kernel.cpu.mean_relative_error(target_grad_kernel.asType(T)) < 0.2
+    check: grad_input.cpu.mean_relative_error(target_grad_input.asType(T)) < 0.2
 
     # echo "output"
     # echo output

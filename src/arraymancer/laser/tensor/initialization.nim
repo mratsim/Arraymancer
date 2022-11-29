@@ -10,11 +10,13 @@ import
   ../dynamic_stack_arrays,
   ../private/nested_containers,
   ./datatypes,
-  ../../std_version_types,
   # Standard library
   typetraits, sequtils,
   # Third-party
   nimblas
+
+when (NimMajor, NimMinor) < (1, 4):
+  import ../../std_version_types
 
 ## Initialization and copy routines
 
@@ -27,7 +29,7 @@ template toMetadata*(m: Metadata): Metadata = m
 
 template initTensorMetadataImpl(
     result: var Tensor,
-    size: var int, shape: openarray[int]|Metadata,
+    size: var int, shape: openArray[int]|Metadata,
     layout: static OrderType) =
   ## We don't use a proc directly due to https://github.com/nim-lang/Nim/issues/6529
   result.shape = shape.toMetadata
@@ -48,7 +50,7 @@ template initTensorMetadataImpl(
 
 func initTensorMetadata*(
        result: var Tensor,
-       size: var int, shape: openarray[int],
+       size: var int, shape: openArray[int],
        layout: static OrderType = rowMajor) =
   ## result metadata and size will be initialized in-place
   initTensorMetadataImpl(result, size, shape, layout)
@@ -197,8 +199,8 @@ proc newTensor*[T](shape: Metadata): Tensor[T] =
     # seq based tensors are zero'ed by default upon construction
     setZero(result, check_contiguous = false)
 
-proc toTensor*(a: openarray, dummy_bugfix: static[int] = 0): auto =
-  ## Convert an openarray to a Tensor
+proc toTensor*(a: openArray, dummy_bugfix: static[int] = 0): auto =
+  ## Convert an openArray to a Tensor
   ## Input:
   ##      - An array or a seq (can be nested)
   ## Result:
@@ -272,4 +274,3 @@ func toUnsafeView*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool =
   ##
   ## Unsafe: the pointer can outlive the input tensor.
   unsafe_raw_offset(t, aligned).distinctBase()
-

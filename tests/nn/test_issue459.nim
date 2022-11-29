@@ -13,4 +13,4 @@ suite "Regression test - issue 459":
         x.fc1.tanh
 
     var ctx = newContext Tensor[float32]
-    let model = ctx.init(TestNet)
+    let model {.used.} = ctx.init(TestNet)

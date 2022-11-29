@@ -1,4 +1,4 @@
-import sequtils, math, heapqueue, typetraits
+import math, heapqueue, typetraits
 
 import ../tensor
 import ./distances
@@ -131,16 +131,16 @@ proc build[T](tree: KDTree[T],
       var split = (maxVal + minVal) / 2.0 # take mean between min / max
     # we (ab)use nonzero to get the indices for the mask along the
     # first axis
-    var lessIdx = nonzeroWrapper(data <=. split)
-    var greaterIdx = nonzeroWrapper(data >. split)
+    var lessIdx = nonZeroWrapper(data <=. split)
+    var greaterIdx = nonZeroWrapper(data >. split)
     if lessIdx.size == 0:
       split = min(data)
-      lessIdx = nonzeroWrapper(data <=. split)
-      greaterIdx = nonzeroWrapper(data >. split)
+      lessIdx = nonZeroWrapper(data <=. split)
+      greaterIdx = nonZeroWrapper(data >. split)
     if greaterIdx.size == 0:
       split = max(data)
-      lessIdx = nonzeroWrapper(data <. split)
-      greaterIdx = nonzeroWrapper(data >=. split)
+      lessIdx = nonZeroWrapper(data <. split)
+      greaterIdx = nonZeroWrapper(data >=. split)
     if lessIdx.size == 0:
       # still zero, all must have same value
       if not allEqual(data, data[0]):

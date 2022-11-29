@@ -16,8 +16,8 @@ template `=~=`(x, y: Tensor[float], eps = 1e-6): bool =
 
 template compare(nimResTup, expDists, expIdxs: untyped): untyped =
   # sort the output by the index (arg 1)
-  let nimRes = zip(nimResTup[0].toRawSeq,
-                   nimResTup[1].toRawSeq).sortedByIt(it[1])
+  let nimRes = zip(nimResTup[0].toSeq1D,
+                   nimResTup[1].toSeq1D).sortedByIt(it[1])
   let expRes = zip(expDists, expIdxs).sortedByIt(it[1])
   check nimRes.len == expRes.len
   for i in 0 ..< nimRes.len:
@@ -58,10 +58,10 @@ suite "k-d tree: k = 2":
       let scipy = pyImport("scipy.spatial")
       let np = pyImport("numpy")
       # `xs` and `ys` are the above of course
-      let tree = scipy.cKDTree(np.array([xs.toRawSeq, ys.toRawSeq]).T)
+      let tree = scipy.cKDTree(np.array([xs.toSeq1D, ys.toSeq1D]).T)
       # scipy returns array of dist, array of ids. Should do the same I guess
       # Having a seq[tuple] as return is bad.
-      let scipyResPy = tree.query(ps.toRawSeq, 3)
+      let scipyResPy = tree.query(ps.toSeq1D, 3)
       let scipyDists = scipyResPy[0].mapIt(it.to(float))
       let scipyIdxs = scipyResPy[1].mapIt(it.to(int))
       echo "--------"
@@ -87,9 +87,9 @@ suite "k-d tree: k = 2":
       let scipy = pyImport("scipy.spatial")
       let np = pyImport("numpy")
       # `xs` and `ys` are the above of course
-      let tree = scipy.cKDTree(np.array([xs.toRawSeq, ys.toRawSeq]).T)
+      let tree = scipy.cKDTree(np.array([xs.toSeq1D, ys.toSeq1D]).T)
       # query_ball_point only returns indices in scipy. Compute distances manually for each point
-      let pdt = tree.query_ball_point(ps.toRawSeq, 0.1)
+      let pdt = tree.query_ball_point(ps.toSeq1D, 0.1)
       var dists = newSeq[float]()
       for i in pdt:
         let idx = i.to(int)
@@ -130,10 +130,10 @@ suite "k-d tree: k = 5":
       let scipy = pyImport("scipy.spatial")
       let np = pyImport("numpy")
       # `xs` and `ys` are the above of course
-      let tree = scipy.cKDTree(np.array([x0.toRawSeq, x1.toRawSeq, x2.toRawSeq, x3.toRawSeq, x4.toRawSeq]).T)
+      let tree = scipy.cKDTree(np.array([x0.toSeq1D, x1.toSeq1D, x2.toSeq1D, x3.toSeq1D, x4.toSeq1D]).T)
       # scipy returns array of dist, array of ids. Should do the same I guess
       # Having a seq[tuple] as return is bad.
-      let scipyResPy = tree.query(ps.toRawSeq, 10)
+      let scipyResPy = tree.query(ps.toSeq1D, 10)
       let scipyDists = scipyResPy[0].mapIt(it.to(float))
       let scipyIdxs = scipyResPy[1].mapIt(it.to(int))
       echo "--------"
@@ -168,9 +168,9 @@ suite "k-d tree: k = 5":
       let scipy = pyImport("scipy.spatial")
       let np = pyImport("numpy")
       # `xs` and `ys` are the above of course
-      let tree = scipy.cKDTree(np.array([x0.toRawSeq, x1.toRawSeq, x2.toRawSeq, x3.toRawSeq, x4.toRawSeq]).T)
+      let tree = scipy.cKDTree(np.array([x0.toSeq1D, x1.toSeq1D, x2.toSeq1D, x3.toSeq1D, x4.toSeq1D]).T)
       # query_ball_point only returns indices in scipy. Compute distances manually for each point
-      let pdt = tree.query_ball_point(ps.toRawSeq, 0.5)
+      let pdt = tree.query_ball_point(ps.toSeq1D, 0.5)
       var dists = newSeq[float]()
       for i in pdt:
         let idx = i.to(int)

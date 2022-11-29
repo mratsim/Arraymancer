@@ -7,6 +7,9 @@ import
     ./gemm_ukernel_generator, ./gemm_tiling,
     ../../simd
 
+# mark as used to avoid unused import warnings
+{.used.}
+
 x86only()
 
 ## For the C codegen of AVX512 instructions to be valid, we need the following flag:

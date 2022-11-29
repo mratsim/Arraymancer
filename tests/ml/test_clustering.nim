@@ -2,7 +2,7 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import
   unittest,
   math,
@@ -90,7 +90,7 @@ proc main() =
       var lLabs = [-1, -1, -1]
       var rLabs = [-1, -1, -1]
       var curIdx = 0
-      for (l, r) in zip(labels.toRawSeq, randomLabels):
+      for (l, r) in zip(labels.toSeq1D, randomLabels):
         if lLabs[l] == -1:
           lLabs[l] = curIdx
           doAssert rLabs[r] == -1

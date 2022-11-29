@@ -28,7 +28,7 @@ template tensorOpenCL[T: SomeFloat](
 
 proc newClTensor*[T: SomeFloat](
   shape: varargs[int],
-  layout: OrderType = rowMajor): ClTensor[T] {.noInit.}=
+  layout: OrderType = rowMajor): ClTensor[T] {.noinit.}=
   ## Internal proc
   ## Allocate a ClTensor
   ## WARNING: The OpenCL memory is not initialized to 0
@@ -37,6 +37,6 @@ proc newClTensor*[T: SomeFloat](
 
 proc newClTensor*[T: SomeFloat](
   shape: Metadata,
-  layout: OrderType = rowMajor): ClTensor[T] {.noInit.}=
+  layout: OrderType = rowMajor): ClTensor[T] {.noinit.}=
 
   tensorOpenCL(shape, layout, result)

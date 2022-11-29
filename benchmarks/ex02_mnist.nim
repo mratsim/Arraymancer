@@ -9,13 +9,13 @@ let
 
 let
   mnist = load_mnist(cache = true)
-  x_train = mnist.train_images.astype(float32) / 255'f32
+  x_train = mnist.train_images.asType(float32) / 255'f32
   X_train = ctx.variable x_train.unsqueeze(1)
-  y_train = mnist.train_labels.astype(int)
+  y_train = mnist.train_labels.asType(int)
 
-  x_test = mnist.test_images.astype(float32) / 255'f32
+  x_test = mnist.test_images.asType(float32) / 255'f32
   X_test = ctx.variable x_test.unsqueeze(1)
-  y_test = mnist.test_labels.astype(int)
+  y_test = mnist.test_labels.asType(int)
 
 # Configuration of the neural network
 network ctx, DemoNet:

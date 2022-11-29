@@ -32,7 +32,7 @@ proc atContiguousIndex*[T](t: var Tensor[T], idx: int): var T {.noSideEffect,inl
   else:
     return t.storage.raw_buffer[t.getContiguousIndex(idx)]
 
-proc atAxisIndex*[T](t: Tensor[T], axis, idx: int, length = 1): Tensor[T] {.noInit,inline.} =
+proc atAxisIndex*[T](t: Tensor[T], axis, idx: int, length = 1): Tensor[T] {.noinit,inline.} =
   ## Returns a sliced tensor in the given axis index
 
   when compileOption("boundChecks"):

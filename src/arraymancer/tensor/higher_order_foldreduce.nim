@@ -133,7 +133,7 @@ proc reduce*[T](t: Tensor[T],
 proc reduce*[T](t: Tensor[T],
                 f: (Tensor[T], Tensor[T]) -> Tensor[T],
                 axis: int
-                ): Tensor[T] {.noInit, effectsOf: f.} =
+                ): Tensor[T] {.noinit, effectsOf: f.} =
   ## Chain result = f(result, element) over all elements of the Tensor.
   ##
   ## The starting value is the first element of the Tensor.

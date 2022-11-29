@@ -26,7 +26,7 @@ import  ./backend/memory_optimization_hints,
 # Indexed axis
 # --------------------------------------------------------------------------------------------
 
-proc index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int, indices: Tensor[Idx]): Tensor[T] {.noInit.} =
+proc index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int, indices: Tensor[Idx]): Tensor[T] {.noinit.} =
   ## Take elements from a tensor along an axis using the indices Tensor.
   ## This is equivalent to NumPy `take`.
   ## The result does not share the input storage, there are copies.
@@ -45,7 +45,7 @@ proc index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int,
     var t_slice = t.atAxisIndex(axis, int(index))
     r_slice.copyFrom(t_slice)
 
-proc index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int, indices: openarray[Idx]): Tensor[T] {.noInit.} =
+proc index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int, indices: openarray[Idx]): Tensor[T] {.noinit.} =
   ## Take elements from a tensor along an axis using the indices Tensor.
   ## This is equivalent to NumPy `take`.
   ## The result does not share the input storage, there are copies.
@@ -85,7 +85,7 @@ proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: in
 # Mask full tensor
 # --------------------------------------------------------------------------------------------
 
-proc masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
+proc masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noinit.} =
   ## Take elements from a tensor according to the provided boolean mask
   ##
   ## Returns a **flattened** tensor which is the concatenation of values for which the mask is true.
@@ -113,7 +113,7 @@ proc masked_select*[T](t: Tensor[T], mask: Tensor[bool]): Tensor[T] {.noInit.} =
       inc idx
   assert idx == size
 
-proc masked_select*[T](t: Tensor[T], mask: openarray): Tensor[T] {.noInit.} =
+proc masked_select*[T](t: Tensor[T], mask: openarray): Tensor[T] {.noinit.} =
   ## Take elements from a tensor according to the provided boolean mask
   ##
   ## The boolean mask must be
@@ -220,7 +220,7 @@ template masked_axis_select_impl[T](result: var Tensor[T], t: Tensor[T], mask: T
     " true values in mask, but selected " & $dstSlice[axis].a &
     " values on that axis"
 
-proc masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor[T] {.noInit.} =
+proc masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor[T] {.noinit.} =
   ## Take elements from a tensor according to the provided boolean mask.
   ## The mask must be a 1D tensor and is applied along an axis, by default 0.
   ##
@@ -235,7 +235,7 @@ proc masked_axis_select*[T](t: Tensor[T], mask: Tensor[bool], axis: int): Tensor
   let mask = mask.squeeze() # make 1D if coming from unreduced axis aggregation like sum
   masked_axis_select_impl(result, t, mask, axis)
 
-proc masked_axis_select*[T](t: Tensor[T], mask: openArray[bool], axis: int): Tensor[T] {.noInit.} =
+proc masked_axis_select*[T](t: Tensor[T], mask: openArray[bool], axis: int): Tensor[T] {.noinit.} =
   ## Take elements from a tensor according to the provided boolean mask.
   ## The mask must be a 1D tensor and is applied along an axis, by default 0.
   ##

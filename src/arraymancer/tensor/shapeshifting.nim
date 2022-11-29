@@ -24,7 +24,7 @@ import  ./private/p_shapeshifting,
 # until either https://github.com/nim-lang/Nim/issues/6528 or https://github.com/nim-lang/Nim/issues/6529
 # are solved/added.
 
-proc transpose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
+proc transpose*(t: Tensor): Tensor {.noinit,noSideEffect,inline.} =
   ## Transpose a Tensor.
   ##
   ## For N-d Tensor with shape (0, 1, 2 ... n-1) the resulting tensor will have shape (n-1, ... 2, 1, 0)
@@ -35,7 +35,7 @@ proc transpose*(t: Tensor): Tensor {.noInit,noSideEffect,inline.} =
   result.offset = t.offset
   result.storage = t.storage
 
-proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noInit.} =
+proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noinit.} =
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
   ##
   ## By default tensor will be rowMajor.
@@ -56,7 +56,7 @@ proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = 
     return t
   contiguousImpl(t, layout, result)
 
-proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
+proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noinit.} =
   ## Reshape a tensor. If possible no data copy is done and the returned tensor
   ## shares data with the input. If input is not contiguous, this is not possible
   ## and a copy will be made.
@@ -68,7 +68,7 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noInit.} =
   ##   - a tensor with the same data but reshaped.
   reshapeImpl(t, new_shape, result)
 
-proc reshape*(t: Tensor, new_shape: Metadata): Tensor {.noInit.} =
+proc reshape*(t: Tensor, new_shape: Metadata): Tensor {.noinit.} =
   ## Reshape a tensor. If possible no data copy is done and the returned tensor
   ## shares data with the input. If input is not contiguous, this is not possible
   ## and a copy will be made.
@@ -80,7 +80,7 @@ proc reshape*(t: Tensor, new_shape: Metadata): Tensor {.noInit.} =
   ##   - a tensor with the same data but reshaped.
   reshapeImpl(t, new_shape, result)
 
-proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSideEffect.}=
+proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noinit,noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.
   ##
   ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
@@ -92,7 +92,7 @@ proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noInit,noSide
   result = t
   result.broadcastImpl(shape)
 
-proc broadcast*[T](t: Tensor[T], shape: Metadata): Tensor[T] {.noInit,noSideEffect.}=
+proc broadcast*[T](t: Tensor[T], shape: Metadata): Tensor[T] {.noinit,noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.
   ##
   ## Dimension(s) of size 1 can be expanded to arbitrary size by replicating
@@ -104,7 +104,7 @@ proc broadcast*[T](t: Tensor[T], shape: Metadata): Tensor[T] {.noInit,noSideEffe
   result = t
   result.broadcastImpl(shape)
 
-proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit.} =
+proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noinit.} =
   ## Broadcast a number
   ##
   ## Input:
@@ -125,7 +125,7 @@ proc broadcast*[T: SomeNumber](val: T, shape: varargs[int]): Tensor[T] {.noInit.
   result.storage.allocCpuStorage(1)
   result.unsafe_raw_buf[0] = val
 
-proc broadcast*[T: SomeNumber](val: T, shape: Metadata): Tensor[T] {.noInit,noSideEffect.} =
+proc broadcast*[T: SomeNumber](val: T, shape: Metadata): Tensor[T] {.noinit,noSideEffect.} =
   ## Broadcast a number
   ##
   ## Input:
@@ -154,7 +154,7 @@ template bc*(t: (Tensor|SomeNumber), shape: Metadata): untyped =
   ## Alias for ``broadcast``
   t.broadcast(shape)
 
-proc broadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect, noInit.}=
+proc broadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect, noinit.}=
   ## Broadcast 2 tensors so they have compatible shapes for element-wise computations.
   ##
   ## Tensors in the tuple can be accessed with output.a and output.b
@@ -175,7 +175,7 @@ proc broadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect, noI
   result.b.storage = b.storage
 
 
-proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
+proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noinit,noSideEffect.}=
   ## Permute dimensions of a tensors
   ## Input:
   ##   - a tensor
@@ -190,7 +190,7 @@ proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noInit,noSideEffect.}=
   result = t
   permuteImpl(result, dims)
 
-proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit.}=
+proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noinit.}=
   ## Concatenate tensors
   ## Input:
   ##   - Tensors
@@ -226,7 +226,7 @@ proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noInit.}=
     result.slicerMut(slices, t)
     iaxis += t.shape[axis]
 
-func squeeze*(t: AnyTensor): AnyTensor {.noInit.}=
+func squeeze*(t: AnyTensor): AnyTensor {.noinit.}=
   ## Squeeze tensors. For example a Tensor of shape [4,1,3] will become [4,3]
   ## Input:
   ##   - a tensor
@@ -235,7 +235,7 @@ func squeeze*(t: AnyTensor): AnyTensor {.noInit.}=
   result = t
   result.squeezeImpl
 
-func squeeze*(t: Tensor, axis: Natural): Tensor {.noInit.}=
+func squeeze*(t: Tensor, axis: Natural): Tensor {.noinit.}=
   ## Collapse the given axis, if the dimension is not 1, it does nothing.
   ## Input:
   ##   - a tensor
@@ -245,7 +245,7 @@ func squeeze*(t: Tensor, axis: Natural): Tensor {.noInit.}=
   result = t
   result.squeezeImpl(axis)
 
-func unsqueeze*(t: Tensor, axis: Natural): Tensor {.noInit.}=
+func unsqueeze*(t: Tensor, axis: Natural): Tensor {.noinit.}=
   ## Insert a new axis just before the given axis, increasing the tensor
   ## dimension (rank) by 1
   ## Input:
@@ -256,7 +256,7 @@ func unsqueeze*(t: Tensor, axis: Natural): Tensor {.noInit.}=
   result = t
   result.unsqueezeImpl(axis)
 
-proc stack*[T](tensors: varargs[Tensor[T]], axis: Natural = 0): Tensor[T] {.noInit.} =
+proc stack*[T](tensors: varargs[Tensor[T]], axis: Natural = 0): Tensor[T] {.noinit.} =
   ## Join a sequence of tensors along a new axis into a new tensor.
   ## Input:
   ##   - a tensor
@@ -266,7 +266,7 @@ proc stack*[T](tensors: varargs[Tensor[T]], axis: Natural = 0): Tensor[T] {.noIn
   func stack_unsqueeze(t: Tensor[T]): Tensor[T] = t.unsqueeze(axis)
   tensors.map(stack_unsqueeze).concat(axis)
 
-func split*[T](t: Tensor[T], chunk_size: Positive, axis: Natural): seq[Tensor[T]] {.noInit.} =
+func split*[T](t: Tensor[T], chunk_size: Positive, axis: Natural): seq[Tensor[T]] {.noinit.} =
   ## Split the tensor into chunks of size ``chunk_size`` along the specified axis.
   ## Last chunk size will equal the remainder if the specified axis length is not divisible
   ## by ``chunk_size``
@@ -282,7 +282,7 @@ func split*[T](t: Tensor[T], chunk_size: Positive, axis: Natural): seq[Tensor[T]
   if rem_size != 0:
     result[^1] = t.atAxisIndex(axis, nb_chunks * chunk_size, rem_size)
 
-func chunk*[T](t: Tensor[T], nb_chunks: Positive, axis: Natural): seq[Tensor[T]] {.noInit.} =
+func chunk*[T](t: Tensor[T], nb_chunks: Positive, axis: Natural): seq[Tensor[T]] {.noinit.} =
   ## Splits a Tensor into n chunks along the specified axis.
   ##
   ## In case a tensor cannot be split evenly,

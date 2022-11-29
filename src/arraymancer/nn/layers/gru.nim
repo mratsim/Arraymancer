@@ -43,7 +43,7 @@ proc gru_inference[TT](
 proc gru_backward_ag[TT](
           self: Gate[TT],
           payload: Payload[TT],
-        ): SmallDiffs[TT] {.noInit.}=
+        ): SmallDiffs[TT] {.noinit.}=
   let self = GRUGate[TT](self)
   let gradients = payload.sequence
   result = newDiffs[TT](7)
@@ -122,7 +122,7 @@ proc gru*[TT](
       W3s0, W3sN, U3s: Variable[TT],
       bW3s, bU3s: Variable[TT]
       ): tuple[output, hiddenN: Variable[TT]] =
-  
+
   ## ⚠️ API subject to change to match CuDNNs
   ##
   ## Bidirectional support is not implemented
@@ -178,7 +178,7 @@ proc init*[T](
   ##     - ``numInputFeatures`` Number of features of the input.
   ##     - ``hiddenSize`` size of the hidden layer(s)
   ##     - ``layers`` Number of stacked layers
-  ## 
+  ##
   ## Returns the created ``GRULayer``.
 
   template weightInit(shape: varargs[int], initKind: untyped): Variable =
@@ -197,7 +197,7 @@ proc init*[T](
   # TODO allow freezing
 
 proc forward*[T](self: GRULayer[T], input, hidden0: Variable): tuple[output, hiddenN: Variable] =
-  
+
   ## Inputs:
   ##   - `input`: Input tensor of shape [sequence/timesteps, batch, features]
   ##   - `hidden0` the initial hidden state of shape [num_stacked_layers, batch, hidden_size]

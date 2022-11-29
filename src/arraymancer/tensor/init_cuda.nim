@@ -20,7 +20,7 @@ import  ../private/sequninit,
         ./data_structure,
         ./init_cpu
 
-proc cuda*[T:SomeFloat](t: Tensor[T]): CudaTensor[T] {.noInit.}=
+proc cuda*[T:SomeFloat](t: Tensor[T]): CudaTensor[T] {.noinit.}=
   ## Convert a tensor on Cpu to a tensor on a Cuda device.
   # Note: due to modifying the cudaStream0 global var for async copy
   # proc cannot be tagged noSideEffect
@@ -40,7 +40,7 @@ proc cuda*[T:SomeFloat](t: Tensor[T]): CudaTensor[T] {.noInit.}=
                         cudaMemcpyHostToDevice,
                         cudaStream0) # cudaStream0 is a cudaStream_t global var
 
-proc cpu*[T:SomeFloat](t: CudaTensor[T]): Tensor[T] {.noSideEffect, noInit.}=
+proc cpu*[T:SomeFloat](t: CudaTensor[T]): Tensor[T] {.noSideEffect, noinit.}=
   ## Convert a tensor on a Cuda device to a tensor on Cpu.
   # We use blocking copy in this case to make sure
   # all data is available for future computation
@@ -59,7 +59,7 @@ proc cpu*[T:SomeFloat](t: CudaTensor[T]): Tensor[T] {.noSideEffect, noInit.}=
 
 
 
-proc zeros_like*[T: SomeFloat](t: CudaTensor[T]): CudaTensor[T] {.noInit, inline.} =
+proc zeros_like*[T: SomeFloat](t: CudaTensor[T]): CudaTensor[T] {.noinit, inline.} =
   ## Creates a new CudaTensor filled with 0 with the same shape as the input
   ## Input:
   ##      - Shape of the CudaTensor
@@ -70,7 +70,7 @@ proc zeros_like*[T: SomeFloat](t: CudaTensor[T]): CudaTensor[T] {.noInit, inline
   # TODO use cudaMemset
   result = zeros[T](t.shape).cuda
 
-proc ones_like*[T: SomeFloat](t: CudaTensor[T]): CudaTensor[T] {.noInit, inline.} =
+proc ones_like*[T: SomeFloat](t: CudaTensor[T]): CudaTensor[T] {.noinit, inline.} =
   ## Creates a new CudaTensor filled with 1 with the same shape as the input
   ## and filled with 1
   ## Input:

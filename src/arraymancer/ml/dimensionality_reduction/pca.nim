@@ -9,7 +9,7 @@ proc pca*[T: SomeFloat](
        X: Tensor[T], n_components = 2, center: static bool = true,
        n_oversamples = 5,
        n_power_iters = 2
-      ): tuple[projected: Tensor[T], components: Tensor[T]] {.noInit.} =
+      ): tuple[projected: Tensor[T], components: Tensor[T]] {.noinit.} =
   ## Principal Component Analysis (PCA)
   ##
   ## Project the input data ``X`` of shape [Observations, Features] into a new coordinate system
@@ -113,7 +113,7 @@ proc pca_detailed*[T: SomeFloat](
        X: Tensor[T], n_components = 2, center: static bool = true,
        n_oversamples = 5,
        n_power_iters = 2
-      ): PCA_Detailed[T] {.noInit.} =
+      ): PCA_Detailed[T] {.noinit.} =
   ## Principal Component Analysis (PCA) with full details
   ##
   ## Project the input data ``X`` of shape [Observations, Features] into a new coordinate system

@@ -28,7 +28,7 @@ template tensorCuda[T: SomeFloat](
 
 proc newCudaTensor*[T: SomeFloat](
   shape: varargs[int],
-  layout: OrderType = colMajor): CudaTensor[T] {.noInit, noSideEffect.}=
+  layout: OrderType = colMajor): CudaTensor[T] {.noinit, noSideEffect.}=
   ## Internal proc
   ## Allocate a CudaTensor
   ## WARNING: The Cuda memory is not initialized to 0
@@ -41,6 +41,6 @@ proc newCudaTensor*[T: SomeFloat](
 
 proc newCudaTensor*[T: SomeFloat](
   shape: Metadata,
-  layout: OrderType = colMajor): CudaTensor[T] {.noInit, noSideEffect.}=
+  layout: OrderType = colMajor): CudaTensor[T] {.noinit, noSideEffect.}=
 
   tensorCuda(shape, layout, result)

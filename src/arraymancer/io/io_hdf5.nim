@@ -60,7 +60,7 @@ func parseNameAndGroup(h5f: var H5FileObj,
 
 proc read_hdf5*[T: SomeNumber](h5f: var H5FileObj,
                                name, group: Option[string],
-                               number: Option[int]): Tensor[T] {.noInit.} =
+                               number: Option[int]): Tensor[T] {.noinit.} =
   ## Reads a .h5 file (written by arraymancer) and returns a tensor of the
   ## specified type.
   ## If the tensor is stored in a different type in the file, it will be
@@ -113,7 +113,7 @@ proc read_hdf5*[T: SomeNumber](h5f: var H5FileObj,
 
 proc read_hdf5*[T: SomeNumber](h5f: var H5FileObj,
                               name, group = "",
-                              number = -1): Tensor[T] {.noInit, inline.} =
+                              number = -1): Tensor[T] {.noinit, inline.} =
   ## wrapper around the real `read_hdf5` to provide a nicer interface
   ## without having to worry about `some` and `none`
   let
@@ -124,7 +124,7 @@ proc read_hdf5*[T: SomeNumber](h5f: var H5FileObj,
 
 proc read_hdf5*[T: SomeNumber](hdf5Path: string,
                                name, group = "",
-                               number = -1): Tensor[T] {.noInit, inline.} =
+                               number = -1): Tensor[T] {.noinit, inline.} =
   ## convenience wrapper around `read_hdf5` with `var H5DataSet` argument.
   ## opens the given H5 file for reading and then calls the read proc
   withH5(hdf5Path, "r"):

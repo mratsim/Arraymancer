@@ -36,7 +36,7 @@ proc overloadSingleSym(oldName, replacement: NimNode, exported: bool): NimNode =
     pragmas = nnkPragma.newTree()
 
   # pragmas.add ident"inline"
-  # pragmas.add ident"noInit"
+  # pragmas.add ident"noinit"
   pragmas.add nnkExprColonExpr.newTree(
     ident"deprecated",
     newLit("Use `" & $replacement & "` instead")

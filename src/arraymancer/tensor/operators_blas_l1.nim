@@ -42,11 +42,11 @@ proc dot*[T: SomeInteger](a, b: Tensor[T]): T {.noSideEffect.} =
 # # Tensor-Tensor linear algebra
 # # shape checks are done in map2 proc
 
-proc `+`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noInit.} =
+proc `+`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noinit.} =
   ## Tensor addition
   map2_inline(a, b, x + y)
 
-proc `-`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noInit.} =
+proc `-`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noinit.} =
   ## Tensor substraction
   map2_inline(a, b, x - y)
 
@@ -64,21 +64,21 @@ proc `-=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b:
 # #########################################################
 # # Tensor-scalar linear algebra
 
-proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: T, t: Tensor[T]): Tensor[T] {.noInit.} =
+proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: T, t: Tensor[T]): Tensor[T] {.noinit.} =
   ## Element-wise multiplication by a scalar
   returnEmptyIfEmpty(t)
   t.map_inline(x * a)
 
-proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
+proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
   ## Element-wise multiplication by a scalar
   a * t
 
-proc `/`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
+proc `/`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
   ## Element-wise division by a float scalar
   returnEmptyIfEmpty(t)
   t.map_inline(x / a)
 
-proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noInit.} =
+proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
   ## Element-wise division by an integer
   returnEmptyIfEmpty(t)
   t.map_inline(x div a)

@@ -37,7 +37,7 @@ proc sum*[T](t: Tensor[T]): T =
   t.reduce_inline():
     x+=y
 
-proc sum*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
+proc sum*[T](t: Tensor[T], axis: int): Tensor[T] {.noinit.} =
   ## Compute the sum of all elements along an axis
   returnEmptyIfEmpty(t)
   t.reduce_axis_inline(axis):
@@ -48,7 +48,7 @@ proc product*[T](t: Tensor[T]): T =
   t.reduce_inline():
     x*=y
 
-proc product*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.}=
+proc product*[T](t: Tensor[T], axis: int): Tensor[T] {.noinit.}=
   ## Compute the product along an axis
   returnEmptyIfEmpty(t)
   t.reduce_axis_inline(axis):
@@ -60,7 +60,7 @@ proc mean*[T: SomeInteger](t: Tensor[T]): T {.inline.}=
   ## Warning ⚠: Since input is integer, output will also be integer (using integer division)
   t.sum div t.size.T
 
-proc mean*[T: SomeInteger](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
+proc mean*[T: SomeInteger](t: Tensor[T], axis: int): Tensor[T] {.noinit,inline.}=
   ## Compute the mean along an axis
   ##
   ## Warning ⚠: Since input is integer, output will also be integer (using integer division)
@@ -76,12 +76,12 @@ proc mean*[T: Complex[float32] or Complex[float64]](t: Tensor[T]): T {.inline.}=
   type F = T.T # Get float subtype of Complex[T]
   t.sum / complex(t.size.F, 0.F)
 
-proc mean*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
+proc mean*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noinit,inline.}=
   ## Compute the mean along an axis
   returnEmptyIfEmpty(t)
   t.sum(axis) / t.shape[axis].T
 
-proc mean*[T: Complex[float32] or Complex[float64]](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.}=
+proc mean*[T: Complex[float32] or Complex[float64]](t: Tensor[T], axis: int): Tensor[T] {.noinit,inline.}=
   ## Compute the mean along an axis
   returnEmptyIfEmpty(t)
   type F = T.T # Get float subtype of Complex[T]
@@ -92,7 +92,7 @@ proc min*[T](t: Tensor[T]): T =
   reduce_inline(t):
     x = min(x,y)
 
-proc min*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
+proc min*[T](t: Tensor[T], axis: int): Tensor[T] {.noinit.} =
   ## Compute the min along an axis
   returnEmptyIfEmpty(t)
   t.reduce_axis_inline(axis):
@@ -104,7 +104,7 @@ proc max*[T](t: Tensor[T]): T =
   t.reduce_inline():
     x = max(x,y)
 
-proc max*[T](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
+proc max*[T](t: Tensor[T], axis: int): Tensor[T] {.noinit.} =
   ## Compute the max along an axis
   returnEmptyIfEmpty(t)
   t.reduce_axis_inline(axis):
@@ -127,7 +127,7 @@ proc variance*[T: SomeFloat](t: Tensor[T]): T =
     x += y
   result /= (t.size-1).T
 
-proc variance*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noInit.} =
+proc variance*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noinit.} =
   ## Compute the variance of all elements
   ## The normalization is by the (n-1), like in the formal definition
   returnEmptyIfEmpty(t)
@@ -149,13 +149,13 @@ proc std*[T: SomeFloat](t: Tensor[T]): T {.inline.} =
   ## The normalization is by the (n-1), like in the formal definition
   sqrt(t.variance())
 
-proc std*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noInit,inline.} =
+proc std*[T: SomeFloat](t: Tensor[T], axis: int): Tensor[T] {.noinit,inline.} =
   ## Compute the standard deviation of all elements
   ## The normalization is by the (n-1), like in the formal definition
   returnEmptyIfEmpty(t)
   sqrt(t.variance(axis))
 
-proc argmax_max*[T: SomeNumber](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes: Tensor[T]] {.noInit.} =
+proc argmax_max*[T: SomeNumber](t: Tensor[T], axis: int): tuple[indices: Tensor[int], maxes: Tensor[T]] {.noinit.} =
   ## Returns (indices, maxes) along an axis
   ##
   ## Input:

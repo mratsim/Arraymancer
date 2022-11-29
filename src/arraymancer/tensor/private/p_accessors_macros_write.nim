@@ -261,7 +261,7 @@ macro slice_typed_dispatch_mut*(t: typed, args: varargs[typed], val: typed): unt
 #
 # Unused: Nim support for var return types is problematic
 
-proc slicer_var[T](t: var AnyTensor[T], slices: openArray[SteppedSlice]): var AnyTensor[T] {.noInit,noSideEffect.}=
+proc slicer_var[T](t: var AnyTensor[T], slices: openArray[SteppedSlice]): var AnyTensor[T] {.noinit,noSideEffect.}=
   ## Take a Tensor and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -272,7 +272,7 @@ proc slicer_var[T](t: var AnyTensor[T], slices: openArray[SteppedSlice]): var An
 
 proc slicer_var[T](t: var AnyTensor[T],
                 slices: openArray[SteppedSlice],
-                ellipsis: Ellipsis): var AnyTensor[T] {.noInit,noSideEffect.}=
+                ellipsis: Ellipsis): var AnyTensor[T] {.noinit,noSideEffect.}=
   ## Take a Tensor, SteppedSlices and Ellipsis
   ## Returns:
   ##    A copy of the original Tensor
@@ -285,7 +285,7 @@ proc slicer_var[T](t: var AnyTensor[T],
 proc slicer_var[T](t: var AnyTensor[T],
                 ellipsis: Ellipsis,
                 slices: openArray[SteppedSlice]
-                ): var AnyTensor[T] {.noInit,noSideEffect.}=
+                ): var AnyTensor[T] {.noinit,noSideEffect.}=
   ## Take a Tensor, Ellipsis and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor
@@ -299,7 +299,7 @@ proc slicer_var[T](t: var AnyTensor[T],
                 slices1: openArray[SteppedSlice],
                 ellipsis: Ellipsis,
                 slices2: openArray[SteppedSlice]
-                ): var AnyTensor[T] {.noInit,noSideEffect.}=
+                ): var AnyTensor[T] {.noinit,noSideEffect.}=
   ## Take a Tensor, Ellipsis and SteppedSlices
   ## Returns:
   ##    A copy of the original Tensor

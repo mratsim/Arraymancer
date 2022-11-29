@@ -18,7 +18,7 @@ import  ./data_structure,
 # Unfortunately higher_order depends on init_cpu and "clone" depends on higher_order, so we need an extra file
 # to deal with circular dependencies
 
-proc clone*[T](t: Tensor[T], layout: OrderType = rowMajor): Tensor[T] {.noInit.}=
+proc clone*[T](t: Tensor[T], layout: OrderType = rowMajor): Tensor[T] {.noinit.} =
   ## Input:
   ##     - A tensor
   ## Returns:

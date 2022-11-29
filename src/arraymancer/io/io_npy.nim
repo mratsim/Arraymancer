@@ -62,7 +62,7 @@ func get_parser_metadata[T](header_raw: string):
     else:
       raise newException(ValueError, &"Invalid token '{npy_fortran}' in numpy description {header_raw}")
 
-proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noInit.} =
+proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noinit.} =
   ## Reads a .npy file and returns a Tensor of the specified type.
   ## If the ndarray is stored in a different type inside the file, it will be converted.
   ##

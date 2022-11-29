@@ -272,4 +272,3 @@ func toUnsafeView*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool =
   ##
   ## Unsafe: the pointer can outlive the input tensor.
   unsafe_raw_offset(t, aligned).distinctBase()
-

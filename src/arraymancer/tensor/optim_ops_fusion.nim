@@ -86,13 +86,13 @@ template toTensorReshapeImpl(oa: typed, shape: varargs[int]): untyped =
     i += 1
   assert i == size
 
-func toTensorReshape(oa: string, shape: varargs[int]): auto {.noInit.}=
+func toTensorReshape(oa: string, shape: varargs[int]): auto {.noinit.}=
   ## Fuse toTensor and reshape in one operation.
   ##
   ## Deal specifically with strings/seq[char]
   toTensorReshapeImpl(oa, shape)
 
-func toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto {.noInit.}=
+func toTensorReshape(oa: openarray, shape: varargs[int], dummy_bugfix: static[int] = 0): auto {.noinit.}=
   ## Fuse toTensor and reshape in one operation
   ##
   # Dummy_bugfix param is necessary due to: https://github.com/nim-lang/Nim/issues/6343

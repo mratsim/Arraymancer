@@ -19,7 +19,7 @@ import  ../private/sequninit,
         ./data_structure,
         ./init_cpu
 
-proc opencl*[T:SomeFloat](t: Tensor[T]): ClTensor[T] {.noInit.}=
+proc opencl*[T:SomeFloat](t: Tensor[T]): ClTensor[T] {.noinit.}=
   ## Convert a tensor on Cpu to a tensor on an OpenCL device.
 
   result = newClTensor[T](t.shape)
@@ -40,7 +40,7 @@ proc opencl*[T:SomeFloat](t: Tensor[T]): ClTensor[T] {.noInit.}=
     0, nil, nil
   )
 
-proc cpu*[T:SomeFloat](t: ClTensor[T]): Tensor[T] {.noInit.}=
+proc cpu*[T:SomeFloat](t: ClTensor[T]): Tensor[T] {.noinit.}=
   ## Convert a tensor on an OpenCL device to a tensor on Cpu.
   # We use blocking copy in this case to make sure
   # all data is available for future computation
@@ -65,7 +65,7 @@ proc cpu*[T:SomeFloat](t: ClTensor[T]): Tensor[T] {.noInit.}=
     0, nil, nil
   )
 
-proc zeros_like*[T: SomeFloat](t: ClTensor[T]): ClTensor[T] {.noInit, inline.} =
+proc zeros_like*[T: SomeFloat](t: ClTensor[T]): ClTensor[T] {.noinit, inline.} =
   ## Creates a new ClTensor filled with 0 with the same shape as the input
   ## Input:
   ##      - Shape of the CudaTensor
@@ -76,7 +76,7 @@ proc zeros_like*[T: SomeFloat](t: ClTensor[T]): ClTensor[T] {.noInit, inline.} =
   # TODO use clEnqueueFillBuffer (OpenCL 1.2 only)
   result = zeros[T](t.shape).opencl
 
-proc ones_like*[T: SomeFloat](t: ClTensor[T]): ClTensor[T] {.noInit, inline.} =
+proc ones_like*[T: SomeFloat](t: ClTensor[T]): ClTensor[T] {.noinit, inline.} =
   ## Creates a new ClTensor filled with 1 with the same shape as the input
   ## and filled with 1
   ## Input:

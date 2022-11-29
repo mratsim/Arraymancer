@@ -19,7 +19,7 @@ import  ./backend/cudnn,
 
 proc conv2d*[T: SomeFloat](input, kernel, bias: CudaTensor[T],
                 padding: SizeHW = [0,0],
-                strides, dilation: SizeHW = [1,1]): CudaTensor[T] {.noInit.}=
+                strides, dilation: SizeHW = [1,1]): CudaTensor[T] {.noinit.}=
   ## Input:
   ##     - ``input`` 4D Tensor batch of images of the size [N,C_in,H_in,W_in]
   ##     - ``kernel`` 4D Tensor convolving kernel filters of the size [C_out,C_in,kH,kW]

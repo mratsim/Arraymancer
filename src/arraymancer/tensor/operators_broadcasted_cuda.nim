@@ -30,17 +30,17 @@ import ../private/deprecate
 cuda_binary_glue("cuda_Mul", "MulOp", cuda_Mul)
 cuda_binary_glue("cuda_Div", "DivOp", cuda_Div)
 
-proc `+.`*[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T] {.noInit,inline.} =
+proc `+.`*[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T] {.noinit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a + tmp_b
 
-proc `-.`*[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T] {.noInit,inline.} =
+proc `-.`*[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T] {.noinit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a - tmp_b
 
-proc `*.`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+proc `*.`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noinit.} =
   ## Element-wise multiplication (Hadamard product).
   ##
   ## And broadcasted element-wise multiplication.
@@ -50,7 +50,7 @@ proc `*.`*[T: SomeFloat](a,b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
   result = newCudaTensor[T](tmp_a.shape)
   cuda_binary_call(cuda_Mul, result, tmp_a, tmp_b)
 
-proc `/.`*[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+proc `/.`*[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T] {.noinit.} =
   ## CudaTensor substraction
 
   let (tmp_a, tmp_b) = broadcast2(a, b)
@@ -108,12 +108,12 @@ proc `/.=`*[T: SomeFloat](a: var CudaTensor[T], b: CudaTensor[T]) =
 cuda_rscal_glue("cuda_rscalSub","RscalSub", cuda_rscalSub)
 cuda_rscal_glue("cuda_rscalAdd","RscalAdd", cuda_rscalAdd)
 
-proc `+.`*[T: SomeFloat](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
+proc `+.`*[T: SomeFloat](t: CudaTensor[T], val: T): CudaTensor[T] {.noinit.} =
   ## Broadcasted addition for scalar + tensor.
   result = newCudaTensor[T](t.shape)
   cuda_rscal_call(cuda_rscalAdd, result, t, val)
 
-proc `-.`*[T: SomeFloat](t: CudaTensor[T], val: T): CudaTensor[T] {.noInit.} =
+proc `-.`*[T: SomeFloat](t: CudaTensor[T], val: T): CudaTensor[T] {.noinit.} =
   ## Broadcasted substraction for scalar - tensor.
   result = newCudaTensor[T](t.shape)
   cuda_rscal_call(cuda_rscalSub, result, t, val)
@@ -122,17 +122,17 @@ cuda_lscal_glue("cuda_lscalSub","LscalSub", cuda_lscalSub)
 cuda_lscal_glue("cuda_lscalAdd","LscalAdd", cuda_lscalAdd)
 cuda_lscal_glue("cuda_lscalDiv","LscalDiv", cuda_lscalDiv)
 
-proc `+.`*[T: SomeFloat](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+proc `+.`*[T: SomeFloat](val: T, t: CudaTensor[T]): CudaTensor[T] {.noinit.} =
   ## Broadcasted addition for tensor + scalar.
   result = newCudaTensor[T](t.shape)
   cuda_lscal_call(cuda_lscalAdd, result, val, t)
 
-proc `-.`*[T: SomeFloat](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+proc `-.`*[T: SomeFloat](val: T, t: CudaTensor[T]): CudaTensor[T] {.noinit.} =
   ## Broadcasted substraction for tensor - scalar.
   result = newCudaTensor[T](t.shape)
   cuda_lscal_call(cuda_lscalSub, result, val, t)
 
-proc `/.`*[T: SomeFloat](val: T, t: CudaTensor[T]): CudaTensor[T] {.noInit.} =
+proc `/.`*[T: SomeFloat](val: T, t: CudaTensor[T]): CudaTensor[T] {.noinit.} =
   ## Broadcasted division of a float by a tensor of floats.
   result = newCudaTensor[T](t.shape)
   cuda_lscal_call(cuda_lscalDiv, result, val, t)

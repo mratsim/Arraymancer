@@ -23,7 +23,7 @@ include ./private/incl_accessors_cuda,
 
 cuda_assign_glue("cuda_clone", "CopyOp", cuda_clone)
 
-proc clone*[T](t: CudaTensor[T]): CudaTensor[T] {.noInit, noSideEffect.}=
+proc clone*[T](t: CudaTensor[T]): CudaTensor[T] {.noinit, noSideEffect.}=
   ## Clone (deep copy) a CudaTensor.
   ## Copy will not share its data with the original.
 

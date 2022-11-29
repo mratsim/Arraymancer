@@ -12,7 +12,7 @@ proc least_squares_solver*[T: SomeFloat](a, b: Tensor[T],
     residuals:  Tensor[T],
     matrix_rank: int,
     singular_values: Tensor[T]
-  ] {.noInit.} =
+  ] {.noinit.} =
   ## Solves the given linear least squares problem:
   ##
   ## `minimize | Ax - y |`

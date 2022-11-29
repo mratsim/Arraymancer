@@ -26,7 +26,7 @@ import
 
 export initialization
 
-proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noInit, inline.} =
+proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -39,12 +39,12 @@ proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noInit, inline.} =
   initTensorMetadata(result, size, shape)
   allocCpuStorage(result.storage, size)
 
-proc newTensorUninit*[T](size: int): Tensor[T] {.noInit, inline.} =
+proc newTensorUninit*[T](size: int): Tensor[T] {.noinit, inline.} =
   ## Overload above taking `varargs[int]` to avoid "expression * cannot be called"
   ## errors if called in a template. Warning: This ``will`` create a 1D tensor!
   result = newTensorUninit[T]([size])
 
-proc newTensorUninit*[T](shape: Metadata): Tensor[T] {.noInit, inline.} =
+proc newTensorUninit*[T](shape: Metadata): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor on Cpu backend
   ## Input:
   ##      - Shape of the Tensor
@@ -59,7 +59,7 @@ proc newTensorUninit*[T](shape: Metadata): Tensor[T] {.noInit, inline.} =
 
 # newTensor is defined in laser/tensor/initialization
 
-proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit.} =
+proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noinit.} =
   ## Creates a new Tensor filled with the given value
   ## Input:
   ##      - Shape of the Tensor
@@ -80,7 +80,7 @@ proc newTensorWith*[T](shape: varargs[int], value: T): Tensor[T] {.noInit.} =
     for i in 0 ..< result.size:
       result[i] = value
 
-proc newTensorWith*[T](shape: Metadata, value: T): Tensor[T] {.noInit.} =
+proc newTensorWith*[T](shape: Metadata, value: T): Tensor[T] {.noinit.} =
   ## Creates a new Tensor filled with the given value
   ## Input:
   ##      - Shape of the Tensor
@@ -103,7 +103,7 @@ proc newTensorWith*[T](shape: Metadata, value: T): Tensor[T] {.noInit.} =
 
 # newTensor is defined in laser/tensor/initialization
 
-proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]): Tensor[T] {.noInit, inline.} =
+proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -113,7 +113,7 @@ proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]
   ##      - A zero-ed Tensor of the input shape on backend Cpu
   result = newTensor[T](shape)
 
-proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: Metadata): Tensor[T] {.noInit, inline.} =
+proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: Metadata): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -123,7 +123,7 @@ proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: Metadata): T
   ##      - A zero-ed Tensor of the input shape on backend Cpu
   result = newTensor[T](shape)
 
-proc zeros_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noInit, inline.} =
+proc zeros_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
   ## Input:
   ##      - Shape of the Tensor
@@ -132,7 +132,7 @@ proc zeros_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]):
   ##      - A zero-ed Tensor of the same shape
   result = zeros[T](t.shape)
 
-proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]): Tensor[T] {.noInit, inline.} =
+proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -145,7 +145,7 @@ proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int])
     type F = T.T # Get the float subtype of Complex[T]
     result = newTensorWith[T](shape, complex(1.F, 0.F))
 
-proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: Metadata): Tensor[T] {.noInit, inline.} =
+proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: Metadata): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
@@ -158,7 +158,7 @@ proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: Metadata): Te
     type F = T.T
     result = newTensorWith[T](shape, complex(1.F, 0.F))
 
-proc ones_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noInit, inline.} =
+proc ones_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor filled with 1 with the same shape as the input
   ## and filled with 1
   ## Input:
@@ -167,7 +167,7 @@ proc ones_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): 
   ##      - A one-ed Tensor of the same shape
   result = ones[T](t.shape)
 
-proc arange*[T: SomeNumber](start, stop, step: T): Tensor[T] {.noInit.} =
+proc arange*[T: SomeNumber](start, stop, step: T): Tensor[T] {.noinit.} =
   ## Creates a new 1d-tensor with values evenly spaced by ``step``
   ## in the half-open interval [start, stop)
   ##
@@ -213,7 +213,7 @@ template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typ
   for i in 0 ..< t.size:
     result.storage.raw_buffer[i] = T(rand(max_or_range)) # Due to automatic converter (float32 -> float64), we must force T #68
 
-proc randomTensor*[T:SomeFloat](shape: varargs[int], max: T): Tensor[T] {.noInit.} =
+proc randomTensor*[T:SomeFloat](shape: varargs[int], max: T): Tensor[T] {.noinit.} =
   ## Creates a new float Tensor filled with values between 0 and max.
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
@@ -225,7 +225,7 @@ proc randomTensor*[T:SomeFloat](shape: varargs[int], max: T): Tensor[T] {.noInit
   ##      - A tensor of the input shape filled with random value between 0 and max input value
   randomTensorCpu(result, shape, max)
 
-proc randomTensor*(shape: varargs[int], max: int): Tensor[int] {.noInit.} =
+proc randomTensor*(shape: varargs[int], max: int): Tensor[int] {.noinit.} =
   ## Creates a new int Tensor filled with values between 0 and max (inclusive).
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
@@ -237,7 +237,7 @@ proc randomTensor*(shape: varargs[int], max: int): Tensor[int] {.noInit.} =
   ##      - A tensor of the input shape filled with random value between 0 and max input value (excluded)
   randomTensorCpu(result, shape, max)
 
-proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] {.noInit.} =
+proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] {.noinit.} =
   ## Creates a new int Tensor filled with values in the Slice range (inclusive).
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
@@ -249,7 +249,7 @@ proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] {.noInit.
   ##      - A tensor of the input shape filled with random value in the slice range
   randomTensorCpu(result, shape, slice)
 
-proc randomTensor*[T](shape: varargs[int], sample_source: openarray[T]): Tensor[T] {.noInit.} =
+proc randomTensor*[T](shape: varargs[int], sample_source: openarray[T]): Tensor[T] {.noinit.} =
   ## Creates a new Tensor filled with values uniformly sampled from ``sample_source``
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
@@ -280,7 +280,7 @@ proc randomNormal(mean = 0.0, std = 1.0): float =
     valid = false
     return rho*sin(2.0*PI*x)*std+mean
 
-proc randomNormalTensor*[T:SomeFloat](shape: varargs[int], mean:T = 0, std:T = 1): Tensor[T] {.noInit.} =
+proc randomNormalTensor*[T:SomeFloat](shape: varargs[int], mean:T = 0, std:T = 1): Tensor[T] {.noinit.} =
   ## Creates a new Tensor filled with values in the normal distribution
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
@@ -297,7 +297,7 @@ proc randomNormalTensor*[T:SomeFloat](shape: varargs[int], mean:T = 0, std:T = 1
   for i in 0 ..< size:
     result.storage.raw_buffer[i] = T(randomNormal(mean.float, std.float))
 
-proc linspace*[T: SomeNumber](start, stop: T, num: int, endpoint = true): Tensor[float] {.noInit.} =
+proc linspace*[T: SomeNumber](start, stop: T, num: int, endpoint = true): Tensor[float] {.noinit.} =
   ## Creates a new 1d-tensor with `num` values linearly spaced between
   ## the closed interval [start, stop] (`endpoint == true`) or in the
   ## half open interval [start, stop) (`endpoint == false`).
@@ -324,7 +324,7 @@ proc linspace*[T: SomeNumber](start, stop: T, num: int, endpoint = true): Tensor
 proc logspace*[T: SomeNumber](start, stop: T,
                               num: int,
                               base = 10.0,
-                              endpoint = true): Tensor[float] {.noInit.} =
+                              endpoint = true): Tensor[float] {.noinit.} =
   ## Creates a new 1d-tensor with `num` values linearly spaced in log space
   ## of base `base` either in the closed interval [start, stop] (`endpoint == true`)
   ## or in the half open interval [start, stop) (`endpoint == false`).

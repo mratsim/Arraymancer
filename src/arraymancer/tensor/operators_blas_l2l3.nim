@@ -85,7 +85,7 @@ proc gemm*[T: SomeNumber](
   C: var Tensor[T]) {.deprecated: "Use explicit gemm(1, A, B, 0, C) instead".}=
   gemm(1.T, A, B, 0.T, C)
 
-proc `*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
+proc `*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noinit.} =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
   ##
   ## Float and complex operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.
@@ -100,7 +100,7 @@ proc `*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noInit.} =
     raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
 
 proc `*`*[T: Complex[float32] or Complex[float64]](
-      a, b: Tensor[T]): Tensor[T] {.noInit.} =
+      a, b: Tensor[T]): Tensor[T] {.noinit.} =
   ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
   ##
   ## Float and complex operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.

@@ -24,12 +24,12 @@ import  ./backend/opencl_backend,
 # #########################################################
 # # Broadcasting Tensor-Tensor
 # # And element-wise multiplication (Hadamard) and division
-proc `+.`*[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T] {.noInit,inline.} =
+proc `+.`*[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T] {.noinit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a + tmp_b
 
-proc `-.`*[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T] {.noInit,inline.} =
+proc `-.`*[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T] {.noinit,inline.} =
   ## Broadcasted addition for tensors of incompatible but broadcastable shape.
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = tmp_a - tmp_b
@@ -39,14 +39,14 @@ genClInfixOp(float64, "double", elwise_mul, "clAdd", "*", exported = false)
 genClInfixOp(float32, "float", elwise_div, "clSub", "/", exported = false)
 genClInfixOp(float64, "double", elwise_div, "clSub", "/", exported = false)
 
-proc `*.`*[T: SomeFloat](a,b: ClTensor[T]): ClTensor[T] {.noInit.} =
+proc `*.`*[T: SomeFloat](a,b: ClTensor[T]): ClTensor[T] {.noinit.} =
   ## Element-wise multiplication (Hadamard product).
   ##
   ## And broadcasted element-wise multiplication.
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = elwise_mul(tmp_a, tmp_b)
 
-proc `/.`*[T: SomeFloat](a,b: ClTensor[T]): ClTensor[T] {.noInit.} =
+proc `/.`*[T: SomeFloat](a,b: ClTensor[T]): ClTensor[T] {.noinit.} =
   ## Element-wise multiplication (Hadamard product).
   ##
   ## And broadcasted element-wise multiplication.

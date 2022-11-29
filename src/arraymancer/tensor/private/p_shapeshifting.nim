@@ -112,7 +112,7 @@ proc broadcast2Impl*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T]
   result.b.offset = b.offset
 
 
-proc exch_dim*[T](t: Tensor[T], dim1, dim2: int): Tensor[T] {.noInit,noSideEffect.}=
+proc exch_dim*[T](t: Tensor[T], dim1, dim2: int): Tensor[T] {.noinit,noSideEffect.}=
   if dim1 == dim2:
     return
 

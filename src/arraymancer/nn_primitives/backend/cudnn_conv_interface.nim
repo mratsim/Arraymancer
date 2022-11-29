@@ -44,7 +44,7 @@ type ConvAlgoSpace*[T: SomeFloat, Algo] = object
 # #####################################################################
 # Convolution descriptor
 
-proc initConv2DConfig(padding, strides, dilation: SizeHW): ConvConfig[2] {.inline, noInit.}=
+proc initConv2DConfig(padding, strides, dilation: SizeHW): ConvConfig[2] {.inline, noinit.}=
   result.pad = [padding[0].cint, padding[1].cint]
   result.strides = [strides[0].cint, strides[1].cint]
   result.dilation = [dilation[0].cint, dilation[1].cint]
@@ -55,7 +55,7 @@ template getPtr[N: static[int]](convConfig: ConvConfig[N], field: untyped): ptr 
 proc newConvDesc( convolution_dimension: range[2..3],
                   convolution_config: ConvConfig,
                   convolution_mode: cudnnConvolutionMode_t,
-                  T: typedesc): cudnnConvolutionDescriptor_t {.inline, noInit.}=
+                  T: typedesc): cudnnConvolutionDescriptor_t {.inline, noinit.}=
   check cudnnCreateConvolutionDescriptor(addr result)
   check cudnnSetConvolutionNdDescriptor(
     result,
@@ -67,7 +67,7 @@ proc newConvDesc( convolution_dimension: range[2..3],
     T.asCudnnType
   )
 
-proc newConv2dDesc*[T: SomeFloat](padding, strides, dilation: SizeHW): cudnnConvolutionDescriptor_t {.noInit, inline.}=
+proc newConv2dDesc*[T: SomeFloat](padding, strides, dilation: SizeHW): cudnnConvolutionDescriptor_t {.noinit, inline.}=
   let convConfig = initConv2DConfig(padding, strides, dilation)
   result = newConvDesc(2, convConfig, CUDNN_CROSS_CORRELATION, T)
 
@@ -75,7 +75,7 @@ proc newConv2dDesc*[T: SomeFloat](padding, strides, dilation: SizeHW): cudnnConv
 # Convolution kernel descriptor
 
 proc newCudnnConvKernelDesc*[T: SomeFloat](
-  convKernel: CudaTensor[T]): cudnnFilterDescriptor_t {.inline, noInit.}=
+  convKernel: CudaTensor[T]): cudnnFilterDescriptor_t {.inline, noinit.}=
   # TODO: destroy descriptor automatically
   check cudnnCreateFilterDescriptor(result.addr)
 
@@ -92,7 +92,7 @@ proc newCudnnConvKernelDesc*[T: SomeFloat](
     addr filters[0]
   )
 
-proc convOutDims*(input, kernel: CudaTensor, padding, strides, dilation: SizeHW): Metadata {.inline, noInit.}=
+proc convOutDims*(input, kernel: CudaTensor, padding, strides, dilation: SizeHW): Metadata {.inline, noinit.}=
 
   ## Each dimension of the (nbDims-2)-D images of the output tensor is computed as followed:
   ##   outputDim = 1 + ( inputDim + 2*pad - (((filterDim-1)*upscaleA)+1) )/ convolutionStride;
@@ -137,7 +137,7 @@ proc newConvAlgoSpace*[T: SomeFloat](
   kernelDesc: cudnnFilterDescriptor_t,
   convDesc: cudnnConvolutionDescriptor_t,
   dstTensorDesc: cudnnTensorDescriptor_t
-): ConvAlgoSpace[T, cudnnConvolutionFwdAlgo_t] {.noInit.}=
+): ConvAlgoSpace[T, cudnnConvolutionFwdAlgo_t] {.noinit.}=
 
   when defined(debug):
     echo "\nCudnn conv2d - get forward algorithm"
@@ -182,7 +182,7 @@ proc conv_bwd_kernel_algo_workspace*[T: SomeFloat](
   gradOutputTensorDesc: cudnnTensorDescriptor_t, # gradOuput is the gradient of the output. Result will be the gradient of the input
   gradKernelDesc: cudnnFilterDescriptor_t,
   convDesc: cudnnConvolutionDescriptor_t
-): ConvAlgoSpace[T, cudnnConvolutionBwdFilterAlgo_t] {.noInit.}=
+): ConvAlgoSpace[T, cudnnConvolutionBwdFilterAlgo_t] {.noinit.}=
 
   when defined(debug):
     echo "\nCudnn conv2d - get backward kernel algorithm"
@@ -228,7 +228,7 @@ proc conv_bwd_data_algo_workspace*[T: SomeFloat](
   kernelDesc: cudnnFilterDescriptor_t,
   convDesc: cudnnConvolutionDescriptor_t,
   gradInputTensorDesc: cudnnTensorDescriptor_t # gradInput is what we want to compute in the backward pass
-): ConvAlgoSpace[T, cudnnConvolutionBwdDataAlgo_t] {.noInit.}=
+): ConvAlgoSpace[T, cudnnConvolutionBwdDataAlgo_t] {.noinit.}=
 
   when defined(debug):
     echo "\nCudnn conv2d - get backward data algorithm"

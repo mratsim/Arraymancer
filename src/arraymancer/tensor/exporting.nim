@@ -46,6 +46,12 @@ proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect, deprecated: "This proc ca
   elif t is CudaTensor:
     return t.cpu.data
 
+proc toFlatSeq*[T](t: Tensor[T]) : seq[T] =
+  ## Export the data of the Tensor flattened as a Seq
+  result = newSeq[T](t.size)
+  for i, e in enumerate(t):
+    result[i] = e
+
 proc export_tensor*[T](t: Tensor[T]):
   tuple[shape: seq[int], strides: seq[int], data: seq[T]] {.noSideEffect.}=
   ## Export the tensor as a tuple containing
@@ -59,13 +65,7 @@ proc export_tensor*[T](t: Tensor[T]):
 
   result.shape = contig_t.shape
   result.strides = contig_t.strides
-  result.data = contig_t.toRawSeq
-
-proc toFlatSeq*[T](t: Tensor[T]) : seq[T] =
-  ## Export the data of the Tensor flattened as a Seq
-  result = newSeq[T](t.size)
-  for i, e in enumerate(t):
-    result[i] = e
+  result.data = contig_t.toFlatSeq
 
 proc toSeq1D*[T](t: Tensor[T]): seq[T] =
   ## Exports a rank-1 tensor to a 1D sequence

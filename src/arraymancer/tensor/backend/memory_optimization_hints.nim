@@ -18,7 +18,8 @@
 # They must be redeclared within each proc.
 # As a workaround we use a template
 
-import ../../std_version_types
+when (NimMajor, NimMinor) < (1, 4):
+  import ../../std_version_types
 
 template withMemoryOptimHints*() =
   when not defined(js):

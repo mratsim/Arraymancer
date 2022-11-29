@@ -69,11 +69,11 @@ proc ex02() =
   network DemoNet:
     layers h, w:
       cv1:        Conv2D(@[1, h, w], 20, (5, 5))
-      mp1:        Maxpool2D(cv1.out_shape, (2,2), (0,0), (2,2))
-      cv2:        Conv2D(mp1.out_shape, 50, (5, 5))
-      mp2:        MaxPool2D(cv2.out_shape, (2,2), (0,0), (2,2))
-      fl:         Flatten(mp2.out_shape)
-      hidden:     Linear(fl.out_shape[0], 500)
+      mp1:        MaxPool2D(cv1.outShape, (2,2), (0,0), (2,2))
+      cv2:        Conv2D(mp1.outShape, 50, (5, 5))
+      mp2:        MaxPool2D(cv2.outShape, (2,2), (0,0), (2,2))
+      fl:         Flatten(mp2.outShape)
+      hidden:     Linear(fl.outShape[0], 500)
       classifier: Linear(500, 10)
     forward x:
       x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier

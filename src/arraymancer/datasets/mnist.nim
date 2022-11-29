@@ -143,7 +143,7 @@ proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noinit.}=
 
 func mnistFilesPath(cache_dir: string): array[4, string] =
   for idx, val in result.mpairs:
-    val = cache_dir / MNISTFileNames[idx]
+    val = cache_dir / MNISTFilenames[idx]
 
 proc download_mnist_files(files: array[4, string]) =
   ## Download the MNIST files from http://yann.lecun.com/exdb/mnist/

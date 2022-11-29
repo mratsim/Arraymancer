@@ -13,7 +13,7 @@
 # limitations under the License.
 
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, math
 
 

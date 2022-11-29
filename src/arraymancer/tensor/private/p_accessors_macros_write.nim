@@ -73,9 +73,9 @@ proc slicerMut*[T](t: var Tensor[T],
   slicerMutImpl_val(t, full_slices, val)
 
 # ###########################################################################
-# Assign value from an openarray of the same shape
+# Assign value from an openArray of the same shape
 
-template slicerMutImpl_oa[T](t: var Tensor[T], slices: openArray[SteppedSlice], oa: openarray) =
+template slicerMutImpl_oa[T](t: var Tensor[T], slices: openArray[SteppedSlice], oa: openArray) =
   ## Assign value from openarrays
 
   var sliced = t.slicer(slices)
@@ -92,17 +92,17 @@ template slicerMutImpl_oa[T](t: var Tensor[T], slices: openArray[SteppedSlice], 
   for i, x in sliced.menumerate:
     x = data[i]
 
-proc slicerMut*[T](t: var Tensor[T], slices: openArray[SteppedSlice], oa: openarray) {.noSideEffect.}=
-  ## Assign value from openarrays
-  ## The openarray must have the same shape as the slice
+proc slicerMut*[T](t: var Tensor[T], slices: openArray[SteppedSlice], oa: openArray) {.noSideEffect.}=
+  ## Assign value from openArrays
+  ## The openArray must have the same shape as the slice
   slicerMutImpl_oa(t, slices, oa)
 
 proc slicerMut*[T](t: var Tensor[T],
                   slices: openArray[SteppedSlice],
                   ellipsis: Ellipsis,
-                  oa: openarray) {.noSideEffect.}=
-  ## Assign value from openarrays
-  ## The openarray must have the same shape as the slice
+                  oa: openArray) {.noSideEffect.}=
+  ## Assign value from openArrays
+  ## The openArray must have the same shape as the slice
   # TODO: tests
   let full_slices = slices.toArrayOfSlices & initSpanSlices(t.rank - slices.len)
   slicerMutImpl_oa(t, slices, oa)
@@ -110,9 +110,9 @@ proc slicerMut*[T](t: var Tensor[T],
 proc slicerMut*[T](t: var Tensor[T],
                   ellipsis: Ellipsis,
                   slices: openArray[SteppedSlice],
-                  oa: openarray) {.noSideEffect.}=
-  ## Assign value from openarrays
-  ## The openarray must have the same shape as the slice
+                  oa: openArray) {.noSideEffect.}=
+  ## Assign value from openArrays
+  ## The openArray must have the same shape as the slice
   # TODO: tests
   let full_slices = initSpanSlices(t.rank - slices.len) & slices.toArrayOfSlices
   slicerMutImpl_oa(t, slices, oa)
@@ -122,9 +122,9 @@ proc slicerMut*[T](t: var Tensor[T],
                 slices1: openArray[SteppedSlice],
                 ellipsis: Ellipsis,
                 slices2: openArray[SteppedSlice],
-                oa: openarray) {.noSideEffect.}=
-  ## Assign value from openarrays
-  ## The openarray must have the same shape as the slice
+                oa: openArray) {.noSideEffect.}=
+  ## Assign value from openArrays
+  ## The openArray must have the same shape as the slice
   # TODO: tests
   let full_slices = concat(slices1,
                             initSpanSlices(t.rank - slices1.len - slices2.len),

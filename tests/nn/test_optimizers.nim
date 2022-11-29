@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import
-  ../../src/arraymancer, aux_rosenbrock, ../testutils,
+  ../../src/arraymancer, aux_rosenbrock,
   unittest, random, strformat
 
 # ############################################################

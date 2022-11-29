@@ -1,7 +1,7 @@
 # Copyright (c) 2019 the Arraymancer contributors
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, sequtils
 
 # The tests are adapted from here:
@@ -10,7 +10,7 @@ import unittest, sequtils
 proc main() =
   suite "Einsum":
     test "Transposition of a tensor":
-      let a = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
+      let a = toSeq(0 .. 5).toTensor.reshape([2, 3]).astype(float)
       let b = einsum(a):
         b[j,i] = a[i,j]
       let res = [[ 0.0,  3.0],
@@ -19,37 +19,37 @@ proc main() =
       doAssert res == b
 
     test "Contraction of a whole tensor":
-      let a = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
+      let a = toSeq(0 .. 5).toTensor.reshape([2, 3]).astype(float)
       let b = einsum(a):
         b = a[i,j]
       let res = 15.0
       doAssert res == b
 
     test "Contraction of a column":
-      let a = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
+      let a = toSeq(0 .. 5).toTensor.reshape([2, 3]).astype(float)
       let b = einsum(a):
         b[j] = a[i,j]
       let res = [3.0, 5.0, 7.0].toTensor
       doAssert res == b
 
     test "Contraction of a row":
-      let a = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
+      let a = toSeq(0 .. 5).toTensor.reshape([2, 3]).astype(float)
       let b = einsum(a):
         b[i] = a[i,j]
       let res = [3.0, 12.0].toTensor
       doAssert res == b
 
     test "Matrix-vector multiplication ~ implicit":
-      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
-      let v = toSeq(0 .. 2).toTensor.asType(float)
+      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).astype(float)
+      let v = toSeq(0 .. 2).toTensor.astype(float)
       let b = einsum(m, v):
         m[i,k] * v[k]
       let res = [5.0, 14.0].toTensor
       doAssert res == b
 
     test "Matrix-vector multiplication ~ explicit":
-      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
-      let v = toSeq(0 .. 2).toTensor.asType(float)
+      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).astype(float)
+      let v = toSeq(0 .. 2).toTensor.astype(float)
       let b = einsum(m, v):
         b[i] = m[i,k] * v[k]
       let res = [5.0, 14.0].toTensor
@@ -57,8 +57,8 @@ proc main() =
 
     test "Matrix-matrix multiplication ~ implicit":
       # TODO: Fix the order of the implicit loops
-      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
-      let n = toSeq(0 .. 14).toTensor.reshape([3, 5]).asType(float)
+      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).astype(float)
+      let n = toSeq(0 .. 14).toTensor.reshape([3, 5]).astype(float)
       let b = einsum(m, n):
         m[i,k] * n[k, j]
       let res = [[  25.0,   28.0,   31.0,   34.0,   37.0],
@@ -66,8 +66,8 @@ proc main() =
       doAssert res == b
 
     test "Matrix-matrix multiplication ~ explicit":
-      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
-      let n = toSeq(0 .. 14).toTensor.reshape([3, 5]).asType(float)
+      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).astype(float)
+      let n = toSeq(0 .. 14).toTensor.reshape([3, 5]).astype(float)
       let b = einsum(m, n):
         b[i,j] = m[i,k] * n[k, j]
       let res = [[  25.0,   28.0,   31.0,   34.0,   37.0],
@@ -75,40 +75,40 @@ proc main() =
       doAssert res == b
 
     test "Dot product ~ implicit":
-      let v = toSeq(0 .. 2).toTensor.asType(float)
-      let w = toSeq(3 .. 5).toTensor.asType(float)
+      let v = toSeq(0 .. 2).toTensor.astype(float)
+      let w = toSeq(3 .. 5).toTensor.astype(float)
       let b = einsum(v, w):
         v[i] * w[i]
       let res = 14.0
       doAssert res == b
 
     test "Dot product ~ explicit":
-      let v = toSeq(0 .. 2).toTensor.asType(float)
-      let w = toSeq(3 .. 5).toTensor.asType(float)
+      let v = toSeq(0 .. 2).toTensor.astype(float)
+      let w = toSeq(3 .. 5).toTensor.astype(float)
       let b = einsum(v, w):
         b = v[i] * w[i]
       let res = 14.0
       doAssert res == b
 
     test "Matrix dot product ~ implicit":
-      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
-      let n = toSeq(6 .. 11).toTensor.reshape([2, 3]).asType(float)
+      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).astype(float)
+      let n = toSeq(6 .. 11).toTensor.reshape([2, 3]).astype(float)
       let b = einsum(m, n):
         m[i, j] * n[i, j]
       let res = 145.0
       doAssert res == b
 
     test "Matrix dot product ~ explcit":
-      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
-      let n = toSeq(6 .. 11).toTensor.reshape([2, 3]).asType(float)
+      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).astype(float)
+      let n = toSeq(6 .. 11).toTensor.reshape([2, 3]).astype(float)
       let b = einsum(m, n):
         b = m[i, j] * n[i, j]
       let res = 145.0
       doAssert res == b
 
     test "Hadamard product":
-      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
-      let n = toSeq(6 .. 11).toTensor.reshape([2, 3]).asType(float)
+      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).astype(float)
+      let n = toSeq(6 .. 11).toTensor.reshape([2, 3]).astype(float)
       let b = einsum(m, n):
         b[i, j] = m[i, j] * n[i, j]
       let res = [[  0.0,   7.0,  16.0],
@@ -116,8 +116,8 @@ proc main() =
       doAssert res == b
 
     test "Outer product":
-      let v = toSeq(0 .. 2).toTensor.asType(float)
-      let w = toSeq(3 .. 6).toTensor.asType(float)
+      let v = toSeq(0 .. 2).toTensor.astype(float)
+      let w = toSeq(3 .. 6).toTensor.astype(float)
       let b = einsum(v, w):
         b[i, j] = v[i] * w[j]
       let res = [[  0.0,   0.0,   0.0,   0.0],
@@ -131,27 +131,27 @@ proc main() =
       [[0, 0, 0], [0, 0, 1], [0, -1, 0]],
       [[0, 0, -1], [0, 0, 0], [1, 0, 0]],
       [[0, 1, 0], [-1, 0, 0], [0, 0, 0]],
-    ].toTensor.asType(float)
+    ].toTensor.astype(float)
 
     test "Cross product":
-      let v = [1, 0, 0].toTensor.asType(float)
-      let w = [0, 1, 0].toTensor.asType(float)
+      let v = [1, 0, 0].toTensor.astype(float)
+      let w = [0, 1, 0].toTensor.astype(float)
       let b = einsum(epsilon, v, w):
         b[i] = epsilon[i, j, k] * v[j] * w[k]
       let res = [0.0, 0.0, 1.0].toTensor
       doAssert res == b
 
     test "Batch cross product":
-      let v = [[1, 0, 0], [1, 0, 0]].toTensor.asType(float)
-      let w = [[1, 0, 0], [0, 1, 0]].toTensor.asType(float)
+      let v = [[1, 0, 0], [1, 0, 0]].toTensor.astype(float)
+      let w = [[1, 0, 0], [0, 1, 0]].toTensor.astype(float)
       let b = einsum(epsilon, v, w):
         b[i, j] = epsilon[j, k, l] * v[i, k] * w[i, l]
       let res = [[0.0, 0.0, 0.0], [0.0, 0.0, 1.0]].toTensor
       doAssert res == b
 
     test "'Batch' Matrix multiplication (tensor contraction)":
-      let m = toSeq(0 .. 29).toTensor.reshape([3, 2, 5]).asType(float)
-      let n = toSeq(30 .. 74).toTensor.reshape([3, 5, 3]).asType(float)
+      let m = toSeq(0 .. 29).toTensor.reshape([3, 2, 5]).astype(float)
+      let n = toSeq(30 .. 74).toTensor.reshape([3, 5, 3]).astype(float)
       let b = einsum(m, n):
         b[i,j,l] = m[i,j,k] * n[i,k,l]
       let res = [[[ 390.0,  400.0,  410.0],
@@ -163,8 +163,8 @@ proc main() =
       doAssert res == b
 
     test "Larger tensor contraction ~ implicit & explicit":
-      let m = toSeq(0 .. 209).toTensor.reshape([2, 3, 5, 7]).asType(float)
-      let n = toSeq(0 .. 179).toTensor.reshape([2, 3, 3, 2, 5]).asType(float)
+      let m = toSeq(0 .. 209).toTensor.reshape([2, 3, 5, 7]).astype(float)
+      let n = toSeq(0 .. 179).toTensor.reshape([2, 3, 3, 2, 5]).astype(float)
       let bImpl = einsum(m, n):
         m[p,q,r,s] * n[t,u,q,v,r]
       let resShape = @[2, 7, 2, 3, 2]
@@ -175,9 +175,9 @@ proc main() =
       doAssert bImpl == bExpl
 
     test "Bilinear transformation / working with 3 tensors":
-      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).asType(float)
-      let n = toSeq(0 .. 5 * 3 * 7 - 1).toTensor.reshape([5, 3, 7]).asType(float)
-      let p = toSeq(0 .. 13).toTensor.reshape([2, 7]).asType(float)
+      let m = toSeq(0 .. 5).toTensor.reshape([2, 3]).astype(float)
+      let n = toSeq(0 .. 5 * 3 * 7 - 1).toTensor.reshape([5, 3, 7]).astype(float)
+      let p = toSeq(0 .. 13).toTensor.reshape([2, 7]).astype(float)
       let b = einsum(m, n, p):
         b[i,j] = m[i,k] * n[j,k,l] * p[i,l]
       let res = [[ 1008.0,  2331.0,  3654.0,  4977.0,  6300.0],
@@ -186,7 +186,7 @@ proc main() =
 
     # and now for some tests `pytorch.einsum` apparently cannot do
     test "Diagonal elements":
-      let m = toSeq(0 .. 8).toTensor.reshape([3, 3]).asType(float)
+      let m = toSeq(0 .. 8).toTensor.reshape([3, 3]).astype(float)
       let b = einsum(m):
         b[i] = m[i, i]
       let res = [0.0, 4.0, 8.0].toTensor
@@ -197,8 +197,8 @@ proc main() =
         result = einsum(x, y):
           x[i, k] * y[i, k]
 
-      let a = [[0, 0, 1], [1, 0, 0], [1, 1, 0]].toTensor.asType(float32)
-      let b = [[0, 0, 1], [0, 1, 0], [0, 0, 1]].toTensor.asType(float32)
+      let a = [[0, 0, 1], [1, 0, 0], [1, 1, 0]].toTensor.astype(float32)
+      let b = [[0, 0, 1], [0, 1, 0], [0, 0, 1]].toTensor.astype(float32)
 
       let res = einsumWithScalarOutput(a, b)
       doAssert res == 1.0'f32
@@ -208,11 +208,11 @@ proc main() =
         result = einsum(x, y):
           r[i] = x[i, k] * y[i, k]
 
-      let a = [[0, 0, 1], [1, 0, 0], [1, 1, 0]].toTensor.asType(float32)
-      let b = [[0, 0, 1], [0, 1, 0], [0, 0, 1]].toTensor.asType(float32)
+      let a = [[0, 0, 1], [1, 0, 0], [1, 1, 0]].toTensor.astype(float32)
+      let b = [[0, 0, 1], [0, 1, 0], [0, 0, 1]].toTensor.astype(float32)
 
       let res = einsumWithTensorOutput(a, b)
-      doAssert res == [1, 0, 0].toTensor.asType(float32)
+      doAssert res == [1, 0, 0].toTensor.astype(float32)
 
 main()
 GC_fullCollect()

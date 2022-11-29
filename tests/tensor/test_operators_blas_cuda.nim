@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Please compile with -d:cuda switch
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, sugar, math
 
 testSuite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":

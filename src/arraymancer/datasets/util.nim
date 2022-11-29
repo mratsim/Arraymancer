@@ -15,7 +15,7 @@
 import os
 
 proc get_cache_home(): string =
-    result = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache").string
+    result = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache")
 
 proc get_cache_dir*(): string =
     result = get_cache_home() / "arraymancer"

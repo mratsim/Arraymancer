@@ -386,7 +386,7 @@ proc gru_backward*[T: SomeFloat](
   ## ⚠️ API subject to change to match CuDNNs
 
   ## Outputs:
-  ##   - dinput, dhidden0, dW3s, dU3s:
+  ##   - dinput, dHidden0, dW3s, dU3s:
   ##     Gradient tensors, will hold the results corresponding to the respective gradients of:
   ##     - `input`: Input tensor during the forward pass of shape [sequence/timesteps, batch, features]
   ##     - `hidden`: Hidden states during the forward pass of shape [num_stacked_layers * num_directions, batch, hidden_size]
@@ -433,7 +433,7 @@ proc gru_backward*[T: SomeFloat](
     doAssert x.len == seq_len
 
   # 1. Preallocate the results (TODO: separate alloc from compute so that users can pass buffers)
-  dhidden0 = newTensorUninit[T](num_stacked_layers, batch_size, hidden_size)
+  dHidden0 = newTensorUninit[T](num_stacked_layers, batch_size, hidden_size)
   dW3s0 = zeros_like(W3s0)
   if num_stacked_layers > 1:
     dW3sN = zeros_like(W3sN)
@@ -487,7 +487,7 @@ proc gru_backward*[T: SomeFloat](
       if timestep != 0:
         dht1 = dht
       else:
-        dhidden0[layer, _, _] = dht.unsqueeze(0)
+        dHidden0[layer, _, _] = dht.unsqueeze(0)
 
       # Accumulate the contribution of weights
       if layer == 0:

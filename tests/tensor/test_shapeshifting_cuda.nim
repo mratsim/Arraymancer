@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, sugar, sequtils
 
 testSuite "CUDA: Shapeshifting":
@@ -28,25 +28,25 @@ testSuite "CUDA: Shapeshifting":
     # |2      0       4       3       2       0|
 
     let b = a.asContiguous()
-    check: b.cpu.toRawSeq == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
+    check: b.cpu.toSeq1D == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
 
     # a is already contiguous, even if wrong layout.
     # Nothing should be done
     let c = a.asContiguous(colMajor)
-    check: c.cpu.toRawSeq == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
+    check: c.cpu.toSeq1D == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
 
     # force parameter has been used.
     # Layout will change even if a was contiguous
     let d = a.asContiguous(colMajor, force = true)
-    check: d.cpu.toRawSeq == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
+    check: d.cpu.toSeq1D == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
 
 
     # Now test with a non-contiguous tensor
     let u = a[_,0..1]
-    check: u.cpu.toRawSeq == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
+    check: u.cpu.toSeq1D == @[7.0, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
     check: u.cpu == [7.0,4,8,1,2,0].toTensor.reshape([3,2])
 
-    check: u.asContiguous(rowMajor, force=true).cpu.toRawSeq == @[7.0,4,8,1,2,0]
+    check: u.asContiguous(rowMajor, force=true).cpu.toSeq1D == @[7.0,4,8,1,2,0]
 
   test "Unsafe reshape":
     block:

@@ -17,12 +17,9 @@ import
   ../laser/tensor/initialization,
   ../laser/strided_iteration/foreach,
   ./data_structure,
-  # Third-party
-  nimblas,
   # Standard library
   random,
-  math,
-  typetraits
+  math
 
 export initialization
 
@@ -182,8 +179,8 @@ proc arange*[T: SomeNumber](start, stop, step: T): Tensor[T] {.noinit.} =
   # TODO: proper exceptions
   assert step != 0, "Step must be non-zero"
   when T is SomeFloat:
-    assert start.classify() notin {fcNaN, fcInf, fcNegInf}
-    assert stop.classify() notin {fcNaN, fcInf, fcNegInf}
+    assert start.classify() notin {fcNan, fcInf, fcNegInf}
+    assert stop.classify() notin {fcNan, fcInf, fcNegInf}
   assert (step > 0 and stop >= start) or (step < 0 and stop <= start), "bounds inconsistent with step sign"
 
   var size_f64 = ceil((stop.float64 - start.float64) / step.float64)
@@ -249,7 +246,7 @@ proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] {.noinit.
   ##      - A tensor of the input shape filled with random value in the slice range
   randomTensorCpu(result, shape, slice)
 
-proc randomTensor*[T](shape: varargs[int], sample_source: openarray[T]): Tensor[T] {.noinit.} =
+proc randomTensor*[T](shape: varargs[int], sample_source: openArray[T]): Tensor[T] {.noinit.} =
   ## Creates a new Tensor filled with values uniformly sampled from ``sample_source``
   ##
   ## Random seed can be set by importing ``random`` and ``randomize(seed)``
@@ -305,8 +302,8 @@ proc linspace*[T: SomeNumber](start, stop: T, num: int, endpoint = true): Tensor
   ## Resulting size is `num`.
   # TODO: proper exceptions
   when T is SomeFloat:
-    assert start.classify() notin {fcNaN, fcInf, fcNegInf}
-    assert stop.classify() notin {fcNaN, fcInf, fcNegInf}
+    assert start.classify() notin {fcNan, fcInf, fcNegInf}
+    assert stop.classify() notin {fcNan, fcInf, fcNegInf}
   result = newTensorUninit[float](num)
   var
     step = start.float

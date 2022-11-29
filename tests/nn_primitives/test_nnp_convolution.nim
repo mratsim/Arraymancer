@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-import ../../src/arraymancer, ../testutils
-import unittest, math, sugar
+import ../../src/arraymancer
+import unittest, sugar
 
 proc main() =
   suite "Convolution 2D":

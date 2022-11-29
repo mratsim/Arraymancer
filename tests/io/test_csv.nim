@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, os
 
 proc main() =
@@ -100,7 +100,7 @@ with a line break, ugh
       check content == expected_output_1d
 
     test "Read 1D serialized tensor":
-      let tRead = readCsv[int](test_file_path, skipHeader = true)
+      let tRead = read_csv[int](test_file_path, skipHeader = true)
       let tExp = @[@[0, 1], @[1, 2], @[2, 3], @[3, 4], @[4, 5]].toTensor()
       check tExp == tRead
 
@@ -124,19 +124,19 @@ with a line break, ugh
 
     test "CSV parsing ignores empty lines":
       writeFile(test_file_path, csv_empty_lines)
-      let tRead = readCsv[int](test_file_path, skipHeader = true)
+      let tRead = read_csv[int](test_file_path, skipHeader = true)
       let tExp = @[@[0, 1], @[1, 2], @[2, 3], @[3, 4], @[4, 5]].toTensor()
       check tExp == tRead
 
     test "CSV parsing of different (semicolon) separators works":
       writeFile(test_file_path, csv_semicolon_short)
-      let tRead = readCsv[int](test_file_path, separator = ';', skipHeader = true)
+      let tRead = read_csv[int](test_file_path, separator = ';', skipHeader = true)
       let tExp = @[@[0, 1], @[1, 2], @[2, 3], @[3, 4], @[4, 5]].toTensor()
       check tExp == tRead
 
     test "CSV parsing of file with quoted content works":
       writeFile(test_file_path, csv_with_quoted)
-      let tRead = readCsv[string](test_file_path, quote = '\"', skipHeader = true)
+      let tRead = read_csv[string](test_file_path, quote = '\"', skipHeader = true)
       let tExp = @[@["0", "A"],
                    @["1", "B"],
                    @["2", """hello, this is a string

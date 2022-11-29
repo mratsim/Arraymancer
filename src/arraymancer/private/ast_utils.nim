@@ -16,22 +16,22 @@
 
 import macros
 
-proc hasType*(x: NimNode, t: static[string]): bool {. compileTime .} =
+proc hastype*(x: NimNode, t: static[string]): bool {. compileTime .} =
   ## Compile-time type checking
   sameType(x, bindSym(t))
 
 proc isInt*(x: NimNode): bool {. compileTime .} =
   ## Compile-time type checking
-  hasType(x, "int")
+  hastype(x, "int")
 
 proc isBool*(x: NimNode): bool {. compileTime .} =
   ## Compile-time type checking
-  hasType(x, "bool")
+  hastype(x, "bool")
 
-proc isOpenarray*(x: NimNode): bool {. compileTime .} =
+proc isOpenArray*(x: NimNode): bool {. compileTime .} =
   ## Compile-time type checking
   doAssert false, "This is broken for generics https://github.com/nim-lang/Nim/issues/14021"
-  hasType(x, "array") or hasType(x, "seq") or hasType(x, "openArray")
+  hastype(x, "array") or hastype(x, "seq") or hastype(x, "openArray")
 
 proc isAllInt*(slice_args: NimNode): bool {. compileTime .} =
   ## Compile-time type checking

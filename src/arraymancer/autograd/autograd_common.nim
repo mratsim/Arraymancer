@@ -112,7 +112,7 @@ type
 func debug[TT](ctx: Context[TT]) =
   ## Debug the autograd context
 
-  debugecho "\n######"
+  debugEcho "\n######"
   for i, node in ctx.nodes:
     # strformat doesn't work in generics
     # var s = &"Node {i:>4}: {node.name:>12} - "
@@ -136,7 +136,7 @@ func debug[TT](ctx: Context[TT]) =
           s &= ", "
         s &= $payload.value.shape
       s &= ")"
-    debugecho s
+    debugEcho s
 
 # ############################################################
 #

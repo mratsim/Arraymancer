@@ -31,7 +31,7 @@ macro `[]=`*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
   ##     - a single value that will
   ##       - replace the value at the specific coordinates
   ##       - or be applied to the whole slice
-  ##     - an openarray with a shape that matches the slice
+  ##     - an openArray with a shape that matches the slice
   ##     - a tensor with a shape that matches the slice
   ## Result:
   ##   - Nothing, the tensor is modified in-place
@@ -46,7 +46,7 @@ macro `[]=`*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
 
   var tmp = args
   let val = tmp.pop
-  let new_args = getAST(desugar(tmp))
+  let new_args = getAst(desugar(tmp))
 
   result = quote do:
     slice_typed_dispatch_mut(`t`, `new_args`,`val`)

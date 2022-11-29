@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, sugar, sequtils
 
 testSuite "OpenCL: Shapeshifting - broadcasting and non linear algebra elementwise operations":

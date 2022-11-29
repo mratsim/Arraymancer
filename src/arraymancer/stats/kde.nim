@@ -55,15 +55,6 @@ proc getCutoff(bw: float, kind: KernelKind): float =
   of knGauss: result = 3.0 * bw # 3 sigma amounts to 99.7% of gaussian kernel contribution
   of knCustom: doAssert false, "`getCutoff` must not be called with custom kernel!"
 
-proc getKernelFunc(kind: KernelKind): KernelFunc =
-  case kind
-  of knBox: result = boxKernel
-  of knTriangular: result = triangularKernel
-  of knTrig: result = trigonometricKernel
-  of knEpanechnikov: result = epanechnikovKernel
-  of knGauss: result = gaussKernel
-  of knCustom: doAssert false, "`getKernelFunc` must not be called with custom kernel!"
-
 proc findWindow[T](dist: T, s: T, t: Tensor[T], oldStart = 0, oldStop = 0): (int, int) =
   ## returns the index (start or stop) given a distance `dist` that
   ## is allowed between s - x[j]
@@ -129,13 +120,13 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
   ## contribution of the custom kernel is very small (or 0) outside that range.
   let N = t.size
   # `t` not sorted here yet, but does not matter
-  var t = t.asType(float)
+  var t = t.astype(float)
   let A = min(std(t),
               iqr(t) / 1.34)
-  let bwAct = if classify(bw) != fcNaN: bw
+  let bwAct = if classify(bw) != fcNan: bw
               else: 0.9 * A * pow(N.float, -1.0/5.0)
 
-  var weights = weights.asType(float)
+  var weights = weights.astype(float)
   if weights.size > 0:
     doAssert weights.size == t.size
     let sortIdx = t.argsort()
@@ -144,16 +135,16 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
     t = t[sortIdx].clone()
     weights = weights[sortIdx].clone()
   else:
-    t = t.asType(float).sorted
+    t = t.astype(float).sorted
   let (minT, maxT) = (min(t), max(t))
   when U is int:
     let x = linspace(minT, maxT, samples)
     let nsamples = samples
   elif U is seq | array:
-    let x = toTensor(@samples).asType(float)
+    let x = toTensor(@samples).astype(float)
     let nsamples = x.size
   else:
-    let x = samples.asType(float)
+    let x = samples.astype(float)
     let nsamples = x.size
   result = newTensor[float](nsamples)
   let norm = 1.0 / (N.float * bwAct)

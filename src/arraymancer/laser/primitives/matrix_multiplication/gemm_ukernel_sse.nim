@@ -7,6 +7,9 @@ import
   ./gemm_ukernel_generator, ./gemm_tiling,
   ../../simd
 
+# mark as used to avoid unused import warnings
+{.used.}
+
 x86only()
 
 template float32x4_muladd_unfused(a, b, c: m128): m128 =

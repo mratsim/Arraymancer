@@ -50,7 +50,7 @@ macro `[]`*[T](t: AnyTensor[T], args: varargs[untyped]): untyped =
   ##    - Slice from the end - expect non-negative step error - foo[^1..0, 3]
   ##    - Slice from the end - foo[^(2*2)..2*2, 3]
   ##    - Slice from the end - foo[^3..^2, 3]
-  let new_args = getAST(desugar(args))
+  let new_args = getAst(desugar(args))
 
   result = quote do:
     slice_typed_dispatch(`t`, `new_args`)

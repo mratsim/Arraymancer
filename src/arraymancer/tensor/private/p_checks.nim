@@ -14,8 +14,10 @@
 
 import  ../../laser/private/nested_containers,
         ../../laser/tensor/initialization,
-        ../../std_version_types,
         ../data_structure
+
+when (NimMajor, NimMinor) < (1, 4):
+  import ../../std_version_types
 
 include ./p_checks_cuda, ./p_checks_opencl
 
@@ -89,9 +91,9 @@ func check_start_end*(a, b: int, dim_size: int) {.inline.} =
                 $b & " cannot slice a dimension of size " &
                 $dim_size &
                 ". Slicing must be done between 0 (inclusive) and " &
-                $dimsize & " (exclusive).")
+                $dim_size & " (exclusive).")
 
-func check_shape*(a: Tensor; b: Tensor|openarray) {.inline.}=
+func check_shape*(a: Tensor; b: Tensor|openArray) {.inline.}=
   ## Compare shape
 
   when b is Tensor:
@@ -100,7 +102,7 @@ func check_shape*(a: Tensor; b: Tensor|openarray) {.inline.}=
     let b_shape = b.getShape()
 
   if unlikely(a.shape != b_shape):
-    raise newException(IndexDefect, "Your tensors or openarrays do not have the same shape: " &
+    raise newException(IndexDefect, "Your tensors or openArrays do not have the same shape: " &
                                    $a.shape &
                                    " and " & $b_shape)
 

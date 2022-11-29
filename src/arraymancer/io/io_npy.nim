@@ -3,7 +3,6 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  ../private/sequninit,
   ../tensor, ./io_stream_readers,
   ../laser/tensor/initialization,
   os, streams, strscans, strformat, parseutils, strutils, endians
@@ -108,7 +107,7 @@ proc read_npy*[T: SomeNumber](npyPath: string): Tensor[T] {.noinit.} =
     result.initTensorMetadata(size, shape, rowMajor)
   else:
     result.initTensorMetadata(size, shape, colMajor)
-  result.storage.allocCPUStorage(size)
+  result.storage.allocCpuStorage(size)
 
   let r_ptr = result.unsafe_raw_buf()
 

@@ -48,7 +48,7 @@ proc gru_backward_ag[TT](
   let gradients = payload.sequence
   result = newDiffs[TT](7)
   gru_backward(
-    result[0], result[1],                 # Result   dinput, dhidden,
+    result[0], result[1],                 # Result   dinput, dHidden,
     result[2], result[3],                 # Result   dW3s0, dW3sN,
     result[4], result[5], result[6],      # Result   dU3s, dbW3s, dbU3s
     gradients[0].grad, gradients[1].grad, # Incoming dOutput, dHiddenN
@@ -188,9 +188,9 @@ proc init*[T](
       requiresGrad = true
     )
 
-  result.w3s0 = weightInit(            3 * hiddenSize,     numInputFeatures,    xavierUniform)
-  result.w3sN = weightInit(layers - 1, 3 * hiddenSize,     hiddenSize,          xavierUniform)
-  result.u3s  = weightInit(    layers, 3 * hiddenSize,     hiddenSize,          yannNormal)
+  result.w3s0 = weightInit(            3 * hiddenSize,     numInputFeatures,    xavier_uniform)
+  result.w3sN = weightInit(layers - 1, 3 * hiddenSize,     hiddenSize,          xavier_uniform)
+  result.u3s  = weightInit(    layers, 3 * hiddenSize,     hiddenSize,          yann_normal)
 
   result.bW3s = ctx.variable(zeros[T](layers, 1, 3 * hiddenSize), requiresGrad = true)
   result.bU3s = ctx.variable(zeros[T](layers, 1, 3 * hiddenSize), requiresGrad = true)

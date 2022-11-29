@@ -72,7 +72,7 @@ template map_inline*[T](t: Tensor[T], op:untyped): untyped =
 
   type outType = type((
     block:
-      var x{.inject.}: type(items(z));
+      var x{.inject, used.}: type(items(z));
       op
   ))
 

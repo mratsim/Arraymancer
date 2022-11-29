@@ -7,6 +7,9 @@ import
   ./gemm_ukernel_generator, ./gemm_tiling,
   ../../simd
 
+# mark as used to avoid unused import warnings
+{.used.}
+
 x86only()
 
 template int32x8_muladd_unfused_avx2(a, b, c: m256i): m256i =

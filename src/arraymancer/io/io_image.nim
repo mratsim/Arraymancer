@@ -50,7 +50,7 @@ proc read_image*(buffer: seq[byte]): Tensor[uint8] =
   var width, height, channels: int
   let desired_channels = 0 # Channel autodetection
 
-  let raw_pixels = load_from_memory(buffer, width, height, channels, desired_channels)
+  let raw_pixels = loadFromMemory(buffer, width, height, channels, desired_channels)
   result = raw_pixels.toTensor.reshape(width, height, channels).hwc_to_chw
 
 

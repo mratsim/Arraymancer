@@ -3,7 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, sequtils, strformat
 
 proc main() =
@@ -170,7 +170,7 @@ proc main() =
 
       check:
         dx.mean_absolute_error(target_grad_x) < 1e-8
-        dhidden.mean_absolute_error(target_grad_hidden) < 1e-8
+        dHidden.mean_absolute_error(target_grad_hidden) < 1e-8
         dW3.mean_absolute_error(target_grad_W3) < 1e-8
         dU3.mean_absolute_error(target_grad_U3) < 1e-8
         dbW3.mean_absolute_error(target_grad_bW3) < 1e-8
@@ -179,7 +179,7 @@ proc main() =
   suite "[NN Primitives - GRU: Stacked, sequences, bidirectional]":
 
     const
-      Timesteps = 4
+      TimeSteps = 4
       Layers = 2
 
     let x = toTensor([
@@ -468,7 +468,7 @@ proc main() =
 
         check:
           dx.mean_absolute_error(target_grad_x) < tol
-          dhidden0.mean_absolute_error(target_grad_hidden) < tol
+          dHidden0.mean_absolute_error(target_grad_hidden) < tol
           dW3s0.mean_absolute_error(target_grad_W3s0) < tol
           dU3s.mean_absolute_error(target_grad_U3s) < tol
           dbW3s.mean_absolute_error(target_grad_bW3s) < tol

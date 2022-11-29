@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../tensor/backend/openmp,
-        ../tensor,
-        ./private/p_logsumexp
+import ../tensor,
+       ./private/p_logsumexp
 
 proc softmax*[T](input: Tensor[T]): Tensor[T] {.noinit.} =
   ## For each sample in a tensor:

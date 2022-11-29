@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-import ../../src/arraymancer, ../testutils
-import unittest, math, random, sequtils
+import ../../src/arraymancer
+import unittest, random, sequtils
 
 proc main() =
   suite "Load test - OpenMP":

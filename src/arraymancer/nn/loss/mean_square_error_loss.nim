@@ -38,7 +38,7 @@ proc mse_cache[TT](result: Variable[TT], input: Variable[TT], target: TT) =
   ## We expect input with shape [batch_size, features]
 
   # Gate
-  var gate: MSEloss[TT]
+  var gate: MSELoss[TT]
   new gate
   gate.cache = input
   gate.target = target

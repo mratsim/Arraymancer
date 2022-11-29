@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, sequtils
 import complex except Complex64, Complex32
 
@@ -30,30 +30,30 @@ proc main() =
 
         let b = a.asContiguous()
         let b_c = a_c.asContiguous()
-        check: b.toRawSeq == @[7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0]
-        check: b_c.toRawSeq == @[complex64(7'f64,0.0), complex64(4'f64,0.0), complex64(3'f64,0.0), complex64(1'f64,0.0), complex64(8'f64,0.0), complex64(6'f64,0.0), complex64(8'f64,0.0), complex64(1'f64,0.0), complex64(6'f64,0.0), complex64(2'f64,0.0), complex64(6'f64,0.0), complex64(6'f64,0.0), complex64(2'f64,0.0), complex64(0'f64,0.0), complex64(4'f64,0.0), complex64(3'f64,0.0), complex64(2'f64,0.0), complex64(0'f64,0.0)]
+        check: b.toSeq1D == @[7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0]
+        check: b_c.toSeq1D == @[complex64(7'f64,0.0), complex64(4'f64,0.0), complex64(3'f64,0.0), complex64(1'f64,0.0), complex64(8'f64,0.0), complex64(6'f64,0.0), complex64(8'f64,0.0), complex64(1'f64,0.0), complex64(6'f64,0.0), complex64(2'f64,0.0), complex64(6'f64,0.0), complex64(6'f64,0.0), complex64(2'f64,0.0), complex64(0'f64,0.0), complex64(4'f64,0.0), complex64(3'f64,0.0), complex64(2'f64,0.0), complex64(0'f64,0.0)]
 
         # a is already contiguous, even if wrong layout.
         # Nothing should be done
         let c = a.asContiguous(colMajor)
-        check: c.toRawSeq == @[7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0]
+        check: c.toSeq1D == @[7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0]
 
         # force parameter has been used.
         # Layout will change even if a was contiguous
         let d = a.asContiguous(colMajor, force = true)
-        check: d.toRawSeq == @[7, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
+        check: d.toSeq1D == @[7, 8, 2, 4, 1, 0, 3, 6, 4, 1, 2, 3, 8, 6, 2, 6, 6, 0]
 
 
-        # TODO Deprecated: toRawSeq cannot be re-implemented in a backward compatible way to v0.6.0
+        # TODO Deprecated: toSeq1D cannot be re-implemented in a backward compatible way to v0.6.0
         #      and so cannot be used to check the internal memory layout of non-contiguous tensors
 
         # # Now test with a non contiguous tensor
         # let u = a[_,0..1]
-        # check: u.toRawSeq == @[7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0]
+        # check: u.toSeq1D == @[7, 4, 3, 1, 8, 6, 8, 1, 6, 2, 6, 6, 2, 0, 4, 3, 2, 0]
         # check: u == [7,4,8,1,2,0].toTensor.reshape([3,2])
         #
-        # check: u.asContiguous.toRawSeq == @[7,4,8,1,2,0]
-        # check: u.asContiguous(colMajor).toRawSeq == @[7,8,2,4,1,0]
+        # check: u.asContiguous.toSeq1D == @[7,4,8,1,2,0]
+        # check: u.asContiguous(colMajor).toSeq1D == @[7,8,2,4,1,0]
 
       block: # Check Fortran order on 3d+ tensors
         let a = randomTensor([3, 1, 4, 4], 100) # [batch_size, color channel, height, width]

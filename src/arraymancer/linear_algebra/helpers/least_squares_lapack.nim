@@ -3,7 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import
-  nimlapack, fenv,
+  nimlapack,
   ./overload, ./init_colmajor,
   ../../private/sequninit,
   ../../tensor,
@@ -94,7 +94,7 @@ proc gelsd*[T: SomeFloat](
   # now use `work` value to create enough memory
   var work = newSeqUninit[T](workSize.int)
   # stort the now correct size in `lwork`
-  lWork = workSize.int32
+  lwork = workSize.int32
   # And solve the equations A*X = B
   gelsd(
     m.addr, n.addr, nrhs.addr,

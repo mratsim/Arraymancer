@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Please compile with -d:opencl switch
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest
 
 testSuite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":

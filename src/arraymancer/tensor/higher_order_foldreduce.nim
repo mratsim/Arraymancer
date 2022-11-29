@@ -20,8 +20,8 @@ import  ./backend/openmp,
 when not defined(nimHasEffectsOf):
   {.pragma: effectsOf.}
 
-template reduce_inline*[T](t: Tensor[T], op: untyped): untyped =
-  let z = t # ensure that if t is the result of a function it is not called multiple times
+template reduce_inline*[T](arg: Tensor[T], op: untyped): untyped =
+  let z = arg # ensure that if t is the result of a function it is not called multiple times
   var reduced: T
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, z.size, 1, op) do:
     x = z.atContiguousIndex(block_offset)
@@ -30,8 +30,8 @@ template reduce_inline*[T](t: Tensor[T], op: untyped): untyped =
       op
   reduced
 
-template fold_inline*[T](t: Tensor[T], op_initial, op_middle, op_final: untyped): untyped =
-  let z = t # ensure that if t is the result of a function it is not called multiple times
+template fold_inline*[T](arg: Tensor[T], op_initial, op_middle, op_final: untyped): untyped =
+  let z = arg # ensure that if t is the result of a function it is not called multiple times
   var reduced: T
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, z.size, 1, op_final) do:
     let y {.inject.} = z.atContiguousIndex(block_offset)
@@ -41,8 +41,8 @@ template fold_inline*[T](t: Tensor[T], op_initial, op_middle, op_final: untyped)
       op_middle
   reduced
 
-template reduce_axis_inline*[T](t: Tensor[T], reduction_axis: int, op: untyped): untyped =
-  let z = t # ensure that if t is the result of a function it is not called multiple times
+template reduce_axis_inline*[T](arg: Tensor[T], reduction_axis: int, op: untyped): untyped =
+  let z = arg # ensure that if t is the result of a function it is not called multiple times
   var reduced: type(z)
   let weight = z.size div z.shape[reduction_axis]
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, z.shape[reduction_axis], weight, op) do:
@@ -52,8 +52,8 @@ template reduce_axis_inline*[T](t: Tensor[T], reduction_axis: int, op: untyped):
       op
   reduced
 
-template fold_axis_inline*[T](t: Tensor[T], accumType: typedesc, fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
-  let z = t # ensure that if t is the result of a function it is not called multiple times
+template fold_axis_inline*[T](arg: Tensor[T], accumType: typedesc, fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
+  let z = arg # ensure that if t is the result of a function it is not called multiple times
   var reduced: accumType
   let weight = z.size div z.shape[fold_axis]
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, z.shape[fold_axis], weight, op_final) do:
@@ -70,7 +70,7 @@ template fold_axis_inline*[T](t: Tensor[T], accumType: typedesc, fold_axis: int,
 # Note: You can't pass builtins like `+` or `+=` due to Nim limitations
 # https://github.com/nim-lang/Nim/issues/2172
 
-proc fold*[U, T](t: Tensor[U],
+proc fold*[U, T](arg: Tensor[U],
                 start_val: T,
                 f:(T, U) -> T,
                 ): T {.effectsOf: f.}=
@@ -88,10 +88,10 @@ proc fold*[U, T](t: Tensor[U],
   ##                     ## whichever is bigger.
 
   result = start_val
-  for val in t:
+  for val in arg:
     result = f(result, val)
 
-proc fold*[U, T](t: Tensor[U],
+proc fold*[U, T](arg: Tensor[U],
                 start_val: Tensor[T],
                 f: (Tensor[T], Tensor[U]) -> Tensor[T],
                 axis: int
@@ -106,10 +106,10 @@ proc fold*[U, T](t: Tensor[U],
   ##     - An Tensor with the aggregate of the function called on the starting value and all slices along the selected axis
 
   result = start_val
-  for val in t.axis(axis):
+  for val in arg.axis(axis):
     result = f(result, val)
 
-proc reduce*[T](t: Tensor[T],
+proc reduce*[T](arg: Tensor[T],
                 f: (T, T) -> T
                 ): T {.effectsOf: f.} =
   ## Chain result = f(result, element) over all elements of the Tensor.
@@ -124,13 +124,13 @@ proc reduce*[T](t: Tensor[T],
   ##  .. code:: nim
   ##     a.reduce(max) ## This returns the maximum value in the Tensor.
 
-  t.reduce_inline():
+  arg.reduce_inline():
     when defined(gcArc) or defined(gcOrc):
       x = f(x,y) # hopefully nvro will work
     else:
       shallowCopy(x, f(x,y))
 
-proc reduce*[T](t: Tensor[T],
+proc reduce*[T](arg: Tensor[T],
                 f: (Tensor[T], Tensor[T]) -> Tensor[T],
                 axis: int
                 ): Tensor[T] {.noinit, effectsOf: f.} =
@@ -144,7 +144,7 @@ proc reduce*[T](t: Tensor[T],
   ## Result:
   ##     - A tensor aggregate of the function called all elements of the tensor
 
-  t.reduce_axis_inline(axis):
+  arg.reduce_axis_inline(axis):
     when defined(gcArc) or defined(gcOrc):
       x = f(x,y) # hopefully nvro will work
     else:

@@ -148,14 +148,14 @@ proc `>.`*[T](t: Tensor[T], value : T): Tensor[bool] {.noinit.} =
 # ##################################
 # broadcasted special float handling
 
-proc isNan*(t: Tensor[SomeFloat]): Tensor[bool] =
+proc isNaN*(t: Tensor[SomeFloat]): Tensor[bool] =
   ## Returns a boolean tensor set to true for each element which is "Not-a-number"
   ## or set to false otherwise
   returnEmptyIfEmpty(t)
   result = t.map_inline():
     x != x
 
-proc isNotNan*(t: Tensor[SomeFloat]): Tensor[bool] =
+proc isNotNaN*(t: Tensor[SomeFloat]): Tensor[bool] =
   ## Returns a boolean tensor set to false for each element
   ## which is "Not-a-number"
   ## or set to true otherwise

@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import  ../../laser/tensor/initialization,
-        ../../private/sequninit,
         ../data_structure, ../higher_order_applymap,
         ../init_cpu,
         ./p_checks,

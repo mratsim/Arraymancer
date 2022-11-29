@@ -73,7 +73,7 @@ proc sparse_softmax_ce_backward_ag[TT, Idx](self: Gate[TT], payload: Payload[TT]
   let self = SparseSoftmaxCrossEntropyLoss[TT, Idx](self)
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
-  result[0] = sparse_softmax_crossentropy_backward(gradient, self.cache.value, self.target)
+  result[0] = sparse_softmax_cross_entropy_backward(gradient, self.cache.value, self.target)
 
 proc sparse_softmax_ce_cache[TT, Idx](result: Variable[TT], a: Variable[TT], target: Tensor[Idx]) =
   # We expect a in shape [batch_size, features]
@@ -99,14 +99,14 @@ proc sparse_softmax_ce_cache[TT, Idx](result: Variable[TT], a: Variable[TT], tar
     a
   )
 
-proc sparse_softmax_crossentropy*[TT; Idx: SomeNumber or byte or char or enum](
+proc sparse_softmax_cross_entropy*[TT; Idx: SomeNumber or byte or char or enum](
         a: Variable[TT],
         target: Tensor[Idx]): Variable[TT] =
   # Resulting var
   new result
   result.context = a.context
   # TODO: implement a Scalar[T] concept instead of rewrapping the result into a Tensor
-  result.value = [sparse_softmax_crossentropy(a.value, target)].toTensor
+  result.value = [sparse_softmax_cross_entropy(a.value, target)].toTensor
 
   # Caching for backprop
   if a.is_grad_needed:

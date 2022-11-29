@@ -49,7 +49,7 @@ proc extract_and_delete_tgz(cache_dir, file_name: string) =
   let tgz = cache_dir / file_name
 
   debug(fmt"Extracting {tgz}")
-  newTarFile(tgz).extract(cache_dir / foldername)
+  newTarFile(tgz).extract(cache_dir / folder_name)
   debug("Done!")
   os.removeFile(tgz)
 
@@ -69,7 +69,7 @@ proc read_imdb(path: string): Imdb =
 
         # Get the file contexts
         let text = readFile(file_path)
-        texts[i + offset] = text.string
+        texts[i + offset] = text
 
         # Extract the label from the filename
         let

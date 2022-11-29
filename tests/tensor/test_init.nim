@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, math, sequtils
 import complex except Complex64, Complex32
 
-type TestObject = object
-  x: Tensor[float]
+when defined(gcDestructors):
+  type TestObject = object
+    x: Tensor[float]
 
 type
   Nest = enum

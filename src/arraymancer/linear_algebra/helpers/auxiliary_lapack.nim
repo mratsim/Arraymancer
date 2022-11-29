@@ -13,7 +13,7 @@ import
 overload(laswp, slaswp)
 overload(laswp, dlaswp)
 
-proc laswp*(a: var Tensor, pivot_indices: openarray[int32], pivot_from: static int32) =
+proc laswp*(a: var Tensor, pivot_indices: openArray[int32], pivot_from: static int32) =
   ## Apply A = P * A
   ## where P is a permutation matrix, represented pivot_indices of rows.
   ##
@@ -43,7 +43,7 @@ proc laswp*(a: var Tensor, pivot_indices: openarray[int32], pivot_from: static i
 overload(orgqr, sorgqr)
 overload(orgqr, dorgqr)
 
-proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: openarray[T], scratchspace: var seq[T]) =
+proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: openArray[T], scratchspace: var seq[T]) =
   ## Wrapper for LAPACK orgqr routine
   ## Generates the orthonormal Q matrix from
   ## elementary Householder reflectors
@@ -98,7 +98,7 @@ proc orgqr*[T: SomeFloat](rv_q: var Tensor[T], tau: openarray[T], scratchspace: 
 overload(ormqr, sormqr)
 overload(ormqr, dormqr)
 
-proc ormqr*[T: SomeFloat](C: var Tensor[T], Q: Tensor[T], tau: openarray[T], side, trans: static char, scratchspace: var seq[T]) =
+proc ormqr*[T: SomeFloat](C: var Tensor[T], Q: Tensor[T], tau: openArray[T], side, trans: static char, scratchspace: var seq[T]) =
   ## Wrapper for LAPACK ormqr routine
   ## Multiply the orthonormal Q matrix from geqrf
   ## with another matrix C without materializing Q

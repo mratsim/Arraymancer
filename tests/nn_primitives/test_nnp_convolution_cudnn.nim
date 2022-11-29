@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Please compile with -d:cuda switch
-import ../../src/arraymancer, ../testutils
+import ../../src/arraymancer
 import unittest, sugar
 
 proc test_conv(T: typedesc) =

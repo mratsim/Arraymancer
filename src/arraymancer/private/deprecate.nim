@@ -56,7 +56,7 @@ proc overloadSingleSym(oldName, replacement: NimNode, exported: bool): NimNode =
       else: # unbound - can this happen?
         genParam.expectKind(nnkIdentDefs)
 
-  let name = if exported: nnkPostFix.newTree(ident"*", oldName)
+  let name = if exported: nnkPostfix.newTree(ident"*", oldName)
             else: oldName
 
   result = nnkProcDef.newTree(

@@ -47,7 +47,7 @@ type
     arguments: seq[NimNode]
 
 proc createLayerInfo(sectionInfo: SectionInfo): seq[LayerInfo] =
-  
+
   # sectionInfo.idents contains constains a list of identifiers that will be used
   # as function parameters for the init funxtion
   # sectionInfo.body contains the description of layers, e.g.:
@@ -99,7 +99,7 @@ proc createModelType(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
         underlyingTypeSymbol
       )
     )
-  
+
   doAssert modelName.kind == nnkIdent
 
   result = newNimNode(nnkTypeSection).add(
@@ -118,7 +118,7 @@ proc createModelType(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
       )
     )
   )
-  
+
 proc createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelName: NimNode): NimNode =
 
   # creates init function of the model, e.g.:
@@ -207,7 +207,7 @@ proc createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelN
         ident"auto"
       )
     )
-    
+
   result = newProc(
     name = ident"init",
     params = params,
@@ -227,13 +227,13 @@ proc createForwardProc(layerInfos: seq[LayerInfo], forward: SectionInfo, modelNa
   # proc forward[T](self: SomeConvNet[T]; x: auto): auto =
   #   template cv1(x: varargs[untyped]): auto =
   #     forward(self.cv1, x)
-  # 
+  #
   #   template mp1(x: varargs[untyped]): auto =
   #     forward(self.mp1, x)
-  # 
+  #
   #   template fl(x: varargs[untyped]): auto =
   #     forward(self.fl, x)
-  # 
+  #
   #   x.cv1.relu.mp1.cv2.relu.mp2.fl
 
   let
@@ -313,7 +313,7 @@ macro network*(modelName: untyped, config: untyped): untyped =
   ## Declare a neural network.
   ##
   ## Example usage:
-  ## 
+  ##
   ## .. code:: nim
   ##   network DemoNet:
   ##     layers h, w:
@@ -326,25 +326,25 @@ macro network*(modelName: untyped, config: untyped): untyped =
   ##       classifier: Linear(500, 10)
   ##     forward x:
   ##       x.cv1.relu.mp1.cv2.relu.mp2.fl.hidden.relu.classifier
-  ## 
+  ##
   ##   let
   ##     ctx = newContext Tensor[float32]
   ##     model = ctx.init(DemoNet, 28, 28)
   ##
-  ## 
+  ##
   ## Custom layers can be created by providing a type, an init-function, and a forward-function.
   ## The type could look like this:
-  ## 
+  ##
   ## .. code:: nim
   ##   type
   ##     MyLayer*[T] = object
   ##       someWeights*: Variable[Tensor[T]]
   ##       importantInfo*: seq[int]
-  ## 
+  ##
   ## It is important that the type has exactly one generic parameter which corresponds to the
   ## underlying type (e.g., ``float32`` or ``int8``).
   ## The init-function is required to adhere to the following structure:
-  ## 
+  ##
   ## .. code:: nim
   ##   proc init*[T](
   ##     ctx: Context[Tensor[T]], # could also be Context[AnyTensor[T]] for example
@@ -353,20 +353,20 @@ macro network*(modelName: untyped, config: untyped): untyped =
   ##     # ... here you can add all the necessary init parameters, like shapes and number of output features
   ##   ): MyLayer[T] =
   ##     discard # your init stuff
-  ## 
+  ##
   ## The only requirement for the forward function is that the first parameter must be of your layer type like this:
-  ## 
+  ##
   ## .. code:: nim
   ##   proc forward*[T](self: MyLayer[T], myInput: SpecialInputType, doNothing: bool): Variable[Tensor[T]] =
   ##     if not doNothing:
   ##       result = myInput.yourComputations(self.importantInfo, self.someWeights)
-  ##     
-  ## 
+  ##
+  ##
   ## Often it is also useful to provide ``proc outShape(m: MyLayer): seq[int]`` and possibly
   ## ``proc inShape(m: MyLayer): seq[int]`` functions.
-  ## 
+  ##
   ## Your custom layer can then be used for example like this:
-  ## 
+  ##
   ## .. code:: nim
   ##   network DemoNet2:
   ##     layers:
@@ -378,7 +378,7 @@ macro network*(modelName: untyped, config: untyped): untyped =
   ##       x.myLayer(doNothing = false).fl.hidden.relu.classifier
 
   # TODO better doc
-  
+
   if modelName.kind != nnkIdent:
     error("Name of model must be an identifier: \"" & $toStrLit(modelName) & "\"", modelName)
 

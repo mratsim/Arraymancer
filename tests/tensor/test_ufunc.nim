@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer, ../testutils
-import math, unittest, complex
+import ../../src/arraymancer
+import math, unittest
 import complex except Complex64, Complex32
 
 proc main() =

@@ -1,5 +1,5 @@
 import ../../src/arraymancer
-import unittest, random, sequtils, algorithm
+import unittest
 
 proc `=~=`(x, y: float, eps = 1e-6): bool =
   ## simple float compare with epsilon to not have to worry about perfect scipy / nim
@@ -115,6 +115,6 @@ suite "Distances: `CustomMetric`":
 
   test "CustomMetric that is euclidean":
     proc distance(_: typedesc[CustomMetric], v, w: Tensor[int]): float =
-      result = Euclidean.distance(v.asType(float), w.asType(float))
+      result = Euclidean.distance(v.astype(float), w.astype(float))
 
-    check CustomMetric.distance(a, b) == Euclidean.distance(a.asType(float), b.asType(float))
+    check CustomMetric.distance(a, b) == Euclidean.distance(a.astype(float), b.astype(float))

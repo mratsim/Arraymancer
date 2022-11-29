@@ -42,7 +42,7 @@ proc vandermonde*[T](x: Tensor[T], order: int): Tensor[float] =
   ##
   ## where `order_j` runs from 0 to `order`.
   assert x.squeeze.rank == 1
-  let x = x.squeeze.asType(float)
+  let x = x.squeeze.astype(float)
   result = newTensorUninit[float]([x.size.int, order.int])
   let orders = arange(order.float)
   for i, ax in enumerateAxis(result, axis = 1):

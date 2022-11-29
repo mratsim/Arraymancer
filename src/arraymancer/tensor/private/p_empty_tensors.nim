@@ -23,7 +23,7 @@ import
 # - https://github.com/mratsim/Arraymancer/issues/210
 # - or https://github.com/mratsim/Arraymancer/issues/445
 
-template isEmpty[T](oa: openarray[T]): bool =
+template isEmpty[T](oa: openArray[T]): bool =
   oa.len == 0
 
 template isEmpty(t: AnyTensor): bool =

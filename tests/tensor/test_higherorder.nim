@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../../src/arraymancer, ../testutils
-import unittest, math, sugar, sequtils
+import ../../src/arraymancer
+import unittest, sugar, sequtils
 import complex except Complex32, Complex64
 
 type
@@ -121,7 +121,7 @@ proc main() =
           check x == b
       block:
         # check sliced tensors work fine
-        proc `==`(x, y: Value): bool = x.val == y.val
+        proc `==`(x, y: Value): bool {.used.} = x.val == y.val
         var x = newSeq[Value](100)
         for i in 0 ..< 100:
           x[i] = Value(val: i)

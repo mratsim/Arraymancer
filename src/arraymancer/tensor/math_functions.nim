@@ -28,7 +28,7 @@ proc melwise_mul*[T](a: var Tensor[T], b: Tensor[T]) =
   ## Element-wise multiply
   a.apply2_inline(b, x * y)
 
-proc elwise_div*[T: Someinteger](a, b: Tensor[T]): Tensor[T] {.noinit.} =
+proc elwise_div*[T: SomeInteger](a, b: Tensor[T]): Tensor[T] {.noinit.} =
   ## Element-wise division
   map2_inline(a, b, x div y)
 
@@ -36,7 +36,7 @@ proc elwise_div*[T: SomeFloat](a, b: Tensor[T]): Tensor[T] {.noinit.} =
   ## Element-wise division
   map2_inline(a, b, x / y)
 
-proc melwise_div*[T: Someinteger](a: var Tensor[T], b: Tensor[T]) =
+proc melwise_div*[T: SomeInteger](a: var Tensor[T], b: Tensor[T]) =
   ## Element-wise division (in-place)
   a.apply2_inline(b, x div y)
 

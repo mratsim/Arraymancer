@@ -3,7 +3,8 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
-import ../std_version_types
+when (NimMajor, NimMinor) < (1, 4):
+  import ../../std_version_types
 
 const LASER_MEM_ALIGN*{.intdefine.} = 64
 static:

@@ -232,7 +232,6 @@ proc toTensor*[T](a: openArray[T]): auto =
   ##      - A Tensor of the same shape
   ##
   # Note: we removed the dummy static bugfixe related to Nim issue
-  # ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
   # https://github.com/nim-lang/Nim/issues/6343
   # motivated by
   # https://github.com/nim-lang/Nim/issues/20993

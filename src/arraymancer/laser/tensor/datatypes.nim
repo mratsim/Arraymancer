@@ -17,7 +17,9 @@ when not defined(nimHasCursor):
   {.pragma: cursor.}
 
 type
-  KnownSupportsCopyMem* = SomeNumber | char | Complex[float64] | Complex[float32] | bool
+  ## This works around the issue that `supportsCopyMem` is not supported in a type section
+  KnownSupportsCopyMem* = concept x, type T
+    supportsCopyMem(T)
 
   RawImmutableView*[T] = distinct ptr UncheckedArray[T]
   RawMutableView*[T] = distinct ptr UncheckedArray[T]

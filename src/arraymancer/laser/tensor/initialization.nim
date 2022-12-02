@@ -198,43 +198,47 @@ proc newTensor*[T](shape: Metadata): Tensor[T] =
     # seq based tensors are zero'ed by default upon construction
     setZero(result, check_contiguous = false)
 
-proc toTensor*(a: openArray, dummy_bugfix: static[int] = 0): auto =
+proc toTensor[T](a: openArray[T], shape: Metadata): Tensor[T] =
   ## Convert an openArray to a Tensor
   ## Input:
-  ##      - An array or a seq (can be nested)
+  ##      - An array or a seq, must be flattened. Called by `toTensor` below.
   ## Result:
   ##      - A Tensor of the same shape
   ##
-  ## Note: dummy_bugfix param is unused and is a workaround a Nim bug.
-  # TODO: remove 'dummy_bugfix' - https://github.com/nim-lang/Nim/issues/6343
-
-  let shape = getShape(a)
-  var data = toSeq(flatIter(a))
-
+  var data = @a
   if unlikely(shape.product != data.len):
     raise newException(
       IndexDefect,
       "Each nested sequence at the same level" &
         " must have the same number of elements"
       )
-
-  type T = typeof(data[0])
-  var
-    t: Tensor[T]
-    size: int
-
-  initTensorMetadata(t, size, shape)
-  allocCpuStorage(t.storage, size)
+  var size: int
+  initTensorMetadata(result, size, shape)
+  allocCpuStorage(result.storage, size)
 
   when T is KnownSupportsCopyMem:
-    t.copyFromRaw(data[0].unsafeAddr, data.len)
+    result.copyFromRaw(data[0].unsafeAddr, data.len)
   else:
     when defined(gcArc) or defined(gcOrc):
-      t.storage.raw_buffer = move data
+      result.storage.raw_buffer = move data
     else:
-      shallowCopy(t.storage.raw_buffer, data)
+      shallowCopy(result.storage.raw_buffer, data)
 
-  result = t
+proc toTensor*[T](a: openArray[T]): auto =
+  ## Convert an openArray to a Tensor
+  ## Input:
+  ##      - An array or a seq (can be nested)
+  ## Result:
+  ##      - A Tensor of the same shape
+  ##
+  # Note: we removed the dummy static bugfixe related to Nim issue
+  # https://github.com/nim-lang/Nim/issues/6343
+  # motivated by
+  # https://github.com/nim-lang/Nim/issues/20993
+  # due to the previous local type alias causing issues.
+  let shape = getShape(a)
+  let data = toSeq(flatIter(a))
+  result = toTensor(data, shape)
 
 proc fromBuffer*[T](rawBuffer: ptr UncheckedArray[T], shape: varargs[int], layout: static OrderType): Tensor[T] =
   ## Creates a `Tensor[T]` from a raw buffer, cast as `ptr UncheckedArray[T]`. The

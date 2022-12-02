@@ -1,6 +1,14 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.17 Dec. 02 2022
+=====================================================
+
+- change `KnownSupportsCopyMem` to a `concept` to allow usage of
+  `supportsCopyMem` instead of a fixed list of supported types
+- remove the workaround in `toTensor` as parts of it triggered an
+  upstream ARC bug in certain code. The solution gets rid of the
+  existing workaround and replaces it by a saner solution.
 
 Arraymancer v0.7.16 Nov. 29 2022
 =====================================================

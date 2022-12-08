@@ -14,7 +14,7 @@
 
 
 import ../../src/arraymancer
-import unittest, sugar
+import unittest, sugar, math
 
 proc main() =
   suite "Convolution 2D":

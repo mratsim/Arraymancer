@@ -1,6 +1,12 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.18 Dec. 10 2022
+=====================================================
+
+- import `math` in one test to avoid regression due to upstream
+  change, PR #580
+
 Arraymancer v0.7.17 Dec. 02 2022
 =====================================================
 

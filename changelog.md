@@ -1,6 +1,12 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.19 Dec. 10 2022
+=====================================================
+
+- change the signature of `numerical_gradient` for scalars to
+  explicitly reject `Tensor` arguments. See discussion in PR #580.
+
 Arraymancer v0.7.18 Dec. 10 2022
 =====================================================
 

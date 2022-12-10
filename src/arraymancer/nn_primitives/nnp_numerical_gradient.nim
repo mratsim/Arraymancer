@@ -14,7 +14,7 @@
 
 import ../tensor
 
-proc numerical_gradient*[T](input: T, f: (proc(x: T): T), h = T(1e-5)): T {.inline.} =
+proc numerical_gradient*[T: not Tensor](input: T, f: (proc(x: T): T), h = T(1e-5)): T {.inline.} =
   ## Compute numerical gradient for any function w.r.t. to an input value,
   ## useful for gradient checking, recommend using float64 types to assure
   ## numerical precision. The gradient is calculated as:

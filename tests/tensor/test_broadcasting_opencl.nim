@@ -13,7 +13,8 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, sugar, sequtils
+import std/[unittest, sugar, sequtils]
+import ../testutils
 
 testSuite "OpenCL: Shapeshifting - broadcasting and non linear algebra elementwise operations":
   test "Tensor element-wise multiplication (Hadamard product) and division":

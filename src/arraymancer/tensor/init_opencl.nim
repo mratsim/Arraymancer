@@ -25,7 +25,7 @@ proc opencl*[T:SomeFloat](t: Tensor[T]): ClTensor[T] {.noinit.}=
   result = newClTensor[T](t.shape)
 
   let contig_t = t.asContiguous(rowMajor, force = true)
-  let size = csize_t(result.size * sizeof(T))
+  let size = result.size * sizeof(T)
 
   # TODO error checking in Nim opencl is broken
   # See https://github.com/nim-lang/opencl/pull/3

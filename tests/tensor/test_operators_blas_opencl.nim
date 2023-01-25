@@ -14,7 +14,8 @@
 
 # Please compile with -d:opencl switch
 import ../../src/arraymancer
-import unittest
+import std/unittest
+import ../testutils
 
 testSuite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":
   test "GEMM - General Matrix to Matrix Multiplication":

@@ -123,9 +123,8 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
   var t = t.asType(float)
   let A = min(std(t),
               iqr(t) / 1.34)
-  let bwAct = if classify(bw) != fcNan: bw
-              else: 0.9 * A * pow(N.float, -1.0/5.0)
-
+  var bwAct = if classify(bw) == fcNormal: bw
+              else: adjust * (0.9 * A * pow(N.float, -1.0/5.0))
   var weights = weights.asType(float)
   if weights.size > 0:
     doAssert weights.size == t.size
@@ -142,10 +141,10 @@ proc kde*[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](
     let nsamples = samples
   elif U is seq | array:
     let x = toTensor(@samples).asType(float)
-    let nsamples = x.size
+    let nsamples = x.size.int
   else:
     let x = samples.asType(float)
-    let nsamples = x.size
+    let nsamples = x.size.int
   result = newTensor[float](nsamples)
   let norm = 1.0 / (N.float * bwAct)
   var

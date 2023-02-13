@@ -73,7 +73,23 @@ proc distance*(metric: typedesc[Euclidean], v, w: Tensor[float], squared: static
   assert v.squeeze.rank == 1
   assert w.squeeze.rank == 1
   # Note: possibly faster by writing `let uv = u -. v; dot(uv, uv);` ?
-  result = Minkowski.distance(v, w, p = 2.0, squared = squared)
+  #result = Minkowski.distance(v, w, p = 2.0, squared = squared)
+  ## NOTE: this is the branch used in the kd-tree. It's very performance critical there,
+  ## hence we use this simple manual code (benchmarked to be more than 2x faster than
+  ## via a 'higher order' approach).
+  ## DBSCAN clustering test (11,000 points)
+  ## - debug mode, old branch: 98.5s
+  ## - debug mode, this branch: 50s
+  ## - danger mode, old branch: 6.3s
+  ## - danger mode, this branch: 2.8s
+  when squared:
+    result = 0.0
+    var tmp = 0.0
+    for idx in 0 ..< v.size:
+      tmp = v[0, idx] - w[0, idx] # no need for abs, as we square
+      result += tmp*tmp
+  else:
+    result = sqrt( sum( abs(v -. w).map_inline(x * x) ) )
 
 proc distance*(metric: typedesc[Jaccard], v, w: Tensor[float]): float =
   ## Computes the Jaccard distance between points `v` and `w`. Both need to
@@ -121,13 +137,13 @@ proc pairwiseDistances*(metric: typedesc[AnyMetric],
   if x.rank == y.rank and x.shape[0] == y.shape[0]:
     for idx in 0 ..< n_obs:
       when metric is Minkowski:
-        result[idx] = Minkowski.distance(x[idx, _].squeeze, y[idx, _].squeeze,
+        result[idx] = Minkowski.distance(x[idx, _], y[idx, _],
                                          p = p, squared = squared)
       elif metric is Euclidean:
-        result[idx] = Euclidean.distance(x[idx, _].squeeze, y[idx, _].squeeze,
+        result[idx] = Euclidean.distance(x[idx, _], y[idx, _],
                                          squared = squared)
       else:
-        result[idx] = metric.distance(x[idx, _].squeeze, y[idx, _].squeeze)
+        result[idx] = metric.distance(x[idx, _], y[idx, _])
   else:
     # determine which is one is 1 along n_observations
     let nx = if x.rank == 2 and x.shape[0] == n_obs: x else: y
@@ -137,13 +153,13 @@ proc pairwiseDistances*(metric: typedesc[AnyMetric],
     var idx = 0
     for ax in axis(nx, 0):
       when metric is Minkowski:
-        result[idx] = Minkowski.distance(ax.squeeze, ny.squeeze,
+        result[idx] = Minkowski.distance(ax, ny,
                                          p = p, squared = squared)
       elif metric is Euclidean:
-        result[idx] = Euclidean.distance(ax.squeeze, ny.squeeze,
+        result[idx] = Euclidean.distance(ax, ny,
                                          squared = squared)
       else:
-        result[idx] = metric.distance(ax.squeeze, ny.squeeze)
+        result[idx] = metric.distance(ax, ny)
       inc idx
 
 proc distanceMatrix*(metric: typedesc[AnyMetric],

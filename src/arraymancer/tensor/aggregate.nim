@@ -337,6 +337,8 @@ proc cumprod*[T](arg: Tensor[T], axis: int = 0): Tensor[T] = # from hugogranstro
     else:
       temp[_] = result.atAxisIndex(axis, i-1) *. tAxis
 
+when (NimMajor, NimMinor, NimPatch) > (1, 6, 0):
+  import std/atomics
 proc nonzero*[T](arg: Tensor[T]): Tensor[int] =
   ## Returns the indices, which are non zero as a `Tensor[int]`.
   ##
@@ -368,15 +370,27 @@ proc nonzero*[T](arg: Tensor[T]): Tensor[int] =
   ##      # - 1 -> 4 in col 1
   ##      # - 0 -> 5 in col 0
   ##      # - 1 -> 6 in col 1
-  var count = 0 # number of non zero elements
-  let mask = map_inline(arg):
-    block:
-      let cond = x != 0.T
-      if cond:
-        inc count
-      cond
+  when (NimMajor, NimMinor, NimPatch) > (1, 6, 0):
+    ## Use `Atomic` counter. If compiled with `-d:openmp` otherwise the code breaks!
+    var count: Atomic[int]
+    count.store(0)
+    let mask = map_inline(arg):
+      block:
+        let cond = x != 0.T
+        if cond:
+          atomicInc count
+        cond
 
-  result = newTensor[int]([arg.shape.len, count])
+    result = newTensor[int]([arg.shape.len, count.load])
+  else:
+    let mask = map_inline(arg): # generate the mask
+      x != 0.T
+    var count = 0 # and count non zero elements (avoid openmp issues)
+    for x in mask:
+      if x:
+        inc count
+    result = newTensor[int]([arg.shape.len, count])
+
   var ax = 0 # current axis
   var k = 0 # counter for indices in one axis
   for idx, x in mask:

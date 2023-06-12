@@ -15,9 +15,10 @@
 import  ./data_structure,
         ./higher_order_applymap,
         ./shapeshifting,
-        ./math,
         ../private/deprecate,
         ./private/p_empty_tensors
+
+import std/math
 import complex except Complex64, Complex32
 
 # #########################################################

@@ -32,11 +32,11 @@ jobs:
         include:
           - target:
               os: linux
-            builder: ubuntu-latest
+            builder: ubuntu-20.04
             shell: bash
           - target:
               os: macos
-            builder: macos-latest
+            builder: macos-11
             shell: bash
           # - target:
           #     os: windows

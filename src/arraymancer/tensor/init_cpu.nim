@@ -18,7 +18,7 @@ import
   ../laser/strided_iteration/foreach,
   ./data_structure,
   # Standard library
-  random,
+  std / random,
   math
 
 export initialization

@@ -7,7 +7,7 @@
 # Compile-time name mangling for OpenMP thresholds
 # Workaround https://github.com/nim-lang/Nim/issues/9365
 # and https://github.com/nim-lang/Nim/issues/9366
-import random
+import std / random
 from strutils import toHex
 
 var mangling_rng {.compileTime.} = initRand(0x1337DEADBEEF)

@@ -59,14 +59,19 @@ type Mnist = tuple[
   train_labels: Tensor[uint8],
   test_labels: Tensor[uint8],
 ]
-const MNISTFilenames = [
-    "train-images-idx3-ubyte.gz",
-    "train-labels-idx1-ubyte.gz",
-    "t10k-images-idx3-ubyte.gz",
-    "t10k-labels-idx1-ubyte.gz"
-  ]
 
-proc read_mnist_images(stream: Stream): Tensor[uint8] {.noinit.}=
+const MNISTFilenames = [
+  "train-images-idx3-ubyte.gz",
+  "train-labels-idx1-ubyte.gz",
+  "t10k-images-idx3-ubyte.gz",
+  "t10k-labels-idx1-ubyte.gz"
+]
+
+const
+  DefaultMnistUrl = "http://yann.lecun.com/exdb/mnist/"
+  FashionMnistUrl = "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"
+
+proc read_mnist_images(stream: Stream): Tensor[uint8] {.noinit.} =
   ## Load MNIST images into a Tensor[uint8] from a stream
   ## Input:
   ##   - A stream of MNIST image data
@@ -89,7 +94,7 @@ proc read_mnist_images(stream: Stream): Tensor[uint8] {.noinit.}=
   result = newTensorUninit[uint8](n_imgs, n_rows, n_cols)
   discard stream.readData(result.get_data_ptr, result.size)
 
-proc read_mnist_images*(imgsPath: string): Tensor[uint8] {.noinit.}=
+proc read_mnist_images*(imgsPath: string): Tensor[uint8] {.noinit.} =
   ## Load MNIST images into a Tensor[uint8]
   ## Input:
   ##   - A path to a MNIST images file
@@ -107,7 +112,7 @@ proc read_mnist_images*(imgsPath: string): Tensor[uint8] {.noinit.}=
   let stream = newGzFileStream(imgsPath, mode = fmRead)
   return read_mnist_images(stream)
 
-proc read_mnist_labels*(stream: Stream): Tensor[uint8] {.noinit.}=
+proc read_mnist_labels*(stream: Stream): Tensor[uint8] {.noinit.} =
   ## Load MNIST labels into a Tensor[uint8] from a file
   ## Input:
   ##   - A stream of MNIST labels data
@@ -126,7 +131,7 @@ proc read_mnist_labels*(stream: Stream): Tensor[uint8] {.noinit.}=
   result = newTensorUninit[uint8](n_labels)
   discard stream.readData(result.get_data_ptr, result.size)
 
-proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noinit.}=
+proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noinit.} =
   ## Load MNIST labels into a Tensor[uint8] from a file
   ## Input:
   ##   - A path to a MNIST labels file
@@ -141,18 +146,27 @@ proc read_mnist_labels*(labelsPath: string): Tensor[uint8] {.noinit.}=
   let stream = newGzFileStream(labelsPath, mode = fmRead)
   return read_mnist_labels(stream)
 
-func mnistFilesPath(cache_dir: string): array[4, string] =
+func mnistFilesPath(cache_dir: string,
+                    fashion_mnist: static bool): array[4, string] =
   for idx, val in result.mpairs:
-    val = cache_dir / MNISTFilenames[idx]
+    let fileName =
+      when fashion_mnist: "fashion-" & MNISTFilenames[idx]
+        else: MNISTFilenames[idx]
+    val = cache_dir / fileName
 
-proc download_mnist_files(files: array[4, string]) =
-  ## Download the MNIST files from http://yann.lecun.com/exdb/mnist/
+proc download_mnist_files(files: array[4, string],
+                          fashion_mnist: static bool = false) =
+  ## Download the MNIST files from:
+  ##  http://yann.lecun.com/exdb/mnist/ when `fashion_mnist = false` (Default)
+  ##  http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/ when `fashion_mnist = true`
   ## It will download the files to the current directory.
-  const mnist_domain = "http://yann.lecun.com/exdb/mnist/"
   let client = newHttpClient()
 
+  const mnist_domain =
+    when fashion_mnist: FashionMnistUrl
+    else: DefaultMnistUrl
   for idx, f in files:
-    let url = fmt"{mnist_domain}{MNISTFilenames[idx]}"
+    let url = mnist_domain & MNISTFilenames[idx] # fmt"{mnist_domain}{MNISTFilenames[idx]}"
     client.downloadFile(url, f)
 
 proc delete_mnist_files(files: array[4, string]) =
@@ -160,12 +174,15 @@ proc delete_mnist_files(files: array[4, string]) =
   for f in files:
     discard tryRemoveFile(f)
 
-proc load_mnist*(cache: static bool = true): Mnist =
+proc load_mnist*(cache: static bool = true,
+                 fashion_mnist: static bool = false): Mnist =
   ## Loads the MNIST dataset into a tuple with fields:
   ## - train_images
   ## - train_labels
   ## - test_images
   ## - test_labels
+  ## If `fashion_mnist = true` is provided, the Fashion MNIST dataset will
+  ## be loaded instead.
   ##
   ## Use the cache argument (bool) as false to cleanup the files each time.
   ##
@@ -181,7 +198,7 @@ proc load_mnist*(cache: static bool = true): Mnist =
 
   let
     cache_dir = util.get_cache_dir()
-    files = cache_dir.mnistFilesPath
+    files = cache_dir.mnistFilesPath(fashion_mnist)
 
   if not files.all(x => x.fileExists):
     create_cache_dirs_if_necessary()

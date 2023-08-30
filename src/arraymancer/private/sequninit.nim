@@ -12,8 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-func newSeqUninit*[T](len: Natural): seq[T] {.inline.} =
-  ## Creates an uninitialzed seq.
-  ## Contrary to newSequnitialized in system.nim this works for any subtype T
-  result = newSeqOfCap[T](len)
-  result.setLen(len)
+when not declared(newSeqUninit):
+  # https://github.com/nim-lang/Nim/pull/22586#issuecomment-1698160304
+
+  func newSeqUninit*[T](len: Natural): seq[T] {.inline.} =
+    ## Creates an uninitialzed seq.
+    ## Contrary to newSequnitialized in system.nim this works for any subtype T
+    result = newSeqOfCap[T](len)
+    result.setLen(len)

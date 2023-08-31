@@ -1,6 +1,12 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.21 Aug. 31 2023
+=====================================================
+
+- use `system.newSeqUninit` if available (PR #589)
+- add support to load Fashion MNIST dataset (PR #590)
+
 Arraymancer v0.7.20 Jun. 12 2023
 =====================================================
 

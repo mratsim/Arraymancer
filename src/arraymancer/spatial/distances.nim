@@ -130,6 +130,7 @@ proc pairwiseDistances*(metric: typedesc[AnyMetric],
   ## `[1, n_dimensions]`. In this case all distances between this point and
   ## all in the other input will be computed so that the result is always of
   ## shape `[n_observations]`.
+  ## If one input has only shape `[n_dimensions]` it is unsqueezed to `[1, n_dimensions]`.
   ##
   ## The first argument is the metric to compute the distance under. If the Minkowski metric
   ## is selected the power `p` is used.
@@ -154,9 +155,10 @@ proc pairwiseDistances*(metric: typedesc[AnyMetric],
   else:
     # determine which is one is 1 along n_observations
     let nx = if x.rank == 2 and x.shape[0] == n_obs: x else: y
-    let ny = if x.rank == 2 and x.shape[0] == n_obs: y else: x
+    var ny = if x.rank == 2 and x.shape[0] == n_obs: y else: x
     # in this case compute distance between all `nx` and single `ny`
-
+    if ny.rank == 1: # unsqueeze to have both rank 2
+      ny = ny.unsqueeze(0)
     var idx = 0
     for ax in axis(nx, 0):
       when metric is Minkowski:

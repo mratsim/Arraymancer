@@ -3,7 +3,7 @@ import math, typetraits
 import ../tensor
 import ./distances
 
-import sorted_seq
+import std / heapqueue
 
 #[
 
@@ -216,11 +216,11 @@ proc kdTree*[T](data: Tensor[T],
   result.buildKdTree(arange[int](result.n),
                      useMedian = balancedTree)
 
-proc toTensorTuple[T, U](q: var SortedSeq[T],
+proc toTensorTuple[T, U](q: var HeapQueue[T],
                          retType: typedesc[U],
                          p = Inf): tuple[dist: Tensor[U],
                                          idx: Tensor[int]] =
-  ## Helper proc to convert the contents of the SortedSeq to a tuple of
+  ## Helper proc to convert the contents of the `HeapQueue` to a tuple of
   ## two tensors.
   ##
   ## The heap queue here is used to accumulate neighbors in the `query` proc. It
@@ -291,12 +291,12 @@ proc queryImpl[T](
   # - distance between nearest side of cell and target
   # - head node of cell
   bind tensor_compare_helper.`<`
-  var q = initSortedSeq[(T, Tensor[T], Node[T])](128)
+  var q = initHeapQueue[(T, Tensor[T], Node[T])]()
   q.push (min_distance, side_distances.clone, tree.tree)
   # priority queue for nearest neighbors, i.e. our result
   # - (- distance ** p) from input `x` to current point
   # - index of point in `KDTree's` data
-  var neighbors = initSortedSeq[(T, int)](128)
+  var neighbors = initHeapQueue[(T, int)]()
 
   # compute a sensible epsilon
   var epsfac: T

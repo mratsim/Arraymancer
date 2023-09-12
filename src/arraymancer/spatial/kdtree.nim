@@ -1,7 +1,9 @@
-import math, heapqueue, typetraits
+import math, typetraits
 
 import ../tensor
 import ./distances
+
+import std / heapqueue
 
 #[
 
@@ -42,6 +44,8 @@ type
     mins*: Tensor[T]         ## minimum values along each dimension of `n` data points
     tree*: Node[T]           ## the root node of the tree
     size*: int               ## number of nodes in the tree
+
+proc isSquared(p: float): bool = abs(p - 2.0) < 1e-6
 
 proc clone*[T](n: Node[T]): Node[T] =
   result = Node[T](level: n.level,
@@ -216,7 +220,7 @@ proc toTensorTuple[T, U](q: var HeapQueue[T],
                          retType: typedesc[U],
                          p = Inf): tuple[dist: Tensor[U],
                                          idx: Tensor[int]] =
-  ## Helper proc to convert the contents of the HeapQueue to a tuple of
+  ## Helper proc to convert the contents of the `HeapQueue` to a tuple of
   ## two tensors.
   ##
   ## The heap queue here is used to accumulate neighbors in the `query` proc. It
@@ -227,6 +231,7 @@ proc toTensorTuple[T, U](q: var HeapQueue[T],
   var vals = newTensorUninit[U](q.len)
   var idxs = newTensorUninit[int](q.len)
   var i = 0
+  let squared = isSquared(p)
   if classify(p) == fcInf:
     while q.len > 0:
       let (val, idx) = q.pop
@@ -234,11 +239,18 @@ proc toTensorTuple[T, U](q: var HeapQueue[T],
       idxs[i] = idx
       inc i
   else:
-    while q.len > 0:
-      let (val, idx) = q.pop
-      vals[i] = pow(-val, 1.0 / p)
-      idxs[i] = idx
-      inc i
+    if squared:
+      while q.len > 0:
+        let (val, idx) = q.pop
+        vals[i] = sqrt(-val)
+        idxs[i] = idx
+        inc i
+    else:
+      while q.len > 0:
+        let (val, idx) = q.pop
+        vals[i] = pow(-val, 1.0 / p)
+        idxs[i] = idx
+        inc i
   result = (vals, idxs)
 
 import ./tensor_compare_helper
@@ -257,6 +269,8 @@ proc queryImpl[T](
   ## and the static `yieldNumber` arguments it returns:
   ## - the `k` neighbors around `x` within a maximum `radius` (`yieldNumber = true`)
   ## - all points around `x` within `radius` (`yieldNumber = false`)
+  let squared = isSquared(p)
+
   var side_distances = map2_inline(x -. tree.maxes,
                                     tree.mins -. x):
     max(0, max(x, y))
@@ -264,7 +278,10 @@ proc queryImpl[T](
   var min_distance: T
   var distanceUpperBound = radius
   if classify(p) != fcInf:
-    side_distances = side_distances.map_inline(pow(x, p))
+    if squared:
+      side_distances = side_distances.map_inline(x*x)
+    else:
+      side_distances = side_distances.map_inline(pow(x, p))
     min_distance = sum(side_distances)
   else:
     min_distance = max(side_distances)
@@ -276,7 +293,6 @@ proc queryImpl[T](
   bind tensor_compare_helper.`<`
   var q = initHeapQueue[(T, Tensor[T], Node[T])]()
   q.push (min_distance, side_distances.clone, tree.tree)
-
   # priority queue for nearest neighbors, i.e. our result
   # - (- distance ** p) from input `x` to current point
   # - index of point in `KDTree's` data
@@ -288,12 +304,18 @@ proc queryImpl[T](
     epsfac = 1.T
   elif classify(p) == fcInf:
     epsfac = T(1 / (1 + eps))
+  elif squared:
+    let tmp = 1 + eps
+    epsfac = T(1 / (tmp*tmp))
   else:
     epsfac = T(1 / pow(1 + eps, p))
 
   # normalize the radius to the correct power
   if classify(p) != fcInf and classify(distanceUpperBound) != fcInf:
-    distanceUpperBound = pow(distanceUpperBound, p)
+    if squared:
+      distanceUpperBound = distanceUpperBound*distanceUpperBound
+    else:
+      distanceUpperBound = pow(distanceUpperBound, p)
 
   var node: Node[T]
   while q.len > 0:
@@ -334,7 +356,11 @@ proc queryImpl[T](
         sd[node.split_dim] = abs(node.split - x[node.split_dim])
         min_distance = min_distance - side_distances[node.split_dim] + sd[node.split_dim]
       else:
-        sd[node.split_dim] = pow(abs(node.split - x[node.split_dim]), p)
+        if squared:
+          let tmp = node.split - x[node.split_dim]
+          sd[node.split_dim] = tmp*tmp
+        else:
+          sd[node.split_dim] = pow(abs(node.split - x[node.split_dim]), p)
         min_distance = min_distance - side_distances[node.split_dim] + sd[node.split_dim]
 
       if min_distance <= distanceUpperBound * epsfac:

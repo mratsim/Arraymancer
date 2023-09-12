@@ -73,7 +73,30 @@ proc distance*(metric: typedesc[Euclidean], v, w: Tensor[float], squared: static
   assert v.squeeze.rank == 1
   assert w.squeeze.rank == 1
   # Note: possibly faster by writing `let uv = u -. v; dot(uv, uv);` ?
-  result = Minkowski.distance(v, w, p = 2.0, squared = squared)
+  #result = Minkowski.distance(v, w, p = 2.0, squared = squared)
+  ## NOTE: this is the branch used in the kd-tree. It's very performance critical there,
+  ## hence we use this simple manual code (benchmarked to be more than 2x faster than
+  ## via a 'higher order' approach).
+  ## DBSCAN clustering test (11,000 points)
+  ## - debug mode, old branch: 98.5s
+  ## - debug mode, this branch: 50s
+  ## - danger mode, old branch: 6.3s
+  ## - danger mode, this branch: 2.8s
+  when squared:
+    if v.is_C_contiguous and w.is_C_contiguous:
+      result = 0.0
+      var tmp = 0.0
+      let vBuf = v.toUnsafeView()
+      let wBuf = w.toUnsafeView()
+      for idx in 0 ..< v.size:
+        # Use `atIndex` so that this also works for rank 2 tensors with `[1, N]` size, as this is
+        # what we get from `pairwiseDistance` due to not squeezing the dimensions anymore.
+        tmp = vBuf[idx] - wBuf[idx] # no need for abs, as we square
+        result += tmp*tmp
+    else: # Fall back to broadcasting implementation which handles non contiguous data
+      result = sum( abs(v -. w).map_inline(x * x) )
+  else:
+    result = sqrt( sum( abs(v -. w).map_inline(x * x) ) )
 
 proc distance*(metric: typedesc[Jaccard], v, w: Tensor[float]): float =
   ## Computes the Jaccard distance between points `v` and `w`. Both need to
@@ -107,6 +130,7 @@ proc pairwiseDistances*(metric: typedesc[AnyMetric],
   ## `[1, n_dimensions]`. In this case all distances between this point and
   ## all in the other input will be computed so that the result is always of
   ## shape `[n_observations]`.
+  ## If one input has only shape `[n_dimensions]` it is unsqueezed to `[1, n_dimensions]`.
   ##
   ## The first argument is the metric to compute the distance under. If the Minkowski metric
   ## is selected the power `p` is used.
@@ -121,29 +145,30 @@ proc pairwiseDistances*(metric: typedesc[AnyMetric],
   if x.rank == y.rank and x.shape[0] == y.shape[0]:
     for idx in 0 ..< n_obs:
       when metric is Minkowski:
-        result[idx] = Minkowski.distance(x[idx, _].squeeze, y[idx, _].squeeze,
+        result[idx] = Minkowski.distance(x[idx, _], y[idx, _],
                                          p = p, squared = squared)
       elif metric is Euclidean:
-        result[idx] = Euclidean.distance(x[idx, _].squeeze, y[idx, _].squeeze,
+        result[idx] = Euclidean.distance(x[idx, _], y[idx, _],
                                          squared = squared)
       else:
-        result[idx] = metric.distance(x[idx, _].squeeze, y[idx, _].squeeze)
+        result[idx] = metric.distance(x[idx, _], y[idx, _])
   else:
     # determine which is one is 1 along n_observations
     let nx = if x.rank == 2 and x.shape[0] == n_obs: x else: y
-    let ny = if x.rank == 2 and x.shape[0] == n_obs: y else: x
+    var ny = if x.rank == 2 and x.shape[0] == n_obs: y else: x
     # in this case compute distance between all `nx` and single `ny`
-
+    if ny.rank == 1: # unsqueeze to have both rank 2
+      ny = ny.unsqueeze(0)
     var idx = 0
     for ax in axis(nx, 0):
       when metric is Minkowski:
-        result[idx] = Minkowski.distance(ax.squeeze, ny.squeeze,
+        result[idx] = Minkowski.distance(ax, ny,
                                          p = p, squared = squared)
       elif metric is Euclidean:
-        result[idx] = Euclidean.distance(ax.squeeze, ny.squeeze,
+        result[idx] = Euclidean.distance(ax, ny,
                                          squared = squared)
       else:
-        result[idx] = metric.distance(ax.squeeze, ny.squeeze)
+        result[idx] = metric.distance(ax, ny)
       inc idx
 
 proc distanceMatrix*(metric: typedesc[AnyMetric],

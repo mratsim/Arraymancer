@@ -30,8 +30,8 @@ proc nearestNeighbors*[T](X: Tensor[T], eps: float, metric: typedesc[AnyMetric],
     let kd = kdTree(X)
     result = newSeq[Tensor[int]](X.shape[0])
     var idx = 0
-    for v in axis(X, 0):
-      let (dist, idxs) = kd.query_ball_point(v.squeeze, radius = eps, metric = metric)
+    for i in 0 ..< X.shape[0]:
+      let (dist, idxs) = kd.query_ball_point(X[i, _].squeeze, radius = eps, metric = metric)
       result[idx] = idxs
       inc idx
   else:

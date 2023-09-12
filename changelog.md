@@ -1,6 +1,14 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.22 Sep. 12 2023
+=====================================================
+
+- performance improvements to the k-d tree implementation by avoiding
+  `pow` and `sqrt` calls if unnecessary and providing a custom code
+  path for euclidean distances
+- fix an issue in `kde` such that the `adjust` argument actually takes effect
+
 Arraymancer v0.7.21 Aug. 31 2023
 =====================================================
 

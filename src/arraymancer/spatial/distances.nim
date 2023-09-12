@@ -83,11 +83,18 @@ proc distance*(metric: typedesc[Euclidean], v, w: Tensor[float], squared: static
   ## - danger mode, old branch: 6.3s
   ## - danger mode, this branch: 2.8s
   when squared:
-    result = 0.0
-    var tmp = 0.0
-    for idx in 0 ..< v.size:
-      tmp = v[0, idx] - w[0, idx] # no need for abs, as we square
-      result += tmp*tmp
+    if v.is_C_contiguous and w.is_C_contiguous:
+      result = 0.0
+      var tmp = 0.0
+      let vBuf = v.toUnsafeView()
+      let wBuf = w.toUnsafeView()
+      for idx in 0 ..< v.size:
+        # Use `atIndex` so that this also works for rank 2 tensors with `[1, N]` size, as this is
+        # what we get from `pairwiseDistance` due to not squeezing the dimensions anymore.
+        tmp = vBuf[idx] - wBuf[idx] # no need for abs, as we square
+        result += tmp*tmp
+    else: # Fall back to broadcasting implementation which handles non contiguous data
+      result = sum( abs(v -. w).map_inline(x * x) )
   else:
     result = sqrt( sum( abs(v -. w).map_inline(x * x) ) )
 

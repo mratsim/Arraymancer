@@ -36,7 +36,7 @@ proc solve*[T: SomeFloat](a, b: Tensor[T], kind: MatrixKind = mkGeneral): Tensor
 
   # mutated by lapack wrappers
   var
-    pivot_indices = newSeqUninit[int32](k)
+    pivot_indices = newSeqUninit2[int32](k)
     lu = a.clone(colMajor)
   result = b.clone(colMajor)
 

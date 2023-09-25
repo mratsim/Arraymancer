@@ -93,7 +93,7 @@ proc syevr*[T: SomeFloat](a: var Tensor[T], uplo: static char, return_eigenvecto
     jobz = "V"
     eigenvec.newMatrixUninitColMajor(n, m) # ldz, m
     if interval == "A": # or (il == 1 and iu == n): -> Already checked before
-      isuppz = newSeqUninit[int32](2*m)
+      isuppz = newSeqUninit2[int32](2*m)
       isuppz_ptr = isuppz[0].addr
   else:
     jobz = "N"
@@ -114,7 +114,7 @@ proc syevr*[T: SomeFloat](a: var Tensor[T], uplo: static char, return_eigenvecto
   lwork = work_size.int32
   scratchspace.setLen(lwork)
   liwork = iwork_size.int32
-  iwork = newSeqUninit[int32](liwork)
+  iwork = newSeqUninit2[int32](liwork)
 
   # Decompose matrix
   syevr(jobz, interval, uplo_layout,
@@ -246,7 +246,7 @@ proc gesdd*[T: SomeFloat](a: var Tensor[T], U, S, Vh: var Tensor[T], scratchspac
     work_size: T
     lwork = -1'i32 # size query
     info: int32
-    iwork = newSeqUninit[int32](8 * k)
+    iwork = newSeqUninit2[int32](8 * k)
 
   U.newMatrixUninitColMajor(ldu, ucol)
   S = newTensorUninit[T](k.int)
@@ -377,7 +377,7 @@ when isMainModule:
     let expected_tau = [1.0, 1.4].toTensor()
 
     let k = min(a.shape[0], a.shape[1])
-    var tau = newSeqUninit[float64](k)
+    var tau = newSeqUninit2[float64](k)
     var r_v = a.clone(colMajor)
     var scratchspace: seq[float64]
     geqrf(r_v, tau, scratchspace)

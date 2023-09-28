@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# https://github.com/nim-lang/Nim/pull/22739
-
-func newSeqUninit*[T](len: Natural): seq[T] {.inline.} =
-  ## Creates an uninitialzed seq.
-  ## Contrary to newSequnitialized in system.nim this works for any subtype T
-  result = newSeqOfCap[T](len)
-  result.setLen(len)
+# from Nim https://github.com/nim-lang/Nim/pull/22739 on the stdlib provides a
+# `newSeqUninit` for types supporting `supportsCopyMem`
+when not declared(newSeqUninit):
+  func newSeqUninit*[T](len: Natural): seq[T] {.inline.} =
+    ## Creates an uninitialzed seq.
+    ## Contrary to newSequnitialized in system.nim this works for any subtype T
+    result = newSeqOfCap[T](len)
+    result.setLen(len)

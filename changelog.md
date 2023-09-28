@@ -1,6 +1,12 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.23 Sep. 28 2023
+=====================================================
+
+- remove custom `newSeqUninit` if stdlib version is available after
+  https://github.com/nim-lang/Nim/pull/22739 (PRs #591, #592)
+
 Arraymancer v0.7.22 Sep. 12 2023
 =====================================================
 

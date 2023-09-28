@@ -67,7 +67,7 @@ proc stack*[TT](variables: varargs[Variable[TT]], axis = 0): Variable[TT] =
 
   # Resulting var
   new result
-  var ts = newSeqUninit2[TT](variables.len)
+  var ts = newSeqUninit[TT](variables.len)
   for i in 0 ..< variables.len:
     # TODO: avoid the intermediate seq alloc to extract varargs Tensors from varargs variables
     ts[i] = variables[i].value

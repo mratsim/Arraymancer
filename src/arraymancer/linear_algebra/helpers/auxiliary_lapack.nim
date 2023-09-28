@@ -180,7 +180,7 @@ when isMainModule:
 
   let k = min(a.shape[0], a.shape[1])
   var Q_reflectors: Tensor[float64]
-  var tau = newSeqUninit2[float64](k)
+  var tau = newSeqUninit[float64](k)
   var scratchspace: seq[float64]
 
   # QR decomposition

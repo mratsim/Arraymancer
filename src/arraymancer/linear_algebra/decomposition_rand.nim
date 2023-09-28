@@ -37,7 +37,7 @@ proc lu_permuted_inplace(a: var Tensor) =
   assert a.is_F_contiguous
 
   let k = min(a.shape[0], a.shape[1])
-  var pivot_indices = newSeqUninit2[int32](k)
+  var pivot_indices = newSeqUninit[int32](k)
 
   getrf(a, pivot_indices)
 

@@ -77,7 +77,7 @@ proc gelsd*[T: SomeFloat](
   singular_values = newTensorUninit[T](minmn) # will hold the singular values of A
 
   var # Temporary parameter values
-    iwork = newSeqUninit2[int32](liwork)
+    iwork = newSeqUninit[int32](liwork)
     info, rank: int32
     lwork: int32 = -1
 
@@ -92,7 +92,7 @@ proc gelsd*[T: SomeFloat](
     iwork[0].addr, info.addr
   )
   # now use `work` value to create enough memory
-  var work = newSeqUninit2[T](workSize.int)
+  var work = newSeqUninit[T](workSize.int)
   # stort the now correct size in `lwork`
   lwork = workSize.int32
   # And solve the equations A*X = B

@@ -80,7 +80,7 @@ proc qr*[T: SomeFloat](a: Tensor[T]): tuple[Q, R: Tensor[T]] =
   let k = min(a.shape[0], a.shape[1])
 
   var scratchspace: seq[T]
-  var tau = newSeqUninit2[T](k)
+  var tau = newSeqUninit[T](k)
 
   result.Q = a.clone(colMajor)
 
@@ -111,7 +111,7 @@ proc lu_permuted*[T: SomeFloat](a: Tensor[T]): tuple[PL, U: Tensor[T]] =
   assert a.rank == 2
 
   let k = min(a.shape[0], a.shape[1])
-  var pivot_indices = newSeqUninit2[int32](k)
+  var pivot_indices = newSeqUninit[int32](k)
   result.PL = a.clone(colMajor)
 
   getrf(result.PL, pivot_indices)

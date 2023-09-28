@@ -241,7 +241,7 @@ proc backprop*[TT](v: Variable[TT]) =
         parent_i.grad += diff
 
 func newParents*[TT](num: Natural): Parents[TT] {.inline.} =
-  newSeqUninit2[Variable[TT]](num)
+  newSeqUninit[Variable[TT]](num)
 
 func newDiffs*[TT](num: Natural): SmallDiffs[TT] {.inline.} =
-  newSeqUninit2[TT](num)
+  newSeqUninit[TT](num)

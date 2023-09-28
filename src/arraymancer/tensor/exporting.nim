@@ -37,7 +37,7 @@ proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect, deprecated: "This proc ca
   # Due to forward declaration this proc must be declared
   # after "cpu" proc are declared in init_cuda
   when t is Tensor:
-    result = newSeqUninit2[T](t.size)
+    result = newSeq[T](t.size)
     for i in 0 ..< t.size:
       when T is KnownSupportsCopyMem:
         result[i] = t.unsafe_raw_offset()[i]

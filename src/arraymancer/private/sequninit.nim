@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# from Nim https://github.com/nim-lang/Nim/pull/22739 on the stdlib provides a
+# `newSeqUninit` for types supporting `supportsCopyMem`
 when not declared(newSeqUninit):
-  # https://github.com/nim-lang/Nim/pull/22586#issuecomment-1698160304
-
   func newSeqUninit*[T](len: Natural): seq[T] {.inline.} =
     ## Creates an uninitialzed seq.
     ## Contrary to newSequnitialized in system.nim this works for any subtype T

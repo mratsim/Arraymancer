@@ -81,7 +81,7 @@ proc gru_forward[TT](
   let batch_size = input.value.shape[1]
   let hidden_size = hidden0.value.shape[2]
 
-  gate.cached_inputs = newSeqUninit[TT](layers)
+  gate.cached_inputs = newSeq[TT](layers)
   gate.cached_hiddens = newSeqWith(layers) do: newSeq[TT](seq_len)
 
   gate.rs = newTensorUninit[TT.T](layers, seq_len, batch_size, hidden_size)

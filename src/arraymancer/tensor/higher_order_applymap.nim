@@ -235,7 +235,7 @@ proc map2*[T, U; V: KnownSupportsCopyMem](t1: Tensor[T],
   ##     # Or
   ##     map2(a, `**`, b)
   ## ``map2`` is especially useful to do multiple element-wise operations on a two tensors in a single loop over the data.
-  ## for example ```alpha * sin(A) + B```
+  ## for example ``alpha * sin(A) + B``
   ##
   ## For OpenMP compatibility, this ``map2`` doesn't allow ref types as result like seq or string
   when compileOption("boundChecks"):

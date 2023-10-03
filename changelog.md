@@ -1,6 +1,13 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.24 Oct. 03 2023
+=====================================================
+
+- change a few more wrong usages of `newSeqUninit` by `newSeq` (PR
+  #593)
+- two minor `nim doc` related fixes
+
 Arraymancer v0.7.23 Sep. 28 2023
 =====================================================
 

@@ -24,11 +24,27 @@ import
 
 # SVD and Eigenvalues/eigenvectors decomposition
 # --------------------------------------------------------------------------------------
+import std / [math, complex]
+
+type
+  SupportedDecomposition* = SomeFloat | Complex64 | Complex32
+
+proc dataPointerMaybeCast[T](arg: Tensor[T]): auto =
+  when T is SomeFloat: arg.get_data_ptr
+  elif T is Complex32: cast[ptr lapack_complex_float](arg.get_data_ptr)
+  elif T is Complex64: cast[ptr lapack_complex_double](arg.get_data_ptr)
+  else: {.error: "Invalid type: " & $T.}
+
+proc dataPointerMaybeCast[T](arg: seq[T]): auto =
+  when T is SomeFloat: arg[0].addr
+  elif T is Complex32: cast[ptr lapack_complex_float](arg[0].addr)
+  elif T is Complex64: cast[ptr lapack_complex_double](arg[0].addr)
+  else: {.error: "Invalid type: " & $T.}
 
 overload(syevr, ssyevr)
 overload(syevr, dsyevr)
 
-proc syevr*[T: SomeFloat](a: var Tensor[T], uplo: static char, return_eigenvectors: static bool,
+proc syevr*[T: SupportedDecomposition](a: var Tensor[T], uplo: static char, return_eigenvectors: static bool,
   low_idx: int, high_idx: int, eigenval, eigenvec: var Tensor[T], scratchspace: var seq[T]) =
   ## Wrapper for LAPACK syevr routine (Symmetric Recursive Eigenvalue Decomposition)
   ##
@@ -101,11 +117,11 @@ proc syevr*[T: SomeFloat](a: var Tensor[T], uplo: static char, return_eigenvecto
   # Querying workspaces sizes
   syevr(jobz, interval, uplo_layout,
         n.unsafeAddr,
-        a.get_data_ptr, n.unsafeAddr, # lda
+        a.dataPointerMaybeCast, n.unsafeAddr, # lda
         vl.addr, vu.addr, il.addr, iu.addr,
         abstol.addr, m.addr,
-        eigenval.get_data_ptr,
-        eigenvec.get_data_ptr, n.unsafeAddr, # ldz
+        eigenval.dataPointerMaybeCast,
+        eigenvec.dataPointerMaybeCast, n.unsafeAddr, # ldz
         isuppz_ptr,
         work_size.addr, lwork.addr,
         iwork_size.addr, liwork.addr, info.addr)
@@ -119,11 +135,11 @@ proc syevr*[T: SomeFloat](a: var Tensor[T], uplo: static char, return_eigenvecto
   # Decompose matrix
   syevr(jobz, interval, uplo_layout,
         n.unsafeAddr,
-        a.get_data_ptr, n.unsafeAddr,
+        a.dataPointerMaybeCast, n.unsafeAddr,
         vl.addr, vu.addr, il.addr, iu.addr,
         abstol.addr, m.addr,
-        eigenval.get_data_ptr,
-        eigenvec.get_data_ptr, n.unsafeAddr,
+        eigenval.dataPointerMaybeCast,
+        eigenvec.dataPointerMaybeCast, n.unsafeAddr,
         isuppz_ptr,
         scratchspace[0].addr, lwork.addr,
         iwork[0].addr, liwork.addr, info.addr)
@@ -150,8 +166,10 @@ proc syevr*[T: SomeFloat](a: var Tensor[T], uplo: static char, return_eigenvecto
 
 overload(geqrf, sgeqrf)
 overload(geqrf, dgeqrf)
+overload(geqrf, cgeqrf)
+overload(geqrf, zgeqrf)
 
-proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T], scratchspace: var seq[T]) =
+proc geqrf*[T: SupportedDecomposition](Q: var Tensor[T], tau: var seq[T], scratchspace: var seq[T]) =
   ## Wrapper for LAPACK geqrf routine (GEneral QR Factorization)
   ## Decomposition is done through Householder Reflection
   ## and without pivoting
@@ -172,7 +190,7 @@ proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T], scratchspace: var s
     info: int32
 
   # Querying workspace size
-  geqrf(m.unsafeAddr, n.unsafeAddr, Q.get_data_ptr, m.unsafeAddr, # lda
+  geqrf(m.unsafeAddr, n.unsafeAddr, Q.dataPointerMaybeCast, m.unsafeAddr, # lda
         tau[0].addr, work_size.addr, lwork.addr, info.addr)
 
   # Allocating workspace
@@ -180,7 +198,7 @@ proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T], scratchspace: var s
   scratchspace.setLen(lwork)
 
   # Decompose matrix
-  geqrf(m.unsafeAddr, n.unsafeAddr, Q.get_data_ptr, m.unsafeAddr, # lda
+  geqrf(m.unsafeAddr, n.unsafeAddr, Q.dataPointerMaybeCast, m.unsafeAddr, # lda
         tau[0].addr, scratchspace[0].addr, lwork.addr, info.addr)
   if unlikely(info < 0):
     raise newException(ValueError, "Illegal parameter in geqrf: " & $(-info))
@@ -190,8 +208,14 @@ proc geqrf*[T: SomeFloat](Q: var Tensor[T], tau: var seq[T], scratchspace: var s
 
 overload(gesdd, sgesdd)
 overload(gesdd, dgesdd)
+overload(gesdd, cgesdd)
+overload(gesdd, zgesdd)
 
-proc gesdd*[T: SomeFloat](a: var Tensor[T], U, S, Vh: var Tensor[T], scratchspace: var seq[T]) =
+proc gesdd*[T: SupportedDecomposition; X: SupportedDecomposition](a: var Tensor[T],
+                                                                  U: var Tensor[T],
+                                                                  S: var Tensor[X],
+                                                                  Vh: var Tensor[T],
+                                                                  scratchspace: var seq[T]) =
   ## Wrapper for LAPACK gesdd routine
   ## (GEneral Singular value Decomposition by Divide & conquer)
   ##
@@ -249,34 +273,57 @@ proc gesdd*[T: SomeFloat](a: var Tensor[T], U, S, Vh: var Tensor[T], scratchspac
     iwork = newSeqUninit[int32](8 * k)
 
   U.newMatrixUninitColMajor(ldu, ucol)
-  S = newTensorUninit[T](k.int)
+  S = newTensorUninit[X](k.int)
   Vh.newMatrixUninitColMajor(ldvt, n)
 
-  # Querying workspace size
-  gesdd(jobz, m.unsafeAddr, n.unsafeAddr,
-        a.get_data_ptr, m.unsafeAddr, # lda
-        S.get_data_ptr,
-        U.get_data_ptr, ldu.unsafeAddr,
-        Vh.get_data_ptr, ldvt.unsafeAddr,
-        work_size.addr,
-        lwork.addr, iwork[0].addr,
-        info.addr
-       )
+  when T is SomeFloat:
+    # Querying workspace size
+    gesdd(jobz, m.unsafeAddr, n.unsafeAddr,
+          a.dataPointerMaybeCast, m.unsafeAddr, # lda
+          S.dataPointerMaybeCast,
+          U.dataPointerMaybeCast, ldu.unsafeAddr,
+          Vh.dataPointerMaybeCast, ldvt.unsafeAddr,
+          work_size.addr,
+          lwork.addr, iwork[0].addr,
+          info.addr
+         )
 
-  # Allocating workspace
-  lwork = work_size.int32
-  scratchspace.setLen(lwork)
+    # Allocating workspace
+    lwork = work_size.int32
+    scratchspace.setLen(lwork)
 
-  # Decompose matrix
-  gesdd(jobz, m.unsafeAddr, n.unsafeAddr,
-        a.get_data_ptr, m.unsafeAddr, # lda
-        S.get_data_ptr,
-        U.get_data_ptr, ldu.unsafeAddr,
-        Vh.get_data_ptr, ldvt.unsafeAddr,
-        scratchspace[0].addr,
-        lwork.addr, iwork[0].addr,
-        info.addr
-       )
+    # Decompose matrix
+    gesdd(jobz, m.unsafeAddr, n.unsafeAddr,
+          a.dataPointerMaybeCast, m.unsafeAddr, # lda
+          S.dataPointerMaybeCast,
+          U.dataPointerMaybeCast, ldu.unsafeAddr,
+          Vh.dataPointerMaybeCast, ldvt.unsafeAddr,
+          scratchspace.dataPointerMaybeCast,
+          lwork.addr, iwork[0].addr,
+          info.addr
+         )
+  else:
+    # recommendation for `jobz` != 'N`
+    let rwork_size = max(1, 5*(min(m,n))^2 + 7*min(m,n))
+    var rwork = newSeq[X](rwork_size)
+
+    # Allocating workspace, based on recommendation for `jobz` == `S`. Cannot
+    # retrieve by query when `rwork` is given as well I think. Maybe doing something
+    # wrong
+    lwork = 3*(min(m.int32, n.int32))^2 + max(max(m.int32, n.int32), 4*(min(m.int32, n.int32))^2 + 4*min(m.int32, n.int32))
+    scratchspace.setLen(lwork)
+
+    # Decompose matrix
+    gesdd(jobz, m.unsafeAddr, n.unsafeAddr,
+          a.dataPointerMaybeCast, m.unsafeAddr, # lda
+          S.dataPointerMaybeCast,
+          U.dataPointerMaybeCast, ldu.unsafeAddr,
+          Vh.dataPointerMaybeCast, ldvt.unsafeAddr,
+          scratchspace.dataPointerMaybeCast,
+          lwork.addr, rwork.dataPointerMaybeCast, iwork[0].addr,
+          info.addr
+         )
+
 
   if info > 0:
     # TODO, this should not be an exception, not converging is something that can happen and should
@@ -290,8 +337,10 @@ proc gesdd*[T: SomeFloat](a: var Tensor[T], U, S, Vh: var Tensor[T], scratchspac
 # --------------------------------------------------------------------------------------
 overload(getrf, sgetrf)
 overload(getrf, dgetrf)
+overload(getrf, cgetrf)
+overload(getrf, zgetrf)
 
-proc getrf*[T: SomeFloat](lu: var Tensor[T], pivot_indices: var seq[int32]) =
+proc getrf*[T: SupportedDecomposition](lu: var Tensor[T], pivot_indices: var seq[int32]) =
   ## Wrapper for LAPACK getrf routine
   ## (GEneral ??? Pivoted LU Factorization)
   ##
@@ -307,7 +356,7 @@ proc getrf*[T: SomeFloat](lu: var Tensor[T], pivot_indices: var seq[int32]) =
   var info: int32
 
   # Decompose matrix
-  getrf(m.unsafeAddr, n.unsafeAddr, lu.get_data_ptr, m.unsafeAddr, # lda
+  getrf(m.unsafeAddr, n.unsafeAddr, lu.dataPointerMaybeCast, m.unsafeAddr, # lda
         pivot_indices[0].addr, info.addr)
   if info < 0:
     raise newException(ValueError, "Illegal parameter in lu factorization getrf: " & $(-info))

@@ -3,6 +3,7 @@
 
 import ../../src/arraymancer
 import unittest, math
+import std/strformat
 
 proc main() =
   suite "Linear algebra":
@@ -522,6 +523,31 @@ proc main() =
 
         let reconstructed = (U *. S.unsqueeze(0)) * Vh
         check: H.mean_absolute_error(reconstructed) < 1e-2
+
+    test "Pseudo-Inverse (Pinv)":
+      block:
+        let a = [[ 7.52, -1.10, -7.95,  1.08],
+                [ -0.76,  0.62,  9.34, -7.10],
+                [  5.13,  6.62, -5.66,  0.87],
+                [ -4.75,  8.52,  5.75,  5.30],
+                [  1.33,  4.91, -5.49, -3.52],
+                [ -2.40, -6.77,  2.34,  3.95]].toTensor()
+
+        let expected_a_pinv = [[0.11181,    0.0799877,  0.075215,  0.0069947, -0.0949072,  0.00267723],
+                              [-0.00777931, 0.00729835, 0.0340491, 0.0477368,  0.0235042, -0.0353603 ],
+                              [ 0.0315948,  0.0781534,  0.0227237, 0.0345276, -0.0772229,  0.0116902 ],
+                              [ 0.0381356, -0.0348393,  0.0267878, 0.0563091, -0.0662466,  0.0396261 ]].toTensor()
+
+        let a_pinv = pinv(a)
+        let should_be_identity = a_pinv * a
+        let identity = [[1.0, 0.0, 0.0, 0.0],
+                        [0.0, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, 1.0, 0.0],
+                        [0.0, 0.0, 0.0, 1.0]].toTensor()
+
+        check:
+          a_pinv.mean_absolute_error(expected_a_pinv) < 1e-2
+          should_be_identity.mean_absolute_error(identity) < 1e-2
 
     test "Solve linear equations general matrix":
       block:

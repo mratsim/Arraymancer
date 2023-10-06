@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import ./data_structure
-import ../private/sequninit
 import ./accessors
 import std/sequtils
 

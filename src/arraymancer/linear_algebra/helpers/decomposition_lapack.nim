@@ -29,6 +29,12 @@ import std / [math, complex]
 type
   SupportedDecomposition* = SomeFloat | Complex64 | Complex32
 
+template address*(x: typed): untyped =
+  when (NimMajor, NimMinor, NimPatch) < (1, 9, 0):
+    unsafeAddr(x)
+  else:
+    addr(x)
+
 proc dataPointerMaybeCast[T](arg: Tensor[T]): auto =
   when T is SomeFloat: arg.get_data_ptr
   elif T is Complex32: cast[ptr lapack_complex_float](arg.get_data_ptr)
@@ -36,9 +42,9 @@ proc dataPointerMaybeCast[T](arg: Tensor[T]): auto =
   else: {.error: "Invalid type: " & $T.}
 
 proc dataPointerMaybeCast[T](arg: seq[T]): auto =
-  when T is SomeFloat: arg[0].addr
-  elif T is Complex32: cast[ptr lapack_complex_float](arg[0].addr)
-  elif T is Complex64: cast[ptr lapack_complex_double](arg[0].addr)
+  when T is SomeFloat: address(arg[0])
+  elif T is Complex32: cast[ptr lapack_complex_float](address(arg[0]))
+  elif T is Complex64: cast[ptr lapack_complex_double](address(arg[0]))
   else: {.error: "Invalid type: " & $T.}
 
 overload(syevr, ssyevr)

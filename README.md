@@ -22,6 +22,10 @@ Reminder of supported compilation flags:
 - `-d:openblas`: Use OpenBLAS
 - by default Arraymancer will try to use your default `blas.so/blas.dll`
   Archlinux users may have to specify `-d:blas=cblas`.
+  Windows users may have to download `libopenblas.dll` from the binary releases
+  section of [openblas](https://www.openblas.net), extract it to the compilation
+  output folder and specify `-d:blas=libopenblas -d:lapack=libopenblas` when compiling
+  (or set those options on your `nim.cfg` file).
   See [nimblas](https://github.com/unicredit/nimblas) for further configuration.
 - `-d:cuda`: Build with Cuda support
 - `-d:cudnn`: Build with CuDNN support, implies `cuda`.

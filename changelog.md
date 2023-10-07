@@ -1,6 +1,17 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.25 Oct. 07 2023
+=====================================================
+
+- add support for Complex tensors for the `decomposition` procedures
+  (PR #594)
+- add support for Complex tensors for the common error functions (PR
+  #594)
+- add new submodule `linear_algebra/algebra.nim` with `pinv` to
+  compute the pseudo inverse of a given matrix (`SomeFloat` and
+  `Complex`) (PR #594)
+
 Arraymancer v0.7.24 Oct. 03 2023
 =====================================================
 

@@ -7,8 +7,9 @@ import
                     special_matrices,
                     decomposition,
                     decomposition_rand,
-                    linear_systems]
+                    linear_systems,
+                    algebra]
 
 export
   least_squares, special_matrices,
-  decomposition, decomposition_rand, linear_systems
+  decomposition, decomposition_rand, linear_systems, algebra

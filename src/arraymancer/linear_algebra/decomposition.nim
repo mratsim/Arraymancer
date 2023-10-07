@@ -16,7 +16,7 @@ template `^^`(s, i: untyped): untyped =
 # Full decompositions
 # -------------------------------------------
 
-proc symeig*[T: SomeFloat](a: Tensor[T], return_eigenvectors: static bool = false, uplo: static char = 'U'): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
+proc symeig*[T: SupportedDecomposition](a: Tensor[T], return_eigenvectors: static bool = false, uplo: static char = 'U'): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
   ## Compute the eigenvalues and eigen vectors of a symmetric matrix
   ## Input:
   ##   - A symmetric matrix of shape [n x n]
@@ -36,7 +36,7 @@ proc symeig*[T: SomeFloat](a: Tensor[T], return_eigenvectors: static bool = fals
   var a = a.clone(colMajor)
   syevr(a, uplo, return_eigenvectors, 0, a.shape[0] - 1, result.eigenval, result.eigenvec, scratchspace)
 
-proc symeig*[T: SomeFloat](a: Tensor[T], return_eigenvectors: static bool = false,
+proc symeig*[T: SupportedDecomposition](a: Tensor[T], return_eigenvectors: static bool = false,
   uplo: static char = 'U',
   slice: HSlice[int or BackwardsIndex, int or BackwardsIndex]): tuple[eigenval, eigenvec: Tensor[T]] {.inline.}=
   ## Compute the eigenvalues and eigen vectors of a symmetric matrix
@@ -60,7 +60,7 @@ proc symeig*[T: SomeFloat](a: Tensor[T], return_eigenvectors: static bool = fals
   var a = a.clone(colMajor)
   syevr(a, uplo, return_eigenvectors, a ^^ slice.a, a ^^ slice.b, result.eigenval, result.eigenvec, scratchspace)
 
-proc qr*[T: SomeFloat](a: Tensor[T]): tuple[Q, R: Tensor[T]] =
+proc qr*[T: SupportedDecomposition](a: Tensor[T]): tuple[Q, R: Tensor[T]] =
   ## Compute the QR decomposition of an input matrix ``a``
   ## Decomposition is done through the Householder method
   ## without pivoting.
@@ -90,7 +90,7 @@ proc qr*[T: SomeFloat](a: Tensor[T]): tuple[Q, R: Tensor[T]] =
   orgqr(result.Q, tau, scratchspace)
   result.Q = result.Q[_, 0..<k]
 
-proc lu_permuted*[T: SomeFloat](a: Tensor[T]): tuple[PL, U: Tensor[T]] =
+proc lu_permuted*[T: SupportedDecomposition](a: Tensor[T]): tuple[PL, U: Tensor[T]] =
   ## Compute the pivoted LU decomposition of an input matrix ``a``.
   ##
   ## The decomposition solves the equation:
@@ -121,7 +121,7 @@ proc lu_permuted*[T: SomeFloat](a: Tensor[T]): tuple[PL, U: Tensor[T]] =
   tril_unit_diag_mut(result.PL)
   laswp(result.PL, pivot_indices, pivot_from = -1)
 
-proc svd*[T: SomeFloat](A: Tensor[T]): tuple[U, S, Vh: Tensor[T]] =
+proc svd*[T: SupportedDecomposition; U: SomeFloat](A: Tensor[T], _: typedesc[U]): tuple[U: Tensor[T], S: Tensor[U], Vh: Tensor[T]] =
   ## Compute the Singular Value Decomposition of an input matrix ``a``
   ## Decomposition is done through recursive divide & conquer.
   ##
@@ -174,3 +174,8 @@ proc svd*[T: SomeFloat](A: Tensor[T]): tuple[U, S, Vh: Tensor[T]] =
 
     result.Vh = V.transpose()
     result.U = Ut.transpose()
+
+proc svd*[T: SupportedDecomposition](A: Tensor[T]): auto =
+  when T is SomeFloat: svd(A, T)
+  elif T is Complex32: svd(A, float32)
+  else: svd(A, float)

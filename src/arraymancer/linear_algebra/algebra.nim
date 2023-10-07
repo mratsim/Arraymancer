@@ -30,7 +30,7 @@ proc pinv*[T: SomeFloat](A: Tensor[T], rcond = 1e-15): Tensor[T] =
   const unit = T(1.0)
   for n in 0..<S.shape[0]:
     S_inv[n, n] = if abs(S[n]) > epsilon: unit / S[n] else: 0.0
-  Vt.transpose * S_inv * U.transpose
+  result = Vt.transpose * S_inv * U.transpose
 
 proc pinv*[T: Complex32 | Complex64](A: Tensor[T], rcond = 1e-15): Tensor[T] =
   ## Compute the (Moore-Penrose) pseudo-inverse of a matrix.
@@ -51,4 +51,4 @@ proc pinv*[T: Complex32 | Complex64](A: Tensor[T], rcond = 1e-15): Tensor[T] =
   const unit = complex(1.0)
   for n in 0..<S.shape[0]:
     S_inv[n, n] = if abs(S[n]) > epsilon: unit / S[n] else: complex(0.0)
-  Vt.conjugate.transpose * S_inv * U.conjugate.transpose
+  result = Vt.conjugate.transpose * S_inv * U.conjugate.transpose

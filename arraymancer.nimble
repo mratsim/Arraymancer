@@ -1,13 +1,13 @@
 ### Package
-version       = "0.7.25"
+version       = "0.7.26"
 author        = "Mamy André-Ratsimbazafy"
 description   = "A n-dimensional tensor (ndarray) library"
 license       = "Apache License 2.0"
 
 ### Dependencies
 requires "nim >= 1.0.0",
-  "nimblas >= 0.2.2",
-  "nimlapack >= 0.1.1",
+  "nimblas >= 0.3.0",
+  "nimlapack >= 0.3.0",
   "nimcuda >= 0.1.4",
   "nimcl >= 0.1.3",
   "clblast",

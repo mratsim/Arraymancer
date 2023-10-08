@@ -1,6 +1,12 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.26 Oct. 08 2023
+=====================================================
+- clean up some warnings and hints (PR #595)
+- update `nimblas` and `nimlapack` deps to `v0.3.0` for smarter
+  detection of these shared libraries
+
 Arraymancer v0.7.25 Oct. 07 2023
 =====================================================
 

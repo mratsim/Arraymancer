@@ -273,7 +273,7 @@ proc gesdd*[T: SupportedDecomposition; X: SupportedDecomposition](a: var Tensor[
     ldvt = k # depends on jobz
   var
     # LAPACK stores optimal scratchspace size in the first element of a float array ...
-    work_size: T
+    work_size {. used .}: T
     lwork = -1'i32 # size query
     info: int32
     iwork = newSeqUninit[int32](8 * k)

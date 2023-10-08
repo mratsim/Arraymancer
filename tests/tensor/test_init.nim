@@ -180,7 +180,6 @@ proc main() =
 
     when defined(gcDestructors):
       test "Self assignment of tensor (ARC)":
-        var a = @[1.0, 2, 3, 4, 5].toTensor()
         var t: TestObject
         t.x = @[1.0, 2, 3, 4].toTensor()
         t.x = t.x

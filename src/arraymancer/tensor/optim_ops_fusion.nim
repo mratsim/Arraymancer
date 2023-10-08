@@ -54,7 +54,7 @@ template rewriteTensor_MultiplyAdd*{`*`(A,B) + C}[T](
   ## Operation fusion leverage the Nim compiler and should not be called explicitly.
   tensor_multiplyAdd(A, B, C)
 
-template rewriteTensor_MultiplyAdd*{C + `*`(A,B)}[T](
+template rewriteTensor_AddMultiply*{C + `*`(A,B)}[T](
   A, B, C: Tensor[T]): auto =
   ## Fuse ``C + A * B`` into a single operation.
   ##

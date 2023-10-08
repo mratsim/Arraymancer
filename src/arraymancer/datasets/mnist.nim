@@ -15,6 +15,9 @@
 
 # ##########################################################################
 # Download and read images and labels from http://yann.lecun.com/exdb/mnist/
+# for the handwritten digits dataset
+# and http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/ for the
+# fashion dataset.
 
 
 # Format:
@@ -191,7 +194,7 @@ proc load_mnist*(cache: static bool = true,
   ## Use the cache argument (bool) as false to cleanup the files each time.
   ##
   ## The cache by default will be in `~/.cache/arraymancer` on Unix
-  ## and `%USERNAME%/.cache/arraymancer` on Windows, yhis can be changed with
+  ## and `%USERNAME%/.cache/arraymancer` on Windows, this can be changed with
   ## the XDG_CACHE_HOME environment variable.
   ##
   ## This proc will:
@@ -206,7 +209,7 @@ proc load_mnist*(cache: static bool = true,
 
   if not files.all(x => x.fileExists):
     create_cache_dirs_if_necessary()
-    download_mnist_files(files)
+    download_mnist_files(files, fashion_mnist)
 
   # Training
   result.train_images = read_mnist_images(files[0])

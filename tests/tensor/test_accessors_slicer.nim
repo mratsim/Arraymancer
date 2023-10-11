@@ -145,6 +145,14 @@ proc main() =
       let test2 = @[@[256],@[81],@[16],@[1]]
       check: t_van[^(4-2)..0|-1, 3] == test2.toTensor()
 
+    test "Span stepping from the end - foo[_|-2, 3]":
+      let test = @[@[625],@[81],@[1]]
+      check: t_van[_|-2, 3] == test.toTensor()
+
+    test "Span stepping from the end - foo[_.._|-2, 3]":
+      let test = @[@[625],@[81],@[1]]
+      check: t_van[_.._|-2, 3] == test.toTensor()
+
     when compileOption("boundChecks") and not defined(openmp):
       test "Slice from the end - expect non-negative step error - foo[^1..0, 3]":
         expect(IndexDefect):

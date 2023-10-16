@@ -42,7 +42,7 @@ Reminder of supported compilation flags:
 
 ## Show me some code
 
-Arraymancer tutorial is available [here](https://mratsim.github.io/Arraymancer/tuto.first_steps.html).
+The Arraymancer tutorial is available [here](https://mratsim.github.io/Arraymancer/tuto.first_steps.html).
 
 Here is a preview of Arraymancer syntax.
 
@@ -56,10 +56,8 @@ const
     y = @[1, 2, 3, 4, 5]
 
 var
-    vandermonde: seq[seq[int]]
+    vandermonde: newSeq[seq[int]]()
     row: seq[int]
-
-vandermonde = newSeq[seq[int]]()
 
 for i, xx in x:
     row = newSeq[int]()
@@ -71,17 +69,17 @@ let foo = vandermonde.toTensor()
 
 echo foo
 
-# Tensor of shape 5x5 of type "int" on backend "Cpu"
-# |1      1       1       1       1|
-# |2      4       8       16      32|
-# |3      9       27      81      243|
-# |4      16      64      256     1024|
-# |5      25      125     625     3125|
+# Tensor[system.int] of shape "[5, 5]" on backend "Cpu"
+# |1          1       1       1       1|
+# |2          4       8      16      32|
+# |3          9      27      81     243|
+# |4         16      64     256    1024|
+# |5         25     125     625    3125|
 
 echo foo[1..2, 3..4] # slice
 
-# Tensor of shape 2x2 of type "int" on backend "Cpu"
-# |16     32|
+# Tensor[system.int] of shape "[2, 2]" on backend "Cpu"
+# |16      32|
 # |81     243|
 
 echo foo[_|-1, _] # reverse the order of the rows
@@ -99,7 +97,6 @@ echo foo[_|-1, _] # reverse the order of the rows
 ```Nim
 import arraymancer, sequtils
 
-
 let a = toSeq(1..4).toTensor.reshape(2,2)
 
 let b = toSeq(5..8).toTensor.reshape(2,2)
@@ -109,19 +106,19 @@ let c0 = c.reshape(3,2)
 let c1 = c.reshape(2,3)
 
 echo concat(a,b,c0, axis = 0)
-# Tensor of shape 7x2 of type "int" on backend "Cpu"
+# Tensor[system.int] of shape "[7, 2]" on backend "Cpu"
 # |1      2|
 # |3      4|
 # |5      6|
 # |7      8|
-# |11     12|
-# |13     14|
-# |15     16|
+# |11    12|
+# |13    14|
+# |15    16|
 
 echo concat(a,b,c1, axis = 1)
-# Tensor of shape 2x7 of type "int" on backend "Cpu"
-# |1      2       5       6       11      12      13|
-# |3      4       7       8       14      15      16|
+# Tensor[system.int] of shape "[2, 7]" on backend "Cpu"
+# |1      2     5     6    11    12    13|
+# |3      4     7     8    14    15    16|
 ```
 
 ### Broadcasting
@@ -137,11 +134,11 @@ let j = [0, 10, 20, 30].toTensor.reshape(4,1)
 let k = [0, 1, 2].toTensor.reshape(1,3)
 
 echo j +. k
-# Tensor of shape 4x3 of type "int" on backend "Cpu"
-# |0      1       2|
-# |10     11      12|
-# |20     21      22|
-# |30     31      32|
+# Tensor[system.int] of shape "[4, 3]" on backend "Cpu"
+# |0      1     2|
+# |10    11    12|
+# |20    21    22|
+# |30    31    32|
 ```
 
 ### A simple two layers neural network
@@ -172,7 +169,7 @@ let
   y = randomTensor[float32](N, D_out, 1'f32)
 
 # ##################################################################
-# Define the model.
+# Define the model
 
 network TwoLayersNet:
   layers:
@@ -305,6 +302,8 @@ You can also watch the following animated [neural network demo](https://github.c
 Neural network definition extracted from [example 4](examples/ex04_fizzbuzz_interview_cheatsheet.nim).
 
 ```Nim
+import arraymancer
+
 const
   NumDigits = 10
   NumHidden = 100
@@ -339,6 +338,8 @@ echo answer
 Neural network definition extracted from [example 2](examples/ex02_handwritten_digits_recognition.nim).
 
 ```Nim
+import arraymancer
+
 network DemoNet:
   layers:
     cv1:        Conv2D(@[1, 28, 28], out_channels = 20, kernel_size = (5, 5))
@@ -365,6 +366,8 @@ let
 Neural network definition extracted [example 5](examples/ex05_sequence_classification_GRU.nim).
 
 ```Nim
+import arraymancer
+
 const
   HiddenSize = 256
   Layers = 4
@@ -409,6 +412,7 @@ let exam = ctx.variable([
     [float32 0.98, 0.97, 0.96], # decreasing
     [float32 0.12, 0.05, 0.01], # decreasing
     [float32 0.95, 0.05, 0.07]  # non-monotonic
+  ])
 # ...
 echo answer.unsqueeze(1)
 # Tensor[ex05_sequence_classification_GRU.SeqKind] of shape [8, 1] of type "SeqKind" on backend "Cpu"
@@ -428,6 +432,7 @@ Network models can also act as layers in other network definitions.
 The handwritten-digit-recognition model above can also be written like this:
 
 ```Nim
+import arraymancer
 
 network SomeConvNet:
   layers h, w:

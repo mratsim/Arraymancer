@@ -5,9 +5,10 @@
 Arraymancer is a tensor (N-dimensional array) project in Nim. The main focus is providing a fast and ergonomic CPU, Cuda and OpenCL ndarray library on which to build a scientific computing ecosystem.
 
 The library is inspired by Numpy and PyTorch and targets the following use-cases:
-  - N-dimensional arrays (tensors) for numerical computing
-  - machine learning algorithms (as in Scikit-learn: least squares solvers, PCA and dimensionality reduction, classifiers, regressors and clustering algorithms, cross-validation).
-  - deep learning
+
+- N-dimensional arrays (tensors) for numerical computing
+- machine learning algorithms (as in Scikit-learn: least squares solvers, PCA and dimensionality reduction, classifiers, regressors and clustering algorithms, cross-validation).
+- deep learning
 
 The ndarray component can be used without the machine learning and deep learning component.
 It can also use the OpenMP, Cuda or OpenCL backends.
@@ -15,6 +16,7 @@ It can also use the OpenMP, Cuda or OpenCL backends.
 Note: While Nim is compiled and does not offer an interactive REPL yet (like Jupyter), it allows much faster prototyping than C++ due to extremely fast compilation times. Arraymancer compiles in about 5 seconds on my dual-core MacBook.
 
 Reminder of supported compilation flags:
+
 - `-d:release`: Nim release mode (no stacktraces and debugging information)
 - `-d:danger`: No runtime checks like array bound checking
 - `-d:openmp`: Multithreaded compilation
@@ -299,6 +301,7 @@ Reminder: The final interface is still **work in progress.**
 You can also watch the following animated [neural network demo](https://github.com/Vindaar/NeuralNetworkLiveDemo) which shows live training via [nim-plotly](https://github.com/brentp/nim-plotly).
 
 #### Fizzbuzz with fully-connected layers (also called Dense, Affine or Linear layers)
+
 Neural network definition extracted from [example 4](examples/ex04_fizzbuzz_interview_cheatsheet.nim).
 
 ```Nim
@@ -332,6 +335,7 @@ echo answer
 ```
 
 #### Handwritten digit recognition with convolutions
+
 Neural network definition extracted from [example 2](examples/ex02_handwritten_digits_recognition.nim).
 
 ```Nim
@@ -357,6 +361,7 @@ let
 ```
 
 #### Sequence classification with stacked Recurrent Neural Networks
+
 Neural network definition extracted [example 5](examples/ex05_sequence_classification_GRU.nim).
 
 ```Nim
@@ -418,6 +423,7 @@ echo answer.unsqueeze(1)
 ```
 
 #### Composing models
+
 Network models can also act as layers in other network definitions.
 The handwritten-digit-recognition model above can also be written like this:
 
@@ -453,10 +459,12 @@ network DemoNet:
 ```
 
 #### Custom layers
+
 It is also possible to create fully custom layers.
 The documentation for this can be found in the [official API documentation](https://mratsim.github.io/Arraymancer/nn_dsl.html).
 
 ### Tensors on CPU, on Cuda and OpenCL
+
 Tensors, CudaTensors and CLTensors do not have the same features implemented yet.
 Also CudaTensors and CLTensors can only be float32 or float64 while CpuTensors can be integers, string, boolean or any custom object.
 
@@ -491,12 +499,13 @@ Here is a comparative table of the core features.
 The full changelog is available in [changelog.md](./changelog.md).
 
 Here are the highlights:
-  - 0.20.x compatibility
-  - Complex support
-  - `Einsum`
-  - Naive whitespace tokenizer for NLP
-  - Fix height/width order when reading an image in tensor
-  - Preview of Laser backend for matrix multiplication without SIMD autodetection (already 5x faster on integer matrix multiplication)
+
+- 0.20.x compatibility
+- Complex support
+- `Einsum`
+- Naive whitespace tokenizer for NLP
+- Fix height/width order when reading an image in tensor
+- Preview of Laser backend for matrix multiplication without SIMD autodetection (already 5x faster on integer matrix multiplication)
 
 ## 4 reasons why Arraymancer
 
@@ -525,7 +534,9 @@ Arraymancer models can be packaged in a self-contained binary that only depends 
 This means that there is no need to install a huge library or language ecosystem to use Arraymancer. This also makes it naturally suitable for resource-constrained devices like mobile phones and Raspberry Pi.
 
 ### Bridging the gap between deep learning research and production
+
 The deep learning frameworks are currently in two camps:
+
 - Research: Theano, Tensorflow, Keras, Torch, PyTorch
 - Production: Caffe, Darknet, (Tensorflow)
 
@@ -543,6 +554,7 @@ Furthermore, Python preprocessing steps, unless using OpenCV, often needs a cust
 ### So why Arraymancer ?
 
 All those pain points may seem like a huge undertaking however thanks to the Nim language, we can have Arraymancer:
+
 - Be as fast as C
 - Accelerated routines with Intel MKL/OpenBLAS or even NNPACK
 - Access to CUDA and CuDNN and generate custom CUDA kernels on the fly via metaprogramming.
@@ -552,7 +564,9 @@ All those pain points may seem like a huge undertaking however thanks to the Nim
 - For everything that Nim doesn't have yet, you can use Nim bindings to C, C++, Objective-C or Javascript to bring it to Nim. Nim also has unofficial Python->Nim and Nim->Python wrappers.
 
 ## Future ambitions
+
 Because apparently to be successful you need a vision, I would like Arraymancer to be:
+
 - The go-to tool for Deep Learning video processing. I.e. `vid = load_video("./cats/youtube_cat_video.mkv")`
 - Target javascript, WebAssembly, Apple Metal, ARM devices, AMD Rocm, OpenCL, you name it.
 - The base of a Starcraft II AI bot.

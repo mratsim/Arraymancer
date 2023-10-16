@@ -48,27 +48,7 @@ proc vandermonde*[T](x: Tensor[T], order: int): Tensor[float] =
   for i, ax in enumerateAxis(result, axis = 1):
     result[_, i] = (x ^. orders[i]).unsqueeze(axis = 1)
 
-proc diag*[T](d: Tensor[T], k = 0): Tensor[T] {.noInit.}=
-  ## Creates new square diagonal matrix from an rank-1 input tensor
-  ##
-  ## Input:
-  ##      - Rank-1 tensor containg the elements of the diagonal
-  ##      - k: The index of the diagonal that will be set. The default is 0.
-  ##        Use k>0 for diagonals above the main diagonal, and k<0 for diagonals below the main diagonal.
-  ## Result:
-  ##      - The constructed, square diagonal matrix
-  assert d.rank == 1
-  let size = d.size + abs(k)
-  result = zeros[T](size, size)
-
-  if k >= 0:
-    for i in 0 ..< d.size:
-      result[i, i+k] = d[i]
-  else:
-    for i in 0 ..< d.size:
-      result[i-k, i] = d[i]
-
-proc diagonal*[T](a: Tensor[T], k = 0, anti = false): Tensor[T] {.noInit.}=
+proc diagonal*[T](a: Tensor[T], k = 0, anti = false): Tensor[T] {.noInit.} =
   ## Gets the k-th diagonal (or anti-diagonal) of a matrix
   ##
   ## Input:
@@ -147,7 +127,7 @@ proc set_diagonal*[T](a: var Tensor[T], d: Tensor[T], k = 0, anti = false) =
       for i in 0 ..< d.size:
         a[i-k, i] = d[i]
 
-proc with_diagonal*[T](a: Tensor[T], d: Tensor[T], k = 0, anti = false): Tensor[T] {.noInit.}=
+proc with_diagonal*[T](a: Tensor[T], d: Tensor[T], k = 0, anti = false): Tensor[T] {.noInit.} =
   ## Copy the input matrix, changing one of its diagonals into the elements of the rank-1 input tensor d
   ##
   ## Input:
@@ -159,7 +139,22 @@ proc with_diagonal*[T](a: Tensor[T], d: Tensor[T], k = 0, anti = false): Tensor[
   result = a
   set_diagonal(result, d, k, anti=anti)
 
-proc identity*[T](n: int): Tensor[T] {.noInit.}=
+proc diag*[T](d: Tensor[T], k = 0, anti = false): Tensor[T] {.noInit.} =
+  ## Creates new square diagonal matrix from an rank-1 input tensor
+  ##
+  ## Input:
+  ##      - Rank-1 tensor containg the elements of the diagonal
+  ##      - k: The index of the diagonal that will be set. The default is 0.
+  ##        Use k>0 for diagonals above the main diagonal, and k<0 for diagonals below the main diagonal.
+  ##      - anti: If true, set the k-th "anti-diagonal" instead of the k-th regular diagonal.
+  ## Result:
+  ##      - The constructed, square diagonal matrix
+  doAssert d.rank == 1, "Diagonal must be a rank-1 tensor"
+  let size = d.size + abs(k)
+  result = zeros[T](size, size)
+  result.set_diagonal(d, k=k, anti=anti)
+
+proc identity*[T](n: int): Tensor[T] {.noInit.} =
   ## Return an identity matrix (i.e. 2-D tensor) of size `n`
   ## 
   ## The identity matrix is a square 2-D tensor with ones on the main diagonal and zeros elsewhere.

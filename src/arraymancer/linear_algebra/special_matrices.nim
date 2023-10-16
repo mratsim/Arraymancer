@@ -58,7 +58,7 @@ proc diagonal*[T](a: Tensor[T], k = 0, anti = false): Tensor[T] {.noInit.} =
   ##      - anti: If true, get the k-th "anti-diagonal" instead of the k-th regular diagonal.
   ## Result:
   ##      - A copy of the diagonal elements as a rank-1 tensor
-  assert a.rank == 2
+  assert a.rank == 2, "diagonal() only works on matrices"
   assert k < a.shape[0], &"Diagonal index ({k=}) exceeds matrix height ({a.shape[0]})"
   assert k < a.shape[1], &"Diagonal index ({k=}) exceeds matrix width ({a.shape[1]})"
   let size = min(a.shape[0], a.shape[1]) - abs(k)
@@ -96,34 +96,34 @@ proc set_diagonal*[T](a: var Tensor[T], d: Tensor[T], k = 0, anti = false) =
   ##      - k: The index k of the diagonal that will be changed. The default is 0 (i.e. the main diagonal).
   ##        Use k>0 for diagonals above the main diagonal, and k<0 for diagonals below the main diagonal.
   ##      - anti: If true, set the k-th "anti-diagonal" instead of the k-th regular diagonal.
-  assert a.rank == 2
-  assert d.rank == 1
-  assert k < a.shape[0], &"Diagonal index ({k=}) exceeds matrix height ({a.shape[0]})"
-  assert k < a.shape[1], &"Diagonal index ({k=}) exceeds matrix width ({a.shape[1]})"
+  assert a.rank == 2, "set_diagonal() only works on matrices"
+  assert d.rank == 1, "The diagonal passed to set_diagonal() must be a rank-1 tensor"
+  assert k < a.shape[0], &"Diagonal index ({k=}) exceeds input matrix height ({a.shape[0]})"
+  assert k < a.shape[1], &"Diagonal index ({k=}) exceeds input matrix width ({a.shape[1]})"
   if anti:
     if k >= 0:
       when compileOption("boundChecks"):
         let size = min(a.shape[0] - abs(k), a.shape[1])
-        assert size == d.size, &"Input size ({d.size}) does not match the {k}-th upper anti-diagonal size ({size})"
+        doAssert size == d.size, &"Diagonal input size ({d.size}) does not match the {k}-th upper anti-diagonal size ({size})"
       for i in 0 ..< d.size:
         a[a.shape[0]-1-(i+k), i] = d[i]
     else:
       when compileOption("boundChecks"):
         let size = min(a.shape[0], a.shape[1] - abs(k))
-        assert size == d.size, &"Input size ({d.size}) does not match the {-k}-th lower anti-diagonal size ({size})"
+        doAssert size == d.size, &"Diagonal input size ({d.size}) does not match the {-k}-th lower anti-diagonal size ({size})"
       for i in 0 ..< d.size:
         a[a.shape[0]-1-i, i-k] = d[i]
   else:
     if k >= 0:
       when compileOption("boundChecks"):
         let size = min(a.shape[0], a.shape[1] - abs(k))
-        assert size == d.size, &"Input size ({d.size}) does not match the {k}-th upper diagonal size ({size})"
+        doAssert size == d.size, &"Diagonal input size ({d.size}) does not match the {k}-th upper diagonal size ({size})"
       for i in 0 ..< d.size:
         a[i, i+k] = d[i]
     else:
       when compileOption("boundChecks"):
         let size = min(a.shape[0] - abs(k), a.shape[1])
-        assert size == d.size, &"Input size ({d.size}) does not match the {-k}-th lower diagonal size ({size})"
+        doAssert size == d.size, &"Diagonal input size ({d.size}) does not match the {-k}-th lower diagonal size ({size})"
       for i in 0 ..< d.size:
         a[i-k, i] = d[i]
 
@@ -173,5 +173,6 @@ proc eye*[T](shape: varargs[int]): Tensor[T] {.noInit.} =
   ##      - The shape of the output matrix
   ## Result:
   ##      - The constructed, rank-2 diagonal tensor
+  doAssert shape.len == 2, "eye() takes exactly two arguments"
   result = zeros[T](shape)
   result.set_diagonal(ones[T](min(shape)))

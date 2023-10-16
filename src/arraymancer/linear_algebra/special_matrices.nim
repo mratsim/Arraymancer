@@ -163,6 +163,7 @@ proc identity*[T](n: int): Tensor[T] {.noInit.}=
   ## Return an identity matrix (i.e. 2-D tensor) of size `n`
   ## 
   ## The identity matrix is a square 2-D tensor with ones on the main diagonal and zeros elsewhere.
+  ## This is basically the same as calling `eye(n, n)`.
   ##
   ## Input:
   ##      - Number of rows / columns in the output.
@@ -170,13 +171,11 @@ proc identity*[T](n: int): Tensor[T] {.noInit.}=
   ##      - The constructed indentity 2-D tensor
   result = diag(ones[T](n))
 
-proc eye*[T](shape: varargs[int]): Tensor[T] {.noInit.}=
+proc eye*[T](shape: varargs[int]): Tensor[T] {.noInit.} =
   ## Return a 2-D tensor with ones on the diagonal and zeros elsewhere
   ##
   ## Input:
-  ##      - Rank-1 tensor containg the elements of the diagonal
-  ##      - The index of the diagonal that will be set. The default is 0.
-  ##        Use k>0 for diagonals above the main diagonal, and k<0 for diagonals below the main diagonal.
+  ##      - The shape of the output matrix
   ## Result:
   ##      - The constructed, rank-2 diagonal tensor
   result = zeros[T](shape)

@@ -45,6 +45,7 @@ Arraymancer tutorial is available [here](https://mratsim.github.io/Arraymancer/t
 Here is a preview of Arraymancer syntax.
 
 ### Tensor creation and slicing
+
 ```Nim
 import math, arraymancer
 
@@ -80,9 +81,19 @@ echo foo[1..2, 3..4] # slice
 # Tensor of shape 2x2 of type "int" on backend "Cpu"
 # |16     32|
 # |81     243|
+
+echo foo[_|-1, _] # reverse the order of the rows
+
+# Tensor[int] of shape "[5, 5]" on backend "Cpu"
+# |5      25      125     625     3125|
+# |4      16       64     256     1024|
+# |3       9       27      81      243|
+# |2       4        8      16       32|
+# |1       1        1       1        1|
 ```
 
 ### Reshaping and concatenation
+
 ```Nim
 import arraymancer, sequtils
 

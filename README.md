@@ -19,26 +19,22 @@ Reminder of supported compilation flags:
 
 - `-d:release`: Nim release mode (no stacktraces and debugging information)
 - `-d:danger`: No runtime checks like array bound checking
+- `-d:blas=blaslibname`: Customize the BLAS library used by Arraymancer. By default (i.e. if you don't define this setting) Arraymancer will try to automatically find a BLAS library (e.g. `blas.so/blas.dll` or `libopenblas.dll`) on your path. You should only set this setting if for some reason you want to use a specific BLAS library. See [nimblas](https://github.com/SciNim/nimblas) for further information
+- `-d:lapack=lapacklibname`: Customize the LAPACK library used by Arraymancer. By default (i.e. if you don't define this setting) Arraymancer will try to automatically find a LAPACK library (e.g. `lapack.so/lapack.dll` or `libopenblas.dll`) on your path. You should only set this setting if for some reason you want to use a specific LAPACK library. See [nimlapack](https://github.com/SciNim/nimlapack) for further information
 - `-d:openmp`: Multithreaded compilation
-- `-d:mkl`: Use MKL, implies `openmp`
-- `-d:openblas`: Use OpenBLAS
-- by default Arraymancer will try to use your default `blas.so/blas.dll`
-  Archlinux users may have to specify `-d:blas=cblas`.
-  Windows users may have to download `libopenblas.dll` from the binary releases
-  section of [openblas](https://www.openblas.net), extract it to the compilation
-  output folder and specify `-d:blas=libopenblas -d:lapack=libopenblas` when compiling
-  (or set those options on your `nim.cfg` file).
-  See [nimblas](https://github.com/unicredit/nimblas) for further configuration.
+- `-d:mkl`: Deprecated flag which forces the use of MKL. Implies `-d:openmp`. Use `-d:blas=mkl -d:lapack=mkl` instead, but _only_ if you want to force Arraymancer to use MKL, instead of looking for the available BLAS / LAPACK libraries
+- `-d:openblas`: Deprecated flag which forces the use of OpenBLAS. Use `-d:blas=openblas -d:lapack=openblas` instead, but _only_ if you want to force Arraymancer to use OpenBLAS, instead of looking for the available BLAS / LAPACK libraries
 - `-d:cuda`: Build with Cuda support
-- `-d:cudnn`: Build with CuDNN support, implies `cuda`.
-- `-d:avx512`: Build with AVX512 support by supplying the
-  `-mavx512dq` flag to gcc / clang. Without this flag the
-  resulting binary does not use AVX512 even on CPUs that support
-  it. Handing this flag however, makes the binary incompatible with
-  CPUs that do *not* support it. See the comments in #505 for a
-  discussion (from `v0.7.9`).
+- `-d:cudnn`: Build with CuDNN support, implies `-d:cuda`
+- `-d:avx512`: Build with AVX512 support by supplying the `-mavx512dq` flag
+  to gcc / clang. Without this flag the resulting binary does not use AVX512
+  even on CPUs that support it. Setting this flag, however, makes the binary
+  incompatible with CPUs that do _not_ support AVX512. See the comments in #505
+  for a discussion (from `v0.7.9`)
 - You might want to tune library paths in [nim.cfg](nim.cfg) after installation for OpenBLAS, MKL and Cuda compilation.
-  The current defaults should work on Mac and Linux.
+  The current defaults should work on Mac and Linux; and on Windows after downloading `libopenblas.dll` or another
+  BLAS / LAPACK DLL (see the [Installation](#installation) section for more information) and copying it into a folder
+  in your path or into the compilation output folder.
 
 ## Show me some code
 
@@ -260,11 +256,14 @@ I however recommend installing Nim in your user profile via [``choosenim``](http
 
 To install Arraymancer development version you can use `nimble install arraymancer@#head`.
 
-Arraymancer requires a BLAS and Lapack library.
+Arraymancer requires a BLAS and a LAPACK library.
 
-- On Windows you can get [OpenBLAS ](https://github.com/xianyi/OpenBLAS/wiki/Precompiled-installation-packages)and [Lapack](https://icl.cs.utk.edu/lapack-for-windows/lapack/) for Windows.
+- On Windows you can get the [OpenBLAS](https://www.openblas.net) library, which combines BLAS and LAPACK into a single DLL (`libopenblas.dll`), from the binary packages section of the OpenBLAS web page. Alternatively you can download separate BLAS and LAPACK libraries from the [LAPACK for Windows](https://icl.cs.utk.edu/lapack-for-windows/lapack/) site. You must then copy or extract those DLLs into a folder on your path or into the folder containing your compilation target.
 - On MacOS, Apple Accelerate Framework is included in all MacOS versions and provides those.
 - On Linux, you can download libopenblas and liblapack through your package manager.
+
+Windows users may have to download `libopenblas.dll` from the binary releases
+  section of [openblas](https://www.openblas.net), extract it to the compilation
 
 ## Full documentation
 

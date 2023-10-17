@@ -93,6 +93,15 @@ proc mabs*[T](t: var Tensor[T]) =
   # FIXME: how to inplace convert Tensor[Complex] to Tensor[float]
   t.apply_inline(abs(x))
 
+# complex phase -> float
+proc phase*(t: Tensor[Complex[float64]]): Tensor[float64] {.noinit.} =
+  ## Return a Tensor with phase values of all elements
+  t.map_inline(phase(x))
+
+proc phase*(t: Tensor[Complex[float32]]): Tensor[float32] {.noinit.} =
+  ## Return a Tensor with phase values of all elements
+  t.map_inline(phase(x))
+
 proc clamp*[T](t: Tensor[T], min, max: T): Tensor[T] {.noinit.} =
   t.map_inline(clamp(x, min, max))
 

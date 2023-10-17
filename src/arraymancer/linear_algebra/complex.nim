@@ -42,3 +42,8 @@ proc `imag=`*[T: SomeFloat](t: var Tensor[Complex[T]], val: Tensor[T]) {.inline.
   ## The source and target Tensor sizes must match, but the shapes might differ
   for it, srcit in mzip(t, val):
     it.im = srcit
+
+proc conjugate*[T: Complex32 | Complex64](A: Tensor[T]): Tensor[T] =
+  ## Return the element-wise complex conjugate of a tensor of complex numbers.
+  ## The complex conjugate of a complex number is obtained by changing the sign of its imaginary part.
+  A.map_inline(x.conjugate)

@@ -4,12 +4,8 @@
 
 import std/complex
 import
-  ../tensor
-
-proc conjugate*[T: Complex32 | Complex64](A: Tensor[T]): Tensor[T] =
-  ## Return the element-wise complex conjugate of a tensor of complex numbers.
-  ## The complex conjugate of a complex number is obtained by changing the sign of its imaginary part.
-  A.map_inline(x.conjugate)
+  ../tensor,
+  ./complex
 
 proc pinv*[T: SomeFloat](A: Tensor[T], rcond = 1e-15): Tensor[T] =
   ## Compute the (Moore-Penrose) pseudo-inverse of a matrix.

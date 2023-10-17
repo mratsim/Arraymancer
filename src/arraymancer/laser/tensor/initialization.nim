@@ -277,3 +277,14 @@ func toUnsafeView*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool =
   ##
   ## Unsafe: the pointer can outlive the input tensor.
   unsafe_raw_offset(t, aligned).distinctBase()
+
+func toScalar*[T](t: Tensor[T]): T =
+  ## Convert a Tensor of size 1 (of any rank) into a scalar
+  ##
+  ## Raises an IndexDefect if the Tensor does not contain exactly 1 element
+  if likely(t.size == 1):
+    result = t.squeeze[]
+  elif t.size > 1:
+    raise newException(IndexDefect, "You cannot convert a Tensor that has more than 1 element into a scalar")
+  else:
+    raise newException(IndexDefect, "You cannot convert an empty Tensor into a scalar")

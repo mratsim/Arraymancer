@@ -4,7 +4,9 @@
 
 import std/complex
 import
-  ../tensor
+  ./data_structure,
+  ./accessors,
+  ./higher_order_applymap
 
 proc complex*[T: SomeFloat](re: Tensor[T], im: Tensor[T]): Tensor[Complex[T]] {.inline, noinit.} =
   ## Create a new, complex Tensor by combining two real Tensors

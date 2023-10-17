@@ -4,8 +4,7 @@
 
 import std/complex
 import
-  ../tensor,
-  ./complex
+  ../tensor
 
 proc pinv*[T: SomeFloat](A: Tensor[T], rcond = 1e-15): Tensor[T] =
   ## Compute the (Moore-Penrose) pseudo-inverse of a matrix.

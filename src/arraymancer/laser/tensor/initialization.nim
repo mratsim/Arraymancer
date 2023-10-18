@@ -3,6 +3,8 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
+import std/complex
+
 import
   ../openmp,
   ../compiler_optim_hints,
@@ -278,13 +280,24 @@ func toUnsafeView*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool =
   ## Unsafe: the pointer can outlive the input tensor.
   unsafe_raw_offset(t, aligned).distinctBase()
 
-func toScalar*[T](t: Tensor[T]): T =
-  ## Convert a Tensor of size 1 (of any rank) into a scalar
-  ##
-  ## Raises an IndexDefect if the Tensor does not contain exactly 1 element
+func toScalar*[T_IN, T_OUT](t: Tensor[T_IN], _: typedesc[T_OUT]): T_OUT =
+  ## Returns the value of the input Tensor as a scalar of the selected type.
+  ## This only works for Tensors (of any rank) that contain one single element.
+  ## If the tensor has more than one element IndexDefect is raised.
   if likely(t.size == 1):
-    result = t.squeeze[]
+    when T_OUT is Complex64:
+      result = complex(float64(t.squeeze[]))
+    elif T_OUT is Complex32:
+      result = complex(float32(t.squeeze[]))
+    else:
+      result = T_OUT(t.squeeze[])
   elif t.size > 1:
     raise newException(IndexDefect, "You cannot convert a Tensor that has more than 1 element into a scalar")
   else:
     raise newException(IndexDefect, "You cannot convert an empty Tensor into a scalar")
+
+func toScalar*[T](t: Tensor[T]): T {.inline.}=
+  ## Returns the value of the input Tensor as a scalar (without changing its type).
+  ## This only works for Tensors (of any rank) that contain one single element.
+  ## If the tensor has more than one element IndexDefect is raised.
+  toScalar(t, T)

@@ -134,13 +134,14 @@ proc permuteImpl*[T](result: var Tensor[T], dims: varargs[int]) {.noSideEffect.}
 proc squeezeImpl*(t: var AnyTensor) {.noSideEffect.} =
   var idx_real_dim = 0
 
-  for i in 0..<t.rank:
+  for i in 0 ..< t.rank:
     if t.shape[i] != 1:
       if i != idx_real_dim:
         t.shape[idx_real_dim] = t.shape[i]
         t.strides[idx_real_dim] = t.strides[i]
       inc idx_real_dim
 
+  idx_real_dim = max(idx_real_dim, 1)
   t.shape = t.shape[0..<idx_real_dim]
   t.strides = t.strides[0..<idx_real_dim]
 

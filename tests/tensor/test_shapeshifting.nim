@@ -148,6 +148,16 @@ proc main() =
         check: a.rank == 4
         check: b.rank == 1
 
+    test "Getting the item out of a single element tensor":
+      block:
+        let a = [[[[1.5]]]].toTensor
+        let value = a.item()
+        check value == 1.5
+      block:
+        let a = [[[[1]]]].toTensor
+        let value = a.item(Complex64)
+        check value == complex(1.0, 0)
+
     test "Unsqueeze":
       block:
         let a = toSeq(1..12).toTensor().reshape(3,4)

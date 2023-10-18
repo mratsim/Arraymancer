@@ -52,7 +52,7 @@ const
     y = @[1, 2, 3, 4, 5]
 
 var
-    vandermonde: newSeq[seq[int]]()
+    vandermonde = newSeq[seq[int]]()
     row: seq[int]
 
 for i, xx in x:

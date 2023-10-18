@@ -286,11 +286,11 @@ func item*[T_IN, T_OUT](t: Tensor[T_IN], _: typedesc[T_OUT]): T_OUT =
   ## If the tensor has more than one element IndexDefect is raised.
   if likely(t.size == 1):
     when T_OUT is Complex64:
-      result = complex(float64(t.squeeze[]))
+      result = complex(float64(t.squeeze[0]))
     elif T_OUT is Complex32:
-      result = complex(float32(t.squeeze[]))
+      result = complex(float32(t.squeeze[0]))
     else:
-      result = T_OUT(t.squeeze[])
+      result = T_OUT(t.squeeze[0])
   elif t.size > 1:
     raise newException(IndexDefect, "You cannot convert a Tensor that has more than 1 element into a scalar")
   else:

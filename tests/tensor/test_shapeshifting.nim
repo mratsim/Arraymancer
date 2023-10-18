@@ -123,6 +123,31 @@ proc main() =
 
         check: b == [4, 3, 2, 1, 8, 7, 6, 5].toTensor.reshape(2,1,4)
 
+    test "Squeezing a single element tensor":
+      # Previously squeezing a single element tensor turned the result into
+      # a 0 rank tensor. But we don't actually fully support zero rank tensors!
+      # Hence `squeeze` now leaves at least a rank 1 tensor
+      block:
+        let a = [1].toTensor
+        let b = a.squeeze()
+        check: a.rank == 1
+        check: b.rank == 1
+      block:
+        let a = [[1]].toTensor
+        let b = a.squeeze()
+        check: a.rank == 2
+        check: b.rank == 1
+      block:
+        let a = [[[1]]].toTensor
+        let b = a.squeeze()
+        check: a.rank == 3
+        check: b.rank == 1
+      block:
+        let a = [[[[1]]]].toTensor
+        let b = a.squeeze()
+        check: a.rank == 4
+        check: b.rank == 1
+
     test "Unsqueeze":
       block:
         let a = toSeq(1..12).toTensor().reshape(3,4)

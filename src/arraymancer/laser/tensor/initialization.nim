@@ -280,7 +280,7 @@ func toUnsafeView*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool =
   ## Unsafe: the pointer can outlive the input tensor.
   unsafe_raw_offset(t, aligned).distinctBase()
 
-func toScalar*[T_IN, T_OUT](t: Tensor[T_IN], _: typedesc[T_OUT]): T_OUT =
+func item*[T_IN, T_OUT](t: Tensor[T_IN], _: typedesc[T_OUT]): T_OUT =
   ## Returns the value of the input Tensor as a scalar of the selected type.
   ## This only works for Tensors (of any rank) that contain one single element.
   ## If the tensor has more than one element IndexDefect is raised.
@@ -296,8 +296,8 @@ func toScalar*[T_IN, T_OUT](t: Tensor[T_IN], _: typedesc[T_OUT]): T_OUT =
   else:
     raise newException(IndexDefect, "You cannot convert an empty Tensor into a scalar")
 
-func toScalar*[T](t: Tensor[T]): T {.inline.}=
+func item*[T](t: Tensor[T]): T {.inline.}=
   ## Returns the value of the input Tensor as a scalar (without changing its type).
   ## This only works for Tensors (of any rank) that contain one single element.
   ## If the tensor has more than one element IndexDefect is raised.
-  toScalar(t, T)
+  item(t, T)

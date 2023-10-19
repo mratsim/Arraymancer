@@ -5,9 +5,10 @@
 Arraymancer is a tensor (N-dimensional array) project in Nim. The main focus is providing a fast and ergonomic CPU, Cuda and OpenCL ndarray library on which to build a scientific computing ecosystem.
 
 The library is inspired by Numpy and PyTorch and targets the following use-cases:
-  - N-dimensional arrays (tensors) for numerical computing
-  - machine learning algorithms (as in Scikit-learn: least squares solvers, PCA and dimensionality reduction, classifiers, regressors and clustering algorithms, cross-validation).
-  - deep learning
+
+- N-dimensional arrays (tensors) for numerical computing
+- machine learning algorithms (as in Scikit-learn: least squares solvers, PCA and dimensionality reduction, classifiers, regressors and clustering algorithms, cross-validation).
+- deep learning
 
 The ndarray component can be used without the machine learning and deep learning component.
 It can also use the OpenMP, Cuda or OpenCL backends.
@@ -15,36 +16,34 @@ It can also use the OpenMP, Cuda or OpenCL backends.
 Note: While Nim is compiled and does not offer an interactive REPL yet (like Jupyter), it allows much faster prototyping than C++ due to extremely fast compilation times. Arraymancer compiles in about 5 seconds on my dual-core MacBook.
 
 Reminder of supported compilation flags:
+
 - `-d:release`: Nim release mode (no stacktraces and debugging information)
 - `-d:danger`: No runtime checks like array bound checking
+- `-d:blas=blaslibname`: Customize the BLAS library used by Arraymancer. By default (i.e. if you don't define this setting) Arraymancer will try to automatically find a BLAS library (e.g. `blas.so/blas.dll` or `libopenblas.dll`) on your path. You should only set this setting if for some reason you want to use a specific BLAS library. See [nimblas](https://github.com/SciNim/nimblas) for further information
+- `-d:lapack=lapacklibname`: Customize the LAPACK library used by Arraymancer. By default (i.e. if you don't define this setting) Arraymancer will try to automatically find a LAPACK library (e.g. `lapack.so/lapack.dll` or `libopenblas.dll`) on your path. You should only set this setting if for some reason you want to use a specific LAPACK library. See [nimlapack](https://github.com/SciNim/nimlapack) for further information
 - `-d:openmp`: Multithreaded compilation
-- `-d:mkl`: Use MKL, implies `openmp`
-- `-d:openblas`: Use OpenBLAS
-- by default Arraymancer will try to use your default `blas.so/blas.dll`
-  Archlinux users may have to specify `-d:blas=cblas`.
-  Windows users may have to download `libopenblas.dll` from the binary releases
-  section of [openblas](https://www.openblas.net), extract it to the compilation
-  output folder and specify `-d:blas=libopenblas -d:lapack=libopenblas` when compiling
-  (or set those options on your `nim.cfg` file).
-  See [nimblas](https://github.com/unicredit/nimblas) for further configuration.
+- `-d:mkl`: Deprecated flag which forces the use of MKL. Implies `-d:openmp`. Use `-d:blas=mkl -d:lapack=mkl` instead, but _only_ if you want to force Arraymancer to use MKL, instead of looking for the available BLAS / LAPACK libraries
+- `-d:openblas`: Deprecated flag which forces the use of OpenBLAS. Use `-d:blas=openblas -d:lapack=openblas` instead, but _only_ if you want to force Arraymancer to use OpenBLAS, instead of looking for the available BLAS / LAPACK libraries
 - `-d:cuda`: Build with Cuda support
-- `-d:cudnn`: Build with CuDNN support, implies `cuda`.
-- `-d:avx512`: Build with AVX512 support by supplying the
-  `-mavx512dq` flag to gcc / clang. Without this flag the
-  resulting binary does not use AVX512 even on CPUs that support
-  it. Handing this flag however, makes the binary incompatible with
-  CPUs that do *not* support it. See the comments in #505 for a
-  discussion (from `v0.7.9`).
+- `-d:cudnn`: Build with CuDNN support, implies `-d:cuda`
+- `-d:avx512`: Build with AVX512 support by supplying the `-mavx512dq` flag
+  to gcc / clang. Without this flag the resulting binary does not use AVX512
+  even on CPUs that support it. Setting this flag, however, makes the binary
+  incompatible with CPUs that do _not_ support AVX512. See the comments in #505
+  for a discussion (from `v0.7.9`)
 - You might want to tune library paths in [nim.cfg](nim.cfg) after installation for OpenBLAS, MKL and Cuda compilation.
-  The current defaults should work on Mac and Linux.
+  The current defaults should work on Mac and Linux; and on Windows after downloading `libopenblas.dll` or another
+  BLAS / LAPACK DLL (see the [Installation](#installation) section for more information) and copying it into a folder
+  in your path or into the compilation output folder.
 
 ## Show me some code
 
-Arraymancer tutorial is available [here](https://mratsim.github.io/Arraymancer/tuto.first_steps.html).
+The Arraymancer tutorial is available [here](https://mratsim.github.io/Arraymancer/tuto.first_steps.html).
 
 Here is a preview of Arraymancer syntax.
 
 ### Tensor creation and slicing
+
 ```Nim
 import math, arraymancer
 
@@ -53,10 +52,8 @@ const
     y = @[1, 2, 3, 4, 5]
 
 var
-    vandermonde: seq[seq[int]]
+    vandermonde = newSeq[seq[int]]()
     row: seq[int]
-
-vandermonde = newSeq[seq[int]]()
 
 for i, xx in x:
     row = newSeq[int]()
@@ -68,24 +65,33 @@ let foo = vandermonde.toTensor()
 
 echo foo
 
-# Tensor of shape 5x5 of type "int" on backend "Cpu"
-# |1      1       1       1       1|
-# |2      4       8       16      32|
-# |3      9       27      81      243|
-# |4      16      64      256     1024|
-# |5      25      125     625     3125|
+# Tensor[system.int] of shape "[5, 5]" on backend "Cpu"
+# |1          1       1       1       1|
+# |2          4       8      16      32|
+# |3          9      27      81     243|
+# |4         16      64     256    1024|
+# |5         25     125     625    3125|
 
 echo foo[1..2, 3..4] # slice
 
-# Tensor of shape 2x2 of type "int" on backend "Cpu"
-# |16     32|
+# Tensor[system.int] of shape "[2, 2]" on backend "Cpu"
+# |16      32|
 # |81     243|
+
+echo foo[_|-1, _] # reverse the order of the rows
+
+# Tensor[int] of shape "[5, 5]" on backend "Cpu"
+# |5      25      125     625     3125|
+# |4      16       64     256     1024|
+# |3       9       27      81      243|
+# |2       4        8      16       32|
+# |1       1        1       1        1|
 ```
 
 ### Reshaping and concatenation
+
 ```Nim
 import arraymancer, sequtils
-
 
 let a = toSeq(1..4).toTensor.reshape(2,2)
 
@@ -96,19 +102,19 @@ let c0 = c.reshape(3,2)
 let c1 = c.reshape(2,3)
 
 echo concat(a,b,c0, axis = 0)
-# Tensor of shape 7x2 of type "int" on backend "Cpu"
+# Tensor[system.int] of shape "[7, 2]" on backend "Cpu"
 # |1      2|
 # |3      4|
 # |5      6|
 # |7      8|
-# |11     12|
-# |13     14|
-# |15     16|
+# |11    12|
+# |13    14|
+# |15    16|
 
 echo concat(a,b,c1, axis = 1)
-# Tensor of shape 2x7 of type "int" on backend "Cpu"
-# |1      2       5       6       11      12      13|
-# |3      4       7       8       14      15      16|
+# Tensor[system.int] of shape "[2, 7]" on backend "Cpu"
+# |1      2     5     6    11    12    13|
+# |3      4     7     8    14    15    16|
 ```
 
 ### Broadcasting
@@ -124,11 +130,11 @@ let j = [0, 10, 20, 30].toTensor.reshape(4,1)
 let k = [0, 1, 2].toTensor.reshape(1,3)
 
 echo j +. k
-# Tensor of shape 4x3 of type "int" on backend "Cpu"
-# |0      1       2|
-# |10     11      12|
-# |20     21      22|
-# |30     31      32|
+# Tensor[system.int] of shape "[4, 3]" on backend "Cpu"
+# |0      1     2|
+# |10    11    12|
+# |20    21    22|
+# |30    31    32|
 ```
 
 ### A simple two layers neural network
@@ -159,7 +165,7 @@ let
   y = randomTensor[float32](N, D_out, 1'f32)
 
 # ##################################################################
-# Define the model.
+# Define the model
 
 network TwoLayersNet:
   layers:
@@ -250,11 +256,14 @@ I however recommend installing Nim in your user profile via [``choosenim``](http
 
 To install Arraymancer development version you can use `nimble install arraymancer@#head`.
 
-Arraymancer requires a BLAS and Lapack library.
+Arraymancer requires a BLAS and a LAPACK library.
 
-- On Windows you can get [OpenBLAS ](https://github.com/xianyi/OpenBLAS/wiki/Precompiled-installation-packages)and [Lapack](https://icl.cs.utk.edu/lapack-for-windows/lapack/) for Windows.
+- On Windows you can get the [OpenBLAS](https://www.openblas.net) library, which combines BLAS and LAPACK into a single DLL (`libopenblas.dll`), from the binary packages section of the OpenBLAS web page. Alternatively you can download separate BLAS and LAPACK libraries from the [LAPACK for Windows](https://icl.cs.utk.edu/lapack-for-windows/lapack/) site. You must then copy or extract those DLLs into a folder on your path or into the folder containing your compilation target.
 - On MacOS, Apple Accelerate Framework is included in all MacOS versions and provides those.
 - On Linux, you can download libopenblas and liblapack through your package manager.
+
+Windows users may have to download `libopenblas.dll` from the binary releases
+  section of [openblas](https://www.openblas.net), extract it to the compilation
 
 ## Full documentation
 
@@ -288,9 +297,12 @@ Reminder: The final interface is still **work in progress.**
 You can also watch the following animated [neural network demo](https://github.com/Vindaar/NeuralNetworkLiveDemo) which shows live training via [nim-plotly](https://github.com/brentp/nim-plotly).
 
 #### Fizzbuzz with fully-connected layers (also called Dense, Affine or Linear layers)
+
 Neural network definition extracted from [example 4](examples/ex04_fizzbuzz_interview_cheatsheet.nim).
 
 ```Nim
+import arraymancer
+
 const
   NumDigits = 10
   NumHidden = 100
@@ -321,9 +333,12 @@ echo answer
 ```
 
 #### Handwritten digit recognition with convolutions
+
 Neural network definition extracted from [example 2](examples/ex02_handwritten_digits_recognition.nim).
 
 ```Nim
+import arraymancer
+
 network DemoNet:
   layers:
     cv1:        Conv2D(@[1, 28, 28], out_channels = 20, kernel_size = (5, 5))
@@ -346,9 +361,12 @@ let
 ```
 
 #### Sequence classification with stacked Recurrent Neural Networks
+
 Neural network definition extracted [example 5](examples/ex05_sequence_classification_GRU.nim).
 
 ```Nim
+import arraymancer
+
 const
   HiddenSize = 256
   Layers = 4
@@ -393,6 +411,7 @@ let exam = ctx.variable([
     [float32 0.98, 0.97, 0.96], # decreasing
     [float32 0.12, 0.05, 0.01], # decreasing
     [float32 0.95, 0.05, 0.07]  # non-monotonic
+  ])
 # ...
 echo answer.unsqueeze(1)
 # Tensor[ex05_sequence_classification_GRU.SeqKind] of shape [8, 1] of type "SeqKind" on backend "Cpu"
@@ -407,10 +426,12 @@ echo answer.unsqueeze(1)
 ```
 
 #### Composing models
+
 Network models can also act as layers in other network definitions.
 The handwritten-digit-recognition model above can also be written like this:
 
 ```Nim
+import arraymancer
 
 network SomeConvNet:
   layers h, w:
@@ -442,10 +463,12 @@ network DemoNet:
 ```
 
 #### Custom layers
+
 It is also possible to create fully custom layers.
 The documentation for this can be found in the [official API documentation](https://mratsim.github.io/Arraymancer/nn_dsl.html).
 
 ### Tensors on CPU, on Cuda and OpenCL
+
 Tensors, CudaTensors and CLTensors do not have the same features implemented yet.
 Also CudaTensors and CLTensors can only be float32 or float64 while CpuTensors can be integers, string, boolean or any custom object.
 
@@ -480,12 +503,13 @@ Here is a comparative table of the core features.
 The full changelog is available in [changelog.md](./changelog.md).
 
 Here are the highlights:
-  - 0.20.x compatibility
-  - Complex support
-  - `Einsum`
-  - Naive whitespace tokenizer for NLP
-  - Fix height/width order when reading an image in tensor
-  - Preview of Laser backend for matrix multiplication without SIMD autodetection (already 5x faster on integer matrix multiplication)
+
+- 0.20.x compatibility
+- Complex support
+- `Einsum`
+- Naive whitespace tokenizer for NLP
+- Fix height/width order when reading an image in tensor
+- Preview of Laser backend for matrix multiplication without SIMD autodetection (already 5x faster on integer matrix multiplication)
 
 ## 4 reasons why Arraymancer
 
@@ -514,7 +538,9 @@ Arraymancer models can be packaged in a self-contained binary that only depends 
 This means that there is no need to install a huge library or language ecosystem to use Arraymancer. This also makes it naturally suitable for resource-constrained devices like mobile phones and Raspberry Pi.
 
 ### Bridging the gap between deep learning research and production
+
 The deep learning frameworks are currently in two camps:
+
 - Research: Theano, Tensorflow, Keras, Torch, PyTorch
 - Production: Caffe, Darknet, (Tensorflow)
 
@@ -532,6 +558,7 @@ Furthermore, Python preprocessing steps, unless using OpenCV, often needs a cust
 ### So why Arraymancer ?
 
 All those pain points may seem like a huge undertaking however thanks to the Nim language, we can have Arraymancer:
+
 - Be as fast as C
 - Accelerated routines with Intel MKL/OpenBLAS or even NNPACK
 - Access to CUDA and CuDNN and generate custom CUDA kernels on the fly via metaprogramming.
@@ -541,7 +568,9 @@ All those pain points may seem like a huge undertaking however thanks to the Nim
 - For everything that Nim doesn't have yet, you can use Nim bindings to C, C++, Objective-C or Javascript to bring it to Nim. Nim also has unofficial Python->Nim and Nim->Python wrappers.
 
 ## Future ambitions
+
 Because apparently to be successful you need a vision, I would like Arraymancer to be:
+
 - The go-to tool for Deep Learning video processing. I.e. `vid = load_video("./cats/youtube_cat_video.mkv")`
 - Target javascript, WebAssembly, Apple Metal, ARM devices, AMD Rocm, OpenCL, you name it.
 - The base of a Starcraft II AI bot.

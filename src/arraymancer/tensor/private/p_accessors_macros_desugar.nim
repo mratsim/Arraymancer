@@ -43,6 +43,13 @@ macro desugar*(args: untyped): void =
     # Node is "_"
     let nnk_joker = eqIdent(nnk, "_")
 
+    # Node is of the form "_ |- *"
+    let nnk_joker_bar_min = (
+      nnk.kind == nnkInfix and
+      eqIdent(nnk[0], "|-") and 
+      eqIdent(nnk[1], "_")
+    )
+
     # Node is of the form "* .. *"
     let nnk0_inf_dotdot = (
       nnk.kind == nnkInfix and
@@ -118,14 +125,19 @@ macro desugar*(args: untyped): void =
     if nnk_joker:
       ## [_, 3] into [Span, 3]
       r.add(bindSym("Span"))
+    elif nnk_joker_bar_min:
+      ## [_|-2, 3] into [^1..0|-2, 3]   # when step is negative and no limits are passed, go backwards
+      r.add(prefix(infix(newIntLitNode(1), "..", infix(newIntLitNode(0), "|-", nnk[2])), "^"))
     elif nnk0_inf_dotdot and nnk1_joker and nnk2_joker:
       ## [_.._, 3] into [Span, 3]
       r.add(bindSym("Span"))
-    elif nnk0_inf_dotdot and nnk1_joker and nnk20_bar_all and nnk21_joker:
+    elif nnk0_inf_dotdot and nnk1_joker and nnk20_bar_pos and nnk21_joker:
       ## [_.._|2, 3] into [0..^1|2, 3]
       ## [_.._|+2, 3] into [0..^1|2, 3]
-      ## [_.._|-2 doesn't make sense and will throw out of bounds
       r.add(infix(newIntLitNode(0), "..^", infix(newIntLitNode(1), $nnk[2][0], nnk[2][2])))
+    elif nnk0_inf_dotdot and nnk1_joker and nnk20_bar_min and nnk21_joker:
+      ## [_.._|-2, 3] into [^1..0|-2, 3]   # when step is negative and no limits are passed, go backwards
+      r.add(prefix(infix(newIntLitNode(1), "..", infix(newIntLitNode(0), $nnk[2][0], nnk[2][2])), "^"))
     elif nnk0_inf_dotdot_all and nnk1_joker and nnk20_bar_all:
       ## [_..10|1, 3] into [0..10|1, 3]
       ## [_..^10|1, 3] into [0..^10|1, 3]   # ..^ directly creating SteppedSlices may introduce issues in seq[0..^10]

@@ -22,7 +22,7 @@ import ./shapeshifting
 ## Simple Einstein summation examples
 ## ==================================
 ##
-## Typical examples include matrix-vector multiplcation, matrix-matrix multiplication
+## Typical examples include matrix-vector multiplication, matrix-matrix multiplication
 ## or the cross product. The examples below use the `einsum` / notation for the
 ## elements of tensors, namely `m[i,j]` for element `i,j` of the matrix ``m``, instead of
 ## the more mathematical notation `m_ij`.
@@ -124,7 +124,7 @@ import ./shapeshifting
 ## If only the `RHS` of the examples above are given, the required indices
 ## for the resulting tensor are automatically calculated using pure Einstein
 ## summation. Assuming `a`, `b` are two 2D arraymancer tensors , we could
-## express their matrix mutliplcation as
+## express their matrix mutiplication as
 ##
 ## .. code:: nim
 ##    let c = einsum(a, b):

@@ -157,6 +157,10 @@ proc main() =
         let a = [[[[1]]]].toTensor
         let value = a.item(Complex64)
         check value == complex(1.0, 0)
+      block:
+        let a = [[[[complex[float64](1.0, 1.1)]]]].toTensor
+        let value = a.item(Complex32)
+        check value == complex[float32](1.0, 1.1)
 
     test "Unsqueeze":
       block:

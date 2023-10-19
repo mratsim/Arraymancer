@@ -240,7 +240,7 @@ jobs:
       - name: Publish docs
         if: >
           github.event_name == 'push' && github.ref == 'refs/heads/master' &&
-          matrix.target.os == 'linux' && matrix.nim == 'version-1-6'
+          matrix.target.os == 'linux' && matrix.nim == 'version-2-0'
         uses: crazy-max/ghaction-github-pages@v1
         with:
           build_dir: arraymancer/docs/build

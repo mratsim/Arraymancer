@@ -253,7 +253,6 @@ proc main() =
     block:
       let a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]].toTensor
       let mask = a >. 3
-      echo mask
       let exp = [[1, 1, 1, 2, 2, 2], [0, 1, 2, 0, 1, 2]].toTensor
       check nonzero(mask) == exp
 

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest
+import std/[unittest, math]
 import complex except Complex64, Complex32
 
 proc main() =
@@ -87,6 +87,22 @@ proc main() =
                   [10.0],
                   [20.0],
                   [30.0]].toTensor
+
+    test "Complex Phase":
+      var a_c = [[
+        complex(0.0, 0.0),
+        complex(1.0, 0.0),
+        complex(1.0, 1.0),
+        complex(0.0, 1.0),
+        complex(-1.0, 1.0),
+        complex(-1.0, 0.0),
+        complex(-1.0, -1.0),
+        complex(0.0, -1.0)
+      ]].toTensor
+
+      var expected_phases = [[0.0, 0.0, PI/4.0, PI/2.0, 3.0*PI/4.0, PI, -3.0*PI/4.0, -PI/2.0]].toTensor
+
+      check: a_c.phase == expected_phases
 
 main()
 GC_fullCollect()

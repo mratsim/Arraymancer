@@ -1,6 +1,21 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.27 Oct. 19 2023
+=====================================================
+
+- fix doc generation (PR #602)
+- fix behavior of `squeeze` for 1 element tensors. Now correctly
+  returns a rank 1 tensor instead of a broken rank 0 tensor (PR #600)
+- massively improve support for `Complex` tensors (PR #599 by
+  @ezquerra)
+- implement span slices with negative steps to reverse tensors (PR
+  #598 by @ezquerra)
+- add procedures to create and handle (anti-)diagonal matrices (PR
+  #597 by @ezquerra)
+- add `item` function to get element of a single element tensor,
+  similar to `PyTorch / Flambeau`'s `item` (PR #600 by @ezquerra)
+
 Arraymancer v0.7.26 Oct. 08 2023
 =====================================================
 - clean up some warnings and hints (PR #595)

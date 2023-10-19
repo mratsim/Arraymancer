@@ -41,9 +41,9 @@ type
     ##   - ``storage``: An opaque data storage for the CudaTensor
     ##
     ## Warning ⚠:
-    ##   Assignment ```var a = b``` does not copy the data. Data modification on one CudaTensor will be reflected on the other.
+    ##   Assignment ``var a = b`` does not copy the data. Data modification on one CudaTensor will be reflected on the other.
     ##   However modification on metadata (shape, strides or offset) will not affect the other tensor.
-    ##   Explicit copies can be made with ``clone``: ```var a = b.clone```
+    ##   Explicit copies can be made with ``clone``: ``var a = b.clone``
     shape*: Metadata
     strides*: Metadata
     offset*: int
@@ -63,9 +63,9 @@ type
     ##   - ``storage``: An opaque data storage for the CudaTensor
     ##
     ## Warning ⚠:
-    ##   Assignment ```var a = b``` does not copy the data. Data modification on one CudaTensor will be reflected on the other.
+    ##   Assignment ``var a = b`` does not copy the data. Data modification on one CudaTensor will be reflected on the other.
     ##   However modification on metadata (shape, strides or offset) will not affect the other tensor.
-    ##   Explicit copies can be made with ``clone``: ```var a = b.clone```
+    ##   Explicit copies can be made with ``clone``: ``var a = b.clone``
     shape*: Metadata
     strides*: Metadata
     offset*: int

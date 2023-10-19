@@ -9,6 +9,9 @@ import
   ./gemm_tiling, ./gemm_utils, ./gemm_packing,
   ./gemm_ukernel_dispatch
 
+from ../../tensor/datatypes import KnownSupportsCopyMem
+
+
 when defined(i386) or defined(amd64):
   import ../../cpuinfo_x86
 

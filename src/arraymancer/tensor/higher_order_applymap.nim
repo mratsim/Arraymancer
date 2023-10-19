@@ -280,8 +280,9 @@ proc apply2*[T: KnownSupportsCopyMem, U](a: var Tensor[T],
   ##     a.apply2(`**=`, b)
   ##     # Or
   ##     apply2(a, `**=`, b)
+  ##
   ## ``apply2`` is especially useful to do multiple element-wise operations on a two tensors in a single loop over the data.
-  ## for example ```A += alpha * sin(A) + B```
+  ## for example ``A += alpha * sin(A) + B``
   when compileOption("boundChecks"):
     check_elementwise(a,b)
 
@@ -311,7 +312,7 @@ proc apply2*[T: not KnownSupportsCopyMem; U](a: var Tensor[T],
   ##     # Or
   ##     apply2(a, `**=`, b)
   ## ``apply2`` is especially useful to do multiple element-wise operations on a two tensors in a single loop over the data.
-  ## for example ```A += alpha * sin(A) + B```
+  ## for example ``A += alpha * sin(A) + B``
   when compileOption("boundChecks"):
     check_elementwise(a,b)
   for x, y in mzip(a, b):

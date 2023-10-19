@@ -10,7 +10,7 @@ requires "nim >= 1.0.0",
   "nimlapack >= 0.3.0",
   "nimcuda >= 0.1.4",
   "nimcl >= 0.1.3",
-  "clblast",
+  "clblast >= 0.0.2",
   "stb_image",
   "zip",
   "untar"

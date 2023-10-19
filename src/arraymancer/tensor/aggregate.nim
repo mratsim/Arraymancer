@@ -279,7 +279,7 @@ proc percentile*[T](arg: Tensor[T], p: int, isSorted = false): float =
   ## the result is the linear interpolation between the neighbors.
   ##
   ## ``t`` does not need to be sorted, because ``percentile`` sorts
-  ## a copy of the data itself. If ``isSorted``` is ``true`` however,
+  ## a copy of the data itself. If ``isSorted`` is ``true`` however,
   ## no sorting is done.
   # TODO: we could in principle also return `T`, but then we cannot do
   # interpolation between values. Hm.
@@ -359,7 +359,7 @@ proc nonzero*[T](arg: Tensor[T]): Tensor[int] =
   ##               [5, 6, 0]].toTensor()
   ##      assert a.nonzero == [[0, 1, 2, 2], [0, 1, 0, 1]].toTensor
   ##      #                    ^-- indices.. ^ ..for  axis 0
-  ##      #                                  |-- indices for axis 1
+  ##      #                                  ∟-- indices for axis 1
   ##      # axis 0: [0, 1, 2, 2] refers to:
   ##      # - 0 -> 3 in row 0
   ##      # - 1 -> 4 in row 1

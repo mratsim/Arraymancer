@@ -3,6 +3,8 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
+import std/complex
+
 import
   ../openmp,
   ../compiler_optim_hints,
@@ -277,3 +279,25 @@ func toUnsafeView*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool =
   ##
   ## Unsafe: the pointer can outlive the input tensor.
   unsafe_raw_offset(t, aligned).distinctBase()
+
+func item*[T_IN, T_OUT](t: Tensor[T_IN], _: typedesc[T_OUT]): T_OUT =
+  ## Returns the value of the input Tensor as a scalar of the selected type.
+  ## This only works for Tensors (of any rank) that contain one single element.
+  ## If the tensor has more than one element IndexDefect is raised.
+  if likely(t.size == 1):
+    when T_OUT is Complex64:
+      result = complex(float64(t.squeeze[0]))
+    elif T_OUT is Complex32:
+      result = complex(float32(t.squeeze[0]))
+    else:
+      result = T_OUT(t.squeeze[0])
+  elif t.size > 1:
+    raise newException(IndexDefect, "You cannot convert a Tensor that has more than 1 element into a scalar")
+  else:
+    raise newException(IndexDefect, "You cannot convert an empty Tensor into a scalar")
+
+func item*[T](t: Tensor[T]): T {.inline.}=
+  ## Returns the value of the input Tensor as a scalar (without changing its type).
+  ## This only works for Tensors (of any rank) that contain one single element.
+  ## If the tensor has more than one element IndexDefect is raised.
+  item(t, T)

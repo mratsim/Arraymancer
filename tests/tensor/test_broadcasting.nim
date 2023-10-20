@@ -240,7 +240,7 @@ proc main() =
                     [10.0, 4, 2],
                     [15.0, 6, 3]].toTensor.asType(Complex[float64])
 
-    test "Implicit tensor-scalar broadcasting - basic operations +, -, *, mod":
+    test "Implicit tensor-scalar broadcasting - basic operations +, -, *, /, mod":
       block: # Addition
         var a = [0, 10, 20, 30].toTensor().reshape(4,1)
         var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).asType(Complex[float64])
@@ -285,6 +285,21 @@ proc main() =
                       [2000],
                       [4000],
                       [6000]].toTensor.asType(Complex[float64])
+
+      block: # Division
+        var a = [0, 10, 20, 30].toTensor().reshape(4,1)
+        var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).asType(Complex[float64])
+
+        a = (a /. 2) / 5
+        a_c = (a_c /. complex[float64](2.0)) / complex[float64](5.0)
+        check: a == [[0],
+                    [1],
+                    [2],
+                    [3]].toTensor
+        check: a_c == [[0],
+                      [1],
+                      [2],
+                      [3]].toTensor.asType(Complex[float64])
 
       block: # Modulo operation
         let a = [2, 5, 10].toTensor().reshape(1,3)

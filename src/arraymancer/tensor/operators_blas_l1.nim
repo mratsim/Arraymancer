@@ -64,6 +64,26 @@ proc `-=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b:
 # #########################################################
 # # Tensor-scalar linear algebra
 
+proc `+`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: T, t: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Element-wise addition of a scalar
+  returnEmptyIfEmpty(t)
+  t.map_inline(x + a)
+
+proc `+`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
+  ## Element-wise addition of a scalar
+  returnEmptyIfEmpty(t)
+  t.map_inline(x + a)
+
+proc `-`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: T, t: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Element-wise subtraction of a scalar
+  returnEmptyIfEmpty(t)
+  t.map_inline(a - x)
+
+proc `-`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
+  ## Element-wise subtraction of a scalar
+  returnEmptyIfEmpty(t)
+  t.map_inline(x - a)
+
 proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: T, t: Tensor[T]): Tensor[T] {.noinit.} =
   ## Element-wise multiplication by a scalar
   returnEmptyIfEmpty(t)
@@ -85,6 +105,18 @@ proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
 
 # #########################################################
 # # Tensor-scalar in-place linear algebra
+
+proc `+=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], a: T) =
+  ## Element-wise addition of a scalar (in-place)
+  if t.size == 0:
+    return
+  t.apply_inline(x + a)
+
+proc `-=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], a: T) =
+  ## Element-wise substraction of a scalar (in-place)
+  if t.size == 0:
+    return
+  t.apply_inline(x - a)
 
 proc `*=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], a: T) =
   ## Element-wise multiplication by a scalar (in-place)

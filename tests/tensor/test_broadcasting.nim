@@ -231,14 +231,50 @@ proc main() =
                     [10.0, 4, 2],
                     [15.0, 6, 3]].toTensor.asType(Complex[float64])
 
+    test "Implicit tensor-scalar broadcasting - basic operations +, -":
+      block: # Addition
+        var a = [0, 10, 20, 30].toTensor().reshape(4,1)
+        var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).asType(Complex[float64])
+
+        a = 100 + a +. 200
+        a_c = complex64(100.0, 0.0) + a_c +. complex64(200.0, 0.0)
+        check: a == [[300],
+                    [310],
+                    [320],
+                    [330]].toTensor
+        check: a_c == [[300],
+                      [310],
+                      [320],
+                      [330]].toTensor.asType(Complex[float64])
+
+      block: # Substraction
+        var a = [0, 10, 20, 30].toTensor().reshape(4,1)
+        var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).asType(Complex[float64])
+
+        a = 100 - a -. 200
+        a_c = complex64(100.0, 0.0) - a_c -. complex64(200.0, 0.0)
+        check: a == [[-100],
+                    [-110],
+                    [-120],
+                    [-130]].toTensor
+        check: a_c == [[-100],
+                      [-110],
+                      [-120],
+                      [-130]].toTensor.asType(Complex[float64])
+
+
 
     test "Implicit tensor-scalar broadcasting - basic operations +.=, -.=, .^=":
       block: # Addition
         var a = [0, 10, 20, 30].toTensor().reshape(4,1)
         var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).asType(Complex[float64])
+        var a2 = a.clone()
+        var a_c2 = a_c.clone()
 
         a +.= 100
+        a2 += 100
         a_c +.= complex64(100.0, 0.0)
+        a_c2 += complex64(100.0, 0.0)
         check: a == [[100],
                     [110],
                     [120],
@@ -247,13 +283,19 @@ proc main() =
                     [110],
                     [120],
                     [130]].toTensor.asType(Complex[float64])
+        check: a == a2
+        check: a_c == a_c2
 
       block: # Substraction
         var a = [0, 10, 20, 30].toTensor().reshape(4,1)
         var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).asType(Complex[float64])
+        var a2 = a.clone()
+        var a_c2 = a_c.clone()
 
         a -.= 100
+        a2 -= 100
         a_c -.= complex64(100.0, 0.0)
+        a_c2 -= complex64(100.0, 0.0)
         check: a == [[-100],
                       [-90],
                       [-80],
@@ -262,6 +304,8 @@ proc main() =
                       [-90],
                       [-80],
                       [-70]].toTensor.asType(Complex[float64])
+        check: a == a2
+        check: a_c == a_c2
 
       block: # Float Exponentiation
         var a = [1.0, 10, 20, 30].toTensor().reshape(4,1)

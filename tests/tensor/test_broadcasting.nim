@@ -151,6 +151,15 @@ proc main() =
                             [1.0/20.0],
                             [1.0/30.0]].toTensor.asType(Complex[float64])
 
+      block: # Modulo operation
+        let a = [1, 10, 20, 30].toTensor().reshape(4,1)
+        let b = [2, 3, 4].toTensor().reshape(1,3)
+
+        check: a mod b == [[1, 1, 1],
+                          [0, 1, 2],
+                          [0, 2, 0],
+                          [0, 0, 2]].toTensor
+
     test "Implicit tensor-tensor broadcasting - basic in-place operations +.=, -.=, *.=, /.=":
       block: # Addition
         # Note: We can't broadcast the lhs with in-place operations
@@ -231,7 +240,7 @@ proc main() =
                     [10.0, 4, 2],
                     [15.0, 6, 3]].toTensor.asType(Complex[float64])
 
-    test "Implicit tensor-scalar broadcasting - basic operations +, -, *":
+    test "Implicit tensor-scalar broadcasting - basic operations +, -, *, mod":
       block: # Addition
         var a = [0, 10, 20, 30].toTensor().reshape(4,1)
         var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).asType(Complex[float64])
@@ -277,6 +286,11 @@ proc main() =
                       [4000],
                       [6000]].toTensor.asType(Complex[float64])
 
+      block: # Modulo operation
+        let a = [2, 5, 10].toTensor().reshape(1,3)
+
+        check: a mod 3 == [[2, 2, 1]].toTensor
+        check: 3 mod a == [[1, 3, 3]].toTensor
 
     test "Implicit tensor-scalar broadcasting - basic operations +.=, -.=, .^=":
       block: # Addition

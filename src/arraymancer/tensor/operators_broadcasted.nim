@@ -52,6 +52,13 @@ proc `/.`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Te
   else:
     result = map2_inline(tmp_a, tmp_b, x / y )
 
+proc `mod`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Tensor element-wise modulo operation
+  ##
+  ## And broadcasted element-wise modulo operation.
+  let (tmp_a, tmp_b) = broadcast2(a, b)
+  result = map2_inline(tmp_a, tmp_b, x mod y)
+
 # ##############################################
 # # Broadcasting in-place Tensor-Tensor
 

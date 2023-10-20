@@ -196,11 +196,20 @@ proc arange*[T: SomeNumber](start, stop, step: T): Tensor[T] {.noinit.} =
 
 template arange*[T: SomeNumber](stop: T): Tensor[T] =
   # Error messages of templates are very poor
-  arange(T(0), stop, T(1))
+  # While it seems that we could do `arange(T(0), stop, T(1))`
+  # that does not work well (https://github.com/mratsim/Arraymancer/issues/606)
+  # Instead we must do this:
+  type TT = typeof(stop)
+  const zero = TT(0)
+  const one = TT(1)
+  arange(zero, stop, one)
 
 template arange*[T: SomeNumber](start, stop: T): Tensor[T] =
   # Error messages of templates are very poor
-  arange(start, stop, T(1))
+  type TT = typeof(stop)
+  const one = TT(1)
+  arange(start, stop, one)
+
 
 template randomTensorCpu[T](t: Tensor[T], shape: varargs[int], max_or_range: typed): untyped =
   var size: int

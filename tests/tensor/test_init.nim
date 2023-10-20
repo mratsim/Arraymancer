@@ -157,6 +157,13 @@ proc main() =
       block:
         let t = arange(1.0,2.5,0.5)
         check: t == [1.0,1.5,2.0].toTensor()
+      # Test for Issue #606
+      block:
+        let numItems = 3
+        let start = 2
+        let v = @[10, 11, 12, 13, 14, 15].toTensor
+        let w = v[start +. arange(numItems)]
+        check: w == [12, 13, 14].toTensor()
 
     test "Random tensor":
       # Check that randomTensor doesn't silently convert float32 to float64

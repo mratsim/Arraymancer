@@ -2,7 +2,7 @@
 Spellbook: How to convert a tensor underlying type?
 ===================================================
 
-A type conversion fonction ``asType`` is provided for convenience
+A type conversion function ``asType`` is provided for convenience
 
 .. code:: nim
 

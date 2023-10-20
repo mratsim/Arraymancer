@@ -231,7 +231,7 @@ proc main() =
                     [10.0, 4, 2],
                     [15.0, 6, 3]].toTensor.asType(Complex[float64])
 
-    test "Implicit tensor-scalar broadcasting - basic operations +, -":
+    test "Implicit tensor-scalar broadcasting - basic operations +, -, *":
       block: # Addition
         var a = [0, 10, 20, 30].toTensor().reshape(4,1)
         var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).asType(Complex[float64])
@@ -262,6 +262,20 @@ proc main() =
                       [-120],
                       [-130]].toTensor.asType(Complex[float64])
 
+      block: # Multiplication
+        var a = [0, 10, 20, 30].toTensor().reshape(4,1)
+        var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).asType(Complex[float64])
+
+        a = 10 * a *. 20
+        a_c = complex64(10.0, 0.0) * a_c *. complex64(20.0, 0.0)
+        check: a == [[0],
+                    [2000],
+                    [4000],
+                    [6000]].toTensor
+        check: a_c == [[0],
+                      [2000],
+                      [4000],
+                      [6000]].toTensor.asType(Complex[float64])
 
 
     test "Implicit tensor-scalar broadcasting - basic operations +.=, -.=, .^=":

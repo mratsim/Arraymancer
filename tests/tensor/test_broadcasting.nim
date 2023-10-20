@@ -291,7 +291,7 @@ proc main() =
                       [1.0/20.0],
                       [1.0/30.0]].toTensor.asType(Complex[float64])
 
-    test "Implicit broadcasting - Sigmoid 1 ./ (1 +. exp(-x)":
+    test "Implicit broadcasting - Sigmoid 1 ./ (1 +. exp(-x))":
       block:
         proc sigmoid[T: SomeFloat](t: Tensor[T]): Tensor[T]=
           1.T /. (1.T +. exp(0.T -. t))

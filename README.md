@@ -221,7 +221,6 @@ Of them; she's murder'd of your galla?
 <!-- TOC -->
 
 - [Arraymancer - A n-dimensional tensor (ndarray) library.](#arraymancer---a-n-dimensional-tensor-ndarray-library)
-  - [Performance notice on Nim 0.20 & compilation flags](#performance-notice-on-nim-020--compilation-flags)
   - [Show me some code](#show-me-some-code)
     - [Tensor creation and slicing](#tensor-creation-and-slicing)
     - [Reshaping and concatenation](#reshaping-and-concatenation)

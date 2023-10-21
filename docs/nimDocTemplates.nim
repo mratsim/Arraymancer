@@ -115,7 +115,7 @@ const headerTmpl* = """
   <a class="pagetitle" href="index.html">Arraymancer</a>
   <span>
     <a href="#">Technical reference</a>
-    <ul class="monospace">
+    <ul class="monospace" style="padding-bottom: 15px; padding-top: 10px;">
       <span>
         <a href="#">Core tensor API</a>
         <ul class="monospace">

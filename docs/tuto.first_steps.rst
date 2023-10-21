@@ -194,6 +194,7 @@ Take a look at the printing result of the aforementioned shape and try
 to understand the indexing shown on the top / right and how it relates
 to the different dimensions:
 
+.. code:: nim
     let t1 = toSeq(1..144).toTensor().reshape(2,3,4,3,2)
     # Tensor[system.int] of shape "[2, 3, 4, 3, 2]" on backend "Cpu"
     #                           0                            |                            1

@@ -44,6 +44,11 @@ template fold_inline*[T](arg: Tensor[T], op_initial, op_middle, op_final: untype
 template reduce_axis_inline*[T](arg: Tensor[T], reduction_axis: int, op: untyped): untyped =
   let z = arg # ensure that if t is the result of a function it is not called multiple times
   var reduced: type(z)
+  when compileOption("boundChecks"):
+    if arg.rank <= reduction_axis:
+      raise newException(IndexDefect, "Input tensor rank (" & $arg.rank &
+        ") must be greater than reduction axis (" & $reduction_axis &
+        ") when executing reduce_axis_inline: " & astToStr(op))
   let weight = z.size div z.shape[reduction_axis]
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, z.shape[reduction_axis], weight, op) do:
     x = z.atAxisIndex(reduction_axis, block_offset).clone()
@@ -55,6 +60,10 @@ template reduce_axis_inline*[T](arg: Tensor[T], reduction_axis: int, op: untyped
 template fold_axis_inline*[T](arg: Tensor[T], accumType: typedesc, fold_axis: int, op_initial, op_middle, op_final: untyped): untyped =
   let z = arg # ensure that if t is the result of a function it is not called multiple times
   var reduced: accumType
+  when compileOption("boundChecks"):
+    if arg.rank <= fold_axis:
+      raise newException(IndexDefect, "Input tensor rank (" & $arg.rank &
+        ") must be greater than fold axis (" & $fold_axis & ") when executing fold_axis_inline")
   let weight = z.size div z.shape[fold_axis]
   omp_parallel_reduce_blocks(reduced, block_offset, block_size, z.shape[fold_axis], weight, op_final) do:
     let y {.inject.} = z.atAxisIndex(fold_axis, block_offset).clone()

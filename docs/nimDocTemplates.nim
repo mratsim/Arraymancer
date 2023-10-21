@@ -91,7 +91,7 @@ function main() {
 <link href='http://fonts.googleapis.com/css?family=Raleway:400,600,900' rel='stylesheet' type='text/css'/>
 <link href='http://fonts.googleapis.com/css?family=Source+Code+Pro:400,500,600' rel='stylesheet' type='text/css'/>
 
-<a href="https://github.com/mratsim/arraymancer"><img style="position: fixed; top: 0; right: 0; border: 0; z-index: 10;" src="https://camo.githubusercontent.com/652c5b9acfaddf3a9c326fa6bde407b87f7be0f4/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6f72616e67655f6666373630302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png"></a>
+<a href="https://github.com/mratsim/arraymancer"><img style="position: fixed; top: 0; right: 0; border: 0; z-index: 10;" src="https://github.blog/wp-content/uploads/2008/12/forkme_right_gray_6d6d6d.png?resize=150%2C150" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png"></a>
 
 <body onload="main()">
 <div class="document" id="documentId">
@@ -117,46 +117,60 @@ const headerTmpl* = """
     <a href="#">Technical reference</a>
     <ul class="monospace" style="padding-bottom: 15px; padding-top: 10px;">
       <span>
+      <li>
         <a href="#">Core tensor API</a>
         <ul class="monospace">
           $1
         </ul>
+      </li>
       </span>
       <span>
+      <li>
         <a href="#">Neural network API</a>
         <ul class="monospace">
           $2
         </ul>
+      </li>
       </span>
       <span>
+      <li>
         <a href="#">Linear algebra, stats, ML</a>
         <ul class="monospace">
           $3
         </ul>
+      </li>
       </span>
       <span>
+      <li>
         <a href="#">IO & Datasets</a>
         <ul class="monospace">
           $4
         </ul>
+      </li>
       </span>
       <span>
+      <li>
         <a href="#">Autograd</a>
         <ul class="monospace">
           $5
         </ul>
+      </li>
       </span>
       <span>
+      <li>
         <a href="#">Neuralnet primitives</a>
         <ul class="monospace">
           $6
         </ul>
+      </li>
       </span>
       <span>
+      <li>
         <a href="#">Other docs</a>
         <ul class="monospace">
           $7
         </ul>
+      </li>
       </span>
     </ul>
   </span>

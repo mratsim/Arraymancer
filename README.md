@@ -497,18 +497,9 @@ Here is a comparative table of the core features.
 | Squeezing singleton dimension                     | [x]                         | [x]                        | []                         |
 | Slicing + squeezing                               | [x]                         | []                         | []                         |
 
-## What's new in Arraymancer v0.5.1 - July 2019
+## What's new in Arraymancer
 
 The full changelog is available in [changelog.md](./changelog.md).
-
-Here are the highlights:
-
-- 0.20.x compatibility
-- Complex support
-- `Einsum`
-- Naive whitespace tokenizer for NLP
-- Fix height/width order when reading an image in tensor
-- Preview of Laser backend for matrix multiplication without SIMD autodetection (already 5x faster on integer matrix multiplication)
 
 ## 4 reasons why Arraymancer
 

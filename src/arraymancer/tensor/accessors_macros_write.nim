@@ -72,3 +72,6 @@ macro `[]=`*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
 #
 #   result = quote do:
 #     slice_typed_dispatch_var(`t`, `new_args`)
+
+template `[]=`*[T](t: Tensor[T], args: varargs[untyped]): untyped =
+  {.error: "a slice of an immutable tensor cannot be assigned to".}

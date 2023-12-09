@@ -221,7 +221,6 @@ Of them; she's murder'd of your galla?
 <!-- TOC -->
 
 - [Arraymancer - A n-dimensional tensor (ndarray) library.](#arraymancer---a-n-dimensional-tensor-ndarray-library)
-  - [Performance notice on Nim 0.20 & compilation flags](#performance-notice-on-nim-020--compilation-flags)
   - [Show me some code](#show-me-some-code)
     - [Tensor creation and slicing](#tensor-creation-and-slicing)
     - [Reshaping and concatenation](#reshaping-and-concatenation)
@@ -498,18 +497,9 @@ Here is a comparative table of the core features.
 | Squeezing singleton dimension                     | [x]                         | [x]                        | []                         |
 | Slicing + squeezing                               | [x]                         | []                         | []                         |
 
-## What's new in Arraymancer v0.5.1 - July 2019
+## What's new in Arraymancer
 
 The full changelog is available in [changelog.md](./changelog.md).
-
-Here are the highlights:
-
-- 0.20.x compatibility
-- Complex support
-- `Einsum`
-- Naive whitespace tokenizer for NLP
-- Fix height/width order when reading an image in tensor
-- Preview of Laser backend for matrix multiplication without SIMD autodetection (already 5x faster on integer matrix multiplication)
 
 ## 4 reasons why Arraymancer
 

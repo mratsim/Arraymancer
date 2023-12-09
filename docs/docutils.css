@@ -33,9 +33,7 @@ body {
   font-weight: 400;
   font-size: 16px;
   line-height: 20px;
-  color: #444;
-  letter-spacing: 0.15px;
-  background-color: rgba(252, 248, 244, 0.45); }
+  letter-spacing: 0.15px; }
 /* Skeleton grid */
 .container {
   position: relative;
@@ -97,37 +95,28 @@ body {
 /* Customer Overrides */
 .footer {
   text-align: center;
-  color: #969696;
   padding-top: 10%; }
 p.module-desc {
   font-size: 1.1em;
-  color: #666666; }
-a.link-seesrc {
-  color: #aec7d2;
+}a.link-seesrc {
   font-style: italic; }
-a.link-seesrc:hover {
-  color: #6c9aae; }
 #toc-list {
   word-wrap: break-word; }
 ul.simple-toc {
   list-style: none; }
 ul.simple-toc a.reference-toplevel {
   font-weight: bold;
-  color: #0077b3; }
+}
 ul.simple-toc-section {
   list-style-type: circle;
-  color: #6c9aae; }
-ul.simple-toc-section a.reference {
-  color: #0077b3; }
+}
 cite {
   font-style: italic !important; }
 dt > pre {
   border-color: rgba(0, 0, 0, 0.1);
-  background-color: rgba(255, 255, 255, 0.3);
   margin: 15px 0px 5px; }
 dd > pre {
   border-color: rgba(0, 0, 0, 0.1);
-  background-color: whitesmoke;
   margin-top: 8px; }
 .item > dd {
   margin-left: 10px;
@@ -149,7 +138,6 @@ div.search-groupby {
 table.line-nums-table {
   border-radius: 4px;
   border: 1px solid #cccccc;
-  background-color: whitesmoke;
   border-collapse: separate;
   margin-top: 15px;
   margin-bottom: 25px; }
@@ -161,7 +149,6 @@ table.line-nums-table {
 .line-nums-table td.blob-line-nums {
   width: 28px; }
 .line-nums-table td.blob-line-nums pre {
-  color: #b0b0b0;
   -webkit-filter: opacity(75%);
   text-align: right;
   border-color: transparent;
@@ -173,11 +160,9 @@ table.line-nums-table {
 /* Docgen styles */
 /* Links */
 a {
-  color: #0077b3;
   text-decoration: none; }
 a:hover,
 a:focus {
-  color: #00334d;
   text-decoration: underline; }
 a:visited {
   color: #00334d; }
@@ -207,7 +192,6 @@ img {
   -ms-interpolation-mode: bicubic; }
 @media print {
   * {
-    color: black !important;
     text-shadow: none !important;
     background: transparent !important;
     box-shadow: none !important; }
@@ -368,7 +352,6 @@ pre {
   padding: 0 3px 2px;
   font-weight: 500;
   font-size: 12px;
-  color: #444444;
   -webkit-border-radius: 3px;
   -moz-border-radius: 3px;
   border-radius: 3px; }
@@ -379,9 +362,7 @@ pre {
 }
 code {
   padding: 2px 4px;
-  color: #444444;
   white-space: nowrap;
-  background-color: white;
   border: 1px solid #777777; }
 pre {
   display: inline-block;
@@ -394,7 +375,6 @@ pre {
   white-space: pre !important;
   overflow-y: hidden;
   overflow-x: visible;
-  background-color: rgba(0, 0, 0, 0.01);
   border: 1px solid #cccccc;
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
@@ -442,8 +422,6 @@ table th, table td {
   border-top: 0; }
 .table tbody + tbody {
   border-top: 2px solid #444444; }
-.table .table {
-  background-color: rgba(252, 248, 244, 0.75); }
 .table-condensed th,
 .table-condensed td {
   padding: 4px 5px; }
@@ -518,16 +496,8 @@ table th, table td {
   -webkit-border-top-right-radius: 4px;
   border-top-right-radius: 4px;
   -moz-border-radius-topright: 4px; }
-table.docutils th {
-  background-color: #e8e8e8; }
-table.docutils tr:hover {
-  background-color: whitesmoke; }
 .table-striped tbody > tr:nth-child(odd) > td,
-.table-striped tbody > tr:nth-child(odd) > th {
-  background-color: rgba(252, 248, 244, 0.75); }
 .table-hover tbody tr:hover > td,
-.table-hover tbody tr:hover > th {
-  background-color: rgba(241, 222, 204, 0.75); }
 table td[class*="span"],
 table th[class*="span"],
 .row-fluid table td[class*="span"],
@@ -542,7 +512,6 @@ table th[class*="span"],
   font-weight: 200;
   line-height: 30px;
   color: inherit;
-  background-color: rgba(230, 197, 164, 0.75);
   -webkit-border-radius: 6px;
   -moz-border-radius: 6px;
   border-radius: 6px; }
@@ -662,7 +631,6 @@ div.sidebar {
   margin: 0 0 0.5em 1em;
   border: medium outset;
   padding: 1em;
-  background-color: rgba(252, 248, 244, 0.75);
   width: 40%;
   float: right;
   clear: right; }
@@ -759,24 +727,9 @@ pre.address {
 pre.literal-block, pre.doctest-block, pre.math, pre.code {
   margin-left: 2em;
   margin-right: 2em; }
-pre.code .ln {
-  color: grey; }
 /* line numbers */
-pre.code, code {
-  background-color: #eeeeee; }
-pre.code .comment, code .comment {
-  color: #5c6576; }
 pre.code .keyword, code .keyword {
-  color: #3B0D06;
   font-weight: bold; }
-pre.code .literal.string, code .literal.string {
-  color: #0c5404; }
-pre.code .name.builtin, code .name.builtin {
-  color: #352b84; }
-pre.code .deleted, code .deleted {
-  background-color: #DEB0A1; }
-pre.code .inserted, code .inserted {
-  background-color: #A3D289; }
 span.classifier {
   font-family: "Lato", "Helvetica Neue", "HelveticaNeue", Helvetica, Arial, sans-serif;
   font-style: oblique; }
@@ -802,8 +755,7 @@ table.docinfo {
   margin-top: 2em;
   margin-bottom: 2em;
   font-family: "Lato", "Helvetica Neue", "HelveticaNeue", Helvetica, Arial, sans-serif !important;
-  color: #444444; }
-table.docutils {
+}table.docutils {
   margin-top: 0.5em;
   margin-bottom: 0.5em; }
 table.footnote {
@@ -824,61 +776,14 @@ h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
   font-size: 100%; }
 ul.auto-toc {
   list-style-type: none; }
-span.DecNumber {
-  color: #252dbe; }
-span.BinNumber {
-  color: #252dbe; }
-span.HexNumber {
-  color: #252dbe; }
-span.OctNumber {
-  color: #252dbe; }
-span.FloatNumber {
-  color: #252dbe; }
-span.Identifier {
-  color: #3b3b3b; }
 span.Keyword {
-  font-weight: 600;
-  color: #5e8f60; }
-span.StringLit {
-  color: #a4255b; }
-span.LongStringLit {
-  color: #a4255b; }
-span.CharLit {
-  color: #a4255b; }
-span.EscapeSequence {
-  color: black; }
-span.Operator {
-  color: black; }
-span.Punctuation {
-  color: black; }
+  font-weight: 600;}
 span.Comment, span.LongComment {
   font-style: italic;
   font-weight: 400;
-  color: #484a86; }
-span.RegularExpression {
-  color: darkviolet; }
-span.TagStart {
-  color: darkviolet; }
-span.TagEnd {
-  color: darkviolet; }
-span.Key {
-  color: #252dbe; }
-span.Value {
-  color: #252dbe; }
-span.RawData {
-  color: #a4255b; }
-span.Assembler {
-  color: #252dbe; }
-span.Preprocessor {
-  color: #252dbe; }
-span.Directive {
-  color: #252dbe; }
-span.Command, span.Rule, span.Hyperlink, span.Label, span.Reference,
-span.Other {
-  color: black; }
+}
 /* Pop type, const, proc, and iterator defs in nim def blocks */
 dt pre > span.Identifier, dt pre > span.Operator {
-  color: #155da4;
   font-weight: 700; }
 dt pre > span.Identifier ~ span.Identifier, dt pre > span.Operator ~ span.Identifier {
   color: inherit;

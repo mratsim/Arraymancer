@@ -113,3 +113,45 @@ proc square*[T](x: T): T {.inline.} =
   x*x
 
 makeUniversal(square)
+
+proc convolveImpl[T: SomeNumber | Complex32 | Complex64](f, g: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Implementation of the linear convolution of two one-dimensional tensors
+
+  # Initialize the result as an all zero tensor of the right length
+  let len_result = f.size + g.size - 1
+  result = zeros[T](len_result)
+
+  # Perform the convolution
+  for n in 0 ..< len_result:
+    for m in max(0, n - g.size + 1) .. min(f.size - 1, n):
+      result[n] += f[m] * g[n - m]
+
+proc convolve*[T: SomeNumber | Complex32 | Complex64](t1, t2: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Returns the discrete, linear convolution of two one-dimensional tensors.
+  ##
+  ## The convolution operator is often seen in signal processing, where it models
+  ## the effect of a linear time-invariant system on a signal (Wikipedia,
+  ## “Convolution”, https://en.wikipedia.org/wiki/Convolution).
+  ##
+  ## The convolution is defined as the integral of the product of the two tensors
+  ## after one is reflected about the y-axis and shifted n positions, for all values
+  ## of n in which the tensors overlap (since the integral will be zero outside of
+  ## that window).
+  ##
+  ## Inputs:
+  ##   - t1, t2: Input tensors
+  ##
+  ## Output:
+  ##   - Convolution tensor (of size `t1.size + t2.size -1` and same type as the inputs)
+
+  # Ensure that both arrays are 1-dimensional
+  let f = if t1.rank > 1: t1.squeeze else: t1
+  let g = if t2.rank > 1: t2.squeeze else: t2
+  if f.rank > 1:
+    raise newException(ValueError,
+      "convolve input tensors must be 1D, but first input tensor is multi-dimensional (shape=" & $t1.shape & ")")
+  if g.rank > 1:
+    raise newException(ValueError,
+      "convolve input tensors must be 1D, but second input tensor is multi-dimensional (shape=" & $t2.shape & ")")
+
+  convolveImpl(f, g)

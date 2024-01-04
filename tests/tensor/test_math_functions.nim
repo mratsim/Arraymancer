@@ -104,5 +104,14 @@ proc main() =
 
       check: a_c.phase == expected_phases
 
+    test "1-D convolution":
+      block:
+        let a = arange(4)
+        let b = 2 * ones[int](7) - arange(7)
+        let expected = [0, 2, 5, 8, 2, -4, -10, -16, -17, -12].toTensor
+
+        check: convolve(a, b) == expected
+        check: convolve(b, a) == expected
+
 main()
 GC_fullCollect()

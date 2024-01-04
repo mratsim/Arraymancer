@@ -55,25 +55,3 @@ template at_mut*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
   ##     Singleton dimension are collapsed
   var mt = t[args].squeeze
   mt
-
-template mut*[T](t: Tensor[T]): var Tensor[T] =
-# template mut*[T](t: Tensor[T]): untyped =
-  ## Return a mutable view of a Tensor
-  ## 
-  ## This can be useful, for example, when assigning a value into a chain
-  ## of slice operations which are usually considered immutable even if
-  ## the original tensor is mutable. For example, this lets you do:
-  ##
-  ## .. code:: nim
-  ##   var x = arange(20).reshape([4, 3])
-  ##   # The code `x[1..2, _][condition] = 100` would fail with
-  ##   # a `a slice of an immutable tensor cannot be assigned to` error
-  ##   # Using `mut` allows assignment to the slice
-  ##   x[1..2, _].mut[condition] = 100
-  ##
-  ## Input:
-  ##   - a Tensor
-  ## Returns:
-  ##   - a mutable value or view of the Tensor corresponding to the slice
-  var mt = t
-  mt

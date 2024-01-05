@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import  ./data_structure,
+        ./backend/openmp,
         ./init_cpu,
         ./higher_order_applymap,
         ./ufunc
@@ -135,10 +136,11 @@ proc convolveImpl[T: SomeNumber | Complex32 | Complex64](
   result = zeros[T](len_result)
 
   # And perform the convolution
-  for n in 0 ..< len_result:
-    let shift = n + offset
-    for m in max(0, shift - g.size + 1) .. min(f.size - 1, shift):
-      result[n] += f[m] * g[shift - m]
+  omp_parallel_blocks(block_offset, block_size, len_result):
+    for n in block_offset ..< block_offset + block_size:
+      let shift = n + offset
+      for m in max(0, shift - g.size + 1) .. min(f.size - 1, shift):
+        result[n] += f[m] * g[shift - m]
 
 proc convolve*[T: SomeNumber | Complex32 | Complex64](
     t1, t2: Tensor[T],

@@ -114,19 +114,35 @@ proc square*[T](x: T): T {.inline.} =
 
 makeUniversal(square)
 
-proc convolveImpl[T: SomeNumber | Complex32 | Complex64](f, g: Tensor[T]): Tensor[T] {.noinit.} =
+type ConvolveMode* = enum full, same, valid
+
+proc convolveImpl[T: SomeNumber | Complex32 | Complex64](
+    f, g: Tensor[T],
+    mode: ConvolveMode): Tensor[T] {.noinit.} =
   ## Implementation of the linear convolution of two one-dimensional tensors
 
-  # Initialize the result as an all zero tensor of the right length
-  let len_result = f.size + g.size - 1
+  # Calculate the result lenth and the shift offset
+  let len_result = case mode
+    of full: f.size + g.size - 1
+    of same: max(f.size, g.size)
+    of valid: max(f.size, g.size) - min(f.size, g.size) + 1
+  let offset = case mode
+    of full: 0
+    of same: (min(f.size, g.size) - 1) div 2
+    of valid: min(f.size, g.size) - 1
+
+  # Initialize the result tensor
   result = zeros[T](len_result)
 
-  # Perform the convolution
+  # And perform the convolution
   for n in 0 ..< len_result:
-    for m in max(0, n - g.size + 1) .. min(f.size - 1, n):
-      result[n] += f[m] * g[n - m]
+    let shift = n + offset
+    for m in max(0, shift - g.size + 1) .. min(f.size - 1, shift):
+      result[n] += f[m] * g[shift - m]
 
-proc convolve*[T: SomeNumber | Complex32 | Complex64](t1, t2: Tensor[T]): Tensor[T] {.noinit.} =
+proc convolve*[T: SomeNumber | Complex32 | Complex64](
+    t1, t2: Tensor[T],
+    mode = ConvolveMode.full): Tensor[T] {.noinit.} =
   ## Returns the discrete, linear convolution of two one-dimensional tensors.
   ##
   ## The convolution operator is often seen in signal processing, where it models
@@ -139,10 +155,23 @@ proc convolve*[T: SomeNumber | Complex32 | Complex64](t1, t2: Tensor[T]): Tensor
   ## that window).
   ##
   ## Inputs:
-  ##   - t1, t2: Input tensors
+  ##   - t1, t2: Input tensors of size N and M respectively.
+  ##   - mode: Convolution mode (full, same, valid):
+  ##     - `full`: This is the default mode. It returns the convolution at each point
+  ##               of overlap, with an output shape of (N+M-1,). At the end-points of
+  ##               the convolution, the signals do not overlap completely, and boundary
+  ##               effects may be seen.
+  ##      - `same`: Returns an output of length max(M, N).
+  ##                Boundary effects are still visible.
+  ##      - `valid`: Returns output of length max(M, N) - min(M, N) + 1.
+  ##                 The convolution is only given for points where the signals overlap
+  ##                 completely. Values outside the signal boundary have no effect.
   ##
   ## Output:
-  ##   - Convolution tensor (of size `t1.size + t2.size -1` and same type as the inputs)
+  ##   - Convolution tensor of same type as the inputs and size according to the mode.
+  ##
+  ## Notes:
+  ##  - The API of this function is the same as the one of numpy.convolve.
 
   # Ensure that both arrays are 1-dimensional
   let f = if t1.rank > 1: t1.squeeze else: t1
@@ -154,4 +183,4 @@ proc convolve*[T: SomeNumber | Complex32 | Complex64](t1, t2: Tensor[T]): Tensor
     raise newException(ValueError,
       "convolve input tensors must be 1D, but second input tensor is multi-dimensional (shape=" & $t2.shape & ")")
 
-  convolveImpl(f, g)
+  convolveImpl(f, g, mode=mode)

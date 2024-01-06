@@ -104,5 +104,29 @@ proc main() =
 
       check: a_c.phase == expected_phases
 
+    test "1-D convolution":
+      block:
+        let a = arange(4)
+        let b = 2 * ones[int](7) - arange(7)
+        let expected = [0, 2, 5, 8, 2, -4, -10, -16, -17, -12].toTensor
+        let expected_same = [2, 5, 8, 2, -4, -10, -16].toTensor
+        let expected_valid = [8, 2, -4, -10].toTensor
+
+        check: convolve(a, b) == expected
+        # Test that input order doesn't matter
+        check: convolve(b, a) == expected
+        # Test the `same` mode with different input sizes
+        check: convolve(a, b, mode=ConvolveMode.same) == expected_same
+
+        let a2 = arange(5)
+        let b2 = 2 * ones[int](8) - arange(8)
+        let expected_same_a2b = [  5,   8,  10,   0, -10, -20, -25].toTensor
+        let expected_same_ab2 = [  2,   5,   8,   2,  -4, -10, -16, -22].toTensor
+        check: convolve(a2, b, mode=ConvolveMode.same) == expected_same_a2b
+        check: convolve(a, b2, mode=ConvolveMode.same) == expected_same_ab2
+
+        # Test the `valid` mode
+        check: convolve(b, a, mode=ConvolveMode.valid) == expected_valid
+
 main()
 GC_fullCollect()

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import  ./data_structure,
+        ./backend/openmp,
         ./init_cpu,
         ./higher_order_applymap,
         ./ufunc
@@ -113,3 +114,75 @@ proc square*[T](x: T): T {.inline.} =
   x*x
 
 makeUniversal(square)
+
+type ConvolveMode* = enum full, same, valid
+
+proc convolveImpl[T: SomeNumber | Complex32 | Complex64](
+    f, g: Tensor[T],
+    mode: ConvolveMode): Tensor[T] {.noinit.} =
+  ## Implementation of the linear convolution of two one-dimensional tensors
+
+  # Calculate the result lenth and the shift offset
+  let len_result = case mode
+    of full: f.size + g.size - 1
+    of same: max(f.size, g.size)
+    of valid: max(f.size, g.size) - min(f.size, g.size) + 1
+  let offset = case mode
+    of full: 0
+    of same: (min(f.size, g.size) - 1) div 2
+    of valid: min(f.size, g.size) - 1
+
+  # Initialize the result tensor
+  result = zeros[T](len_result)
+
+  # And perform the convolution
+  omp_parallel_blocks(block_offset, block_size, len_result):
+    for n in block_offset ..< block_offset + block_size:
+      let shift = n + offset
+      for m in max(0, shift - g.size + 1) .. min(f.size - 1, shift):
+        result[n] += f[m] * g[shift - m]
+
+proc convolve*[T: SomeNumber | Complex32 | Complex64](
+    t1, t2: Tensor[T],
+    mode = ConvolveMode.full): Tensor[T] {.noinit.} =
+  ## Returns the discrete, linear convolution of two one-dimensional tensors.
+  ##
+  ## The convolution operator is often seen in signal processing, where it models
+  ## the effect of a linear time-invariant system on a signal (Wikipedia,
+  ## “Convolution”, https://en.wikipedia.org/wiki/Convolution).
+  ##
+  ## The convolution is defined as the integral of the product of the two tensors
+  ## after one is reflected about the y-axis and shifted n positions, for all values
+  ## of n in which the tensors overlap (since the integral will be zero outside of
+  ## that window).
+  ##
+  ## Inputs:
+  ##   - t1, t2: Input tensors of size N and M respectively.
+  ##   - mode: Convolution mode (full, same, valid):
+  ##     - `full`: This is the default mode. It returns the convolution at each point
+  ##               of overlap, with an output shape of (N+M-1,). At the end-points of
+  ##               the convolution, the signals do not overlap completely, and boundary
+  ##               effects may be seen.
+  ##      - `same`: Returns an output of length max(M, N).
+  ##                Boundary effects are still visible.
+  ##      - `valid`: Returns output of length max(M, N) - min(M, N) + 1.
+  ##                 The convolution is only given for points where the signals overlap
+  ##                 completely. Values outside the signal boundary have no effect.
+  ##
+  ## Output:
+  ##   - Convolution tensor of same type as the inputs and size according to the mode.
+  ##
+  ## Notes:
+  ##  - The API of this function is the same as the one of numpy.convolve.
+
+  # Ensure that both arrays are 1-dimensional
+  let f = if t1.rank > 1: t1.squeeze else: t1
+  let g = if t2.rank > 1: t2.squeeze else: t2
+  if f.rank > 1:
+    raise newException(ValueError,
+      "convolve input tensors must be 1D, but first input tensor is multi-dimensional (shape=" & $t1.shape & ")")
+  if g.rank > 1:
+    raise newException(ValueError,
+      "convolve input tensors must be 1D, but second input tensor is multi-dimensional (shape=" & $t2.shape & ")")
+
+  convolveImpl(f, g, mode=mode)

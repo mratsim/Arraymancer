@@ -108,25 +108,66 @@ proc main() =
       block:
         let a = arange(4)
         let b = 2 * ones[int](7) - arange(7)
-        let expected = [0, 2, 5, 8, 2, -4, -10, -16, -17, -12].toTensor
+        let expected_full = [0, 2, 5, 8, 2, -4, -10, -16, -17, -12].toTensor
         let expected_same = [2, 5, 8, 2, -4, -10, -16].toTensor
         let expected_valid = [8, 2, -4, -10].toTensor
 
-        check: convolve(a, b) == expected
-        # Test that input order doesn't matter
-        check: convolve(b, a) == expected
-        # Test the `same` mode with different input sizes
+        # Test all the convolution modes
+        check: convolve(a, b, mode=ConvolveMode.full) == expected_full
         check: convolve(a, b, mode=ConvolveMode.same) == expected_same
+        check: convolve(a, b, mode=ConvolveMode.valid) == expected_valid
 
+        # Test that the default convolution mode is `full`
+        check: convolve(a, b) == expected_full
+
+        # Test that input order doesn't matter
+        check: convolve(b, a) == expected_full
+
+        # Test the `same` mode with different input sizes
         let a2 = arange(5)
         let b2 = 2 * ones[int](8) - arange(8)
-        let expected_same_a2b = [  5,   8,  10,   0, -10, -20, -25].toTensor
-        let expected_same_ab2 = [  2,   5,   8,   2,  -4, -10, -16, -22].toTensor
+        let expected_same_a2b = [5, 8, 10, 0, -10, -20, -25].toTensor
+        let expected_same_ab2 = [2, 5, 8, 2, -4, -10, -16, -22].toTensor
+
         check: convolve(a2, b, mode=ConvolveMode.same) == expected_same_a2b
         check: convolve(a, b2, mode=ConvolveMode.same) == expected_same_ab2
 
-        # Test the `valid` mode
-        check: convolve(b, a, mode=ConvolveMode.valid) == expected_valid
+    test "1-D correlation":
+      block:
+        let a = [2, 8, -8, -6, 4].toTensor
+        let b = [-7, -7, 6, 0, 6, -7, 5, -6, 2].toTensor
+        let expected_full = [4, 4, -54, 62, -40, 50, 26, -30, -94, -36, 122, 14, -28].toTensor
+        let expected_same = [-54, 62, -40, 50, 26, -30, -94, -36, 122].toTensor
+        let expected_valid = [-40, 50, 26, -30, -94].toTensor
+
+        # Test all the correlation modes
+        check: correlate(a, b, mode=ConvolveMode.full) == expected_full
+        check: correlate(a, b, mode=ConvolveMode.same) == expected_same
+        check: correlate(a, b, mode=ConvolveMode.valid) == expected_valid
+
+        # Test that the default correlation mode is `valid`
+        check: correlate(a, b) == expected_valid
+
+      block: # Complex Tensor correlation
+        let ca = complex(
+          [6.3, 7.1, -6.0, 1.7].toTensor,
+          [-8.1, -9.2, 0.0, 3.5].toTensor)
+        let cb = complex(
+          [-3.9, 1.6, -1.6].toTensor,
+          [1.0, 5.2, 2.1].toTensor)
+        let expected_full = complex(
+          [-27.09, -62.72, -59.55, -41.86, 44.32, -3.13].toTensor,
+          [-0.27, -45.91, -13.75, 50.81, 2.76, -15.35].toTensor)
+        let expected_same = expected_full[1..^2]
+        let expected_valid = expected_full[2..^3]
+
+        # Test all the correlation modes
+        check: expected_full.mean_absolute_error(correlate(ca, cb, mode=ConvolveMode.full)) < 1e-9
+        check: expected_same.mean_absolute_error(correlate(ca, cb, mode=ConvolveMode.same)) < 1e-9
+        check: expected_valid.mean_absolute_error(correlate(ca, cb, mode=ConvolveMode.valid)) < 1e-9
+
+        # Test that the default correlation mode is `valid`
+        check: expected_valid.mean_absolute_error(correlate(ca, cb)) < 1e-9
 
 main()
 GC_fullCollect()

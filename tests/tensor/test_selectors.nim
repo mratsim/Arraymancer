@@ -378,5 +378,20 @@ proc main() =
 
         check: checkered == expected
 
+    test "at_mut":
+      block:
+        var x = arange(12).reshape([4, 3])
+        # The code `x[1..2, _][condition] = 1000` would fail with
+        # a `a slice of an immutable tensor cannot be assigned to` error
+        # Instead, using `at_mut` allows assignment to the slice
+        let condition = [[true, false, true], [true, false, true]].toTensor
+        let expected = [[   0, 1,    2],
+                        [1000, 4, 1000],
+                        [1000, 7, 1000],
+                        [   9, 10, 11]].toTensor
+        x.at_mut(1..2, _)[condition] = 1000
+        check: expected == x
+
+
 main()
 GC_fullCollect()

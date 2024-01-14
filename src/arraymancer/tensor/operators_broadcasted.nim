@@ -19,7 +19,6 @@ import  ./data_structure,
         ./private/p_empty_tensors
 
 import std/math
-import complex except Complex64, Complex32
 
 # #########################################################
 # # Broadcasting Tensor-Tensor

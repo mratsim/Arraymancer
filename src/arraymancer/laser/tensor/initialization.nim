@@ -17,6 +17,8 @@ import
   # Third-party
   nimblas
 
+export OrderType
+
 when (NimMajor, NimMinor) < (1, 4):
   import ../../std_version_types
 
@@ -289,7 +291,7 @@ func item*[T_IN, T_OUT](t: Tensor[T_IN], _: typedesc[T_OUT]): T_OUT =
       # When the input and the output types are Complex, we need to find
       # the "base" type of the output type (e.g. float32 or float64),
       # and then convert the real and imaginary parts of the input value
-      # into the output base type before creating the output complex type 
+      # into the output base type before creating the output complex type
       type TT = typeof(
         block:
           var tmp: T_OUT

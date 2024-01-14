@@ -186,3 +186,92 @@ proc convolve*[T: SomeNumber | Complex32 | Complex64](
       "convolve input tensors must be 1D, but second input tensor is multi-dimensional (shape=" & $t2.shape & ")")
 
   convolveImpl(f, g, mode=mode)
+
+type CorrelateMode* = ConvolveMode
+
+proc correlate*[T: SomeNumber](
+    t1, t2: Tensor[T],
+    mode = CorrelateMode.valid): Tensor[T] {.noinit.} =
+  ## Returns the cross-correlation of two one-dimensional real tensors.
+  ##
+  ## The correlation is defined as the integral of the product of the two tensors
+  ## after the second one is shifted n positions, for all values of n in which
+  ## the tensors overlap (since the integral will be zero outside of that window).
+  ##
+  ## Inputs:
+  ##   - t1, t2: Input tensors of size N and M respectively.
+  ##   - mode: Correlation mode (full, same, valid):
+  ##     - `full`: It returns the correlation at each point
+  ##               of overlap, with an output shape of (N+M-1,). At the end-points of
+  ##               the correlation, the signals do not overlap completely, and boundary
+  ##               effects may be seen.
+  ##      - `same`: Returns an output of length max(M, N).
+  ##                Boundary effects are still visible.
+  ##      - `valid`: This is the default mode. Returns output of length max(M, N) - min(M, N) + 1.
+  ##                 The correlation is only given for points where the signals overlap
+  ##                 completely. Values outside the signal boundary have no effect.
+  ##
+  ## Output:
+  ##   - Correlation tensor of same type as the inputs and size according to the mode.
+  ##
+  ## Notes:
+  ##   - The API of this function is the same as the one of numpy.correlate.
+  ##   - Note that (as with np.correlate) the default correlation mode is `valid`,
+  ##     which is different than the default convolution mode (`full`).
+
+  # Ensure that both arrays are 1-dimensional
+  let f = if t1.rank > 1: t1.squeeze else: t1
+  let g = if t2.rank > 1: t2.squeeze else: t2
+  if f.rank > 1:
+    raise newException(ValueError,
+      "correlate input tensors must be 1D, but first input tensor is multi-dimensional (shape=" & $t1.shape & ")")
+  if g.rank > 1:
+    raise newException(ValueError,
+      "correlate input tensors must be 1D, but second input tensor is multi-dimensional (shape=" & $t2.shape & ")")
+  mixin `|-`
+  mixin `_`
+  convolveImpl(f, g[_|-1], mode=mode)
+
+proc correlate*[T: Complex32 | Complex64](
+    t1, t2: Tensor[T],
+    mode = CorrelateMode.valid): Tensor[T] {.noinit.} =
+  ## Returns the cross-correlation of two one-dimensional complex tensors.
+  ##
+  ## The correlation is defined as the integral of the product of the two tensors
+  ## after the second one is conjugated and shifted n positions, for all values
+  ## of n in which the tensors overlap (since the integral will be zero outside of
+  ## that window).
+  ##
+  ## Inputs:
+  ##   - t1, t2: Input tensors of size N and M respectively.
+  ##   - mode: Correlation mode (full, same, valid):
+  ##     - `full`: It returns the correlation at each point
+  ##               of overlap, with an output shape of (N+M-1,). At the end-points of
+  ##               the correlation, the signals do not overlap completely, and boundary
+  ##               effects may be seen.
+  ##      - `same`: Returns an output of length max(M, N).
+  ##                Boundary effects are still visible.
+  ##      - `valid`: This is the default mode. Returns output of length max(M, N) - min(M, N) + 1.
+  ##                 The correlation is only given for points where the signals overlap
+  ##                 completely. Values outside the signal boundary have no effect.
+  ##
+  ## Output:
+  ##   - Correlation tensor of same type as the inputs and size according to the mode.
+  ##
+  ## Notes:
+  ##   - The API of this function is the same as the one of numpy.correlate.
+  ##   - Note that (as with np.correlate) the default correlation mode is `valid`,
+  ##     which is different than the default convolution mode (`full`).
+
+  # Ensure that both arrays are 1-dimensional
+  let f = if t1.rank > 1: t1.squeeze else: t1
+  let g = if t2.rank > 1: t2.squeeze else: t2
+  if f.rank > 1:
+    raise newException(ValueError,
+      "correlate input tensors must be 1D, but first input tensor is multi-dimensional (shape=" & $t1.shape & ")")
+  if g.rank > 1:
+    raise newException(ValueError,
+      "correlate input tensors must be 1D, but second input tensor is multi-dimensional (shape=" & $t2.shape & ")")
+  mixin `|-`
+  mixin `_`
+  convolveImpl(f, g[_|-1].conjugate, mode=mode)

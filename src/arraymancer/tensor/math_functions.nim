@@ -104,9 +104,11 @@ proc phase*(t: Tensor[Complex[float32]]): Tensor[float32] {.noinit.} =
   t.map_inline(phase(x))
 
 proc clamp*[T](t: Tensor[T], min, max: T): Tensor[T] {.noinit.} =
+  ## Return a Tensor with all elements clamped to the interval [min, max].
   t.map_inline(clamp(x, min, max))
 
 proc mclamp*[T](t: var Tensor[T], min, max: T) =
+  ## Update the Tensor with all elements clamped to the interval [min, max].
   t.apply_inline(clamp(x, min, max))
 
 proc square*[T](x: T): T {.inline.} =

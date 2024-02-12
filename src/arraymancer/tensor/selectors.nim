@@ -155,8 +155,67 @@ proc masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
       if maskElem:
         tElem = value
 
-
 proc masked_fill*[T](t: var Tensor[T], mask: openArray, value: T) =
+  ## For the index of each element of t.
+  ## Fill the elements at ``t[index]`` with the ``value``
+  ## if their corresponding ``mask[index]`` is true.
+  ## If not they are untouched.
+  ##
+  ## Example:
+  ##
+  ##   t.masked_fill(t > 0, -1)
+  ##
+  ## or alternatively:
+  ##
+  ##   t.masked_fill(t > 0): -1
+  ##
+  ## The boolean mask must be
+  ##   - an array or sequence of bools
+  ##   - an array of arrays of bools,
+  ##   - ...
+  ##
+  if t.size == 0 or mask.len == 0:
+    return
+  t.masked_fill(mask.toTensor(), value)
+
+proc masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: Tensor[T]) =
+  ## For the index of each element of t.
+  ## Fill the elements at ``t[index]`` with the ``value``
+  ## if their corresponding ``mask[index]`` is true.
+  ## If not they are untouched.
+  ##
+  ## Example:
+  ##
+  ##   t.masked_fill(t > 0, -1)
+  ##
+  ## or alternatively:
+  ##
+  ##   t.masked_fill(t > 0): -1
+  if t.size == 0 or mask.size == 0:
+    return
+  check_elementwise(t, mask)
+
+  # Due to requiring unnecessary assigning `x` for a `false` mask
+  # apply2_inline is a bit slower for very sparse mask.
+  # As this is a critical operation, especially on dataframes, we use the lower level construct.
+  #
+  # t.apply2_inline(mask):
+  #   if y:
+  #     value
+  #   else:
+  #     x
+  omp_parallel_blocks(block_offset, block_size, t.size):
+    var n = block_offset
+    try:
+      for tElem, maskElem in mzip(t, mask, block_offset, block_size):
+        if maskElem:
+          tElem = value[n]
+          inc n
+    except IndexDefect:
+      raise newException(IndexDefect, "The size of the value tensor (" & $value.size &
+        ") is smaller than the number of true elements in the mask (" & $mask.size & ")")
+
+proc masked_fill*[T](t: var Tensor[T], mask: openArray, value: Tensor[T]) =
   ## For the index of each element of t.
   ## Fill the elements at ``t[index]`` with the ``value``
   ## if their corresponding ``mask[index]`` is true.

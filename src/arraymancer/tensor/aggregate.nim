@@ -345,7 +345,7 @@ proc cumprod*[T](arg: Tensor[T], axis: int = 0): Tensor[T] = # from hugogranstro
 proc diff_discrete*[T](arg: Tensor[T], n=1, axis: int = -1): Tensor[T] =
   ## Calculate the n-th discrete difference along the given axis.
   ##
-  ## The first difference is given by out[i] = a[i+1] - a[i] along the given axis.
+  ## The first difference is given by `out[i] = a[i+1] - a[i]` along the given axis.
   ## Higher differences are calculated by using diff recursively.
   ##
   ## Input:
@@ -354,6 +354,11 @@ proc diff_discrete*[T](arg: Tensor[T], n=1, axis: int = -1): Tensor[T] =
   ##        If zero, the input is returned as-is.
   ##   - axis: The axis along which the difference is taken,
   ##           default is the last axis.
+  ## Returns:
+  ##   - A tensor with the n-th discrete difference along the given axis.
+  ##     It's size along that axis will be reduced by one.
+  ##   - The code in this function is heavily based upon and equivalent
+  ##   to numpy's `diff()` function.
   mixin `_`
   assert n >= 0, "diff order (" & $n & ") cannot be negative"
   if n == 0 or arg.size == 0:

@@ -231,6 +231,52 @@ proc main() =
                     [10.0, 4, 2],
                     [15.0, 6, 3]].toTensor.asType(Complex[float64])
 
+    test "Implicit tensor-scalar broadcasting - basic operations +, -, *":
+      block: # Addition
+        var a = [0, 10, 20, 30].toTensor().reshape(4,1)
+        var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).asType(Complex[float64])
+
+        a = 100 +. a +. 200
+        a_c = complex64(100.0, 0.0) +. a_c +. complex64(200.0, 0.0)
+        check: a == [[300],
+                    [310],
+                    [320],
+                    [330]].toTensor
+        check: a_c == [[300],
+                      [310],
+                      [320],
+                      [330]].toTensor.asType(Complex[float64])
+
+      block: # Substraction
+        var a = [0, 10, 20, 30].toTensor().reshape(4,1)
+        var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).asType(Complex[float64])
+
+        a = 100 -. a -. 200
+        a_c = complex64(100.0, 0.0) -. a_c -. complex64(200.0, 0.0)
+        check: a == [[-100],
+                    [-110],
+                    [-120],
+                    [-130]].toTensor
+        check: a_c == [[-100],
+                      [-110],
+                      [-120],
+                      [-130]].toTensor.asType(Complex[float64])
+
+      block: # Multiplication
+        var a = [0, 10, 20, 30].toTensor().reshape(4,1)
+        var a_c = [0, 10, 20, 30].toTensor().reshape(4,1).asType(Complex[float64])
+
+        a = 10 *. a *. 20
+        a_c = complex64(10.0, 0.0) *. a_c *. complex64(20.0, 0.0)
+        check: a == [[0],
+                    [2000],
+                    [4000],
+                    [6000]].toTensor
+        check: a_c == [[0],
+                      [2000],
+                      [4000],
+                      [6000]].toTensor.asType(Complex[float64])
+
 
     test "Implicit tensor-scalar broadcasting - basic operations +.=, -.=, .^=":
       block: # Addition

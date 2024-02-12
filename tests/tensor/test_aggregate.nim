@@ -268,6 +268,54 @@ proc main() =
         check b.diff() == expected_bool_diff1
         check b.diff(2) == expected_bool_diff2
 
+  test "unwrap":
+    block:
+      # Single dimension unwrap
+      let phase_deg = (linspace(0, 720, 9) mod 360).asType(int) -. 180
+      let expected = linspace(0, 720, 9).asType(int) -. 180
+      check unwrap(phase_deg, period=360) == expected
+
+      # Check that unwrap also works with floats
+      check unwrap(phase_deg.asType(float), period=360.0) == expected.asType(float)
+
+      let phase_rad = (linspace(0.0, 4*PI, 9).floorMod(2*PI)) -. PI
+      let expected_rad = linspace(0.0, 4*PI, 9) -. PI
+      check unwrap(phase_rad, period=2*PI) == expected_rad
+      check unwrap(phase_rad) == expected_rad
+    block:
+      # Multiple dimension unwrap through axis
+      let a = arange(0, 60*5, 5).reshape([3,4,5])
+      let expected_axis0 = [[[ 0,  5, 10, 15, 20],
+                             [25, 30, 35, 40, 45],
+                             [50, 55, 60, 65, 70],
+                             [75, 80, 85, 90, 95]],
+                            [[-2,  3,  8, 13, 18],
+                             [23, 28, 33, 38, 43],
+                             [48, 53, 58, 63, 68],
+                             [73, 78, 83, 88, 93]],
+                            [[-4,  1,  6, 11, 16],
+                             [21, 26, 31, 36, 41],
+                             [46, 51, 56, 61, 66],
+                             [71, 76, 81, 86, 91]]].toTensor
+      let expected_axis2 = [[[ 0, -1, -2, -3, -4],
+                             [25, 24, 23, 22, 21],
+                             [50, 49, 48, 47, 46],
+                             [75, 74, 73, 72, 71]],
+                            [[100,  99,  98,  97,  96],
+                             [125, 124, 123, 122, 121],
+                             [150, 149, 148, 147, 146],
+                             [175, 174, 173, 172, 171]],
+                            [[200, 199, 198, 197, 196],
+                             [225, 224, 223, 222, 221],
+                             [250, 249, 248, 247, 246],
+                             [275, 274, 273, 272, 271]]].toTensor
+      check unwrap(a, axis=0, period=6) == expected_axis0
+      check unwrap(a, axis=2, period=6) == expected_axis2
+      # When the axis is not specified, the innermost axis is used
+      check unwrap(a, period=6) == expected_axis2
+      # Check that unwrap also works with floats
+      check unwrap(a.asType(float), period=6.0) == expected_axis2.asType(float)
+
   test "Nonzero":
     block:
       let a = [[3, 0, 0], [0, 4, 0], [5, 6, 0]].toTensor()

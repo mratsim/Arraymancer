@@ -103,6 +103,13 @@ proc main() =
       check: concat(a,b, axis = 1) == [[1,2,5,6],
                                       [3,4,7,8]].toTensor()
 
+    test "Append":
+      let a = toSeq(1..4).toTensor()
+      let b = toSeq(5..8)
+
+      check: a.append(b) == [1,2,3,4,5,6,7,8].toTensor()
+      check: a.append(b.toTensor()) == [1,2,3,4,5,6,7,8].toTensor()
+
     test "Squeeze":
       block:
         let a = toSeq(1..12).toTensor().reshape(3,1,2,1,1,2)

@@ -239,6 +239,76 @@ proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T] {.noinit.} =
     result.slicerMut(slices, t)
     iaxis += t.shape[axis]
 
+proc append*[T](t: Tensor[T], values: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Create a copy of an rank-1 input tensor with values appended to its end
+  ##
+  ## Inputs:
+  ##   - Rank-1 tensor
+  ##   - Rank-1 tensor of extra values to append
+  ## Returns:
+  ##   - A copy of the input tensor t with the extra values appended at the end.
+  ## Notes:
+  ##   Append does not occur in-place (a new tensor is allocated and filled).
+  ##   To concatenate more than one tensor or tensors that you must use `concat`.
+  ##   Compared to numpy's `append`, this proc requires that you explicitly
+  ##   flatten the inputs if they are not rank-1 tensors. It also does not
+  ##   support the `axis` parameter. If you want to append the values along a
+  ##   specific axis, you should use `concat` instead.
+  ## Examples:
+  ## > echo append([1, 2, 3].toTensor, [4, 5, 6, 7].toTensor)
+  ## > # Tensor[system.int] of shape "[9]" on backend "Cpu"
+  ## > #    1     2     3     4     5     6     7
+  ## >
+  ## > echo append([1, 2, 3].toTensor, [[4, 5, 6], [7, 8, 9]].toTensor)
+  ## > # Error: unhandled exception: `values.rank == 1` append only works
+  ## > # on rank-1 tensors but extra values tensor has rank 2 [AssertionDefect]
+  ## >
+  ## > echo append([1, 2, 3].toTensor, [[4, 5, 6], [7, 8, 9]].toTensor.flatten)
+  ## > #    1     2     3     4     5     6     7     8     9
+  doAssert t.rank == 1,
+    "`append` only works on rank-1 tensors but first input tensor has rank " &
+    $t.rank & " (use `concat` for higher rank tensors)"
+  doAssert values.rank == 1,
+    "`append` only works on rank-1 tensors but extra values tensor has rank " &
+    $values.rank & " (use `concat` for higher rank tensors)"
+  let result_size = t.size + values.size
+  result = newTensorUninit[T](result_size)
+  result[0 ..< t.size] = t
+  result[t.size ..< result.size] = values
+
+proc append*[T](t: Tensor[T], values: openArray[T]): Tensor[T] {.noinit.} =
+  ## Create a copy of an rank-1 input tensor with values appended to its end
+  ##
+  ## Inputs:
+  ##   - Rank-1 tensor of type T
+  ##   - An open array of values of type T
+  ## Returns:
+  ##   - A copy of the input tensor t with the extra values appended at the end.
+  ## Notes:
+  ##   Append does not occur in-place (a new tensor is allocated and filled).
+  ##   Compared to numpy's `append`, this proc requires that you explicitly
+  ##   flatten the input tensor if its rank is greater than 1. It also does not
+  ##   support the `axis` parameter. If you want to append values along a
+  ##   specific axis, you should use `concat` instead.
+  ## Examples:
+  ## > echo append([1, 2, 3].toTensor, [4, 5, 6, 7])
+  ## > # Tensor[system.int] of shape "[9]" on backend "Cpu"
+  ## > #    1     2     3     4     5     6     7
+  ## >
+  ## > echo append([[1, 2, 3], [4, 5, 6]].toTensor, [7, 8, 9])
+  ## > # Error: unhandled exception: `t.rank == 1` append only works
+  ## > # on rank-1 tensors but first input tensor has rank 2 [AssertionDefect]
+  ## >
+  ## > echo append([[1, 2, 3], [4, 5, 6]].toTensor.flatten, [7, 8, 9])
+  ## > #    1     2     3     4     5     6     7     8     9
+  doAssert t.rank == 1,
+    "`append` only works on rank-1 tensors but input tensor has rank " &
+    $t.rank & " (use `concat` for higher rank tensors)"
+  let result_size = t.size + values.len
+  result = newTensorUninit[T](result_size)
+  result[0 ..< t.size] = t
+  result[t.size ..< result.size] = values
+
 func squeeze*(t: AnyTensor): AnyTensor {.noinit.}=
   ## Squeeze tensors. For example a Tensor of shape [4,1,3] will become [4,3]
   ## Input:

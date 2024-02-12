@@ -83,6 +83,16 @@ proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
   returnEmptyIfEmpty(t)
   t.map_inline(x div a)
 
+proc `mod`*[T: SomeNumber](t: Tensor[T], val: T): Tensor[T] {.noinit.} =
+  ## Broadcasted modulo operation
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(x mod val)
+
+proc `mod`*[T: SomeNumber](val: T, t: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Broadcasted modulo operation
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(val mod x)
+
 # Unsupported operations (these must be done using the broadcasted operators)
 proc `+`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: Tensor[T], val: T): Tensor[T] {.noinit,inline.} =
   ## Mathematical addition of tensors and scalars is undefined. Must use a broadcasted addition instead

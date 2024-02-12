@@ -104,6 +104,35 @@ proc main() =
 
       check: a_c.phase == expected_phases
 
+    test "Sign functions":
+      var a = [-5.3, 42.0, -0.0, 0.01, 10.7, -0.001, 0.9, -125.3].toTensor
+      let expected_signs = [-1, 1, 0, 1, 1, -1, 1, -1].toTensor()
+      check: a.sgn() == expected_signs
+
+      let new_signs = arange(-4.0, 4.0)
+      a.mcopySign(new_signs)
+      let expected = [-5.3, -42.0, -0.0, -0.01, 10.7, 0.001, 0.9, 125.3].toTensor
+      check: a == expected
+
+    test "Modulo functions":
+      var a = arange(-70.7, 50.0, 34.7)
+      let expected_floormod_ts = [1.3, -0.0, 1.7, 0.4].toTensor()
+      let expected_floormod_st = [-67.7, -33.0, -0.9, 3.0].toTensor()
+      check: expected_floormod_ts.mean_absolute_error(a.floorMod(3.0)) < 1e-9
+      check: expected_floormod_st.mean_absolute_error(floorMod(3.0, a)) < 1e-9
+
+    test "min-max":
+      var a = arange(-70, 50, 34)
+      var b = arange(53, -73, -34)
+      let expected_min = [-70, -36, -15, -49].toTensor()
+      let expected_max = [53, 19, -2, 32].toTensor()
+      check expected_min == min(a, b)
+      check expected_max == max(a, b)
+
+      # In-place version
+      a.mmax(b)
+      check expected_max == a
+
     test "1-D convolution":
       block:
         let a = arange(4)

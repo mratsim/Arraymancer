@@ -155,12 +155,30 @@ proc max*[T: SomeNumber](t1, t2: Tensor[T]): Tensor[T] {.noinit.} =
   ## then the non NaN element is returned.
   t1.map2_inline(t2, max(x, y))
 
+proc max*[T: SomeNumber](args: varargs[Tensor[T]]): Tensor[T] {.noinit.} =
+  ## Compare any number of arrays and return a new array containing the element-wise maxima.
+  ##
+  ## As in nim's built-in max procedure if one of the elements being compared is a NaN,
+  ## then the non NaN element is returned.
+  result = max(args[0], args[1])
+  for n in countup(2, len(args)-1):
+    result = max(result, args[n])
+
 proc mmax*[T: SomeNumber](t1: var Tensor[T], t2: Tensor[T]) =
   ## In-place element-wise maxima of two tensors.
   ##
   ## As in nim's built-in max procedure if one of the elements being compared is a NaN,
   ## then the non NaN element is returned.
   t1.apply2_inline(t2, max(x, y))
+
+proc mmax*[T: SomeNumber](t1: var Tensor[T], args: varargs[Tensor[T]]) =
+  ## In-place element-wise maxima of N tensors.
+  ##
+  ## As in nim's built-in max procedure if one of the elements being compared is a NaN,
+  ## then the non NaN element is returned.
+  t1.apply2_inline(args[0], max(x, y))
+  for n in countup(1, len(args)-1):
+    t1.apply2_inline(args[n], max(x, y))
 
 proc min*[T: SomeNumber](t1, t2: Tensor[T]): Tensor[T] {.noinit.} =
   ## Compare two arrays and return a new array containing the element-wise minima.
@@ -169,12 +187,30 @@ proc min*[T: SomeNumber](t1, t2: Tensor[T]): Tensor[T] {.noinit.} =
   ## then the non NaN element is returned.
   t1.map2_inline(t2, min(x, y))
 
+proc min*[T: SomeNumber](args: varargs[Tensor[T]]): Tensor[T] {.noinit.} =
+  ## Compare any number of arrays and return a new array containing the element-wise minima.
+  ##
+  ## As in nim's built-in min procedure if one of the elements being compared is a NaN,
+  ## then the non NaN element is returned.
+  result = min(args[0], args[1])
+  for n in countup(2, len(args)-1):
+    result = min(result, args[n])
+
 proc mmin*[T: SomeNumber](t1: var Tensor[T], t2: Tensor[T]) =
   ## In-place element-wise minima of two tensors.
   ##
   ## As in nim's built-in min procedure if one of the elements being compared is a NaN,
   ## then the non NaN element is returned.
   t1.apply2_inline(t2, min(x, y))
+
+proc mmin*[T: SomeNumber](t1: var Tensor[T], args: varargs[Tensor[T]]) =
+  ## In-place element-wise minima of N tensors.
+  ##
+  ## As in nim's built-in min procedure if one of the elements being compared is a NaN,
+  ## then the non NaN element is returned.
+  t1.apply2_inline(args[0], min(x, y))
+  for n in countup(1, len(args)-1):
+    t1.apply2_inline(args[n], min(x, y))
 
 proc square*[T](x: T): T {.inline.} =
   ## Return `x*x`

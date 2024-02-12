@@ -129,9 +129,25 @@ proc main() =
       check expected_min == min(a, b)
       check expected_max == max(a, b)
 
-      # In-place version
-      a.mmax(b)
-      check expected_max == a
+      # N-element versions
+      let c = [100, -500, -100, 500].toTensor()
+      let expected_n_min = [-70, -500, -100, -49].toTensor()
+      let expected_n_max = [100, 19, -2, 500].toTensor()
+      check expected_n_min == min(a, b, c)
+      check expected_n_max == max(a, b, c)
+
+      # In-place versions
+      var d = a.clone()
+      d.mmax(b)
+      check expected_max == d
+      d.mmax(b, c)
+      check expected_n_max == d
+      d = a.clone()
+      d.mmin(b)
+      check expected_min == d
+      d.mmin(b, c)
+      check expected_n_min == d
+
 
     test "1-D convolution":
       block:

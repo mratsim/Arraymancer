@@ -341,6 +341,42 @@ proc cumprod*[T](arg: Tensor[T], axis: int = 0): Tensor[T] = # from hugogranstro
     else:
       temp[_] = result.atAxisIndex(axis, i-1) *. tAxis
 
+proc diff*[T](arg: Tensor[T], n=1, axis: int = -1): Tensor[T] =
+  ## Calculate the n-th discrete difference along the given axis.
+  ##
+  ## The first difference is given by out[i] = a[i+1] - a[i] along the given axis.
+  ## Higher differences are calculated by using diff recursively.
+  ##
+  ## Input:
+  ##   - A tensor
+  ##   - n: The number of times values are differenced.
+  ##        If zero, the input is returned as-is.
+  ##   - axis: The axis along which the difference is taken,
+  ##           default is the last axis.
+  mixin `_`
+  assert n >= 0, "diff order (" & $n & ") cannot be negative"
+  if n == 0 or arg.size == 0:
+    return arg
+  let axis = if axis == -1:
+    arg.shape.len + axis
+  else:
+    axis
+  assert axis < arg.shape.len,
+    "diff axis (" & $axis & ") cannot be greater than input shape length (" & $arg.shape.len & ")"
+  var result_shape = arg.shape
+  result_shape[axis] -= 1
+  result = zeros[T](result_shape)
+  for i, tAxis in enumerateAxis(arg, axis):
+    if unlikely(i == 0):
+      continue
+    var temp = result.atAxisIndex(axis, i-1)
+    when T is bool:
+      temp[_] = tAxis != arg.atAxisIndex(axis, i-1)
+    else:
+      temp[_] = tAxis -. arg.atAxisIndex(axis, i-1)
+  if n > 1:
+    result = diff(result, n=n-1, axis=axis)
+
 when (NimMajor, NimMinor, NimPatch) > (1, 6, 0):
   import std/atomics
 proc nonzero*[T](arg: Tensor[T]): Tensor[int] =

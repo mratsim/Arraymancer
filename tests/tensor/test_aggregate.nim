@@ -243,6 +243,30 @@ proc main() =
                                  [1, 9, 45],
                                  [3, 12, 12]].toTensor
 
+    test "diff":
+      let a = arange(12).reshape([3, 4])
+      block:
+        # Test diffs along the default axis
+        let expected_diff1_axis1 = ones[int](3, 3)
+        let expected_diff2_axis1 = zeros[int](3, 2)
+        check a.diff(0) == a
+        check a.diff == expected_diff1_axis1
+        check a.diff(2) == expected_diff2_axis1
+      block:
+        # Test diffs along a different axis
+        let expected_diff1_axis0 = 4 * ones[int](2, 4)
+        let expected_diff2_axis0 = zeros[int](1, 4)
+        check a.diff(0, axis=0) == a
+        check a.diff(axis=0) == expected_diff1_axis0
+        check a.diff(2, axis=0) == expected_diff2_axis0
+      block:
+        # Test boolean diffs
+        let b = [true, true, false, false, true].toTensor
+        let expected_bool_diff1 = [false, true, false, true].toTensor
+        let expected_bool_diff2 = [true, true, true].toTensor
+        check b.diff(0) == b
+        check b.diff() == expected_bool_diff1
+        check b.diff(2) == expected_bool_diff2
 
   test "Nonzero":
     block:

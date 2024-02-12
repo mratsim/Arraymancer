@@ -108,11 +108,11 @@ proc main() =
       var a = [-5.3, 42.0, -0.0, 0.01, 10.7, -0.001, 0.9, -125.3].toTensor
       let expected_signs = [-1, 1, 0, 1, 1, -1, 1, -1].toTensor()
       check: a.sgn() == expected_signs
-
-      let new_signs = arange(-4.0, 4.0)
-      a.mcopySign(new_signs)
-      let expected = [-5.3, -42.0, -0.0, -0.01, 10.7, 0.001, 0.9, 125.3].toTensor
-      check: a == expected
+      when (NimMajor, NimMinor, NimPatch) >= (1, 6, 0):
+        let new_signs = arange(-4.0, 4.0)
+        a.mcopySign(new_signs)
+        let expected = [-5.3, -42.0, -0.0, -0.01, 10.7, 0.001, 0.9, 125.3].toTensor
+        check: a == expected
 
     test "Modulo functions":
       var a = arange(-70.7, 50.0, 34.7)

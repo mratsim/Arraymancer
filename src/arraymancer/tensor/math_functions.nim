@@ -113,19 +113,20 @@ proc sgn*[T: SomeNumber](t: Tensor[T]): Tensor[int] {.noinit.} =
   ## - 0 for positive zero, negative zero and NaN
   t.map_inline(sgn(x))
 
-proc copySign*[T: SomeFloat](t1, t2: Tensor[T]): Tensor[T] {.noinit.} =
-  ## Element-wise copySign function (combines 2 tensors, taking the magnitudes from t1 and the signs from t2)
-  ##
-  ## This uses nim's copySign under the hood, and thus has the same properties. That is, it works for values
-  ## which are NaN, infinity or zero (all of which can carry a sign) but does not work for integers.
-  t1.map2_inline(t2, copySign(x, y))
+when (NimMajor, NimMinor, NimPatch) >= (1, 6, 0):
+  proc copySign*[T: SomeFloat](t1, t2: Tensor[T]): Tensor[T] {.noinit.} =
+    ## Element-wise copySign function (combines 2 tensors, taking the magnitudes from t1 and the signs from t2)
+    ##
+    ## This uses nim's copySign under the hood, and thus has the same properties. That is, it works for values
+    ## which are NaN, infinity or zero (all of which can carry a sign) but does not work for integers.
+    t1.map2_inline(t2, copySign(x, y))
 
-proc mcopySign*[T: SomeFloat](t1: var Tensor[T], t2: Tensor[T]) =
-  ## In-place element-wise copySign function (changes the signs of the elements of t1 to match those of t2)
-  ##
-  ## This uses nim's copySign under the hood, and thus has the same properties. That is, it works for values
-  ## which are NaN, infinity or zero (all of which can carry a sign) but does not work for integers.
-  t1.apply2_inline(t2, copySign(x, y))
+  proc mcopySign*[T: SomeFloat](t1: var Tensor[T], t2: Tensor[T]) =
+    ## In-place element-wise copySign function (changes the signs of the elements of t1 to match those of t2)
+    ##
+    ## This uses nim's copySign under the hood, and thus has the same properties. That is, it works for values
+    ## which are NaN, infinity or zero (all of which can carry a sign) but does not work for integers.
+    t1.apply2_inline(t2, copySign(x, y))
 
 proc floorMod*[T: SomeNumber](t1, t2: Tensor[T]): Tensor[T] {.noinit.} =
   ## Broadcasted floorMod operation: floorMod(tensor, tensor).

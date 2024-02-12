@@ -280,5 +280,20 @@ proc main() =
           a.roll(-1) == [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 0]].toTensor
           a.roll(-5) == a.roll(7)
 
+    test "Axis permute and move":
+      block: # Permute and moveaxis
+        let a = arange(6).reshape(1, 2, 3)
+        let a_permuted_1 = [[[0, 3], [1, 4], [2, 5]]].toTensor
+        let a_permuted_2 = [[[0], [1], [2]], [[3], [4], [5]]].toTensor
+        check:
+          # Keep dim 0 at 0 and swap dimensions 1 and 2
+          a_permuted_1 == a.permute(0, 2, 1)
+          a_permuted_1 == a.moveaxis(2, 1)
+
+          # Move dim 0 to 2, which is the same as
+          # moving dim 1 to 0 and then moving 2 to 1
+          a_permuted_2 == a.permute(1, 2, 0)
+          a_permuted_2 == a.moveaxis(1, 0).moveaxis(2, 1)
+
 main()
 GC_fullCollect()

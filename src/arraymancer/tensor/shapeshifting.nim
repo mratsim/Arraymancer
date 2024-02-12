@@ -188,18 +188,55 @@ proc broadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect, noi
   result.b.storage = b.storage
 
 
-proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noinit,noSideEffect.}=
-  ## Permute dimensions of a tensor
+proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noinit,noSideEffect.} =
+  ## Permute the dimensions of a tensor into a different order
   ## Input:
   ##   - a tensor
   ##   - the new dimension order
   ## Returns:
-  ##   - a tensor with re-order dimension
+  ##   - a tensor with re-ordered dimensions but sharing the same data
+  ## See also:
+  ##   - moveaxis
   ## Usage:
   ##  .. code:: nim
-  ##     a.permute(0,2,1) # dim 0 stays at 0, dim 1 becomes dim 2 and dim 2 becomes dim 1
+  ##     # keep dim 0 at position 0 and swap dims 1 and 2
+  ##     a.permute(0,2,1)
+  ## Notes:
+  ##   Call `.clone()` if you want to make a copy of the data, otherwise
+  ##   changes to the data of returned tensor will affect the input tensor.
 
   # TODO: bounds check
+  result = t
+  permuteImpl(result, dims)
+
+proc moveaxis*(t: Tensor, initial: Natural, target: Natural): Tensor {.noinit.} =
+  ## Move one of the axes of a tensor into a new position
+  ## Input:
+  ##   - a tensor
+  ##   - the initial position of the axes to move
+  ##   - the target position of the axes to move
+  ## Returns:
+  ##   - a tensor with moved axes but sharing the same data
+  ## See also:
+  ##   - permute
+  ## Usage:
+  ##  .. code:: nim
+  ##     # move dim 0 to position 2, which makes
+  ##     # dim 1 become dim 0 and dim 2 become dim 1
+  ##     a.moveaxis(0, 2)
+  ## Notes:
+  ##   Call `.clone()` if you want to make a copy of the data, otherwise
+  ##   changes to the data of returned tensor will affect the input tensor.
+  if initial == target:
+    return t
+  doAssert initial < t.rank,
+    "moveaxis initial axis position (" & $initial & ") exceeds input tensor rank (" & $t.rank & ")"
+  doAssert target < t.rank,
+    "moveaxis target axis position (" & $target & ") exceeds input tensor rank (" & $t.rank & ")"
+  var dims = toSeq(0 ..< t.rank)
+  # Note that dims[initial] == initial!
+  dims.delete(initial)
+  dims.insert(initial, target)
   result = t
   permuteImpl(result, dims)
 

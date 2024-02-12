@@ -73,10 +73,13 @@ proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): 
   ## Element-wise multiplication by a scalar
   a * t
 
-proc `/`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
+proc `/`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
   ## Element-wise division by a float scalar
   returnEmptyIfEmpty(t)
-  t.map_inline(x / a)
+  when T is SomeInteger:
+    t.map_inline(x div a)
+  else:
+    t.map_inline(x / a)
 
 proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
   ## Element-wise division by an integer

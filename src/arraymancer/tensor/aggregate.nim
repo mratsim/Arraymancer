@@ -296,6 +296,10 @@ proc percentile*[T](arg: Tensor[T], p: int, isSorted = false): float =
       let frac = f - i.float
       result = (a[i].float + (a[i+1] - a[i]).float * frac)
 
+proc median*[T](arg: Tensor[T], isSorted = false): float {.inline.} =
+  ## Compute the median of all elements (same as `arg.percentile(50)`)
+  percentile(arg, 50, isSorted)
+
 proc iqr*[T](arg: Tensor[T]): float =
   ## Returns the interquartile range of the 1D tensor `t`.
   ##

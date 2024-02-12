@@ -378,7 +378,7 @@ proc diff*[T](arg: Tensor[T], n=1, axis: int = -1): Tensor[T] =
   if n > 1:
     result = diff(result, n=n-1, axis=axis)
 
-proc unwrap*[T: SomeNumber](t: Tensor[T], discont: T = -1, axis = -1, period: T = default(T)): Tensor[T] {.noinit.} =
+proc unwrap_period*[T: SomeNumber](t: Tensor[T], discont: T = -1, axis = -1, period: T = default(T)): Tensor[T] {.noinit.} =
     # Unwrap a tensor by taking the complement of large deltas with respect to a period.
     #
     # This unwraps a tensor `t` by changing elements which have an absolute
@@ -395,7 +395,7 @@ proc unwrap*[T: SomeNumber](t: Tensor[T], discont: T = -1, axis = -1, period: T 
     #       Values below `period/2` are treated as if they were `period/2`.
     #       To have an effect different than the default, `discont` must be
     #       larger than `period/2`.
-    #   - axis: Axis along which unwrap will operate, default is the last axis.
+    #   - axis: Axis along which the unwrap will be done. Default is the last axis.
     #   - period: Size of the range over which the input wraps.
     #             By default, it is ``2*PI``.
     # Return:
@@ -405,7 +405,8 @@ proc unwrap*[T: SomeNumber](t: Tensor[T], discont: T = -1, axis = -1, period: T 
     #   - If the discontinuity in `t` is smaller than ``period/2``,
     #   but larger than `discont`, no unwrapping is done because taking
     #   the complement would only make the discontinuity larger.
-    #   - The code in this function is heavily based upon numpy's unwrap()
+    #   - The code in this function is heavily based upon and equivalent
+    #   to numpy's `unwrap()` function.
   mixin `_`
   let axis = if axis == -1:
     t.shape.len + axis

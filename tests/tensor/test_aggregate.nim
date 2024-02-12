@@ -268,22 +268,22 @@ proc main() =
         check b.diff() == expected_bool_diff1
         check b.diff(2) == expected_bool_diff2
 
-  test "unwrap":
+  test "unwrap_period":
     block:
-      # Single dimension unwrap
+      # Single dimension unwrap_period
       let phase_deg = (linspace(0, 720, 9) mod 360).asType(int) -. 180
       let expected = linspace(0, 720, 9).asType(int) -. 180
-      check unwrap(phase_deg, period=360) == expected
+      check unwrap_period(phase_deg, period=360) == expected
 
-      # Check that unwrap also works with floats
-      check unwrap(phase_deg.asType(float), period=360.0) == expected.asType(float)
+      # Check that unwrap_period also works with floats
+      check unwrap_period(phase_deg.asType(float), period=360.0) == expected.asType(float)
 
       let phase_rad = (linspace(0.0, 4*PI, 9).floorMod(2*PI)) -. PI
       let expected_rad = linspace(0.0, 4*PI, 9) -. PI
-      check unwrap(phase_rad, period=2*PI) == expected_rad
-      check unwrap(phase_rad) == expected_rad
+      check unwrap_period(phase_rad, period=2*PI) == expected_rad
+      check unwrap_period(phase_rad) == expected_rad
     block:
-      # Multiple dimension unwrap through axis
+      # Multiple dimension unwrap_period through axis
       let a = arange(0, 60*5, 5).reshape([3,4,5])
       let expected_axis0 = [[[ 0,  5, 10, 15, 20],
                              [25, 30, 35, 40, 45],
@@ -309,12 +309,12 @@ proc main() =
                              [225, 224, 223, 222, 221],
                              [250, 249, 248, 247, 246],
                              [275, 274, 273, 272, 271]]].toTensor
-      check unwrap(a, axis=0, period=6) == expected_axis0
-      check unwrap(a, axis=2, period=6) == expected_axis2
+      check unwrap_period(a, axis=0, period=6) == expected_axis0
+      check unwrap_period(a, axis=2, period=6) == expected_axis2
       # When the axis is not specified, the innermost axis is used
-      check unwrap(a, period=6) == expected_axis2
-      # Check that unwrap also works with floats
-      check unwrap(a.asType(float), period=6.0) == expected_axis2.asType(float)
+      check unwrap_period(a, period=6) == expected_axis2
+      # Check that unwrap_period also works with floats
+      check unwrap_period(a.asType(float), period=6.0) == expected_axis2.asType(float)
 
   test "Nonzero":
     block:

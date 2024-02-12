@@ -342,7 +342,7 @@ proc cumprod*[T](arg: Tensor[T], axis: int = 0): Tensor[T] = # from hugogranstro
     else:
       temp[_] = result.atAxisIndex(axis, i-1) *. tAxis
 
-proc diff*[T](arg: Tensor[T], n=1, axis: int = -1): Tensor[T] =
+proc diff_discrete*[T](arg: Tensor[T], n=1, axis: int = -1): Tensor[T] =
   ## Calculate the n-th discrete difference along the given axis.
   ##
   ## The first difference is given by out[i] = a[i+1] - a[i] along the given axis.
@@ -376,7 +376,7 @@ proc diff*[T](arg: Tensor[T], n=1, axis: int = -1): Tensor[T] =
     else:
       temp[_] = tAxis -. arg.atAxisIndex(axis, i-1)
   if n > 1:
-    result = diff(result, n=n-1, axis=axis)
+    result = diff_discrete(result, n=n-1, axis=axis)
 
 proc unwrap_period*[T: SomeNumber](t: Tensor[T], discont: T = -1, axis = -1, period: T = default(T)): Tensor[T] {.noinit.} =
     # Unwrap a tensor by taking the complement of large deltas with respect to a period.
@@ -412,7 +412,7 @@ proc unwrap_period*[T: SomeNumber](t: Tensor[T], discont: T = -1, axis = -1, per
     t.shape.len + axis
   else:
     axis
-  let td = t.diff(axis=axis)
+  let td = t.diff_discrete(axis=axis)
   let period: T = if period == default(T):
     when T is int:
       raise newException(ValueError, "unwrap period must be specified for integer types")

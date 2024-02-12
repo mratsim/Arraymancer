@@ -190,6 +190,18 @@ proc main() =
         let expected = [[1.0, 2.0], [-10.0, 3.0], [-20.0, -30.0]].toTensor()
         check: x == expected
 
+        when compileOption("mm", "arc") or compileOption("mm", "orc"):
+          # Check that we throw an exception when there are less values than
+          # true elements in the mask
+          # This only works when using ARC or ORC
+          x = t.clone()
+          var exception_thrown_when_true_element_mask_count_exceeds_value_tensor_size = false
+          try:
+            x.masked_fill(x.isNaN, [-10.0, -20.0].toTensor())
+          except IndexDefect:
+            exception_thrown_when_true_element_mask_count_exceeds_value_tensor_size = true
+          check: exception_thrown_when_true_element_mask_count_exceeds_value_tensor_size
+
       block: # Fill with regular arrays/sequences
         var x = t.clone()
 

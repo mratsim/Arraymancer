@@ -19,7 +19,7 @@ import  ./backend/memory_optimization_hints,
         ./private/p_empty_tensors,
         ./accessors, ./accessors_macros_syntax,
         ./data_structure, ./init_cpu,
-        std/sequtils
+        std/[sequtils, locks]
 
 # Indexed axis
 # --------------------------------------------------------------------------------------------
@@ -204,16 +204,32 @@ proc masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: Tensor[T]) =
   #     value
   #   else:
   #     x
+
+  # We need to protect against the case in which we run out of values to
+  # fill the tensor with, which we cannot tell in advance without counting
+  # the number of true values in the mask (which would be expensive)
+  var lock: Lock
+  initLock(lock)
+  var too_few_values = false
+
   omp_parallel_blocks(block_offset, block_size, t.size):
     var n = block_offset
-    try:
-      for tElem, maskElem in mzip(t, mask, block_offset, block_size):
-        if maskElem:
-          tElem = value[n]
-          inc n
-    except IndexDefect:
-      raise newException(IndexDefect, "The size of the value tensor (" & $value.size &
-        ") is smaller than the number of true elements in the mask (" & $mask.size & ")")
+    for tElem, maskElem in mzip(t, mask, block_offset, block_size):
+      if maskElem:
+        if n >= value.size:
+          withLock(lock):
+            # The lock protection is technically unnecessary but it is good form
+            too_few_values = true
+          break
+        tElem = value[n]
+        inc n
+  if too_few_values:
+    let error_msg = "masked_fill error: the size of the value tensor (" & $value.size &
+      ") is smaller than the number of true elements in the mask"
+    when not(compileOption("mm", "arc") or compileOption("mm", "orc")):
+      # Other memory management modes crash without showing the exception message
+      echo error_msg
+    raise newException(IndexDefect, error_msg)
 
 proc masked_fill*[T](t: var Tensor[T], mask: openArray, value: Tensor[T]) =
   ## For the index of each element of t.

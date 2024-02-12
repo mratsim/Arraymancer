@@ -218,6 +218,20 @@ proc square*[T](x: T): T {.inline.} =
 
 makeUniversal(square)
 
+proc classify*[T: SomeFloat](t: Tensor[T]): Tensor[FloatClass] {.noinit.} =
+  ## Element-wise classify function (returns a tensor with the float class of each element).
+  ##
+  ## Returns:
+  ##   A FloatClass tensor where each value is one of the following:
+  ##   - fcNormal: value is an ordinary nonzero floating point value
+  ##   - fcSubnormal: value is a subnormal (a very small) floating point value
+  ##   - fcZero: value is zero
+  ##   - fcNegZero: value is the negative zero
+  ##   - fcNan: value is Not a Number (NaN)
+  ##   - fcInf: value is positive infinity
+  ##   - fcNegInf: value is negative infinity
+  t.map_inline(classify(x))
+
 type ConvolveMode* = enum full, same, valid
 
 proc convolveImpl[T: SomeNumber | Complex32 | Complex64](

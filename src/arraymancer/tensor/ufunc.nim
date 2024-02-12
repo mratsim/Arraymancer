@@ -75,7 +75,7 @@ template makeUniversalLocal*(func_name: untyped) =
 # Unary functions from Nim math library
 
 makeUniversal(fac)
-#makeUniversal(classify)
+makeUniversal(isNaN)
 #makeUniversal(isPowerOfTwo)
 #makeUniversal(nextPowerOfTwo)
 #makeUniversal(countBits32)

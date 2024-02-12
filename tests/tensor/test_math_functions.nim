@@ -148,6 +148,12 @@ proc main() =
       d.mmin(b, c)
       check expected_n_min == d
 
+    test "isNaN & classify":
+      var a = [0.0, -0.0, 1.0/0.0, -1.0/0.0, 0.0/0.0].toTensor
+      let expected_isNaN = [false, false, false, false, true].toTensor()
+      let expected_classification = [fcZero, fcNegZero, fcInf, fcNegInf, fcNaN].toTensor()
+      check: expected_isNaN == a.isNaN
+      check: expected_classification == a.classify
 
     test "1-D convolution":
       block:

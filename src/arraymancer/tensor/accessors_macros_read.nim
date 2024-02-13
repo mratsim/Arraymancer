@@ -24,8 +24,10 @@ macro `[]`*[T](t: AnyTensor[T], args: varargs[untyped]): untyped =
   ##   - and:
   ##     - specific coordinates (``varargs[int]``)
   ##     - or a slice (cf. tutorial)
+  ##     - or a boolean tensor or openArray mask with the same shape as the tensor
   ## Returns:
   ##   - a value or a tensor corresponding to the slice
+  ##     or to the true elements of the mask
   ## Warning ⚠ CudaTensor temporary default:
   ##   For CudaTensor only, this is a no-copy operation, data is shared with the input.
   ##   This proc does not guarantee that a ``let`` value is immutable.
@@ -50,6 +52,7 @@ macro `[]`*[T](t: AnyTensor[T], args: varargs[untyped]): untyped =
   ##    - Slice from the end - expect non-negative step error - foo[^1..0, 3]
   ##    - Slice from the end - foo[^(2*2)..2*2, 3]
   ##    - Slice from the end - foo[^3..^2, 3]
+  ##    - Items matching a mask - foo[foo >. 0]
   let new_args = getAst(desugar(args))
 
   result = quote do:

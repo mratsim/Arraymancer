@@ -260,3 +260,35 @@ the second to last operation in reverse in the final operation, thus
 copying exactly the thing we copied to the second to last row in
 reverse back to the last row. But because that is where the values in
 the second to last row originated from, nothing "happens".
+
+
+Boolean Masks
+~~~~~~~~~~~~~
+
+In addition to regular slicing, boolean masks can be used to select items
+from a tensor. The mask should have the same shape as the tensor it is used on.
+However, the result of the mask operation will be a flat, 1-D tensor with the
+selected items.
+
+.. code:: nim
+
+    foo = vandermonde.toTensor()
+    echo foo[foo >. 27]
+
+    # Tensor[system.int] of shape "[9]" on backend "Cpu"
+    #     32      81     243      64     256    1024     125     625    3125
+
+Boolean masks can also be used to mutate a tensor. The tensor is mutated in
+place, and thus it maintains its original shape.
+
+.. code:: nim
+
+    foo = vandermonde.toTensor()
+    foo[foo >. 27] = -arange(9)
+
+    # Tensor[system.int] of shape "[5, 5]" on backend "Cpu"
+    # |1      1     1     1     1|
+    # |2      4     8    16     0|
+    # |3      9    27    -1    -2|
+    # |4     16    -3    -4    -5|
+    # |5     25    -6    -7    -8|

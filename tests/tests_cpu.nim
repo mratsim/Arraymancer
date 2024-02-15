@@ -69,6 +69,7 @@ when not defined(windows) and not sizeof(int) == 4:
 
 when not defined(no_lapack):
   import ./linear_algebra/test_linear_algebra,
+        ./linear_algebra/test_special_matrices,
         ./ml/test_dimensionality_reduction
 
 import  ./stability_tests/test_stability_openmp,

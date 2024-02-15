@@ -151,7 +151,7 @@ template map3_inline*[T, U, V](t1: Tensor[T], t2: Tensor[U], t3: Tensor[V], op:u
 
 proc map*[T; U](t: Tensor[T], f: T -> U): Tensor[U] {.noinit, effectsOf: f.} =
   ## Apply a unary function in an element-wise manner on Tensor[T], returning a new Tensor.
-  ## Usage with Nim's ``future`` module:
+  ## Usage with Nim's ``sugar`` module:
   ##  .. code:: nim
   ##     a.map(x => x+1) # Map the anonymous function x => x+1
   ## Usage with named functions:
@@ -180,7 +180,7 @@ proc apply*[T](t: var Tensor[T], f: T -> T) {.effectsOf: f.} =
   ## Result:
   ##   - Nothing, the ``var`` Tensor is modified in-place
   ##
-  ## Usage with Nim's ``future`` module:
+  ## Usage with Nim's ``sugar`` module:
   ##  .. code:: nim
   ##     var a = newTensor([5,5], int) # a must be ``var``
   ##     a.apply(x => x+1) # Map the anonymous function x => x+1
@@ -200,15 +200,16 @@ proc apply*[T: KnownSupportsCopyMem](t: var Tensor[T], f: proc(x:var T)) {.effec
   ## Result:
   ##   - Nothing, the ``var`` Tensor is modified in-place
   ##
-  ## Usage with Nim's ``future`` module:
-  ##   - Future module has a functional programming paradigm, anonymous function cannot mutate
-  ##     the arguments
+  ## Usage with Nim's ``sugar`` module:
+  ##   - The sugar module has a functional programming paradigm,
+  ##     anonymous functions cannot mutate the arguments
   ## Usage with named functions:
   ##  .. code:: nim
   ##     proc pluseqone[T](x: var T) =
   ##       x += 1
   ##     a.apply(pluseqone) # Apply the in-place function pluseqone
-  ## ``apply`` is especially useful to do multiple element-wise operations on a tensor in a single loop over the data.
+  ## ``apply`` is especially useful to do multiple element-wise operations
+  ## on a tensor in a single loop over the data.
 
   omp_parallel_blocks(block_offset, block_size, t.size):
     for x in t.mitems(block_offset, block_size):
@@ -260,8 +261,8 @@ proc map2*[T, U; V: not KnownSupportsCopyMem](t1: Tensor[T],
     r = f(t1, t2)
 
 proc apply2*[T: KnownSupportsCopyMem, U](a: var Tensor[T],
-                                         f: proc(x:var T, y:T), # We can't use the nice future syntax here
-                                                b: Tensor[U]) {.effectsOf: f.} =
+                                         f: proc(x:var T, y:T), # We can't use the nice sugar syntax here
+                                         b: Tensor[U]) {.effectsOf: f.} =
   ## Apply a binary in-place function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ## Overload for types that are not mem-copyable.
   ##
@@ -291,8 +292,8 @@ proc apply2*[T: KnownSupportsCopyMem, U](a: var Tensor[T],
       f(x, y)
 
 proc apply2*[T: not KnownSupportsCopyMem; U](a: var Tensor[T],
-                                             f: proc(x:var T, y: T), # We can't use the nice future syntax here
-                                                    b: Tensor[U]) {.effectsOf: f.} =
+                                             f: proc(x:var T, y: T), # We can't use the nice sugar syntax here
+                                             b: Tensor[U]) {.effectsOf: f.} =
   ## Apply a binary in-place function in an element-wise manner on two Tensor[T], returning a new Tensor.
   ## Overload for types that are not mem-copyable.
   ##

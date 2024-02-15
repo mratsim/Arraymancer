@@ -62,9 +62,29 @@ proc tri_impl[T](a: Tensor[T], upper: static bool, k: static int): Tensor[T] {.i
   """.}
 
 proc triu*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
+  ## Upper triangle of a matrix.
+  ##
+  ## Return a copy of a matrix with the elements below the k-th diagonal zeroed.
+  ##
+  ## Inputs:
+  ## - a: the input matrix (i.e. a rank-2 tensor)
+  ## - k: the diagonal below which elements will be zeroed (default = 0, i.e. the main diagonal)
+  ##
+  ## Result:
+  ## - A copy of the input matrix with the elements below the k-th diagonal zeroed.
   tri_impl(a, upper = true, k)
 
 proc tril*[T](a: Tensor[T], k: static int = 0): Tensor[T] =
+  ## Lower triangle of a matrix.
+  ##
+  ## Return a copy of a matrix with the elements above the k-th diagonal zeroed.
+  ##
+  ## Inputs:
+  ## - a: the input matrix (i.e. a rank-2 tensor)
+  ## - k: the diagonal above which elements will be zeroed (default = 0, i.e. the main diagonal)
+  ##
+  ## Result:
+  ## - A copy of the input matrix with the elements above the k-th diagonal zeroed.
   tri_impl(a, upper = false, k)
 
 proc tril_unit_diag*[T](a: Tensor[T]): Tensor[T] =

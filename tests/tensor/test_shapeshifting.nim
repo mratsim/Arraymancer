@@ -86,6 +86,11 @@ proc main() =
         a_view[_, _] = 0
         check: a == [1,0,0,4].toTensor()
 
+    test "Flatten":
+      let a = [[1, 2], [3, 4]].toTensor()
+      let b = a.flatten()
+      check: b == [1,2,3,4].toTensor()
+
     test "Concatenation":
       let a = toSeq(1..4).toTensor().reshape(2,2)
 

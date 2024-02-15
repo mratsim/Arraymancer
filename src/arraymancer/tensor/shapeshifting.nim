@@ -80,6 +80,19 @@ proc reshape*(t: Tensor, new_shape: Metadata): Tensor {.noinit.} =
   ##   - a tensor with the same data but reshaped.
   reshapeImpl(t, new_shape, result)
 
+proc flatten*(t: Tensor): Tensor {.noinit,inline.} =
+  ## Flatten a tensor, returning a rank-1 tensor with the same data as the input.
+  ##
+  ## This is the same as `t.reshape([t.size.int])`. Therefore, if possible no
+  ## data copy is done and the returned tensor shares data with the input.
+  ## If input is not contiguous, this is not possible and a copy will be made.
+  ##
+  ## Input:
+  ##   - a tensor
+  ## Returns:
+  ##   - a tensor rank-1 tensor with the same data as the input.
+  t.reshape([t.size.int])
+
 proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noinit,noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.
   ##
@@ -176,7 +189,7 @@ proc broadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect, noi
 
 
 proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noinit,noSideEffect.}=
-  ## Permute dimensions of a tensors
+  ## Permute dimensions of a tensor
   ## Input:
   ##   - a tensor
   ##   - the new dimension order
@@ -190,7 +203,7 @@ proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noinit,noSideEffect.}=
   result = t
   permuteImpl(result, dims)
 
-proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noinit.}=
+proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T] {.noinit.} =
   ## Concatenate tensors
   ## Input:
   ##   - Tensors

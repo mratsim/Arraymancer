@@ -215,5 +215,14 @@ proc main() =
         a.chunk(4, axis = 0) == [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]].mapIt(it.toTensor)
         a.chunk(5, axis = 0) == [@[1, 2, 3], @[4, 5, 6], @[7, 8], @[9, 10], @[11, 12]].mapIt(it.toTensor)
 
+    test "Roll":
+      let a = arange(5)
+      check:
+        a.roll(0) == [0, 1, 2, 3, 4].toTensor
+        a.roll(1) == [4, 0, 1, 2, 3].toTensor
+        a.roll(2) == [3, 4, 0, 1, 2].toTensor
+        a.roll(7) == [3, 4, 0, 1, 2].toTensor
+        a.roll(-2) == [2, 3, 4, 0, 1].toTensor
+
 main()
 GC_fullCollect()

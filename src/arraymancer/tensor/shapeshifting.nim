@@ -17,8 +17,8 @@ import  ./private/p_shapeshifting,
         ./private/p_accessors_macros_write,
         ./private/p_empty_tensors,
         ./accessors,
-        ./data_structure, ./init_cpu, ./higher_order_applymap,
-        sequtils
+        ./data_structure, ./init_cpu, ./higher_order_applymap
+import std/[sequtils, math]
 
 # NOTE: Procs that accepts shape are duplicated to accept both varargs and Metadata
 # until either https://github.com/nim-lang/Nim/issues/6528 or https://github.com/nim-lang/Nim/issues/6529
@@ -315,3 +315,32 @@ func chunk*[T](t: Tensor[T], nb_chunks: Positive, axis: Natural): seq[Tensor[T]]
       result[i] = t.atAxisIndex(axis, i * chunk_size + i, chunk_size + 1)
     else:
       result[i] = t.atAxisIndex(axis, i * chunk_size + remainder, chunk_size)
+
+proc roll*[T](t: Tensor[T], shift: int): Tensor[T] {.noinit.} =
+  ## Roll elements of a rank-1 tensor.
+  ##
+  ## Elements that roll beyond the last position are re-introduced at
+  ## the first.
+  ##
+  ## Input:
+  ##   - t: A rank-1 input tensor.
+  ##   - shift: Integer number of places by which elements are shifted.
+  ## Return:
+  ##   - Output tensor, with the same shape as `a`.
+  ##
+  ## Examples:
+  ## > let x = arange(5)
+  ## > echo roll(x, 2)
+  ## > Tensor[system.int] of shape "[5]" on backend "Cpu"
+  ## >     3     4     0     1     2
+  ## > echo roll(x, -2)
+  ## > Tensor[system.int] of shape "[5]" on backend "Cpu"
+  ## >     2     3     4     0     1
+  doAssert t.rank == 1, "roll only works on rank-1 tensors but input tensor has rank " & $t.rank
+  let shift = floorMod(shift, t.size)
+  if shift == 0:
+    return t
+  let shiftedLen = t.size - shift
+  result = newTensorUninit[T](t.shape)
+  result[shift ..< t.size] = t[0 ..< shiftedLen]
+  result[0 ..< shift] = t[shiftedLen ..< t.size]

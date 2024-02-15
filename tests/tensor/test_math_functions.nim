@@ -104,6 +104,15 @@ proc main() =
 
       check: a_c.phase == expected_phases
 
+    test "sinc":
+      let s = sinc(linspace(0.0, 0.5, 3))
+      let normalized_s = sinc(linspace(0.0, 0.5 * PI, 3), normalized=false)
+      let expected_sinc = [1.0, 0.9003163161571, 0.6366197723676].toTensor
+
+      check:
+        expected_sinc.mean_absolute_error(s) < 1e-9
+        expected_sinc.mean_absolute_error(normalized_s) < 1e-9
+
     test "Sign functions":
       var a = [-5.3, 42.0, -0.0, 0.01, 10.7, -0.001, 0.9, -125.3].toTensor
       let expected_signs = [-1, 1, 0, 1, 1, -1, 1, -1].toTensor()

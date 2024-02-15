@@ -17,8 +17,8 @@ import  ./data_structure,
         ./init_cpu,
         ./higher_order_applymap,
         ./ufunc
+import std/math
 import complex except Complex64, Complex32
-import math
 
 # Non-operator math functions
 
@@ -217,6 +217,46 @@ proc square*[T](x: T): T {.inline.} =
   x*x
 
 makeUniversal(square)
+
+proc sinc*[T: SomeFloat](x: T, normalized: static bool = true): T {.inline.} =
+  ## Return the normalized or non-normalized sinc function.
+  ##
+  ## For values other than 0, the normalized sinc function is equal to
+  ## `sin(PI * x) / (PI * x)`, while the non-normalized sync function
+  ## is equal to `sin(x) / x`.
+  ## `sinc(0)` takes the limit value 1 in both cases, making `sinc` not only
+  ## everywhere continuous but also infinitely differentiable.
+  ##
+  ## Inputs:
+  ## - t: Real input value.
+  ## - normalized: Select whether to return the normalized or non-normalized sync.
+  ##               This argument is static so it must be set at compile time.
+  ##               The default is `true` (i.e. to return the normalized sync).
+  ## Result:
+  ## - Calculated sinc value
+  if x == 0.T:
+    return 1.T
+  when normalized:
+    let x = T(PI) * x
+  sin(x) / x
+
+proc sinc*[T: SomeFloat](t: Tensor[T], normalized: static bool = true): Tensor[T] {.noinit.} =
+  ## Return the normalized or non-normalized sinc function of a Tensor
+  ##
+  ## For values other than 0, the normalized sinc function is equal to
+  ## `sin(PI * x) / (PI * x)`, while the non-normalized sync function
+  ## is equal to `sin(x) / x`.
+  ## `sinc(0)` takes the limit value 1 in both cases, making `sinc` not only
+  ## everywhere continuous but also infinitely differentiable.
+  ##
+  ## Inputs:
+  ## - t: Input real tensor.
+  ## - normalized: Select whether to return the normalized or non-normalized sync.
+  ##               This argument is static so it must be set at compile time.
+  ##               The default is `true` (i.e. to return the normalized sync).
+  ## Result:
+  ## - New tensor with the sinc values of all the input tensor elements.
+  t.map_inline(sinc(x, normalized=normalized))
 
 proc classify*[T: SomeFloat](t: Tensor[T]): Tensor[FloatClass] {.noinit.} =
   ## Element-wise classify function (returns a tensor with the float class of each element).

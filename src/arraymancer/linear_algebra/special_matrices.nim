@@ -4,6 +4,7 @@
 
 import ../tensor
 import ./helpers/triangular
+import std/sequtils
 
 proc hilbert*(n: int, T: typedesc[SomeFloat]): Tensor[T] =
   ## Generates an Hilbert matrix of shape [N, N]
@@ -215,3 +216,48 @@ proc tri*[T](shape_ax1, shape_ax0: int, k: static int = 0, upper: static bool = 
 # Also export the tril and triu functions which are also part of numpy's API
 # and which are implemented in helpers/triangular.nim
 export tril, triu
+
+type MeshGridIndexing* = enum xygrid, ijgrid
+
+proc meshgrid*[T](t_list: varargs[Tensor[T]], indexing = MeshGridIndexing.xygrid):
+    seq[Tensor[T]] {.noinit.} =
+  ## Return a sequence of coordinate matrices from coordinate vectors.
+  ##
+  ## Make N-D coordinate tensors for vectorized evaluations of N-D scalar/vector
+  ## fields over N-D grids, given one-dimensional coordinate tensors x1, x2,..., xn.
+  ##
+  ## Inputs:
+  ## - xi: The coordinate tensors. Each vector must be a rank-1 tensor.
+  ## - indexing: Cartesian (`xygrid`, default) or matrix (`ijgrid`) indexing of the output.
+  ##             The indexing mode only affects the first 2 output Tensors.
+  ##             In the 2-D case with inputs of length M and N, the outputs are of shape
+  ##             (N, M) for `xygrid` indexing and (M, N) for `ijgrid` indexing.
+  ##             In the 3-D case with inputs of length M, N and P, outputs are of shape
+  ##             (N, M, P) for `xygrid` indexing and (M, N, P) for `ijgrid` indexing.
+  ## Result:
+  ## - List of N meshgrid N-dimensional Tensors
+  ##   For tensors x1, x2,..., xn with lengths Ni=len(xi), returns (N1, N2, N3,..., Nn)
+  ##   shaped tensors if indexing=`ijgrid` or (N2, N1, N3,..., Nn) shaped tensors if
+  ##   indexing=`xygrid` with the elements of xi repeated to fill the matrix along
+  ##   the first dimension for x1, the second for x2 and so on.
+  ##
+  ## Notes:
+  ## - This function follows and implements the `numpy.meshgrid` API.
+
+  let t_list = if indexing == MeshGridIndexing.xygrid:
+      # In xy mode, the first two dimensions are swapped before broadcasting
+      @[t_list[1], t_list[0]] & t_list[2..^1]
+    else:
+      t_list.toSeq
+  result = newSeq[Tensor[T]](t_list.len)
+  var out_shape = t_list.mapIt(it.size.int)
+  let dims = repeat(1, t_list.len)
+  var n = 0
+  for t in t_list:
+    var item_shape = dims
+    item_shape[n] = t.size.int
+    result[n] = broadcast(t.reshape(item_shape), out_shape)
+    inc n
+  if indexing == MeshGridIndexing.xygrid:
+    # In xy mode, we must swap back the first two dimensions after broadcast
+    result = @[result[1], result[0]] & result[2..^1]

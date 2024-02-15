@@ -121,5 +121,71 @@ proc main() =
           t2b == expected_t2
           t3b == expected_t3
 
+  suite "meshgrid":
+    test "meshgrid-2D":
+      block:
+        let expected_xy_x = [[0, 1],
+                             [0, 1],
+                             [0, 1]].toTensor
+        let expected_xy_y = [[2, 2],
+                             [3, 3],
+                             [4, 4]].toTensor
+        let expected_ij_x = [[0, 0, 0],
+                             [1, 1, 1]].toTensor
+        let expected_ij_y = [[2, 3, 4],
+                             [2, 3, 4]].toTensor
+        let xy = meshgrid(arange(2), arange(2, 5), indexing=xygrid)
+        let ij = meshgrid(arange(2), arange(2, 5), indexing=ijgrid)
+
+        check:
+          xy == @[expected_xy_x, expected_xy_y]
+          ij == @[expected_ij_x, expected_ij_y]
+
+    test "meshgrid-3D":
+      block:
+        let expected_xy_x = [[[0, 0, 0, 0],
+                             [1, 1, 1, 1]],
+                            [[0, 0, 0, 0],
+                             [1, 1, 1, 1]],
+                            [[0, 0, 0, 0],
+                             [1, 1, 1, 1]]].toTensor
+        let expected_xy_y = [[[2, 2, 2, 2],
+                              [2, 2, 2, 2]],
+                             [[3, 3, 3, 3],
+                              [3, 3, 3, 3]],
+                             [[4, 4, 4, 4],
+                              [4, 4, 4, 4]]].toTensor
+        let expected_xy_z = [[[5, 6, 7, 8],
+                              [5, 6, 7, 8]],
+                             [[5, 6, 7, 8],
+                              [5, 6, 7, 8]],
+                             [[5, 6, 7, 8],
+                              [5, 6, 7, 8]]].toTensor
+        let expected_ij_x = [[[0, 0, 0, 0],
+                              [0, 0, 0, 0],
+                              [0, 0, 0, 0]],
+                             [[1, 1, 1, 1],
+                              [1, 1, 1, 1],
+                              [1, 1, 1, 1]]].toTensor
+        let expected_ij_y = [[[2, 2, 2, 2],
+                              [3, 3, 3, 3],
+                              [4, 4, 4, 4]],
+                             [[2, 2, 2, 2],
+                              [3, 3, 3, 3],
+                              [4, 4, 4, 4]]].toTensor
+        let expected_ij_z = [[[5, 6, 7, 8],
+                              [5, 6, 7, 8],
+                              [5, 6, 7, 8]],
+                             [[5, 6, 7, 8],
+                              [5, 6, 7, 8],
+                              [5, 6, 7, 8]]].toTensor
+        let xy = meshgrid(arange(2), arange(2, 5), arange(5, 9), indexing=xygrid)
+        let ij = meshgrid(arange(2), arange(2, 5), arange(5, 9), indexing=ijgrid)
+
+        check:
+          xy == @[expected_xy_x, expected_xy_y, expected_xy_z]
+          ij == @[expected_ij_x, expected_ij_y, expected_ij_z]
+
+
 main()
 GC_fullCollect()

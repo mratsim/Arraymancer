@@ -39,7 +39,6 @@ proc `*.`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Te
   ## Element-wise multiplication (Hadamard product).
   ##
   ## And broadcasted element-wise multiplication.
-
   let (tmp_a, tmp_b) = broadcast2(a, b)
   result = map2_inline(tmp_a, tmp_b, x * y)
 
@@ -52,6 +51,13 @@ proc `/.`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Te
     result = map2_inline(tmp_a, tmp_b, x div y )
   else:
     result = map2_inline(tmp_a, tmp_b, x / y )
+
+proc `mod`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Tensor element-wise modulo operation
+  ##
+  ## And broadcasted element-wise modulo operation.
+  let (tmp_a, tmp_b) = broadcast2(a, b)
+  result = map2_inline(tmp_a, tmp_b, x mod y)
 
 # ##############################################
 # # Broadcasting in-place Tensor-Tensor
@@ -117,6 +123,16 @@ proc `-.`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], val: T
   ## Broadcasted substraction for scalar - tensor.
   returnEmptyIfEmpty(t)
   result = t.map_inline(x - val)
+
+proc `*.`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, t: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Broadcasted multiplication for tensor * scalar.
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(x * val)
+
+proc `*.`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], val: T): Tensor[T] {.noinit.} =
+  ## Broadcasted multiplication for scalar * tensor.
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(x * val)
 
 proc `/.`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, t: Tensor[T]): Tensor[T] {.noinit.} =
   ## Broadcasted division

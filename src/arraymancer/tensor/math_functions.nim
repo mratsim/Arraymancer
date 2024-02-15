@@ -18,6 +18,7 @@ import  ./data_structure,
         ./higher_order_applymap,
         ./ufunc
 import complex except Complex64, Complex32
+import math
 
 # Non-operator math functions
 
@@ -103,17 +104,133 @@ proc phase*(t: Tensor[Complex[float32]]): Tensor[float32] {.noinit.} =
   ## Return a Tensor with phase values of all elements
   t.map_inline(phase(x))
 
+proc sgn*[T: SomeNumber](t: Tensor[T]): Tensor[int] {.noinit.} =
+  ## Element-wise sgn function (returns a tensor with the sign of each element)
+  ##
+  ## Returns:
+  ## - -1 for negative numbers and NegInf,
+  ## - 1 for positive numbers and Inf,
+  ## - 0 for positive zero, negative zero and NaN
+  t.map_inline(sgn(x))
+
+when (NimMajor, NimMinor, NimPatch) >= (1, 6, 0):
+  proc copySign*[T: SomeFloat](t1, t2: Tensor[T]): Tensor[T] {.noinit.} =
+    ## Element-wise copySign function (combines 2 tensors, taking the magnitudes from t1 and the signs from t2)
+    ##
+    ## This uses nim's copySign under the hood, and thus has the same properties. That is, it works for values
+    ## which are NaN, infinity or zero (all of which can carry a sign) but does not work for integers.
+    t1.map2_inline(t2, copySign(x, y))
+
+  proc mcopySign*[T: SomeFloat](t1: var Tensor[T], t2: Tensor[T]) =
+    ## In-place element-wise copySign function (changes the signs of the elements of t1 to match those of t2)
+    ##
+    ## This uses nim's copySign under the hood, and thus has the same properties. That is, it works for values
+    ## which are NaN, infinity or zero (all of which can carry a sign) but does not work for integers.
+    t1.apply2_inline(t2, copySign(x, y))
+
+proc floorMod*[T: SomeNumber](t1, t2: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Broadcasted floorMod operation: floorMod(tensor, tensor).
+  result = t1.map2_inline(t2, floorMod(x, y))
+
+proc floorMod*[T: SomeNumber](t: Tensor[T], val: T): Tensor[T] {.noinit.} =
+  ## Broadcasted floorMod operation: floorMod(tensor, scalar).
+  result = t.map_inline(floorMod(x, val))
+
+proc floorMod*[T: SomeNumber](val: T, t: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Broadcasted floorMod operation: floorMod(scalar, tensor).
+  result = t.map_inline(floorMod(val, x))
+
 proc clamp*[T](t: Tensor[T], min, max: T): Tensor[T] {.noinit.} =
+  ## Return a Tensor with all elements clamped to the interval [min, max].
   t.map_inline(clamp(x, min, max))
 
 proc mclamp*[T](t: var Tensor[T], min, max: T) =
+  ## Update the Tensor with all elements clamped to the interval [min, max].
   t.apply_inline(clamp(x, min, max))
+
+proc max*[T: SomeNumber](t1, t2: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Compare two arrays and return a new array containing the element-wise maxima.
+  ##
+  ## As in nim's built-in max procedure if one of the elements being compared is a NaN,
+  ## then the non NaN element is returned.
+  t1.map2_inline(t2, max(x, y))
+
+proc max*[T: SomeNumber](args: varargs[Tensor[T]]): Tensor[T] {.noinit.} =
+  ## Compare any number of arrays and return a new array containing the element-wise maxima.
+  ##
+  ## As in nim's built-in max procedure if one of the elements being compared is a NaN,
+  ## then the non NaN element is returned.
+  result = max(args[0], args[1])
+  for n in countup(2, len(args)-1):
+    result = max(result, args[n])
+
+proc mmax*[T: SomeNumber](t1: var Tensor[T], t2: Tensor[T]) =
+  ## In-place element-wise maxima of two tensors.
+  ##
+  ## As in nim's built-in max procedure if one of the elements being compared is a NaN,
+  ## then the non NaN element is returned.
+  t1.apply2_inline(t2, max(x, y))
+
+proc mmax*[T: SomeNumber](t1: var Tensor[T], args: varargs[Tensor[T]]) =
+  ## In-place element-wise maxima of N tensors.
+  ##
+  ## As in nim's built-in max procedure if one of the elements being compared is a NaN,
+  ## then the non NaN element is returned.
+  t1.apply2_inline(args[0], max(x, y))
+  for n in countup(1, len(args)-1):
+    t1.apply2_inline(args[n], max(x, y))
+
+proc min*[T: SomeNumber](t1, t2: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Compare two arrays and return a new array containing the element-wise minima.
+  ##
+  ## As in nim's built-in min procedure if one of the elements being compared is a NaN,
+  ## then the non NaN element is returned.
+  t1.map2_inline(t2, min(x, y))
+
+proc min*[T: SomeNumber](args: varargs[Tensor[T]]): Tensor[T] {.noinit.} =
+  ## Compare any number of arrays and return a new array containing the element-wise minima.
+  ##
+  ## As in nim's built-in min procedure if one of the elements being compared is a NaN,
+  ## then the non NaN element is returned.
+  result = min(args[0], args[1])
+  for n in countup(2, len(args)-1):
+    result = min(result, args[n])
+
+proc mmin*[T: SomeNumber](t1: var Tensor[T], t2: Tensor[T]) =
+  ## In-place element-wise minima of two tensors.
+  ##
+  ## As in nim's built-in min procedure if one of the elements being compared is a NaN,
+  ## then the non NaN element is returned.
+  t1.apply2_inline(t2, min(x, y))
+
+proc mmin*[T: SomeNumber](t1: var Tensor[T], args: varargs[Tensor[T]]) =
+  ## In-place element-wise minima of N tensors.
+  ##
+  ## As in nim's built-in min procedure if one of the elements being compared is a NaN,
+  ## then the non NaN element is returned.
+  t1.apply2_inline(args[0], min(x, y))
+  for n in countup(1, len(args)-1):
+    t1.apply2_inline(args[n], min(x, y))
 
 proc square*[T](x: T): T {.inline.} =
   ## Return `x*x`
   x*x
 
 makeUniversal(square)
+
+proc classify*[T: SomeFloat](t: Tensor[T]): Tensor[FloatClass] {.noinit.} =
+  ## Element-wise classify function (returns a tensor with the float class of each element).
+  ##
+  ## Returns:
+  ##   A FloatClass tensor where each value is one of the following:
+  ##   - fcNormal: value is an ordinary nonzero floating point value
+  ##   - fcSubnormal: value is a subnormal (a very small) floating point value
+  ##   - fcZero: value is zero
+  ##   - fcNegZero: value is the negative zero
+  ##   - fcNan: value is Not a Number (NaN)
+  ##   - fcInf: value is positive infinity
+  ##   - fcNegInf: value is negative infinity
+  t.map_inline(classify(x))
 
 type ConvolveMode* = enum full, same, valid
 

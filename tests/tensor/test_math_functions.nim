@@ -104,6 +104,57 @@ proc main() =
 
       check: a_c.phase == expected_phases
 
+    test "Sign functions":
+      var a = [-5.3, 42.0, -0.0, 0.01, 10.7, -0.001, 0.9, -125.3].toTensor
+      let expected_signs = [-1, 1, 0, 1, 1, -1, 1, -1].toTensor()
+      check: a.sgn() == expected_signs
+      when (NimMajor, NimMinor, NimPatch) >= (1, 6, 0):
+        let new_signs = arange(-4.0, 4.0)
+        a.mcopySign(new_signs)
+        let expected = [-5.3, -42.0, -0.0, -0.01, 10.7, 0.001, 0.9, 125.3].toTensor
+        check: a == expected
+
+    test "Modulo functions":
+      var a = arange(-70.7, 50.0, 34.7)
+      let expected_floormod_ts = [1.3, -0.0, 1.7, 0.4].toTensor()
+      let expected_floormod_st = [-67.7, -33.0, -0.9, 3.0].toTensor()
+      check: expected_floormod_ts.mean_absolute_error(a.floorMod(3.0)) < 1e-9
+      check: expected_floormod_st.mean_absolute_error(floorMod(3.0, a)) < 1e-9
+
+    test "min-max":
+      var a = arange(-70, 50, 34)
+      var b = arange(53, -73, -34)
+      let expected_min = [-70, -36, -15, -49].toTensor()
+      let expected_max = [53, 19, -2, 32].toTensor()
+      check expected_min == min(a, b)
+      check expected_max == max(a, b)
+
+      # N-element versions
+      let c = [100, -500, -100, 500].toTensor()
+      let expected_n_min = [-70, -500, -100, -49].toTensor()
+      let expected_n_max = [100, 19, -2, 500].toTensor()
+      check expected_n_min == min(a, b, c)
+      check expected_n_max == max(a, b, c)
+
+      # In-place versions
+      var d = a.clone()
+      d.mmax(b)
+      check expected_max == d
+      d.mmax(b, c)
+      check expected_n_max == d
+      d = a.clone()
+      d.mmin(b)
+      check expected_min == d
+      d.mmin(b, c)
+      check expected_n_min == d
+
+    test "isNaN & classify":
+      var a = [0.0, -0.0, 1.0/0.0, -1.0/0.0, 0.0/0.0].toTensor
+      let expected_isNaN = [false, false, false, false, true].toTensor()
+      let expected_classification = [fcZero, fcNegZero, fcInf, fcNegInf, fcNaN].toTensor()
+      check: expected_isNaN == a.isNaN
+      check: expected_classification == a.classify
+
     test "1-D convolution":
       block:
         let a = arange(4)

@@ -16,13 +16,14 @@ import  ./data_structure,
         ./init_cpu,
         ./higher_order_foldreduce,
         ./operators_broadcasted,
+        ./operators_comparison,
         ./higher_order_applymap,
         ./math_functions,
         ./accessors,
+        ./accessors_macros_syntax,
         ./algorithms,
-        ./private/p_empty_tensors,
-        math
-
+        ./private/p_empty_tensors
+import std/[math, macros]
 import complex except Complex64, Complex32
 
 # ### Standard aggregate functions
@@ -287,7 +288,7 @@ proc percentile*[T](arg: Tensor[T], p: int, isSorted = false): float =
   elif p <= 0: result = min(arg).float
   elif p >= 100: result = max(arg).float
   else:
-    let a = if not isSorted: sorted(arg) else: arg
+    let a = if not isSorted: sorted(arg.reshape([1, arg.size]).squeeze) else: arg
     let f = (arg.size - 1) * p / 100
     let i = floor(f).int
     if f == i.float: result = a[i].float
@@ -295,6 +296,10 @@ proc percentile*[T](arg: Tensor[T], p: int, isSorted = false): float =
       # interpolate linearly
       let frac = f - i.float
       result = (a[i].float + (a[i+1] - a[i]).float * frac)
+
+proc median*[T](arg: Tensor[T], isSorted = false): float {.inline.} =
+  ## Compute the median of all elements (same as `arg.percentile(50)`)
+  percentile(arg, 50, isSorted)
 
 proc iqr*[T](arg: Tensor[T]): float =
   ## Returns the interquartile range of the 1D tensor `t`.
@@ -336,6 +341,122 @@ proc cumprod*[T](arg: Tensor[T], axis: int = 0): Tensor[T] = # from hugogranstro
       temp[_] = tAxis
     else:
       temp[_] = result.atAxisIndex(axis, i-1) *. tAxis
+
+proc diff_discrete*[T](arg: Tensor[T], n=1, axis: int = -1): Tensor[T] =
+  ## Calculate the n-th discrete difference along the given axis.
+  ##
+  ## The first difference is given by `out[i] = a[i+1] - a[i]` along the given axis.
+  ## Higher differences are calculated by using diff recursively.
+  ##
+  ## Input:
+  ##   - A tensor
+  ##   - n: The number of times values are differenced.
+  ##        If zero, the input is returned as-is.
+  ##   - axis: The axis along which the difference is taken,
+  ##           default is the last axis.
+  ## Returns:
+  ##   - A tensor with the n-th discrete difference along the given axis.
+  ##     It's size along that axis will be reduced by one.
+  ##   - The code in this function is heavily based upon and equivalent
+  ##   to numpy's `diff()` function.
+  mixin `_`
+  assert n >= 0, "diff order (" & $n & ") cannot be negative"
+  if n == 0 or arg.size == 0:
+    return arg
+  let axis = if axis == -1:
+    arg.shape.len + axis
+  else:
+    axis
+  assert axis < arg.shape.len,
+    "diff axis (" & $axis & ") cannot be greater than input shape length (" & $arg.shape.len & ")"
+  var result_shape = arg.shape
+  result_shape[axis] -= 1
+  result = zeros[T](result_shape)
+  for i, tAxis in enumerateAxis(arg, axis):
+    if unlikely(i == 0):
+      continue
+    var temp = result.atAxisIndex(axis, i-1)
+    when T is bool:
+      temp[_] = tAxis != arg.atAxisIndex(axis, i-1)
+    else:
+      temp[_] = tAxis -. arg.atAxisIndex(axis, i-1)
+  if n > 1:
+    result = diff_discrete(result, n=n-1, axis=axis)
+
+proc unwrap_period*[T: SomeNumber](t: Tensor[T], discont: T = -1, axis = -1, period: T = default(T)): Tensor[T] {.noinit.} =
+    # Unwrap a tensor by taking the complement of large deltas with respect to a period.
+    #
+    # This unwraps a tensor `t` by changing elements which have an absolute
+    # difference from their predecessor of more than ``max(discont, period/2)``
+    # to their `period`-complementary values.
+    #
+    # For the default case where `period` is `2*PI` and `discont` is
+    # `PI`, this unwraps a radian phase `t` such that adjacent differences
+    # are never greater than `PI` by adding `2*k*PIi` for some integer `k`.
+    #
+    # Inputs:
+    #   - t: Input Tensor.
+    #   - discont: Maximum discontinuity between values. Default is `period/2`.
+    #       Values below `period/2` are treated as if they were `period/2`.
+    #       To have an effect different than the default, `discont` must be
+    #       larger than `period/2`.
+    #   - axis: Axis along which the unwrap will be done. Default is the last axis.
+    #   - period: Size of the range over which the input wraps.
+    #             By default, it is ``2*PI``.
+    # Return:
+    #   - Output Tensor.
+    #
+    # Notes:
+    #   - If the discontinuity in `t` is smaller than ``period/2``,
+    #   but larger than `discont`, no unwrapping is done because taking
+    #   the complement would only make the discontinuity larger.
+    #   - The code in this function is heavily based upon and equivalent
+    #   to numpy's `unwrap()` function.
+  mixin `_`
+  let axis = if axis == -1:
+    t.shape.len + axis
+  else:
+    axis
+  let td = t.diff_discrete(axis=axis)
+  let period: T = if period == default(T):
+    when T is int:
+      raise newException(ValueError, "unwrap period must be specified for integer types")
+    else:
+      2.0 * PI
+  else:
+    period
+  let discont = if discont == -1:
+    T(period/2)
+  else:
+    discont
+  when T is int:
+    when (NimMajor, NimMinor, NimPatch) >= (2, 0, 0):
+      let (interval_high, rem) = divmod(period, 2)
+    else:
+      let interval_high = period div 2
+      let rem = period mod 2
+    let boundary_ambiguous = rem == 0
+  else:
+    let interval_high = period / 2
+    let boundary_ambiguous = true
+  let interval_low = -interval_high
+  var tdmod = (td -. interval_low).floorMod(period) +. interval_low
+  if boundary_ambiguous:
+    const zero: T = T(0)
+    tdmod[(tdmod ==. interval_low) and (td >. zero)] = interval_high
+  var ph_correct = tdmod - td
+  ph_correct[abs(td) <. discont] = 0
+  result = t.clone()
+  let ph_correct_cumsum = ph_correct.cumsum(axis)
+  if t.rank == 1:
+    result[1.._] = t[1.._] +. ph_correct_cumsum
+  else:
+    for i, tAxis in enumerateAxis(t, axis):
+      if unlikely(i < 1):
+        continue
+      let pAxis = ph_correct_cumsum.atAxisIndex(axis, i-1)
+      var temp = result.atAxisIndex(axis, i)
+      temp[_] = tAxis +. pAxis
 
 when (NimMajor, NimMinor, NimPatch) > (1, 6, 0):
   import std/atomics

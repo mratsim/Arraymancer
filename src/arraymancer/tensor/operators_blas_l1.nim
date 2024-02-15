@@ -73,15 +73,47 @@ proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): 
   ## Element-wise multiplication by a scalar
   a * t
 
-proc `/`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
+proc `/`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
   ## Element-wise division by a float scalar
   returnEmptyIfEmpty(t)
-  t.map_inline(x / a)
+  when T is SomeInteger:
+    t.map_inline(x div a)
+  else:
+    t.map_inline(x / a)
 
 proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
   ## Element-wise division by an integer
   returnEmptyIfEmpty(t)
   t.map_inline(x div a)
+
+proc `mod`*[T: SomeNumber](t: Tensor[T], val: T): Tensor[T] {.noinit.} =
+  ## Broadcasted modulo operation
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(x mod val)
+
+proc `mod`*[T: SomeNumber](val: T, t: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Broadcasted modulo operation
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(val mod x)
+
+# Unsupported operations (these must be done using the broadcasted operators)
+proc `+`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: Tensor[T], val: T): Tensor[T] {.noinit,inline.} =
+  ## Mathematical addition of tensors and scalars is undefined. Must use a broadcasted addition instead
+  {.error: "To add a scalar to a tensor you must use the `+.` operator (instead of a plain `+` operator)".}
+
+# Unsupported operations
+proc `+`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, a: Tensor[T]): Tensor[T] {.noinit,inline.} =
+  ## Mathematical addition of tensors and scalars is undefined. Must use a broadcasted addition instead
+  {.error: "To add a tensor to a scalar you must use the `+.` operator (instead of a plain `+` operator)".}
+
+proc `-`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: Tensor[T], val: T): Tensor[T] {.noinit,inline.} =
+  ## Mathematical subtraction of tensors and scalars is undefined. Must use a broadcasted addition instead
+  {.error: "To subtract a scalar from a tensor you must use the `-.` operator (instead of a plain `-` operator)".}
+
+# Unsupported operations
+proc `-`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, a: Tensor[T]): Tensor[T] {.noinit,inline.} =
+  ## Mathematical subtraction of tensors and scalars is undefined. Must use a broadcasted addition instead
+  {.error: "To subtract a tensor from a scalar you must use the `-.` operator (instead of a plain `-` operator)".}
 
 # #########################################################
 # # Tensor-scalar in-place linear algebra

@@ -24,22 +24,28 @@ macro `[]=`*[T](t: var Tensor[T], args: varargs[untyped]): untyped =
   ##
   ## Input:
   ##   - a ``var`` tensor
-  ##   - a location:
+  ##   - a location or a boolean mask:
   ##     - specific coordinates (``varargs[int]``)
   ##     - or a slice (cf. tutorial)
+  ##     - or a boolean tensor or openArray mask with the same shape as the tensor
   ##   - a value:
   ##     - a single value that will
   ##       - replace the value at the specific coordinates
   ##       - or be applied to the whole slice
-  ##     - an openArray with a shape that matches the slice
-  ##     - a tensor with a shape that matches the slice
+  ##       - or be applied to the true elements of the boolean mask
+  ##     - a tensor or openArray with a shape that matches the slice
+  ##     - a tensor whose values will be applied to the true elements
+  ##       of the boolean mask
   ## Result:
   ##   - Nothing, the tensor is modified in-place
   ## Usage:
   ##   - Assign a single value - foo[1..2, 3..4] = 999
+  ##   - Assign a single value to a boolean mask - foo[foo .> 0] = 999
   ##   - Assign an array/seq of values - foo[0..1,0..1] = [[111, 222], [333, 444]]
   ##   - Assign values from a view/Tensor - foo[^2..^1,2..4] = bar
   ##   - Assign values from the same Tensor - foo[^2..^1,2..4] = foo[^1..^2|-1, 4..2|-1]
+  ##   - Assign values from a view/Tensor
+  ##     to a boolean mask - foo[foo .> 0] = [1, 2, 3].toTensor
 
   # varargs[untyped] consumes all arguments so the actual value should be popped
   # https://github.com/nim-lang/Nim/issues/5855

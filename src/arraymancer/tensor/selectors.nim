@@ -19,7 +19,7 @@ import  ./backend/memory_optimization_hints,
         ./private/p_empty_tensors,
         ./accessors, ./accessors_macros_syntax,
         ./data_structure, ./init_cpu,
-        std/sequtils
+        std/[sequtils, locks]
 
 # Indexed axis
 # --------------------------------------------------------------------------------------------
@@ -125,10 +125,9 @@ proc masked_select*[T](t: Tensor[T], mask: openArray): Tensor[T] {.noinit.} =
   t.masked_select mask.toTensor()
 
 proc masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
-  ## For the index of each element of t.
-  ## Fill the elements at ``t[index]`` with the ``value``
-  ## if their corresponding ``mask[index]`` is true.
-  ## If not they are untouched.
+  ## For each element ``t[index]`` of the input tensor ``t`` with index ``index``,
+  ## check if ``mask[index]`` is true. If so, fill it ``value``.
+  ## Otherwise leave it untouched.
   ##
   ## Example:
   ##
@@ -137,6 +136,10 @@ proc masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
   ## or alternatively:
   ##
   ##   t.masked_fill(t > 0): -1
+  ##
+  ## In this version of this procedure the boolean mask is a ``Tensor[bool]``
+  ## with the same size as the input tensor ``t``.
+
   if t.size == 0 or mask.size == 0:
     return
   check_elementwise(t, mask)
@@ -155,26 +158,111 @@ proc masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: T) =
       if maskElem:
         tElem = value
 
-
 proc masked_fill*[T](t: var Tensor[T], mask: openArray, value: T) =
-  ## For the index of each element of t.
-  ## Fill the elements at ``t[index]`` with the ``value``
-  ## if their corresponding ``mask[index]`` is true.
-  ## If not they are untouched.
+  ## For each element ``t[index]`` of the input tensor ``t`` with index ``index``,
+  ## check if ``mask[index]`` is true. If so, fill it ``value``.
+  ## Otherwise leave it untouched.
   ##
   ## Example:
   ##
-  ##   t.masked_fill(t > 0, -1)
+  ##   t.masked_fill([true, false, true, true], -1)
   ##
   ## or alternatively:
   ##
-  ##   t.masked_fill(t > 0): -1
+  ##   t.masked_fill([true, false, true, true]): -1
   ##
-  ## The boolean mask must be
+  ## In this version of this procedure the boolean mask, which must have the
+  ## same size as the input tensor ``t``, is an openArray of bools, i.e.:
   ##   - an array or sequence of bools
   ##   - an array of arrays of bools,
   ##   - ...
+  if t.size == 0 or mask.len == 0:
+    return
+  t.masked_fill(mask.toTensor(), value)
+
+proc masked_fill*[T](t: var Tensor[T], mask: Tensor[bool], value: Tensor[T]) =
+  ## For each element ``t[index]`` of the input tensor ``t`` with index ``index``,
+  ## check if ``mask[index]`` is true. If so fill it with the _next_
+  ## element from the ``value`` tensor. Otherwise leave it untouched.
   ##
+  ## Note that this does _not_ fill ``t[index]`` with ``value[index]``, but
+  ## with the n-th element of ``value`` where n is the number of true elements
+  ## in the mask before and including the index-th mask element.
+  ## Because of this, the value tensor must have at least as many elements as
+  ## the number of true elements in the mask. If that is not the case an
+  ## IndexDefect exception will be raised at runtime. The ``value`` tensor
+  ## can have even more values which will simply be ignored.
+  ##
+  ## Example:
+  ##
+  ##   t.masked_fill(t > 0, [3, 4, -1].toTensor)
+  ##
+  ## In this version of this procedure the boolean mask is a ``Tensor[bool]``
+  ## with the same size as the input tensor ``t``.
+
+  if t.size == 0 or mask.size == 0:
+    return
+  check_elementwise(t, mask)
+
+  # Due to requiring unnecessary assigning `x` for a `false` mask
+  # apply2_inline is a bit slower for very sparse mask.
+  # As this is a critical operation, especially on dataframes, we use the lower level construct.
+  #
+  # t.apply2_inline(mask):
+  #   if y:
+  #     value
+  #   else:
+  #     x
+
+  # We need to protect against the case in which we run out of values to
+  # fill the tensor with, which we cannot tell in advance without counting
+  # the number of true values in the mask (which would be expensive)
+  var lock: Lock
+  initLock(lock)
+  var too_few_values = false
+
+  omp_parallel_blocks(block_offset, block_size, t.size):
+    var n = block_offset
+    for tElem, maskElem in mzip(t, mask, block_offset, block_size):
+      if maskElem:
+        if n >= value.size:
+          withLock(lock):
+            # The lock protection is technically unnecessary but it is good form
+            too_few_values = true
+          break
+        tElem = value[n]
+        inc n
+  if too_few_values:
+    let error_msg = "masked_fill error: the size of the value tensor (" & $value.size &
+      ") is smaller than the number of true elements in the mask"
+    when not(compileOption("mm", "arc") or compileOption("mm", "orc")):
+      # Other memory management modes crash without showing the exception message
+      echo error_msg
+    raise newException(IndexDefect, error_msg)
+
+proc masked_fill*[T](t: var Tensor[T], mask: openArray, value: Tensor[T]) =
+  ## For each element ``t[index]`` of the input tensor ``t`` with index ``index``,
+  ## check if ``mask[index]`` is true. If so fill it with the _next_
+  ## element from the ``value`` tensor. Otherwise leave it untouched.
+  ##
+  ## Note that this does _not_ fill ``t[index]`` with ``value[index]``, but
+  ## with the n-th element of ``value`` where n is the number of true elements
+  ## in the mask before and including the index-th mask element.
+  ## Because of this, the value tensor must have at least as many elements as
+  ## the number of true elements in the mask. If that is not the case an
+  ## IndexDefect exception will be raised at runtime. The ``value`` tensor
+  ## can have even more values which will simply be ignored.
+  ##
+  ## Example:
+  ##
+  ##   t.masked_fill([true, false, true, true], [3, 4, -1].toTensor)
+  ##
+  ## In this version of this procedure the boolean mask, which must have the
+  ## same size as the input tensor ``t``, is an openArray of bools, i.e.:
+  ##   - an array or sequence of bools
+  ##   - an array of arrays of bools,
+  ##   - ...
+
   if t.size == 0 or mask.len == 0:
     return
   t.masked_fill(mask.toTensor(), value)
@@ -272,7 +360,7 @@ template masked_axis_fill_impl[T](t: var Tensor[T], mask: Tensor[bool] or openAr
 
 proc masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value: T or Tensor[T]) =
   ## Take a 1D boolean mask tensor with size equal to the `t.shape[axis]`
-  ## The axis index that are set to true in the mask will be filled with `value`
+  ## The axis indexes that are set to true in the mask will be filled with `value`
   ##
   ## Limitation:
   ##   If value is a Tensor, only filling via broadcastable tensors is supported at the moment
@@ -306,7 +394,7 @@ proc masked_axis_fill*[T](t: var Tensor[T], mask: Tensor[bool], axis: int, value
 
 proc masked_axis_fill*[T](t: var Tensor[T], mask: openArray[bool], axis: int, value: T or Tensor[T]) =
   ## Take a 1D boolean mask tensor with size equal to the `t.shape[axis]`
-  ## The axis index that are set to true in the mask will be filled with `value`
+  ## The axis indexes that are set to true in the mask will be filled with `value`
   ##
   ## Limitation:
   ##   If value is a Tensor, only filling via broadcastable tensors is supported at the moment

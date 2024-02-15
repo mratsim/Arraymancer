@@ -164,26 +164,46 @@ proc main() =
         check: r == expected
 
     test "Masked_fill":
-      block: # Numpy reference doc
-            # https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#boolean-array-indexing
-            # select non NaN
-        # x = np.array([[1., 2.], [np.nan, 3.], [np.nan, np.nan]])
-        # x[np.isnan(x)] = -1
-        # x
-        # np.array([[1., 2.], [-1, 3.], [-1, -1]])
-        var x = [[1.0, 2.0],
-                [NaN, 3.0],
-                [NaN, NaN]].toTensor
+      # Numpy reference doc
+      # https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#boolean-array-indexing
+      # select non NaN
+      # x = np.array([[1., 2.], [np.nan, 3.], [np.nan, np.nan]])
+      # x[np.isnan(x)] = -1
+      # x
+      # np.array([[1., 2.], [-1, 3.], [-1, -1]])
+      let t = [[1.0, 2.0],
+        [NaN, 3.0],
+        [NaN, NaN]].toTensor
+      block: # Single value masked fill
+        var x = t.clone()
 
         x.masked_fill(x.isNaN, -1.0)
 
         let expected = [[1.0, 2.0], [-1.0, 3.0], [-1.0, -1.0]].toTensor()
         check: x == expected
 
-      block: # with regular arrays/sequences
-        var x = [[1.0, 2.0],
-                [NaN, 3.0],
-                [NaN, NaN]].toTensor
+      block: # Multiple value masked fill
+        var x = t.clone()
+
+        x.masked_fill(x.isNaN, [-10.0, -20.0, -30.0].toTensor())
+
+        let expected = [[1.0, 2.0], [-10.0, 3.0], [-20.0, -30.0]].toTensor()
+        check: x == expected
+
+        when compileOption("mm", "arc") or compileOption("mm", "orc"):
+          # Check that we throw an exception when there are less values than
+          # true elements in the mask
+          # This only works when using ARC or ORC
+          x = t.clone()
+          var exception_thrown_when_true_element_mask_count_exceeds_value_tensor_size = false
+          try:
+            x.masked_fill(x.isNaN, [-10.0, -20.0].toTensor())
+          except IndexDefect:
+            exception_thrown_when_true_element_mask_count_exceeds_value_tensor_size = true
+          check: exception_thrown_when_true_element_mask_count_exceeds_value_tensor_size
+
+      block: # Fill with regular arrays/sequences
+        var x = t.clone()
 
         x.masked_fill(
           [[false,  false],

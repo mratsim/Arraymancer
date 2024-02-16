@@ -86,6 +86,11 @@ proc main() =
         a_view[_, _] = 0
         check: a == [1,0,0,4].toTensor()
 
+    test "Flatten":
+      let a = [[1, 2], [3, 4]].toTensor()
+      let b = a.flatten()
+      check: b == [1,2,3,4].toTensor()
+
     test "Concatenation":
       let a = toSeq(1..4).toTensor().reshape(2,2)
 
@@ -209,6 +214,64 @@ proc main() =
         a.chunk(3, axis = 0) == [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]].mapIt(it.toTensor)
         a.chunk(4, axis = 0) == [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]].mapIt(it.toTensor)
         a.chunk(5, axis = 0) == [@[1, 2, 3], @[4, 5, 6], @[7, 8], @[9, 10], @[11, 12]].mapIt(it.toTensor)
+
+    test "Roll":
+      block: # Rank-1 tensor roll
+        let a = arange(5)
+        check:
+          a.roll(0) == [0, 1, 2, 3, 4].toTensor
+          a.roll(1) == [4, 0, 1, 2, 3].toTensor
+          a.roll(2) == [3, 4, 0, 1, 2].toTensor
+          a.roll(7) == [3, 4, 0, 1, 2].toTensor
+          a.roll(-2) == [2, 3, 4, 0, 1].toTensor
+          # rolling over an axis is the same as a global roll for rank-1 tensors
+          a.roll(2) == a.roll(2, axis=0)
+
+      block: # Rank-2 tensor roll over an axis
+        let a = arange(12).reshape(3, 4)
+        check:
+          a.roll(1, axis = 0) == [[8, 9, 10, 11], [0, 1, 2, 3], [4, 5, 6, 7]].toTensor
+          a.roll(-1, axis = 0) == [[4, 5, 6, 7], [8, 9, 10, 11], [0, 1, 2, 3]].toTensor
+          a.roll(-4, axis = 0) == a.roll(2, axis = 0)
+
+          a.roll(1, axis = 1) == [[3, 0, 1, 2], [7, 4, 5, 6], [11, 8, 9, 10]].toTensor
+          a.roll(-1, axis = 1) == [[1, 2, 3, 0], [5, 6, 7, 4], [9, 10, 11, 8]].toTensor
+          a.roll(-5, axis = 1) == a.roll(3, axis = 1)
+
+      block: # Rank-3 tensor roll over an axis
+        let a = arange(24).reshape(2, 3, 4)
+        check:
+          a.roll(1, axis = 0) == [[[12, 13, 14, 15], [16, 17, 18, 19], [20, 21, 22, 23]],
+                                  [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11]]]
+                                  .toTensor
+          a.roll(-1, axis = 0) == a.roll(1, axis = 0)
+
+          a.roll(1, axis = 1) == [[[8, 9, 10, 11], [0, 1, 2, 3], [4, 5, 6, 7]],
+                                  [[20, 21, 22, 23], [12, 13, 14, 15], [16, 17, 18, 19]]]
+                                  .toTensor
+          a.roll(-1, axis = 1) == [[[4, 5, 6, 7], [8, 9, 10, 11], [0, 1, 2, 3]],
+                                   [[16, 17, 18, 19], [20, 21, 22, 23], [12, 13, 14, 15]]]
+                                   .toTensor
+
+          a.roll(1, axis = 2) == [[[3, 0, 1, 2], [7, 4, 5, 6], [11, 8, 9, 10]],
+                                  [[15, 12, 13, 14], [19, 16, 17, 18], [23, 20, 21, 22]]]
+                                  .toTensor
+          a.roll(-1, axis = 2) == [[[1, 2, 3, 0], [5, 6, 7, 4], [9, 10, 11, 8]],
+                                   [[13, 14, 15, 12], [17, 18, 19, 16], [21, 22, 23, 20]]]
+                                   .toTensor
+          a.roll(-6, axis = 2) == a.roll(2, axis = 2)
+
+      block: # Combined rolls
+        let a = arange(8).reshape(2, 4)
+        check:
+          a.roll(1, axis=0).roll(2, axis=1) == [[6, 7, 4, 5], [2, 3, 0, 1]].toTensor
+
+      block: # Global (axis-less) roll
+        let a = arange(12).reshape(3, 4)
+        check:
+          a.roll(1) == [[11, 0, 1, 2], [3, 4, 5, 6], [7, 8, 9, 10]].toTensor
+          a.roll(-1) == [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 0]].toTensor
+          a.roll(-5) == a.roll(7)
 
 main()
 GC_fullCollect()

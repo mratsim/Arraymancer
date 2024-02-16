@@ -315,18 +315,58 @@ proc main() =
       check unwrap_period(a, period=6) == expected_axis2
       # Check that unwrap_period also works with floats
       check unwrap_period(a.asType(float), period=6.0) == expected_axis2.asType(float)
+  suite "Testing logic functions":
+    test "Nonzero":
+      block:
+        let a = [[3, 0, 0], [0, 4, 0], [5, 6, 0]].toTensor()
+        let exp = [[0, 1, 2, 2], [0, 1, 0, 1]].toTensor
+        check a.nonzero == exp
 
-  test "Nonzero":
-    block:
-      let a = [[3, 0, 0], [0, 4, 0], [5, 6, 0]].toTensor()
-      let exp = [[0, 1, 2, 2], [0, 1, 0, 1]].toTensor
-      check a.nonzero == exp
+      block:
+        let a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]].toTensor
+        let mask = a >. 3
+        let exp = [[1, 1, 1, 2, 2, 2], [0, 1, 2, 0, 1, 2]].toTensor
+        check nonzero(mask) == exp
 
-    block:
-      let a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]].toTensor
-      let mask = a >. 3
-      let exp = [[1, 1, 1, 2, 2, 2], [0, 1, 2, 0, 1, 2]].toTensor
-      check nonzero(mask) == exp
+    test "all":
+      let a = [[1, 2, 3], [-4, -5, -6]].toTensor
+      let b = [[0, 2, 3], [4, 5, 6]].toTensor
+      let ca = a.asType(Complex64)
+      let cb = b.asType(Complex64)
+
+      check:
+        # Tensor[int]
+        all(a) == true
+        all(b) == false
+        # Tensor[float]
+        all(a.asType(float)) == true
+        all(b.asType(float)) == false
+        # Tensor[bool]
+        all(a !=. 0) == true
+        all(b >. 0) == false
+        # Tensor[complex]
+        all(ca) == true
+        all(cb) == false
+
+    test "any":
+      let a = [0, 0, 1].toTensor
+      let b = [0, 0, 0].toTensor
+      let ca = a.asType(Complex64)
+      let cb = b.asType(Complex64)
+
+      check:
+        # Tensor[int]
+        any(a) == true
+        any(b) == false
+        # Tensor[float]
+        any(a.asType(float)) == true
+        any(b.asType(float)) == false
+        # Tensor[bool]
+        any(a !=. 0) == true
+        any(b >. 0) == false
+        # Tensor[complex]
+        any(ca) == true
+        any(cb) == false
 
 main()
 GC_fullCollect()

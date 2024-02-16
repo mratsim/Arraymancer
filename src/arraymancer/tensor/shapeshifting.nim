@@ -17,8 +17,8 @@ import  ./private/p_shapeshifting,
         ./private/p_accessors_macros_write,
         ./private/p_empty_tensors,
         ./accessors,
-        ./data_structure, ./init_cpu, ./higher_order_applymap,
-        sequtils
+        ./data_structure, ./init_cpu, ./higher_order_applymap
+import std/[sequtils, math]
 
 # NOTE: Procs that accepts shape are duplicated to accept both varargs and Metadata
 # until either https://github.com/nim-lang/Nim/issues/6528 or https://github.com/nim-lang/Nim/issues/6529
@@ -79,6 +79,19 @@ proc reshape*(t: Tensor, new_shape: Metadata): Tensor {.noinit.} =
   ## Returns:
   ##   - a tensor with the same data but reshaped.
   reshapeImpl(t, new_shape, result)
+
+proc flatten*(t: Tensor): Tensor {.noinit,inline.} =
+  ## Flatten a tensor, returning a rank-1 tensor with the same data as the input.
+  ##
+  ## This is the same as `t.reshape([t.size.int])`. Therefore, if possible no
+  ## data copy is done and the returned tensor shares data with the input.
+  ## If input is not contiguous, this is not possible and a copy will be made.
+  ##
+  ## Input:
+  ##   - a tensor
+  ## Returns:
+  ##   - a tensor rank-1 tensor with the same data as the input.
+  t.reshape([t.size.int])
 
 proc broadcast*[T](t: Tensor[T], shape: varargs[int]): Tensor[T] {.noinit,noSideEffect.}=
   ## Explicitly broadcast a tensor to the specified shape.
@@ -176,7 +189,7 @@ proc broadcast2*[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]] {.noSideEffect, noi
 
 
 proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noinit,noSideEffect.}=
-  ## Permute dimensions of a tensors
+  ## Permute dimensions of a tensor
   ## Input:
   ##   - a tensor
   ##   - the new dimension order
@@ -190,7 +203,7 @@ proc permute*(t: Tensor, dims: varargs[int]): Tensor {.noinit,noSideEffect.}=
   result = t
   permuteImpl(result, dims)
 
-proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T]  {.noinit.}=
+proc concat*[T](t_list: varargs[Tensor[T]], axis: int): Tensor[T] {.noinit.} =
   ## Concatenate tensors
   ## Input:
   ##   - Tensors
@@ -302,3 +315,126 @@ func chunk*[T](t: Tensor[T], nb_chunks: Positive, axis: Natural): seq[Tensor[T]]
       result[i] = t.atAxisIndex(axis, i * chunk_size + i, chunk_size + 1)
     else:
       result[i] = t.atAxisIndex(axis, i * chunk_size + remainder, chunk_size)
+
+proc rollRank1Tensor[T](t: Tensor[T], shift: int): Tensor[T] {.noinit,inline.} =
+  let shift = floorMod(shift, t.size)
+  if shift == 0:
+    return t
+  let shiftedLen = t.size - shift
+  result = newTensorUninit[T](t.shape)
+  result[shift ..< t.size] = t[0 ..< shiftedLen]
+  result[0 ..< shift] = t[shiftedLen ..< t.size]
+
+proc roll*[T](t: Tensor[T], shift: int): Tensor[T] {.noinit.} =
+  ## Roll elements of tensor "globally" (i.e. across all axes).
+  ##
+  ## This takes a tensor, flattens it, rolls the elements `shift` positions
+  ## (taking the last `shift` elements of the flattened tensor and putting
+  ## them at the beginning of the flattened tensor), and then reshapes the
+  ## rolled tensor back to the original shape.
+  ##
+  ## This is different from the version of this proc that accepts an axis,
+  ## which rolls _slices_ of a tensor taken along the selected axis.
+  ##
+  ## Input:
+  ##   - t: Input tensor.
+  ##   - shift: Integer number of places by which elements are shifted.
+  ## Return:
+  ##   - Output tensor, with the same shape as `a`.
+  ##
+  ## Examples:
+  ## > let x = arange(5)
+  ## > echo x.roll(2)
+  ## > Tensor[system.int] of shape "[5]" on backend "Cpu"
+  ## >     3     4     0     1     2
+  ## > echo x.roll(-2)
+  ## > Tensor[system.int] of shape "[5]" on backend "Cpu"
+  ## >     2     3     4     0     1
+  ## > let x2 = arange(5).reshape(2, 5)
+  ## > echo x2
+  ## > # Tensor[system.int] of shape "[2, 5]" on backend "Cpu"
+  ## > # |0      1     2     3     4|
+  ## > # |5      6     7     8     9|
+  ## > echo roll(x2, 1)
+  ## > # Tensor[system.int] of shape "[2, 5]" on backend "Cpu"
+  ## > # |9      0     1     2     3|
+  ## > # |4      5     6     7     8|
+  ## > echo roll(x2, -1)
+  ## > # Tensor[system.int] of shape "[2, 5]" on backend "Cpu"
+  ## > # |1      2     3     4     5|
+  ## > # |6      7     8     9     0|
+  rollRank1Tensor(t.flatten, shift).reshape(t.shape)
+
+proc roll*[T](t: Tensor[T], shift: int, axis: Natural): Tensor[T] {.noinit.} =
+  ## Roll slices of a tensor along a given axis.
+  ##
+  ## Slices that roll beyond the last position are re-introduced at
+  ## the first.
+  ##
+  ## Note that calling this proc with a rank-1 tensor, will simply check that
+  ## `axis` == 0 and then call the (axis-less) version of this proc.
+  ##
+  ## Input:
+  ##   - t : Input tensor.
+  ##   - shift : Integer number of places by which elements are shifted.
+  ##   - axis : an axis (dimension).
+  ## Return:
+  ##   - Output tensor, with the same shape as `t`.
+  ##
+  ## Notes:
+  ##  - numpy's `roll` also supports passing a list of shifts and axis, while
+  ##    this proc doesn't. However, you can achieve the same effect by calling
+  ##    roll multiple times in a row (i.e. `np.roll(t, [1, 2], axis=[0, 1])` is
+  ##    equivalent to `t.roll(1, axis=0).roll(2, axis=1)` which is arguably
+  ##    more clear).
+  ##
+  ## Examples:
+  ## > let x = arange(5)
+  ## > echo x.roll(2, axis=0)
+  ## > Tensor[system.int] of shape "[5]" on backend "Cpu"
+  ## >     3     4     0     1     2
+  ## > echo x.roll(-2, axis=0)
+  ## > Tensor[system.int] of shape "[5]" on backend "Cpu"
+  ## >     2     3     4     0     1
+  ##
+  ## > let x2 = arange(5).reshape(2, 5)
+  ## > echo x2
+  ## > # Tensor[system.int] of shape "[2, 5]" on backend "Cpu"
+  ## > # |0      1     2     3     4|
+  ## > # |5      6     7     8     9|
+  ## > echo roll(x2, 1, axis=0)
+  ## > # Tensor[system.int] of shape "[2, 5]" on backend "Cpu"
+  ## > # |5      6     7     8     9|
+  ## > # |0      1     2     3     4|
+  ## > echo roll(x2, -1, axis=0)
+  ## > # Tensor[system.int] of shape "[2, 5]" on backend "Cpu"
+  ## > # |5      6     7     8     9|
+  ## > # |0      1     2     3     4|
+  ## > echo roll(x2, 1, axis=1)
+  ## > # Tensor[system.int] of shape "[2, 5]" on backend "Cpu"
+  ## > # |4      0     1     2     3|
+  ## > # |9      5     6     7     8|
+  ## > echo roll(x2, -1, axis=1)
+  ## > # Tensor[system.int] of shape "[2, 5]" on backend "Cpu"
+  ## > # |1      2     3     4     0|
+  ## > # |6      7     8     9     5|
+  ## > echo x2.roll(1, axis=0).roll(2, axis=1)
+  ## > Tensor[system.int] of shape "[2, 5]" on backend "Cpu"
+  ## > |8      9     5     6     7|
+  ## > |3      4     0     1     2|
+  if shift == 0 or t.rank == 0:
+    result = t
+  elif t.rank == 1:
+    doAssert axis == 0, "roll axis must be 0 for rank-1 tensors"
+    result = rollRank1Tensor(t, shift)
+  else:
+    doAssert axis < t.rank,
+      "roll axis (" & $axis & ") exceeds input tensor rank (" & $t.rank & ")"
+    var rolled_slices = newSeq[Tensor[T]](t.shape[axis])
+    let shift = floorMod(shift, t.shape[axis])
+    if shift == 0:
+      return t
+    for n, t_slice in enumerateAxis(t, axis = axis):
+      let result_idx = floorMod(n + shift, t.shape[axis])
+      rolled_slices[result_idx] = t_slice
+    result = concat(rolled_slices, axis)

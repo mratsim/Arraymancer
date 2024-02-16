@@ -330,7 +330,7 @@ iterator zipAxis*[T, U](a: Tensor[T], b: Tensor[U], axis: int): tuple[a: Tensor[
   ##
   ## Usage:
   ##  .. code:: nim
-  ##     for subtensor in axis(a, b, 1):
+  ##     for subtensor in zipAxis(a, b, 1):
   ##       # do stuff
   dualAxisIterator(a, b, axis, 0, a.shape[axis])
 

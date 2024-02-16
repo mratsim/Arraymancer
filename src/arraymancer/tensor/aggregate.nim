@@ -521,3 +521,39 @@ proc nonzero*[T](arg: Tensor[T]): Tensor[int] =
         result[ax, k] = j
         inc ax
       inc k
+
+func all*[T](t: Tensor[T]): bool =
+  ## Returns true if all of the items in the input tensor are true or non-zero
+  ##
+  ## Input:
+  ##   - A tensor
+  ##
+  ## Returns:
+  ##   - True if at least one element is not zero
+  result = true
+  when T is Complex:
+    const zero: T = complex(0.0, 0.0)
+  else:
+    const zero: T = 0.T
+  for it in t:
+    if it == zero:
+      result = false
+      break
+
+func any*[T](t: Tensor[T]): bool =
+  ## Returns true if any of the items in the input tensor is true or non-zero
+  ##
+  ## Input:
+  ##   - A tensor
+  ##
+  ## Returns:
+  ##   - True if at least one element is not zero
+  result = false
+  when T is Complex:
+    const zero: T = complex(0.0, 0.0)
+  else:
+    const zero: T = 0.T
+  for it in t:
+    if it != zero:
+      result = true
+      break

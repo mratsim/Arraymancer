@@ -311,8 +311,8 @@ proc linspace*[T: SomeNumber](start, stop: T, num: int, endpoint = true): Tensor
   ## Resulting size is `num`.
   # TODO: proper exceptions
   when T is SomeFloat:
-    assert start.classify() notin {fcNan, fcInf, fcNegInf}
-    assert stop.classify() notin {fcNan, fcInf, fcNegInf}
+    assert start.classify() notin {fcNan, fcInf, fcNegInf}, "linspace start argument is NaN or +/-Inf"
+    assert stop.classify() notin {fcNan, fcInf, fcNegInf}, "linspace stop argument is NaN or +/-Inf"
   result = newTensorUninit[float](num)
   var
     step = start.float
@@ -342,3 +342,16 @@ proc logspace*[T: SomeNumber](start, stop: T,
   result = linspace(start, stop, num, endpoint = endpoint)
   for i in 0 ..< num:
     result[i] = pow(base, result[i])
+
+proc geomspace*[T: SomeFloat](start, stop: T,
+                              num: int,
+                              endpoint = true): Tensor[float] {.noinit, inline.} =
+  ## Creates a new 1d-tensor with `num` values linearly spaced in a log scale
+  ## (i.e. a geometric progression). This is similar to `logspace`, but with
+  ## the interval endpoints specified directly as [start, stop] (`endpoint == true`)
+  ## or in the half open interval [start, stop) (`endpoint == false`).
+  ##
+  ## Resulting size is `num`.
+  assert start > 0.0, "geomspace start argument must be positive"
+  assert stop > 0.0, "geomspace stop argument must be positive"
+  result = logspace(log10(start), log10(stop), num, endpoint = endpoint)

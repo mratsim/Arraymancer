@@ -3,6 +3,8 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import ../tensor
+import ./helpers/triangular
+import std/sequtils
 
 proc hilbert*(n: int, T: typedesc[SomeFloat]): Tensor[T] =
   ## Generates an Hilbert matrix of shape [N, N]
@@ -59,8 +61,8 @@ proc diagonal*[T](a: Tensor[T], k = 0, anti = false): Tensor[T] {.noInit.} =
   ## Result:
   ##      - A copy of the diagonal elements as a rank-1 tensor
   assert a.rank == 2, "diagonal() only works on matrices"
-  assert k < a.shape[0], &"Diagonal index ({k=}) exceeds matrix height ({a.shape[0]})"
-  assert k < a.shape[1], &"Diagonal index ({k=}) exceeds matrix width ({a.shape[1]})"
+  assert k < a.shape[0], &"Diagonal index ({k=}) exceeds the output matrix height ({a.shape[0]})"
+  assert k < a.shape[1], &"Diagonal index ({k=}) exceeds the output matrix width ({a.shape[1]})"
   let size = min(a.shape[0], a.shape[1]) - abs(k)
   result = newTensor[T](size)
 
@@ -156,7 +158,7 @@ proc diag*[T](d: Tensor[T], k = 0, anti = false): Tensor[T] {.noInit.} =
 
 proc identity*[T](n: int): Tensor[T] {.noInit.} =
   ## Return an identity matrix (i.e. 2-D tensor) of size `n`
-  ## 
+  ##
   ## The identity matrix is a square 2-D tensor with ones on the main diagonal and zeros elsewhere.
   ## This is basically the same as calling `eye(n, n)`.
   ##
@@ -176,3 +178,86 @@ proc eye*[T](shape: varargs[int]): Tensor[T] {.noInit.} =
   doAssert shape.len == 2, "eye() takes exactly two arguments"
   result = zeros[T](shape)
   result.set_diagonal(ones[T](min(shape)))
+
+proc tri*[T](shape: Metadata, k: static int = 0, upper: static bool = false): Tensor[T] {.noInit.} =
+  ## Return a 2-D tensor with ones at and below the given diagonal and zeros elsewhere
+  ##
+  ## Inputs:
+  ##      - The (rank-2) shape of the output matrix.
+  ##      - k: The sub-diagonal at and below which the tensor will be filled with ones.
+  ##           The default is 0.
+  ##      - upper: If true, the tensor will be filled with ones at and above the given
+  ##               diagonal. The default is false.
+  ## Result:
+  ##      - The constructed, rank-2 triangular tensor.
+  assert shape.len == 2, &"tri() requires a rank-2 shape as it's input but a shape of rank {shape.len} was passed"
+  assert k < shape[0], &"tri() received a diagonal index ({k=}) which exceeds the output matrix height ({shape[0]})"
+  assert k < shape[1], &"tri() received a diagonal index ({k=}) which exceeds the output matrix width ({shape[1]})"
+
+  result = ones[T](shape)
+  when upper:
+    result = triu(result, k = k)
+  else:
+    result = tril(result, k = k)
+
+proc tri*[T](shape_ax1, shape_ax0: int, k: static int = 0, upper: static bool = false): Tensor[T] {.noInit, inline.} =
+  ## Return a 2-D tensor with ones at and below the given diagonal and zeros elsewhere
+  ##
+  ## Inputs:
+  ##      - The shape of the output matrix.
+  ##      - k: The sub-diagonal at and below which the tensor will be filled with ones.
+  ##           The default is 0.
+  ##      - upper: If true, the tensor will be filled with ones at and above the given
+  ##               diagonal. The default is false.
+  ## Result:
+  ##      - The constructed, rank-2 triangular tensor
+  tri[T](toMetadata(shape_ax1, shape_ax0), k = k, upper = upper)
+
+# Also export the tril and triu functions which are also part of numpy's API
+# and which are implemented in helpers/triangular.nim
+export tril, triu
+
+type MeshGridIndexing* = enum xygrid, ijgrid
+
+proc meshgrid*[T](t_list: varargs[Tensor[T]], indexing = MeshGridIndexing.xygrid):
+    seq[Tensor[T]] {.noinit.} =
+  ## Return a sequence of coordinate matrices from coordinate vectors.
+  ##
+  ## Make N-D coordinate tensors for vectorized evaluations of N-D scalar/vector
+  ## fields over N-D grids, given one-dimensional coordinate tensors x1, x2,..., xn.
+  ##
+  ## Inputs:
+  ## - xi: The coordinate tensors. Each vector must be a rank-1 tensor.
+  ## - indexing: Cartesian (`xygrid`, default) or matrix (`ijgrid`) indexing of the output.
+  ##             The indexing mode only affects the first 2 output Tensors.
+  ##             In the 2-D case with inputs of length M and N, the outputs are of shape
+  ##             (N, M) for `xygrid` indexing and (M, N) for `ijgrid` indexing.
+  ##             In the 3-D case with inputs of length M, N and P, outputs are of shape
+  ##             (N, M, P) for `xygrid` indexing and (M, N, P) for `ijgrid` indexing.
+  ## Result:
+  ## - List of N meshgrid N-dimensional Tensors
+  ##   For tensors x1, x2,..., xn with lengths Ni=len(xi), returns (N1, N2, N3,..., Nn)
+  ##   shaped tensors if indexing=`ijgrid` or (N2, N1, N3,..., Nn) shaped tensors if
+  ##   indexing=`xygrid` with the elements of xi repeated to fill the matrix along
+  ##   the first dimension for x1, the second for x2 and so on.
+  ##
+  ## Notes:
+  ## - This function follows and implements the `numpy.meshgrid` API.
+
+  let t_list = if indexing == MeshGridIndexing.xygrid:
+      # In xy mode, the first two dimensions are swapped before broadcasting
+      @[t_list[1], t_list[0]] & t_list[2..^1]
+    else:
+      t_list.toSeq
+  result = newSeq[Tensor[T]](t_list.len)
+  var out_shape = t_list.mapIt(it.size.int)
+  let dims = repeat(1, t_list.len)
+  var n = 0
+  for t in t_list:
+    var item_shape = dims
+    item_shape[n] = t.size.int
+    result[n] = broadcast(t.reshape(item_shape), out_shape)
+    inc n
+  if indexing == MeshGridIndexing.xygrid:
+    # In xy mode, we must swap back the first two dimensions after broadcast
+    result = @[result[1], result[0]] & result[2..^1]

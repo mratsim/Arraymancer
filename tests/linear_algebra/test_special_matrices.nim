@@ -22,6 +22,7 @@ proc main() =
                             [0.0, 0.0, 1.0, 0.0]].toTensor
         check:
           eye == expected_eye
+
     test "Diagonal Matrix creation (diag)":
       block:
         # Issue: should implement anti?
@@ -41,7 +42,7 @@ proc main() =
           square_diag == expected_square_diag
           upper1_diag == expected_upper1_diag
           lower1_diag == expected_lower1_diag
-        
+
     test "Get diagonal":
       block:
         let a = arange(4*5).reshape(4, 5)
@@ -68,6 +69,7 @@ proc main() =
           a.diagonal(anti=true) == expected_center_antidiagonal
           a.diagonal(-1, anti=true) == expected_lower1_antidiagonal
           a.diagonal(-2, anti=true) == expected_lower2_antidiagonal
+
     test "Set diagonal":
       block:
         var a = zeros[int](3, 4).with_diagonal([10, 20, 30].toTensor, 1)
@@ -91,6 +93,98 @@ proc main() =
                           [  1, -10,   0]].toTensor
         check:
           a == expected_a
+
+    test "Triangular Matrices":
+      block:
+        let expected_t1 = [[1.0, 0.0, 0.0],
+                           [1.0, 1.0, 0.0],
+                           [1.0, 1.0, 1.0]].toTensor
+        let expected_t2 = [[1.0, 1.0, 1.0],
+                           [0.0, 1.0, 1.0],
+                           [0.0, 0.0, 1.0]].toTensor
+        let expected_t3 = [[0.0, 1.0, 1.0],
+                           [0.0, 0.0, 1.0],
+                           [0.0, 0.0, 0.0]].toTensor
+        let t1 = tri[float](3, 3)
+        let t2 = tri[float](3, 3, upper = true)
+        let t3 = tri[float](3, 3, k=1, upper = true)
+
+        let t1b = tri[float](t1.shape)
+        let t2b = tri[float](t1.shape, upper = true)
+        let t3b = tri[float](t1.shape, k = 1, upper = true)
+
+        check:
+          t1 == expected_t1
+          t2 == expected_t2
+          t3 == expected_t3
+          t1b == expected_t1
+          t2b == expected_t2
+          t3b == expected_t3
+
+  suite "meshgrid":
+    test "meshgrid-2D":
+      block:
+        let expected_xy_x = [[0, 1],
+                             [0, 1],
+                             [0, 1]].toTensor
+        let expected_xy_y = [[2, 2],
+                             [3, 3],
+                             [4, 4]].toTensor
+        let expected_ij_x = [[0, 0, 0],
+                             [1, 1, 1]].toTensor
+        let expected_ij_y = [[2, 3, 4],
+                             [2, 3, 4]].toTensor
+        let xy = meshgrid(arange(2), arange(2, 5), indexing=xygrid)
+        let ij = meshgrid(arange(2), arange(2, 5), indexing=ijgrid)
+
+        check:
+          xy == @[expected_xy_x, expected_xy_y]
+          ij == @[expected_ij_x, expected_ij_y]
+
+    test "meshgrid-3D":
+      block:
+        let expected_xy_x = [[[0, 0, 0, 0],
+                             [1, 1, 1, 1]],
+                            [[0, 0, 0, 0],
+                             [1, 1, 1, 1]],
+                            [[0, 0, 0, 0],
+                             [1, 1, 1, 1]]].toTensor
+        let expected_xy_y = [[[2, 2, 2, 2],
+                              [2, 2, 2, 2]],
+                             [[3, 3, 3, 3],
+                              [3, 3, 3, 3]],
+                             [[4, 4, 4, 4],
+                              [4, 4, 4, 4]]].toTensor
+        let expected_xy_z = [[[5, 6, 7, 8],
+                              [5, 6, 7, 8]],
+                             [[5, 6, 7, 8],
+                              [5, 6, 7, 8]],
+                             [[5, 6, 7, 8],
+                              [5, 6, 7, 8]]].toTensor
+        let expected_ij_x = [[[0, 0, 0, 0],
+                              [0, 0, 0, 0],
+                              [0, 0, 0, 0]],
+                             [[1, 1, 1, 1],
+                              [1, 1, 1, 1],
+                              [1, 1, 1, 1]]].toTensor
+        let expected_ij_y = [[[2, 2, 2, 2],
+                              [3, 3, 3, 3],
+                              [4, 4, 4, 4]],
+                             [[2, 2, 2, 2],
+                              [3, 3, 3, 3],
+                              [4, 4, 4, 4]]].toTensor
+        let expected_ij_z = [[[5, 6, 7, 8],
+                              [5, 6, 7, 8],
+                              [5, 6, 7, 8]],
+                             [[5, 6, 7, 8],
+                              [5, 6, 7, 8],
+                              [5, 6, 7, 8]]].toTensor
+        let xy = meshgrid(arange(2), arange(2, 5), arange(5, 9), indexing=xygrid)
+        let ij = meshgrid(arange(2), arange(2, 5), arange(5, 9), indexing=ijgrid)
+
+        check:
+          xy == @[expected_xy_x, expected_xy_y, expected_xy_z]
+          ij == @[expected_ij_x, expected_ij_y, expected_ij_z]
 
 
 main()

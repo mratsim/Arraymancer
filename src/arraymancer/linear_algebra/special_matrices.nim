@@ -34,21 +34,90 @@ proc hilbert*(n: int, T: typedesc[SomeFloat]): Tensor[T] =
   # TODO: scipy has a very fast hilbert matrix generation
   #       via Hankel Matrix and fancy 2D indexing
 
-proc vandermonde*[T](x: Tensor[T], order: int): Tensor[float] =
-  ## Returns a Vandermonde matrix of the input `x` up to the given `order`.
+proc vandermonde*[T](x: Tensor[T], orders: Tensor[SomeNumber]): Tensor[float] =
+  ## Returns a "Generalized" Vandermonde matrix of the input `x` over the given `orders`
   ##
-  ## A vandermonde matrix consists of the input `x` split into multiple
-  ## rows where each row contains all powers from 0 to `order` of `x_i`.
+  ## A "generalized" Vandermonde matrix consists of the input `x` split into
+  ## multiple rows where each row contains the powers of `x_i` elevated to each
+  ## of the elements of the `orders` tensor.
   ##
   ## `V_ij = x_i ^ order_j`
   ##
-  ## where `order_j` runs from 0 to `order`.
+  ## Inputs:
+  ##   - x: The input tensor `x` (which must be a rank-1 tensor)
+  ##   - orders: The "exponentes" tensor (which must also be a rank-1 tensor)
+  ## Result:
+  ##   - The constructed Vandermonde matrix
   assert x.squeeze.rank == 1
   let x = x.squeeze.asType(float)
-  result = newTensorUninit[float]([x.size.int, order.int])
-  let orders = arange(order.float)
+  result = newTensorUninit[float]([x.size.int, orders.size])
   for i, ax in enumerateAxis(result, axis = 1):
-    result[_, i] = (x ^. orders[i]).unsqueeze(axis = 1)
+    result[_, i] = (x ^. orders[i].float).unsqueeze(axis = 1)
+
+proc vandermonde*[T](x: Tensor[T], order: int = -1, increasing = true): Tensor[float] =
+  ## Returns a Vandermonde matrix of the input `x` up to the given `order`
+  ##
+  ## A Vandermonde matrix consists of the input `x` split into multiple
+  ## rows where each row contains all powers of `x_i` from 0 to `order-1`
+  ## (by default) or from `order-1` down to 0 (if `increasing` is set to false).
+  ##
+  ## `V_ij = x_i ^ order_j`
+  ##
+  ## where `order_j` runs from 0 to `order-1` or from `order-1` down to 0.
+  ##
+  ## Inputs:
+  ##   - x: The input tensor `x` (which must be a rank-1 tensor)
+  ##   - order: the order of the Vandermonde matrix. If not provided,
+  ##     (or non positive) the order is set to the size of `x`.
+  ##   - increasing: If true, the powers of `x_i` will run from 0 to `order-1`,
+  ##                 otherwise they will run from `order-1` down to 0.
+  ## Result:
+  ##   - The constructed Vandermonde matrix
+  let order = if order > 0: order else: x.size.int
+  let orders = if increasing:
+    arange(order.float)
+  else:
+    arange((order - 1).float, -1.0, -1.0)
+  vandermonde(x, orders)
+
+proc vandermonde*(order: int, increasing = true): Tensor[float] {.inline.} =
+  ## Returns a "square" Vandermonde matrix of the given `order`
+  ##
+  ## A square Vandermonde matrix is a Vandermonde matrix of the given order
+  ## whose input tensor is `arange(order)`.
+  ##
+  ## `V_ij = x_i ^ order_j`
+  ##
+  ## where `order_j` runs from 0 to `order-1` or from `order-1` down to 0.
+  ##
+  ## Inputs:
+  ##   - order: the order of the Vandermonde matrix.
+  ##   - increasing: If true, the powers of `x_i` will run from 0 to `order-1`,
+  ##                 otherwise they will run from `order-1` down to 0.
+  ## Result:
+  ##   - The constructed Vandermonde matrix
+  let x = arange(order.float)
+  vandermonde(x, order, increasing = increasing)
+
+proc vander*[T](x: Tensor[T], order: int = -1, increasing = false): Tensor[float] {.inline.} =
+  ## Same as `vandermonde` but with `increasing` set to false by default
+  ##
+  ## This procedure is meant for compatibility with numpy, whose `vander()`
+  ## function defaults to increasing = false (as opposed to Arraymancer's
+  ## `vandermonde`, which defaults to increasing = true).
+  ##
+  ## See also: `vandermonde`
+  vandermonde(x, order, increasing = increasing)
+
+proc vander*(order: int = -1, increasing = false): Tensor[float] {.inline.} =
+  ## Same as the square `vandermonde` but with `increasing` set to false by default
+  ##
+  ## This procedure is meant for compatibility with numpy, whose `vander()`
+  ## function defaults to increasing = false (as opposed to Arraymancer's
+  ## `vandermonde`, which defaults to increasing = true).
+  ##
+  ## See also: `vandermonde`
+  vandermonde(order, increasing = increasing)
 
 proc diagonal*[T](a: Tensor[T], k = 0, anti = false): Tensor[T] {.noInit.} =
   ## Gets the k-th diagonal (or anti-diagonal) of a matrix

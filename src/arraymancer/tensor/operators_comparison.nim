@@ -114,7 +114,6 @@ proc `==.`*[T](t: Tensor[T], value : T): Tensor[bool] {.noinit.} =
   ##   - A tensor of boolean
   gen_broadcasted_scalar_comparison(`==`)
 
-
 proc `!=.`*[T](t: Tensor[T], value : T): Tensor[bool] {.noinit.} =
   ## Tensor element-wise inequality with scalar
   ## Returns:
@@ -144,6 +143,47 @@ proc `>.`*[T](t: Tensor[T], value : T): Tensor[bool] {.noinit.} =
   ## Returns:
   ##   - A tensor of boolean
   gen_broadcasted_scalar_comparison(`>`)
+
+
+# ###########################################
+# Broadcasted  scalar ops with reversed order
+
+template `==.`*[T](value : T, t: Tensor[T]): Tensor[bool] =
+  ## Element-wise scalar equality with tensor
+  ## Returns:
+  ##   - A tensor of boolean
+  t ==. value
+
+template `!=.`*[T](value : T, t: Tensor[T]): Tensor[bool] =
+  ## Element-wise scalar inequality with tensor
+  ## Returns:
+  ##   - A tensor of boolean
+  t !=. value
+
+template `<=.`*[T](value : T, t: Tensor[T]): Tensor[bool] =
+  ## Element-wise scalar smaller or equal than tensor
+  ## Returns:
+  ##   - A tensor of boolean
+  t >=. value
+
+template `<.`*[T](value : T, t: Tensor[T]): Tensor[bool] =
+  ## Element-wise scalar smaller than tensor
+  ## Returns:
+  ##   - A tensor of boolean
+  t >. value
+
+template `>=.`*[T](value : T, t: Tensor[T]): Tensor[bool] =
+  ## Element-wise scalar greater or equal than tensor
+  ## Returns:
+  ##   - A tensor of boolean
+  t <=. value
+
+template `>.`*[T](value : T, t: Tensor[T]): Tensor[bool] =
+  ## Element-wise scalar greater than tensor
+  ## Returns:
+  ##   - A tensor of boolean
+  t <. value
+
 
 # ##################################
 # broadcasted special float handling

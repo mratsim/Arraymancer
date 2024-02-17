@@ -163,7 +163,7 @@ proc main() =
         let expected = [1.0, 2.0, 3.0].toTensor()
         check: r == expected
 
-    test "Masked_fill":
+    test "Masked_fill with single value":
       # Numpy reference doc
       # https://docs.scipy.org/doc/numpy/reference/arrays.indexing.html#boolean-array-indexing
       # select non NaN
@@ -174,6 +174,7 @@ proc main() =
       let t = [[1.0, 2.0],
         [NaN, 3.0],
         [NaN, NaN]].toTensor
+
       block: # Single value masked fill
         var x = t.clone()
 
@@ -182,12 +183,34 @@ proc main() =
         let expected = [[1.0, 2.0], [-1.0, 3.0], [-1.0, -1.0]].toTensor()
         check: x == expected
 
-      block: # Multiple value masked fill
+      block: # Fill array/sequence mask with scalar value
         var x = t.clone()
 
-        x.masked_fill(x.isNaN, [-10.0, -20.0, -30.0].toTensor())
+        x.masked_fill(
+          [[false,  false],
+          [true, false],
+          [true, true]],
+          -1.0
+        )
 
-        let expected = [[1.0, 2.0], [-10.0, 3.0], [-20.0, -30.0]].toTensor()
+        let expected = [[1.0, 2.0], [-1.0, 3.0], [-1.0, -1.0]].toTensor()
+        check: x == expected
+
+    test "Masked_fill with multiple values (Tensor or openArray)":
+      let t = [[1.0, 2.0],
+        [NaN, 3.0],
+        [NaN, NaN]].toTensor
+      let expected = [[1.0, 2.0], [-10.0, 3.0], [-20.0, -30.0]].toTensor()
+
+      block: # Tensor mask
+        # Fill with tensor
+        var x = t.clone()
+        x.masked_fill(x.isNaN, [-10.0, -20.0, -30.0].toTensor())
+        check: x == expected
+
+        # Fill with openArray
+        x = t.clone()
+        x.masked_fill(x.isNaN, [-10.0, -20.0, -30.0])
         check: x == expected
 
         when compileOption("mm", "arc") or compileOption("mm", "orc"):
@@ -202,17 +225,25 @@ proc main() =
             exception_thrown_when_true_element_mask_count_exceeds_value_tensor_size = true
           check: exception_thrown_when_true_element_mask_count_exceeds_value_tensor_size
 
-      block: # Fill with regular arrays/sequences
+      block: # openArray mask
+        # Fill with tensor
         var x = t.clone()
-
         x.masked_fill(
           [[false,  false],
           [true, false],
           [true, true]],
-          -1.0
+          [-10.0, -20.0, -30.0].toTensor()
         )
+        check: x == expected
 
-        let expected = [[1.0, 2.0], [-1.0, 3.0], [-1.0, -1.0]].toTensor()
+        # Fill with openArray
+        x = t.clone()
+        x.masked_fill(
+          [[false,  false],
+          [true, false],
+          [true, true]],
+          [-10.0, -20.0, -30.0]
+        )
         check: x == expected
 
     test "Masked_axis_select":
@@ -255,7 +286,7 @@ proc main() =
                         [1, 1]].toTensor
         check r == expected
 
-    test "Masked_axis_fill with value":
+    test "Masked_axis_fill with single value":
       block: # Numpy
             # Fill all columns which sum up to greater than 1
             # with -10

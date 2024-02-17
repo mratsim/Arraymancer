@@ -33,6 +33,14 @@ proc main() =
         for j in 0 ..< axSq.size:
           check axSq[j] == pow(el.float, order.float)
           inc order
+      let vandermonde_3x3 = vandermonde(arange(3), 3)
+      let vander_3x3 = vander(arange(3), 3)
+      check:
+        vandermonde_3x3 == vandermonde(3)
+        vandermonde_3x3 == vandermonde(arange(3))
+        vandermonde_3x3 == vandermonde(arange(3), arange(3))
+        vandermonde_3x3 == vander_3x3[_, _|-1]
+        vandermonde_3x3 == vander(arange(3), 3, increasing=true)
 
     test "Linear equation solver using least squares":
       block: # "Single equation"

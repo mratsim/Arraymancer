@@ -55,15 +55,26 @@ proc main() =
       check: t_van_complex[1..3,1..3] == t_test_complex
 
     test "Testing element-wise/broadcasted comparison":
-      let
-        a = [0, 2, 1, 3].toTensor
-        b = [0, 1, 2, 3].toTensor
-        a_complex = a.asType(Complex[float64])
-        b_complex = b.asType(Complex[float64])
+      block: # Element-wise Tensor-Tensor comparison
+        let
+          a = [0, 1, 2, 3].toTensor
+          b = [0, 2, 1, 3].toTensor
+          a_complex = a.asType(Complex[float64])
+          b_complex = b.asType(Complex[float64])
 
-      check: (a ==. b) == [true, false, false, true].toTensor
-      check: (a >. b)  == [false, true, false, false].toTensor
-      check: (a_complex ==. b_complex) == [true, false, false, true].toTensor
+        check: (a ==. b) == [true, false, false, true].toTensor
+        check: (a <. b)  == [false, true, false, false].toTensor
+        check: (a_complex ==. b_complex) == [true, false, false, true].toTensor
+
+      block: # Element-wise Tensor-Scalar and Scalar-Tensor comparison
+        let
+          a = [0, 1, 2, 3].toTensor
+          a_complex = a.asType(Complex[float64])
+
+        check: (a >=. 2)  == [false, false, true, true].toTensor
+        check: (2 <=. a)  == [false, false, true, true].toTensor
+        check: (a_complex ==. complex(2.0))  == [false, false, true, false].toTensor
+
 
 main()
 GC_fullCollect()

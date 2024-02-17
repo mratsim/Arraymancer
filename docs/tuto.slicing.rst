@@ -8,25 +8,9 @@ out of 2 rows), reversing dimensions and counting from the end.
 
 .. code:: nim
 
-    import math, arraymancer
+    import arraymancer
 
-    const
-        x = @[1, 2, 3, 4, 5]
-        y = @[1, 2, 3, 4, 5]
-
-    var
-        vandermonde: seq[seq[int]]
-        row: seq[int]
-
-    vandermonde = newSeq[seq[int]]()
-
-    for i, xx in x:
-        row = newSeq[int]()
-        vandermonde.add(row)
-        for j, yy in y:
-            vandermonde[i].add(xx^yy)
-
-    let foo = vandermonde.toTensor()
+    let foo = vandermonde(arange(1, 6), arange(1, 6)).asType(int)
 
     echo foo
 
@@ -136,25 +120,9 @@ an example and the explanation below.
 
 .. code:: nim
 
-    import math, arraymancer
+    import arraymancer
 
-    const
-        x = @[1, 2, 3, 4, 5]
-        y = @[1, 2, 3, 4, 5]
-
-    var
-        vandermonde: seq[seq[int]]
-        row: seq[int]
-
-    vandermonde = newSeq[seq[int]]()
-
-    for i, xx in x:
-        row = newSeq[int]()
-        vandermonde.add(row)
-        for j, yy in y:
-            vandermonde[i].add(xx^yy)
-
-    var foo = vandermonde.toTensor()
+    var foo = vandermonde(arange(1, 6), arange(1, 6)).asType(int)
 
     echo foo
 

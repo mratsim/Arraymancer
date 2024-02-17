@@ -58,9 +58,15 @@ proc toMetadataArray*(s: varargs[int]): Metadata {.inline.} =
     result.data[i] = s[i]
 
 func rank*[T](t: Tensor[T]): range[0 .. LASER_MAXRANK] {.inline.} =
+  # Number of dimensions in the tensor
   t.shape.len
 
 func size*[T](t: Tensor[T]): Natural {.inline.} =
+  # Total number of elements in the tensor (same as `len`, but returns a Natural)
+  t.shape.product
+
+func len*[T](t: Tensor[T]): int {.inline.} =
+  # Total number of elements in the tensor (same as `size`, but returns an int)
   t.shape.product
 
 # note: the finalizer has to be here for ARC to like it

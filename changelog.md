@@ -1,6 +1,26 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.28 Feb. 17 2023
+=====================================================
+
+- drops support for Nim v1.4. Many things are likely to still work,
+  but the CI tests for 1.4 have been removed.
+- add `Tensor.len` as an alias for `Tensor.size` returning an int
+  (#623 by @AngelEzquerra)
+- More missing numpy functions (#622 by @AngelEzquerra)
+- Missing numpy functions (#619 by @AngelEzquerra)
+- Missing math (#610 by @AngelEzquerra)
+- Add support for doing a masked fill from a tensor (#612 by @AngelEzquerra)
+- Add correlate 1D implementation (#618 by @AngelEzquerra)
+- Add `at_mut` template to enable masked_fill on slices (#613 by @AngelEzquerra)
+- Add 1D convolution (#617 by @AngelEzquerra)
+- Add bounds checks for fold and reduce axis inline operations (#608 by @AngelEzquerra)
+- Doc improvements (#609 by @AngelEzquerra)
+- Improve the error message when trying to assign to a slice of an
+  immutable tensor (#611 by @AngelEzquerra)
+- fix issue #606 about `arange` within a `[]` expression (#607 by @AngelEzquerra)
+
 Arraymancer v0.7.27 Oct. 19 2023
 =====================================================
 
@@ -8,13 +28,13 @@ Arraymancer v0.7.27 Oct. 19 2023
 - fix behavior of `squeeze` for 1 element tensors. Now correctly
   returns a rank 1 tensor instead of a broken rank 0 tensor (PR #600)
 - massively improve support for `Complex` tensors (PR #599 by
-  @ezquerra)
+  @AngelEzquerra)
 - implement span slices with negative steps to reverse tensors (PR
-  #598 by @ezquerra)
+  #598 by @AngelEzquerra)
 - add procedures to create and handle (anti-)diagonal matrices (PR
-  #597 by @ezquerra)
+  #597 by @AngelEzquerra)
 - add `item` function to get element of a single element tensor,
-  similar to `PyTorch / Flambeau`'s `item` (PR #600 by @ezquerra)
+  similar to `PyTorch / Flambeau`'s `item` (PR #600 by @AngelEzquerra)
 
 Arraymancer v0.7.26 Oct. 08 2023
 =====================================================

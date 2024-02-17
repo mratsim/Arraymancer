@@ -45,7 +45,7 @@ proc vandermonde*[T](x: Tensor[T], orders: Tensor[SomeNumber]): Tensor[float] =
   ##
   ## Inputs:
   ##   - x: The input tensor `x` (which must be a rank-1 tensor)
-  ##   - orders: The "exponentes" tensor (which must also be a rank-1 tensor)
+  ##   - orders: The "exponents" tensor (which must also be a rank-1 tensor)
   ## Result:
   ##   - The constructed Vandermonde matrix
   assert x.squeeze.rank == 1

@@ -80,7 +80,7 @@ template slicerMutImpl_oa[T](t: var Tensor[T], slices: openArray[SteppedSlice], 
 
   var sliced = t.slicer(slices)
   when compileOption("boundChecks"):
-    check_shape(sliced, oa)
+    check_shape(sliced, oa, relaxed_rank1_check=true)
 
   var data = toSeq(flatIter(oa))
   when compileOption("boundChecks"):
@@ -140,7 +140,7 @@ template slicerMutImpl_T[T](t: var Tensor[T], slices: openArray[SteppedSlice], t
   var sliced = t.slicer(slices)
 
   when compileOption("boundChecks"):
-    check_shape(sliced, t2)
+    check_shape(sliced, t2, relaxed_rank1_check=true)
 
   apply2_inline(sliced, t2):
     y

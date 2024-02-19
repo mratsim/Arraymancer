@@ -93,13 +93,24 @@ func check_start_end*(a, b: int, dim_size: int) {.inline.} =
                 ". Slicing must be done between 0 (inclusive) and " &
                 $dim_size & " (exclusive).")
 
-func check_shape*(a: Tensor; b: Tensor|openArray) {.inline.}=
+func check_shape*(a: Tensor; b: Tensor|openArray;
+    relaxed_rank1_check: static[bool] = false) {.inline.} =
   ## Compare shape
 
   when b is Tensor:
     let b_shape = b.shape
   else:
     let b_shape = b.getShape()
+
+  when relaxed_rank1_check:
+    # When b is a rank-1 tensor, just check its size (i.e. make a rank-1
+    # tensor of size n "fit" into a [1, n] rank-2 tensor, for example)
+    when b is Tensor:
+      let b_rank = b.rank
+    else:
+      let b_rank = b_shape.len
+    if b_rank == 1 and b.len == a.len:
+      return
 
   if unlikely(a.shape != b_shape):
     raise newException(IndexDefect, "Your tensors or openArrays do not have the same shape: " &

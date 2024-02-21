@@ -106,9 +106,12 @@ proc main() =
     test "Append":
       let a = toSeq(1..4).toTensor()
       let b = toSeq(5..8)
+      let expected = [1,2,3,4,5,6,7,8].toTensor()
 
-      check: a.append(b) == [1,2,3,4,5,6,7,8].toTensor()
-      check: a.append(b.toTensor()) == [1,2,3,4,5,6,7,8].toTensor()
+      check: a.append(5) == [1,2,3,4,5].toTensor()
+      check: a.append(5, 6, 7, 8) == expected
+      check: a.append(b) == expected
+      check: a.append(b.toTensor()) == expected
 
     test "Squeeze":
       block:

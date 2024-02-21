@@ -313,12 +313,12 @@ proc append*[T](t: Tensor[T], values: Tensor[T]): Tensor[T] {.noinit.} =
   result[0 ..< t.size] = t
   result[t.size ..< result.size] = values
 
-proc append*[T](t: Tensor[T], values: openArray[T]): Tensor[T] {.noinit.} =
-  ## Create a copy of an rank-1 input tensor with values appended to its end
+proc append*[T](t: Tensor[T], values: varargs[T]): Tensor[T] {.noinit.} =
+  ## Create a copy of an rank-1 input tensor with one or more values appended to its end
   ##
   ## Inputs:
   ##   - Rank-1 tensor of type T
-  ##   - An open array of values of type T
+  ##   - An open array or a list of values of type T
   ## Returns:
   ##   - A copy of the input tensor t with the extra values appended at the end.
   ## Notes:
@@ -328,14 +328,23 @@ proc append*[T](t: Tensor[T], values: openArray[T]): Tensor[T] {.noinit.} =
   ##   support the `axis` parameter. If you want to append values along a
   ##   specific axis, you should use `concat` instead.
   ## Examples:
+  ## - Append a single value
+  ## > echo append([1, 2, 3].toTensor, 4)
+  ## > # Tensor[system.int] of shape "[9]" on backend "Cpu"
+  ## > #    1     2     3     4
+  ## - Append a multiple values
   ## > echo append([1, 2, 3].toTensor, [4, 5, 6, 7])
   ## > # Tensor[system.int] of shape "[9]" on backend "Cpu"
   ## > #    1     2     3     4     5     6     7
-  ## >
+  ## - Append an openArray of values
+  ## > echo append([1, 2, 3].toTensor, [4, 5, 6, 7])
+  ## > # Tensor[system.int] of shape "[9]" on backend "Cpu"
+  ## > #    1     2     3     4     5     6     7
+  ## - Only rank-1 tensors are supported
   ## > echo append([[1, 2, 3], [4, 5, 6]].toTensor, [7, 8, 9])
   ## > # Error: unhandled exception: `t.rank == 1` append only works
   ## > # on rank-1 tensors but first input tensor has rank 2 [AssertionDefect]
-  ## >
+  ## - Flatten higher ranked tensors before appending
   ## > echo append([[1, 2, 3], [4, 5, 6]].toTensor.flatten, [7, 8, 9])
   ## > #    1     2     3     4     5     6     7     8     9
   doAssert t.rank == 1,

@@ -100,7 +100,7 @@ proc newTensorWith*[T](shape: Metadata, value: T): Tensor[T] {.noinit.} =
 
 # newTensor is defined in laser/tensor/initialization
 
-proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]): Tensor[T] {.noinit, inline.} =
+proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]|bool](shape: varargs[int]): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -110,7 +110,7 @@ proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]
   ##      - A zero-ed Tensor of the input shape on backend Cpu
   result = newTensor[T](shape)
 
-proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: Metadata): Tensor[T] {.noinit, inline.} =
+proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]|bool](shape: Metadata): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor filled with 0
   ##
   ## Input:
@@ -120,7 +120,7 @@ proc zeros*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: Metadata): T
   ##      - A zero-ed Tensor of the input shape on backend Cpu
   result = newTensor[T](shape)
 
-proc zeros_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noinit, inline.} =
+proc zeros_like*[T: SomeNumber|Complex[float32]|Complex[float64]|bool](t: Tensor[T]): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor filled with 0 with the same shape as the input
   ## Input:
   ##      - Shape of the Tensor
@@ -129,33 +129,33 @@ proc zeros_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]):
   ##      - A zero-ed Tensor of the same shape
   result = zeros[T](t.shape)
 
-proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: varargs[int]): Tensor[T] {.noinit, inline.} =
+proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]|bool](shape: varargs[int]): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
   ##      - Type of its elements
   ## Result:
   ##      - A one-ed Tensor of the same shape
-  when T is SomeNumber:
+  when T is SomeNumber | bool:
     result = newTensorWith[T](shape, 1.T)
   else:
     type F = T.T # Get the float subtype of Complex[T]
     result = newTensorWith[T](shape, complex(1.F, 0.F))
 
-proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]](shape: Metadata): Tensor[T] {.noinit, inline.} =
+proc ones*[T: SomeNumber|Complex[float32]|Complex[float64]|bool](shape: Metadata): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor filled with 1
   ## Input:
   ##      - Shape of the Tensor
   ##      - Type of its elements
   ## Result:
   ##      - A one-ed Tensor of the same shape
-  when T is SomeNumber:
+  when T is SomeNumber | bool:
     result = newTensorWith[T](shape, 1.T)
   else:
     type F = T.T
     result = newTensorWith[T](shape, complex(1.F, 0.F))
 
-proc ones_like*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T]): Tensor[T] {.noinit, inline.} =
+proc ones_like*[T: SomeNumber|Complex[float32]|Complex[float64]|bool](t: Tensor[T]): Tensor[T] {.noinit, inline.} =
   ## Creates a new Tensor filled with 1 with the same shape as the input
   ## and filled with 1
   ## Input:
@@ -228,7 +228,7 @@ proc randomTensor*[T:SomeFloat](shape: varargs[int], max: T): Tensor[T] {.noinit
   ##      - the max value possible (float)
   ##      - a tensor backend
   ## Result:
-  ##      - A tensor of the input shape filled with random value between 0 and max input value
+  ##      - A tensor of the input shape filled with random values between 0 and max input value
   randomTensorCpu(result, shape, max)
 
 proc randomTensor*(shape: varargs[int], max: int): Tensor[int] {.noinit.} =
@@ -240,7 +240,7 @@ proc randomTensor*(shape: varargs[int], max: int): Tensor[int] {.noinit.} =
   ##      - the max value possible (integer, inclusive)
   ##      - a tensor backend
   ## Result:
-  ##      - A tensor of the input shape filled with random value between 0 and max input value (excluded)
+  ##      - A tensor of the input shape filled with random values between 0 and max input value (excluded)
   randomTensorCpu(result, shape, max)
 
 proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] {.noinit.} =
@@ -252,8 +252,18 @@ proc randomTensor*[T](shape: varargs[int], slice: Slice[T]): Tensor[T] {.noinit.
   ##      - a range/slice
   ##      - a tensor backend
   ## Result:
-  ##      - A tensor of the input shape filled with random value in the slice range
+  ##      - A tensor of the input shape filled with random values in the slice range
   randomTensorCpu(result, shape, slice)
+
+proc randomTensor*[T: bool](shape: varargs[int]): Tensor[T] {.noinit.} =
+  ## Creates a new bool Tensor.
+  ##
+  ## Random seed can be set by importing ``random`` and ``randomize(seed)``
+  ## Input:
+  ##      - a shape
+  ## Result:
+  ##      - A tensor of the input shape filled with random bool values
+  randomTensorCpu(result, shape, false..true)
 
 proc randomTensor*[T](shape: varargs[int], sample_source: openArray[T]): Tensor[T] {.noinit.} =
   ## Creates a new Tensor filled with values uniformly sampled from ``sample_source``

@@ -4,7 +4,7 @@
 
 import ../tensor
 import ./helpers/triangular
-import std/sequtils
+import std/[sequtils, bitops]
 
 proc hilbert*(n: int, T: typedesc[SomeFloat]): Tensor[T] =
   ## Generates an Hilbert matrix of shape [N, N]
@@ -330,3 +330,82 @@ proc meshgrid*[T](t_list: varargs[Tensor[T]], indexing = MeshGridIndexing.xygrid
   if indexing == MeshGridIndexing.xygrid:
     # In xy mode, we must swap back the first two dimensions after broadcast
     result = @[result[1], result[0]] & result[2..^1]
+
+func int2bit_impl(value: int, n: int, msbfirst: bool): seq[bool] {.noinit, inline.} =
+  ## Convert an integer into binary sequence of size `n`
+  let largest_index = min(n-1, sizeof(value) * 8)
+  result = newSeq[bool](n)
+  if msbfirst:
+    for k in countdown(largest_index, 0):
+      result[n-1-k] = testBit(value, k)
+  else:
+    for k in countup(0, largest_index):
+      result[k] = testBit(value, k)
+
+proc int2bit*(value: int, n: int, msbfirst = true): Tensor[bool] =
+  ## Convert an integer into a "bit" tensor of size `n`
+  ##
+  ## A "binary" tensor is a tensor containing the bits that represent
+  ## the input integer.
+  ##
+  ## Inputs:
+  ##   - value: The input integer
+  ##   - n: The size of the output tensor. No check is done to ensure that `n`
+  ##        is large enough to represent `value`.
+  ##   - msbfirst: If `true` (the default), the first element will be the most
+  ##               significant bit (i.e. the msb will be first). Otherwise the
+  ##               least significant bit will be first.
+  ## Result:
+  ##   - The constructed "bit" tensor
+  ## Notes:
+  ##   This is similar to Matlab's `int2bit` (except that Matlab's version
+  ##   fills the bit tensors column-wise, while this fills them row-wise).
+  ##   It is also similar to (but more flexible than) numpy's `unpackbits`.
+  ## Examples:
+  ## .. code:: nim
+  ##   echo int2bit(12, 5)
+  ##   # Tensor[system.bool] of shape "[5]" on backend "Cpu"
+  ##   #    false     true     true    false    false
+  ##   echo int2bit(12, 5, msbfirst = false)
+  ##   # Tensor[system.bool] of shape "[5]" on backend "Cpu"
+  ##   #    false    false     true     true    false
+
+  int2bit_impl(value, n, msbfirst = msbfirst).toTensor
+
+proc int2bit*[T: SomeInteger](t: Tensor[T], n: int, msbfirst = true): Tensor[bool] {.noinit.} =
+  ## Convert an integer tensor of rank-X into a "bit" tensor of rank X+1
+  ##
+  ## The "bit" tensor corresponding to an integer tensor is a tensor in
+  ## which each integer element is replaced with its binary representation
+  ## (of size `n`). This requires increasing the rank of the output tensor
+  ## by 1, making the size of its last axis equal to `n`.
+  ##
+  ## Inputs:
+  ##   - value: The input tensor (of rank X)
+  ##   - n: The size of the output tensor. No check is done to ensure that `n`
+  ##        is large enough to represent `value`.
+  ##   - msbfirst: If `true` (the default), elements of the input tensor will
+  ##               be converted to bits by placing the most significant bit
+  ##               first. Otherwise the least significant bit will be first.
+  ## Result:
+  ##   - The constructed "bit" tensor (of rank X+1 and shape `t.shape` + [n])
+  ## Notes:
+  ##   This is similar to Matlab's `int2bit` (except that Matlab's version
+  ##   fills the bit tensors column-wise, while this fills them row-wise).
+  ##   It is also similar to (but more flexible than) numpy's `unpackbits`.
+  ## Examples:
+  ## .. code:: nim
+  ##   echo int2bit([12, 6], 5)
+  ##   # Tensor[system.bool] of shape "[2, 5]" on backend "Cpu"
+  ##   # |false     true     true    false    false|
+  ##   # |false    false     true     true    false|
+  ##   echo int2bit([12, 6], msbfirst = false)
+  ##   # Tensor[system.bool] of shape "[2, 5]" on backend "Cpu"
+  ##   # |false    false     true     true    false|
+  ##   # |false     true     true    false    false|
+  var shape = t.shape
+  shape.add(n)
+  result = newTensor[bool](t.size * n)
+  for idx in 0 ..< t.size:
+    result[n * idx ..< n * (idx + 1)] = int2bit(t[idx], n, msbfirst = msbfirst)
+  result = result.reshape(shape)

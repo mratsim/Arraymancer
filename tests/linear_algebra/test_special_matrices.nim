@@ -186,6 +186,21 @@ proc main() =
           xy == @[expected_xy_x, expected_xy_y, expected_xy_z]
           ij == @[expected_ij_x, expected_ij_y, expected_ij_z]
 
+  suite "int2bit":
+    test "Scalar value":
+      block:
+        check:
+          int2bit(12, 5) == [false, true, true, false, false].toTensor
+          int2bit(12, 5, msbfirst=false) == [false, false, true, true, false].toTensor
+
+    test "Tensor":
+      block:
+        check:
+          int2bit([12, 6].toTensor, 5) == [[false, true, true, false, false],
+                                           [false, false, true, true, false]].toTensor
+          int2bit([12, 6].toTensor, 5, msbfirst=false) == [[false, false, true, true, false],
+                                                           [false, true, true, false, false]].toTensor
+
 
 main()
 GC_fullCollect()

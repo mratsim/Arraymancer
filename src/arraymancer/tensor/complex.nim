@@ -8,18 +8,28 @@ import
   ./accessors,
   ./higher_order_applymap
 
-proc complex*[T: SomeFloat](re: Tensor[T], im: Tensor[T]): auto {.inline, noinit.} =
+proc complex*[T: SomeNumber](re: Tensor[T], im: Tensor[T]): auto {.inline, noinit.} =
   ## Create a new, complex Tensor by combining two real Tensors
   ##
   ## The first input Tensor is copied into the real part of the output Tensor,
   ## while the second input Tensor is copied into the imaginary part.
-  map2_inline(re, im, complex(x, y))
+  ##
+  ## If the inputs are integer Tensors, the output will be a Tensor of
+  ## Complex64 to avoid any loss of precision.
+  when T is SomeInteger:
+    map2_inline(re, im, complex(float64(x), float64(y)))
+  else:
+    map2_inline(re, im, complex(x, y))
 
 proc complex*[T: SomeNumber](re: Tensor[T]): auto {.inline, noinit.} =
   ## Create a new, complex Tensor from a single real Tensor
   ##
   ## The input Tensor is copied into the real part of the output Tensor,
   ## while the imaginary part is set to all zeros.
+  ##
+  ## If the input is an integer Tensor, the output will be a Tensor of
+  ## Complex64 to avoid any loss of precision. If you want to convert it
+  ## into a Tensor of Complex32, you can use `.asType(Complex32)` instead.
   ##
   ## Note that you can also convert a real tensor into a complex tensor by
   ## means of the `asType` procedure. However, this has the advantage that
@@ -28,7 +38,10 @@ proc complex*[T: SomeNumber](re: Tensor[T]): auto {.inline, noinit.} =
   ## Another advantage is that this function will automatically use the right
   ## Complex type for the output tensor, leading to more generic code. Use
   ## `asType` only when you want to control the type of the Complex tensor.
-  map_inline(re, complex(x))
+  when T is SomeInteger:
+    map_inline(re, complex(float64(x)))
+  else:
+    map_inline(re, complex(x))
 
 proc real*[T: SomeFloat](t: Tensor[Complex[T]]): Tensor[T] {.inline, noinit.} =
   ## Get the real part of a complex Tensor (as a float Tensor)

@@ -30,15 +30,30 @@ proc main() =
 
         check: c == expected_c
 
+      block: # Create a complex tensor from 2 real integer tensors
+        var re = [1, -10, 20].toTensor
+        var im = [-300, 20, -1].toTensor
+        var c = complex(re, im)
+        var expected_c = [
+          complex(1.0, -300.0),
+          complex(-10.0, 20.0),
+          complex(20.0, -1.0),
+        ].toTensor
+
+        check: c == expected_c
+
       block: # Single tensor to complex conversion
-        var re_float64 = [1.0, -10.0, 20.0].toTensor.asType(float64)
-        var re_float32 = [1.0, -10.0, 20.0].toTensor.asType(float32)
+        var re_int = [1, -10, 20].toTensor
+        var re_float64 = re_int.asType(float64)
+        var re_float32 = re_int.asType(float32)
+        var c64_from_int = complex(re_int)
         var c64 = complex(re_float64)
         var c32 = complex(re_float32)
         var expected_c64 = re_float64.asType(Complex64)
         var expected_c32 = re_float32.asType(Complex32)
 
         check: c64 == expected_c64
+        check: c64_from_int == expected_c64
         check: c32 == expected_c32
 
     test "Get the Real and Imaginary Components of a Complex Tensor":

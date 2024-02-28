@@ -8,12 +8,27 @@ import
   ./accessors,
   ./higher_order_applymap
 
-proc complex*[T: SomeFloat](re: Tensor[T], im: Tensor[T]): Tensor[Complex[T]] {.inline, noinit.} =
+proc complex*[T: SomeFloat](re: Tensor[T], im: Tensor[T]): auto {.inline, noinit.} =
   ## Create a new, complex Tensor by combining two real Tensors
   ##
   ## The first input Tensor is copied into the real part of the output Tensor,
-  ## while the second input Tensor is copied into the imaginary part
+  ## while the second input Tensor is copied into the imaginary part.
   map2_inline(re, im, complex(x, y))
+
+proc complex*[T: SomeNumber](re: Tensor[T]): auto {.inline, noinit.} =
+  ## Create a new, complex Tensor from a single real Tensor
+  ##
+  ## The input Tensor is copied into the real part of the output Tensor,
+  ## while the imaginary part is set to all zeros.
+  ##
+  ## Note that you can also convert a real tensor into a complex tensor by
+  ## means of the `asType` procedure. However, this has the advantage that
+  ## you can use the same function to combine a real and imaginary tensor
+  ## or a single real tensor into a complex tensor.
+  ## Another advantage is that this function will automatically use the right
+  ## Complex type for the output tensor, leading to more generic code. Use
+  ## `asType` only when you want to control the type of the Complex tensor.
+  map_inline(re, complex(x))
 
 proc real*[T: SomeFloat](t: Tensor[Complex[T]]): Tensor[T] {.inline, noinit.} =
   ## Get the real part of a complex Tensor (as a float Tensor)

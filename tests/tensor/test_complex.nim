@@ -18,16 +18,28 @@ import std/[unittest, math]
 proc main() =
   suite "Basic Complex Tensor Operations":
     test "Complex Tensor Creation":
-      var re = [1.0, -10, 20].toTensor
-      var im = [-300.0, 20, -1].toTensor
-      var c = complex(re, im)
-      var expected_c = [
-        complex(1.0, -300.0),
-        complex(-10.0, 20.0),
-        complex(20.0, -1.0),
-      ].toTensor
+      block:
+        var re = [1.0, -10, 20].toTensor
+        var im = [-300.0, 20, -1].toTensor
+        var c = complex(re, im)
+        var expected_c = [
+          complex(1.0, -300.0),
+          complex(-10.0, 20.0),
+          complex(20.0, -1.0),
+        ].toTensor
 
-      check: c == expected_c
+        check: c == expected_c
+
+      block: # Single tensor to complex conversion
+        var re_float64 = [1.0, -10.0, 20.0].toTensor.asType(float64)
+        var re_float32 = [1.0, -10.0, 20.0].toTensor.asType(float32)
+        var c64 = complex(re_float64)
+        var c32 = complex(re_float32)
+        var expected_c64 = re_float64.asType(Complex64)
+        var expected_c32 = re_float32.asType(Complex32)
+
+        check: c64 == expected_c64
+        check: c32 == expected_c32
 
     test "Get the Real and Imaginary Components of a Complex Tensor":
       var c = [

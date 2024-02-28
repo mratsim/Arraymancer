@@ -105,37 +105,37 @@ proc `/.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b
 # # Broadcasting Tensor-Scalar and Scalar-Tensor
 
 proc `+.`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, t: Tensor[T]): Tensor[T] {.noinit.} =
-  ## Broadcasted addition for tensor + scalar.
+  ## Broadcasted addition for tensor + scalar of the same type.
   returnEmptyIfEmpty(t)
   result = t.map_inline(x + val)
 
 proc `+.`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], val: T): Tensor[T] {.noinit.} =
-  ## Broadcasted addition for scalar + tensor.
+  ## Broadcasted addition for scalar + tensor of the same type.
   returnEmptyIfEmpty(t)
   result = t.map_inline(x + val)
 
 proc `-.`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, t: Tensor[T]): Tensor[T] {.noinit.} =
-  ## Broadcasted substraction for tensor - scalar.
+  ## Broadcasted substraction for tensor - scalar of the same type.
   returnEmptyIfEmpty(t)
   result = t.map_inline(val - x)
 
 proc `-.`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], val: T): Tensor[T] {.noinit.} =
-  ## Broadcasted substraction for scalar - tensor.
+  ## Broadcasted substraction for scalar - tensor of the same type.
   returnEmptyIfEmpty(t)
   result = t.map_inline(x - val)
 
 proc `*.`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, t: Tensor[T]): Tensor[T] {.noinit.} =
-  ## Broadcasted multiplication for tensor * scalar.
+  ## Broadcasted multiplication for tensor * scalar of the same type.
   returnEmptyIfEmpty(t)
   result = t.map_inline(x * val)
 
 proc `*.`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], val: T): Tensor[T] {.noinit.} =
-  ## Broadcasted multiplication for scalar * tensor.
+  ## Broadcasted multiplication for scalar * tensor of the same type.
   returnEmptyIfEmpty(t)
   result = t.map_inline(x * val)
 
 proc `/.`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, t: Tensor[T]): Tensor[T] {.noinit.} =
-  ## Broadcasted division
+  ## Broadcasted division for scalar / tensor of the same type.
   returnEmptyIfEmpty(t)
   when T is SomeInteger:
     result = t.map_inline(val div x)
@@ -143,7 +143,7 @@ proc `/.`*[T: SomeNumber|Complex[float32]|Complex[float64]](val: T, t: Tensor[T]
     result = t.map_inline(val / x)
 
 proc `/.`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], val: T): Tensor[T] {.noinit.} =
-  ## Broadcasted division
+  ## Broadcasted division for tensor / scalar of the same type.
   returnEmptyIfEmpty(t)
   when T is SomeInteger:
     result = t.map_inline(x div val)
@@ -151,12 +151,12 @@ proc `/.`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], val: T
     result = t.map_inline(x / val)
 
 proc `^.`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: Tensor[T], exponent: T): Tensor[T] {.noinit.} =
-  ## Compute element-wise exponentiation: tensor ^ scalar.
+  ## Compute element-wise exponentiation: tensor ^ scalar of the same type.
   returnEmptyIfEmpty(t)
   result = t.map_inline pow(x, exponent)
 
 proc `^.`*[T: SomeFloat|Complex[float32]|Complex[float64]](base: T, t: Tensor[T]): Tensor[T] {.noinit.} =
-  ## Broadcasted exponentiation: scalar ^ tensor.
+  ## Broadcasted exponentiation: scalar ^ tensor of the same type.
   returnEmptyIfEmpty(t)
   result = t.map_inline pow(base, x)
 
@@ -192,6 +192,119 @@ proc `/.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], v
   if t.size == 0:
     return
   t.apply_inline(x / val)
+
+
+# #################################################
+# # Mixed Complex64 tensor - real scalar operations
+#
+# It is always possible to operate on a Complex64 tensor with a real scalar
+# without loss of precission, so we allow it without explicit type conversion.
+# This makes complex tensor arithmetic more convenient to use.
+
+proc `+.`*[T: SomeNumber](val: T, t: Tensor[Complex64]): Tensor[Complex64] {.noinit, inline.} =
+  ## Broadcasted addition for real scalar + Complex64 tensor
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  complex_val +. t
+
+proc `+.`*[T: SomeNumber](t: Tensor[Complex64], val: T): Tensor[Complex64] {.noinit, inline.} =
+  ## Broadcasted addition for real scalar + Complex64 tensor
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  t +. complex_val
+
+proc `-.`*[T: SomeNumber](val: T, t: Tensor[Complex64]): Tensor[Complex64] {.noinit, inline.} =
+  ## Broadcasted subtraction for real scalar - Complex64 tensor
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  complex_val -. t
+
+proc `-.`*[T: SomeNumber](t: Tensor[Complex64], val: T): Tensor[Complex64] {.noinit, inline.} =
+  ## Broadcasted subtraction for real scalar - Complex64 tensor
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  t -. complex_val
+
+proc `*.`*[T: SomeNumber](val: T, t: Tensor[Complex64]): Tensor[Complex64] {.noinit, inline.} =
+  ## Broadcasted multiplication for real scalar * Complex64 tensor
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  complex_val *. t
+
+proc `*.`*[T: SomeNumber](t: Tensor[Complex64], val: T): Tensor[Complex64] {.noinit, inline.} =
+  ## Broadcasted multiplication for real scalar * Complex64 tensor
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  t *. complex_val
+
+proc `/.`*[T: SomeNumber](val: T, t: Tensor[Complex64]): Tensor[Complex64] {.noinit, inline.} =
+  ## Broadcasted division for real scalar / Complex64 tensor
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  complex_val /. t
+
+proc `/.`*[T: SomeNumber](t: Tensor[Complex64], val: T): Tensor[Complex64] {.noinit, inline.} =
+  ## Broadcasted division for real scalar / Complex64 tensor
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  t /. complex_val
+
+proc `^.`*[T: SomeNumber](val: T, t: Tensor[Complex64]): Tensor[Complex64] {.noinit, inline.} =
+  ## Broadcasted exponentiation for real scalar ^ Complex64 tensor
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  complex_val ^. t
+
+proc `^.`*[T: SomeNumber](t: Tensor[Complex64], val: T): Tensor[Complex64] {.noinit, inline.} =
+  ## Broadcasted exponentiation for real scalar ^ Complex64 tensor
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  t ^. complex_val
+
+proc `+.=`*[T: SomeNumber](t: var Tensor[Complex64], val: T) {.inline.} =
+  ## Complex64 tensor in-place addition with a real scalar.
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  t +.= complex_val
+
+proc `-.=`*[T: SomeNumber](t: var Tensor[Complex64], val: T) {.inline.} =
+  ## Complex64 tensor in-place subtraction of a real scalar.
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  t -.= complex_val
+
+proc `*.=`*[T: SomeNumber](t: var Tensor[Complex64], val: T) {.inline.} =
+  ## Complex64 tensor in-place multiplication with a real scalar.
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  t *.= complex_val
+
+proc `/.=`*[T: SomeNumber](t: var Tensor[Complex64], val: T) {.inline.} =
+  ## Complex64 tensor in-place division by a real scalar.
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  t /.= complex_val
+
+proc `^.=`*[T: SomeNumber](t: var Tensor[Complex64], val: T) {.inline.} =
+  ## Complex64 tensor in-place exponentiation by a real scalar.
+  ##
+  ## The scalar is automatically converted to Complex64 before the operation.
+  let complex_val = complex(float64(val))
+  t ^.= complex_val
 
 
 # ##############################################

@@ -366,6 +366,29 @@ proc main() =
                       [1.0/20.0],
                       [1.0/30.0]].toTensor.asType(Complex[float64])
 
+    test "Implicit tensor-scalar broadcasting - Tensor[Complex64] - scalar operations":
+      block:
+        let a_c = [10, 20, 30, 40].toTensor().reshape(4,1).asType(Complex[float64])
+
+        check: complex(2.0) +. a_c +. complex(3.0) == 2 +. a_c +. 3
+        check: complex(2.0) -. a_c -. complex(3.0) == 2 -. a_c -. 3
+        check: complex(2.0) *. a_c *. complex(3.0) == 2 *. a_c *. 3
+        check: complex(2.0) /. a_c /. complex(3.0) == 2 /. a_c /. 3
+        check: complex(0.5) ^. a_c ^. complex(2.0) == 0.5 ^. a_c ^. 2
+
+      block:
+        var a_c = complex([10.0, 20.0, 30.0, 40.0].toTensor,
+                          [1.0, 2.0, 3.0, 4.0].toTensor)
+
+        a_c +.= 2
+        a_c -.= 3.0
+        a_c *.= 4
+        a_c /.= 2.0
+        a_c ^.= 2
+        let expected = complex([320.0, 1428.0, 3328.0, 6020.0].toTensor,
+                               [72.0, 304.0, 696.0, 1248.0].toTensor)
+        check: a_c.mean_absolute_error(expected) < 1e-12
+
     test "Implicit broadcasting - Sigmoid 1 ./ (1 +. exp(-x)":
       block:
         proc sigmoid[T: SomeFloat](t: Tensor[T]): Tensor[T]=

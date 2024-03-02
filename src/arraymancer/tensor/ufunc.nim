@@ -42,32 +42,38 @@ proc asType*[T: SomeNumber, U: Complex](t: Tensor[T], typ: typedesc[U]): Tensor[
 # #############################################################
 # Autogen universal functions
 
-# Note, the makeUniversal/Local documentation gets duplicated in docs at each template call
-# And shouldn't use ##
-template makeUniversal*(func_name: untyped) =
-  # Lift an unary function into an exported universal function.
-  #
-  # Universal functions apply element-wise.
-  #
-  # ``makeUniversal`` does not work when the internal type of the Tensor changes,
-  # for example, a function "isEven: int -> bool".
-  # Use ``map`` in this case instead instead
+import std / [strutils, macros]
+macro genDocstring(name, suffix: untyped): untyped =
+  var text = """
+Applies `$#` to every element of the input tensor `t` and returns a copy.
+""" % name.strVal
+  if suffix.strVal.len > 0:
+    text.add "\n" & (suffix.strVal)
+  result = newNimNode(nnkCommentStmt)
+  result.strVal = text
+
+template makeUniversal*(func_name: untyped, docSuffix = "") =
+  ## Lift an unary function into an exported universal function.
+  ##
+  ## Universal functions apply element-wise.
+  ##
+  ## ``makeUniversal`` does not work when the internal type of the Tensor changes,
+  ## for example, a function "isEven: int -> bool".
+  ## Use ``map`` in this case instead instead
   proc func_name*[T](t: Tensor[T]): Tensor[T] {.noinit.} =
-    ## Auto-generated universal version of the function.
-    ##
-    ## The function can be used directly on tensors and will work element-wise.
+    genDocstring(func_name, docSuffix) # generate the doc string
     returnEmptyIfEmpty(t)
     t.map_inline(func_name(x))
   export func_name
 
 template makeUniversalLocal*(func_name: untyped) =
-  # Lift an unary function into a non-exported universal function.
-  #
-  # Universal functions apply element-wise.
-  #
-  # ``makeUniversalLocal`` does not work when the internal type of the Tensor changes,
-  # for example, a function "isEven: int -> bool".
-  # Use ``map`` in this case instead instead
+  ## Lift an unary function into a non-exported universal function.
+  ##
+  ## Universal functions apply element-wise.
+  ##
+  ## ``makeUniversalLocal`` does not work when the internal type of the Tensor changes,
+  ## for example, a function "isEven: int -> bool".
+  ## Use ``map`` in this case instead instead
   proc func_name[T](t: Tensor[T]): Tensor[T] {.noinit.} =
     returnEmptyIfEmpty(t)
     t.map_inline(func_name(x))

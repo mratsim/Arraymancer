@@ -80,14 +80,17 @@ template makeUniversalLocal*(func_name: untyped) =
 
 # Unary functions from Nim math library
 
-makeUniversal(fac)
+makeUniversal(fac,
+  docSuffix="Note that the scalar [fac](https://nim-lang.org/docs/math.html#fac%2Cint) function computes the factorial of its input, which must be a non-negative integer.")
 makeUniversal(isNaN)
 #makeUniversal(isPowerOfTwo)
 #makeUniversal(nextPowerOfTwo)
 #makeUniversal(countBits32)
 #makeUniversal(sum)
-makeUniversal(sqrt)
-makeUniversal(cbrt)
+makeUniversal(sqrt,
+  docSuffix="Note that the scalar [sqrt](https://nim-lang.org/docs/math.html#sqrt%2Cfloat64) function computes the square root of its input.")
+makeUniversal(cbrt,
+  docSuffix="Note that the scalar [cbrt](https://nim-lang.org/docs/math.html#cbrt%2Cfloat64) function computes the cube root of its input.")
 makeUniversal(ln)
 makeUniversal(log10)
 makeUniversal(log2)
@@ -104,14 +107,23 @@ makeUniversal(sinh)
 makeUniversal(sin)
 makeUniversal(tan)
 makeUniversal(tanh)
-makeUniversal(erf)
-makeUniversal(erfc)
-makeUniversal(lgamma)
-makeUniversal(gamma)
-makeUniversal(floor)
-makeUniversal(ceil)
-makeUniversal(trunc)
-makeUniversal(round)
+makeUniversal(erf,
+  docSuffix="Note that the scalar [erf](https://nim-lang.org/docs/math.html#erf%2Cfloat64) function computes the Gauss [error function](https://en.wikipedia.org/wiki/Error_function) of its input.")
+makeUniversal(erfc,
+  docSuffix="Note that the scalar [erfc](https://nim-lang.org/docs/math.html#erfc%2Cfloat64) function computes the [complementary error function](https://en.wikipedia.org/wiki/Error_function#Complementary_error_function) of its input.")
+makeUniversal(gamma,
+  docSuffix="Note that the scalar [gamma](https://nim-lang.org/docs/math.html#lgamma%2Cfloat64) function computes the [gamma function](https://en.wikipedia.org/wiki/Gamma_function) of its input.")
+makeUniversal(lgamma,
+  docSuffix="Note that the scalar [lgamma](https://nim-lang.org/docs/math.html#lgamma%2Cfloat64) function computes the natural logarithm of the [gamma function](https://en.wikipedia.org/wiki/Gamma_function) of its input.")
+makeUniversal(floor,
+  docSuffix="Note that the scalar [floor](https://nim-lang.org/docs/math.html#floor%2Cfloat64) function returns the largest integer not greater than its input to the decimal point.")
+makeUniversal(ceil,
+  docSuffix="Note that the scalar [ceil](https://nim-lang.org/docs/math.html#ceil%2Cfloat64) function returns the smallest integer not smaller than its input to the decimal point.")
+makeUniversal(trunc,
+  docSuffix="Note that the scalar [trunc](https://nim-lang.org/docs/math.html#trunc%2Cfloat64) function truncates its input to the decimal point.")
+makeUniversal(round,
+  docSuffix="Note that the scalar [round](https://nim-lang.org/docs/math.html#round%2Cfloat64) function rounds its input to the closest integer. \n" &
+  "Unlike nim's standard library version, this function does not take a `places` argument. If you need to round to a specific number of decimal places, use `map_inline` instead (e.g. `t.map_inline(round(x, places = 3))`).")
 #makeUniversal(splitDecimal)
 makeUniversal(degToRad)
 makeUniversal(radToDeg)

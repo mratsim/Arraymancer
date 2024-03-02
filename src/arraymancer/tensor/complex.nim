@@ -43,6 +43,21 @@ proc complex*[T: SomeNumber](re: Tensor[T]): auto {.inline, noinit.} =
   else:
     map_inline(re, complex(x))
 
+proc complex_imag*[T: SomeNumber](im: Tensor[T]): auto {.inline, noinit.} =
+  ## Create a new, imaginary Tensor from a single real Tensor
+  ##
+  ## The input Tensor is copied into the imaginary part of the output Tensor,
+  ## while the real part is set to all zeros.
+  ##
+  ## If the input is an integer Tensor, the output will be a Tensor of
+  ## Complex64 to avoid any loss of precision. If you want to convert it
+  ## into a Tensor of Complex32, you must convert the input to float32 first
+  ## by using `.asType(float32)`.
+  when T is SomeInteger:
+    map_inline(im, complex(float64(0.0), float64(x)))
+  else:
+    map_inline(im, complex(T(0.0), x))
+
 proc real*[T: SomeFloat](t: Tensor[Complex[T]]): Tensor[T] {.inline, noinit.} =
   ## Get the real part of a complex Tensor (as a float Tensor)
   t.map_inline(x.re)

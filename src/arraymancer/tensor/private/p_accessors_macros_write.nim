@@ -24,6 +24,13 @@ import  ../../laser/private/nested_containers,
 # #########################################################################
 # Slicing macros - write access
 
+## `RelaxedRankOne` is a CT variable exposed to the user to recover the old behavior
+## of how rank 1 tensors are treated in mutating slices.
+## If set to `false` using `-d:RelaxedRankOne=false`, slice assignments using rank 1
+## arrays / seqs / tensors have to match exactly. If it is `true`, only the number of
+## input elements have to match for a more convenient interface.
+const RelaxedRankOne* {.booldefine.} = true
+
 # #########################################################################
 # Setting a single value
 
@@ -80,7 +87,7 @@ template slicerMutImpl_oa[T](t: var Tensor[T], slices: openArray[SteppedSlice], 
 
   var sliced = t.slicer(slices)
   when compileOption("boundChecks"):
-    check_shape(sliced, oa)
+    check_shape(sliced, oa, relaxed_rank1_check = RelaxedRankOne)
 
   var data = toSeq(flatIter(oa))
   when compileOption("boundChecks"):
@@ -140,7 +147,7 @@ template slicerMutImpl_T[T](t: var Tensor[T], slices: openArray[SteppedSlice], t
   var sliced = t.slicer(slices)
 
   when compileOption("boundChecks"):
-    check_shape(sliced, t2)
+    check_shape(sliced, t2, relaxed_rank1_check = RelaxedRankOne)
 
   apply2_inline(sliced, t2):
     y

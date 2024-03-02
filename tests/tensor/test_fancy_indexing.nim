@@ -122,6 +122,31 @@ proc main() =
 
         check: y == exp
 
+    test "Masked assign tensor or openArray via fancy indexing":
+      block: # y[y > 50] = np.array([-100, -200])
+        var y = x.clone()
+        # Assing a tensor
+        y[y >. 50] = [-100, -200].toTensor()
+
+        let exp = [[ 4, -100,    2],
+                  [ 3,    4, -200],
+                  [ 1,    8,    7],
+                  [ 8,    6,    8]].toTensor()
+
+        check: y == exp
+
+      block: # y[y > 50] = [-100, -200]
+        var y = x.clone()
+        # Assing an openArray
+        y[y >. 50] = [-100, -200]
+
+        let exp = [[ 4, -100,    2],
+                  [ 3,    4, -200],
+                  [ 1,    8,    7],
+                  [ 8,    6,    8]].toTensor()
+
+        check: y == exp
+
     test "Masked axis assign value via fancy indexing":
       block: # y[:, y.sum(axis = 0) > 50] = -100
         var y = x.clone()
@@ -146,11 +171,11 @@ proc main() =
         check: y == exp
 
     test "Masked axis assign tensor via fancy indexing - invalid Numpy syntaxes":
-      block: # y[:, y.sum(axis = 0) > 50] = np.array([10, 20, 30, 40])
+      block: # y[:, y.sum(axis = 0) > 50] = np.array([[10, 20, 30, 40]])
         var y = x.clone()
 
         expect(IndexDefect):
-          y[_, y.sum(axis = 0) >. 50] = [10, 20, 30, 40].toTensor()
+          y[_, y.sum(axis = 0) >. 50] = [[10, 20, 30, 40]].toTensor()
 
     test "Masked axis assign broadcastable 1d tensor via fancy indexing":
       block: # y[:, y.sum(axis = 0) > 50] = np.array([[10], [20], [30], [40]])
@@ -172,6 +197,19 @@ proc main() =
                   [-10, -20, -30],
                   [  1,   8,   7],
                   [  8,   6,   8]].toTensor()
+
+        check: y == exp
+
+      block:
+        # Assigning a rank-1 tensor into an axis of the same size is supported
+        # Note that this is not supported by numpy
+        var y = x.clone()
+        y[_, y.sum(axis = 0) >. 50] = [10, 20, 30, 40].toTensor()
+
+        let exp = [[  4, 10, 10],
+                  [  3, 20, 20],
+                  [  1, 30, 30],
+                  [  8, 40, 40]].toTensor()
 
         check: y == exp
 

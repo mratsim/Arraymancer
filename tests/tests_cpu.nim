@@ -13,7 +13,7 @@
 # limitations under the License.
 
 {.push warning[Spacing]: off.}
-import ../src/arraymancer,
+import
         ./tensor/test_init,
         ./tensor/test_operators_comparison,
         ./tensor/test_accessors,

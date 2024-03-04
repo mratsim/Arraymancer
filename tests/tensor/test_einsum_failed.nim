@@ -1,4 +1,4 @@
-import ../../src/arraymancer
+# import ../../src/arraymancer
 
 # A list of tests that are supposed to fail and their error messages we
 # expect. Set the `toRun` argument to true to see a test fail

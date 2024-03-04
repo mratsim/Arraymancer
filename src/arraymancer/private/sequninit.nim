@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{.used.} # TODO, delete with Nim v2.2
+
 # from Nim https://github.com/nim-lang/Nim/pull/22739 on the stdlib provides a
 # `newSeqUninit` for types supporting `supportsCopyMem`
 when not declared(newSeqUninit):

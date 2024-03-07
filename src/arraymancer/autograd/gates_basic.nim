@@ -96,3 +96,45 @@ proc `-`*[TT](a, b: Variable[TT]): Variable[TT] =
   # Caching for backprop
   if a.is_grad_needed or b.is_grad_needed:
     result.sub_cache(a, b)
+
+type DivGate*[TT] {.final.} = ref object of Gate[TT]
+  a: Variable[TT]
+  b: Variable[TT]
+
+proc div_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = DivGate[TT](self)
+  let gradient = payload.variable.grad
+  result = newDiffs[TT](2)
+  result[0] = gradient /. self.b.value
+  result[1] = - gradient *. self.a.value /. self.b.value ^. 2
+
+proc div_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
+  # Gate
+  var gate: DivGate[TT]
+  new gate
+  gate.a = a
+  gate.b = b
+
+  # Result setup
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+
+  # Add to graph
+  register_node(
+    "Div",
+    gate,
+    div_backward_ag[TT],
+    result,
+    a, b
+  )
+
+proc `/.`*[TT](a, b: Variable[TT]): Variable[TT] =
+  when compileOption("boundChecks"):
+    check_ctx(a, b)
+
+  new result
+  result.context = a.context
+  result.value = a.value /. b.value
+
+  if a.is_grad_needed or b.is_grad_needed:
+    result.div_cache(a, b)

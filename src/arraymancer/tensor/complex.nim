@@ -92,3 +92,7 @@ proc conjugate*[T: Complex32 | Complex64](A: Tensor[T]): Tensor[T] =
   ## Return the element-wise complex conjugate of a tensor of complex numbers.
   ## The complex conjugate of a complex number is obtained by changing the sign of its imaginary part.
   A.map_inline(x.conjugate)
+
+proc cswap*[T: Complex32 | Complex64](t: Tensor[T]): Tensor[T] {.inline, noinit.} =
+  ## Swap the real and imaginary components of the elements of a complex Tensor
+  map_inline(t, complex(x.im, x.re))

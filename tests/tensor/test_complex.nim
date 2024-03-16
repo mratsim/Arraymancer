@@ -121,5 +121,20 @@ proc main() =
 
       check: c.conjugate == expected_c_conjugate
 
+    test "Complex Component Swap":
+      var c = [
+        complex(1.0, -300.0),
+        complex(-10.0, 20.0),
+        complex(20.0, -1.0),
+      ].toTensor
+
+      var expected_c_swapped = [
+        complex(-300.0, 1.0),
+        complex(20.0, -10.0),
+        complex(-1.0, 20.0),
+      ].toTensor
+
+      check: c.cswap == expected_c_swapped
+
 main()
 GC_fullCollect()

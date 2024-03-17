@@ -8,3 +8,12 @@ docs/build/
 .cache
 .DS_Store
 .vscode
+.idea/
+htmldocs/
+*.exe
+*.dll
+*.orig
+*.bak
+*.bck
+* - Copy.*
+* - Copy (?).*

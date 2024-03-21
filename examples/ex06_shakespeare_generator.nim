@@ -19,8 +19,8 @@
 # TODO: save/reload trained weights
 
 import
-  os, random, times, strformat, algorithm, sequtils, tables,
-  ../src/arraymancer
+  std / [os, random, times, strformat, algorithm, sequtils, tables]
+import ../src/arraymancer
 
 # ################################################################
 #
@@ -262,7 +262,15 @@ proc gen_text[T](
 
 proc main() =
   # Parse the input file
+  if paramCount() < 1:
+    echo "Please provide an input file path as an argument"
+    return
+
   let filePath = paramStr(1)
+  if not filePath.fileExists:
+    echo "Could not find input file"
+    return
+
   let txt_raw = readFile(filePath)
 
   echo "Checking the first hundred characters of your file"

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, sequtils
+import std / [unittest, sequtils]
 
 proc main() =
   suite "Autograd of basic operations":

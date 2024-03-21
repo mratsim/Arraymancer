@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import math, unittest
-import complex except Complex64, Complex32
+import std / unittest
 
 proc main() =
   suite "Universal functions":

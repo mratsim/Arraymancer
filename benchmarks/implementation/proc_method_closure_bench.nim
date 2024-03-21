@@ -1,4 +1,4 @@
-import times
+import std / times
 
 type FooBase = ref object {.inheritable.}
   dummy: int

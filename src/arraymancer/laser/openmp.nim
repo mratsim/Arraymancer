@@ -396,7 +396,7 @@ template omp_taskloop*(
   for `index`{.inject.} in `||`(0, length-1, omp_annotation):
     block: body
 
-import macros
+import std / macros
 macro omp_flush*(variables: varargs[untyped]): untyped =
   var listvars = "("
   for i, variable in variables:

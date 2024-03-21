@@ -23,7 +23,7 @@ import  ./data_structure,
         ./accessors_macros_syntax,
         ./algorithms,
         ./private/p_empty_tensors
-import std/[math, macros]
+import std / [math, macros]
 import complex except Complex64, Complex32
 
 # ### Standard aggregate functions
@@ -459,7 +459,7 @@ proc unwrap_period*[T: SomeNumber](t: Tensor[T], discont: T = -1, axis = -1, per
       temp[_] = tAxis +. pAxis
 
 when (NimMajor, NimMinor, NimPatch) > (1, 6, 0):
-  import std/atomics
+  import std / atomics
 proc nonzero*[T](arg: Tensor[T]): Tensor[int] =
   ## Returns the indices, which are non zero as a `Tensor[int]`.
   ##

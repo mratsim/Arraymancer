@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, os
+import std / [unittest, os]
 
 proc main() =
 

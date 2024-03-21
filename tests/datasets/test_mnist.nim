@@ -2,7 +2,7 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 
 import ../../src/arraymancer
-import unittest
+import std / unittest
 
 proc main() =
   suite "Datasets - MNIST":

@@ -1,5 +1,5 @@
 import ../../src/arraymancer except readCsv
-import unittest
+import std / unittest
 
 suite "Kernel Density Estimation - KDE":
   test "Simple test with single entries per kernel":

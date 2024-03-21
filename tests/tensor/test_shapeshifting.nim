@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, sequtils
-import complex except Complex64, Complex32
+import std / [unittest, sequtils]
 
 proc main() =
   suite "Shapeshifting":

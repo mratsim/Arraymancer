@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, sugar, sequtils
-import complex except Complex32, Complex64
+import std / [unittest, sugar, sequtils]
 
 type
   Nest = enum

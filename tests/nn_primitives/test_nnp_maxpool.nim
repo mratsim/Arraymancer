@@ -14,7 +14,7 @@
 
 
 import ../../src/arraymancer
-import unittest
+import std / unittest
 
 proc main() =
   suite "[NN Primitives] Maxpool":

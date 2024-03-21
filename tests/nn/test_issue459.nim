@@ -1,5 +1,5 @@
 import ../../src/arraymancer
-import unittest
+import std / unittest
 
 suite "Regression test - issue 459":
   test "Issue 459: tanh ambiguous identifier in NN DSL":

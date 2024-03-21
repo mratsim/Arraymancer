@@ -3,7 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import ../../src/arraymancer
-import unittest, os
+import std / [unittest, os]
 
 proc main() =
 

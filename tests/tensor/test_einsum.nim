@@ -2,7 +2,7 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 
 import ../../src/arraymancer
-import unittest, sequtils
+import std / [unittest, sequtils]
 
 # The tests are adapted from here:
 # https://rockt.github.io/2018/04/30/einsum

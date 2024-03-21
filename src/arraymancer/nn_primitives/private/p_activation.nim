@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import math
+import std / math
 
 proc sigmoid*[T: SomeFloat](x: T): T {.inline, noSideEffect.} =
   1 / (1 + exp(-x))

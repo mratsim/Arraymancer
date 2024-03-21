@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import macros, ./ast_utils
+import std / macros
+import ./ast_utils
 
 # Handle deprecation and replacement
 # --------------------------------------------------------------------------------------

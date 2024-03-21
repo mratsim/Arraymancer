@@ -18,7 +18,7 @@ import  ./private/p_shapeshifting,
         ./private/p_empty_tensors,
         ./accessors,
         ./data_structure, ./init_cpu, ./higher_order_applymap
-import std/[sequtils, math]
+import std / [sequtils, math]
 
 # NOTE: Procs that accepts shape are duplicated to accept both varargs and Metadata
 # until either https://github.com/nim-lang/Nim/issues/6528 or https://github.com/nim-lang/Nim/issues/6529

@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-import  httpclient, strformat, os, strutils,
-        ./util, ../tensor,
+import std / [httpclient, strformat, os, strutils]
+import ./util, ../tensor,
         untar
 
 const

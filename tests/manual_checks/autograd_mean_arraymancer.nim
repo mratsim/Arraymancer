@@ -1,6 +1,6 @@
 
 import ../../src/arraymancer
-import sequtils
+import std / sequtils
 
 let ctx = newContext Tensor[float32]
 

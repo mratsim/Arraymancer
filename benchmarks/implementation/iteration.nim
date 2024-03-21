@@ -1,6 +1,6 @@
 import ../../src/arraymancer
 import ../../src/tensor/backend/[openmp, memory_optimization_hints]
-import times
+import std / times
 
 const
   dz = 0.01

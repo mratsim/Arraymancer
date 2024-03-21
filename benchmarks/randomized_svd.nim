@@ -1,5 +1,5 @@
 import ../src/arraymancer
-import times, strformat
+import std / [times, strformat]
 
 # Compile with -d:release -d:danger (optionally -d:openmp)
 

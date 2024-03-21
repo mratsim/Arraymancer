@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../tensor
-import math
+import std / math
 
 proc gauss*[T](x, mean, sigma: T, norm = false): float =
   ## Returns a value of the gaussian distribution described by `mean`, `sigma`

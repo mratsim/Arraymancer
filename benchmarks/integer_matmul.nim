@@ -1,4 +1,4 @@
-import os, strutils, random
+import std / [os, strutils, random]
 import ../src/arraymancer
 
 {.passC: "-march=native" .}

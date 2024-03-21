@@ -11,7 +11,7 @@ import
 
 when NimVersion < "1.1.0":
   # For distinctBase
-  import sugar
+  import std / sugar
 
 when not defined(nimHasCursor):
   {.pragma: cursor.}

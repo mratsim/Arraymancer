@@ -14,7 +14,7 @@
 
 # Please compile with -d:opencl switch
 import ../../src/arraymancer
-import std/unittest
+import std / unittest
 import ../testutils
 
 testSuite "OpenCL BLAS operations (Basic Linear Algebra Subprograms)":

@@ -14,7 +14,7 @@
 
 
 import ../../src/arraymancer
-import unittest, random, sequtils
+import std / [unittest, random, sequtils]
 
 proc main() =
   suite "Load test - OpenMP":

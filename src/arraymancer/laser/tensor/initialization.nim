@@ -3,7 +3,7 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
-import std/complex
+import std / complex
 
 import
   ../openmp,
@@ -11,11 +11,11 @@ import
   ../strided_iteration/foreach,
   ../dynamic_stack_arrays,
   ../private/nested_containers,
-  ./datatypes,
-  # Standard library
-  typetraits, sequtils,
-  # Third-party
-  nimblas
+  ./datatypes
+# Standard library
+import std / [typetraits, sequtils]
+# Third-party
+import nimblas
 
 when (NimMajor, NimMinor) < (1, 4):
   import ../../std_version_types
@@ -289,7 +289,7 @@ func item*[T_IN, T_OUT](t: Tensor[T_IN], _: typedesc[T_OUT]): T_OUT =
       # When the input and the output types are Complex, we need to find
       # the "base" type of the output type (e.g. float32 or float64),
       # and then convert the real and imaginary parts of the input value
-      # into the output base type before creating the output complex type 
+      # into the output base type before creating the output complex type
       type TT = typeof(
         block:
           var tmp: T_OUT

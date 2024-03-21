@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, random, sequtils
+import std / [unittest, random, sequtils]
 
 proc main() =
   suite "Autograd of Hadamard product":

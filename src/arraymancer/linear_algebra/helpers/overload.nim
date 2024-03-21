@@ -1,4 +1,4 @@
-import macros
+import std / macros
 
 # Alias / overload generator
 # --------------------------------------------------------------------------------------

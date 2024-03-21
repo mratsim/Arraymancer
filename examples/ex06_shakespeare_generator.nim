@@ -56,7 +56,7 @@ const
 #
 # ################################################################
 
-proc strToTensor(str: string|TaintedString): Tensor[PrintableIdx] =
+proc strToTensor(str: string): Tensor[PrintableIdx] =
   result = newTensor[PrintableIdx](str.len)
 
   # For each x in result, map the corresponding char index

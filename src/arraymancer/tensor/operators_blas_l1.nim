@@ -17,7 +17,6 @@ import  ./private/p_checks,
         ./data_structure,
         ./accessors, ./higher_order_applymap,
         nimblas
-import complex except Complex32, Complex64
 
 # ####################################################################
 # BLAS Level 1 (Vector dot product, Addition, Scalar to Vector/Matrix)

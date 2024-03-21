@@ -91,6 +91,8 @@ func `$`*(a: DynamicStackArray): string =
   result.add("]")
 
 func product*[T:SomeNumber](a: DynamicStackArray[T]): T =
+  if unlikely(a.len == 0):
+    return 0
   result = 1
   for value in items(a):
     result *= value

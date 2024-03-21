@@ -352,7 +352,8 @@ proc append*[T](t: Tensor[T], values: varargs[T]): Tensor[T] {.noinit.} =
     $t.rank & " (use `concat` for higher rank tensors)"
   let result_size = t.size + values.len
   result = newTensorUninit[T](result_size)
-  result[0 ..< t.size] = t
+  if t.size > 0:
+    result[0 ..< t.size] = t
   result[t.size ..< result.size] = values
 
 func squeeze*(t: AnyTensor): AnyTensor {.noinit.}=

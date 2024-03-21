@@ -113,6 +113,10 @@ proc main() =
       check: a.append(b) == expected
       check: a.append(b.toTensor()) == expected
 
+      # Test fix for issue #637 (https://github.com/mratsim/Arraymancer/issues/637)
+      let c = newTensor[int](0)
+      check: c.append(1) == [1].toTensor
+
     test "Squeeze":
       block:
         let a = toSeq(1..12).toTensor().reshape(3,1,2,1,1,2)

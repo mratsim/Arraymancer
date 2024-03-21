@@ -262,7 +262,7 @@ proc gen_text[T](
 
 proc main() =
   # Parse the input file
-  let filePath = paramStr(1).string
+  let filePath = paramStr(1)
   let txt_raw = readFile(filePath)
 
   echo "Checking the first hundred characters of your file"

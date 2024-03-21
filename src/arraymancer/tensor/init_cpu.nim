@@ -23,15 +23,17 @@ import
 
 export initialization
 
-proc newTensorUninit*[T](shape: varargs[int]): Tensor[T] {.noinit, inline.} =
-  ## Creates a new Tensor on Cpu backend
+proc newTensorUninit*[T](shape: varargs[int] = [0]): Tensor[T] {.noinit, inline.} =
+  ## Creates a new uninitialized Tensor of type `T` on the Cpu backend
   ## Input:
-  ##      - Shape of the Tensor
-  ##      - Type of its elements
+  ##      - Shape of the Tensor (defaults to an empty rank-1 tensor)
   ## Result:
   ##      - A Tensor of the proper shape with NO initialization
-  ## Warning ⚠
-  ##   Tensor data is uninitialized and contains garbage.
+  ## Warnings ⚠:
+  ##      - Tensor data is uninitialized and contains garbage.
+  ##      - If no shape is provided, a 1D tensor of size 0 is created.
+  ##        It is possible to create a rank-0 tensor by explicitly
+  ##        providing an empty shape `[]` (e.g. `newTensorUninit[float]([])`).
   var size: int
   initTensorMetadata(result, size, shape)
   allocCpuStorage(result.storage, size)
@@ -42,14 +44,13 @@ proc newTensorUninit*[T](size: int): Tensor[T] {.noinit, inline.} =
   result = newTensorUninit[T]([size])
 
 proc newTensorUninit*[T](shape: Metadata): Tensor[T] {.noinit, inline.} =
-  ## Creates a new Tensor on Cpu backend
+  ## Creates a new uninitialized Tensor of type `T` on the Cpu backend
   ## Input:
   ##      - Shape of the Tensor
-  ##      - Type of its elements
   ## Result:
   ##      - A Tensor of the proper shape with NO initialization
-  ## Warning ⚠
-  ##   Tensor data is uninitialized and contains garbage.
+  ## Warning ⚠:
+  ##      - Tensor data is uninitialized and contains garbage.
   var size: int
   initTensorMetadata(result, size, shape)
   allocCpuStorage(result.storage, size)

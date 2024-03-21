@@ -318,7 +318,14 @@ proc newTiles*(
   #   - kc * nr in L1 cache µkernel
   #   - mc * kc in L2 cache Ã
   #   - kc * nc in L3 cache ~B (no L3 in Xeon Phi ¯\_(ツ)_/¯)
+
+  # The following line implictly creates a destructor which, as of nim 2.0.2,
+  # creates a "non var `=destroy`" which generates a warning
+  # We temporary disable that warning because there is nothing we can do about it
+  {.push warning[Deprecated]:off.}
   new result, deallocTiles[T]
+  {.pop.}
+
   const
     nr = ukernel.nr
     mr = ukernel.mr

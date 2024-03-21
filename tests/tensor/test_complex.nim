@@ -56,6 +56,24 @@ proc main() =
         check: c64_from_int == expected_c64
         check: c32 == expected_c32
 
+      block: # Single tensor to imaginary complex conversion
+        var im_int = [1, -10, 20].toTensor
+        var im_float64 = im_int.asType(float64)
+        var im_float32 = im_int.asType(float32)
+        var c64_imag_from_int = complex_imag(im_int)
+        var c64_imag = complex_imag(im_float64)
+        var c32_imag = complex_imag(im_float32)
+        var expected_imag64 = [complex64(0.0, 1.0),
+                               complex64(0.0, -10.0),
+                               complex64(0.0, 20.0)].toTensor
+        var expected_imag32 = [complex32(0.0, 1.0),
+                               complex32(0.0, -10.0),
+                               complex32(0.0, 20.0)].toTensor
+
+        check: c64_imag == expected_imag64
+        check: c64_imag_from_int == expected_imag64
+        check: c32_imag == expected_imag32
+
     test "Get the Real and Imaginary Components of a Complex Tensor":
       var c = [
         complex(1.0, -300.0),
@@ -102,6 +120,21 @@ proc main() =
       ].toTensor
 
       check: c.conjugate == expected_c_conjugate
+
+    test "Complex Component Swap":
+      var c = [
+        complex(1.0, -300.0),
+        complex(-10.0, 20.0),
+        complex(20.0, -1.0),
+      ].toTensor
+
+      var expected_c_swapped = [
+        complex(-300.0, 1.0),
+        complex(20.0, -10.0),
+        complex(-1.0, 20.0),
+      ].toTensor
+
+      check: c.cswap == expected_c_swapped
 
 main()
 GC_fullCollect()

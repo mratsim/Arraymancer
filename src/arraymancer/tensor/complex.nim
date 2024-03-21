@@ -43,6 +43,21 @@ proc complex*[T: SomeNumber](re: Tensor[T]): auto {.inline, noinit.} =
   else:
     map_inline(re, complex(x))
 
+proc complex_imag*[T: SomeNumber](im: Tensor[T]): auto {.inline, noinit.} =
+  ## Create a new, imaginary Tensor from a single real Tensor
+  ##
+  ## The input Tensor is copied into the imaginary part of the output Tensor,
+  ## while the real part is set to all zeros.
+  ##
+  ## If the input is an integer Tensor, the output will be a Tensor of
+  ## Complex64 to avoid any loss of precision. If you want to convert it
+  ## into a Tensor of Complex32, you must convert the input to float32 first
+  ## by using `.asType(float32)`.
+  when T is SomeInteger:
+    map_inline(im, complex(float64(0.0), float64(x)))
+  else:
+    map_inline(im, complex(T(0.0), x))
+
 proc real*[T: SomeFloat](t: Tensor[Complex[T]]): Tensor[T] {.inline, noinit.} =
   ## Get the real part of a complex Tensor (as a float Tensor)
   t.map_inline(x.re)
@@ -73,7 +88,11 @@ proc `imag=`*[T: SomeFloat](t: var Tensor[Complex[T]], val: Tensor[T]) {.inline.
   for it, srcit in mzip(t, val):
     it.im = srcit
 
-proc conjugate*[T: Complex32 | Complex64](A: Tensor[T]): Tensor[T] =
+proc conjugate*[T: Complex32 | Complex64](t: Tensor[T]): Tensor[T] =
   ## Return the element-wise complex conjugate of a tensor of complex numbers.
   ## The complex conjugate of a complex number is obtained by changing the sign of its imaginary part.
-  A.map_inline(x.conjugate)
+  t.map_inline(x.conjugate)
+
+proc cswap*[T: Complex32 | Complex64](t: Tensor[T]): Tensor[T] {.inline, noinit.} =
+  ## Swap the real and imaginary components of the elements of a complex Tensor
+  map_inline(t, complex(x.im, x.re))

@@ -9,6 +9,10 @@ import
   ./gemm_tiling, ./gemm_utils, ./gemm_packing,
   ./gemm_ukernel_dispatch
 
+# This import is needed for our current docgen. Otherwise it fails
+# on this submodule.
+from ../../tensor/datatypes import KnownSupportsCopyMem
+
 when defined(i386) or defined(amd64):
   import ../../cpuinfo_x86
 

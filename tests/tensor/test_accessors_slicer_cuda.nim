@@ -14,7 +14,7 @@
 
 
 import ../../src/arraymancer
-import unittest, math
+import std / unittest
 
 
 testSuite "CUDA: Testing indexing and slice syntax":

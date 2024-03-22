@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import math, unittest, sequtils, strutils
+import std / [unittest, sequtils, strutils]
 
 template compareStrings(t1, t2: string) =
   let t1S = t1.splitLines

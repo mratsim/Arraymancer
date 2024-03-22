@@ -1,4 +1,5 @@
-import ../src/arraymancer, strformat, os
+import ../src/arraymancer
+import std / [strformat, os]
 
 #[
 A fully-connected ReLU network with one hidden layer, trained to predict y from x

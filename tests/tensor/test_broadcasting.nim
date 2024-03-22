@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, sequtils, math
-import complex except Complex64, Complex32
+import std / [unittest, sequtils]
 
 proc main() =
   suite "Shapeshifting - broadcasting and non linear algebra elementwise operations":

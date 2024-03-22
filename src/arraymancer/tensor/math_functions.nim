@@ -17,8 +17,10 @@ import  ./data_structure,
         ./init_cpu,
         ./higher_order_applymap,
         ./ufunc
-import std/math
+import std / math
 import complex except Complex64, Complex32
+
+export math
 
 # Non-operator math functions
 

@@ -1,5 +1,5 @@
 import ../../src/arraymancer
-import unittest, random, sequtils, algorithm
+import std / [unittest, random, sequtils, algorithm]
 
 proc `=~=`(x, y: float, eps = 1e-6): bool =
   ## simple float compare with epsilon to not have to worry about perfect scipy / nim

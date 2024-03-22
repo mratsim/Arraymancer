@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, sequtils
+import std / [unittest, sequtils]
 
 # # Differentiating through matmul:
 # # See http://cs231n.stanford.edu/vecDerivs.pdf

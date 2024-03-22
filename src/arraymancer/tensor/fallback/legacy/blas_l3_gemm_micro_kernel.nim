@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  macros,
-        ../../backend/memory_optimization_hints
+import std / macros
+import ../../backend/memory_optimization_hints
 
 macro unroll_ukernel[MRNR, T](AB: array[MRNR, T],
                               a: ptr UncheckedArray[T], offA: int,

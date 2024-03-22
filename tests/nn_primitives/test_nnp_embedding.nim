@@ -3,7 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import ../../src/arraymancer
-import unittest, tables, sequtils, strutils
+import std / [unittest, tables, sequtils, strutils]
 
 proc main() =
   suite "[NN Primitive] Embedding":

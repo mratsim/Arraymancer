@@ -14,7 +14,7 @@
 
 # Please compile with -d:cuda switch
 import ../../src/arraymancer
-import unittest, sugar
+import std / [unittest, sugar]
 
 proc test_conv(T: typedesc) =
   test "Conv2d Forward [" & $T & ']':

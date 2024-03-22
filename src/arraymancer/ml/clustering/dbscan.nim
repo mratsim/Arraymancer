@@ -1,5 +1,4 @@
-import deques
-import sequtils
+import std / [deques, sequtils]
 
 import ../../spatial/[distances, neighbors],
        ../../tensor

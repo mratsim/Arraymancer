@@ -1,4 +1,4 @@
-import math, typetraits
+import std / [math, typetraits]
 
 import ../tensor
 import ./distances

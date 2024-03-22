@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest
+import std / unittest
 
 
 suite "Testing fusion operations":

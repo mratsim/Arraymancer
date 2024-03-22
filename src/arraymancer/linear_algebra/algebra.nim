@@ -2,9 +2,8 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 # This file may not be copied, modified, or distributed except according to those terms.
 
-import std/complex
-import
-  ../tensor
+import std / complex
+import ../tensor
 
 proc pinv*[T: SomeFloat](A: Tensor[T], rcond = 1e-15): Tensor[T] =
   ## Compute the (Moore-Penrose) pseudo-inverse of a matrix.

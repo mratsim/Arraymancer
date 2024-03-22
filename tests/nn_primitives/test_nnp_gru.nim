@@ -4,7 +4,7 @@
 
 
 import ../../src/arraymancer
-import unittest, sequtils, strformat
+import std / [unittest, sequtils, strformat]
 
 proc main() =
   suite "[NN Primitives - Gated Recurrent Unit - Cell]":

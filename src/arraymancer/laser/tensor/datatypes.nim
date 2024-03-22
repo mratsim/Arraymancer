@@ -11,7 +11,7 @@ import
 
 when NimVersion < "1.1.0":
   # For distinctBase
-  import sugar
+  import std / sugar
 
 when not defined(nimHasCursor):
   {.pragma: cursor.}
@@ -77,13 +77,24 @@ when not defined(gcDestructors):
       storage.memalloc.deallocShared()
       storage.memalloc = nil
 else:
-  proc `=destroy`[T](storage: var CpuStorageObj[T]) =
-    when T is KnownSupportsCopyMem:
-      if storage.isMemOwner and not storage.memalloc.isNil:
-        storage.memalloc.deallocShared()
-        storage.memalloc = nil
-    else:
-      `=destroy`(storage.raw_buffer)
+  when (NimMajor, NimMinor, NimPatch) >= (2, 0, 0):
+    proc `=destroy`[T](storage: CpuStorageObj[T]) =
+      when T is KnownSupportsCopyMem:
+        if storage.isMemOwner and not storage.memalloc.isNil:
+          storage.memalloc.deallocShared()
+      else:
+        # The following cast removes the following warning:
+        # =destroy(storage.raw_buffer) can raise an unlisted exception: Exception
+        {.cast(raises: []).}:
+          `=destroy`(storage.raw_buffer)
+  else:
+    proc `=destroy`[T](storage: var CpuStorageObj[T]) =
+      when T is KnownSupportsCopyMem:
+        if storage.isMemOwner and not storage.memalloc.isNil:
+          storage.memalloc.deallocShared()
+          storage.memalloc = nil
+      else:
+        `=destroy`(storage.raw_buffer)
 
   proc `=copy`[T](a: var CpuStorageObj[T]; b: CpuStorageObj[T]) {.error.}
   proc `=sink`[T](a: var CpuStorageObj[T]; b: CpuStorageObj[T]) {.error.}

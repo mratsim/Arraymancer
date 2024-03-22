@@ -1,7 +1,7 @@
 # Nim port of jcjohnson code: https://github.com/jcjohnson/pytorch-examples/blob/master/nn/two_layer_net_nn.py
 
 import ../../src/arraymancer, ../testutils
-import unittest, random
+import std / [unittest, random]
 
 proc gcntest() =
   # Test a simple Graph convolutional network

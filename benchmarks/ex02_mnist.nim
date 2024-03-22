@@ -1,4 +1,5 @@
-import ../src/arraymancer, random
+import ../src/arraymancer
+import std / random
 
 # Make the results reproducible by initializing a random seed
 randomize(42)

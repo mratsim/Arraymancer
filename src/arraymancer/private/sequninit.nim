@@ -14,7 +14,11 @@
 
 # from Nim https://github.com/nim-lang/Nim/pull/22739 on the stdlib provides a
 # `newSeqUninit` for types supporting `supportsCopyMem`
-when not declared(newSeqUninit):
+when declared(newSeqUninit):
+  # Avoid an "imported and not used: 'sequninit' [UnusedImport]" warning
+  # when nim has a built-in newSeqUninit function (i.e. post nim 2.0.2)
+  {.used.}
+else:
   func newSeqUninit*[T](len: Natural): seq[T] {.inline.} =
     ## Creates an uninitialzed seq.
     ## Contrary to newSequnitialized in system.nim this works for any subtype T

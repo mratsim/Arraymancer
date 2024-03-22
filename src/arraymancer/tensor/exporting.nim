@@ -14,7 +14,7 @@
 
 import ./data_structure
 import ./accessors
-import std/sequtils
+import std / sequtils
 
 proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect, deprecated: "This proc cannot be reimplemented in a backward compatible way.".} =
   ## Convert a tensor to the raw sequence of data.

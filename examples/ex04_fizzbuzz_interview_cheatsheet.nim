@@ -8,7 +8,8 @@
 #              if it's divisible by 5 print "buzz", and if it's divisible by 15 print "fizzbuzz".
 
 # Let's start with standard imports
-import ../src/arraymancer, math, strformat
+import ../src/arraymancer
+import std / strformat
 
 # We want to input a number and output the correct "fizzbuzz" representation
 # ideally the input is a represented by a vector of real values between 0 and 1

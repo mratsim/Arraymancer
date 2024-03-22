@@ -3,7 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import ../../src/arraymancer, ../testutils
-import unittest, random
+import std / [unittest, random]
 
 proc ex01() =
   let ctx = newContext Tensor[float32]

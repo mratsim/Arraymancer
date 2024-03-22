@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest
+import std / unittest
 
 
 # TODO: Fill the suite with corner cases, example "prod" returning 1 or "var" returning nan

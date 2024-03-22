@@ -1,4 +1,4 @@
-import math, times, strformat
+import std / [times, strformat]
 import ../src/arraymancer
 
 proc getTime(): float =

@@ -3,7 +3,7 @@
 # This file may not be copied, modified, or distributed except according to those terms.
 
 import ../../src/arraymancer
-import unittest, math
+import std / unittest
 
 proc main() =
   suite "[ML] Dimensionality reduction":

@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest, math
-from complex import Complex
+import std / unittest
 
 proc main() =
   suite "Testing tensor comparison":

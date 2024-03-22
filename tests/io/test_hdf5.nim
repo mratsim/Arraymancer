@@ -4,9 +4,7 @@
 
 import ../../src/arraymancer
 import nimhdf5
-import unittest, os, options
-
-import sequtils
+import std / [unittest, os, options, sequtils]
 
 proc main() =
 

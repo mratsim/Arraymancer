@@ -1,6 +1,6 @@
 
 import ../../src/arraymancer
-import unittest, strutils, times
+import std / [unittest, strutils, times]
 
 proc main() =
   suite "Tokenizers":

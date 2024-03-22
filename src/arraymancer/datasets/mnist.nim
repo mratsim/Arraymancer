@@ -52,8 +52,8 @@
 # The labels values are 0 to 9.
 
 
-import  streams, os, httpClient, strformat, sugar, sequtils,
-        ../tensor, ../io/io_stream_readers, ./util,
+import std / [streams, os, httpclient, strformat, sugar, sequtils]
+import ../tensor, ../io/io_stream_readers, ./util,
         zip/gzipfiles
 
 type Mnist = tuple[

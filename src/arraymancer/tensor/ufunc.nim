@@ -14,8 +14,9 @@
 
 import  ./data_structure,
         ./higher_order_applymap,
-        ./private/p_empty_tensors,
-        sugar, math, complex
+        ./private/p_empty_tensors
+# Standard library
+import std / [sugar, math]
 
 ## NOTE: This should be `{.noinit.}`, but this is blocked by:
 ## https://github.com/nim-lang/Nim/issues/16253

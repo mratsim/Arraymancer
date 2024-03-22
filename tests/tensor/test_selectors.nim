@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import unittest
+import std / unittest
 
 proc main() =
   suite "Selectors":

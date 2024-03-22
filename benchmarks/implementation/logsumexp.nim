@@ -1,4 +1,6 @@
-import times, ../../src/arraymancer, math, sequtils
+import std / times
+import ../../src/arraymancer
+import std / sequtils
 
 # Reference python
 # import numpy as np

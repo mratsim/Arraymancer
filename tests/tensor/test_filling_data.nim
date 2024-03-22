@@ -14,8 +14,7 @@
 
 
 import ../../src/arraymancer
-import unittest
-import complex except Complex64, Complex32
+import std / unittest
 
 proc main() =
   suite "Testing miscellaneous data functions":

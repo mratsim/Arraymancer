@@ -1,4 +1,4 @@
-import macros, sequtils, sets, algorithm
+import std / [macros, sequtils, sets, algorithm]
 import ../private/ast_utils
 import ./shapeshifting
   # Note: importing shapeshifting_cuda will trigger a Nim inference bug

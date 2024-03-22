@@ -16,10 +16,10 @@ import
   # Internal
   ../laser/tensor/initialization,
   ../laser/strided_iteration/foreach,
-  ./data_structure,
-  # Standard library
-  std / random,
-  math
+  ./data_structure
+
+# Standard library
+import std / [random, math]
 
 export initialization
 

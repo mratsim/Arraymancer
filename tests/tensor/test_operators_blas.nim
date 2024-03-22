@@ -15,8 +15,7 @@
 import
   ../../src/arraymancer,
   ../../src/arraymancer/linear_algebra/helpers/init_colmajor
-import unittest, sugar
-import complex except Complex64, Complex32
+import std / [unittest, sugar]
 
 proc main() =
   suite "BLAS (Basic Linear Algebra Subprograms)":

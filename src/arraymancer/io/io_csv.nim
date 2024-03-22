@@ -13,8 +13,8 @@
 # limitations under the License.
 
 
-import  os, parsecsv, streams, strutils, sequtils, algorithm,
-        ../tensor
+import  std / [os, parsecsv, streams, strutils, sequtils, algorithm]
+import ../tensor
 from memfiles as mf import nil
 
 proc countLinesAndCols(file: string, sep: char, quote: char,

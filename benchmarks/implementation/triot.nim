@@ -19,7 +19,7 @@
 
 
 import ../../src/tensor/backend/metadataArray
-import macros
+import std / macros
 
 proc shape_to_strides*(shape: MetadataArray): MetadataArray {.noSideEffect.} =
   var accum = 1
@@ -210,7 +210,7 @@ proc warmup() =
 ################################################################################################
 #### Bench
 
-import times
+import std / times
 
 
 let a = [2, 3, 4].toMetadataArray

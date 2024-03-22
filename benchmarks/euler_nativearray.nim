@@ -1,4 +1,4 @@
-import math, times, strformat
+import std / [math, times, strformat]
 
 const
   dz = 0.1

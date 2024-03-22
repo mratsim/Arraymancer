@@ -41,6 +41,6 @@ export  tensor,
         std_version_types
 
 when not defined(no_lapack):
-  # The ml module also does not export everything is LAPACK is not available
+  # The ml module also does not export everything if LAPACK is not available
   import ./arraymancer/linear_algebra
   export linear_algebra

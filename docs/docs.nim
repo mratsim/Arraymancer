@@ -1,6 +1,6 @@
-import macros, strformat, strutils, sequtils, sets, tables, algorithm
+import std / [macros, strformat, strutils, sequtils, sets, tables, algorithm]
 
-from os import parentDir, getCurrentCompilerExe, DirSep, extractFilename, `/`, setCurrentDir
+from std / os import parentDir, getCurrentCompilerExe, DirSep, extractFilename, `/`, setCurrentDir
 
 # NOTE:
 # for some time on devel 1.3.x `paramCount` and `paramStr` had to be imported
@@ -8,7 +8,7 @@ from os import parentDir, getCurrentCompilerExe, DirSep, extractFilename, `/`, s
 # https://github.com/nim-lang/Nim/pull/14658
 # For `nimdoc` we still have to import those from `os`!
 when defined(nimdoc):
-  from os import getCurrentDir, paramCount, paramStr
+  from std / os import getCurrentDir, paramCount, paramStr
 
 #[
 This file is a slightly modified version of the same file of `nimterop`:

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+import std / os
 
 proc get_cache_home(): string =
     result = getEnv("XDG_CACHE_HOME", getHomeDir() / ".cache")

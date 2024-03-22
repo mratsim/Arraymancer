@@ -2,8 +2,7 @@
 # Distributed under the Apache v2 License (license terms are at http://www.apache.org/licenses/LICENSE-2.0).
 
 import ../../src/arraymancer
-import unittest, math
-import std/strformat
+import std / [unittest, strformat]
 
 proc main() =
   suite "Diagonals":

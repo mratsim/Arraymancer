@@ -1,4 +1,5 @@
-import times, ../../src/arraymancer, math
+import std / times
+import ../../src/arraymancer
 
 # The goal is to test the speed of various sigmoid implementation
 # Some are numericall stable for positive, negative or both value

@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import ../../src/arraymancer
-import std/[unittest, math]
+import std / unittest
 
 proc main() =
   suite "Basic Complex Tensor Operations":

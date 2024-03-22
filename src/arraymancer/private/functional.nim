@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Functional programming and iterator tooling
-import sequtils
+import std / sequtils
 
 when not defined(nimHasEffectsOf):
   {.pragma: effectsOf.}

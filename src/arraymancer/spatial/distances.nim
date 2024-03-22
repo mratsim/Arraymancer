@@ -1,5 +1,4 @@
-import math
-import sets
+import std / [math, sets]
 
 import ../tensor
 

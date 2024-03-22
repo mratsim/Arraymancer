@@ -14,7 +14,7 @@
 
 # Tools to manipulate Nim Abstract Syntax Tree
 
-import macros
+import std / macros
 
 proc hasType*(x: NimNode, t: static[string]): bool {. compileTime .} =
   ## Compile-time type checking

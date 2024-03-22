@@ -184,7 +184,14 @@ proc setZero*[T](t: var Tensor[T], check_contiguous: static bool = true) =
         chunk_size * sizeof(T)
       )
 
-proc newTensor*[T](shape: varargs[int]): Tensor[T] =
+proc newTensor*[T](shape: varargs[int] = [0]): Tensor[T] =
+  ## Create a new tensor of type T with the given shape.
+  ##
+  ## If no shape is provided, we create an empty rank-1 tensor.
+  ## To create a rank-0 tensor, explicitly pass and empty shape `[]`.
+  ##
+  ## Note that in general it is not a good idea to use rank-0 tensors.
+  ## However, they can be used as "sentinel" values for Tensor arguments.
   var size: int
   initTensorMetadata(result, size, shape)
   allocCpuStorage(result.storage, size)
@@ -193,6 +200,7 @@ proc newTensor*[T](shape: varargs[int]): Tensor[T] =
     setZero(result, check_contiguous = false)
 
 proc newTensor*[T](shape: Metadata): Tensor[T] =
+  ## Create a new tensor of type T with the given shape.
   var size: int
   initTensorMetadata(result, size, shape)
   allocCpuStorage(result.storage, size)

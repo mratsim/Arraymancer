@@ -1,0 +1,2 @@
+nimTitle	init_copy_cuda	init_copy_cuda.html	module src/arraymancer/tensor/init_copy_cuda		0
+nim	clone	init_copy_cuda.html#clone,CudaTensor[T]	proc clone[T](t: CudaTensor[T]): CudaTensor[T]		26

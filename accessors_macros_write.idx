@@ -1,0 +1,3 @@
+nimTitle	accessors_macros_write	accessors_macros_write.html	module src/arraymancer/tensor/accessors_macros_write		0
+nim	`[]=`	accessors_macros_write.html#[]=.m,Tensor[T],varargs[untyped]	macro `[]=`[T](t: var Tensor[T]; args: varargs[untyped]): untyped		21
+nim	`[]=`	accessors_macros_write.html#[]=.t,Tensor[T],varargs[untyped]	template `[]=`[T](t: Tensor[T]; args: varargs[untyped]): untyped		82

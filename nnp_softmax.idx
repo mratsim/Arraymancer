@@ -1,0 +1,2 @@
+nimTitle	nnp_softmax	nnp_softmax.html	module src/arraymancer/nn_primitives/nnp_softmax		0
+nim	softmax	nnp_softmax.html#softmax,Tensor[T]	proc softmax[T](input: Tensor[T]): Tensor[T]		18

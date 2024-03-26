@@ -1,0 +1,5 @@
+nimTitle	operators_logical	operators_logical.html	module src/arraymancer/tensor/operators_logical		0
+nim	`and`	operators_logical.html#and,Tensor[bool],Tensor[bool]	proc `and`(a, b: Tensor[bool]): Tensor[bool]		25
+nim	`or`	operators_logical.html#or,Tensor[bool],Tensor[bool]	proc `or`(a, b: Tensor[bool]): Tensor[bool]		32
+nim	`xor`	operators_logical.html#xor,Tensor[bool],Tensor[bool]	proc `xor`(a, b: Tensor[bool]): Tensor[bool]		39
+nim	`not`	operators_logical.html#not,Tensor[bool]	proc `not`(a: Tensor[bool]): Tensor[bool]		46

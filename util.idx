@@ -1,0 +1,3 @@
+nimTitle	util	util.html	module src/arraymancer/datasets/util		0
+nim	get_cache_dir	util.html#get_cache_dir	proc get_cache_dir(): string		20
+nim	create_cache_dirs_if_necessary	util.html#create_cache_dirs_if_necessary	proc create_cache_dirs_if_necessary()		23

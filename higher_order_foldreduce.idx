@@ -1,0 +1,11 @@
+nimTitle	higher_order_foldreduce	higher_order_foldreduce.html	module src/arraymancer/tensor/higher_order_foldreduce		0
+nim	reduce_inline	higher_order_foldreduce.html#reduce_inline.t,Tensor[T],untyped	template reduce_inline[T](arg: Tensor[T]; op: untyped): untyped		23
+nim	fold_inline	higher_order_foldreduce.html#fold_inline.t,Tensor[T],untyped,untyped,untyped	template fold_inline[T](arg: Tensor[T]; op_initial, op_middle, op_final: untyped): untyped		33
+nim	reduce_axis_inline	higher_order_foldreduce.html#reduce_axis_inline.t,Tensor[T],int,untyped	template reduce_axis_inline[T](arg: Tensor[T]; reduction_axis: int; op: untyped): untyped		44
+nim	fold_axis_inline	higher_order_foldreduce.html#fold_axis_inline.t,Tensor[T],typedesc,int,untyped,untyped,untyped	template fold_axis_inline[T](arg: Tensor[T]; accumType: typedesc; fold_axis: int;\n                    op_initial, op_middle, op_final: untyped): untyped		60
+nim	fold	higher_order_foldreduce.html#fold,Tensor[U],T,	proc fold[U, T](arg: Tensor[U]; start_val: T; f: (T, U) -> T): T		82
+nim	fold	higher_order_foldreduce.html#fold,Tensor[U],Tensor[T],,int	proc fold[U, T](arg: Tensor[U]; start_val: Tensor[T];\n           f: (Tensor[T], Tensor[U]) -> Tensor[T]; axis: int): Tensor[T]		103
+nim	reduce	higher_order_foldreduce.html#reduce,Tensor[T],	proc reduce[T](arg: Tensor[T]; f: (T, T) -> T): T		121
+nim	reduce	higher_order_foldreduce.html#reduce,Tensor[T],,int	proc reduce[T](arg: Tensor[T]; f: (Tensor[T], Tensor[T]) -> Tensor[T]; axis: int): Tensor[\n    T]		142
+nimgrp	reduce	higher_order_foldreduce.html#reduce-procs-all	proc		121
+nimgrp	fold	higher_order_foldreduce.html#fold-procs-all	proc		82

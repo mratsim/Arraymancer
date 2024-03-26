@@ -1,0 +1,8 @@
+nimTitle	embedding	embedding.html	module src/arraymancer/nn/layers/embedding		0
+nim	EmbeddingGate	embedding.html#EmbeddingGate	type EmbeddingGate		21
+nim	embedding	embedding.html#embedding,Tensor[Idx: VocabIdx],Variable[TT],Idx,static[bool]	proc embedding[TT; Idx: VocabIdx](input_vocab_id: Tensor[Idx]; weight: Variable[TT];\n                             padding_idx: Idx = -1;\n                             scale_grad_by_freq: static[bool] = false): Variable[\n    TT]		69
+nim	Embedding	embedding.html#Embedding	object Embedding		106
+nim	init	embedding.html#init,Context[Tensor[T]],typedesc[Embedding[T]],int,int,VocabIdx	proc init[T](ctx: Context[Tensor[T]]; layerType: typedesc[Embedding[T]];\n        vocabSize, embedSize: int; paddingIdx: VocabIdx = -1): Embedding[T]		110
+nim	forward	embedding.html#forward,Embedding[T],Tensor[Idx: VocabIdx]	proc forward[T; Idx: VocabIdx](self: Embedding[T]; input: Tensor[Idx]): Variable[\n    AnyTensor[T]]		143
+nim	outShape	embedding.html#outShape,Embedding[T]	proc outShape[T](self: Embedding[T]): seq[int]		153
+nim	inShape	embedding.html#inShape,Embedding[T]	proc inShape[T](self: Embedding[T]): seq[int]		155

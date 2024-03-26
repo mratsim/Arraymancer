@@ -1,0 +1,13 @@
+nimTitle	p_shapeshifting	p_shapeshifting.html	module src/arraymancer/tensor/private/p_shapeshifting		0
+nim	contiguousImpl	p_shapeshifting.html#contiguousImpl,Tensor[T],OrderType,Tensor[T]	proc contiguousImpl[T](t: Tensor[T]; layout: OrderType; result: var Tensor[T])		21
+nim	reshape_with_copy	p_shapeshifting.html#reshape_with_copy,Tensor[T],,Tensor[T]	proc reshape_with_copy[T](t: Tensor[T]; new_shape: varargs[int] | Metadata;\n                     result: var Tensor[T])		31
+nim	reshape_no_copy	p_shapeshifting.html#reshape_no_copy,AnyTensor,,AnyTensor,OrderType	proc reshape_no_copy(t: AnyTensor; new_shape: varargs[int] | Metadata;\n                result: var AnyTensor; layout: OrderType)		35
+nim	reshapeImpl	p_shapeshifting.html#reshapeImpl,AnyTensor,,AnyTensor	proc reshapeImpl(t: AnyTensor; new_shape: varargs[int] | Metadata;\n            result: var AnyTensor)		40
+nim	broadcastImpl	p_shapeshifting.html#broadcastImpl,AnyTensor,	proc broadcastImpl(t: var AnyTensor; shape: varargs[int] | Metadata)		53
+nim	broadcast2Impl	p_shapeshifting.html#broadcast2Impl,AnyTensor[T],AnyTensor[T],tuple[AnyTensor[T],AnyTensor[T]]	proc broadcast2Impl[T](a, b: AnyTensor[T]; result: var tuple[a, b: AnyTensor[T]])		73
+nim	exch_dim	p_shapeshifting.html#exch_dim,Tensor[T],int,int	proc exch_dim[T](t: Tensor[T]; dim1, dim2: int): Tensor[T]		114
+nim	permuteImpl	p_shapeshifting.html#permuteImpl,Tensor[T],varargs[int]	proc permuteImpl[T](result: var Tensor[T]; dims: varargs[int])		122
+nim	squeezeImpl	p_shapeshifting.html#squeezeImpl,AnyTensor	proc squeezeImpl(t: var AnyTensor)		134
+nim	squeezeImpl	p_shapeshifting.html#squeezeImpl,AnyTensor,int	proc squeezeImpl(t: var AnyTensor; axis: int)		148
+nim	unsqueezeImpl	p_shapeshifting.html#unsqueezeImpl,AnyTensor,int	proc unsqueezeImpl(t: var AnyTensor; axis: int)		156
+nimgrp	squeezeimpl	p_shapeshifting.html#squeezeImpl-procs-all	proc		134

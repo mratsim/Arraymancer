@@ -1,0 +1,6 @@
+nimTitle	mnist	mnist.html	module src/arraymancer/datasets/mnist		0
+nim	read_mnist_images	mnist.html#read_mnist_images,string	proc read_mnist_images(imgsPath: string): Tensor[uint8]		100
+nim	read_mnist_labels	mnist.html#read_mnist_labels,Stream	proc read_mnist_labels(stream: Stream): Tensor[uint8]		120
+nim	read_mnist_labels	mnist.html#read_mnist_labels,string	proc read_mnist_labels(labelsPath: string): Tensor[uint8]		139
+nim	load_mnist	mnist.html#load_mnist,staticbool,staticbool	proc load_mnist(cache: static bool = true; fashion_mnist: static bool = false): Mnist		184
+nimgrp	readmnistlabels	mnist.html#read_mnist_labels-procs-all	proc		120

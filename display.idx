@@ -1,0 +1,3 @@
+nimTitle	display	display.html	module src/arraymancer/tensor/display		0
+nim	pretty	display.html#pretty,Tensor[T],int	proc pretty[T](t: Tensor[T]; precision = -1): string		19
+nim	`$`	display.html#$,Tensor[T]	proc `$`[T](t: Tensor[T]): string		32

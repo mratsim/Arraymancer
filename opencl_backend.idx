@@ -1,0 +1,9 @@
+nimTitle	opencl_backend	opencl_backend.html	module src/arraymancer/tensor/backend/opencl_backend		0
+nim	toClpointer	opencl_backend.html#toClpointer	proc toClpointer[T](p: ptr T | ptr UncheckedArray[T]): Pmem		25
+nim	toClpointer	opencl_backend.html#toClpointer,ClStorage[T]	proc toClpointer[T](p: ClStorage[T]): Pmem		28
+nim	toClpointer	opencl_backend.html#toClpointer,ClTensor[T]	proc toClpointer[T](p: ClTensor[T]): Pmem		31
+nim	clMalloc	opencl_backend.html#clMalloc,Natural	proc clMalloc[T](size: Natural): ptr UncheckedArray[T]		34
+nim	deallocCl	opencl_backend.html#deallocCl,ref.	proc deallocCl[T](p: ref [ptr UncheckedArray[T]])		41
+nim	newClStorage	opencl_backend.html#newClStorage,int	proc newClStorage[T: SomeFloat](length: int): ClStorage[T]		48
+nim	layoutOnDevice	opencl_backend.html#layoutOnDevice,ClTensor[T: SomeFloat]	proc layoutOnDevice[T: SomeFloat](t: ClTensor[T]): ClTensorLayout[T]		74
+nimgrp	toclpointer	opencl_backend.html#toClpointer-procs-all	proc		25

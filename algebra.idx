@@ -1,0 +1,4 @@
+nimTitle	algebra	algebra.html	module src/arraymancer/linear_algebra/algebra		0
+nim	pinv	algebra.html#pinv,Tensor[T: SomeFloat],float	proc pinv[T: SomeFloat](A: Tensor[T]; rcond = 1e-15): Tensor[T]		8
+nim	pinv	algebra.html#pinv,Tensor[T: Complex32 or Complex64],float	proc pinv[T: Complex32 | Complex64](A: Tensor[T]; rcond = 1e-15): Tensor[T]		29
+nimgrp	pinv	algebra.html#pinv-procs-all	proc		8

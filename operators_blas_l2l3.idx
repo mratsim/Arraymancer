@@ -1,0 +1,11 @@
+nimTitle	operators_blas_l2l3	operators_blas_l2l3.html	module src/arraymancer/tensor/operators_blas_l2l3		0
+nim	gemv	operators_blas_l2l3.html#gemv,T,Tensor[T: float or float32 or float64 or Complex],Tensor[T: float or float32 or float64 or Complex],T,Tensor[T: float or float32 or float64 or Complex]	proc gemv[T: SomeFloat | Complex](alpha: T; A: Tensor[T]; x: Tensor[T]; beta: T;\n                             y: var Tensor[T])		24
+nim	gemv	operators_blas_l2l3.html#gemv,T,Tensor[T: SomeInteger],Tensor[T: SomeInteger],T,Tensor[T: SomeInteger]	proc gemv[T: SomeInteger](alpha: T; A: Tensor[T]; x: Tensor[T]; beta: T;\n                     y: var Tensor[T])		44
+nim	gemm	operators_blas_l2l3.html#gemm,T,Tensor[T: float or float32 or float64 or Complex],Tensor[T: float or float32 or float64 or Complex],T,Tensor[T: float or float32 or float64 or Complex]	proc gemm[T: SomeFloat | Complex](alpha: T; A, B: Tensor[T]; beta: T;\n                             C: var Tensor[T])		58
+nim	gemm	operators_blas_l2l3.html#gemm,T,Tensor[T: SomeInteger],Tensor[T: SomeInteger],T,Tensor[T: SomeInteger]	proc gemm[T: SomeInteger](alpha: T; A, B: Tensor[T]; beta: T; C: var Tensor[T])		73
+nim	gemm	operators_blas_l2l3.html#gemm,Tensor[T: SomeNumber],Tensor[T: SomeNumber],Tensor[T: SomeNumber]	proc gemm[T: SomeNumber](A, B: Tensor[T]; C: var Tensor[T])		83
+nim	`*`	operators_blas_l2l3.html#*,Tensor[T: SomeNumber],Tensor[T: SomeNumber]	proc `*`[T: SomeNumber](a, b: Tensor[T]): Tensor[T]		88
+nim	`*`	operators_blas_l2l3.html#*,Tensor[T: Complex[system.float32] or Complex[system.float64]],Tensor[T: Complex[system.float32] or Complex[system.float64]]	proc `*`[T: Complex[float32] or Complex[float64]](a, b: Tensor[T]): Tensor[T]		102
+nimgrp	gemv	operators_blas_l2l3.html#gemv-procs-all	proc		24
+nimgrp	gemm	operators_blas_l2l3.html#gemm-procs-all	proc		58
+nimgrp	*	operators_blas_l2l3.html#*-procs-all	proc		88

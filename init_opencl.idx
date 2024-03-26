@@ -1,0 +1,5 @@
+nimTitle	init_opencl	init_opencl.html	module src/arraymancer/tensor/init_opencl		0
+nim	opencl	init_opencl.html#opencl,Tensor[T: SomeFloat]	proc opencl[T: SomeFloat](t: Tensor[T]): ClTensor[T]		22
+nim	cpu	init_opencl.html#cpu,ClTensor[T: SomeFloat]	proc cpu[T: SomeFloat](t: ClTensor[T]): Tensor[T]		43
+nim	zeros_like	init_opencl.html#zeros_like,ClTensor[T: SomeFloat]	proc zeros_like[T: SomeFloat](t: ClTensor[T]): ClTensor[T]		68
+nim	ones_like	init_opencl.html#ones_like,ClTensor[T: SomeFloat]	proc ones_like[T: SomeFloat](t: ClTensor[T]): ClTensor[T]		79

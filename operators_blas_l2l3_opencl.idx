@@ -1,0 +1,2 @@
+nimTitle	operators_blas_l2l3_opencl	operators_blas_l2l3_opencl.html	module src/arraymancer/tensor/operators_blas_l2l3_opencl		0
+nim	`*`	operators_blas_l2l3_opencl.html#*,ClTensor[T: SomeFloat],ClTensor[T: SomeFloat]	proc `*`[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T]		80

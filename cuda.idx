@@ -1,0 +1,5 @@
+nimTitle	cuda	cuda.html	module src/arraymancer/tensor/backend/cuda		0
+nim	cudaMalloc	cuda.html#cudaMalloc,Natural	proc cudaMalloc[T](size: Natural): ptr T		23
+nim	deallocCuda	cuda.html#deallocCuda,ref.	proc deallocCuda[T](p: ref [ptr T])		29
+nim	newCudaStorage	cuda.html#newCudaStorage,int	proc newCudaStorage[T: SomeFloat](length: int): CudaStorage[T]		37
+nim	layoutOnDevice	cuda.html#layoutOnDevice,CudaTensor[T: SomeFloat]	proc layoutOnDevice[T: SomeFloat](t: CudaTensor[T]): CudaTensorLayout[T]		91

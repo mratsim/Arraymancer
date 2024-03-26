@@ -1,0 +1,3 @@
+nimTitle	gates_hadamard	gates_hadamard.html	module src/arraymancer/autograd/gates_hadamard		0
+nim	HadamardGate	gates_hadamard.html#HadamardGate	type HadamardGate		18
+nim	`*.`	gates_hadamard.html#*.,Variable[TT],Variable[TT]	proc `*.`[TT](a, b: Variable[TT]): Variable[TT]		49

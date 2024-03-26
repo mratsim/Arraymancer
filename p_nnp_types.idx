@@ -1,0 +1,5 @@
+nimTitle	p_nnp_types	p_nnp_types.html	module src/arraymancer/nn_primitives/private/p_nnp_types		0
+nim	Size2D	p_nnp_types.html#Size2D	tuple Size2D		4
+nim	nchw_channels	p_nnp_types.html#nchw_channels,Tensor[T]	proc nchw_channels[T](input: Tensor[T]): int		10
+nim	nchw_height	p_nnp_types.html#nchw_height,Tensor[T]	proc nchw_height[T](input: Tensor[T]): int		14
+nim	nchw_width	p_nnp_types.html#nchw_width,Tensor[T]	proc nchw_width[T](input: Tensor[T]): int		18

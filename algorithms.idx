@@ -1,0 +1,4 @@
+nimTitle	algorithms	algorithms.html	module src/arraymancer/tensor/algorithms		0
+nim	sort	algorithms.html#sort,Tensor[T]	proc sort[T](t: var Tensor[T]; order = SortOrder.Ascending)		22
+nim	sorted	algorithms.html#sorted,Tensor[T]	proc sorted[T](t: Tensor[T]; order = SortOrder.Ascending): Tensor[T]		32
+nim	argsort	algorithms.html#argsort,Tensor[T]	proc argsort[T](t: Tensor[T]; order = SortOrder.Ascending; toCopy = false): Tensor[\n    int]		38

@@ -1,0 +1,2 @@
+nimTitle	operators_blas_l2l3_cuda	operators_blas_l2l3_cuda.html	module src/arraymancer/tensor/operators_blas_l2l3_cuda		0
+nim	`*`	operators_blas_l2l3_cuda.html#*,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc `*`[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T]		74

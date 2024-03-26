@@ -1,0 +1,6 @@
+nimTitle	p_logsumexp	p_logsumexp.html	module src/arraymancer/nn_primitives/private/p_logsumexp		0
+nim	streaming_max_sumexp	p_logsumexp.html#streaming_max_sumexp,Tensor[T]	proc streaming_max_sumexp[T](t: Tensor[T]): tuple[max: T, sumexp: T]		30
+nim	streaming_max_sumexp	p_logsumexp.html#streaming_max_sumexp,Tensor[T],int	proc streaming_max_sumexp[T](t: Tensor[T]; axis: int): Tensor[\n    tuple[max: T, sumexp: T]]		41
+nim	stable_softmax	p_logsumexp.html#stable_softmax,T,T,T	proc stable_softmax[T](x, max, sumexp: T): T		57
+nim	logsumexp	p_logsumexp.html#logsumexp,Tensor[T: SomeFloat]	proc logsumexp[T: SomeFloat](t: Tensor[T]): T		61
+nimgrp	streamingmaxsumexp	p_logsumexp.html#streaming_max_sumexp-procs-all	proc		30

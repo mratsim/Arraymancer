@@ -1,0 +1,2 @@
+nimTitle	least_squares_lapack	least_squares_lapack.html	module src/arraymancer/linear_algebra/helpers/least_squares_lapack		0
+nim	gelsd	least_squares_lapack.html#gelsd,Tensor[T: SomeFloat],Tensor[T: SomeFloat],Tensor[T: SomeFloat],Tensor[T: SomeFloat],Tensor[T: SomeFloat],int	proc gelsd[T: SomeFloat](a, b: Tensor[T]; solution, residuals: var Tensor[T];\n                    singular_values: var Tensor[T]; matrix_rank: var int;\n                    rcond = -1.T)		18

@@ -1,0 +1,3 @@
+nimTitle	softmax	softmax.html	module src/arraymancer/nn/activation/softmax		0
+nim	SoftmaxActivation	softmax.html#SoftmaxActivation	type SoftmaxActivation		19
+nim	softmax	softmax.html#softmax,Variable[TT]	proc softmax[TT](a: Variable[TT]): Variable[TT]		47

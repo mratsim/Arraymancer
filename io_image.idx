@@ -1,0 +1,8 @@
+nimTitle	io_image	io_image.html	module src/arraymancer/io/io_image		0
+nim	read_image	io_image.html#read_image,string	proc read_image(filepath: string): Tensor[uint8]		20
+nim	read_image	io_image.html#read_image,seq[byte]	proc read_image(buffer: seq[byte]): Tensor[uint8]		39
+nim	write_png	io_image.html#write_png,Tensor[uint8],string	proc write_png(img: Tensor[uint8]; filepath: string)		72
+nim	write_bmp	io_image.html#write_bmp,Tensor[uint8],string	proc write_bmp(img: Tensor[uint8]; filepath: string)		73
+nim	write_tga	io_image.html#write_tga,Tensor[uint8],string	proc write_tga(img: Tensor[uint8]; filepath: string)		74
+nim	write_jpg	io_image.html#write_jpg,Tensor[uint8],string,int	proc write_jpg(img: Tensor[uint8]; filepath: string; quality = 100)		76
+nimgrp	readimage	io_image.html#read_image-procs-all	proc		20

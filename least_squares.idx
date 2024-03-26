@@ -1,0 +1,2 @@
+nimTitle	least_squares	least_squares.html	module src/arraymancer/linear_algebra/least_squares		0
+nim	least_squares_solver	least_squares.html#least_squares_solver,Tensor[T: SomeFloat],Tensor[T: SomeFloat]	proc least_squares_solver[T: SomeFloat](a, b: Tensor[T]; rcond = -1.T): tuple[\n    solution: Tensor[T], residuals: Tensor[T], matrix_rank: int,\n    singular_values: Tensor[T]]		8

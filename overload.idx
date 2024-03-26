@@ -1,0 +1,2 @@
+nimTitle	overload	overload.html	module src/arraymancer/linear_algebra/helpers/overload		0
+nim	overload	overload.html#overload.m,untyped,	macro overload(overloaded_name: untyped; lapack_name: typed{nkSym}): untyped		5

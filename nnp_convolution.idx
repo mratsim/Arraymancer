@@ -1,0 +1,6 @@
+nimTitle	nnp_convolution	nnp_convolution.html	module src/arraymancer/nn_primitives/nnp_convolution		0
+nim	Im2ColGEMM	nnp_convolution.html#Im2ColGEMM	Conv2DAlgorithm.Im2ColGEMM		24
+nim	NNPackAuto	nnp_convolution.html#NNPackAuto	Conv2DAlgorithm.NNPackAuto		24
+nim	Conv2DAlgorithm	nnp_convolution.html#Conv2DAlgorithm	enum Conv2DAlgorithm		24
+nim	conv2d	nnp_convolution.html#conv2d,Tensor[T],Tensor[T],Tensor[T],Size2D,Size2D	proc conv2d[T](input, weight, bias: Tensor[T]; padding: Size2D = (0, 0);\n          stride: Size2D = (1, 1); algorithm = Conv2DAlgorithm.Im2ColGEMM): Tensor[\n    T]		28
+nim	conv2d_backward	nnp_convolution.html#conv2d_backward,Tensor[T],Tensor[T],Tensor[T],Size2D,Size2D,Tensor[T],Tensor[T],Tensor[T],Tensor[T]	proc conv2d_backward[T](input, weight, bias: Tensor[T]; padding: Size2D;\n                   stride: Size2D; grad_output: Tensor[T];\n                   grad_input, grad_weight, grad_bias: var Tensor[T];\n                   algorithm = Conv2DAlgorithm.Im2ColGEMM)		65

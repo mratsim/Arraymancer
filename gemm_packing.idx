@@ -1,0 +1,3 @@
+nimTitle	gemm_packing	gemm_packing.html	module src/arraymancer/laser/primitives/matrix_multiplication/gemm_packing		0
+nim	pack_A_mc_kc	gemm_packing.html#pack_A_mc_kc,ptr.UncheckedArray[T],int,int,MatrixView[T]	proc pack_A_mc_kc[T; ukernel: static MicroKernel](packedA: ptr UncheckedArray[T];\n    mc, kc: int; A: MatrixView[T])		24
+nim	pack_B_kc_nc	gemm_packing.html#pack_B_kc_nc,ptr.UncheckedArray[T],int,int,MatrixView[T]	proc pack_B_kc_nc[T; ukernel: static MicroKernel](packedB: ptr UncheckedArray[T];\n    kc, nc: int; B: MatrixView[T])		63

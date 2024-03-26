@@ -1,0 +1,3 @@
+nimTitle	nnpack_interface	nnpack_interface.html	module src/arraymancer/nn_primitives/backend/nnpack_interface		0
+nim	nnpack_conv2d	nnpack_interface.html#nnpack_conv2d,Tensor[float32],Tensor[float32],Tensor[float32],Size2D,Size2D	proc nnpack_conv2d(input, weight, bias: Tensor[float32]; padding, stride: Size2D): Tensor[\n    float32]		18
+nim	nnpack_conv2d_gradient	nnpack_interface.html#nnpack_conv2d_gradient,Tensor[float32],Tensor[float32],Size2D,Size2D,Tensor[T],Tensor[T],Tensor[T]	proc nnpack_conv2d_gradient[T](input, weight: Tensor[float32];\n                          padding, stride: Size2D; grad_output: Tensor[T];\n                          grad_input, grad_weight: var Tensor[T])		60

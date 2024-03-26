@@ -1,0 +1,7 @@
+nimTitle	init	init.html	module src/arraymancer/nn/init		0
+nim	kaiming_uniform	init.html#kaiming_uniform,varargs[int],type	proc kaiming_uniform(shape: varargs[int]; T: type): Tensor[T]		100
+nim	kaiming_normal	init.html#kaiming_normal,varargs[int],type	proc kaiming_normal(shape: varargs[int]; T: type): Tensor[T]		117
+nim	xavier_uniform	init.html#xavier_uniform,varargs[int],type	proc xavier_uniform(shape: varargs[int]; T: type): Tensor[T]		144
+nim	xavier_normal	init.html#xavier_normal,varargs[int],type	proc xavier_normal(shape: varargs[int]; T: type): Tensor[T]		166
+nim	yann_uniform	init.html#yann_uniform,varargs[int],type	proc yann_uniform(shape: varargs[int]; T: type): Tensor[T]		201
+nim	yann_normal	init.html#yann_normal,varargs[int],type	proc yann_normal(shape: varargs[int]; T: type): Tensor[T]		215

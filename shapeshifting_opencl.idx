@@ -1,0 +1,2 @@
+nimTitle	shapeshifting_opencl	shapeshifting_opencl.html	module src/arraymancer/tensor/shapeshifting_opencl		0
+nim	broadcast2	shapeshifting_opencl.html#broadcast2,ClTensor[T],ClTensor[T]	proc broadcast2[T](a, b: ClTensor[T]): tuple[a, b: ClTensor[T]]		18

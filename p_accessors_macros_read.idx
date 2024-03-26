@@ -1,0 +1,18 @@
+nimTitle	p_accessors_macros_read	p_accessors_macros_read.html	module src/arraymancer/tensor/private/p_accessors_macros_read		0
+nim	slicerImpl	p_accessors_macros_read.html#slicerImpl.t,,ArrayOfSlices	template slicerImpl[T](result: AnyTensor[T] | var AnyTensor[T]; slices: ArrayOfSlices): untyped		28
+nim	slicer	p_accessors_macros_read.html#slicer,AnyTensor[T],openArray[SteppedSlice]	proc slicer[T](t: AnyTensor[T]; slices: openArray[SteppedSlice]): AnyTensor[T]		60
+nim	slicer	p_accessors_macros_read.html#slicer,AnyTensor[T],openArray[SteppedSlice],Ellipsis	proc slicer[T](t: AnyTensor[T]; slices: openArray[SteppedSlice]; ellipsis: Ellipsis): AnyTensor[\n    T]		69
+nim	slicer	p_accessors_macros_read.html#slicer,AnyTensor[T],Ellipsis,openArray[SteppedSlice]	proc slicer[T](t: AnyTensor[T]; ellipsis: Ellipsis; slices: openArray[SteppedSlice]): AnyTensor[\n    T]		81
+nim	slicer	p_accessors_macros_read.html#slicer,AnyTensor[T],openArray[SteppedSlice],Ellipsis,openArray[SteppedSlice]	proc slicer[T](t: AnyTensor[T]; slices1: openArray[SteppedSlice]; ellipsis: Ellipsis;\n          slices2: openArray[SteppedSlice]): AnyTensor[T]		94
+nim	slicer	p_accessors_macros_read.html#slicer,Tensor[T],ArrayOfSlices	proc slicer[T](t: Tensor[T]; slices: ArrayOfSlices): Tensor[T]		110
+nim	FancyNone	p_accessors_macros_read.html#FancyNone	FancySelectorKind.FancyNone		124
+nim	FancyIndex	p_accessors_macros_read.html#FancyIndex	FancySelectorKind.FancyIndex		124
+nim	FancyMaskFull	p_accessors_macros_read.html#FancyMaskFull	FancySelectorKind.FancyMaskFull		124
+nim	FancyMaskAxis	p_accessors_macros_read.html#FancyMaskAxis	FancySelectorKind.FancyMaskAxis		124
+nim	FancyUnknownFull	p_accessors_macros_read.html#FancyUnknownFull	FancySelectorKind.FancyUnknownFull		124
+nim	FancyUnknownAxis	p_accessors_macros_read.html#FancyUnknownAxis	FancySelectorKind.FancyUnknownAxis		124
+nim	FancySelectorKind	p_accessors_macros_read.html#FancySelectorKind	enum FancySelectorKind		124
+nim	getFancySelector	p_accessors_macros_read.html#getFancySelector,NimNode,int,NimNode	proc getFancySelector(ast: NimNode; axis: var int; selector: var NimNode): FancySelectorKind		133
+nim	sliceDispatchImpl	p_accessors_macros_read.html#sliceDispatchImpl,NimNode,NimNode,bool	proc sliceDispatchImpl(result: NimNode; args: NimNode; isRead: bool)		198
+nim	slice_typed_dispatch	p_accessors_macros_read.html#slice_typed_dispatch.m,typed,varargs[typed]	macro slice_typed_dispatch(t: typed; args: varargs[typed]): untyped		225
+nimgrp	slicer	p_accessors_macros_read.html#slicer-procs-all	proc		60

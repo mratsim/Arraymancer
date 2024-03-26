@@ -1,0 +1,2 @@
+nimTitle	lapack	lapack.html	module src/arraymancer/tensor/lapack		0
+nim	frobenius_inner_prod	lapack.html#frobenius_inner_prod,Tensor[T],Tensor[T]	proc frobenius_inner_prod[T](a, b: Tensor[T]): T		19

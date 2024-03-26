@@ -1,0 +1,2 @@
+nimTitle	accessors_macros_read	accessors_macros_read.html	module src/arraymancer/tensor/accessors_macros_read		0
+nim	`[]`	accessors_macros_read.html#[].m,AnyTensor[T],varargs[untyped]	macro `[]`[T](t: AnyTensor[T]; args: varargs[untyped]): untyped		20

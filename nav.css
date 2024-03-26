@@ -1,0 +1,138 @@
+/*
+Original credits: Flyx and NimYAML: https://github.com/flyx/NimYAML/blob/e9658f22ecc25444fac361af3a0eca4f3b152578/doc/style.css
+*/
+
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: #111;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+header a {
+    display: inline-block;
+    line-height: 50px;
+    font-size: large;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+header a.active {
+    background: #877 !important;
+    color: black !important;
+}
+
+header span {
+    display: inline-block;
+    line-height: 30px;
+    font-size: large;
+    color: white;
+    padding-left: 15px;
+    padding-right: 5px;
+}
+
+header span a {
+    display: block;
+}
+
+header span ul {
+    opacity: 0;
+    visibility: hidden;
+    transition:visibility 0s linear 0.5s, opacity 0.5s linear;
+    position: absolute;
+    top: 100%;
+    list-style: none;
+    background: #111;
+    margin: 0;
+}
+
+header span ul:after {
+    content: "";
+    clear: both;
+    opacity: 1;
+    visibility: visible;
+    transition-delay:0s;
+}
+
+header span:hover > ul {
+    opacity: 1;
+    visibility: visible;
+    transition-delay:0s;
+}
+
+header span ul a {
+    padding: 0 10px;
+    line-height: 25px;
+}
+
+header span ul.monospace a {
+    font-size: smaller;
+    font-family: "Source Code Pro", Menlo, "Courier New", Courier, monospace;
+}
+
+header span ul span ul {
+    max-height: 800px;/* you can change as you need it */
+    overflow:auto;/* to get scroll */
+}
+
+
+header a:link,
+header a:visited {
+    background: inherit;
+    color: #aaa;
+}
+
+header a:hover {
+    background: inherit;
+    color: white;
+    text-decoration: inherit;
+}
+
+header a:active {
+    background: #222;
+    color: white;
+    text-decoration: inherit;
+}
+
+a.pagetitle:link,
+a.pagetitle:hover,
+a.pagetitle:active,
+a.pagetitle:visited {
+    background: inherit;
+    color: white;
+    text-decoration: inherit;
+}
+
+body {
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 55px;
+    margin-bottom: 5px;
+    padding: 0;
+}
+
+html {
+    background-color: rgba(252, 248, 244, 0.75);
+}
+
+/* necessary for links to scroll to the right position */
+dt a:before {
+    margin-top: -50px;
+    height: 50px;
+    content: ' ';
+    display: block;
+    visibility: hidden;
+}
+
+object {
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}

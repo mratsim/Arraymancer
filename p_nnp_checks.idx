@@ -1,0 +1,2 @@
+nimTitle	p_nnp_checks	p_nnp_checks.html	module src/arraymancer/nn_primitives/private/p_nnp_checks		0
+nim	check_input_target	p_nnp_checks.html#check_input_target,Tensor[T],Tensor[T]	proc check_input_target[T](input, target: Tensor[T])		17

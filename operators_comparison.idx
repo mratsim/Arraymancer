@@ -1,0 +1,34 @@
+nimTitle	operators_comparison	operators_comparison.html	module src/arraymancer/tensor/operators_comparison		0
+nim	`==`	operators_comparison.html#==,Tensor[T],Tensor[T]	proc `==`[T](a, b: Tensor[T]): bool		21
+nim	`==.`	operators_comparison.html#==.,Tensor[T],Tensor[T]	proc `==.`[T](a, b: Tensor[T]): Tensor[bool]		41
+nim	`!=.`	operators_comparison.html#!=.,Tensor[T],Tensor[T]	proc `!=.`[T](a, b: Tensor[T]): Tensor[bool]		51
+nim	`<=.`	operators_comparison.html#<=.,Tensor[T],Tensor[T]	proc `<=.`[T](a, b: Tensor[T]): Tensor[bool]		60
+nim	`<.`	operators_comparison.html#<.,Tensor[T],Tensor[T]	proc `<.`[T](a, b: Tensor[T]): Tensor[bool]		69
+nim	`>=.`	operators_comparison.html#>=.,Tensor[T],Tensor[T]	proc `>=.`[T](a, b: Tensor[T]): Tensor[bool]		78
+nim	`>.`	operators_comparison.html#>.,Tensor[T],Tensor[T]	proc `>.`[T](a, b: Tensor[T]): Tensor[bool]		87
+nim	`.==`	operators_comparison.html#.==,Tensor[T],Tensor[T]	proc `.==`[T](a, b: Tensor[T]): Tensor[bool]		96
+nim	`.!=`	operators_comparison.html#.!=,Tensor[T],Tensor[T]	proc `.!=`[T](a, b: Tensor[T]): Tensor[bool]		97
+nim	`.<=`	operators_comparison.html#.<=,Tensor[T],Tensor[T]	proc `.<=`[T](a, b: Tensor[T]): Tensor[bool]		98
+nim	`.<`	operators_comparison.html#.<,Tensor[T],Tensor[T]	proc `.<`[T](a, b: Tensor[T]): Tensor[bool]		99
+nim	`.>=`	operators_comparison.html#.>=,Tensor[T],Tensor[T]	proc `.>=`[T](a, b: Tensor[T]): Tensor[bool]		100
+nim	`.>`	operators_comparison.html#.>,Tensor[T],Tensor[T]	proc `.>`[T](a, b: Tensor[T]): Tensor[bool]		101
+nim	`==.`	operators_comparison.html#==.,Tensor[T],T	proc `==.`[T](t: Tensor[T]; value: T): Tensor[bool]		111
+nim	`!=.`	operators_comparison.html#!=.,Tensor[T],T	proc `!=.`[T](t: Tensor[T]; value: T): Tensor[bool]		117
+nim	`<=.`	operators_comparison.html#<=.,Tensor[T],T	proc `<=.`[T](t: Tensor[T]; value: T): Tensor[bool]		123
+nim	`<.`	operators_comparison.html#<.,Tensor[T],T	proc `<.`[T](t: Tensor[T]; value: T): Tensor[bool]		129
+nim	`>=.`	operators_comparison.html#>=.,Tensor[T],T	proc `>=.`[T](t: Tensor[T]; value: T): Tensor[bool]		135
+nim	`>.`	operators_comparison.html#>.,Tensor[T],T	proc `>.`[T](t: Tensor[T]; value: T): Tensor[bool]		141
+nim	`==.`	operators_comparison.html#==..t,T,Tensor[T]	template `==.`[T](value: T; t: Tensor[T]): Tensor[bool]		151
+nim	`!=.`	operators_comparison.html#!=..t,T,Tensor[T]	template `!=.`[T](value: T; t: Tensor[T]): Tensor[bool]		157
+nim	`<=.`	operators_comparison.html#<=..t,T,Tensor[T]	template `<=.`[T](value: T; t: Tensor[T]): Tensor[bool]		163
+nim	`<.`	operators_comparison.html#<..t,T,Tensor[T]	template `<.`[T](value: T; t: Tensor[T]): Tensor[bool]		169
+nim	`>=.`	operators_comparison.html#>=..t,T,Tensor[T]	template `>=.`[T](value: T; t: Tensor[T]): Tensor[bool]		175
+nim	`>.`	operators_comparison.html#>..t,T,Tensor[T]	template `>.`[T](value: T; t: Tensor[T]): Tensor[bool]		181
+nim	isNaN	operators_comparison.html#isNaN,Tensor[SomeFloat]	proc isNaN(t: Tensor[SomeFloat]): Tensor[bool]		191
+nim	isNotNaN	operators_comparison.html#isNotNaN,Tensor[SomeFloat]	proc isNotNaN(t: Tensor[SomeFloat]): Tensor[bool]		198
+nimgrp	!=.	operators_comparison.html#!=.-procs-all	proc		51
+nimgrp	<.	operators_comparison.html#<.-procs-all	proc		69
+nimgrp	==.	operators_comparison.html#==.-procs-all	proc		41
+nimgrp	>=.	operators_comparison.html#>=.-procs-all	proc		78
+nimgrp	>.	operators_comparison.html#>.-procs-all	proc		87
+nimgrp	<=.	operators_comparison.html#<=.-procs-all	proc		60

@@ -1,0 +1,6 @@
+nimTitle	flatten	flatten.html	module src/arraymancer/nn/layers/flatten		0
+nim	Flatten	flatten.html#Flatten	object Flatten		6
+nim	init	flatten.html#init,Context[Tensor[T]],typedesc[Flatten[T]],seq[int]	proc init[T](ctx: Context[Tensor[T]]; layerType: typedesc[Flatten[T]];\n        inShape: seq[int]): Flatten[T]		9
+nim	forward	flatten.html#forward,Flatten[T],Variable[Tensor[T]]	proc forward[T](self: Flatten[T]; input: Variable[Tensor[T]]): Variable[Tensor[T]]		19
+nim	outShape	flatten.html#outShape,Flatten[T]	proc outShape[T](self: Flatten[T]): seq[int]		23
+nim	inShape	flatten.html#inShape,Flatten[T]	proc inShape[T](self: Flatten[T]): seq[int]		28

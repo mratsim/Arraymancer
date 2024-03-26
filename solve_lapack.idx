@@ -1,0 +1,2 @@
+nimTitle	solve_lapack	solve_lapack.html	module src/arraymancer/linear_algebra/helpers/solve_lapack		0
+nim	gesv	solve_lapack.html#gesv,Tensor[T: SomeFloat],Tensor[T: SomeFloat],seq[int32]	proc gesv[T: SomeFloat](a, b: var Tensor[T]; pivot_indices: var seq[int32])		17

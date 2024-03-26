@@ -1,0 +1,2 @@
+nimTitle	naive_l2_gemv	naive_l2_gemv.html	module src/arraymancer/tensor/fallback/naive_l2_gemv		0
+nim	naive_gemv_fallback	naive_l2_gemv.html#naive_gemv_fallback,T,Tensor[T: SomeInteger],Tensor[T: SomeInteger],T,Tensor[T: SomeInteger]	proc naive_gemv_fallback[T: SomeInteger](alpha: T; A: Tensor[T]; x: Tensor[T];\n                                    beta: T; y: var Tensor[T])		24

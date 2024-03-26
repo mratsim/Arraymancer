@@ -1,0 +1,2 @@
+nimTitle	foreach_staged	foreach_staged.html	module src/arraymancer/laser/strided_iteration/foreach_staged		0
+nim	forEachStaged	foreach_staged.html#forEachStaged.m,varargs[untyped]	macro forEachStaged(args: varargs[untyped]): untyped		318

@@ -1,0 +1,9 @@
+nimTitle	io_hdf5	io_hdf5.html	module src/arraymancer/io/io_hdf5		0
+nim	read_hdf5	io_hdf5.html#read_hdf5,H5File,Option[string],Option[string],Option[int]	proc read_hdf5[T: SomeNumber](h5f: var H5FileObj; name, group: Option[string];\n                         number: Option[int]): Tensor[T]		61
+nim	read_hdf5	io_hdf5.html#read_hdf5,H5File,string,string,int	proc read_hdf5[T: SomeNumber](h5f: var H5FileObj; name, group = ""; number = -1): Tensor[\n    T]		114
+nim	read_hdf5	io_hdf5.html#read_hdf5,string,string,string,int	proc read_hdf5[T: SomeNumber](hdf5Path: string; name, group = ""; number = -1): Tensor[\n    T]		125
+nim	write_hdf5	io_hdf5.html#write_hdf5,H5File,Tensor[T: SomeNumber],Option[string],Option[string]	proc write_hdf5[T: SomeNumber](h5f: var H5FileObj; t: Tensor[T];\n                          name, group: Option[string])		135
+nim	write_hdf5	io_hdf5.html#write_hdf5,H5File,Tensor[T: SomeNumber],string,string	proc write_hdf5[T: SomeNumber](h5f: var H5FileObj; t: Tensor[T]; name, group = "")		176
+nim	write_hdf5	io_hdf5.html#write_hdf5,Tensor[T: SomeNumber],string,string,string	proc write_hdf5[T: SomeNumber](t: Tensor[T]; hdf5Path: string; name, group = "")		186
+nimgrp	writehdf5	io_hdf5.html#write_hdf5-procs-all	proc		135
+nimgrp	readhdf5	io_hdf5.html#read_hdf5-procs-all	proc		61

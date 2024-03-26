@@ -1,0 +1,7 @@
+nimTitle	nested_containers	nested_containers.html	module src/arraymancer/laser/private/nested_containers		0
+nim	flatIter	nested_containers.html#flatIter.i,string	iterator flatIter(s: string): string		12
+nim	flatIter	nested_containers.html#flatIter.i,openArray[T]	iterator flatIter[T](s: openArray[T]): auto		15
+nim	getShape	nested_containers.html#getShape,string	proc getShape(s: string; parent_shape = Metadata()): Metadata		25
+nim	getShape	nested_containers.html#getShape,openArray[T]	proc getShape[T](s: openArray[T]; parent_shape = Metadata()): Metadata		34
+nimgrp	getshape	nested_containers.html#getShape-procs-all	proc		25
+nimgrp	flatiter	nested_containers.html#flatIter-iterators-all	iterator		12

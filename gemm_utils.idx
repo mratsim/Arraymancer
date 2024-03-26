@@ -1,0 +1,8 @@
+nimTitle	gemm_utils	gemm_utils.html	module src/arraymancer/laser/primitives/matrix_multiplication/gemm_utils		0
+nim	`+`	gemm_utils.html#+,ptr,int	proc `+`(p: ptr; offset: int): type(p)		16
+nim	to_ptr	gemm_utils.html#to_ptr.t,typed,staticint,staticint,typedesc	template to_ptr(AB: typed; MR, NR: static int; T: typedesc): untyped		27
+nim	MatrixView	gemm_utils.html#MatrixView	object MatrixView		37
+nim	toMatrixView	gemm_utils.html#toMatrixView,ptr.T,int,int	proc toMatrixView[T](data: ptr T; rowStride, colStride: int): MatrixView[T]		41
+nim	`[]`	gemm_utils.html#[].t,MatrixView[T],Natural,Natural	template `[]`[T](view: MatrixView[T]; row, col: Natural): T		46
+nim	`[]=`	gemm_utils.html#[]=.t,MatrixView[T],Natural,Natural,T	template `[]=`[T](view: MatrixView[T]; row, col: Natural; value: T)		50
+nim	stride	gemm_utils.html#stride,MatrixView[T],Natural,Natural	proc stride[T](view: MatrixView[T]; row, col: Natural): MatrixView[T]		54

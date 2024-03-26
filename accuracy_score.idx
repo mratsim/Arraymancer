@@ -1,0 +1,2 @@
+nimTitle	accuracy_score	accuracy_score.html	module src/arraymancer/ml/metrics/accuracy_score		0
+nim	accuracy_score	accuracy_score.html#accuracy_score,Tensor[T],Tensor[T]	proc accuracy_score[T](y_pred, y_true: Tensor[T]): float		18

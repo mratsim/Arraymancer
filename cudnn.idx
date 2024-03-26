@@ -1,0 +1,4 @@
+nimTitle	cudnn	cudnn.html	module src/arraymancer/nn_primitives/backend/cudnn		0
+nim	cudnnHandle0	cudnn.html#cudnnHandle0	let cudnnHandle0		34
+nim	asCudnnType	cudnn.html#asCudnnType.t,typedesc[T]	template asCudnnType[T: SomeFloat](typ: typedesc[T]): cudnnDataType_t		39
+nim	newCudnn4DTensorDesc	cudnn.html#newCudnn4DTensorDesc,CudaTensor[T: SomeFloat]	proc newCudnn4DTensorDesc[T: SomeFloat](t: CudaTensor[T]): cudnnTensorDescriptor_t		59

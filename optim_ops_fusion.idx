@@ -1,0 +1,5 @@
+nimTitle	optim_ops_fusion	optim_ops_fusion.html	module src/arraymancer/tensor/optim_ops_fusion		0
+nim	rewriteTensor_MultiplyAdd	optim_ops_fusion.html#rewriteTensor_MultiplyAdd.t,Tensor[T],Tensor[T],Tensor[T]	template rewriteTensor_MultiplyAdd{\n  `*`(A, B) + C\n}[T](A, B, C: Tensor[T]): auto		50
+nim	rewriteTensor_AddMultiply	optim_ops_fusion.html#rewriteTensor_AddMultiply.t,Tensor[T],Tensor[T],Tensor[T]	template rewriteTensor_AddMultiply{\n  C + `*`(A, B)\n}[T](A, B, C: Tensor[T]): auto		57
+nim	rewriteTensor_MultiplyAdd_inplace	optim_ops_fusion.html#rewriteTensor_MultiplyAdd_inplace.t,Tensor[T],Tensor[T],Tensor[T]	template rewriteTensor_MultiplyAdd_inplace{\n  C += `*`(A, B)\n}[T](A, B: Tensor[T]; C: var Tensor[T])		65
+nim	rewriteToTensorReshape	optim_ops_fusion.html#rewriteToTensorReshape.t,openArray,varargs[int],static[int]	template rewriteToTensorReshape{\n  reshape(toTensor(oa, dummy_bugfix), shape)\n}(oa: openArray; shape: varargs[int]; dummy_bugfix: static[int]): auto		101

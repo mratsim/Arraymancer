@@ -1,0 +1,7 @@
+nimTitle	compiler_optim_hints	compiler_optim_hints.html	module src/arraymancer/laser/compiler_optim_hints		0
+nim	LASER_MEM_ALIGN	compiler_optim_hints.html#LASER_MEM_ALIGN	const LASER_MEM_ALIGN		9
+nim	withCompilerOptimHints	compiler_optim_hints.html#withCompilerOptimHints.t	template withCompilerOptimHints()		14
+nim	PrefetchRW	compiler_optim_hints.html#PrefetchRW	enum PrefetchRW		34
+nim	PrefetchLocality	compiler_optim_hints.html#PrefetchLocality	enum PrefetchLocality		37
+nim	assume_aligned	compiler_optim_hints.html#assume_aligned.t,ptr.T,staticint	template assume_aligned[T](data: ptr T; alignment: static int = LASER_MEM_ALIGN): ptr T		56
+nim	prefetch	compiler_optim_hints.html#prefetch.t,ptr.,staticPrefetchRW,staticPrefetchLocality	template prefetch[T](data: ptr (T or UncheckedArray[T]); rw: static PrefetchRW = Read;\n            locality: static PrefetchLocality = HighTemporalLocality)		64

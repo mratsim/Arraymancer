@@ -1,0 +1,44 @@
+nimTitle	accessors	accessors.html	module src/arraymancer/tensor/accessors		0
+nim	atContiguousIndex	accessors.html#atContiguousIndex,Tensor[T],int	proc atContiguousIndex[T](t: Tensor[T]; idx: int): T		19
+nim	atContiguousIndex	accessors.html#atContiguousIndex,Tensor[T],int_2	proc atContiguousIndex[T](t: var Tensor[T]; idx: int): var T		27
+nim	atAxisIndex	accessors.html#atAxisIndex,Tensor[T],int,int,int	proc atAxisIndex[T](t: Tensor[T]; axis, idx: int; length = 1): Tensor[T]		35
+nim	items	accessors.html#items.i,Tensor[T]	iterator items[T](t: Tensor[T]): T		45
+nim	items	accessors.html#items.i,Tensor[T],int,int	iterator items[T](t: Tensor[T]; offset, size: int): T		57
+nim	mitems	accessors.html#mitems.i,Tensor[T]	iterator mitems[T](t: var Tensor[T]): var T		64
+nim	mitems	accessors.html#mitems.i,Tensor[T],int,int	iterator mitems[T](t: var Tensor[T]; offset, size: int): var T		72
+nim	enumerate	accessors.html#enumerate.i,Tensor[T]	iterator enumerate[T](t: Tensor[T]): (int, T)		83
+nim	enumerate	accessors.html#enumerate.i,Tensor[T],int,int	iterator enumerate[T](t: Tensor[T]; offset, size: int): (int, T)		87
+nim	menumerate	accessors.html#menumerate.i,Tensor[T]	iterator menumerate[T](t: Tensor[T]): (int, var T)		94
+nim	menumerate	accessors.html#menumerate.i,Tensor[T],int,int	iterator menumerate[T](t: Tensor[T]; offset, size: int): (int, var T)		102
+nim	pairs	accessors.html#pairs.i,Tensor[T]	iterator pairs[T](t: Tensor[T]): (seq[int], T)		113
+nim	mpairs	accessors.html#mpairs.i,Tensor[T]	iterator mpairs[T](t: var Tensor[T]): (seq[int], var T)		132
+nim	zip	accessors.html#zip.i,Tensor[T],Tensor[U]	iterator zip[T, U](t1: Tensor[T]; t2: Tensor[U]): (T, U)		140
+nim	zip	accessors.html#zip.i,Tensor[T],Tensor[U],int,int	iterator zip[T, U](t1: Tensor[T]; t2: Tensor[U]; offset, size: int): (T, U)		147
+nim	zip	accessors.html#zip.i,Tensor[T],Tensor[U],Tensor[V]	iterator zip[T, U, V](t1: Tensor[T]; t2: Tensor[U]; t3: Tensor[V]): (T, U, V)		156
+nim	zip	accessors.html#zip.i,Tensor[T],Tensor[U],Tensor[V],int,int	iterator zip[T, U, V](t1: Tensor[T]; t2: Tensor[U]; t3: Tensor[V]; offset, size: int): (\n    T, U, V)		164
+nim	mzip	accessors.html#mzip.i,Tensor[T],Tensor[U]	iterator mzip[T, U](t1: var Tensor[T]; t2: Tensor[U]): (var T, U)		174
+nim	mzip	accessors.html#mzip.i,Tensor[T],Tensor[U],int,int	iterator mzip[T, U](t1: var Tensor[T]; t2: Tensor[U]; offset, size: int): (var T, U)		185
+nim	mzip	accessors.html#mzip.i,Tensor[T],Tensor[U],Tensor[V]	iterator mzip[T, U, V](t1: var Tensor[T]; t2: Tensor[U]; t3: Tensor[V]): (var T, U, V)		198
+nim	mzip	accessors.html#mzip.i,Tensor[T],Tensor[U],Tensor[V],int,int	iterator mzip[T, U, V](t1: var Tensor[T]; t2: Tensor[U]; t3: Tensor[V]; offset, size: int): (\n    var T, U, V)		209
+nim	enumerateZip	accessors.html#enumerateZip.i,Tensor[T],Tensor[U]	iterator enumerateZip[T, U](t1: Tensor[T]; t2: Tensor[U]): (int, T, U)		223
+nim	enumerateZip	accessors.html#enumerateZip.i,Tensor[T],Tensor[U],int,int	iterator enumerateZip[T, U](t1: Tensor[T]; t2: Tensor[U]; offset, size: int): (int, T, U)		230
+nim	enumerateZip	accessors.html#enumerateZip.i,Tensor[T],Tensor[U],Tensor[V]	iterator enumerateZip[T, U, V](t1: Tensor[T]; t2: Tensor[U]; t3: Tensor[V]): (int, T, U,\n    V)		239
+nim	enumerateZip	accessors.html#enumerateZip.i,Tensor[T],Tensor[U],Tensor[V],int,int	iterator enumerateZip[T, U, V](t1: Tensor[T]; t2: Tensor[U]; t3: Tensor[V];\n                      offset, size: int): (int, T, U, V)		247
+nim	menumerateZip	accessors.html#menumerateZip.i,Tensor[T],Tensor[U]	iterator menumerateZip[T, U](t1: var Tensor[T]; t2: Tensor[U]): (int, var T, U)		257
+nim	menumerateZip	accessors.html#menumerateZip.i,Tensor[T],Tensor[U],int,int	iterator menumerateZip[T, U](t1: var Tensor[T]; t2: Tensor[U]; offset, size: int): (int,\n    var T, U)		268
+nim	axis	accessors.html#axis.i,Tensor[T],int	iterator axis[T](t: Tensor[T]; axis: int): Tensor[T]		304
+nim	axis	accessors.html#axis.i,Tensor[T],int,int,int	iterator axis[T](t: Tensor[T]; axis, offset, size: int): Tensor[T]		319
+nim	zipAxis	accessors.html#zipAxis.i,Tensor[T],Tensor[U],int	iterator zipAxis[T, U](a: Tensor[T]; b: Tensor[U]; axis: int): tuple[a: Tensor[T],\n    b: Tensor[U]]		322
+nim	enumerateAxis	accessors.html#enumerateAxis.i,Tensor[T],int	iterator enumerateAxis[T](t: Tensor[T]; axis: int): (int, Tensor[T])		344
+nim	enumerateAxis	accessors.html#enumerateAxis.i,Tensor[T],int,int,int	iterator enumerateAxis[T](t: Tensor[T]; axis, offset, size: int): (int, Tensor[T])		360
+nimgrp	atcontiguousindex	accessors.html#atContiguousIndex-procs-all	proc		19
+nimgrp	enumerate	accessors.html#enumerate-iterators-all	iterator		83
+nimgrp	enumeratezip	accessors.html#enumerateZip-iterators-all	iterator		223
+nimgrp	mzip	accessors.html#mzip-iterators-all	iterator		174
+nimgrp	menumeratezip	accessors.html#menumerateZip-iterators-all	iterator		257
+nimgrp	items	accessors.html#items-iterators-all	iterator		45
+nimgrp	zip	accessors.html#zip-iterators-all	iterator		140
+nimgrp	axis	accessors.html#axis-iterators-all	iterator		304
+nimgrp	mitems	accessors.html#mitems-iterators-all	iterator		64
+nimgrp	enumerateaxis	accessors.html#enumerateAxis-iterators-all	iterator		344
+nimgrp	menumerate	accessors.html#menumerate-iterators-all	iterator		94

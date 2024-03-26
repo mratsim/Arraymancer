@@ -1,0 +1,14 @@
+nimTitle	io_stream_readers	io_stream_readers.html	module src/arraymancer/io/io_stream_readers		0
+nim	readInt32BE	io_stream_readers.html#readInt32BE,Stream	proc readInt32BE(stream: Stream): int32		7
+nim	readInt64BE	io_stream_readers.html#readInt64BE,Stream	proc readInt64BE(stream: Stream): int64		11
+nim	readUInt32BE	io_stream_readers.html#readUInt32BE,Stream	proc readUInt32BE(stream: Stream): uint32		15
+nim	readUInt64BE	io_stream_readers.html#readUInt64BE,Stream	proc readUInt64BE(stream: Stream): uint64		19
+nim	readFloat32BE	io_stream_readers.html#readFloat32BE,Stream	proc readFloat32BE(stream: Stream): float32		23
+nim	readFloat64BE	io_stream_readers.html#readFloat64BE,Stream	proc readFloat64BE(stream: Stream): float64		27
+nim	readInt32LE	io_stream_readers.html#readInt32LE,Stream	proc readInt32LE(stream: Stream): int32		31
+nim	readInt64LE	io_stream_readers.html#readInt64LE,Stream	proc readInt64LE(stream: Stream): int64		35
+nim	readUInt16LE	io_stream_readers.html#readUInt16LE,Stream	proc readUInt16LE(stream: Stream): uint16		39
+nim	readUInt32LE	io_stream_readers.html#readUInt32LE,Stream	proc readUInt32LE(stream: Stream): uint32		43
+nim	readUInt64LE	io_stream_readers.html#readUInt64LE,Stream	proc readUInt64LE(stream: Stream): uint64		47
+nim	readFloat32LE	io_stream_readers.html#readFloat32LE,Stream	proc readFloat32LE(stream: Stream): float32		51
+nim	readFloat64LE	io_stream_readers.html#readFloat64LE,Stream	proc readFloat64LE(stream: Stream): float64		55

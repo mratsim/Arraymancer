@@ -1,0 +1,8 @@
+nimTitle	maxpool2D	maxpool2D.html	module src/arraymancer/nn/layers/maxpool2D		0
+nim	MaxPool2DGate	maxpool2D.html#MaxPool2DGate	type MaxPool2DGate		20
+nim	maxpool2d	maxpool2D.html#maxpool2d,Variable[TT],Size2D,Size2D,Size2D	proc maxpool2d[TT](input: Variable[TT]; kernel: Size2D; padding: Size2D = (0, 0);\n              stride: Size2D = (1, 1)): Variable[TT]		81
+nim	MaxPool2D	maxpool2D.html#MaxPool2D	object MaxPool2D		115
+nim	init	maxpool2D.html#init,Context[Tensor[T]],typedesc[MaxPool2D[T]],seq[int],Size2D,Size2D,Size2D	proc init[T](ctx: Context[Tensor[T]]; layerType: typedesc[MaxPool2D[T]];\n        inShape: seq[int]; kernelSize, padding, stride: Size2D): MaxPool2D[T]		121
+nim	forward	maxpool2D.html#forward,MaxPool2D[T],Variable[Tensor[T]]	proc forward[T](self: MaxPool2D[T]; input: Variable[Tensor[T]]): Variable[Tensor[T]]		147
+nim	outShape	maxpool2D.html#outShape,MaxPool2D[T]	proc outShape[T](self: MaxPool2D[T]): seq[int]		154
+nim	inShape	maxpool2D.html#inShape,MaxPool2D[T]	proc inShape[T](self: MaxPool2D[T]): seq[int]		172

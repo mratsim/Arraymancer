@@ -1,0 +1,7 @@
+nimTitle	cross_entropy_losses	cross_entropy_losses.html	module src/arraymancer/nn/loss/cross_entropy_losses		0
+nim	SigmoidCrossEntropyLoss	cross_entropy_losses.html#SigmoidCrossEntropyLoss	type SigmoidCrossEntropyLoss		23
+nim	sigmoid_cross_entropy	cross_entropy_losses.html#sigmoid_cross_entropy,,TT	proc sigmoid_cross_entropy[TT](a`gensym0: Variable[TT]; target`gensym0: TT): Variable[\n    TT]		65
+nim	SoftmaxCrossEntropyLoss	cross_entropy_losses.html#SoftmaxCrossEntropyLoss	type SoftmaxCrossEntropyLoss		23
+nim	softmax_cross_entropy	cross_entropy_losses.html#softmax_cross_entropy,,TT	proc softmax_cross_entropy[TT](a`gensym1: Variable[TT]; target`gensym1: TT): Variable[\n    TT]		66
+nim	SparseSoftmaxCrossEntropyLoss	cross_entropy_losses.html#SparseSoftmaxCrossEntropyLoss	type SparseSoftmaxCrossEntropyLoss		68
+nim	sparse_softmax_cross_entropy	cross_entropy_losses.html#sparse_softmax_cross_entropy,Variable[TT],Tensor[Idx: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or byte or char or enum]	proc sparse_softmax_cross_entropy[TT; Idx: SomeNumber or byte or char or enum](\n    a: Variable[TT]; target: Tensor[Idx]): Variable[TT]		102

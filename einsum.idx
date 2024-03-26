@@ -1,0 +1,12 @@
+nimTitle	einsum	einsum.html	module src/arraymancer/tensor/einsum		0
+nim	einsum	einsum.html#einsum.m,varargs[typed],untyped	macro einsum(tensors: varargs[typed]; stmt: untyped): untyped		595
+heading	Simple Einstein summation examples	einsum.html#simple-einstein-summation-examples	 Simple Einstein summation examples		0
+heading	Matrix-vector multiplication	einsum.html#simple-einstein-summation-examples-matrixminusvector-multiplication	  Matrix-vector multiplication		0
+heading	Matrix-matrix multiplication	einsum.html#simple-einstein-summation-examples-matrixminusmatrix-multiplication	  Matrix-matrix multiplication		0
+heading	Cross-product of two vectors	einsum.html#simple-einstein-summation-examples-crossminusproduct-of-two-vectors	  Cross-product of two vectors		0
+heading	More complex examples	einsum.html#more-complex-examples	 More complex examples		0
+heading	Transposition of a matrix	einsum.html#more-complex-examples-transposition-of-a-matrix	  Transposition of a matrix		0
+heading	Hadamard product	einsum.html#more-complex-examples-hadamard-product	  Hadamard product		0
+heading	Contracting a whole matrix	einsum.html#more-complex-examples-contracting-a-whole-matrix	  Contracting a whole matrix		0
+heading	The nimeinsum macro	einsum.html#the-nimeinsum-macro	 The <tt class="docutils literal"><span class="pre"><span class="Identifier">einsum</span></span></tt> macro		0
+heading	Implementation details	einsum.html#the-nimeinsum-macro-implementation-details	  Implementation details		0

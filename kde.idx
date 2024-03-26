@@ -1,0 +1,18 @@
+nimTitle	kde	kde.html	module src/arraymancer/stats/kde		0
+nim	knCustom	kde.html#knCustom	KernelKind.knCustom		23
+nim	knBox	kde.html#knBox	KernelKind.knBox		23
+nim	knTriangular	kde.html#knTriangular	KernelKind.knTriangular		23
+nim	knTrig	kde.html#knTrig	KernelKind.knTrig		23
+nim	knEpanechnikov	kde.html#knEpanechnikov	KernelKind.knEpanechnikov		23
+nim	knGauss	kde.html#knGauss	KernelKind.knGauss		23
+nim	KernelKind	kde.html#KernelKind	enum KernelKind		23
+nim	KernelFunc	kde.html#KernelFunc	type KernelFunc		31
+nim	makeKernel	kde.html#makeKernel.t,untyped	template makeKernel(fn: untyped): untyped		33
+nim	boxKernel	kde.html#boxKernel,float,float,float	proc boxKernel(x`gensym1, x_i`gensym1, bw`gensym1: float): float		38
+nim	triangularKernel	kde.html#triangularKernel,float,float,float	proc triangularKernel(x`gensym2, x_i`gensym2, bw`gensym2: float): float		39
+nim	trigonometricKernel	kde.html#trigonometricKernel,float,float,float	proc trigonometricKernel(x`gensym3, x_i`gensym3, bw`gensym3: float): float		40
+nim	epanechnikovKernel	kde.html#epanechnikovKernel,float,float,float	proc epanechnikovKernel(x`gensym4, x_i`gensym4, bw`gensym4: float): float		41
+nim	gaussKernel	kde.html#gaussKernel,float,float,float	proc gaussKernel(x, x_i, bw: float): float		45
+nim	kde	kde.html#kde,Tensor[T: SomeNumber],staticKernelFunc,float,U,float,float,Tensor[T: SomeNumber]	proc kde[T: SomeNumber; U: int | Tensor[SomeNumber] | openArray[SomeNumber]](\n    t: Tensor[T]; kernel: static KernelFunc; kernelKind = knCustom;\n    adjust: float = 1.0; samples: U = 1000; bw: float = NaN; normalize = false;\n    cutoff: float = NaN; weights: Tensor[T] = newTensor[T](0)): Tensor[float]		81
+nim	kde	kde.html#kde,Tensor[T: SomeNumber],U,float,V,float,Tensor[T: SomeNumber]	proc kde[T: SomeNumber; U: KernelKind | string;\n    V: int | Tensor[SomeNumber] | openArray[SomeNumber]](t: Tensor[T];\n    kernel: U = "gauss"; adjust: float = 1.0; samples: V = 1000;\n    bw: float = NaN; normalize = false; weights: Tensor[T] = newTensor[T](0)): Tensor[\n    float]		174
+nimgrp	kde	kde.html#kde-procs-all	proc		81

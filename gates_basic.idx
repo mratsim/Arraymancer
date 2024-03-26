@@ -1,0 +1,5 @@
+nimTitle	gates_basic	gates_basic.html	module src/arraymancer/autograd/gates_basic		0
+nim	AddGate	gates_basic.html#AddGate	type AddGate		21
+nim	`+`	gates_basic.html#+,Variable[TT],Variable[TT]	proc `+`[TT](a, b: Variable[TT]): Variable[TT]		47
+nim	SubGate	gates_basic.html#SubGate	type SubGate		60
+nim	`-`	gates_basic.html#-,Variable[TT],Variable[TT]	proc `-`[TT](a, b: Variable[TT]): Variable[TT]		87

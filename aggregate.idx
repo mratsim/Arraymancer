@@ -1,0 +1,40 @@
+nimTitle	aggregate	aggregate.html	module src/arraymancer/tensor/aggregate		0
+nim	sum	aggregate.html#sum,Tensor[T]	proc sum[T](arg: Tensor[T]): T		36
+nim	sum	aggregate.html#sum,Tensor[T],int	proc sum[T](arg: Tensor[T]; axis: int): Tensor[T]		41
+nim	product	aggregate.html#product,Tensor[T]	proc product[T](arg: Tensor[T]): T		47
+nim	product	aggregate.html#product,Tensor[T],int	proc product[T](arg: Tensor[T]; axis: int): Tensor[T]		52
+nim	mean	aggregate.html#mean,Tensor[T: SomeInteger]	proc mean[T: SomeInteger](arg: Tensor[T]): T		58
+nim	mean	aggregate.html#mean,Tensor[T: SomeInteger],int	proc mean[T: SomeInteger](arg: Tensor[T]; axis: int): Tensor[T]		64
+nim	mean	aggregate.html#mean,Tensor[T: SomeFloat]	proc mean[T: SomeFloat](arg: Tensor[T]): T		71
+nim	mean	aggregate.html#mean,Tensor[T: Complex[system.float32] or Complex[system.float64]]	proc mean[T: Complex[float32] or Complex[float64]](arg: Tensor[T]): T		75
+nim	mean	aggregate.html#mean,Tensor[T: SomeFloat],int	proc mean[T: SomeFloat](arg: Tensor[T]; axis: int): Tensor[T]		80
+nim	mean	aggregate.html#mean,Tensor[T: Complex[system.float32] or Complex[system.float64]],int	proc mean[T: Complex[float32] or Complex[float64]](arg: Tensor[T]; axis: int): Tensor[\n    T]		85
+nim	min	aggregate.html#min,Tensor[T]	proc min[T](arg: Tensor[T]): T		91
+nim	min	aggregate.html#min,Tensor[T],int	proc min[T](arg: Tensor[T]; axis: int): Tensor[T]		96
+nim	max	aggregate.html#max,Tensor[T]	proc max[T](arg: Tensor[T]): T		103
+nim	max	aggregate.html#max,Tensor[T],int	proc max[T](arg: Tensor[T]; axis: int): Tensor[T]		108
+nim	variance	aggregate.html#variance,Tensor[T: SomeFloat]	proc variance[T: SomeFloat](arg: Tensor[T]): T		115
+nim	variance	aggregate.html#variance,Tensor[T: SomeFloat],int	proc variance[T: SomeFloat](arg: Tensor[T]; axis: int): Tensor[T]		131
+nim	std	aggregate.html#std,Tensor[T: SomeFloat]	proc std[T: SomeFloat](arg: Tensor[T]): T		148
+nim	std	aggregate.html#std,Tensor[T: SomeFloat],int	proc std[T: SomeFloat](arg: Tensor[T]; axis: int): Tensor[T]		153
+nim	argmax_max	aggregate.html#argmax_max,Tensor[T: SomeNumber],int	proc argmax_max[T: SomeNumber](arg: Tensor[T]; axis: int): tuple[\n    indices: Tensor[int], maxes: Tensor[T]]		159
+nim	argmax	aggregate.html#argmax,Tensor[T],int	proc argmax[T](arg: Tensor[T]; axis: int): Tensor[int]		195
+nim	argmin_min	aggregate.html#argmin_min,Tensor[T: SomeNumber],int	proc argmin_min[T: SomeNumber](arg: Tensor[T]; axis: int): tuple[\n    indices: Tensor[int], mins: Tensor[T]]		216
+nim	argmin	aggregate.html#argmin,Tensor[T],int	proc argmin[T](arg: Tensor[T]; axis: int): Tensor[int]		252
+nim	percentile	aggregate.html#percentile,Tensor[T],int	proc percentile[T](arg: Tensor[T]; p: int; isSorted = false): float		273
+nim	median	aggregate.html#median,Tensor[T]	proc median[T](arg: Tensor[T]; isSorted = false): float		300
+nim	iqr	aggregate.html#iqr,Tensor[T]	proc iqr[T](arg: Tensor[T]): float		304
+nim	cumsum	aggregate.html#cumsum,Tensor[T],int	proc cumsum[T](arg: Tensor[T]; axis: int = 0): Tensor[T]		313
+nim	cumprod	aggregate.html#cumprod,Tensor[T],int	proc cumprod[T](arg: Tensor[T]; axis: int = 0): Tensor[T]		329
+nim	diff_discrete	aggregate.html#diff_discrete,Tensor[T],int,int	proc diff_discrete[T](arg: Tensor[T]; n = 1; axis: int = -1): Tensor[T]		345
+nim	unwrap_period	aggregate.html#unwrap_period,Tensor[T: SomeNumber],T,int,T	proc unwrap_period[T: SomeNumber](t: Tensor[T]; discont: T = -1; axis = -1;\n                             period: T = default(T)): Tensor[T]		386
+nim	nonzero	aggregate.html#nonzero,Tensor[T]	proc nonzero[T](arg: Tensor[T]): Tensor[int]		463
+nim	all	aggregate.html#all,Tensor[T]	proc all[T](t: Tensor[T]): bool		525
+nim	any	aggregate.html#any,Tensor[T]	proc any[T](t: Tensor[T]): bool		543
+nimgrp	mean	aggregate.html#mean-procs-all	proc		58
+nimgrp	max	aggregate.html#max-procs-all	proc		103
+nimgrp	product	aggregate.html#product-procs-all	proc		47
+nimgrp	std	aggregate.html#std-procs-all	proc		148
+nimgrp	variance	aggregate.html#variance-procs-all	proc		115
+nimgrp	min	aggregate.html#min-procs-all	proc		91
+nimgrp	sum	aggregate.html#sum-procs-all	proc		36

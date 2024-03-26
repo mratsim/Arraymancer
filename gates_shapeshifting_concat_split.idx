@@ -1,0 +1,4 @@
+nimTitle	gates_shapeshifting_concat_split	gates_shapeshifting_concat_split.html	module src/arraymancer/autograd/gates_shapeshifting_concat_split		0
+nim	stack	gates_shapeshifting_concat_split.html#stack,varargs[Variable[TT]],int	proc stack[TT](variables: varargs[Variable[TT]]; axis = 0): Variable[TT]		51
+nim	ChunkSplitGate	gates_shapeshifting_concat_split.html#ChunkSplitGate	type ChunkSplitGate		83
+nim	chunk	gates_shapeshifting_concat_split.html#chunk,Variable[TT],Positive,Natural	proc chunk[TT](v: Variable[TT]; nb_chunks: Positive; axis: Natural): seq[Variable[TT]]		116

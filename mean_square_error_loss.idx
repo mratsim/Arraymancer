@@ -1,0 +1,3 @@
+nimTitle	mean_square_error_loss	mean_square_error_loss.html	module src/arraymancer/nn/loss/mean_square_error_loss		0
+nim	MSELoss	mean_square_error_loss.html#MSELoss	type MSELoss		19
+nim	mse_loss	mean_square_error_loss.html#mse_loss,Variable[TT],TT	proc mse_loss[TT](input: Variable[TT]; target: TT): Variable[TT]		59

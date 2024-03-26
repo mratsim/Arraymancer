@@ -1,0 +1,2 @@
+nimTitle	deprecate	deprecate.html	module src/arraymancer/private/deprecate		0
+nim	implDeprecatedBy	deprecate.html#implDeprecatedBy.m,untyped,typed,staticbool	macro implDeprecatedBy(oldName: untyped; replacement: typed; exported: static bool): untyped		73

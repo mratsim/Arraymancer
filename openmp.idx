@@ -1,0 +1,29 @@
+nimTitle	openmp	openmp.html	module src/arraymancer/laser/openmp		0
+nim	omp_suffix	openmp.html#omp_suffix,staticbool	proc omp_suffix(genNew: static bool = false): string		16
+nim	omp_set_num_threads	openmp.html#omp_set_num_threads.t,cint	template omp_set_num_threads(x: cint)		45
+nim	omp_get_num_threads	openmp.html#omp_get_num_threads.t	template omp_get_num_threads(): cint		46
+nim	omp_get_max_threads	openmp.html#omp_get_max_threads.t	template omp_get_max_threads(): cint		47
+nim	omp_get_thread_num	openmp.html#omp_get_thread_num.t	template omp_get_thread_num(): cint		48
+nim	omp_set_nested	openmp.html#omp_set_nested.t,cint	template omp_set_nested(x: cint)		49
+nim	omp_get_nested	openmp.html#omp_get_nested.t	template omp_get_nested(): cint		50
+nim	OMP_MEMORY_BOUND_GRAIN_SIZE	openmp.html#OMP_MEMORY_BOUND_GRAIN_SIZE	const OMP_MEMORY_BOUND_GRAIN_SIZE		58
+nim	OMP_NON_CONTIGUOUS_SCALE_FACTOR	openmp.html#OMP_NON_CONTIGUOUS_SCALE_FACTOR	const OMP_NON_CONTIGUOUS_SCALE_FACTOR		83
+nim	attachGC	openmp.html#attachGC.t	template attachGC(): untyped		89
+nim	detachGC	openmp.html#detachGC.t	template detachGC(): untyped		101
+nim	omp_parallel	openmp.html#omp_parallel.t,untyped	template omp_parallel(body: untyped): untyped		113
+nim	omp_parallel_if	openmp.html#omp_parallel_if.t,bool,untyped	template omp_parallel_if(condition: bool; body: untyped)		125
+nim	omp_for	openmp.html#omp_for.t,untyped,Natural,staticbool,staticbool,untyped	template omp_for(index: untyped; length: Natural; use_simd, nowait: static bool;\n        body: untyped)		133
+nim	omp_parallel_for	openmp.html#omp_parallel_for.t,untyped,Natural,staticNatural,staticbool,untyped	template omp_parallel_for(index: untyped; length: Natural;\n                 omp_grain_size: static Natural; use_simd: static bool;\n                 body: untyped)		167
+nim	omp_parallel_for_default	openmp.html#omp_parallel_for_default.t,untyped,Natural,untyped	template omp_parallel_for_default(index: untyped; length: Natural; body: untyped)		225
+nim	omp_chunks	openmp.html#omp_chunks.t,Natural,untyped,untyped,untyped	template omp_chunks(omp_size: Natural; chunk_offset, chunk_size: untyped; body: untyped): untyped		247
+nim	omp_parallel_chunks	openmp.html#omp_parallel_chunks.t,Natural,untyped,untyped,staticNatural,untyped	template omp_parallel_chunks(length: Natural; chunk_offset, chunk_size: untyped;\n                    omp_grain_size: static Natural; body: untyped): untyped		293
+nim	omp_parallel_chunks_default	openmp.html#omp_parallel_chunks_default.t,Natural,untyped,untyped,untyped	template omp_parallel_chunks_default(length: Natural; chunk_offset, chunk_size: untyped;\n                            body: untyped): untyped		327
+nim	omp_critical	openmp.html#omp_critical.t,untyped	template omp_critical(body: untyped): untyped		348
+nim	omp_master	openmp.html#omp_master.t,untyped	template omp_master(body: untyped): untyped		354
+nim	omp_single	openmp.html#omp_single.t,untyped	template omp_single(body: untyped): untyped		360
+nim	omp_single_nowait	openmp.html#omp_single_nowait.t,untyped	template omp_single_nowait(body: untyped): untyped		366
+nim	omp_barrier	openmp.html#omp_barrier.t	template omp_barrier(): untyped		372
+nim	omp_task	openmp.html#omp_task.t,staticstring,untyped	template omp_task(annotation: static string; body: untyped): untyped		377
+nim	omp_taskwait	openmp.html#omp_taskwait.t	template omp_taskwait(): untyped		383
+nim	omp_taskloop	openmp.html#omp_taskloop.t,untyped,Natural,staticstring,untyped	template omp_taskloop(index: untyped; length: Natural; annotation: static string;\n             body: untyped)		388
+nim	omp_flush	openmp.html#omp_flush.m,varargs[untyped]	macro omp_flush(variables: varargs[untyped]): untyped		400

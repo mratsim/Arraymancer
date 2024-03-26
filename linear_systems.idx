@@ -1,0 +1,10 @@
+nimTitle	linear_systems	linear_systems.html	module src/arraymancer/linear_algebra/linear_systems		0
+nim	mkGeneral	linear_systems.html#mkGeneral	MatrixKind.mkGeneral		11
+nim	mkGenBand	linear_systems.html#mkGenBand	MatrixKind.mkGenBand		11
+nim	mkGenTriDiag	linear_systems.html#mkGenTriDiag	MatrixKind.mkGenTriDiag		11
+nim	mkSymmetric	linear_systems.html#mkSymmetric	MatrixKind.mkSymmetric		11
+nim	mkPosDef	linear_systems.html#mkPosDef	MatrixKind.mkPosDef		11
+nim	mkPosDefBand	linear_systems.html#mkPosDefBand	MatrixKind.mkPosDefBand		11
+nim	mkPosDefTriDiag	linear_systems.html#mkPosDefTriDiag	MatrixKind.mkPosDefTriDiag		11
+nim	MatrixKind	linear_systems.html#MatrixKind	enum MatrixKind		11
+nim	solve	linear_systems.html#solve,Tensor[T: SomeFloat],Tensor[T: SomeFloat],MatrixKind	proc solve[T: SomeFloat](a, b: Tensor[T]; kind: MatrixKind = mkGeneral): Tensor[T]		20

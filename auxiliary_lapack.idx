@@ -1,0 +1,4 @@
+nimTitle	auxiliary_lapack	auxiliary_lapack.html	module src/arraymancer/linear_algebra/helpers/auxiliary_lapack		0
+nim	laswp	auxiliary_lapack.html#laswp,Tensor,openArray[int32],staticint32	proc laswp(a: var Tensor; pivot_indices: openArray[int32]; pivot_from: static int32)		16
+nim	orgqr	auxiliary_lapack.html#orgqr,Tensor[T: SomeFloat],openArray[T],seq[T]	proc orgqr[T: SomeFloat](rv_q: var Tensor[T]; tau: openArray[T];\n                    scratchspace: var seq[T])		46
+nim	ormqr	auxiliary_lapack.html#ormqr,Tensor[T: SomeFloat],Tensor[T: SomeFloat],openArray[T],staticchar,staticchar,seq[T]	proc ormqr[T: SomeFloat](C: var Tensor[T]; Q: Tensor[T]; tau: openArray[T];\n                    side, trans: static char; scratchspace: var seq[T])		101

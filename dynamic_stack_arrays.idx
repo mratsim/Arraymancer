@@ -1,0 +1,36 @@
+nimTitle	dynamic_stack_arrays	dynamic_stack_arrays.html	module src/arraymancer/laser/dynamic_stack_arrays		0
+nim	LASER_MAXRANK	dynamic_stack_arrays.html#LASER_MAXRANK	const LASER_MAXRANK		6
+nim	DynamicStackArray	dynamic_stack_arrays.html#DynamicStackArray	object DynamicStackArray		14
+nim	copyFrom	dynamic_stack_arrays.html#copyFrom,DynamicStackArray,varargs[int]	proc copyFrom(a: var DynamicStackArray; s: varargs[int])		21
+nim	copyFrom	dynamic_stack_arrays.html#copyFrom,DynamicStackArray,DynamicStackArray	proc copyFrom(a: var DynamicStackArray; s: DynamicStackArray)		26
+nim	setLen	dynamic_stack_arrays.html#setLen,DynamicStackArray,int	proc setLen(a: var DynamicStackArray; len: int)		29
+nim	low	dynamic_stack_arrays.html#low,DynamicStackArray	proc low(a: DynamicStackArray): int		33
+nim	high	dynamic_stack_arrays.html#high,DynamicStackArray	proc high(a: DynamicStackArray): int		36
+nim	`[]`	dynamic_stack_arrays.html#[],DynamicStackArray[T],Index	proc `[]`[T](a: DynamicStackArray[T]; idx: Index): T		45
+nim	`[]`	dynamic_stack_arrays.html#[],DynamicStackArray[T],Index_2	proc `[]`[T](a: var DynamicStackArray[T]; idx: Index): var T		48
+nim	`[]=`	dynamic_stack_arrays.html#[]=,DynamicStackArray[T],Index,T	proc `[]=`[T](a: var DynamicStackArray[T]; idx: Index; v: T)		51
+nim	`[]`	dynamic_stack_arrays.html#[],DynamicStackArray[T],Slice[int]	proc `[]`[T](a: DynamicStackArray[T]; slice: Slice[int]): DynamicStackArray[T]		54
+nim	items	dynamic_stack_arrays.html#items.i,DynamicStackArray[T]	iterator items[T](a: DynamicStackArray[T]): T		63
+nim	mitems	dynamic_stack_arrays.html#mitems.i,DynamicStackArray[T]	iterator mitems[T](a: var DynamicStackArray[T]): var T		67
+nim	pairs	dynamic_stack_arrays.html#pairs.i,DynamicStackArray[T]	iterator pairs[T](a: DynamicStackArray[T]): (int, T)		71
+nim	mpairs	dynamic_stack_arrays.html#mpairs.i,DynamicStackArray[T]	iterator mpairs[T](a: var DynamicStackArray[T]): (int, var T)		75
+nim	`@`	dynamic_stack_arrays.html#@,DynamicStackArray[T]	proc `@`[T](a: DynamicStackArray[T]): seq[T]		79
+nim	`$`	dynamic_stack_arrays.html#$,DynamicStackArray	proc `$`(a: DynamicStackArray): string		84
+nim	product	dynamic_stack_arrays.html#product,DynamicStackArray[T: SomeNumber]	proc product[T: SomeNumber](a: DynamicStackArray[T]): T		93
+nim	insert	dynamic_stack_arrays.html#insert,DynamicStackArray[T],T,int	proc insert[T](a: var DynamicStackArray[T]; value: T; index: int = 0)		100
+nim	delete	dynamic_stack_arrays.html#delete,DynamicStackArray,int	proc delete(a: var DynamicStackArray; index: int)		106
+nim	add	dynamic_stack_arrays.html#add,DynamicStackArray[T],T	proc add[T](a: var DynamicStackArray[T]; value: T)		112
+nim	`&`	dynamic_stack_arrays.html#&,DynamicStackArray[T],T	proc `&`[T](a: DynamicStackArray[T]; value: T): DynamicStackArray[T]		116
+nim	`&`	dynamic_stack_arrays.html#&,DynamicStackArray,DynamicStackArray	proc `&`(a, b: DynamicStackArray): DynamicStackArray		120
+nim	reversed	dynamic_stack_arrays.html#reversed,DynamicStackArray	proc reversed(a: DynamicStackArray): DynamicStackArray		126
+nim	reversed	dynamic_stack_arrays.html#reversed,DynamicStackArray,DynamicStackArray	proc reversed(a: DynamicStackArray; result: var DynamicStackArray)		131
+nim	`==`	dynamic_stack_arrays.html#==,DynamicStackArray[T],openArray[T]	proc `==`[T](a: DynamicStackArray[T]; s: openArray[T]): bool		138
+nim	`==`	dynamic_stack_arrays.html#==,DynamicStackArray,DynamicStackArray	proc `==`(a, s: DynamicStackArray): bool		146
+nim	zip	dynamic_stack_arrays.html#zip.i,DynamicStackArray[T],DynamicStackArray[U]	iterator zip[T, U](a: DynamicStackArray[T]; b: DynamicStackArray[U]): (T, T)		154
+nim	concat	dynamic_stack_arrays.html#concat,varargs[DynamicStackArray[T]]	proc concat[T](dsas: varargs[DynamicStackArray[T]]): DynamicStackArray[T]		160
+nim	max	dynamic_stack_arrays.html#max,DynamicStackArray[T]	proc max[T](a: DynamicStackArray[T]): T		174
+nimgrp	reversed	dynamic_stack_arrays.html#reversed-procs-all	proc		126
+nimgrp	&	dynamic_stack_arrays.html#&-procs-all	proc		116
+nimgrp	copyfrom	dynamic_stack_arrays.html#copyFrom-procs-all	proc		21
+nimgrp	==	dynamic_stack_arrays.html#==-procs-all	proc		138
+nimgrp	[]	dynamic_stack_arrays.html#[]-procs-all	proc		45

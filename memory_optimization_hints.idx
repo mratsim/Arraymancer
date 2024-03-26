@@ -1,0 +1,3 @@
+nimTitle	memory_optimization_hints	memory_optimization_hints.html	module src/arraymancer/tensor/backend/memory_optimization_hints		0
+nim	withMemoryOptimHints	memory_optimization_hints.html#withMemoryOptimHints.t	template withMemoryOptimHints()		24
+nim	assume_aligned	memory_optimization_hints.html#assume_aligned.t,ptr.T,csize_t	template assume_aligned[T](data: ptr T; n: csize_t): ptr T		41

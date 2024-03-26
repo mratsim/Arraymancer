@@ -1,0 +1,8 @@
+nimTitle	conv2D	conv2D.html	module src/arraymancer/nn/layers/conv2D		0
+nim	Conv2DGate	conv2D.html#Conv2DGate	type Conv2DGate		20
+nim	conv2d	conv2D.html#conv2d,Variable[TT],Variable[TT],Variable[TT],Size2D,Size2D	proc conv2d[TT](input, weight: Variable[TT]; bias: Variable[TT] = nil;\n           padding: Size2D = (0, 0); stride: Size2D = (1, 1)): Variable[TT]		77
+nim	Conv2D	conv2D.html#Conv2D	object Conv2D		132
+nim	init	conv2D.html#init,Context[Tensor[T]],typedesc[Conv2D[T]],seq[int],int,Size2D,Size2D,Size2D	proc init[T](ctx: Context[Tensor[T]]; layerType: typedesc[Conv2D[T]];\n        inShape: seq[int]; outChannels: int; kernelSize: Size2D;\n        padding: Size2D = (0, 0); stride: Size2D = (1, 1)): Conv2D[T]		139
+nim	forward	conv2D.html#forward,Conv2D[T],Variable[Tensor[T]]	proc forward[T](self: Conv2D[T]; input: Variable[Tensor[T]]): Variable[Tensor[T]]		175
+nim	outShape	conv2D.html#outShape,Conv2D[T]	proc outShape[T](self: Conv2D[T]): seq[int]		184
+nim	inShape	conv2D.html#inShape,Conv2D[T]	proc inShape[T](self: Conv2D[T]): seq[int]		204

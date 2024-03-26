@@ -1,0 +1,2 @@
+nimTitle	p_activation	p_activation.html	module src/arraymancer/nn_primitives/private/p_activation		0
+nim	sigmoid	p_activation.html#sigmoid,T	proc sigmoid[T: SomeFloat](x: T): T		17

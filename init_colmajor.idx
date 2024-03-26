@@ -1,0 +1,2 @@
+nimTitle	init_colmajor	init_colmajor.html	module src/arraymancer/linear_algebra/helpers/init_colmajor		0
+nim	newMatrixUninitColMajor	init_colmajor.html#newMatrixUninitColMajor,Tensor[T],int,int	proc newMatrixUninitColMajor[T](M: var Tensor[T]; rows, cols: int)		9

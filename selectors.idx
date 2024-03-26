@@ -1,0 +1,24 @@
+nimTitle	selectors	selectors.html	module src/arraymancer/tensor/selectors		0
+nim	index_select	selectors.html#index_select,Tensor[T],int,Tensor[Idx: byte or char or int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64]	proc index_select[T; Idx: byte or char or SomeInteger](t: Tensor[T]; axis: int;\n    indices: Tensor[Idx]): Tensor[T]		27
+nim	index_select	selectors.html#index_select,Tensor[T],int,openArray[Idx]	proc index_select[T; Idx: byte or char or SomeInteger](t: Tensor[T]; axis: int;\n    indices: openArray[Idx]): Tensor[T]		46
+nim	index_fill	selectors.html#index_fill,Tensor[T],int,Tensor[Idx: byte or char or int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64],T	proc index_fill[T; Idx: byte or char or SomeInteger](t: var Tensor[T]; axis: int;\n    indices: Tensor[Idx]; value: T)		63
+nim	index_fill	selectors.html#index_fill,Tensor[T],int,openArray[Idx],T	proc index_fill[T; Idx: byte or char or SomeInteger](t: var Tensor[T]; axis: int;\n    indices: openArray[Idx]; value: T)		73
+nim	masked_select	selectors.html#masked_select,Tensor[T],Tensor[bool]	proc masked_select[T](t: Tensor[T]; mask: Tensor[bool]): Tensor[T]		86
+nim	masked_select	selectors.html#masked_select,Tensor[T],openArray	proc masked_select[T](t: Tensor[T]; mask: openArray): Tensor[T]		114
+nim	masked_fill	selectors.html#masked_fill,Tensor[T],Tensor[bool],T	proc masked_fill[T](t: var Tensor[T]; mask: Tensor[bool]; value: T)		127
+nim	masked_fill	selectors.html#masked_fill,Tensor[T],openArray,T	proc masked_fill[T](t: var Tensor[T]; mask: openArray; value: T)		161
+nim	masked_fill	selectors.html#masked_fill,Tensor[T],Tensor[bool],Tensor[T]	proc masked_fill[T](t: var Tensor[T]; mask: Tensor[bool]; value: Tensor[T])		235
+nim	masked_fill	selectors.html#masked_fill,Tensor[T],Tensor[bool],openArray[T]	proc masked_fill[T](t: var Tensor[T]; mask: Tensor[bool]; value: openArray[T])		256
+nim	masked_fill	selectors.html#masked_fill,Tensor[T],openArray,Tensor[T]	proc masked_fill[T](t: var Tensor[T]; mask: openArray; value: Tensor[T])		279
+nim	masked_fill	selectors.html#masked_fill,Tensor[T],openArray,openArray[T]	proc masked_fill[T](t: var Tensor[T]; mask: openArray; value: openArray[T])		286
+nim	masked_axis_select	selectors.html#masked_axis_select,Tensor[T],Tensor[bool],int	proc masked_axis_select[T](t: Tensor[T]; mask: Tensor[bool]; axis: int): Tensor[T]		332
+nim	masked_axis_select	selectors.html#masked_axis_select,Tensor[T],openArray[bool],int	proc masked_axis_select[T](t: Tensor[T]; mask: openArray[bool]; axis: int): Tensor[T]		347
+nim	masked_axis_fill	selectors.html#masked_axis_fill,Tensor[T],Tensor[bool],int,	proc masked_axis_fill[T](t: var Tensor[T]; mask: Tensor[bool]; axis: int;\n                    value: T or Tensor[T])		384
+nim	masked_axis_fill	selectors.html#masked_axis_fill,Tensor[T],openArray[bool],int,	proc masked_axis_fill[T](t: var Tensor[T]; mask: openArray[bool]; axis: int;\n                    value: T or Tensor[T])		418
+nim	masked_fill_along_axis	selectors.html#masked_fill_along_axis,Tensor[T],Tensor[bool],int,T	proc masked_fill_along_axis[T](t: var Tensor[T]; mask: Tensor[bool]; axis: int;\n                          value: T)		453
+nimgrp	indexselect	selectors.html#index_select-procs-all	proc		27
+nimgrp	indexfill	selectors.html#index_fill-procs-all	proc		63
+nimgrp	maskedaxisselect	selectors.html#masked_axis_select-procs-all	proc		332
+nimgrp	maskedfill	selectors.html#masked_fill-procs-all	proc		127
+nimgrp	maskedselect	selectors.html#masked_select-procs-all	proc		86
+nimgrp	maskedaxisfill	selectors.html#masked_axis_fill-procs-all	proc		384

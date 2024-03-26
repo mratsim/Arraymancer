@@ -1,0 +1,5 @@
+nimTitle	triangular	triangular.html	module src/arraymancer/linear_algebra/helpers/triangular		0
+nim	triu	triangular.html#triu,Tensor[T],staticint	proc triu[T](a: Tensor[T]; k: static int = 0): Tensor[T]		64
+nim	tril	triangular.html#tril,Tensor[T],staticint	proc tril[T](a: Tensor[T]; k: static int = 0): Tensor[T]		77
+nim	tril_unit_diag	triangular.html#tril_unit_diag,Tensor[T]	proc tril_unit_diag[T](a: Tensor[T]): Tensor[T]		90
+nim	tril_unit_diag_mut	triangular.html#tril_unit_diag_mut,Tensor[T]	proc tril_unit_diag_mut[T](a: var Tensor[T])		137

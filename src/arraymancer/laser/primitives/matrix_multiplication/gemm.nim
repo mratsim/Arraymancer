@@ -11,7 +11,8 @@ import
 
 # This import is needed for our current docgen. Otherwise it fails
 # on this submodule.
-from ../../tensor/datatypes import KnownSupportsCopyMem
+when defined(nimdoc):
+  from ../../tensor/datatypes import KnownSupportsCopyMem
 
 when defined(i386) or defined(amd64):
   import ../../cpuinfo_x86

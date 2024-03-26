@@ -174,7 +174,7 @@ template stridedIteration*(strider: IterKind, t, iter_offset, iter_size: typed):
   when getSubType(type(t)) is KnownSupportsCopyMem:
     let data = t.unsafe_raw_offset()
   else:
-    template data: untyped = t
+    template data: untyped {.gensym.} = t
 
   # Optimize for loops in contiguous cases
   if t.is_C_contiguous:
@@ -194,7 +194,7 @@ template stridedCoordsIteration*(t, iter_offset, iter_size: typed): untyped =
   when getSubType(type(t)) is KnownSupportsCopyMem:
     let data = t.unsafe_raw_offset()
   else:
-    template data: untyped = t
+    template data: untyped {.gensym.} = t
   let rank = t.rank
 
   initStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
@@ -217,11 +217,11 @@ template dualStridedIteration*(strider: IterKind, t1, t2, iter_offset, iter_size
   when getSubType(type(t1)) is KnownSupportsCopyMem:
     let t1data = t1.unsafe_raw_offset()
   else:
-    template t1data: untyped = t1
+    template t1data: untyped {.gensym.} = t1
   when getSubType(type(t2)) is KnownSupportsCopyMem:
     let t2data = t2.unsafe_raw_offset()
   else:
-    template t2data: untyped = t2
+    template t2data: untyped {.gensym.} = t2
 
   # Optimize for loops in contiguous cases
   if t1_contiguous and t2_contiguous:
@@ -262,15 +262,15 @@ template tripleStridedIteration*(strider: IterKind, t1, t2, t3, iter_offset, ite
   when getSubType(type(t1)) is KnownSupportsCopyMem:
     let t1data = t1.unsafe_raw_offset()
   else:
-    template t1data: untyped = t1
+    template t1data: untyped {.gensym.} = t1
   when getSubType(type(t2)) is KnownSupportsCopyMem:
     let t2data = t2.unsafe_raw_offset()
   else:
-    template t2data: untyped = t2
+    template t2data: untyped {.gensym.} = t2
   when getSubType(type(t3)) is KnownSupportsCopyMem:
     let t3data = t3.unsafe_raw_offset()
   else:
-    template t3data: untyped = t3
+    template t3data: untyped {.gensym.} = t3
 
   # Optimize for loops in contiguous cases
   # Note that not all cases are handled here, just some probable ones

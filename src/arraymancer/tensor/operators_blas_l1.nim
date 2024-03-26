@@ -45,8 +45,24 @@ proc `+`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Ten
   ## Tensor addition
   map2_inline(a, b, x + y)
 
+proc `+`*[T: SomeNumber](a: Tensor[Complex[T]], b: Tensor[T]): Tensor[Complex[T]] {.noinit.} =
+  ## Mixed Complex[T] + Real Tensor addition
+  map2_inline(a, b, x + y)
+
+proc `+`*[T: SomeNumber](a: Tensor[T], b: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit.} =
+  ## Mixed Real + Complex[T] Tensor addition
+  map2_inline(a, b, x + y)
+
 proc `-`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noinit.} =
   ## Tensor substraction
+  map2_inline(a, b, x - y)
+
+proc `-`*[T: SomeNumber](a: Tensor[Complex[T]], b: Tensor[T]): Tensor[Complex[T]] {.noinit.} =
+  ## Mixed Complex[T] - Real Tensor subtraction
+  map2_inline(a, b, x - y)
+
+proc `-`*[T: SomeNumber](a: Tensor[T], b: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit.} =
+  ## Mixed Real - Complex[T] Tensor subtraction
   map2_inline(a, b, x - y)
 
 # #########################################################
@@ -56,8 +72,16 @@ proc `+=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b:
   ## Tensor in-place addition
   a.apply2_inline(b, x + y)
 
+proc `+=`*[T: SomeNumber](a: var Tensor[Complex[T]], b: Tensor[T]) =
+  ## Mixed Complex + Real Tensor in-place addition
+  a.apply2_inline(b, x + y)
+
 proc `-=`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: var Tensor[T], b: Tensor[T]) =
   ## Tensor in-place substraction
+  a.apply2_inline(b, x - y)
+
+proc `-=`*[T: SomeNumber](a: var Tensor[Complex[T]], b: Tensor[T]) =
+  ## Mixed Complex - Real Tensor in-place substraction
   a.apply2_inline(b, x - y)
 
 # #########################################################
@@ -68,8 +92,26 @@ proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](a: T, t: Tensor[T]): 
   returnEmptyIfEmpty(t)
   t.map_inline(x * a)
 
+proc `*`*[T: SomeNumber](a: T, t: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit.} =
+  ## Element-wise mixed Real * Complex multiplication by a scalar
+  returnEmptyIfEmpty(t)
+  t.map_inline(x * a)
+
+proc `*`*[T: SomeNumber](a: Complex[T], t: Tensor[T]): Tensor[Complex[T]] {.noinit.} =
+  ## Element-wise mixed Complex * Real multiplication by a scalar
+  returnEmptyIfEmpty(t)
+  t.map_inline(x * a)
+
 proc `*`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
   ## Element-wise multiplication by a scalar
+  a * t
+
+proc `*`*[T: SomeNumber](t: Tensor[Complex[T]], a: T): Tensor[Complex[T]] {.noinit.} =
+  ## Element-wise mixed Complex * Real multiplication by a scalar
+  a * t
+
+proc `*`*[T: SomeNumber](t: Tensor[T], a: Complex[T]): Tensor[Complex[T]] {.noinit.} =
+  ## Element-wise mixed Real * Complex multiplication by a scalar
   a * t
 
 proc `/`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
@@ -79,6 +121,26 @@ proc `/`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: Tensor[T], a: T): 
     t.map_inline(x div a)
   else:
     t.map_inline(x / a)
+
+proc `/`*[T: SomeNumber](a: T, t: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit.} =
+  ## Element-wise mixed Real scalar / Complex tensor division
+  returnEmptyIfEmpty(t)
+  t.map_inline(a / x )
+
+proc `/`*[T: SomeNumber](a: Complex[T], t: Tensor[T]): Tensor[Complex[T]] {.noinit.} =
+  ## Element-wise mixed Complex scalar / Real tensor division
+  returnEmptyIfEmpty(t)
+  t.map_inline(a / x)
+
+proc `/`*[T: SomeNumber](t: Tensor[Complex[T]], a: T): Tensor[Complex[T]] {.noinit.} =
+  ## Element-wise mixed Complex tensor / Real scalar division
+  returnEmptyIfEmpty(t)
+  t.map_inline(x / a)
+
+proc `/`*[T: SomeNumber](t: Tensor[T], a: Complex[T]): Tensor[Complex[T]] {.noinit.} =
+  ## Element-wise mixed Real tensor / Complex scalar division
+  returnEmptyIfEmpty(t)
+  t.map_inline(x / a)
 
 proc `div`*[T: SomeInteger](t: Tensor[T], a: T): Tensor[T] {.noinit.} =
   ## Element-wise division by an integer
@@ -123,8 +185,20 @@ proc `*=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], a:
     return
   t.apply_inline(x * a)
 
+proc `*=`*[T: SomeNumber](t: var Tensor[Complex[T]], a: T) =
+  ## Element-wise mixed Complex * Real multiplication by a scalar (in-place)
+  if t.size == 0:
+    return
+  t.apply_inline(x * a)
+
 proc `/=`*[T: SomeFloat|Complex[float32]|Complex[float64]](t: var Tensor[T], a: T) =
   ## Element-wise division by a scalar (in-place)
+  if t.size == 0:
+    return
+  t.apply_inline(x / a)
+
+proc `/=`*[T: SomeNumber](t: var Tensor[Complex[T]], a: T) =
+  ## Element-wise mixed Complex / Real division by a scalar (in-place)
   if t.size == 0:
     return
   t.apply_inline(x / a)

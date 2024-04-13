@@ -62,9 +62,13 @@ proc main() =
         check: a == b
 
     test "Reshape":
-      let a = toSeq(1..4).toTensor().reshape(2,2)
+      let a = toSeq(1..4).toTensor().reshape(2, 2)
+      let b = toSeq(1..4).toTensor().reshape_infer(-1, 2)
+      let c = toSeq(1..4).toTensor().reshape_infer(2, -1)
       check: a == [[1,2],
                   [3,4]].toTensor()
+      check: a == b
+      check: a == c
 
     test "Unsafe reshape":
       block:

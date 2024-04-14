@@ -142,6 +142,19 @@ proc main() =
       check: circulant([1.0, 3.0, 6.0, 9.0].toTensor, step = -1) == expected_c3
       check: circulant([1.0, 3.0, 6.0, 9.0].toTensor, step = 2) == expected_c4
 
+    test "Toeplitz Matrices":
+      let expected_t1 = [[1, 10, 11, 12],
+                         [3,  1, 10, 11],
+                         [6,  3,  1, 10]].toTensor
+      let expected_t2 = [[1, 3, 6],
+                         [3, 1, 3],
+                         [6, 3, 1]].toTensor
+      let expected_t3 = [[1.0+2.0.im, 3.0-4.0.im],
+                         [3.0+4.0.im, 1.0+2.0.im]].toTensor
+      check: toeplitz([1, 3, 6].toTensor, [9, 10, 11, 12].toTensor) == expected_t1
+      check: toeplitz([1, 3, 6].toTensor) == expected_t2
+      check: toeplitz([1.0+2.0.im, 3.0+4.0.im].toTensor) == expected_t3
+
     test "Hankel Matrices":
       let expected_h1 = [[1,  3,  6, 10],
                          [3,  6, 10, 11],

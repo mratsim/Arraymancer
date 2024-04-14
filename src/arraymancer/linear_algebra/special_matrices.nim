@@ -321,18 +321,97 @@ proc circulant*[T](t: Tensor[T], axis = -1, step = 1): Tensor[T] {.noInit.} =
     for n in 0 ..< t.len:
       result[_, n] = t.roll(step * n)
 
+proc toeplitz*[T](c, r: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Construct a Toeplitz matrix
+  ##
+  ## A Toeplitz matrix has constant diagonals, with c as its first column
+  ## and r as its last row (note that `r[0]` is ignored but _should_ be the
+  ## same as `c[^1])`. This is similar to (but different than) a Hankel matrix,
+  ## which has constant anti-diagonals instead.
+  ##
+  ## Inputs:
+  ## - c: The first column of the Toeplitz matrix
+  ## - r: The last row of the Toeplitz matrix (note that `r[0]` is ignored)
+  ## Result:
+  ## - The constructed Toeplitz matrix
+  ##
+  ## Notes:
+  ## - There is a version of this procedure that takes a single argument `c`,
+  ##   in which case `r` is set to `c.conjugate`.
+  ## - Use the `hankel` procedure to generate a Hankel matrix instead.
+  ##
+  ## Example:
+  ## ```nim
+  ## echo toeplitz([1, 3, 6], [9, 10, 11, 12])
+  ## # Tensor[system.int] of shape "[3, 4]" on backend "Cpu"
+  ## # |1     10    11    12|
+  ## # |3      1    10    11|
+  ## # |6      3     1    10|
+  ## ```
+  result = newTensor[T](c.len, r.len)
+  let t = c.flatten[_|-1].append(r[1.._])
+  for n in 0 ..< c.len:
+    let idx_start = c.len - 1 - n
+    result[n, _] = t[(idx_start)..<(idx_start + r.len)]
+
+proc toeplitz*[T](c: Tensor[T]): Tensor[T] {.noInit, inline.} =
+  ## Construct a square Toeplitz matrix from a single tensor
+  ##
+  ## A Toeplitz matrix has constant diagonals. This version of this procedure
+  ## gets a single tensor as its input. The input tensor is used as-is to set
+  ## the first column of the Toeplitz matrix, and is conjugated to set the
+  ## first row of the Toeplitz matrix.
+  ##
+  ## Inputs:
+  ## - c: The first column of the Toeplitz matrix. It is also the complex
+  ##      conjugate of the first row of the Toeplitz matrix.
+  ## Result:
+  ## - The constructed square Toeplitz matrix
+  ##
+  ## Notes:
+  ## - There is a version of this procedure that takes two arguments
+  ##   (`c` and `r`),
+  ## - While there is also a single input `hankel` procedure, its behavior
+  ##   is quite different, since it sets `r` to an all zeros tensor instead.
+  ##
+  ## Examples:
+  ## ```nim
+  ## echo toeplitz([1, 3, 6])
+  ## # Tensor[system.int] of shape "[3, 3]" on backend "Cpu"
+  ## # |1      3     6|
+  ## # |3      1     3|
+  ## # |6      3     1|
+  ##
+  ## echo toeplitz([1.0+2.0.im, 3.0+4.0.im, 6.0+7.0.im].toTensor)
+  ## # Tensor[complex.Complex64] of shape "[3, 3]" on backend "Cpu"
+  ## # |(1.0, 2.0)     (3.0, -4.0)    (6.0, -7.0)|
+  ## # |(3.0, 4.0)      (1.0, 2.0)    (3.0, -4.0)|
+  ## # |(6.0, 7.0)      (3.0, 4.0)     (1.0, 2.0)|
+  ## ```
+  when T is Complex:
+    toeplitz(c, c.conjugate)
+  else:
+    toeplitz(c, c)
+
 proc hankel*[T](c, r: Tensor[T]): Tensor[T] {.noInit.} =
   ## Construct a Hankel matrix.
   ##
   ## A Hankel matrix has constant anti-diagonals, with c as its first column
   ## and r as its last row (note that `r[0]` is ignored but _should_ be the same
-  ## as `c[^1])`
+  ## as `c[^1])`. This is similar to a Toeplitz matrix, which has constant
+  ## diagonals instead.
   ##
   ## Inputs:
   ## - c: The first column of the Hankel matrix
   ## - r: The last row of the Hankel matrix (note that `r[0]` is ignored)
   ## Result:
   ## - The constructed Hankel matrix
+  ##
+  ## Notes:
+  ## - There is a version of this procedure that takes a single argument `c`,
+  ##   in which case `r` is set to all zeroes, resulting in a "triangular"
+  ##   Hankel matrix.
+  ## - Use the `toeplitz` procedure to generate a Toeplitz matrix instead.
   ##
   ## Example:
   ## ```nim
@@ -358,6 +437,12 @@ proc hankel*[T](c: Tensor[T]): Tensor[T] {.noInit, inline.} =
   ## - c: The first column of the Hankel matrix
   ## Result:
   ## - The constructed "triangular" Hankel matrix
+  ##
+  ## Notes:
+  ## - There is a version of this procedure that takes two arguments
+  ##   (`c` and `r`),
+  ## - While there is also a single input `toeplitz` procedure, its behavior
+  ##   is quite different, since it sets `r` to the complex conjugate of `c`.
   ##
   ## Example:
   ## ```nim

@@ -211,10 +211,10 @@ proc with_diagonal*[T](a: Tensor[T], d: Tensor[T], k = 0, anti = false): Tensor[
   set_diagonal(result, d, k, anti=anti)
 
 proc diag*[T](d: Tensor[T], k = 0, anti = false): Tensor[T] {.noInit.} =
-  ## Creates new square diagonal matrix from an rank-1 input tensor
+  ## Creates a new square diagonal matrix from an rank-1 input tensor
   ##
   ## Input:
-  ##      - Rank-1 tensor containg the elements of the diagonal
+  ##      - Rank-1 tensor containing the elements of the diagonal
   ##      - k: The index of the diagonal that will be set. The default is 0.
   ##        Use k>0 for diagonals above the main diagonal, and k<0 for diagonals below the main diagonal.
   ##      - anti: If true, set the k-th "anti-diagonal" instead of the k-th regular diagonal.
@@ -285,6 +285,40 @@ proc tri*[T](shape_ax1, shape_ax0: int, k: static int = 0, upper: static bool = 
 # Also export the tril and triu functions which are also part of numpy's API
 # and which are implemented in helpers/triangular.nim
 export tril, triu
+
+proc circulant*[T](t: Tensor[T], axis = -1, step = 1): Tensor[T] {.noInit.} =
+  ## Construct a circulant matrix from a rank-1 tensor
+  ##
+  ## A circulant matrix is a square matrix in which each column (or row) is
+  ## a cyclic shift of the previous column (or row).
+  ##
+  ## By default this function cirulates over the columns of the output which
+  ## are rotated down by 1 element over the previous column, but this behavior
+  ## can be changed by using the `axis` and `step` arguments.
+  ##
+  ## Inputs:
+  ## - A rank-1 Tensor
+  ## - axis: The axis along which the circulant matrix will be constructed.
+  ##         Defaults to -1 (i.e. the columns, which are the last axis).
+  ## - step: The number of elements by which the input tensor will be shifted
+  ##         each time. Defaults to 1.
+  ## Result:
+  ## - The constructed circulant matrix
+  ## Example:
+  ## ```nim
+  ## echo circulant([1, 3, 6])
+  ## Tensor[system.int] of shape "[3, 3]" on backend "Cpu"
+  ## # |1      6     3|
+  ## # |3      1     6|
+  ## # |6      3     1|
+  ## ```
+  result = newTensor[T](t.len, t.len)
+  if axis == 0:
+    for n in 0 ..< t.len:
+      result[n, _] = t.roll(step * n)
+  else:
+    for n in 0 ..< t.len:
+      result[_, n] = t.roll(step * n)
 
 type MeshGridIndexing* = enum xygrid, ijgrid
 

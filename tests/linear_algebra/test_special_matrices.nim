@@ -120,6 +120,28 @@ proc main() =
           t2b == expected_t2
           t3b == expected_t3
 
+    test "Circulant Matrices":
+      let expected_c1 = [[1.0, 9.0, 6.0, 3.0],
+                       [3.0, 1.0, 9.0, 6.0],
+                       [6.0, 3.0, 1.0, 9.0],
+                       [9.0, 6.0, 3.0, 1.0]].toTensor
+      let expected_c2 = [[1.0, 3.0, 6.0, 9.0],
+                       [9.0, 1.0, 3.0, 6.0],
+                       [6.0, 9.0, 1.0, 3.0],
+                       [3.0, 6.0, 9.0, 1.0]].toTensor
+      let expected_c3 = [[1.0, 3.0, 6.0, 9.0],
+                       [3.0, 6.0, 9.0, 1.0],
+                       [6.0, 9.0, 1.0, 3.0],
+                       [9.0, 1.0, 3.0, 6.0]].toTensor
+      let expected_c4 = [[1.0, 6.0, 1.0, 6.0],
+                       [3.0, 9.0, 3.0, 9.0],
+                       [6.0, 1.0, 6.0, 1.0],
+                       [9.0, 3.0, 9.0, 3.0]].toTensor
+      check: circulant([1.0, 3.0, 6.0, 9.0].toTensor) == expected_c1
+      check: circulant([1.0, 3.0, 6.0, 9.0].toTensor, axis = 0) == expected_c2
+      check: circulant([1.0, 3.0, 6.0, 9.0].toTensor, step = -1) == expected_c3
+      check: circulant([1.0, 3.0, 6.0, 9.0].toTensor, step = 2) == expected_c4
+
   suite "meshgrid":
     test "meshgrid-2D":
       block:

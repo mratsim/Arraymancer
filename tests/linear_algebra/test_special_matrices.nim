@@ -142,6 +142,16 @@ proc main() =
       check: circulant([1.0, 3.0, 6.0, 9.0].toTensor, step = -1) == expected_c3
       check: circulant([1.0, 3.0, 6.0, 9.0].toTensor, step = 2) == expected_c4
 
+    test "Hankel Matrices":
+      let expected_h1 = [[1,  3,  6, 10],
+                         [3,  6, 10, 11],
+                         [6, 10, 11, 12]].toTensor
+      let expected_h2 = [[1, 3, 6],
+                         [3, 6, 0],
+                         [6, 0, 0]].toTensor
+      check: hankel([1, 3, 6].toTensor, [9, 10, 11, 12].toTensor) == expected_h1
+      check: hankel([1, 3, 6].toTensor) == expected_h2
+
   suite "meshgrid":
     test "meshgrid-2D":
       block:

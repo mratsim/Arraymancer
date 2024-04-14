@@ -304,6 +304,7 @@ proc circulant*[T](t: Tensor[T], axis = -1, step = 1): Tensor[T] {.noInit.} =
   ##         each time. Defaults to 1.
   ## Result:
   ## - The constructed circulant matrix
+  ##
   ## Example:
   ## ```nim
   ## echo circulant([1, 3, 6])
@@ -319,6 +320,54 @@ proc circulant*[T](t: Tensor[T], axis = -1, step = 1): Tensor[T] {.noInit.} =
   else:
     for n in 0 ..< t.len:
       result[_, n] = t.roll(step * n)
+
+proc hankel*[T](c, r: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Construct a Hankel matrix.
+  ##
+  ## A Hankel matrix has constant anti-diagonals, with c as its first column
+  ## and r as its last row (note that `r[0]` is ignored but _should_ be the same
+  ## as `c[^1])`
+  ##
+  ## Inputs:
+  ## - c: The first column of the Hankel matrix
+  ## - r: The last row of the Hankel matrix (note that `r[0]` is ignored)
+  ## Result:
+  ## - The constructed Hankel matrix
+  ##
+  ## Example:
+  ## ```nim
+  ## echo hankel([1, 3, 6], [9, 10, 11, 12])
+  ## # Tensor[system.int] of shape "[3, 4]" on backend "Cpu"
+  ## # |1      3     6    10|
+  ## # |3      6    10    11|
+  ## # |6     10    11    12|
+  ## ```
+  result = newTensor[T](c.len, r.len)
+  let t = c.flatten.append(r[1.._])
+  for n in 0 ..< r.len:
+    result[_, n] = t[n..<(n+c.len)]
+
+proc hankel*[T](c: Tensor[T]): Tensor[T] {.noInit, inline.} =
+  ## Construct a "triangular" Hankel matrix (i.e. with zeros on its last row)
+  ##
+  ## The "triangular" Hankel matrix is a Hankel matrix in which all the items
+  ## below the main anti-diagonal are set to 0. This is equivalent to creating
+  ## a regular Hankel metrix in which the `c` argument is set to all zeros.
+  ##
+  ## Inputs:
+  ## - c: The first column of the Hankel matrix
+  ## Result:
+  ## - The constructed "triangular" Hankel matrix
+  ##
+  ## Example:
+  ## ```nim
+  ## echo hankel([1, 3, 6], [9, 10, 11, 12])
+  ## # Tensor[system.int] of shape "[3, 3]" on backend "Cpu"
+  ## # |1      3     6|
+  ## # |3      6     0|
+  ## # |6      0     0|
+  ## ```
+  hankel(c, zeros_like(c))
 
 type MeshGridIndexing* = enum xygrid, ijgrid
 

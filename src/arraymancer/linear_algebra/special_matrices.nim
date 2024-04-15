@@ -211,10 +211,10 @@ proc with_diagonal*[T](a: Tensor[T], d: Tensor[T], k = 0, anti = false): Tensor[
   set_diagonal(result, d, k, anti=anti)
 
 proc diag*[T](d: Tensor[T], k = 0, anti = false): Tensor[T] {.noInit.} =
-  ## Creates new square diagonal matrix from an rank-1 input tensor
+  ## Creates a new square diagonal matrix from an rank-1 input tensor
   ##
   ## Input:
-  ##      - Rank-1 tensor containg the elements of the diagonal
+  ##      - Rank-1 tensor containing the elements of the diagonal
   ##      - k: The index of the diagonal that will be set. The default is 0.
   ##        Use k>0 for diagonals above the main diagonal, and k<0 for diagonals below the main diagonal.
   ##      - anti: If true, set the k-th "anti-diagonal" instead of the k-th regular diagonal.
@@ -285,6 +285,174 @@ proc tri*[T](shape_ax1, shape_ax0: int, k: static int = 0, upper: static bool = 
 # Also export the tril and triu functions which are also part of numpy's API
 # and which are implemented in helpers/triangular.nim
 export tril, triu
+
+proc circulant*[T](t: Tensor[T], axis = -1, step = 1): Tensor[T] {.noInit.} =
+  ## Construct a circulant matrix from a rank-1 tensor
+  ##
+  ## A circulant matrix is a square matrix in which each column (or row) is
+  ## a cyclic shift of the previous column (or row).
+  ##
+  ## By default this function cirulates over the columns of the output which
+  ## are rotated down by 1 element over the previous column, but this behavior
+  ## can be changed by using the `axis` and `step` arguments.
+  ##
+  ## Inputs:
+  ## - A rank-1 Tensor
+  ## - axis: The axis along which the circulant matrix will be constructed.
+  ##         Defaults to -1 (i.e. the columns, which are the last axis).
+  ## - step: The number of elements by which the input tensor will be shifted
+  ##         each time. Defaults to 1.
+  ## Result:
+  ## - The constructed circulant matrix
+  ##
+  ## Example:
+  ## ```nim
+  ## echo circulant([1, 3, 6])
+  ## Tensor[system.int] of shape "[3, 3]" on backend "Cpu"
+  ## # |1      6     3|
+  ## # |3      1     6|
+  ## # |6      3     1|
+  ## ```
+  result = newTensor[T](t.len, t.len)
+  if axis == 0:
+    for n in 0 ..< t.len:
+      result[n, _] = t.roll(step * n)
+  else:
+    for n in 0 ..< t.len:
+      result[_, n] = t.roll(step * n)
+
+proc toeplitz*[T](c, r: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Construct a Toeplitz matrix
+  ##
+  ## A Toeplitz matrix has constant diagonals, with c as its first column
+  ## and r as its last row (note that `r[0]` is ignored but _should_ be the
+  ## same as `c[^1])`. This is similar to (but different than) a Hankel matrix,
+  ## which has constant anti-diagonals instead.
+  ##
+  ## Inputs:
+  ## - c: The first column of the Toeplitz matrix
+  ## - r: The last row of the Toeplitz matrix (note that `r[0]` is ignored)
+  ## Result:
+  ## - The constructed Toeplitz matrix
+  ##
+  ## Notes:
+  ## - There is a version of this procedure that takes a single argument `c`,
+  ##   in which case `r` is set to `c.conjugate`.
+  ## - Use the `hankel` procedure to generate a Hankel matrix instead.
+  ##
+  ## Example:
+  ## ```nim
+  ## echo toeplitz([1, 3, 6], [9, 10, 11, 12])
+  ## # Tensor[system.int] of shape "[3, 4]" on backend "Cpu"
+  ## # |1     10    11    12|
+  ## # |3      1    10    11|
+  ## # |6      3     1    10|
+  ## ```
+  result = newTensor[T](c.len, r.len)
+  let t = c.flatten[_|-1].append(r[1.._])
+  for n in 0 ..< c.len:
+    let idx_start = c.len - 1 - n
+    result[n, _] = t[(idx_start)..<(idx_start + r.len)]
+
+proc toeplitz*[T](c: Tensor[T]): Tensor[T] {.noInit, inline.} =
+  ## Construct a square Toeplitz matrix from a single tensor
+  ##
+  ## A Toeplitz matrix has constant diagonals. This version of this procedure
+  ## gets a single tensor as its input. The input tensor is used as-is to set
+  ## the first column of the Toeplitz matrix, and is conjugated to set the
+  ## first row of the Toeplitz matrix.
+  ##
+  ## Inputs:
+  ## - c: The first column of the Toeplitz matrix. It is also the complex
+  ##      conjugate of the first row of the Toeplitz matrix.
+  ## Result:
+  ## - The constructed square Toeplitz matrix
+  ##
+  ## Notes:
+  ## - There is a version of this procedure that takes two arguments
+  ##   (`c` and `r`),
+  ## - While there is also a single input `hankel` procedure, its behavior
+  ##   is quite different, since it sets `r` to an all zeros tensor instead.
+  ##
+  ## Examples:
+  ## ```nim
+  ## echo toeplitz([1, 3, 6])
+  ## # Tensor[system.int] of shape "[3, 3]" on backend "Cpu"
+  ## # |1      3     6|
+  ## # |3      1     3|
+  ## # |6      3     1|
+  ##
+  ## echo toeplitz([1.0+2.0.im, 3.0+4.0.im, 6.0+7.0.im].toTensor)
+  ## # Tensor[complex.Complex64] of shape "[3, 3]" on backend "Cpu"
+  ## # |(1.0, 2.0)     (3.0, -4.0)    (6.0, -7.0)|
+  ## # |(3.0, 4.0)      (1.0, 2.0)    (3.0, -4.0)|
+  ## # |(6.0, 7.0)      (3.0, 4.0)     (1.0, 2.0)|
+  ## ```
+  when T is Complex:
+    toeplitz(c, c.conjugate)
+  else:
+    toeplitz(c, c)
+
+proc hankel*[T](c, r: Tensor[T]): Tensor[T] {.noInit.} =
+  ## Construct a Hankel matrix.
+  ##
+  ## A Hankel matrix has constant anti-diagonals, with c as its first column
+  ## and r as its last row (note that `r[0]` is ignored but _should_ be the same
+  ## as `c[^1])`. This is similar to a Toeplitz matrix, which has constant
+  ## diagonals instead.
+  ##
+  ## Inputs:
+  ## - c: The first column of the Hankel matrix
+  ## - r: The last row of the Hankel matrix (note that `r[0]` is ignored)
+  ## Result:
+  ## - The constructed Hankel matrix
+  ##
+  ## Notes:
+  ## - There is a version of this procedure that takes a single argument `c`,
+  ##   in which case `r` is set to all zeroes, resulting in a "triangular"
+  ##   Hankel matrix.
+  ## - Use the `toeplitz` procedure to generate a Toeplitz matrix instead.
+  ##
+  ## Example:
+  ## ```nim
+  ## echo hankel([1, 3, 6], [9, 10, 11, 12])
+  ## # Tensor[system.int] of shape "[3, 4]" on backend "Cpu"
+  ## # |1      3     6    10|
+  ## # |3      6    10    11|
+  ## # |6     10    11    12|
+  ## ```
+  result = newTensor[T](c.len, r.len)
+  let t = c.flatten.append(r[1.._])
+  for n in 0 ..< r.len:
+    result[_, n] = t[n..<(n+c.len)]
+
+proc hankel*[T](c: Tensor[T]): Tensor[T] {.noInit, inline.} =
+  ## Construct a "triangular" Hankel matrix (i.e. with zeros on its last row)
+  ##
+  ## The "triangular" Hankel matrix is a Hankel matrix in which all the items
+  ## below the main anti-diagonal are set to 0. This is equivalent to creating
+  ## a regular Hankel metrix in which the `c` argument is set to all zeros.
+  ##
+  ## Inputs:
+  ## - c: The first column of the Hankel matrix
+  ## Result:
+  ## - The constructed "triangular" Hankel matrix
+  ##
+  ## Notes:
+  ## - There is a version of this procedure that takes two arguments
+  ##   (`c` and `r`),
+  ## - While there is also a single input `toeplitz` procedure, its behavior
+  ##   is quite different, since it sets `r` to the complex conjugate of `c`.
+  ##
+  ## Example:
+  ## ```nim
+  ## echo hankel([1, 3, 6], [9, 10, 11, 12])
+  ## # Tensor[system.int] of shape "[3, 3]" on backend "Cpu"
+  ## # |1      3     6|
+  ## # |3      6     0|
+  ## # |6      0     0|
+  ## ```
+  hankel(c, zeros_like(c))
 
 type MeshGridIndexing* = enum xygrid, ijgrid
 

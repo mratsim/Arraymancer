@@ -120,6 +120,51 @@ proc main() =
           t2b == expected_t2
           t3b == expected_t3
 
+    test "Circulant Matrices":
+      let expected_c1 = [[1.0, 9.0, 6.0, 3.0],
+                       [3.0, 1.0, 9.0, 6.0],
+                       [6.0, 3.0, 1.0, 9.0],
+                       [9.0, 6.0, 3.0, 1.0]].toTensor
+      let expected_c2 = [[1.0, 3.0, 6.0, 9.0],
+                       [9.0, 1.0, 3.0, 6.0],
+                       [6.0, 9.0, 1.0, 3.0],
+                       [3.0, 6.0, 9.0, 1.0]].toTensor
+      let expected_c3 = [[1.0, 3.0, 6.0, 9.0],
+                       [3.0, 6.0, 9.0, 1.0],
+                       [6.0, 9.0, 1.0, 3.0],
+                       [9.0, 1.0, 3.0, 6.0]].toTensor
+      let expected_c4 = [[1.0, 6.0, 1.0, 6.0],
+                       [3.0, 9.0, 3.0, 9.0],
+                       [6.0, 1.0, 6.0, 1.0],
+                       [9.0, 3.0, 9.0, 3.0]].toTensor
+      check: circulant([1.0, 3.0, 6.0, 9.0].toTensor) == expected_c1
+      check: circulant([1.0, 3.0, 6.0, 9.0].toTensor, axis = 0) == expected_c2
+      check: circulant([1.0, 3.0, 6.0, 9.0].toTensor, step = -1) == expected_c3
+      check: circulant([1.0, 3.0, 6.0, 9.0].toTensor, step = 2) == expected_c4
+
+    test "Toeplitz Matrices":
+      let expected_t1 = [[1, 10, 11, 12],
+                         [3,  1, 10, 11],
+                         [6,  3,  1, 10]].toTensor
+      let expected_t2 = [[1, 3, 6],
+                         [3, 1, 3],
+                         [6, 3, 1]].toTensor
+      let expected_t3 = [[1.0+2.0.im, 3.0-4.0.im],
+                         [3.0+4.0.im, 1.0+2.0.im]].toTensor
+      check: toeplitz([1, 3, 6].toTensor, [9, 10, 11, 12].toTensor) == expected_t1
+      check: toeplitz([1, 3, 6].toTensor) == expected_t2
+      check: toeplitz([1.0+2.0.im, 3.0+4.0.im].toTensor) == expected_t3
+
+    test "Hankel Matrices":
+      let expected_h1 = [[1,  3,  6, 10],
+                         [3,  6, 10, 11],
+                         [6, 10, 11, 12]].toTensor
+      let expected_h2 = [[1, 3, 6],
+                         [3, 6, 0],
+                         [6, 0, 0]].toTensor
+      check: hankel([1, 3, 6].toTensor, [9, 10, 11, 12].toTensor) == expected_h1
+      check: hankel([1, 3, 6].toTensor) == expected_h2
+
   suite "meshgrid":
     test "meshgrid-2D":
       block:

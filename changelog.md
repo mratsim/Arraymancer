@@ -1,6 +1,29 @@
 Arraymancer v0.7.x
 =====================================================
 
+
+Arraymancer v0.7.29 Apr. 15 2023
+=====================================================
+
+- Add `reshape_infer` procedure (PR #646)
+- Missing special matrices (PR #647)
+- properly gensym shim templates in p_accessors (PR #642)
+- Fix "imported and not used: 'datatypes' [UnusedImport]" warning (PR #644)
+- reinsert `KnownSupportsCopyMem` in `gemm` for docgen (PR #641)
+- Fix issue 639 (PR #640)
+- Add a few more items to .gitignore (PR #636)
+- Some warning removals (PR #635)
+- Fix issue PR #637 (crash when using `append` on an empty tensor) (PR #638)
+- More complex tensor features (PR #633)
+- Add additional documentation to some of the ufuncs (PR #632)
+- Relax some shape checks for rank-1 tensors (PR #625)
+- improve docstrings of `makeUniversal` templates, allow extensions (PR #631)
+- Complex enhancements (PR #630)
+- Support complex64 tensor - real scalar operations (like numpy does) (PR #629)
+- Add int2bit functions (PR #628)
+- Support appending one or more individual values (PR #627)
+- Add support for initializing all false, all true and random bool tensors (PR #626)
+
 Arraymancer v0.7.28 Feb. 17 2023
 =====================================================
 

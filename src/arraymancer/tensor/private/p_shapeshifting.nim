@@ -18,6 +18,8 @@ import  ../../laser/tensor/initialization,
         ./p_checks,
         nimblas
 
+import std / sequtils
+
 proc contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]) =
   if layout == rowMajor:
     result = t.map_inline(x)
@@ -28,16 +30,39 @@ proc contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]) 
     apply2_inline(result, t):
       y
 
-proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|Metadata, result: var Tensor[T]) =
+proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|Metadata|seq[int], result: var Tensor[T]) =
   result = newTensorUninit[T](new_shape)
   result.apply2_inline(t,y)
 
-proc reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|Metadata, result: var AnyTensor, layout: OrderType) {.noSideEffect.}=
+proc reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|Metadata|seq[int], result: var AnyTensor, layout: OrderType) {.noSideEffect.}=
   result.shape.copyFrom(new_shape)
   shape_to_strides(result.shape, layout, result.strides)
   result.offset = t.offset
 
-proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|Metadata, result: var AnyTensor) =
+proc infer_shape*(t: Tensor, new_shape: varargs[int]): seq[int] {.noinit.} =
+  ## Replace the single -1 value on `new_shape` with the value that
+  ## makes the size the same as that of the input tensor
+  result = new_shape.toSeq
+  var auto_axis = -1
+  var auto_axis_count = 0
+  for n in 0 .. result.high:
+    if result[n] == -1:
+      auto_axis_count += 1
+      auto_axis = n
+      break
+  if auto_axis_count > 1:
+    raise newException(ValueError, "Only one dimension can be inferred by inferShape")
+  elif auto_axis_count == 0:
+    when compileOption("boundChecks"):
+      raise newException(ValueError, "At least one dimension must be inferred by inferShape")
+  else:
+    result[auto_axis] = t.size div result.filterIt(it != -1).prod
+
+proc reshapeImpl*(t: AnyTensor, new_shape: varargs[int]|Metadata|seq[int],
+    result: var AnyTensor, infer: static bool) =
+  when infer:
+    let new_shape = t.infer_shape(new_shape)
+
   when compileOption("boundChecks"):
     check_reshape(t, new_shape)
 

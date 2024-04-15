@@ -63,10 +63,12 @@ proc reshape*(t: Tensor, new_shape: varargs[int]): Tensor {.noinit.} =
   ##
   ## Input:
   ##   - a tensor
-  ##   - a new shape. Number of elements must be the same
+  ##   - a new shape. Number of elements must be the same. Unlike numpy,
+  ##     dimensions cannot be -1 to infer their value. If that is what you need
+  ##     you must use the alternative `reshape_infer` proc.
   ## Returns:
   ##   - a tensor with the same data but reshaped.
-  reshapeImpl(t, new_shape, result)
+  reshapeImpl(t, new_shape, result, infer = false)
 
 proc reshape*(t: Tensor, new_shape: Metadata): Tensor {.noinit.} =
   ## Reshape a tensor. If possible no data copy is done and the returned tensor
@@ -78,7 +80,21 @@ proc reshape*(t: Tensor, new_shape: Metadata): Tensor {.noinit.} =
   ##   - a new shape. Number of elements must be the same
   ## Returns:
   ##   - a tensor with the same data but reshaped.
-  reshapeImpl(t, new_shape, result)
+  reshapeImpl(t, new_shape, result, infer = false)
+
+proc reshape_infer*(t: Tensor, new_shape: varargs[int]):
+    Tensor {.noinit.} =
+  ## Reshape a tensor. If possible no data copy is done and the returned tensor
+  ## shares data with the input. If input is not contiguous, this is not possible
+  ## and a copy will be made.
+  ##
+  ## Input:
+  ##   - a tensor
+  ##   - a new shape. Number of elements must be the same. The new shape can
+  ##     contain -1 to infer the size of one (and only one) dimension
+  ## Returns:
+  ##   - a tensor with the same data but reshaped.
+  reshapeImpl(t, new_shape, result, infer = true)
 
 proc flatten*(t: Tensor): Tensor {.noinit,inline.} =
   ## Flatten a tensor, returning a rank-1 tensor with the same data as the input.

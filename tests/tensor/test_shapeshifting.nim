@@ -344,5 +344,58 @@ proc main() =
         check: a.repeat_values([1, 0, 3, 2]) == expected
         check: a.repeat_values([1, 0, 3, 2].toTensor) == expected
 
+    test "Tile":
+      let t = arange(6).reshape(2, 3)
+
+      block: # Tile over the first axis
+        let expected = [
+          [0, 1, 2],
+          [3, 4, 5],
+          [0, 1, 2],
+          [3, 4, 5],
+        ].toTensor
+        check: t.tile(2) == expected
+
+      block: # Tile over the all the axis of the input tensor
+        let expected = [
+          [0, 1, 2, 0, 1, 2, 0, 1, 2],
+          [3, 4, 5, 3, 4, 5, 3, 4, 5],
+          [0, 1, 2, 0, 1, 2, 0, 1, 2],
+          [3, 4, 5, 3, 4, 5, 3, 4, 5]
+        ].toTensor
+        check: t.tile(2, 3) == expected
+
+      block: # Tile over the more axis than the input tensor has
+        let expected = [
+          [
+            [0, 1, 2, 0, 1, 2, 0, 1, 2],
+            [3, 4, 5, 3, 4, 5, 3, 4, 5],
+            [0, 1, 2, 0, 1, 2, 0, 1, 2],
+            [3, 4, 5, 3, 4, 5, 3, 4, 5]
+          ],
+          [
+            [0, 1, 2, 0, 1, 2, 0, 1, 2],
+            [3, 4, 5, 3, 4, 5, 3, 4, 5],
+            [0, 1, 2, 0, 1, 2, 0, 1, 2],
+            [3, 4, 5, 3, 4, 5, 3, 4, 5]
+          ],
+          [
+            [0, 1, 2, 0, 1, 2, 0, 1, 2],
+            [3, 4, 5, 3, 4, 5, 3, 4, 5],
+            [0, 1, 2, 0, 1, 2, 0, 1, 2],
+            [3, 4, 5, 3, 4, 5, 3, 4, 5]
+          ],
+          [
+            [0, 1, 2, 0, 1, 2, 0, 1, 2],
+            [3, 4, 5, 3, 4, 5, 3, 4, 5],
+            [0, 1, 2, 0, 1, 2, 0, 1, 2],
+            [3, 4, 5, 3, 4, 5, 3, 4, 5]
+          ]
+        ].toTensor
+        check: t.tile(4, 2, 3) == expected
+
+      block: # tiling and repeating values are sometimes equivalent
+        check: t.tile(2, 1, 1) == t.unsqueeze(axis=0).repeat_values(2, axis = 0)
+
 main()
 GC_fullCollect()

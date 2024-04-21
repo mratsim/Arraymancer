@@ -571,3 +571,119 @@ proc roll*[T](t: Tensor[T], shift: int, axis: Natural): Tensor[T] {.noinit.} =
       let result_idx = floorMod(n + shift, t.shape[axis])
       rolled_slices[result_idx] = t_slice
     result = concat(rolled_slices, axis)
+
+proc repeat_values*[T](t: Tensor[T], reps: int, axis = -1): Tensor[T] {.noinit.} =
+  ## Create a new tensor with each value repeated (the same amount of)`reps` times
+  ##
+  ## Inputs:
+  ##   - t: A tensor.
+  ##   - reps: The integer number of times that each value must be repeated.
+  ##   - axis: The axis over which values will be repeated. Defaults to the
+  ##           last axis.
+  ##
+  ## Returns:
+  ##   - A new tensor containing the values of the input tensor repeated `reps`
+  ##     times over the selected axis.
+  ##
+  ## Notes:
+  ##   - All values are repeated (the same amount of) `reps` times along the
+  ##     selected axis. This makes the output shape the same as the input shape
+  ##     except at the selected axis, which is `reps` times greater.
+  ##   - There are an alternative versions of this function which take a list
+  ##     of `reps` instead of a single `reps` value.
+  ##   - The equivalent numpy function is called `repeat`, while the
+  ##     equivalent Matlab function is called `repelem`. Different names
+  ##     where chosen here to avoid confusion with nim's `repeat` function
+  ##     which behaves like numpy's `tile`, not like this function.
+  ##
+  ## Examples:
+  ## ```nim
+  ## let t = arange(6).reshape(2, 3)
+  ## echo t.repeat_values(2)
+  ## # Tensor[system.int] of shape "[3, 8]" on backend "Cpu"
+  ## # |0      0     1     1     2     2     3     3|
+  ## # |4      4     5     5     6     6     7     7|
+  ## # |8      8     9     9    10    10    11    11|
+  ##
+  ## echo t.repeat_values(2, axis = 0)
+  ## # Tensor[system.int] of shape "[6, 4]" on backend "Cpu"
+  ## # |0      1     2     3|
+  ## # |0      1     2     3|
+  ## # |4      5     6     7|
+  ## # |4      5     6     7|
+  ## # |8      9    10    11|
+  ## # |8      9    10    11|
+  ## ```
+  let axis = if axis >= 0: axis else: t.shape.len + axis
+
+  when compileOption("boundChecks"):
+    doAssert axis < t.rank,
+      "repeat_values called with an axis (" & $axis &
+      ") that exceeds the input tensor rank (" & $t.rank & ")"
+
+  var target_shape = t.shape
+  target_shape[axis] *= reps
+
+  result = newTensorUninit[T](t.size * reps)
+  var step = 1
+  for idx in countdown(t.shape.high, axis + 1):
+    step *= t.shape[idx]
+  for (idx, it) in t.enumerate():
+    for n in countup(0, reps - 1):
+      let base = (step * reps) * (idx div step) + idx mod step
+      result[base + n * step] = it
+  return result.reshape(target_shape)
+
+proc repeat_values*[T](t: Tensor[T], reps: openArray[int]): Tensor[T] {.noinit.} =
+  ## Create a new rank-1 tensor with each value `t[i]` repeated `reps[i]` times
+  ##
+  ## Compared to the version of `repeat_values` that takes a single integer
+  ## `reps` value this version always returns a rank-1 tensor (regardless of  and does not take
+  ## the input shape) and does not take an axis argument.
+  ##
+  ## Inputs:
+  ##   - t: A tensor.
+  ##   - reps: A sequence or array of integers indicating the number of times
+  ##           that each value must be repeated. It must have as many values
+  ##           as the input tensor.
+  ##
+  ## Returns:
+  ##   - A new rank-1 tensor containing the values of the input tensor repeated
+  ##     `reps` times.
+  ##
+  ## Notes:
+  ##   - If a rep value is 0, the corresponding item in the input tensor will
+  ##     be skipped from the output.
+  ##   - The equivalent numpy function is called `repeat`, while the
+  ##     equivalent Matlab function is called `repelem`. Different names
+  ##     where chosen here to avoid confusion with nim's `repeat` function
+  ##     which behaves like numpy's `tile`, not like this function.
+  ##
+  ## Example:
+  ## ```nim
+  ## let t = [3, 5, 2, 4].toTensor
+  ## echo t.repeat_values([1, 0, 3, 2])
+  ## # Tensor[system.int] of shape "[6]" on backend "Cpu"
+  ## #     3     2     2     2     4     4
+  ## ```
+  when compileOption("boundChecks"):
+    doAssert reps.len == t.len,
+      "repeat_values called with a reps list whose length (" & $reps.len &
+      ") does not match the input tensor size (" & $t.len & ")"
+
+  result = newTensorUninit[T](sum(reps))
+  var base_pos = 0
+  for (idx, it) in t.enumerate():
+    for n in countup(0, reps[idx] - 1):
+      result[base_pos + n] = it
+    base_pos += reps[idx]
+  return result
+
+proc repeat_values*[T](t: Tensor[T], reps: Tensor[int]): Tensor[T] {.noinit, inline.} =
+  ## Create a new rank-1 tensor with each value `t[i]` repeated `reps[i]` times
+  ##
+  ## Overload of this function which takes a `Tensor[int]` instead of an
+  ## `openArray[int]`. Behavior is exactly the same as the `openArray[int]`
+  ## version.
+  ## ```
+  t.repeat_values(reps.toSeq1D)

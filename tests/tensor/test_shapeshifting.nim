@@ -305,5 +305,44 @@ proc main() =
           a_permuted_2 == a.permute(1, 2, 0)
           a_permuted_2 == a.moveaxis(1, 0).moveaxis(2, 1)
 
+    test "Repeat Values":
+      let t = arange(6).reshape(2, 3)
+
+      block: # Repeat columns
+        let expected = [
+          [0, 0, 1, 1, 2, 2],
+          [3, 3, 4, 4, 5, 5]
+        ].toTensor
+        check: t.repeat_values(2) == expected
+        check: t.repeat_values(2, axis = 1) == expected
+
+      block: # Repeat rows
+        let expected = [
+          [0, 1, 2],
+          [0, 1, 2],
+          [3, 4, 5],
+          [3, 4, 5]
+        ].toTensor
+        check: t.repeat_values(2, axis = 0) == expected
+
+      block: # Repeat a higher dimension
+        let expected = [
+          [
+            [0, 1, 2],
+            [3, 4, 5],
+          ],
+          [
+            [0, 1, 2],
+            [3, 4, 5]
+          ]
+        ].toTensor
+        check: t.unsqueeze(axis = 0).repeat_values(2, axis = 0) == expected
+
+      block: # Repeat different times each value (including zero times)
+        let a = [3, 5, 2, 4].toTensor
+        let expected = [3, 2, 2, 2, 4, 4].toTensor
+        check: a.repeat_values([1, 0, 3, 2]) == expected
+        check: a.repeat_values([1, 0, 3, 2].toTensor) == expected
+
 main()
 GC_fullCollect()

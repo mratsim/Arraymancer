@@ -71,3 +71,9 @@ suite "[Core] Testing algorithm functions":
       check unique_sorted_descending == [8, 4, 3, 2, 1].toTensor
       check unique_not_c_continuous == [1, 2, 4].toTensor
       check unique_sorted_not_c_continuous == [4, 2, 1].toTensor
+
+  test "Union":
+    block:
+      let t1 = [3, 1, 3, 2, 1, 0].toTensor
+      let t2 = [4, 2, 2, 3].toTensor
+      check: sorted(union(t1, t2)) == [0, 1, 2, 3, 4].toTensor

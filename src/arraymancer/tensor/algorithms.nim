@@ -109,10 +109,12 @@ proc unique*[T](t: Tensor[T], order: SortOrder): Tensor[T] =
   ##
   ## Inputs:
   ##   - t: The input Tensor
-  ##   - order: The order in which elements are sorted (`SortOrder.Ascending` or `SortOrder.Descending`)
+  ##   - order: The order in which elements are sorted (`SortOrder.Ascending`
+  ##            or `SortOrder.Descending`)
   ##
   ## Result:
-  ##   - A new Tensor with the unique elements of the input Tensor sorted in the specified order.
+  ##   - A new Tensor with the unique elements of the input Tensor sorted in
+  ##     the specified order.
   ##
   ## Examples:
   ## ```nim
@@ -134,3 +136,31 @@ proc unique*[T](t: Tensor[T], order: SortOrder): Tensor[T] =
     # We need to clone the tensor in order to make it C continuous
     # and then we can make it unique assuming that it is already sorted
     sorted(t, order = order).unique(isSorted = true)
+
+proc union*[T](t1, t2: Tensor[T]): Tensor[T] =
+  ## Return the unsorted "union" of two Tensors as a rank-1 Tensor
+  ##
+  ## Returns the unique, unsorted Tensor of values that are found in either of
+  ## the two input Tensors.
+  ##
+  ## Inputs:
+  ##   - t1, t2: Input Tensors.
+  ##
+  ## Result:
+  ##   - A rank-1 Tensor containing the (unsorted) union of the two input Tensors.
+  ##
+  ## Notes:
+  ##   - The equivalent `numpy` function is called `union1d`, while the
+  ##     equivalent `Matlab` function is called `union`. However, both of
+  ##     those functions always sort the output. To replicate the same
+  ##     behavior, simply apply `sort` to the output of this function.
+  ##
+  ## Example:
+  ## ```nim
+  ## let t1 = [3, 1, 3, 2, 1, 0].toTensor
+  ## let t2 = [4, 2, 2, 3].toTensor
+  ## echo union(t1, t2)
+  ## # Tensor[system.int] of shape "[5]" on backend "Cpu"
+  ## #     3     1     2     0     4
+  ## ```
+  concat([t1, t2], axis = 0).unique()

@@ -192,3 +192,49 @@ proc intersection*[T](t1, t2: Tensor[T]): Tensor[T] =
   ## ```
   intersection(toHashSet(t1), toHashSet(t2)).toTensor
 
+proc setDiff*[T](t1, t2: Tensor[T], symmetric = false): Tensor[T] =
+  ## Return the (symmetric or non symmetric) "difference" between 2 Tensors as an unsorted rank-1 Tensor
+  ##
+  ## By default (i.e. when `symmetric` is `false`) return all the elements in
+  ## `t1` that are ``not`` found in `t2`.
+  ##
+  ## If `symmetric` is true, the "symmetric" difference of the Tensors is
+  ## returned instead, i.e. the elements which are either not in `t1` ``or``
+  ## not in `t2`.
+  ##
+  ## Inputs:
+  ##   - t1, t2: Input Tensors.
+  ##   - symmetric: Whether to return a symmetric or non symmetric difference.
+  ##                Defaults to `false`.
+  ##
+  ## Result:
+  ##   - An unsorted rank-1 Tensor containing the selected "difference" between
+  ##     the input Tensors.
+  ##
+  ## Note:
+  ##   - The equivalent `numpy` function is called `setdiff1d`, while the
+  ##     equivalent `Matlab` function is called `setdiff`. However, both of
+  ##     those functions always sort the output. To replicate the same
+  ##     behavior, simply apply `sort` to the output of this function.
+  ##
+  ## Examples:
+  ## ```nim
+  ## let t1 = arange(0, 5)
+  ## let t2 = arange(3, 8)
+  ##
+  ## echo setDiff(t1, t2)
+  ## # Tensor[system.int] of shape "[3]" on backend "Cpu"
+  ## #     2     1     0
+  ##
+  ## echo setDiff(t1, t2, symmetric = true)
+  ## # Tensor[system.int] of shape "[6]" on backend "Cpu"
+  ## #     5     2     6     1     7     0
+  ## ```
+  let h1 = toHashSet(t1)
+  let h2 = toHashSet(t2)
+  let diff = if symmetric:
+      symmetricDifference(h1, h2)
+    else:
+      h1 - h2
+  result = diff.toTensor
+

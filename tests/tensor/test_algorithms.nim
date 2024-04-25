@@ -84,3 +84,10 @@ suite "[Core] Testing algorithm functions":
       let t2 = [4, 2, 2, 3].toTensor
       check: sorted(intersection(t1, t2)) == [2, 3].toTensor
 
+  test "setDiff":
+    block:
+      let t1 = arange(0, 5)
+      let t2 = arange(3, 8)
+
+      check: sorted(setDiff(t1, t2)) == [0, 1, 2].toTensor
+      check: sorted(setDiff(t1, t2, symmetric = true)) == [0, 1, 2, 5, 6, 7].toTensor

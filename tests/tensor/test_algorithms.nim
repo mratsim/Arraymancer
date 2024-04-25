@@ -91,3 +91,16 @@ suite "[Core] Testing algorithm functions":
 
       check: sorted(setDiff(t1, t2)) == [0, 1, 2].toTensor
       check: sorted(setDiff(t1, t2, symmetric = true)) == [0, 1, 2, 5, 6, 7].toTensor
+
+  test "Find and Contains":
+    let t = arange(-2, 5)
+
+    block:
+      check: t.find(3) == 5
+      check: t.find(-6) == -1
+
+    block:
+      check: 3 in t
+      check: 3 notin t == false
+      check: -6 in t == false
+      check: -6 notin t

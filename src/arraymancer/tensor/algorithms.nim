@@ -238,3 +238,23 @@ proc setDiff*[T](t1, t2: Tensor[T], symmetric = false): Tensor[T] =
       h1 - h2
   result = diff.toTensor
 
+proc contains*[T](t: Tensor[T], item: T): bool {.inline.}=
+  ## Returns true if `item` is in the input Tensor `t` or false if not found.
+  ## This is a shortcut for `find(t, item) >= 0`.
+  ##
+  ## This allows the `in` and `notin` operators, i.e.:
+  ## `t.contains(item)` is the same as `item in a`.
+  ##
+  ## Examples:
+  ## ```nim
+  ## var t = [1, 3, 5].toTensor
+  ## assert t.contains(5)
+  ## assert 3 in t
+  ## assert 99 notin t
+  ## ```
+  return find(t, item) >= 0
+
+proc ismember*[T](t1, t2: Tensor[T]): Tensor[bool] {.noinit.} =
+  result = newTensor[bool](t1.len)
+  for n, it in t1.enumerate():
+    result[n] = it in t2

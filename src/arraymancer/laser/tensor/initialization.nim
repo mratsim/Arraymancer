@@ -13,7 +13,7 @@ import
   ../private/nested_containers,
   ./datatypes
 # Standard library
-import std / [typetraits, sequtils]
+import std / [typetraits, sequtils, sets]
 # Third-party
 import nimblas
 
@@ -210,11 +210,11 @@ proc newTensor*[T](shape: Metadata): Tensor[T] =
 
 proc toTensor[T](a: openArray[T], shape: Metadata): Tensor[T] =
   ## Convert an openArray to a Tensor
+  ##
   ## Input:
   ##      - An array or a seq, must be flattened. Called by `toTensor` below.
   ## Result:
   ##      - A Tensor of the same shape
-  ##
   var data = @a
   if unlikely(shape.product != data.len):
     raise newException(
@@ -235,19 +235,32 @@ proc toTensor[T](a: openArray[T], shape: Metadata): Tensor[T] =
       shallowCopy(result.storage.raw_buffer, data)
 
 proc toTensor*[T](a: openArray[T]): auto =
-  ## Convert an openArray to a Tensor
+  ## Convert an openArray into a Tensor
+  ##
   ## Input:
   ##      - An array or a seq (can be nested)
   ## Result:
   ##      - A Tensor of the same shape
   ##
-  # Note: we removed the dummy static bugfixe related to Nim issue
+  # Note: we removed the dummy static bugfix related to Nim issue
   # https://github.com/nim-lang/Nim/issues/6343
   # motivated by
   # https://github.com/nim-lang/Nim/issues/20993
   # due to the previous local type alias causing issues.
   let shape = getShape(a)
   let data = toSeq(flatIter(a))
+  result = toTensor(data, shape)
+
+proc toTensor*[T](a: SomeSet[T]): auto =
+  ## Convert a HashSet or an OrderedSet into a Tensor
+  ##
+  ## Input:
+  ##      - An HashSet or an OrderedSet
+  ## Result:
+  ##      - A Tensor of the same shape
+  var shape = MetaData()
+  shape.add(a.len)
+  let data = toSeq(a)
   result = toTensor(data, shape)
 
 proc fromBuffer*[T](rawBuffer: ptr UncheckedArray[T], shape: varargs[int], layout: static OrderType): Tensor[T] =

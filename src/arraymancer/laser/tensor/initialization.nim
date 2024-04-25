@@ -14,6 +14,12 @@ import
   ./datatypes
 # Standard library
 import std / [typetraits, sequtils, sets]
+
+# The folling export is needed to avoid an compilation error in
+# algorithms.nim/intersection() when running the test_algorithms test:
+# `Error: type mismatch - Expression: items(s1)`
+export sets
+
 # Third-party
 import nimblas
 
@@ -300,6 +306,15 @@ func toUnsafeView*[T: KnownSupportsCopyMem](t: Tensor[T], aligned: static bool =
   ##
   ## Unsafe: the pointer can outlive the input tensor.
   unsafe_raw_offset(t, aligned).distinctBase()
+
+proc toHashSet*[T](t: Tensor[T]): HashSet[T] =
+  ## Convert a Tensor into a `HashSet`
+  ##
+  ## Note that this is a lossy operation, since a HashSet only stores an
+  ## unsorted set of unique elements.
+  result = initHashSet[T](t.size)
+  for x in t:
+    result.incl x
 
 func item*[T_IN, T_OUT](t: Tensor[T_IN], _: typedesc[T_OUT]): T_OUT =
   ## Returns the value of the input Tensor as a scalar of the selected type.

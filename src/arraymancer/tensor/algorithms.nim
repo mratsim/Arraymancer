@@ -16,7 +16,7 @@ import ./data_structure,
        ./init_cpu,
        ./init_copy_cpu
 
-import std / [algorithm, sequtils]
+import std / [algorithm, sequtils, sets]
 export SortOrder
 
 proc sort*[T](t: var Tensor[T], order = SortOrder.Ascending) =
@@ -164,3 +164,31 @@ proc union*[T](t1, t2: Tensor[T]): Tensor[T] =
   ## #     3     1     2     0     4
   ## ```
   concat([t1, t2], axis = 0).unique()
+
+proc intersection*[T](t1, t2: Tensor[T]): Tensor[T] =
+  ## Return the "intersection" of 2 Tensors as an unsorted rank-1 Tensor
+  ##
+  ## Inputs:
+  ##   - t1, t2: Input Tensors.
+  ##
+  ## Result:
+  ##   - An unsorted rank-1 Tensor containing the intersection of
+  ##     the input Tensors.
+  ##
+  ## Note:
+  ##   - The equivalent `numpy` function is called `intersect1d`, while the
+  ##     equivalent `Matlab` function is called `intersect`. However, both of
+  ##     those functions always sort the output. To replicate the same
+  ##     behavior, simply apply `sort` to the output of this function.
+  ##
+  ## Example:
+  ## ```nim
+  ## let t1 = arange(0, 5)
+  ## let t2 = arange(3, 8)
+  ##
+  ## echo intersection(t1, t2)
+  ## # Tensor[system.int] of shape "[3]" on backend "Cpu"
+  ## #     4     3
+  ## ```
+  intersection(toHashSet(t1), toHashSet(t2)).toTensor
+

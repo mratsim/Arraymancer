@@ -77,3 +77,10 @@ suite "[Core] Testing algorithm functions":
       let t1 = [3, 1, 3, 2, 1, 0].toTensor
       let t2 = [4, 2, 2, 3].toTensor
       check: sorted(union(t1, t2)) == [0, 1, 2, 3, 4].toTensor
+
+  test "Intersection":
+    block:
+      let t1 = [3, 1, 3, 2, 1, 0].toTensor
+      let t2 = [4, 2, 2, 3].toTensor
+      check: sorted(intersection(t1, t2)) == [2, 3].toTensor
+

@@ -274,6 +274,40 @@ proc classify*[T: SomeFloat](t: Tensor[T]): Tensor[FloatClass] {.noinit.} =
   ##   - fcNegInf: value is negative infinity
   t.map_inline(classify(x))
 
+proc almostEqual*[T: SomeFloat | Complex32 | Complex64](t1, t2: Tensor[T],
+    unitsInLastPlace: Natural = 4): Tensor[bool] {.noinit.} =
+  ## Element-wise almostEqual function
+  ##
+  ## Checks whether pairs of elements of two tensors are almost equal, using
+  ## the [machine epsilon](https://en.wikipedia.org/wiki/Machine_epsilon).
+  ##
+  ## For more details check the section covering the `almostEqual` procedure in
+  ## nim's standard library documentation.
+  ##
+  ## Inputs:
+  ## - t1, t2: Input (floating point or complex) tensors of the same shape.
+  ## - unitsInLastPlace: The max number of
+  ##                     [units in the last place](https://en.wikipedia.org/wiki/Unit_in_the_last_place)
+  ##                     difference tolerated when comparing two numbers. The
+  ##                     larger the value, the more error is allowed. A `0`
+  ##                     value means that two numbers must be exactly the
+  ##                     same to be considered equal.
+  ##
+  ## Result:
+  ## - A new boolean tensor of the same shape as the inputs, in which elements
+  ##   are true if the two values in the same position on the two input tensors
+  ##   are almost equal (and false if they are not).
+  ##
+  ## Note:
+  ## - You can combine this function with `all` to check if two real tensors
+  ##   are almost equal.
+  map2_inline(t1, t2):
+    when T is Complex:
+      almostEqual(x.re, y.re, unitsInLastPlace=unitsInLastPlace) and
+      almostEqual(x.im, y.im, unitsInLastPlace=unitsInLastPlace)
+    else:
+      almostEqual(x, y, unitsInLastPlace=unitsInLastPlace)
+
 type ConvolveMode* = enum full, same, valid
 
 proc convolveImpl[T: SomeNumber | Complex32 | Complex64](

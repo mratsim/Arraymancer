@@ -573,7 +573,7 @@ proc roll*[T](t: Tensor[T], shift: int, axis: Natural): Tensor[T] {.noinit.} =
     result = concat(rolled_slices, axis)
 
 proc repeat_values*[T](t: Tensor[T], reps: int, axis = -1): Tensor[T] {.noinit.} =
-  ## Create a new tensor with each value repeated (the same amount of)`reps` times
+  ## Create a new tensor with each value repeated (the same amount of) `reps` times
   ##
   ## Inputs:
   ##   - t: A tensor.

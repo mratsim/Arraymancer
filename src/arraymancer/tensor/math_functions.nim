@@ -328,12 +328,25 @@ proc convolveImpl[T: SomeNumber | Complex32 | Complex64](
   # Initialize the result tensor
   result = zeros[T](len_result)
 
+  # Ensure that the input tensors are contiguous so that they can be accessed
+  # efficiently using `unsafe_raw_buf` in the inner loop
+  let f = if f.isContiguous(): f else: f.clone()
+  let g = if g.isContiguous(): g else: g.clone()
+
   # And perform the convolution
   omp_parallel_blocks(block_offset, block_size, len_result):
     for n in block_offset ..< block_offset + block_size:
       let shift = n + offset
       for m in max(0, shift - g.size + 1) .. min(f.size - 1, shift):
-        result[n] += f[m] * g[shift - m]
+        # We want to do the following operation:
+        # result[n] += f[m] * g[shift - m]
+        # In order to do it efficently, we want to avoid all the overhead of
+        # using regular `[]` access. Since we know that we are working with
+        # continuous, rank-1 tensors, that `n`, `m` and `shift-m` are within
+        # the boundaries of `result`, `f` and `g` (respectively) and since
+        # `T is KnownSupportsCopyMem`, it is safe (and way more efficient) to
+        # use `unsafe_raw_buf` to access the actual tensor elements here:
+        result.unsafe_raw_offset[n] += f.unsafe_raw_offset[m] * g.unsafe_raw_offset[shift - m]
 
 proc convolve*[T: SomeNumber | Complex32 | Complex64](
     t1, t2: Tensor[T],

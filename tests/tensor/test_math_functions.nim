@@ -209,6 +209,9 @@ proc main() =
         check: convolve(a2, b, mode=ConvolveMode.same) == expected_same_a2b
         check: convolve(a, b2, mode=ConvolveMode.same) == expected_same_ab2
 
+        # Check that convolution works with slices as well
+        check: convolve(a2[_..^2], b2[_..^2]) == expected_full
+
     test "1-D correlation":
       block:
         let a = [2, 8, -8, -6, 4].toTensor

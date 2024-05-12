@@ -71,3 +71,36 @@ suite "[Core] Testing algorithm functions":
       check unique_sorted_descending == [8, 4, 3, 2, 1].toTensor
       check unique_not_c_continuous == [1, 2, 4].toTensor
       check unique_sorted_not_c_continuous == [4, 2, 1].toTensor
+
+  test "Union":
+    block:
+      let t1 = [3, 1, 3, 2, 1, 0].toTensor
+      let t2 = [4, 2, 2, 3].toTensor
+      check: sorted(union(t1, t2)) == [0, 1, 2, 3, 4].toTensor
+
+  test "Intersection":
+    block:
+      let t1 = [3, 1, 3, 2, 1, 0].toTensor
+      let t2 = [4, 2, 2, 3].toTensor
+      check: sorted(intersection(t1, t2)) == [2, 3].toTensor
+
+  test "setDiff":
+    block:
+      let t1 = arange(0, 5)
+      let t2 = arange(3, 8)
+
+      check: sorted(setDiff(t1, t2)) == [0, 1, 2].toTensor
+      check: sorted(setDiff(t1, t2, symmetric = true)) == [0, 1, 2, 5, 6, 7].toTensor
+
+  test "Find and Contains":
+    let t = arange(-2, 5)
+
+    block:
+      check: t.find(3) == 5
+      check: t.find(-6) == -1
+
+    block:
+      check: 3 in t
+      check: 3 notin t == false
+      check: -6 in t == false
+      check: -6 notin t

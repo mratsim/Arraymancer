@@ -11,15 +11,6 @@ type
 
   AnyMetric* = Euclidean | Manhattan | Minkowski | Jaccard | CustomMetric
 
-when (NimMajor, NimMinor, NimPatch) < (1, 4, 0):
-  # have to export sets for 1.0, because `bind` didn't exist apparently
-  export sets
-
-proc toHashSet[T](t: Tensor[T]): HashSet[T] =
-  result = initHashSet[T](t.size)
-  for x in t:
-    result.incl x
-
 proc distance*(metric: typedesc[Manhattan], v, w: Tensor[float]): float =
   ## Computes the Manhattan distance between points `v` and `w`. Both need to
   ## be rank 1 tensors with `k` elements, where `k` is the dimensionality

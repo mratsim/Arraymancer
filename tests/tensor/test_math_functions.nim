@@ -163,6 +163,24 @@ proc main() =
       check: expected_isNaN == a.isNaN
       check: expected_classification == a.classify
 
+    test "almostEqual":
+      block: # Real
+        let t1 = arange(1.0, 5.0)
+        let t2 = t1.clone()
+        check: all(almostEqual(t1, t2)) == true
+        var t3 = t1.clone()
+        t3[0] += 2e-15
+        check: almostEqual(t1, t3) == [false, true, true, true].toTensor()
+        check: all(almostEqual(t1, t3, unitsInLastPlace = 5)) == true
+      block: # Complex
+        let t1 = complex(arange(1.0, 5.0), arange(1.0, 5.0))
+        let t2 = t1.clone()
+        check: all(almostEqual(t1, t2)) == true
+        var t3 = t1.clone()
+        t3[0] += complex(2e-15)
+        check: almostEqual(t1, t3) == [false, true, true, true].toTensor()
+        check: all(almostEqual(t1, t3, unitsInLastPlace = 5)) == true
+
     test "1-D convolution":
       block:
         let a = arange(4)

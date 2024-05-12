@@ -1,0 +1,26 @@
+nimTitle	initialization	initialization.html	module src/arraymancer/laser/tensor/initialization		0
+nim	toMetadata	initialization.html#toMetadata,varargs[int]	proc toMetadata(s: varargs[int]): Metadata		32
+nim	toMetadata	initialization.html#toMetadata.t,Metadata	template toMetadata(m: Metadata): Metadata		37
+nim	initTensorMetadata	initialization.html#initTensorMetadata,Tensor,int,openArray[int],staticOrderType	proc initTensorMetadata(result: var Tensor; size: var int; shape: openArray[int];\n                   layout: static OrderType = rowMajor)		60
+nim	initTensorMetadata	initialization.html#initTensorMetadata,Tensor,int,Metadata,staticOrderType	proc initTensorMetadata(result: var Tensor; size: var int; shape: Metadata;\n                   layout: static OrderType = rowMajor)		67
+nim	deepCopy	initialization.html#deepCopy,Tensor[T],Tensor[T]	proc deepCopy[T](dst: var Tensor[T]; src: Tensor[T])		74
+nim	copyFrom	initialization.html#copyFrom,Tensor[T],Tensor[T]	proc copyFrom[T](dst: var Tensor[T]; src: Tensor[T])		108
+nim	copyFromRaw	initialization.html#copyFromRaw,Tensor[T],ptr.T,Natural	proc copyFromRaw[T](dst: var Tensor[T]; buffer: ptr T; len: Natural)		143
+nim	setZero	initialization.html#setZero,Tensor[T],staticbool	proc setZero[T](t: var Tensor[T]; check_contiguous: static bool = true)		165
+nim	newTensor	initialization.html#newTensor,varargs[int]	proc newTensor[T](shape: varargs[int] = [0]): Tensor[T]		194
+nim	newTensor	initialization.html#newTensor,Metadata	proc newTensor[T](shape: Metadata): Tensor[T]		209
+nim	toTensor	initialization.html#toTensor,openArray[T]	proc toTensor[T](a: openArray[T]): auto		244
+nim	toTensor	initialization.html#toTensor,SomeSet[T]	proc toTensor[T](a: SomeSet[T]): auto		261
+nim	fromBuffer	initialization.html#fromBuffer,ptr.UncheckedArray[T],varargs[int],staticOrderType	proc fromBuffer[T](rawBuffer: ptr UncheckedArray[T]; shape: varargs[int];\n              layout: static OrderType): Tensor[T]		273
+nim	fromBuffer	initialization.html#fromBuffer,ptr.UncheckedArray[T],varargs[int]	proc fromBuffer[T](rawBuffer: ptr UncheckedArray[T]; shape: varargs[int]): Tensor[T]		286
+nim	fromBuffer	initialization.html#fromBuffer,pointer,varargs[int],staticOrderType	proc fromBuffer[T](rawBuffer: pointer; shape: varargs[int]; layout: static OrderType): Tensor[\n    T]		290
+nim	fromBuffer	initialization.html#fromBuffer,pointer,varargs[int]	proc fromBuffer[T](rawBuffer: pointer; shape: varargs[int]): Tensor[T]		300
+nim	toUnsafeView	initialization.html#toUnsafeView,Tensor[T: KnownSupportsCopyMem],staticbool	proc toUnsafeView[T: KnownSupportsCopyMem](t: Tensor[T]; aligned: static bool = true): ptr UncheckedArray[\n    T]		304
+nim	toHashSet	initialization.html#toHashSet,Tensor[T]	proc toHashSet[T](t: Tensor[T]): HashSet[T]		311
+nim	item	initialization.html#item,Tensor[T_IN],typedesc[T_OUT]	proc item[T_IN, T_OUT](t: Tensor[T_IN]; _: typedesc[T_OUT]): T_OUT		320
+nim	item	initialization.html#item,Tensor[T]	proc item[T](t: Tensor[T]): T		348
+nimgrp	newtensor	initialization.html#newTensor-procs-all	proc		194
+nimgrp	inittensormetadata	initialization.html#initTensorMetadata-procs-all	proc		60
+nimgrp	totensor	initialization.html#toTensor-procs-all	proc		244
+nimgrp	frombuffer	initialization.html#fromBuffer-procs-all	proc		273
+nimgrp	item	initialization.html#item-procs-all	proc		320

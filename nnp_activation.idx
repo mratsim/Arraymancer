@@ -1,0 +1,10 @@
+nimTitle	nnp_activation	nnp_activation.html	module src/arraymancer/nn_primitives/nnp_activation		0
+nim	sigmoid	nnp_activation.html#sigmoid,Tensor[T: SomeFloat]	proc sigmoid[T: SomeFloat](t: Tensor[T]): Tensor[T]		25
+nim	relu	nnp_activation.html#relu,Tensor[T]	proc relu[T](t: Tensor[T]): Tensor[T]		35
+nim	tanh	nnp_activation.html#tanh,Tensor[T: SomeFloat]	proc tanh[T: SomeFloat](t: Tensor[T]): Tensor[T]		38
+nim	msigmoid	nnp_activation.html#msigmoid,Tensor[T: SomeFloat]	proc msigmoid[T: SomeFloat](t: var Tensor[T])		44
+nim	mrelu	nnp_activation.html#mrelu,Tensor[T]	proc mrelu[T](t: var Tensor[T])		52
+nim	mtanh	nnp_activation.html#mtanh,Tensor[T: SomeFloat]	proc mtanh[T: SomeFloat](t: var Tensor[T])		55
+nim	sigmoid_backward	nnp_activation.html#sigmoid_backward,Tensor[T],Tensor[T]	proc sigmoid_backward[T](gradient: Tensor[T]; cached_tensor: Tensor[T]): Tensor[T]		61
+nim	relu_backward	nnp_activation.html#relu_backward,Tensor[T],Tensor[T]	proc relu_backward[T](gradient: Tensor[T]; cached_tensor: Tensor[T]): Tensor[T]		65
+nim	tanh_backward	nnp_activation.html#tanh_backward,Tensor[T],Tensor[T]	proc tanh_backward[T](gradient: Tensor[T]; cached_tensor: Tensor[T]): Tensor[T]		72

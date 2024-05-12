@@ -1,0 +1,6 @@
+nimTitle	foreach_common	foreach_common.html	module src/arraymancer/laser/strided_iteration/foreach_common		0
+nim	initForEach	foreach_common.html#initForEach,NimNode,NimNode,NimNode,NimNode,NimNode,NimNode,NimNode	proc initForEach(params: NimNode; values, aliases, raw_ptrs: var NimNode;\n            aliases_stmt, raw_ptrs_stmt: var NimNode; test_shapes: var NimNode)		15
+nim	stridedVarsSetup	foreach_common.html#stridedVarsSetup.t	template stridedVarsSetup(): untyped		79
+nim	stridedChunkOffset	foreach_common.html#stridedChunkOffset.t	template stridedChunkOffset(): untyped		92
+nim	stridedBodyTemplate	foreach_common.html#stridedBodyTemplate.t	template stridedBodyTemplate(): untyped		101
+heading	Parse the input	foreach_common.html#parse-the-input	 Parse the input		0

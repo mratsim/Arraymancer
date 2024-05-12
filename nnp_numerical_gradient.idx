@@ -1,0 +1,4 @@
+nimTitle	nnp_numerical_gradient	nnp_numerical_gradient.html	module src/arraymancer/nn_primitives/nnp_numerical_gradient		0
+nim	numerical_gradient	nnp_numerical_gradient.html#numerical_gradient,T,,typeof(T(0.00001))	proc numerical_gradient[T: not Tensor](input: T; f: (proc (x: T): T); h = T(0.00001)): T		17
+nim	numerical_gradient	nnp_numerical_gradient.html#numerical_gradient,Tensor[T],,typeof(T(0.00001))	proc numerical_gradient[T](input: Tensor[T]; f: (proc (x: Tensor[T]): T);\n                      h = T(0.00001)): Tensor[T]		25
+nimgrp	numericalgradient	nnp_numerical_gradient.html#numerical_gradient-procs-all	proc		17

@@ -1,0 +1,20 @@
+nimTitle	operators_blas_l1_opencl	operators_blas_l1_opencl.html	module src/arraymancer/tensor/operators_blas_l1_opencl		0
+nim	dot	operators_blas_l1_opencl.html#dot,,	proc dot(a`gensym0, b`gensym0: ClTensor[float32]): float32		54
+nim	dot	operators_blas_l1_opencl.html#dot,,_2	proc dot(a`gensym15, b`gensym15: ClTensor[float64]): float64		55
+nim	`+`	operators_blas_l1_opencl.html#+,,	proc `+`(a`gensym30, b`gensym30: ClTensor[float32]): ClTensor[float32]		102
+nim	`+`	operators_blas_l1_opencl.html#+,,_2	proc `+`(a`gensym30, b`gensym30: ClTensor[float32]): ClTensor[float32]		102
+nim	`+`	operators_blas_l1_opencl.html#+,,_3	proc `+`(a`gensym101, b`gensym101: ClTensor[float64]): ClTensor[float64]		102
+nim	`-`	operators_blas_l1_opencl.html#-,,	proc `-`(a`gensym168, b`gensym168: ClTensor[float32]): ClTensor[float32]		102
+nim	`-`	operators_blas_l1_opencl.html#-,,_2	proc `-`(a`gensym168, b`gensym168: ClTensor[float32]): ClTensor[float32]		102
+nim	`-`	operators_blas_l1_opencl.html#-,,_3	proc `-`(a`gensym227, b`gensym227: ClTensor[float64]): ClTensor[float64]		102
+nim	`+=`	operators_blas_l1_opencl.html#+=,,	proc `+=`(dst`gensym286: var ClTensor[float32]; src`gensym286: ClTensor[float32])		176
+nim	`+=`	operators_blas_l1_opencl.html#+=,,_2	proc `+=`(dst`gensym286: var ClTensor[float32]; src`gensym286: ClTensor[float32])		176
+nim	`+=`	operators_blas_l1_opencl.html#+=,,_3	proc `+=`(dst`gensym329: var ClTensor[float64]; src`gensym329: ClTensor[float64])		176
+nim	`-=`	operators_blas_l1_opencl.html#-=,,	proc `-=`(dst`gensym372: var ClTensor[float32]; src`gensym372: ClTensor[float32])		176
+nim	`-=`	operators_blas_l1_opencl.html#-=,,_2	proc `-=`(dst`gensym372: var ClTensor[float32]; src`gensym372: ClTensor[float32])		176
+nim	`-=`	operators_blas_l1_opencl.html#-=,,_3	proc `-=`(dst`gensym415: var ClTensor[float64]; src`gensym415: ClTensor[float64])		176
+nimgrp	+=	operators_blas_l1_opencl.html#+=-procs-all	proc		63
+nimgrp	-	operators_blas_l1_opencl.html#--procs-all	proc		60
+nimgrp	dot	operators_blas_l1_opencl.html#dot-procs-all	proc		30
+nimgrp	-=	operators_blas_l1_opencl.html#-=-procs-all	proc		65
+nimgrp	+	operators_blas_l1_opencl.html#+-procs-all	proc		58

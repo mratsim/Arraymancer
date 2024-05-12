@@ -1,0 +1,2 @@
+nimTitle	sequninit	sequninit.html	module src/arraymancer/private/sequninit		0
+nim	newSeqUninit	sequninit.html#newSeqUninit,Natural	proc newSeqUninit[T](len: Natural): seq[T]		22

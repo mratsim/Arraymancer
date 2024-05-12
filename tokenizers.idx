@@ -1,0 +1,2 @@
+nimTitle	tokenizers	tokenizers.html	module src/arraymancer/nlp/tokenizers		0
+nim	whitespaceTokenizer	tokenizers.html#whitespaceTokenizer.i,Tensor[string]	iterator whitespaceTokenizer(input: Tensor[string]): seq[string]		9

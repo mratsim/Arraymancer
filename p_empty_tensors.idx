@@ -1,0 +1,3 @@
+nimTitle	p_empty_tensors	p_empty_tensors.html	module src/arraymancer/tensor/private/p_empty_tensors		0
+nim	skipIfEmpty	p_empty_tensors.html#skipIfEmpty.t,typed	template skipIfEmpty(t: typed): untyped		32
+nim	returnEmptyIfEmpty	p_empty_tensors.html#returnEmptyIfEmpty.m,varargs[untyped]	macro returnEmptyIfEmpty(tensors: varargs[untyped]): untyped		38

@@ -1,0 +1,175 @@
+nimTitle	simd	simd.html	module src/arraymancer/laser/simd		0
+nim	m128	simd.html#m128	object m128		21
+nim	m128d	simd.html#m128d	object m128d		23
+nim	m128i	simd.html#m128i	object m128i		25
+nim	m256	simd.html#m256	object m256		27
+nim	m256d	simd.html#m256d	object m256d		29
+nim	m256i	simd.html#m256i	object m256i		31
+nim	m512	simd.html#m512	object m512		33
+nim	m512d	simd.html#m512d	object m512d		35
+nim	m512i	simd.html#m512i	object m512i		37
+nim	mmask16	simd.html#mmask16	type mmask16		39
+nim	mmask64	simd.html#mmask64	type mmask64		40
+nim	mm_setzero_ps	simd.html#mm_setzero_ps	proc mm_setzero_ps(): m128		48
+nim	mm_set1_ps	simd.html#mm_set1_ps,float32	proc mm_set1_ps(a: float32): m128		49
+nim	mm_load_ps	simd.html#mm_load_ps,ptr.float32	proc mm_load_ps(aligned_mem_addr: ptr float32): m128		50
+nim	mm_loadu_ps	simd.html#mm_loadu_ps,ptr.float32	proc mm_loadu_ps(data: ptr float32): m128		51
+nim	mm_store_ps	simd.html#mm_store_ps,ptr.float32,m128	proc mm_store_ps(mem_addr: ptr float32; a: m128)		52
+nim	mm_storeu_ps	simd.html#mm_storeu_ps,ptr.float32,m128	proc mm_storeu_ps(mem_addr: ptr float32; a: m128)		53
+nim	mm_add_ps	simd.html#mm_add_ps,m128,m128	proc mm_add_ps(a, b: m128): m128		54
+nim	mm_sub_ps	simd.html#mm_sub_ps,m128,m128	proc mm_sub_ps(a, b: m128): m128		55
+nim	mm_mul_ps	simd.html#mm_mul_ps,m128,m128	proc mm_mul_ps(a, b: m128): m128		56
+nim	mm_max_ps	simd.html#mm_max_ps,m128,m128	proc mm_max_ps(a, b: m128): m128		57
+nim	mm_min_ps	simd.html#mm_min_ps,m128,m128	proc mm_min_ps(a, b: m128): m128		58
+nim	mm_or_ps	simd.html#mm_or_ps,m128,m128	proc mm_or_ps(a, b: m128): m128		59
+nim	mm_load_ss	simd.html#mm_load_ss,ptr.float32	proc mm_load_ss(aligned_mem_addr: ptr float32): m128		67
+nim	mm_add_ss	simd.html#mm_add_ss,m128,m128	proc mm_add_ss(a, b: m128): m128		68
+nim	mm_max_ss	simd.html#mm_max_ss,m128,m128	proc mm_max_ss(a, b: m128): m128		69
+nim	mm_min_ss	simd.html#mm_min_ss,m128,m128	proc mm_min_ss(a, b: m128): m128		70
+nim	mm_cvtss_f32	simd.html#mm_cvtss_f32,m128	proc mm_cvtss_f32(a: m128): float32		72
+nim	mm_movehl_ps	simd.html#mm_movehl_ps,m128,m128	proc mm_movehl_ps(a, b: m128): m128		79
+nim	mm_movelh_ps	simd.html#mm_movelh_ps,m128,m128	proc mm_movelh_ps(a, b: m128): m128		84
+nim	mm_setzero_pd	simd.html#mm_setzero_pd	proc mm_setzero_pd(): m128d		96
+nim	mm_set1_pd	simd.html#mm_set1_pd,float64	proc mm_set1_pd(a: float64): m128d		97
+nim	mm_load_pd	simd.html#mm_load_pd,ptr.float64	proc mm_load_pd(aligned_mem_addr: ptr float64): m128d		98
+nim	mm_loadu_pd	simd.html#mm_loadu_pd,ptr.float64	proc mm_loadu_pd(mem_addr: ptr float64): m128d		99
+nim	mm_store_pd	simd.html#mm_store_pd,ptr.float64,m128d	proc mm_store_pd(mem_addr: ptr float64; a: m128d)		100
+nim	mm_storeu_pd	simd.html#mm_storeu_pd,ptr.float64,m128d	proc mm_storeu_pd(mem_addr: ptr float64; a: m128d)		101
+nim	mm_add_pd	simd.html#mm_add_pd,m128d,m128d	proc mm_add_pd(a, b: m128d): m128d		102
+nim	mm_sub_pd	simd.html#mm_sub_pd,m128d,m128d	proc mm_sub_pd(a, b: m128d): m128d		103
+nim	mm_mul_pd	simd.html#mm_mul_pd,m128d,m128d	proc mm_mul_pd(a, b: m128d): m128d		104
+nim	mm_setzero_si128	simd.html#mm_setzero_si128	proc mm_setzero_si128(): m128i		112
+nim	mm_set1_epi8	simd.html#mm_set1_epi8	proc mm_set1_epi8(a: int8 or uint8): m128i		113
+nim	mm_set1_epi16	simd.html#mm_set1_epi16	proc mm_set1_epi16(a: int16 or uint16): m128i		114
+nim	mm_set1_epi32	simd.html#mm_set1_epi32	proc mm_set1_epi32(a: int32 or uint32): m128i		115
+nim	mm_set1_epi64x	simd.html#mm_set1_epi64x	proc mm_set1_epi64x(a: int64 or uint64): m128i		116
+nim	mm_load_si128	simd.html#mm_load_si128,ptr.m128i	proc mm_load_si128(mem_addr: ptr m128i): m128i		117
+nim	mm_loadu_si128	simd.html#mm_loadu_si128,ptr.m128i	proc mm_loadu_si128(mem_addr: ptr m128i): m128i		118
+nim	mm_storeu_si128	simd.html#mm_storeu_si128,ptr.m128i,m128i	proc mm_storeu_si128(mem_addr: ptr m128i; a: m128i)		119
+nim	mm_add_epi8	simd.html#mm_add_epi8,m128i,m128i	proc mm_add_epi8(a, b: m128i): m128i		120
+nim	mm_add_epi16	simd.html#mm_add_epi16,m128i,m128i	proc mm_add_epi16(a, b: m128i): m128i		121
+nim	mm_add_epi32	simd.html#mm_add_epi32,m128i,m128i	proc mm_add_epi32(a, b: m128i): m128i		122
+nim	mm_add_epi64	simd.html#mm_add_epi64,m128i,m128i	proc mm_add_epi64(a, b: m128i): m128i		123
+nim	mm_or_si128	simd.html#mm_or_si128,m128i,m128i	proc mm_or_si128(a, b: m128i): m128i		125
+nim	mm_and_si128	simd.html#mm_and_si128,m128i,m128i	proc mm_and_si128(a, b: m128i): m128i		126
+nim	mm_slli_epi64	simd.html#mm_slli_epi64,m128i,cint	proc mm_slli_epi64(a: m128i; imm8: cint): m128i		127
+nim	mm_srli_epi64	simd.html#mm_srli_epi64,m128i,cint	proc mm_srli_epi64(a: m128i; imm8: cint): m128i		129
+nim	mm_srli_epi32	simd.html#mm_srli_epi32,m128i,int32	proc mm_srli_epi32(a: m128i; count: int32): m128i		131
+nim	mm_slli_epi32	simd.html#mm_slli_epi32,m128i,int32	proc mm_slli_epi32(a: m128i; count: int32): m128i		132
+nim	mm_mullo_epi16	simd.html#mm_mullo_epi16,m128i,m128i	proc mm_mullo_epi16(a, b: m128i): m128i		134
+nim	mm_shuffle_epi32	simd.html#mm_shuffle_epi32,m128i,cint	proc mm_shuffle_epi32(a: m128i; imm8: cint): m128i		138
+nim	mm_mul_epu32	simd.html#mm_mul_epu32,m128i,m128i	proc mm_mul_epu32(a: m128i; b: m128i): m128i		147
+nim	mm_set_epi32	simd.html#mm_set_epi32,cint,cint,cint,cint	proc mm_set_epi32(e3, e2, e1, e0: cint): m128i		154
+nim	mm_castps_si128	simd.html#mm_castps_si128,m128	proc mm_castps_si128(a: m128): m128i		158
+nim	mm_castsi128_ps	simd.html#mm_castsi128_ps,m128i	proc mm_castsi128_ps(a: m128i): m128		160
+nim	mm_cvtps_epi32	simd.html#mm_cvtps_epi32,m128	proc mm_cvtps_epi32(a: m128): m128i		162
+nim	mm_cvtepi32_ps	simd.html#mm_cvtepi32_ps,m128i	proc mm_cvtepi32_ps(a: m128i): m128		164
+nim	mm_cmpgt_epi32	simd.html#mm_cmpgt_epi32,m128i,m128i	proc mm_cmpgt_epi32(a, b: m128i): m128i		167
+nim	mm_cvtsi128_si32	simd.html#mm_cvtsi128_si32,m128i	proc mm_cvtsi128_si32(a: m128i): cint		170
+nim	mm_extract_epi16	simd.html#mm_extract_epi16,m128i,cint	proc mm_extract_epi16(a: m128i; imm8: cint): cint		173
+nim	mm_movemask_epi8	simd.html#mm_movemask_epi8,m128i	proc mm_movemask_epi8(a: m128i): int32		177
+nim	mm_movehdup_ps	simd.html#mm_movehdup_ps,m128	proc mm_movehdup_ps(a: m128): m128		187
+nim	mm_moveldup_ps	simd.html#mm_moveldup_ps,m128	proc mm_moveldup_ps(a: m128): m128		193
+nim	mm_mullo_epi32	simd.html#mm_mullo_epi32,m128i,m128i	proc mm_mullo_epi32(a, b: m128i): m128i		206
+nim	mm256_setzero_ps	simd.html#mm256_setzero_ps	proc mm256_setzero_ps(): m256		216
+nim	mm256_set1_ps	simd.html#mm256_set1_ps,float32	proc mm256_set1_ps(a: float32): m256		217
+nim	mm256_load_ps	simd.html#mm256_load_ps,ptr.float32	proc mm256_load_ps(aligned_mem_addr: ptr float32): m256		218
+nim	mm256_loadu_ps	simd.html#mm256_loadu_ps,ptr.float32	proc mm256_loadu_ps(mem_addr: ptr float32): m256		219
+nim	mm256_store_ps	simd.html#mm256_store_ps,ptr.float32,m256	proc mm256_store_ps(mem_addr: ptr float32; a: m256)		220
+nim	mm256_storeu_ps	simd.html#mm256_storeu_ps,ptr.float32,m256	proc mm256_storeu_ps(mem_addr: ptr float32; a: m256)		221
+nim	mm256_add_ps	simd.html#mm256_add_ps,m256,m256	proc mm256_add_ps(a, b: m256): m256		222
+nim	mm256_mul_ps	simd.html#mm256_mul_ps,m256,m256	proc mm256_mul_ps(a, b: m256): m256		223
+nim	mm256_sub_ps	simd.html#mm256_sub_ps,m256,m256	proc mm256_sub_ps(a, b: m256): m256		224
+nim	mm256_and_ps	simd.html#mm256_and_ps,m256,m256	proc mm256_and_ps(a, b: m256): m256		226
+nim	mm256_or_ps	simd.html#mm256_or_ps,m256,m256	proc mm256_or_ps(a, b: m256): m256		228
+nim	mm256_min_ps	simd.html#mm256_min_ps,m256,m256	proc mm256_min_ps(a, b: m256): m256		230
+nim	mm256_max_ps	simd.html#mm256_max_ps,m256,m256	proc mm256_max_ps(a, b: m256): m256		231
+nim	mm256_castps256_ps128	simd.html#mm256_castps256_ps128,m256	proc mm256_castps256_ps128(a: m256): m128		232
+nim	mm256_extractf128_ps	simd.html#mm256_extractf128_ps,m256,	proc mm256_extractf128_ps(v: m256; m: cint{lit}): m128		234
+nim	mm256_setzero_pd	simd.html#mm256_setzero_pd	proc mm256_setzero_pd(): m256d		244
+nim	mm256_set1_pd	simd.html#mm256_set1_pd,float64	proc mm256_set1_pd(a: float64): m256d		245
+nim	mm256_load_pd	simd.html#mm256_load_pd,ptr.float64	proc mm256_load_pd(aligned_mem_addr: ptr float64): m256d		246
+nim	mm256_loadu_pd	simd.html#mm256_loadu_pd,ptr.float64	proc mm256_loadu_pd(mem_addr: ptr float64): m256d		247
+nim	mm256_store_pd	simd.html#mm256_store_pd,ptr.float64,m256d	proc mm256_store_pd(mem_addr: ptr float64; a: m256d)		248
+nim	mm256_storeu_pd	simd.html#mm256_storeu_pd,ptr.float64,m256d	proc mm256_storeu_pd(mem_addr: ptr float64; a: m256d)		249
+nim	mm256_add_pd	simd.html#mm256_add_pd,m256d,m256d	proc mm256_add_pd(a, b: m256d): m256d		250
+nim	mm256_mul_pd	simd.html#mm256_mul_pd,m256d,m256d	proc mm256_mul_pd(a, b: m256d): m256d		251
+nim	mm256_fmadd_ps	simd.html#mm256_fmadd_ps,m256,m256,m256	proc mm256_fmadd_ps(a, b, c: m256): m256		259
+nim	mm256_fmadd_pd	simd.html#mm256_fmadd_pd,m256d,m256d,m256d	proc mm256_fmadd_pd(a, b, c: m256d): m256d		260
+nim	mm256_setzero_si256	simd.html#mm256_setzero_si256	proc mm256_setzero_si256(): m256i		268
+nim	mm256_set1_epi8	simd.html#mm256_set1_epi8	proc mm256_set1_epi8(a: int8 or uint8): m256i		269
+nim	mm256_set1_epi16	simd.html#mm256_set1_epi16	proc mm256_set1_epi16(a: int16 or uint16): m256i		270
+nim	mm256_set1_epi32	simd.html#mm256_set1_epi32	proc mm256_set1_epi32(a: int32 or uint32): m256i		271
+nim	mm256_set1_epi64x	simd.html#mm256_set1_epi64x	proc mm256_set1_epi64x(a: int64 or uint64): m256i		272
+nim	mm256_load_si256	simd.html#mm256_load_si256,ptr.m256i	proc mm256_load_si256(mem_addr: ptr m256i): m256i		273
+nim	mm256_loadu_si256	simd.html#mm256_loadu_si256,ptr.m256i	proc mm256_loadu_si256(mem_addr: ptr m256i): m256i		274
+nim	mm256_storeu_si256	simd.html#mm256_storeu_si256,ptr.m256i,m256i	proc mm256_storeu_si256(mem_addr: ptr m256i; a: m256i)		275
+nim	mm256_castps_si256	simd.html#mm256_castps_si256,m256	proc mm256_castps_si256(a: m256): m256i		277
+nim	mm256_castsi256_ps	simd.html#mm256_castsi256_ps,m256i	proc mm256_castsi256_ps(a: m256i): m256		279
+nim	mm256_cvtps_epi32	simd.html#mm256_cvtps_epi32,m256	proc mm256_cvtps_epi32(a: m256): m256i		281
+nim	mm256_cvtepi32_ps	simd.html#mm256_cvtepi32_ps,m256i	proc mm256_cvtepi32_ps(a: m256i): m256		283
+nim	mm256_add_epi8	simd.html#mm256_add_epi8,m256i,m256i	proc mm256_add_epi8(a, b: m256i): m256i		292
+nim	mm256_add_epi16	simd.html#mm256_add_epi16,m256i,m256i	proc mm256_add_epi16(a, b: m256i): m256i		293
+nim	mm256_add_epi32	simd.html#mm256_add_epi32,m256i,m256i	proc mm256_add_epi32(a, b: m256i): m256i		294
+nim	mm256_add_epi64	simd.html#mm256_add_epi64,m256i,m256i	proc mm256_add_epi64(a, b: m256i): m256i		295
+nim	mm256_and_si256	simd.html#mm256_and_si256,m256i,m256i	proc mm256_and_si256(a, b: m256i): m256i		297
+nim	mm256_srli_epi64	simd.html#mm256_srli_epi64,m256i,cint	proc mm256_srli_epi64(a: m256i; imm8: cint): m256i		299
+nim	mm256_mullo_epi16	simd.html#mm256_mullo_epi16,m256i,m256i	proc mm256_mullo_epi16(a, b: m256i): m256i		302
+nim	mm256_mullo_epi32	simd.html#mm256_mullo_epi32,m256i,m256i	proc mm256_mullo_epi32(a, b: m256i): m256i		306
+nim	mm256_shuffle_epi32	simd.html#mm256_shuffle_epi32,m256i,cint	proc mm256_shuffle_epi32(a: m256i; imm8: cint): m256i		310
+nim	mm256_mul_epu32	simd.html#mm256_mul_epu32,m256i,m256i	proc mm256_mul_epu32(a: m256i; b: m256i): m256i		322
+nim	mm256_movemask_epi8	simd.html#mm256_movemask_epi8,m256i	proc mm256_movemask_epi8(a: m256i): int32		330
+nim	mm256_cmpgt_epi32	simd.html#mm256_cmpgt_epi32,m256i,m256i	proc mm256_cmpgt_epi32(a, b: m256i): m256i		334
+nim	mm256_srli_epi32	simd.html#mm256_srli_epi32,m256i,int32	proc mm256_srli_epi32(a: m256i; count: int32): m256i		337
+nim	mm256_slli_epi32	simd.html#mm256_slli_epi32,m256i,int32	proc mm256_slli_epi32(a: m256i; count: int32): m256i		338
+nim	mm_i32gather_epi32	simd.html#mm_i32gather_epi32,ptr.,m128i,int32	proc mm_i32gather_epi32(m: ptr (uint32 or int32); i: m128i; s: int32): m128i		340
+nim	mm256_i32gather_epi32	simd.html#mm256_i32gather_epi32,ptr.,m256i,int32	proc mm256_i32gather_epi32(m: ptr (uint32 or int32); i: m256i; s: int32): m256i		341
+nim	mm512_setzero_ps	simd.html#mm512_setzero_ps	proc mm512_setzero_ps(): m512		349
+nim	mm512_set1_ps	simd.html#mm512_set1_ps,float32	proc mm512_set1_ps(a: float32): m512		350
+nim	mm512_load_ps	simd.html#mm512_load_ps,ptr.float32	proc mm512_load_ps(aligned_mem_addr: ptr float32): m512		351
+nim	mm512_loadu_ps	simd.html#mm512_loadu_ps,ptr.float32	proc mm512_loadu_ps(mem_addr: ptr float32): m512		352
+nim	mm512_store_ps	simd.html#mm512_store_ps,ptr.float32,m512	proc mm512_store_ps(mem_addr: ptr float32; a: m512)		353
+nim	mm512_storeu_ps	simd.html#mm512_storeu_ps,ptr.float32,m512	proc mm512_storeu_ps(mem_addr: ptr float32; a: m512)		354
+nim	mm512_add_ps	simd.html#mm512_add_ps,m512,m512	proc mm512_add_ps(a, b: m512): m512		355
+nim	mm512_sub_ps	simd.html#mm512_sub_ps,m512,m512	proc mm512_sub_ps(a, b: m512): m512		356
+nim	mm512_mul_ps	simd.html#mm512_mul_ps,m512,m512	proc mm512_mul_ps(a, b: m512): m512		357
+nim	mm512_fmadd_ps	simd.html#mm512_fmadd_ps,m512,m512,m512	proc mm512_fmadd_ps(a, b, c: m512): m512		358
+nim	mm512_min_ps	simd.html#mm512_min_ps,m512,m512	proc mm512_min_ps(a, b: m512): m512		360
+nim	mm512_max_ps	simd.html#mm512_max_ps,m512,m512	proc mm512_max_ps(a, b: m512): m512		361
+nim	mm512_or_ps	simd.html#mm512_or_ps,m512,m512	proc mm512_or_ps(a, b: m512): m512		363
+nim	mm512_setzero_pd	simd.html#mm512_setzero_pd	proc mm512_setzero_pd(): m512d		371
+nim	mm512_set1_pd	simd.html#mm512_set1_pd,float64	proc mm512_set1_pd(a: float64): m512d		372
+nim	mm512_load_pd	simd.html#mm512_load_pd,ptr.float64	proc mm512_load_pd(aligned_mem_addr: ptr float64): m512d		373
+nim	mm512_loadu_pd	simd.html#mm512_loadu_pd,ptr.float64	proc mm512_loadu_pd(mem_addr: ptr float64): m512d		374
+nim	mm512_store_pd	simd.html#mm512_store_pd,ptr.float64,m512d	proc mm512_store_pd(mem_addr: ptr float64; a: m512d)		375
+nim	mm512_storeu_pd	simd.html#mm512_storeu_pd,ptr.float64,m512d	proc mm512_storeu_pd(mem_addr: ptr float64; a: m512d)		376
+nim	mm512_add_pd	simd.html#mm512_add_pd,m512d,m512d	proc mm512_add_pd(a, b: m512d): m512d		377
+nim	mm512_mul_pd	simd.html#mm512_mul_pd,m512d,m512d	proc mm512_mul_pd(a, b: m512d): m512d		378
+nim	mm512_fmadd_pd	simd.html#mm512_fmadd_pd,m512d,m512d,m512d	proc mm512_fmadd_pd(a, b, c: m512d): m512d		379
+nim	mm512_setzero_si512	simd.html#mm512_setzero_si512	proc mm512_setzero_si512(): m512i		387
+nim	mm512_set1_epi8	simd.html#mm512_set1_epi8	proc mm512_set1_epi8(a: int8 or uint8): m512i		388
+nim	mm512_set1_epi16	simd.html#mm512_set1_epi16	proc mm512_set1_epi16(a: int16 or uint16): m512i		389
+nim	mm512_set1_epi32	simd.html#mm512_set1_epi32	proc mm512_set1_epi32(a: int32 or uint32): m512i		390
+nim	mm512_set1_epi64	simd.html#mm512_set1_epi64	proc mm512_set1_epi64(a: int64 or uint64): m512i		391
+nim	mm512_load_si512	simd.html#mm512_load_si512,ptr.SomeInteger	proc mm512_load_si512(mem_addr: ptr SomeInteger): m512i		392
+nim	mm512_loadu_si512	simd.html#mm512_loadu_si512,ptr.SomeInteger	proc mm512_loadu_si512(mem_addr: ptr SomeInteger): m512i		393
+nim	mm512_storeu_si512	simd.html#mm512_storeu_si512,ptr.SomeInteger,m512i	proc mm512_storeu_si512(mem_addr: ptr SomeInteger; a: m512i)		394
+nim	mm512_add_epi8	simd.html#mm512_add_epi8,m512i,m512i	proc mm512_add_epi8(a, b: m512i): m512i		396
+nim	mm512_add_epi16	simd.html#mm512_add_epi16,m512i,m512i	proc mm512_add_epi16(a, b: m512i): m512i		397
+nim	mm512_add_epi32	simd.html#mm512_add_epi32,m512i,m512i	proc mm512_add_epi32(a, b: m512i): m512i		398
+nim	mm512_add_epi64	simd.html#mm512_add_epi64,m512i,m512i	proc mm512_add_epi64(a, b: m512i): m512i		399
+nim	mm512_mullo_epi32	simd.html#mm512_mullo_epi32,m512i,m512i	proc mm512_mullo_epi32(a, b: m512i): m512i		401
+nim	mm512_mullo_epi64	simd.html#mm512_mullo_epi64,m512i,m512i	proc mm512_mullo_epi64(a, b: m512i): m512i		405
+nim	mm512_and_si512	simd.html#mm512_and_si512,m512i,m512i	proc mm512_and_si512(a, b: m512i): m512i		409
+nim	mm512_cmpgt_epi32_mask	simd.html#mm512_cmpgt_epi32_mask,m512i,m512i	proc mm512_cmpgt_epi32_mask(a, b: m512i): mmask16		412
+nim	mm512_maskz_set1_epi32	simd.html#mm512_maskz_set1_epi32,mmask16,cint	proc mm512_maskz_set1_epi32(k: mmask16; a: cint): m512i		415
+nim	mm512_movm_epi32	simd.html#mm512_movm_epi32,mmask16	proc mm512_movm_epi32(a: mmask16): m512i		420
+nim	mm512_movepi8_mask	simd.html#mm512_movepi8_mask,m512i	proc mm512_movepi8_mask(a: m512i): mmask64		422
+nim	mm512_srli_epi32	simd.html#mm512_srli_epi32,m512i,int32	proc mm512_srli_epi32(a: m512i; count: int32): m512i		426
+nim	mm512_slli_epi32	simd.html#mm512_slli_epi32,m512i,int32	proc mm512_slli_epi32(a: m512i; count: int32): m512i		427
+nim	mm512_i32gather_epi32	simd.html#mm512_i32gather_epi32,m512i,ptr.,int32	proc mm512_i32gather_epi32(i: m512i; m: ptr (uint32 or int32); s: int32): m512i		429
+nim	mm512_castps_si512	simd.html#mm512_castps_si512,m512	proc mm512_castps_si512(a: m512): m512i		432
+nim	mm512_castsi512_ps	simd.html#mm512_castsi512_ps,m512i	proc mm512_castsi512_ps(a: m512i): m512		434
+nim	mm512_cvtps_epi32	simd.html#mm512_cvtps_epi32,m512	proc mm512_cvtps_epi32(a: m512): m512i		436
+nim	mm512_cvtepi32_ps	simd.html#mm512_cvtepi32_ps,m512i	proc mm512_cvtepi32_ps(a: m512i): m512		438
+nim	cvtmask64_u64	simd.html#cvtmask64_u64,mmask64	proc cvtmask64_u64(a: mmask64): uint64		441

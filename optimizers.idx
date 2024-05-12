@@ -1,0 +1,18 @@
+nimTitle	optimizers	optimizers.html	module src/arraymancer/nn/optimizers/optimizers		0
+nim	SGD	optimizers.html#SGD	object SGD		27
+nim	newSGD	optimizers.html#newSGD,varargs[Variable[Tensor[T]]],T	proc newSGD[T](params: varargs[Variable[Tensor[T]]]; learning_rate: T): SGD[Tensor[T]]		32
+nim	update	optimizers.html#update,SGD	proc update(self: SGD)		35
+nim	optimizer	optimizers.html#optimizer,M,typedesc[SGD],T	proc optimizer[M, T](model: M; OptimizerKind: typedesc[SGD]; learning_rate: T): SGD[\n    Tensor[T]]		55
+nim	optimizerSGD	optimizers.html#optimizerSGD,M,T	proc optimizerSGD[M, T](model: M; learning_rate: T): SGD[Tensor[T]]		80
+nim	SGDMomentum	optimizers.html#SGDMomentum	object SGDMomentum		90
+nim	update	optimizers.html#update,SGDMomentum	proc update(self: var SGDMomentum)		101
+nim	optimizer	optimizers.html#optimizer,M,typedesc[SGDMomentum],T,T,T	proc optimizer[M, T](model: M; OptimizerKind: typedesc[SGDMomentum];\n                learning_rate: T; momentum: T = T(0.0); decay: T = T(0.0);\n                nesterov = false): SGDMomentum[Tensor[T]]		149
+nim	optimizerSGDMomentum	optimizers.html#optimizerSGDMomentum,M,T,typeof(T(0.0)),typeof(T(0.0))	proc optimizerSGDMomentum[M, T](model: M; learning_rate: T; momentum = T(0.0);\n                           decay = T(0.0); nesterov = false): SGDMomentum[\n    Tensor[T]]		184
+nim	Adam	optimizers.html#Adam	object Adam		194
+nim	update	optimizers.html#update,Adam	proc update(self: var Adam)		204
+nim	optimizer	optimizers.html#optimizer,M,typedesc[Adam],T,T,T,T	proc optimizer[M, T](model: M; OptimizerKind: typedesc[Adam];\n                learning_rate: T = T(0.001); beta1: T = T(0.9);\n                beta2: T = T(0.999); eps: T = T(1e-8)): Adam[Tensor[T]]		230
+nim	optimizerAdam	optimizers.html#optimizerAdam,M,T,T,T,T	proc optimizerAdam[M, T](model: M; learning_rate: T; beta1: T = T(0.9);\n                    beta2: T = T(0.999); eps: T = T(1e-8)): Adam[Tensor[T]]		259
+nim	Optimizer	optimizers.html#Optimizer	type Optimizer		269
+nim	zeroGrads	optimizers.html#zeroGrads,Optimizer	proc zeroGrads(o: Optimizer)		271
+nimgrp	update	optimizers.html#update-procs-all	proc		35
+nimgrp	optimizer	optimizers.html#optimizer-procs-all	proc		55

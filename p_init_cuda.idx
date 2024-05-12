@@ -1,0 +1,4 @@
+nimTitle	p_init_cuda	p_init_cuda.html	module src/arraymancer/tensor/private/p_init_cuda		0
+nim	newCudaTensor	p_init_cuda.html#newCudaTensor,varargs[int],OrderType	proc newCudaTensor[T: SomeFloat](shape: varargs[int]; layout: OrderType = colMajor): CudaTensor[\n    T]		29
+nim	newCudaTensor	p_init_cuda.html#newCudaTensor,Metadata,OrderType	proc newCudaTensor[T: SomeFloat](shape: Metadata; layout: OrderType = colMajor): CudaTensor[\n    T]		42
+nimgrp	newcudatensor	p_init_cuda.html#newCudaTensor-procs-all	proc		29

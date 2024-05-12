@@ -1,0 +1,2 @@
+nimTitle	memory	memory.html	module src/arraymancer/laser/private/memory		0
+nim	align_raw_data	memory.html#align_raw_data,typedesc,pointer	proc align_raw_data(T: typedesc; p: pointer): ptr UncheckedArray[T:type]		8

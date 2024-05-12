@@ -1,0 +1,2 @@
+nimTitle	neighbors	neighbors.html	module src/arraymancer/spatial/neighbors		0
+nim	nearestNeighbors	neighbors.html#nearestNeighbors,Tensor[T],float,typedesc[AnyMetric],float,staticbool	proc nearestNeighbors[T](X: Tensor[T]; eps: float; metric: typedesc[AnyMetric];\n                    p = 2.0; useNaiveNearestNeighbor: static bool = false): seq[\n    Tensor[int]]		14

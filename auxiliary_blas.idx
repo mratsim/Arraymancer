@@ -1,0 +1,5 @@
+nimTitle	auxiliary_blas	auxiliary_blas.html	module src/arraymancer/linear_algebra/helpers/auxiliary_blas		0
+nim	AAt	auxiliary_blas.html#AAt	SyrkKind.AAt		14
+nim	AtA	auxiliary_blas.html#AtA	SyrkKind.AtA		14
+nim	SyrkKind	auxiliary_blas.html#SyrkKind	enum SyrkKind		14
+nim	syrk	auxiliary_blas.html#syrk,T,Tensor[T: SomeFloat],staticSyrkKind,T,Tensor[T: SomeFloat],staticchar	proc syrk[T: SomeFloat](alpha: T; A: Tensor[T]; mul_order: static SyrkKind; beta: T;\n                   C: var Tensor[T]; uplo: static char)		18

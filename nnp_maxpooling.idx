@@ -1,0 +1,3 @@
+nimTitle	nnp_maxpooling	nnp_maxpooling.html	module src/arraymancer/nn_primitives/nnp_maxpooling		0
+nim	maxpool2d	nnp_maxpooling.html#maxpool2d,Tensor[T],Size2D,Size2D,Size2D	proc maxpool2d[T](input: Tensor[T]; kernel: Size2D; padding: Size2D = (0, 0);\n             stride: Size2D = (1, 1)): tuple[max_indices: Tensor[int],\n    maxpooled: Tensor[T]]		19
+nim	maxpool2d_backward	nnp_maxpooling.html#maxpool2d_backward,,Tensor[int],Tensor[T]	proc maxpool2d_backward[T](cached_input_shape: openArray[int] | Metadata;\n                      cached_max_indices: Tensor[int]; gradOutput: Tensor[T]): Tensor[\n    T]		68

@@ -1,0 +1,3 @@
+nimTitle	sigmoid	sigmoid.html	module src/arraymancer/nn/activation/sigmoid		0
+nim	SigmoidActivation	sigmoid.html#SigmoidActivation	type SigmoidActivation		20
+nim	sigmoid	sigmoid.html#sigmoid,Variable[TT]	proc sigmoid[TT](a: Variable[TT]): Variable[TT]		48

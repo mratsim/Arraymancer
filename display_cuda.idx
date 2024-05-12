@@ -1,0 +1,3 @@
+nimTitle	display_cuda	display_cuda.html	module src/arraymancer/tensor/display_cuda		0
+nim	pretty	display_cuda.html#pretty,CudaTensor[T],int	proc pretty[T](t: CudaTensor[T]; precision = -1): string		19
+nim	`$`	display_cuda.html#$,CudaTensor[T]	proc `$`[T](t: CudaTensor[T]): string		34

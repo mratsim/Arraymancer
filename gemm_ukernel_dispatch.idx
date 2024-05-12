@@ -1,0 +1,3 @@
+nimTitle	gemm_ukernel_dispatch	gemm_ukernel_dispatch.html	module src/arraymancer/laser/primitives/matrix_multiplication/gemm_ukernel_dispatch		0
+nim	gebb_ukernel	gemm_ukernel_dispatch.html#gebb_ukernel,int,T,ptr.UncheckedArray[T],ptr.UncheckedArray[T],T,MatrixView[T]	proc gebb_ukernel[T; ukernel: static MicroKernel](kc: int; alpha: T;\n    packedA, packedB: ptr UncheckedArray[T]; beta: T; vC: MatrixView[T])		77
+nim	gebb_ukernel_edge	gemm_ukernel_dispatch.html#gebb_ukernel_edge,int,int,int,T,ptr.UncheckedArray[T],ptr.UncheckedArray[T],T,MatrixView[T]	proc gebb_ukernel_edge[T; ukernel: static MicroKernel](mr, nr, kc: int; alpha: T;\n    packedA, packedB: ptr UncheckedArray[T]; beta: T; vC: MatrixView[T])		121

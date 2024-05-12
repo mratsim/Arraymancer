@@ -1,0 +1,2 @@
+nimTitle	p_accessors_macros_desugar	p_accessors_macros_desugar.html	module src/arraymancer/tensor/private/p_accessors_macros_desugar		0
+nim	desugar	p_accessors_macros_desugar.html#desugar.m,untyped	macro desugar(args: untyped): void	## Traverse top tree nodes and one-hot-encode the different conditions	30

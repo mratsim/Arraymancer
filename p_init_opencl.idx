@@ -1,0 +1,4 @@
+nimTitle	p_init_opencl	p_init_opencl.html	module src/arraymancer/tensor/private/p_init_opencl		0
+nim	newClTensor	p_init_opencl.html#newClTensor,varargs[int],OrderType	proc newClTensor[T: SomeFloat](shape: varargs[int]; layout: OrderType = rowMajor): ClTensor[\n    T]		29
+nim	newClTensor	p_init_opencl.html#newClTensor,Metadata,OrderType	proc newClTensor[T: SomeFloat](shape: Metadata; layout: OrderType = rowMajor): ClTensor[\n    T]		38
+nimgrp	newcltensor	p_init_opencl.html#newClTensor-procs-all	proc		29

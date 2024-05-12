@@ -1,0 +1,32 @@
+nimTitle	special_matrices	special_matrices.html	module src/arraymancer/linear_algebra/special_matrices		0
+nim	hilbert	special_matrices.html#hilbert,int,typedesc[SomeFloat]	proc hilbert(n: int; T: typedesc[SomeFloat]): Tensor[T]		9
+nim	vandermonde	special_matrices.html#vandermonde,Tensor[T],Tensor[SomeNumber]	proc vandermonde[T](x: Tensor[T]; orders: Tensor[SomeNumber]): Tensor[float]		37
+nim	vandermonde	special_matrices.html#vandermonde,Tensor[T],int	proc vandermonde[T](x: Tensor[T]; order: int = -1; increasing = true): Tensor[float]		57
+nim	vandermonde	special_matrices.html#vandermonde,int	proc vandermonde(order: int; increasing = true): Tensor[float]		83
+nim	vander	special_matrices.html#vander,Tensor[T],int	proc vander[T](x: Tensor[T]; order: int = -1; increasing = false): Tensor[float]		102
+nim	vander	special_matrices.html#vander,int	proc vander(order: int = -1; increasing = false): Tensor[float]		112
+nim	diagonal	special_matrices.html#diagonal,Tensor[T],int	proc diagonal[T](a: Tensor[T]; k = 0; anti = false): Tensor[T]		122
+nim	set_diagonal	special_matrices.html#set_diagonal,Tensor[T],Tensor[T],int	proc set_diagonal[T](a: var Tensor[T]; d: Tensor[T]; k = 0; anti = false)		161
+nim	with_diagonal	special_matrices.html#with_diagonal,Tensor[T],Tensor[T],int	proc with_diagonal[T](a: Tensor[T]; d: Tensor[T]; k = 0; anti = false): Tensor[T]		201
+nim	diag	special_matrices.html#diag,Tensor[T],int	proc diag[T](d: Tensor[T]; k = 0; anti = false): Tensor[T]		213
+nim	identity	special_matrices.html#identity,int	proc identity[T](n: int): Tensor[T]		228
+nim	eye	special_matrices.html#eye,varargs[int]	proc eye[T](shape: varargs[int]): Tensor[T]		240
+nim	tri	special_matrices.html#tri,Metadata,staticint,staticbool	proc tri[T](shape: Metadata; k: static int = 0; upper: static bool = false): Tensor[T]		251
+nim	tri	special_matrices.html#tri,int,int,staticint,staticbool	proc tri[T](shape_ax1, shape_ax0: int; k: static int = 0; upper: static bool = false): Tensor[\n    T]		272
+nim	circulant	special_matrices.html#circulant,Tensor[T],int,int	proc circulant[T](t: Tensor[T]; axis = -1; step = 1): Tensor[T]		289
+nim	toeplitz	special_matrices.html#toeplitz,Tensor[T],Tensor[T]	proc toeplitz[T](c, r: Tensor[T]): Tensor[T]		324
+nim	toeplitz	special_matrices.html#toeplitz,Tensor[T]	proc toeplitz[T](c: Tensor[T]): Tensor[T]		357
+nim	hankel	special_matrices.html#hankel,Tensor[T],Tensor[T]	proc hankel[T](c, r: Tensor[T]): Tensor[T]		396
+nim	hankel	special_matrices.html#hankel,Tensor[T]	proc hankel[T](c: Tensor[T]): Tensor[T]		429
+nim	xygrid	special_matrices.html#xygrid	MeshGridIndexing.xygrid		457
+nim	ijgrid	special_matrices.html#ijgrid	MeshGridIndexing.ijgrid		457
+nim	MeshGridIndexing	special_matrices.html#MeshGridIndexing	enum MeshGridIndexing		457
+nim	meshgrid	special_matrices.html#meshgrid,varargs[Tensor[T]]	proc meshgrid[T](t_list: varargs[Tensor[T]]; indexing = MeshGridIndexing.xygrid): seq[\n    Tensor[T]]		459
+nim	int2bit	special_matrices.html#int2bit,int,int	proc int2bit(value: int; n: int; msbfirst = true): Tensor[bool]		513
+nim	int2bit	special_matrices.html#int2bit,Tensor[T: SomeInteger],int	proc int2bit[T: SomeInteger](t: Tensor[T]; n: int; msbfirst = true): Tensor[bool]		543
+nimgrp	tri	special_matrices.html#tri-procs-all	proc		251
+nimgrp	toeplitz	special_matrices.html#toeplitz-procs-all	proc		324
+nimgrp	vandermonde	special_matrices.html#vandermonde-procs-all	proc		37
+nimgrp	int2bit	special_matrices.html#int2bit-procs-all	proc		513
+nimgrp	vander	special_matrices.html#vander-procs-all	proc		102
+nimgrp	hankel	special_matrices.html#hankel-procs-all	proc		396

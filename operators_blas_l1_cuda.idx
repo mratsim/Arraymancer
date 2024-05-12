@@ -1,0 +1,12 @@
+nimTitle	operators_blas_l1_cuda	operators_blas_l1_cuda.html	module src/arraymancer/tensor/operators_blas_l1_cuda		0
+nim	dot	operators_blas_l1_cuda.html#dot,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc dot[T: SomeFloat](a, b: CudaTensor[T]): T		28
+nim	`+=`	operators_blas_l1_cuda.html#+=,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc `+=`[T: SomeFloat](a: var CudaTensor[T]; b: CudaTensor[T])		39
+nim	`+`	operators_blas_l1_cuda.html#+,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc `+`[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T]		51
+nim	`-=`	operators_blas_l1_cuda.html#-=,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc `-=`[T: SomeFloat](a: var CudaTensor[T]; b: CudaTensor[T])		62
+nim	`-`	operators_blas_l1_cuda.html#-,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc `-`[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T]		75
+nim	`*=`	operators_blas_l1_cuda.html#*=,CudaTensor[T: SomeFloat],T	proc `*=`[T: SomeFloat](t: var CudaTensor[T]; a: T)		84
+nim	`*`	operators_blas_l1_cuda.html#*,T,CudaTensor[T: SomeFloat]	proc `*`[T: SomeFloat](a: T; t: CudaTensor[T]): CudaTensor[T]		92
+nim	`*`	operators_blas_l1_cuda.html#*,CudaTensor[T: SomeFloat],T	proc `*`[T: SomeFloat](t: CudaTensor[T]; a: T): CudaTensor[T]		101
+nim	`/=`	operators_blas_l1_cuda.html#/=,CudaTensor[T: SomeFloat],T	proc `/=`[T: SomeFloat](t: var CudaTensor[T]; a: T)		107
+nim	`/`	operators_blas_l1_cuda.html#/,CudaTensor[T: SomeFloat],T	proc `/`[T: SomeFloat](t: CudaTensor[T]; val: T): CudaTensor[T]		113
+nimgrp	*	operators_blas_l1_cuda.html#*-procs-all	proc		92

@@ -1,0 +1,9 @@
+nimTitle	decomposition	decomposition.html	module src/arraymancer/linear_algebra/decomposition		0
+nim	symeig	decomposition.html#symeig,Tensor[T: SupportedDecomposition],staticbool,staticchar	proc symeig[T: SupportedDecomposition](a: Tensor[T];\n                                  return_eigenvectors: static bool = false;\n                                  uplo: static char = 'U'): tuple[\n    eigenval, eigenvec: Tensor[T]]		19
+nim	symeig	decomposition.html#symeig,Tensor[T: SupportedDecomposition],staticbool,staticchar,HSlice[,]	proc symeig[T: SupportedDecomposition](a: Tensor[T];\n                                  return_eigenvectors: static bool = false;\n                                  uplo: static char = 'U';\n                                  slice: HSlice[[type node], [type node]]): tuple[\n    eigenval, eigenvec: Tensor[T]]		39
+nim	qr	decomposition.html#qr,Tensor[T: SupportedDecomposition]	proc qr[T: SupportedDecomposition](a: Tensor[T]): tuple[Q, R: Tensor[T]]		63
+nim	lu_permuted	decomposition.html#lu_permuted,Tensor[T: SupportedDecomposition]	proc lu_permuted[T: SupportedDecomposition](a: Tensor[T]): tuple[PL, U: Tensor[T]]		93
+nim	svd	decomposition.html#svd,Tensor[T: SupportedDecomposition],typedesc[U]	proc svd[T: SupportedDecomposition; U: SomeFloat](A: Tensor[T]; _: typedesc[U]): tuple[\n    U: Tensor[T], S: Tensor[U], Vh: Tensor[T]]		124
+nim	svd	decomposition.html#svd,Tensor[T: SupportedDecomposition]	proc svd[T: SupportedDecomposition](A: Tensor[T]): auto		178
+nimgrp	svd	decomposition.html#svd-procs-all	proc		124
+nimgrp	symeig	decomposition.html#symeig-procs-all	proc		19

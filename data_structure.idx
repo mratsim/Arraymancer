@@ -1,0 +1,24 @@
+nimTitle	data_structure	data_structure.html	module src/arraymancer/tensor/data_structure		0
+nim	CudaStorage	data_structure.html#CudaStorage	object CudaStorage		26
+nim	CudaTensor	data_structure.html#CudaTensor	object CudaTensor		36
+nim	ClStorage	data_structure.html#ClStorage	object ClStorage		52
+nim	ClTensor	data_structure.html#ClTensor	object ClTensor		58
+nim	AnyTensor	data_structure.html#AnyTensor	type AnyTensor		74
+nim	data=	data_structure.html#data=,Tensor[T],seq[T]	proc data=[T](t: var Tensor[T]; s: seq[T])		80
+nim	rank	data_structure.html#rank	proc rank[T](t: CudaTensor[T] or ClTensor[T]): range[0 .. LASER_MAXRANK]		93
+nim	size	data_structure.html#size	proc size[T](t: CudaTensor[T] or ClTensor[T]): Natural		96
+nim	shape_to_strides	data_structure.html#shape_to_strides,Metadata,OrderType,Metadata	proc shape_to_strides(shape: Metadata; layout: OrderType = rowMajor;\n                 result: var Metadata)		99
+nim	is_C_contiguous	data_structure.html#is_C_contiguous	proc is_C_contiguous(t: CudaTensor or ClTensor): bool		122
+nim	is_F_contiguous	data_structure.html#is_F_contiguous,AnyTensor	proc is_F_contiguous(t: AnyTensor): bool		133
+nim	isContiguous	data_structure.html#isContiguous,AnyTensor	proc isContiguous(t: AnyTensor): bool		144
+nim	get_data_ptr	data_structure.html#get_data_ptr,Tensor[T: KnownSupportsCopyMem]	proc get_data_ptr[T: KnownSupportsCopyMem](t: Tensor[T]): ptr T		153
+nim	get_data_ptr	data_structure.html#get_data_ptr,AnyTensor[T: not KnownSupportsCopyMem]	proc get_data_ptr[T: not KnownSupportsCopyMem](t: AnyTensor[T]): ptr T		160
+nim	get_offset_ptr	data_structure.html#get_offset_ptr,Tensor[T: KnownSupportsCopyMem]	proc get_offset_ptr[T: KnownSupportsCopyMem](t: Tensor[T]): ptr T		163
+nim	get_offset_ptr	data_structure.html#get_offset_ptr,AnyTensor[T: not KnownSupportsCopyMem]	proc get_offset_ptr[T: not KnownSupportsCopyMem](t: AnyTensor[T]): ptr T		170
+nim	get_data_ptr	data_structure.html#get_data_ptr	proc get_data_ptr[T](t: CudaTensor[T] or ClTensor[T]): ptr T		173
+nim	get_offset_ptr	data_structure.html#get_offset_ptr	proc get_offset_ptr[T](t: CudaTensor[T] or ClTensor[T]): ptr T		180
+nim	dataArray	data_structure.html#dataArray,Tensor[T: KnownSupportsCopyMem]	proc dataArray[T: KnownSupportsCopyMem](t: Tensor[T]): ptr UncheckedArray[T]		187
+nim	dataArray	data_structure.html#dataArray,Tensor[T: not KnownSupportsCopyMem]	proc dataArray[T: not KnownSupportsCopyMem](t: Tensor[T]): ptr UncheckedArray[T]		195
+nimgrp	getdataptr	data_structure.html#get_data_ptr-procs-all	proc		153
+nimgrp	dataarray	data_structure.html#dataArray-procs-all	proc		187
+nimgrp	getoffsetptr	data_structure.html#get_offset_ptr-procs-all	proc		163

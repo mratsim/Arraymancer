@@ -1,0 +1,2 @@
+nimTitle	stats	stats.html	module src/arraymancer/stats/stats		0
+nim	covariance_matrix	stats.html#covariance_matrix,Tensor[T: SomeFloat],Tensor[T: SomeFloat]	proc covariance_matrix[T: SomeFloat](x, y: Tensor[T]): Tensor[T]		7

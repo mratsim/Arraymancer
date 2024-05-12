@@ -1,0 +1,30 @@
+nimTitle	init_cpu	init_cpu.html	module src/arraymancer/tensor/init_cpu		0
+nim	newTensorUninit	init_cpu.html#newTensorUninit,varargs[int]	proc newTensorUninit[T](shape: varargs[int] = [0]): Tensor[T]		26
+nim	newTensorUninit	init_cpu.html#newTensorUninit,int	proc newTensorUninit[T](size: int): Tensor[T]		41
+nim	newTensorUninit	init_cpu.html#newTensorUninit,Metadata	proc newTensorUninit[T](shape: Metadata): Tensor[T]		46
+nim	newTensorWith	init_cpu.html#newTensorWith,varargs[int],T	proc newTensorWith[T](shape: varargs[int]; value: T): Tensor[T]		60
+nim	newTensorWith	init_cpu.html#newTensorWith,Metadata,T	proc newTensorWith[T](shape: Metadata; value: T): Tensor[T]		81
+nim	zeros	init_cpu.html#zeros,varargs[int]	proc zeros[T: SomeNumber | Complex[float32] | Complex[float64] | bool](\n    shape: varargs[int]): Tensor[T]		104
+nim	zeros	init_cpu.html#zeros,Metadata	proc zeros[T: SomeNumber | Complex[float32] | Complex[float64] | bool](\n    shape: Metadata): Tensor[T]		114
+nim	zeros_like	init_cpu.html#zeros_like,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64] or bool]	proc zeros_like[T: SomeNumber | Complex[float32] | Complex[float64] | bool](\n    t: Tensor[T]): Tensor[T]		124
+nim	ones	init_cpu.html#ones,varargs[int]	proc ones[T: SomeNumber | Complex[float32] | Complex[float64] | bool](\n    shape: varargs[int]): Tensor[T]		133
+nim	ones	init_cpu.html#ones,Metadata	proc ones[T: SomeNumber | Complex[float32] | Complex[float64] | bool](shape: Metadata): Tensor[\n    T]		146
+nim	ones_like	init_cpu.html#ones_like,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64] or bool]	proc ones_like[T: SomeNumber | Complex[float32] | Complex[float64] | bool](\n    t: Tensor[T]): Tensor[T]		159
+nim	arange	init_cpu.html#arange,T,T,T	proc arange[T: SomeNumber](start, stop, step: T): Tensor[T]		168
+nim	arange	init_cpu.html#arange.t,T	template arange[T: SomeNumber](stop: T): Tensor[T]		198
+nim	arange	init_cpu.html#arange.t,T,T	template arange[T: SomeNumber](start, stop: T): Tensor[T]		208
+nim	randomTensor	init_cpu.html#randomTensor,varargs[int],T	proc randomTensor[T: SomeFloat](shape: varargs[int]; max: T): Tensor[T]		223
+nim	randomTensor	init_cpu.html#randomTensor,varargs[int],int	proc randomTensor(shape: varargs[int]; max: int): Tensor[int]		235
+nim	randomTensor	init_cpu.html#randomTensor,varargs[int],Slice[T]	proc randomTensor[T](shape: varargs[int]; slice: Slice[T]): Tensor[T]		247
+nim	randomTensor	init_cpu.html#randomTensor,varargs[int]	proc randomTensor[T: bool](shape: varargs[int]): Tensor[T]		259
+nim	randomTensor	init_cpu.html#randomTensor,varargs[int],openArray[T]	proc randomTensor[T](shape: varargs[int]; sample_source: openArray[T]): Tensor[T]		269
+nim	randomNormalTensor	init_cpu.html#randomNormalTensor,varargs[int],T,T	proc randomNormalTensor[T: SomeFloat](shape: varargs[int]; mean: T = 0; std: T = 1): Tensor[\n    T]		300
+nim	linspace	init_cpu.html#linspace,T,T,int	proc linspace[T: SomeNumber](start, stop: T; num: int; endpoint = true): Tensor[float]		317
+nim	logspace	init_cpu.html#logspace,T,T,int,float	proc logspace[T: SomeNumber](start, stop: T; num: int; base = 10.0; endpoint = true): Tensor[\n    float]		341
+nim	geomspace	init_cpu.html#geomspace,T,T,int	proc geomspace[T: SomeFloat](start, stop: T; num: int; endpoint = true): Tensor[float]		357
+nimgrp	ones	init_cpu.html#ones-procs-all	proc		133
+nimgrp	newtensoruninit	init_cpu.html#newTensorUninit-procs-all	proc		26
+nimgrp	zeros	init_cpu.html#zeros-procs-all	proc		104
+nimgrp	randomtensor	init_cpu.html#randomTensor-procs-all	proc		223
+nimgrp	newtensorwith	init_cpu.html#newTensorWith-procs-all	proc		60
+nimgrp	arange	init_cpu.html#arange-templates-all	template		198

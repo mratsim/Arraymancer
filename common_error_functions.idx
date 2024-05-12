@@ -1,0 +1,14 @@
+nimTitle	common_error_functions	common_error_functions.html	module src/arraymancer/ml/metrics/common_error_functions		0
+nim	squared_error	common_error_functions.html#squared_error,T,T	proc squared_error[T: SomeFloat](y, y_true: T): T		19
+nim	squared_error	common_error_functions.html#squared_error,Complex[T: SomeFloat],Complex[T: SomeFloat]	proc squared_error[T: SomeFloat](y, y_true: Complex[T]): T		23
+nim	squared_error	common_error_functions.html#squared_error,,	proc squared_error[T: SomeFloat](y, y_true: Tensor[T] | Tensor[Complex[T]]): Tensor[T]		27
+nim	mean_squared_error	common_error_functions.html#mean_squared_error,,	proc mean_squared_error[T: SomeFloat](y, y_true: Tensor[T] | Tensor[Complex[T]]): T		31
+nim	relative_error	common_error_functions.html#relative_error,,	proc relative_error[T: SomeFloat](y, y_true: T | Complex[T]): T		39
+nim	relative_error	common_error_functions.html#relative_error,,_2	proc relative_error[T: SomeFloat](y, y_true: Tensor[T] | Tensor[Complex[T]]): Tensor[\n    T]		50
+nim	mean_relative_error	common_error_functions.html#mean_relative_error,,	proc mean_relative_error[T: SomeFloat](y, y_true: Tensor[T] | Tensor[Complex[T]]): T		57
+nim	absolute_error	common_error_functions.html#absolute_error,,	proc absolute_error[T: SomeFloat](y, y_true: T | Complex[T]): T		67
+nim	absolute_error	common_error_functions.html#absolute_error,,_2	proc absolute_error[T: SomeFloat](y, y_true: Tensor[T] | Tensor[Complex[T]]): Tensor[\n    T]		71
+nim	mean_absolute_error	common_error_functions.html#mean_absolute_error,,	proc mean_absolute_error[T: SomeFloat](y, y_true: Tensor[T] | Tensor[Complex[T]]): T		75
+nimgrp	absoluteerror	common_error_functions.html#absolute_error-procs-all	proc		67
+nimgrp	squarederror	common_error_functions.html#squared_error-procs-all	proc		19
+nimgrp	relativeerror	common_error_functions.html#relative_error-procs-all	proc		39

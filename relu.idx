@@ -1,0 +1,3 @@
+nimTitle	relu	relu.html	module src/arraymancer/nn/activation/relu		0
+nim	ReluActivation	relu.html#ReluActivation	type ReluActivation		19
+nim	relu	relu.html#relu,Variable[TT]	proc relu[TT](a: Variable[TT]): Variable[TT]		47

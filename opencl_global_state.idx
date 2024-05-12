@@ -1,0 +1,4 @@
+nimTitle	opencl_global_state	opencl_global_state.html	module src/arraymancer/tensor/backend/opencl_global_state		0
+nim	clDevice0	opencl_global_state.html#clDevice0	let clDevice0		31
+nim	clContext0	opencl_global_state.html#clContext0	let clContext0		31
+nim	clQueue0	opencl_global_state.html#clQueue0	let clQueue0		31

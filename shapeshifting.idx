@@ -1,0 +1,42 @@
+nimTitle	shapeshifting	shapeshifting.html	module src/arraymancer/tensor/shapeshifting		0
+nim	transpose	shapeshifting.html#transpose,Tensor	proc transpose(t: Tensor): Tensor		27
+nim	asContiguous	shapeshifting.html#asContiguous,Tensor[T],OrderType,bool	proc asContiguous[T](t: Tensor[T]; layout: OrderType = rowMajor; force: bool = false): Tensor[\n    T]		38
+nim	reshape	shapeshifting.html#reshape,Tensor,varargs[int]	proc reshape(t: Tensor; new_shape: varargs[int]): Tensor		59
+nim	reshape	shapeshifting.html#reshape,Tensor,Metadata	proc reshape(t: Tensor; new_shape: Metadata): Tensor		73
+nim	reshape_infer	shapeshifting.html#reshape_infer,Tensor,varargs[int]	proc reshape_infer(t: Tensor; new_shape: varargs[int]): Tensor		85
+nim	flatten	shapeshifting.html#flatten,Tensor	proc flatten(t: Tensor): Tensor		99
+nim	broadcast	shapeshifting.html#broadcast,Tensor[T],varargs[int]	proc broadcast[T](t: Tensor[T]; shape: varargs[int]): Tensor[T]		112
+nim	broadcast	shapeshifting.html#broadcast,Tensor[T],Metadata	proc broadcast[T](t: Tensor[T]; shape: Metadata): Tensor[T]		124
+nim	broadcast	shapeshifting.html#broadcast,T,varargs[int]	proc broadcast[T: SomeNumber](val: T; shape: varargs[int]): Tensor[T]		136
+nim	broadcast	shapeshifting.html#broadcast,T,Metadata	proc broadcast[T: SomeNumber](val: T; shape: Metadata): Tensor[T]		157
+nim	bc	shapeshifting.html#bc.t,,varargs[int]	template bc(t: (Tensor | SomeNumber); shape: varargs[int]): untyped		178
+nim	bc	shapeshifting.html#bc.t,,Metadata	template bc(t: (Tensor | SomeNumber); shape: Metadata): untyped		182
+nim	broadcast2	shapeshifting.html#broadcast2,Tensor[T],Tensor[T]	proc broadcast2[T](a, b: Tensor[T]): tuple[a, b: Tensor[T]]		186
+nim	permute	shapeshifting.html#permute,Tensor,varargs[int]	proc permute(t: Tensor; dims: varargs[int]): Tensor		207
+nim	moveaxis	shapeshifting.html#moveaxis,Tensor,Natural,Natural	proc moveaxis(t: Tensor; initial: Natural; target: Natural): Tensor		228
+nim	concat	shapeshifting.html#concat,varargs[Tensor[T]],int	proc concat[T](t_list: varargs[Tensor[T]]; axis: int): Tensor[T]		259
+nim	append	shapeshifting.html#append,Tensor[T],Tensor[T]	proc append[T](t: Tensor[T]; values: Tensor[T]): Tensor[T]		295
+nim	append	shapeshifting.html#append,Tensor[T],varargs[T]	proc append[T](t: Tensor[T]; values: varargs[T]): Tensor[T]		332
+nim	squeeze	shapeshifting.html#squeeze,AnyTensor	proc squeeze(t: AnyTensor): AnyTensor		375
+nim	squeeze	shapeshifting.html#squeeze,Tensor,Natural	proc squeeze(t: Tensor; axis: Natural): Tensor		384
+nim	unsqueeze	shapeshifting.html#unsqueeze,Tensor,Natural	proc unsqueeze(t: Tensor; axis: Natural): Tensor		394
+nim	stack	shapeshifting.html#stack,varargs[Tensor[T]],Natural	proc stack[T](tensors: varargs[Tensor[T]]; axis: Natural = 0): Tensor[T]		405
+nim	split	shapeshifting.html#split,Tensor[T],Positive,Natural	proc split[T](t: Tensor[T]; chunk_size: Positive; axis: Natural): seq[Tensor[T]]		415
+nim	chunk	shapeshifting.html#chunk,Tensor[T],Positive,Natural	proc chunk[T](t: Tensor[T]; nb_chunks: Positive; axis: Natural): seq[Tensor[T]]		431
+nim	roll	shapeshifting.html#roll,Tensor[T],int	proc roll[T](t: Tensor[T]; shift: int): Tensor[T]		461
+nim	roll	shapeshifting.html#roll,Tensor[T],int,Natural	proc roll[T](t: Tensor[T]; shift: int; axis: Natural): Tensor[T]		501
+nim	repeat_values	shapeshifting.html#repeat_values,Tensor[T],int,int	proc repeat_values[T](t: Tensor[T]; reps: int; axis = -1): Tensor[T]		575
+nim	repeat_values	shapeshifting.html#repeat_values,Tensor[T],openArray[int]	proc repeat_values[T](t: Tensor[T]; reps: openArray[int]): Tensor[T]		637
+nim	repeat_values	shapeshifting.html#repeat_values,Tensor[T],Tensor[int]	proc repeat_values[T](t: Tensor[T]; reps: Tensor[int]): Tensor[T]		682
+nim	tile	shapeshifting.html#tile,Tensor[T],varargs[int]	proc tile[T](t: Tensor[T]; reps: varargs[int]): Tensor[T]		691
+nimgrp	squeeze	shapeshifting.html#squeeze-procs-all	proc		375
+nimgrp	repeatvalues	shapeshifting.html#repeat_values-procs-all	proc		575
+nimgrp	roll	shapeshifting.html#roll-procs-all	proc		461
+nimgrp	broadcast	shapeshifting.html#broadcast-procs-all	proc		112
+nimgrp	append	shapeshifting.html#append-procs-all	proc		295
+nimgrp	reshape	shapeshifting.html#reshape-procs-all	proc		59
+nimgrp	bc	shapeshifting.html#bc-templates-all	template		178
+heading	1     2     3     4	shapeshifting.html#Z1-2-3-4	 1     2     3     4		0
+heading	1     2     3     4     5     6     7	shapeshifting.html#Z1-2-3-4-5-6-7	 1     2     3     4     5     6     7		0
+heading	1     2     3     4     5     6     7	shapeshifting.html#Z1-2-3-4-5-6-7	 1     2     3     4     5     6     7		0
+heading	on rank-1 tensors but first input tensor has rank 2 AssertionDefectAssertionDefect	shapeshifting.html#on-rankminus1-tensors-but-first-input-tensor-has-rank-2-assertiondefectassertiondefect	 on rank-1 tensors but first input tensor has rank 2 <a class="reference internal" href="#AssertionDefect">AssertionDefect</a>		0

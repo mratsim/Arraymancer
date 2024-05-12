@@ -1,0 +1,2 @@
+nimTitle	imdb	imdb.html	module src/arraymancer/datasets/imdb		0
+nim	load_imdb	imdb.html#load_imdb,staticbool	proc load_imdb(cache: static bool = true): Imdb		89

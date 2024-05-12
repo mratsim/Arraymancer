@@ -1,0 +1,6 @@
+nimTitle	gru	gru.html	module src/arraymancer/nn/layers/gru		0
+nim	GRUGate	gru.html#GRUGate	type GRUGate		21
+nim	gru	gru.html#gru,Variable[TT],Variable[TT],Variable[TT],Variable[TT],Variable[TT],Variable[TT],Variable[TT]	proc gru[TT](input, hidden0: Variable[TT]; W3s0, W3sN, U3s: Variable[TT];\n        bW3s, bU3s: Variable[TT]): tuple[output, hiddenN: Variable[TT]]		119
+nim	GRULayer	gru.html#GRULayer	object GRULayer		164
+nim	init	gru.html#init,Context[Tensor[T]],typedesc[GRULayer[T]],int,int,int	proc init[T](ctx: Context[Tensor[T]]; layerType: typedesc[GRULayer[T]];\n        numInputFeatures, hiddenSize, layers: int): GRULayer[T]		169
+nim	forward	gru.html#forward,GRULayer[T],Variable,Variable	proc forward[T](self: GRULayer[T]; input, hidden0: Variable): tuple[\n    output, hiddenN: Variable]		198

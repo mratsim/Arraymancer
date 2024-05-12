@@ -1,0 +1,21 @@
+nimTitle	higher_order_applymap	higher_order_applymap.html	module src/arraymancer/tensor/higher_order_applymap		0
+nim	apply_inline	higher_order_applymap.html#apply_inline.t,Tensor[T: KnownSupportsCopyMem],untyped	template apply_inline[T: KnownSupportsCopyMem](t: var Tensor[T]; op: untyped): untyped		27
+nim	apply_inline	higher_order_applymap.html#apply_inline.t,Tensor[T: not KnownSupportsCopyMem],untyped	template apply_inline[T: not KnownSupportsCopyMem](t: var Tensor[T]; op: untyped): untyped		34
+nim	apply2_inline	higher_order_applymap.html#apply2_inline.t,Tensor[T: KnownSupportsCopyMem],Tensor[U],untyped	template apply2_inline[T: KnownSupportsCopyMem; U](dest: var Tensor[T]; src: Tensor[U];\n    op: untyped): untyped		40
+nim	apply2_inline	higher_order_applymap.html#apply2_inline.t,Tensor[T: not KnownSupportsCopyMem],Tensor[U],untyped	template apply2_inline[T: not KnownSupportsCopyMem; U](dest: var Tensor[T];\n    src: Tensor[U]; op: untyped): untyped		49
+nim	apply3_inline	higher_order_applymap.html#apply3_inline.t,Tensor[T: KnownSupportsCopyMem],Tensor[U],Tensor[V],untyped	template apply3_inline[T: KnownSupportsCopyMem; U, V](dest: var Tensor[T];\n    src1: Tensor[U]; src2: Tensor[V]; op: untyped): untyped		59
+nim	map_inline	higher_order_applymap.html#map_inline.t,Tensor[T],untyped	template map_inline[T](t: Tensor[T]; op: untyped): untyped		69
+nim	map2_inline	higher_order_applymap.html#map2_inline.t,Tensor[T],Tensor[U],untyped	template map2_inline[T, U](t1: Tensor[T]; t2: Tensor[U]; op: untyped): untyped		92
+nim	map3_inline	higher_order_applymap.html#map3_inline.t,Tensor[T],Tensor[U],Tensor[V],untyped	template map3_inline[T, U, V](t1: Tensor[T]; t2: Tensor[U]; t3: Tensor[V]; op: untyped): untyped		122
+nim	map	higher_order_applymap.html#map,Tensor[T],	proc map[T; U](t: Tensor[T]; f: T -> U): Tensor[U]		152
+nim	apply	higher_order_applymap.html#apply,Tensor[T],	proc apply[T](t: var Tensor[T]; f: T -> T)		174
+nim	apply	higher_order_applymap.html#apply,Tensor[T: KnownSupportsCopyMem],proc(T)	proc apply[T: KnownSupportsCopyMem](t: var Tensor[T]; f: proc (x: var T))		194
+nim	map2	higher_order_applymap.html#map2,Tensor[T],,Tensor[U]	proc map2[T, U; V: KnownSupportsCopyMem](t1: Tensor[T]; f: (T, U) -> V; t2: Tensor[U]): Tensor[\n    V]		218
+nim	map2	higher_order_applymap.html#map2,Tensor[T],,Tensor[U]_2	proc map2[T, U; V: not KnownSupportsCopyMem](t1: Tensor[T]; f: (T, U) -> V;\n                                        t2: Tensor[U]): Tensor[V]		248
+nim	apply2	higher_order_applymap.html#apply2,Tensor[T: KnownSupportsCopyMem],proc(T,T),Tensor[U]	proc apply2[T: KnownSupportsCopyMem; U](a: var Tensor[T]; f: proc (x: var T; y: T);\n                                   b: Tensor[U])		263
+nim	apply2	higher_order_applymap.html#apply2,Tensor[T: not KnownSupportsCopyMem],proc(T,T),Tensor[U]	proc apply2[T: not KnownSupportsCopyMem; U](a: var Tensor[T];\n                                       f: proc (x: var T; y: T); b: Tensor[U])		294
+nimgrp	apply	higher_order_applymap.html#apply-procs-all	proc		174
+nimgrp	apply2	higher_order_applymap.html#apply2-procs-all	proc		263
+nimgrp	map2	higher_order_applymap.html#map2-procs-all	proc		218
+nimgrp	apply2inline	higher_order_applymap.html#apply2_inline-templates-all	template		40
+nimgrp	applyinline	higher_order_applymap.html#apply_inline-templates-all	template		27

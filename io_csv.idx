@@ -1,0 +1,3 @@
+nimTitle	io_csv	io_csv.html	module src/arraymancer/io/io_csv		0
+nim	read_csv	io_csv.html#read_csv,string,char,char	proc read_csv[T: SomeNumber | bool | string](csvPath: string; skipHeader = false;\n                                        separator = ','; quote = '\"'): Tensor[T]		52
+nim	to_csv	io_csv.html#to_csv,Tensor[T],string,char	proc to_csv[T](tensor: Tensor[T]; csvPath: string; separator = ',')		118

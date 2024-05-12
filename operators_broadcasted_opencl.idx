@@ -1,0 +1,9 @@
+nimTitle	operators_broadcasted_opencl	operators_broadcasted_opencl.html	module src/arraymancer/tensor/operators_broadcasted_opencl		0
+nim	`+.`	operators_broadcasted_opencl.html#+.,ClTensor[T: SomeFloat],ClTensor[T: SomeFloat]	proc `+.`[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T]		27
+nim	`-.`	operators_broadcasted_opencl.html#-.,ClTensor[T: SomeFloat],ClTensor[T: SomeFloat]	proc `-.`[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T]		32
+nim	`*.`	operators_broadcasted_opencl.html#*.,ClTensor[T: SomeFloat],ClTensor[T: SomeFloat]	proc `*.`[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T]		42
+nim	`/.`	operators_broadcasted_opencl.html#/.,ClTensor[T: SomeFloat],ClTensor[T: SomeFloat]	proc `/.`[T: SomeFloat](a, b: ClTensor[T]): ClTensor[T]		49
+nim	`.+`	operators_broadcasted_opencl.html#.+,ClTensor[T],ClTensor[T]	proc `.+`[T](a, b: ClTensor[T]): ClTensor[T]		60
+nim	`.-`	operators_broadcasted_opencl.html#.-,ClTensor[T],ClTensor[T]	proc `.-`[T](a, b: ClTensor[T]): ClTensor[T]		61
+nim	`.*`	operators_broadcasted_opencl.html#.*,ClTensor[T],ClTensor[T]	proc `.*`[T](a, b: ClTensor[T]): ClTensor[T]		62
+nim	`./`	operators_broadcasted_opencl.html#./,ClTensor[T],ClTensor[T]	proc `./`[T](a, b: ClTensor[T]): ClTensor[T]		63

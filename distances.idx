@@ -1,0 +1,14 @@
+nimTitle	distances	distances.html	module src/arraymancer/spatial/distances		0
+nim	Euclidean	distances.html#Euclidean	object Euclidean		6
+nim	Manhattan	distances.html#Manhattan	object Manhattan		7
+nim	Minkowski	distances.html#Minkowski	object Minkowski		8
+nim	Jaccard	distances.html#Jaccard	object Jaccard		9
+nim	CustomMetric	distances.html#CustomMetric	object CustomMetric		10
+nim	AnyMetric	distances.html#AnyMetric	type AnyMetric		12
+nim	distance	distances.html#distance,typedesc[Manhattan],Tensor[float],Tensor[float]	proc distance(metric: typedesc[Manhattan]; v, w: Tensor[float]): float		14
+nim	distance	distances.html#distance,typedesc[Minkowski],Tensor[float],Tensor[float],float,staticbool	proc distance(metric: typedesc[Minkowski]; v, w: Tensor[float]; p = 2.0;\n         squared: static bool = false): float		26
+nim	distance	distances.html#distance,typedesc[Euclidean],Tensor[float],Tensor[float],staticbool	proc distance(metric: typedesc[Euclidean]; v, w: Tensor[float];\n         squared: static bool = false): float		53
+nim	distance	distances.html#distance,typedesc[Jaccard],Tensor[float],Tensor[float]	proc distance(metric: typedesc[Jaccard]; v, w: Tensor[float]): float		91
+nim	pairwiseDistances	distances.html#pairwiseDistances,typedesc[AnyMetric],Tensor[float],Tensor[float],float,staticbool	proc pairwiseDistances(metric: typedesc[AnyMetric]; x, y: Tensor[float]; p = 2.0;\n                  squared: static bool = false): Tensor[float]		108
+nim	distanceMatrix	distances.html#distanceMatrix,typedesc[AnyMetric],Tensor[float],Tensor[float],float,staticbool	proc distanceMatrix(metric: typedesc[AnyMetric]; x, y: Tensor[float]; p = 2.0;\n               squared: static bool = false): Tensor[float]		164
+nimgrp	distance	distances.html#distance-procs-all	proc		14

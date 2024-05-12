@@ -1,0 +1,5 @@
+nimTitle	conv	conv.html	module src/arraymancer/nn_primitives/fallback/conv		0
+nim	im2col	conv.html#im2col,Tensor[T],Size2D,Size2D,Size2D,Tensor[T]	proc im2col[T](input: Tensor[T]; kernel_size: Size2D; padding: Size2D = (0, 0);\n          stride: Size2D = (1, 1); result: var Tensor[T])		18
+nim	col2im	conv.html#col2im,Tensor[T],int,int,int,Size2D,Size2D,Size2D	proc col2im[T](input: Tensor[T]; channels, height, width: int; kernel_size: Size2D;\n          padding: Size2D = (0, 0); stride: Size2D = (1, 1)): Tensor[T]		56
+nim	im2colgemm_conv2d	conv.html#im2colgemm_conv2d,Tensor[T],Tensor[T],Tensor[T],Size2D,Size2D	proc im2colgemm_conv2d[T](input, kernel, bias: Tensor[T]; padding: Size2D = (0, 0);\n                     stride: Size2D = (1, 1)): Tensor[T]		81
+nim	im2colgemm_conv2d_gradient	conv.html#im2colgemm_conv2d_gradient,Tensor[T],Tensor[T],Size2D,Size2D,Tensor[T],Tensor[T],Tensor[T]	proc im2colgemm_conv2d_gradient[T](input, kernel: Tensor[T];\n                              padding: Size2D = (0, 0);\n                              stride: Size2D = (1, 1); grad_output: Tensor[T];\n                              grad_input, grad_weight: var Tensor[T])		108

@@ -1,0 +1,9 @@
+nimTitle	gates_shapeshifting_views	gates_shapeshifting_views.html	module src/arraymancer/autograd/gates_shapeshifting_views		0
+nim	`[]`	gates_shapeshifting_views.html#[].t,Variable[TT],varargs[untyped]	template `[]`[TT](v: Variable[TT]; args: varargs[untyped]): Variable[TT]		19
+nim	ReshapeGate	gates_shapeshifting_views.html#ReshapeGate	type ReshapeGate		56
+nim	reshape	gates_shapeshifting_views.html#reshape,Variable[TT],varargs[int]	proc reshape[TT](a: Variable[TT]; shape: varargs[int]): Variable[TT]		94
+nim	reshape	gates_shapeshifting_views.html#reshape,Variable[TT],Metadata	proc reshape[TT](a: Variable[TT]; shape: Metadata): Variable[TT]		100
+nim	flatten	gates_shapeshifting_views.html#flatten,Variable[TT]	proc flatten[TT](a: Variable[TT]): Variable[TT]		106
+nim	squeeze	gates_shapeshifting_views.html#squeeze,,Natural	proc squeeze[TT](v`gensym0: Variable[TT]; axis`gensym0: Natural): Variable[TT]		154
+nim	unsqueeze	gates_shapeshifting_views.html#unsqueeze,,Natural	proc unsqueeze[TT](v`gensym1: Variable[TT]; axis`gensym1: Natural): Variable[TT]		155
+nimgrp	reshape	gates_shapeshifting_views.html#reshape-procs-all	proc		94

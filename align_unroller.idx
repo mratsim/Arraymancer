@@ -1,0 +1,3 @@
+nimTitle	align_unroller	align_unroller.html	module src/arraymancer/laser/private/align_unroller		0
+nim	round_step_down	align_unroller.html#round_step_down,Natural,staticNatural	proc round_step_down(x: Natural; step: static Natural): int		6
+nim	round_step_up	align_unroller.html#round_step_up,Natural,staticNatural	proc round_step_up(x: Natural; step: static Natural): int		14

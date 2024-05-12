@@ -1,0 +1,3 @@
+nimTitle	p_display	p_display.html	module src/arraymancer/tensor/private/p_display		0
+nim	disp2d	p_display.html#disp2d,Tensor[T],int,int,int	proc disp2d[T](t: Tensor[T]; alignBy = 6; alignSpacing = 3; precision = -1): string		81
+nim	prettyImpl	p_display.html#prettyImpl,Tensor[T],int,int,int,int	proc prettyImpl[T](t: Tensor[T]; inputRank = 0; alignBy = 0; alignSpacing = 4;\n              precision = -1): string		163

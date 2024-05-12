@@ -1,0 +1,2 @@
+nimTitle	init_copy_cpu	init_copy_cpu.html	module src/arraymancer/tensor/init_copy_cpu		0
+nim	clone	init_copy_cpu.html#clone,Tensor[T],OrderType	proc clone[T](t: Tensor[T]; layout: OrderType = rowMajor): Tensor[T]		21

@@ -1,0 +1,2 @@
+nimTitle	functional	functional.html	module src/arraymancer/private/functional		0
+nim	concatMap	functional.html#concatMap,seq[T],proc(T)	proc concatMap[T](s: seq[T]; f: proc (ss: T): string): string		21

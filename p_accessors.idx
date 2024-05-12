@@ -1,0 +1,20 @@
+nimTitle	p_accessors	p_accessors.html	module src/arraymancer/tensor/private/p_accessors		0
+nim	getIndex	p_accessors.html#getIndex,Tensor[T],varargs[int]	proc getIndex[T](t: Tensor[T]; idx: varargs[int]): int		60
+nim	getContiguousIndex	p_accessors.html#getContiguousIndex,Tensor[T],int	proc getContiguousIndex[T](t: Tensor[T]; idx: int): int		69
+nim	atIndex	p_accessors.html#atIndex,Tensor[T],varargs[int]	proc atIndex[T](t: Tensor[T]; idx: varargs[int]): T		78
+nim	atIndex	p_accessors.html#atIndex,Tensor[T],varargs[int]_2	proc atIndex[T](t: var Tensor[T]; idx: varargs[int]): var T		86
+nim	atIndexMut	p_accessors.html#atIndexMut,Tensor[T],varargs[int],T	proc atIndexMut[T](t: var Tensor[T]; idx: varargs[int]; val: T)		94
+nim	Values	p_accessors.html#Values	IterKind.Values		131
+nim	Iter_Values	p_accessors.html#Iter_Values	IterKind.Iter_Values		131
+nim	Offset_Values	p_accessors.html#Offset_Values	IterKind.Offset_Values		131
+nim	IterKind	p_accessors.html#IterKind	enum IterKind		131
+nim	initStridedIteration	p_accessors.html#initStridedIteration.t,untyped,untyped,untyped,typed,typed,typed	template initStridedIteration(coord, backstrides, iter_pos: untyped;\n                     t, iter_offset, iter_size: typed): untyped		134
+nim	advanceStridedIteration	p_accessors.html#advanceStridedIteration.t,typed,typed,typed,typed,typed,typed	template advanceStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size: typed): untyped		152
+nim	stridedIterationYield	p_accessors.html#stridedIterationYield.t,IterKind,typed,typed,typed	template stridedIterationYield(strider: IterKind; data, i, iter_pos: typed)		163
+nim	stridedIteration	p_accessors.html#stridedIteration.t,IterKind,typed,typed,typed	template stridedIteration(strider: IterKind; t, iter_offset, iter_size: typed): untyped		169
+nim	stridedCoordsIteration	p_accessors.html#stridedCoordsIteration.t,typed,typed,typed	template stridedCoordsIteration(t, iter_offset, iter_size: typed): untyped		189
+nim	dualStridedIterationYield	p_accessors.html#dualStridedIterationYield.t,IterKind,typed,typed,typed,typed,typed	template dualStridedIterationYield(strider: IterKind;\n                          t1data, t2data, i, t1_iter_pos, t2_iter_pos: typed)		205
+nim	dualStridedIteration	p_accessors.html#dualStridedIteration.t,IterKind,typed,typed,typed,typed	template dualStridedIteration(strider: IterKind; t1, t2, iter_offset, iter_size: typed): untyped		211
+nim	tripleStridedIterationYield	p_accessors.html#tripleStridedIterationYield.t,IterKind,typed,typed,typed,typed,typed,typed,typed	template tripleStridedIterationYield(strider: IterKind; t1data, t2data, t3data, i,\n    t1_iter_pos, t2_iter_pos, t3_iter_pos: typed)		248
+nim	tripleStridedIteration	p_accessors.html#tripleStridedIteration.t,IterKind,typed,typed,typed,typed,typed	template tripleStridedIteration(strider: IterKind;\n                       t1, t2, t3, iter_offset, iter_size: typed): untyped		254
+nimgrp	atindex	p_accessors.html#atIndex-procs-all	proc		78

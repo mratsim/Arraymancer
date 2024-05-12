@@ -1,0 +1,11 @@
+nimTitle	ast_utils	ast_utils.html	module src/arraymancer/private/ast_utils		0
+nim	hasType	ast_utils.html#hasType,NimNode,static[string]	proc hasType(x: NimNode; t: static[string]): bool		19
+nim	isInt	ast_utils.html#isInt,NimNode	proc isInt(x: NimNode): bool		23
+nim	isBool	ast_utils.html#isBool,NimNode	proc isBool(x: NimNode): bool		27
+nim	isOpenArray	ast_utils.html#isOpenArray,NimNode	proc isOpenArray(x: NimNode): bool		31
+nim	isAllInt	ast_utils.html#isAllInt,NimNode	proc isAllInt(slice_args: NimNode): bool		36
+nim	pop	ast_utils.html#pop,NimNode	proc pop(tree: var NimNode): NimNode		44
+nim	getSubType	ast_utils.html#getSubType.m,typedesc	macro getSubType(TT: typedesc): untyped		50
+nim	letsGoDeeper	ast_utils.html#letsGoDeeper.t	template letsGoDeeper()		54
+nim	replaceSymsByIdents	ast_utils.html#replaceSymsByIdents,NimNode	proc replaceSymsByIdents(ast: NimNode): NimNode		60
+nim	replaceNodes	ast_utils.html#replaceNodes,NimNode,NimNode,NimNode	proc replaceNodes(ast: NimNode; replacements: NimNode; to_replace: NimNode): NimNode		76

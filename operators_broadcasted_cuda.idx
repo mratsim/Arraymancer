@@ -1,0 +1,29 @@
+nimTitle	operators_broadcasted_cuda	operators_broadcasted_cuda.html	module src/arraymancer/tensor/operators_broadcasted_cuda		0
+nim	`+.`	operators_broadcasted_cuda.html#+.,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc `+.`[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T]		33
+nim	`-.`	operators_broadcasted_cuda.html#-.,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc `-.`[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T]		38
+nim	`*.`	operators_broadcasted_cuda.html#*.,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc `*.`[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T]		43
+nim	`/.`	operators_broadcasted_cuda.html#/.,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc `/.`[T: SomeFloat](a, b: CudaTensor[T]): CudaTensor[T]		53
+nim	`+.=`	operators_broadcasted_cuda.html#+.=,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc `+.=`[T: SomeFloat](a: var CudaTensor[T]; b: CudaTensor[T])		68
+nim	`-.=`	operators_broadcasted_cuda.html#-.=,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc `-.=`[T: SomeFloat](a: var CudaTensor[T]; b: CudaTensor[T])		77
+nim	`*.=`	operators_broadcasted_cuda.html#*.=,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc `*.=`[T: SomeFloat](a: var CudaTensor[T]; b: CudaTensor[T])		86
+nim	`/.=`	operators_broadcasted_cuda.html#/.=,CudaTensor[T: SomeFloat],CudaTensor[T: SomeFloat]	proc `/.=`[T: SomeFloat](a: var CudaTensor[T]; b: CudaTensor[T])		95
+nim	`+.`	operators_broadcasted_cuda.html#+.,CudaTensor[T: SomeFloat],T	proc `+.`[T: SomeFloat](t: CudaTensor[T]; val: T): CudaTensor[T]		111
+nim	`-.`	operators_broadcasted_cuda.html#-.,CudaTensor[T: SomeFloat],T	proc `-.`[T: SomeFloat](t: CudaTensor[T]; val: T): CudaTensor[T]		116
+nim	`+.`	operators_broadcasted_cuda.html#+.,T,CudaTensor[T: SomeFloat]	proc `+.`[T: SomeFloat](val: T; t: CudaTensor[T]): CudaTensor[T]		125
+nim	`-.`	operators_broadcasted_cuda.html#-.,T,CudaTensor[T: SomeFloat]	proc `-.`[T: SomeFloat](val: T; t: CudaTensor[T]): CudaTensor[T]		130
+nim	`/.`	operators_broadcasted_cuda.html#/.,T,CudaTensor[T: SomeFloat]	proc `/.`[T: SomeFloat](val: T; t: CudaTensor[T]): CudaTensor[T]		135
+nim	`+.=`	operators_broadcasted_cuda.html#+.=,CudaTensor[T: SomeFloat],T	proc `+.=`[T: SomeFloat](t: var CudaTensor[T]; val: T)		146
+nim	`-.=`	operators_broadcasted_cuda.html#-.=,CudaTensor[T: SomeFloat],T	proc `-.=`[T: SomeFloat](t: var CudaTensor[T]; val: T)		150
+nim	`.+`	operators_broadcasted_cuda.html#.+,CudaTensor[T],CudaTensor[T]	proc `.+`[T](a, b: CudaTensor[T]): CudaTensor[T]		157
+nim	`.-`	operators_broadcasted_cuda.html#.-,CudaTensor[T],CudaTensor[T]	proc `.-`[T](a, b: CudaTensor[T]): CudaTensor[T]		158
+nim	`.*`	operators_broadcasted_cuda.html#.*,CudaTensor[T],CudaTensor[T]	proc `.*`[T](a, b: CudaTensor[T]): CudaTensor[T]		159
+nim	`./`	operators_broadcasted_cuda.html#./,CudaTensor[T],CudaTensor[T]	proc `./`[T](a, b: CudaTensor[T]): CudaTensor[T]		160
+nim	`.=+`	operators_broadcasted_cuda.html#.=+,CudaTensor[T],CudaTensor[T]	proc `.=+`[T](a: var CudaTensor[T]; b: CudaTensor[T])		162
+nim	`.=-`	operators_broadcasted_cuda.html#.=-,CudaTensor[T],CudaTensor[T]	proc `.=-`[T](a: var CudaTensor[T]; b: CudaTensor[T])		163
+nim	`.=*`	operators_broadcasted_cuda.html#.=*,CudaTensor[T],CudaTensor[T]	proc `.=*`[T](a: var CudaTensor[T]; b: CudaTensor[T])		164
+nim	`.=/`	operators_broadcasted_cuda.html#.=/,CudaTensor[T],CudaTensor[T]	proc `.=/`[T](a: var CudaTensor[T]; b: CudaTensor[T])		165
+nimgrp	/.	operators_broadcasted_cuda.html#/.-procs-all	proc		53
+nimgrp	-.=	operators_broadcasted_cuda.html#-.=-procs-all	proc		77
+nimgrp	+.=	operators_broadcasted_cuda.html#+.=-procs-all	proc		68
+nimgrp	+.	operators_broadcasted_cuda.html#+.-procs-all	proc		33
+nimgrp	-.	operators_broadcasted_cuda.html#-.-procs-all	proc		38

@@ -1,0 +1,7 @@
+nimTitle	p_complex	p_complex.html	module src/arraymancer/tensor/private/p_complex		0
+nim	numberOne	p_complex.html#numberOne.t,typeSomeNumber	template numberOne(T: type SomeNumber): SomeNumber		3
+nim	numberOne	p_complex.html#numberOne.t,typeComplex[float32]	template numberOne(T: type Complex[float32]): Complex[float32]		4
+nim	numberOne	p_complex.html#numberOne.t,typeComplex[float64]	template numberOne(T: type Complex[float64]): Complex[float64]		5
+nim	Complex64	p_complex.html#Complex64.c,T	converter Complex64[T: SomeNumber](x: T): Complex[float64]		7
+nim	Complex32	p_complex.html#Complex32.c,T	converter Complex32[T: SomeNumber](x: T): Complex[float32]		11
+nimgrp	numberone	p_complex.html#numberOne-templates-all	template		3

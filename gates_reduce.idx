@@ -1,0 +1,7 @@
+nimTitle	gates_reduce	gates_reduce.html	module src/arraymancer/autograd/gates_reduce		0
+nim	MeanGate	gates_reduce.html#MeanGate	type MeanGate		20
+nim	mean	gates_reduce.html#mean,Variable[TT]	proc mean[TT](a: Variable[TT]): Variable[TT]		86
+nim	mean	gates_reduce.html#mean,Variable[TT],Natural	proc mean[TT](a: Variable[TT]; axis: Natural): Variable[TT]		96
+nim	SumGate	gates_reduce.html#SumGate	type SumGate		106
+nim	sum	gates_reduce.html#sum,Variable[TT]	proc sum[TT](a: Variable[TT]): Variable[TT]		138
+nimgrp	mean	gates_reduce.html#mean-procs-all	proc		86

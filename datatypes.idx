@@ -1,0 +1,29 @@
+nimTitle	datatypes	datatypes.html	module src/arraymancer/laser/tensor/datatypes		0
+nim	KnownSupportsCopyMem	datatypes.html#KnownSupportsCopyMem	type KnownSupportsCopyMem		21
+nim	RawImmutableView	datatypes.html#RawImmutableView	type RawImmutableView		24
+nim	RawMutableView	datatypes.html#RawMutableView	type RawMutableView		25
+nim	Metadata	datatypes.html#Metadata	type Metadata		27
+nim	MetadataArray	datatypes.html#MetadataArray	type MetadataArray		31
+nim	Tensor	datatypes.html#Tensor	object Tensor		33
+nim	CpuStorage	datatypes.html#CpuStorage	type CpuStorage		39
+nim	initMetadataArray	datatypes.html#initMetadataArray,int	proc initMetadataArray(len: int): Metadata		49
+nim	toMetadataArray	datatypes.html#toMetadataArray,varargs[int]	proc toMetadataArray(s: varargs[int]): Metadata		52
+nim	rank	datatypes.html#rank,Tensor[T]	proc rank[T](t: Tensor[T]): range[0 .. LASER_MAXRANK]		60
+nim	size	datatypes.html#size,Tensor[T]	proc size[T](t: Tensor[T]): Natural		64
+nim	len	datatypes.html#len,Tensor[T]	proc len[T](t: Tensor[T]): int		68
+nim	allocCpuStorage	datatypes.html#allocCpuStorage,CpuStorage[T],int	proc allocCpuStorage[T](storage: var CpuStorage[T]; size: int)		103
+nim	cpuStorageFromBuffer	datatypes.html#cpuStorageFromBuffer,CpuStorage[T: KnownSupportsCopyMem],pointer,int	proc cpuStorageFromBuffer[T: KnownSupportsCopyMem](storage: var CpuStorage[T];\n    rawBuffer: pointer; size: int)		120
+nim	is_C_contiguous	datatypes.html#is_C_contiguous,Tensor	proc is_C_contiguous(t: Tensor): bool		137
+nim	unsafe_raw_buf	datatypes.html#unsafe_raw_buf,Tensor[T: KnownSupportsCopyMem],staticbool	proc unsafe_raw_buf[T: KnownSupportsCopyMem](t: Tensor[T];\n                                        aligned: static bool = true): RawImmutableView[\n    T]		174
+nim	unsafe_raw_buf	datatypes.html#unsafe_raw_buf,Tensor[T: KnownSupportsCopyMem],staticbool_2	proc unsafe_raw_buf[T: KnownSupportsCopyMem](t: var Tensor[T];\n                                        aligned: static bool = true): RawMutableView[\n    T]		183
+nim	unsafe_raw_offset	datatypes.html#unsafe_raw_offset,Tensor[T: KnownSupportsCopyMem],staticbool	proc unsafe_raw_offset[T: KnownSupportsCopyMem](t: Tensor[T];\n    aligned: static bool = true): RawImmutableView[T]		192
+nim	unsafe_raw_offset	datatypes.html#unsafe_raw_offset,Tensor[T: KnownSupportsCopyMem],staticbool_2	proc unsafe_raw_offset[T: KnownSupportsCopyMem](t: var Tensor[T];\n    aligned: static bool = true): RawMutableView[T]		201
+nim	unsafe_raw_buf	datatypes.html#unsafe_raw_buf,Tensor[T: not KnownSupportsCopyMem],staticbool	proc unsafe_raw_buf[T: not KnownSupportsCopyMem](t: Tensor[T];\n    aligned: static bool = true): ptr UncheckedArray[T]		210
+nim	unsafe_raw_offset	datatypes.html#unsafe_raw_offset,Tensor[T: not KnownSupportsCopyMem],staticbool	proc unsafe_raw_offset[T: not KnownSupportsCopyMem](t: Tensor[T];\n    aligned: static bool = true): ptr UncheckedArray[T]		212
+nim	raw_data_unaligned	datatypes.html#raw_data_unaligned.m,untyped	macro raw_data_unaligned(body: untyped): untyped		214
+nim	`[]`	datatypes.html#[].t,RawImmutableView[T],int	template `[]`[T](v: RawImmutableView[T]; idx: int): T		230
+nim	`[]`	datatypes.html#[].t,RawMutableView[T],int	template `[]`[T](v: RawMutableView[T]; idx: int): var T		234
+nim	`[]=`	datatypes.html#[]=.t,RawMutableView[T],int,T	template `[]=`[T](v: RawMutableView[T]; idx: int; val: T)		238
+nimgrp	unsaferawbuf	datatypes.html#unsafe_raw_buf-procs-all	proc		174
+nimgrp	unsaferawoffset	datatypes.html#unsafe_raw_offset-procs-all	proc		192
+nimgrp	[]	datatypes.html#[]-templates-all	template		230

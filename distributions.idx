@@ -1,0 +1,12 @@
+nimTitle	distributions	distributions.html	module src/arraymancer/stats/distributions		0
+nim	gauss	distributions.html#gauss,T,T,T	proc gauss[T](x, mean, sigma: T; norm = false): float		18
+nim	gauss	distributions.html#gauss,Tensor[T],T,T	proc gauss[T](x: Tensor[T]; mean, sigma: T; norm = false): Tensor[float]		38
+nim	box	distributions.html#box,float	proc box(x: float): float		43
+nim	triangular	distributions.html#triangular,float	proc triangular(x: float): float		47
+nim	trigonometric	distributions.html#trigonometric,float	proc trigonometric(x: float): float		52
+nim	epanechnikov	distributions.html#epanechnikov,float	proc epanechnikov(x: float): float		57
+nim	box	distributions.html#box.t	template box[T](t`gensym0: Tensor[T]): Tensor[float]		67
+nim	triangular	distributions.html#triangular.t	template triangular[T](t`gensym1: Tensor[T]): Tensor[float]		68
+nim	trigonometric	distributions.html#trigonometric.t	template trigonometric[T](t`gensym2: Tensor[T]): Tensor[float]		69
+nim	epanechnikov	distributions.html#epanechnikov.t	template epanechnikov[T](t`gensym3: Tensor[T]): Tensor[float]		70
+nimgrp	gauss	distributions.html#gauss-procs-all	proc		18

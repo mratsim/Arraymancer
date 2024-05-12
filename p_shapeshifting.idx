@@ -1,0 +1,14 @@
+nimTitle	p_shapeshifting	p_shapeshifting.html	module src/arraymancer/tensor/private/p_shapeshifting		0
+nim	contiguousImpl	p_shapeshifting.html#contiguousImpl,Tensor[T],OrderType,Tensor[T]	proc contiguousImpl[T](t: Tensor[T]; layout: OrderType; result: var Tensor[T])		23
+nim	reshape_with_copy	p_shapeshifting.html#reshape_with_copy,Tensor[T],,Tensor[T]	proc reshape_with_copy[T](t: Tensor[T];\n                     new_shape: varargs[int] | Metadata | seq[int];\n                     result: var Tensor[T])		33
+nim	reshape_no_copy	p_shapeshifting.html#reshape_no_copy,AnyTensor,,AnyTensor,OrderType	proc reshape_no_copy(t: AnyTensor; new_shape: varargs[int] | Metadata | seq[int];\n                result: var AnyTensor; layout: OrderType)		37
+nim	infer_shape	p_shapeshifting.html#infer_shape,Tensor,varargs[int]	proc infer_shape(t: Tensor; new_shape: varargs[int]): seq[int]		42
+nim	reshapeImpl	p_shapeshifting.html#reshapeImpl,AnyTensor,,AnyTensor,staticbool	proc reshapeImpl(t: AnyTensor; new_shape: varargs[int] | Metadata | seq[int];\n            result: var AnyTensor; infer: static bool)		61
+nim	broadcastImpl	p_shapeshifting.html#broadcastImpl,AnyTensor,	proc broadcastImpl(t: var AnyTensor; shape: varargs[int] | Metadata)		78
+nim	broadcast2Impl	p_shapeshifting.html#broadcast2Impl,AnyTensor[T],AnyTensor[T],tuple[AnyTensor[T],AnyTensor[T]]	proc broadcast2Impl[T](a, b: AnyTensor[T]; result: var tuple[a, b: AnyTensor[T]])		98
+nim	exch_dim	p_shapeshifting.html#exch_dim,Tensor[T],int,int	proc exch_dim[T](t: Tensor[T]; dim1, dim2: int): Tensor[T]		139
+nim	permuteImpl	p_shapeshifting.html#permuteImpl,Tensor[T],varargs[int]	proc permuteImpl[T](result: var Tensor[T]; dims: varargs[int])		147
+nim	squeezeImpl	p_shapeshifting.html#squeezeImpl,AnyTensor	proc squeezeImpl(t: var AnyTensor)		159
+nim	squeezeImpl	p_shapeshifting.html#squeezeImpl,AnyTensor,int	proc squeezeImpl(t: var AnyTensor; axis: int)		173
+nim	unsqueezeImpl	p_shapeshifting.html#unsqueezeImpl,AnyTensor,int	proc unsqueezeImpl(t: var AnyTensor; axis: int)		181
+nimgrp	squeezeimpl	p_shapeshifting.html#squeezeImpl-procs-all	proc		159

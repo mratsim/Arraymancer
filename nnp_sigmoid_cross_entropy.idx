@@ -1,0 +1,3 @@
+nimTitle	nnp_sigmoid_cross_entropy	nnp_sigmoid_cross_entropy.html	module src/arraymancer/nn_primitives/nnp_sigmoid_cross_entropy		0
+nim	sigmoid_cross_entropy	nnp_sigmoid_cross_entropy.html#sigmoid_cross_entropy,Tensor[T],Tensor[T]	proc sigmoid_cross_entropy[T](input, target: Tensor[T]): T		23
+nim	sigmoid_cross_entropy_backward	nnp_sigmoid_cross_entropy.html#sigmoid_cross_entropy_backward,,Tensor[T],Tensor[T]	proc sigmoid_cross_entropy_backward[T](gradient: Tensor[T] or T;\n                                  cached_tensor: Tensor[T]; target: Tensor[T]): Tensor[\n    T]		56

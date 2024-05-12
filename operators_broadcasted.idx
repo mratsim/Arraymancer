@@ -1,0 +1,84 @@
+nimTitle	operators_broadcasted	operators_broadcasted.html	module src/arraymancer/tensor/operators_broadcasted		0
+nim	`+.`	operators_broadcasted.html#+.,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]]	proc `+.`[T: SomeNumber | Complex[float32] | Complex[float64]](a, b: Tensor[T]): Tensor[\n    T]		28
+nim	`-.`	operators_broadcasted.html#-.,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]]	proc `-.`[T: SomeNumber | Complex[float32] | Complex[float64]](a, b: Tensor[T]): Tensor[\n    T]		33
+nim	`*.`	operators_broadcasted.html#*.,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]]	proc `*.`[T: SomeNumber | Complex[float32] | Complex[float64]](a, b: Tensor[T]): Tensor[\n    T]		38
+nim	`/.`	operators_broadcasted.html#/.,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]]	proc `/.`[T: SomeNumber | Complex[float32] | Complex[float64]](a, b: Tensor[T]): Tensor[\n    T]		45
+nim	`mod`	operators_broadcasted.html#mod,Tensor[T: SomeNumber],Tensor[T: SomeNumber]	proc `mod`[T: SomeNumber](a, b: Tensor[T]): Tensor[T]		55
+nim	`+.=`	operators_broadcasted.html#+.=,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]]	proc `+.=`[T: SomeNumber | Complex[float32] | Complex[float64]](a: var Tensor[T];\n    b: Tensor[T])		65
+nim	`-.=`	operators_broadcasted.html#-.=,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]]	proc `-.=`[T: SomeNumber | Complex[float32] | Complex[float64]](a: var Tensor[T];\n    b: Tensor[T])		74
+nim	`*.=`	operators_broadcasted.html#*.=,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]]	proc `*.=`[T: SomeNumber | Complex[float32] | Complex[float64]](a: var Tensor[T];\n    b: Tensor[T])		83
+nim	`/.=`	operators_broadcasted.html#/.=,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]]	proc `/.=`[T: SomeNumber | Complex[float32] | Complex[float64]](a: var Tensor[T];\n    b: Tensor[T])		92
+nim	`+.`	operators_broadcasted.html#+.,T,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]]	proc `+.`[T: SomeNumber | Complex[float32] | Complex[float64]](val: T; t: Tensor[T]): Tensor[\n    T]		107
+nim	`+.`	operators_broadcasted.html#+.,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],T	proc `+.`[T: SomeNumber | Complex[float32] | Complex[float64]](t: Tensor[T]; val: T): Tensor[\n    T]		112
+nim	`-.`	operators_broadcasted.html#-.,T,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]]	proc `-.`[T: SomeNumber | Complex[float32] | Complex[float64]](val: T; t: Tensor[T]): Tensor[\n    T]		117
+nim	`-.`	operators_broadcasted.html#-.,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],T	proc `-.`[T: SomeNumber | Complex[float32] | Complex[float64]](t: Tensor[T]; val: T): Tensor[\n    T]		122
+nim	`*.`	operators_broadcasted.html#*.,T,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]]	proc `*.`[T: SomeNumber | Complex[float32] | Complex[float64]](val: T; t: Tensor[T]): Tensor[\n    T]		127
+nim	`*.`	operators_broadcasted.html#*.,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],T	proc `*.`[T: SomeNumber | Complex[float32] | Complex[float64]](t: Tensor[T]; val: T): Tensor[\n    T]		132
+nim	`/.`	operators_broadcasted.html#/.,T,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]]	proc `/.`[T: SomeNumber | Complex[float32] | Complex[float64]](val: T; t: Tensor[T]): Tensor[\n    T]		137
+nim	`/.`	operators_broadcasted.html#/.,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],T	proc `/.`[T: SomeNumber | Complex[float32] | Complex[float64]](t: Tensor[T]; val: T): Tensor[\n    T]		145
+nim	`^.`	operators_broadcasted.html#^.,Tensor[T: float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],T	proc `^.`[T: SomeFloat | Complex[float32] | Complex[float64]](t: Tensor[T];\n    exponent: T): Tensor[T]		153
+nim	`^.`	operators_broadcasted.html#^.,T,Tensor[T: float or float32 or float64 or Complex[system.float32] or Complex[system.float64]]	proc `^.`[T: SomeFloat | Complex[float32] | Complex[float64]](base: T; t: Tensor[T]): Tensor[\n    T]		158
+nim	`+.=`	operators_broadcasted.html#+.=,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],T	proc `+.=`[T: SomeNumber | Complex[float32] | Complex[float64]](t: var Tensor[T];\n    val: T)		166
+nim	`-.=`	operators_broadcasted.html#-.=,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],T	proc `-.=`[T: SomeNumber | Complex[float32] | Complex[float64]](t: var Tensor[T];\n    val: T)		172
+nim	`^.=`	operators_broadcasted.html#^.=,Tensor[T: float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],T	proc `^.=`[T: SomeFloat | Complex[float32] | Complex[float64]](t: var Tensor[T];\n    exponent: T)		178
+nim	`*.=`	operators_broadcasted.html#*.=,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],T	proc `*.=`[T: SomeNumber | Complex[float32] | Complex[float64]](t: var Tensor[T];\n    val: T)		184
+nim	`/.=`	operators_broadcasted.html#/.=,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex[system.float32] or Complex[system.float64]],T	proc `/.=`[T: SomeNumber | Complex[float32] | Complex[float64]](t: var Tensor[T];\n    val: T)		190
+nim	`+.`	operators_broadcasted.html#+.,T,Tensor[Complex64]	proc `+.`[T: SomeNumber](val: T; t: Tensor[Complex64]): Tensor[Complex64]		204
+nim	`+.`	operators_broadcasted.html#+.,Tensor[Complex64],T	proc `+.`[T: SomeNumber](t: Tensor[Complex64]; val: T): Tensor[Complex64]		211
+nim	`-.`	operators_broadcasted.html#-.,T,Tensor[Complex64]	proc `-.`[T: SomeNumber](val: T; t: Tensor[Complex64]): Tensor[Complex64]		218
+nim	`-.`	operators_broadcasted.html#-.,Tensor[Complex64],T	proc `-.`[T: SomeNumber](t: Tensor[Complex64]; val: T): Tensor[Complex64]		225
+nim	`*.`	operators_broadcasted.html#*.,T,Tensor[Complex64]	proc `*.`[T: SomeNumber](val: T; t: Tensor[Complex64]): Tensor[Complex64]		232
+nim	`*.`	operators_broadcasted.html#*.,Tensor[Complex64],T	proc `*.`[T: SomeNumber](t: Tensor[Complex64]; val: T): Tensor[Complex64]		239
+nim	`/.`	operators_broadcasted.html#/.,T,Tensor[Complex64]	proc `/.`[T: SomeNumber](val: T; t: Tensor[Complex64]): Tensor[Complex64]		246
+nim	`/.`	operators_broadcasted.html#/.,Tensor[Complex64],T	proc `/.`[T: SomeNumber](t: Tensor[Complex64]; val: T): Tensor[Complex64]		253
+nim	`^.`	operators_broadcasted.html#^.,T,Tensor[Complex64]	proc `^.`[T: SomeNumber](val: T; t: Tensor[Complex64]): Tensor[Complex64]		260
+nim	`^.`	operators_broadcasted.html#^.,Tensor[Complex64],T	proc `^.`[T: SomeNumber](t: Tensor[Complex64]; val: T): Tensor[Complex64]		267
+nim	`+.=`	operators_broadcasted.html#+.=,Tensor[Complex64],T	proc `+.=`[T: SomeNumber](t: var Tensor[Complex64]; val: T)		274
+nim	`-.=`	operators_broadcasted.html#-.=,Tensor[Complex64],T	proc `-.=`[T: SomeNumber](t: var Tensor[Complex64]; val: T)		281
+nim	`*.=`	operators_broadcasted.html#*.=,Tensor[Complex64],T	proc `*.=`[T: SomeNumber](t: var Tensor[Complex64]; val: T)		288
+nim	`/.=`	operators_broadcasted.html#/.=,Tensor[Complex64],T	proc `/.=`[T: SomeNumber](t: var Tensor[Complex64]; val: T)		295
+nim	`^.=`	operators_broadcasted.html#^.=,Tensor[Complex64],T	proc `^.=`[T: SomeNumber](t: var Tensor[Complex64]; val: T)		302
+nim	`.+`	operators_broadcasted.html#.+,Tensor[T],Tensor[T]	proc `.+`[T](a, b: Tensor[T]): Tensor[T]		28
+nim	`.+`	operators_broadcasted.html#.+,Tensor[Complex64],T	proc `.+`[T](t: Tensor[Complex64]; val: T): Tensor[Complex64]		211
+nim	`.+`	operators_broadcasted.html#.+,Tensor[T],T	proc `.+`[T](t: Tensor[T]; val: T): Tensor[T]		112
+nim	`.+`	operators_broadcasted.html#.+,T,Tensor[T]	proc `.+`[T](val: T; t: Tensor[T]): Tensor[T]		107
+nim	`.+`	operators_broadcasted.html#.+,T,Tensor[Complex64]	proc `.+`[T](val: T; t: Tensor[Complex64]): Tensor[Complex64]		313
+nim	`.-`	operators_broadcasted.html#.-,Tensor[T],Tensor[T]	proc `.-`[T](a, b: Tensor[T]): Tensor[T]		33
+nim	`.-`	operators_broadcasted.html#.-,Tensor[Complex64],T	proc `.-`[T](t: Tensor[Complex64]; val: T): Tensor[Complex64]		225
+nim	`.-`	operators_broadcasted.html#.-,T,Tensor[Complex64]	proc `.-`[T](val: T; t: Tensor[Complex64]): Tensor[Complex64]		218
+nim	`.-`	operators_broadcasted.html#.-,Tensor[T],T	proc `.-`[T](t: Tensor[T]; val: T): Tensor[T]		122
+nim	`.-`	operators_broadcasted.html#.-,T,Tensor[T]	proc `.-`[T](val: T; t: Tensor[T]): Tensor[T]		314
+nim	`.*`	operators_broadcasted.html#.*,T,Tensor[Complex64]	proc `.*`[T](val: T; t: Tensor[Complex64]): Tensor[Complex64]		232
+nim	`.*`	operators_broadcasted.html#.*,Tensor[T],Tensor[T]	proc `.*`[T](a, b: Tensor[T]): Tensor[T]		38
+nim	`.*`	operators_broadcasted.html#.*,Tensor[Complex64],T	proc `.*`[T](t: Tensor[Complex64]; val: T): Tensor[Complex64]		239
+nim	`.*`	operators_broadcasted.html#.*,T,Tensor[T]	proc `.*`[T](val: T; t: Tensor[T]): Tensor[T]		127
+nim	`.*`	operators_broadcasted.html#.*,Tensor[T],T	proc `.*`[T](t: Tensor[T]; val: T): Tensor[T]		315
+nim	`./`	operators_broadcasted.html#./,Tensor[T],T	proc `./`[T](t: Tensor[T]; val: T): Tensor[T]		145
+nim	`./`	operators_broadcasted.html#./,T,Tensor[T]	proc `./`[T](val: T; t: Tensor[T]): Tensor[T]		137
+nim	`./`	operators_broadcasted.html#./,T,Tensor[Complex64]	proc `./`[T](val: T; t: Tensor[Complex64]): Tensor[Complex64]		246
+nim	`./`	operators_broadcasted.html#./,Tensor[T],Tensor[T]	proc `./`[T](a, b: Tensor[T]): Tensor[T]		45
+nim	`./`	operators_broadcasted.html#./,Tensor[Complex64],T	proc `./`[T](t: Tensor[Complex64]; val: T): Tensor[Complex64]		316
+nim	`.^`	operators_broadcasted.html#.^,T,Tensor[Complex64]	proc `.^`[T](val: T; t: Tensor[Complex64]): Tensor[Complex64]		260
+nim	`.^`	operators_broadcasted.html#.^,Tensor[T],T	proc `.^`[T](t: Tensor[T]; exponent: T): Tensor[T]		153
+nim	`.^`	operators_broadcasted.html#.^,Tensor[Complex64],T	proc `.^`[T](t: Tensor[Complex64]; val: T): Tensor[Complex64]		267
+nim	`.^`	operators_broadcasted.html#.^,T,Tensor[T]	proc `.^`[T](base: T; t: Tensor[T]): Tensor[T]		317
+nim	`.=+`	operators_broadcasted.html#.=+,Tensor[Complex64],T	proc `.=+`[T](t: var Tensor[Complex64]; val: T)		319
+nim	`.=-`	operators_broadcasted.html#.=-,Tensor[Complex64],T	proc `.=-`[T](t: var Tensor[Complex64]; val: T)		320
+nim	`.=*`	operators_broadcasted.html#.=*,Tensor[Complex64],T	proc `.=*`[T](t: var Tensor[Complex64]; val: T)		321
+nim	`.=/`	operators_broadcasted.html#.=/,Tensor[Complex64],T	proc `.=/`[T](t: var Tensor[Complex64]; val: T)		322
+nim	`.^=`	operators_broadcasted.html#.^=,Tensor[Complex64],T	proc `.^=`[T](t: var Tensor[Complex64]; val: T)		323
+nimgrp	/.	operators_broadcasted.html#/.-procs-all	proc		45
+nimgrp	*.	operators_broadcasted.html#*.-procs-all	proc		38
+nimgrp	-.=	operators_broadcasted.html#-.=-procs-all	proc		74
+nimgrp	^.	operators_broadcasted.html#^.-procs-all	proc		153
+nimgrp	*.=	operators_broadcasted.html#*.=-procs-all	proc		83
+nimgrp	.+	operators_broadcasted.html#.+-procs-all	proc		313
+nimgrp	/.=	operators_broadcasted.html#/.=-procs-all	proc		92
+nimgrp	+.=	operators_broadcasted.html#+.=-procs-all	proc		65
+nimgrp	.-	operators_broadcasted.html#.--procs-all	proc		314
+nimgrp	./	operators_broadcasted.html#./-procs-all	proc		316
+nimgrp	.*	operators_broadcasted.html#.*-procs-all	proc		315
+nimgrp	+.	operators_broadcasted.html#+.-procs-all	proc		28
+nimgrp	^.=	operators_broadcasted.html#^.=-procs-all	proc		178
+nimgrp	-.	operators_broadcasted.html#-.-procs-all	proc		33
+nimgrp	.^	operators_broadcasted.html#.^-procs-all	proc		317

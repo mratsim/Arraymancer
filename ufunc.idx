@@ -1,0 +1,96 @@
+nimTitle	ufunc	ufunc.html	module src/arraymancer/tensor/ufunc		0
+nim	asType	ufunc.html#asType,Tensor[T],typedesc[U]	proc asType[T; U: not Complex](t: Tensor[T]; typ: typedesc[U]): Tensor[U]		23
+nim	asType	ufunc.html#asType,Tensor[T: SomeNumber],typedesc[U]	proc asType[T: SomeNumber; U: Complex](t: Tensor[T]; typ: typedesc[U]): Tensor[U]		33
+nim	makeUniversal	ufunc.html#makeUniversal.t,untyped,string	template makeUniversal(func_name: untyped; docSuffix = "")		56
+nim	makeUniversalLocal	ufunc.html#makeUniversalLocal.t,untyped	template makeUniversalLocal(func_name: untyped)		70
+nim	fac	ufunc.html#fac	proc fac[T](t`gensym1: Tensor[T]): Tensor[T]		64
+nim	fac	ufunc.html#fac_2	proc fac[T](t`gensym1: Tensor[T]): Tensor[T]		64
+nim	isNaN	ufunc.html#isNaN	proc isNaN[T](t`gensym2: Tensor[T]): Tensor[T]		64
+nim	isNaN	ufunc.html#isNaN_2	proc isNaN[T](t`gensym2: Tensor[T]): Tensor[T]		64
+nim	sqrt	ufunc.html#sqrt	proc sqrt[T](t`gensym3: Tensor[T]): Tensor[T]		64
+nim	sqrt	ufunc.html#sqrt_2	proc sqrt[T](t`gensym3: Tensor[T]): Tensor[T]		64
+nim	cbrt	ufunc.html#cbrt	proc cbrt[T](t`gensym4: Tensor[T]): Tensor[T]		64
+nim	cbrt	ufunc.html#cbrt_2	proc cbrt[T](t`gensym4: Tensor[T]): Tensor[T]		64
+nim	ln	ufunc.html#ln	proc ln[T](t`gensym5: Tensor[T]): Tensor[T]		64
+nim	ln	ufunc.html#ln_2	proc ln[T](t`gensym5: Tensor[T]): Tensor[T]		64
+nim	log10	ufunc.html#log10	proc log10[T](t`gensym6: Tensor[T]): Tensor[T]		64
+nim	log10	ufunc.html#log10_2	proc log10[T](t`gensym6: Tensor[T]): Tensor[T]		64
+nim	log2	ufunc.html#log2	proc log2[T](t`gensym7: Tensor[T]): Tensor[T]		64
+nim	log2	ufunc.html#log2_2	proc log2[T](t`gensym7: Tensor[T]): Tensor[T]		64
+nim	exp	ufunc.html#exp	proc exp[T](t`gensym8: Tensor[T]): Tensor[T]		64
+nim	exp	ufunc.html#exp_2	proc exp[T](t`gensym8: Tensor[T]): Tensor[T]		64
+nim	arccos	ufunc.html#arccos	proc arccos[T](t`gensym9: Tensor[T]): Tensor[T]		64
+nim	arccos	ufunc.html#arccos_2	proc arccos[T](t`gensym9: Tensor[T]): Tensor[T]		64
+nim	arcsin	ufunc.html#arcsin	proc arcsin[T](t`gensym10: Tensor[T]): Tensor[T]		64
+nim	arcsin	ufunc.html#arcsin_2	proc arcsin[T](t`gensym10: Tensor[T]): Tensor[T]		64
+nim	arctan	ufunc.html#arctan	proc arctan[T](t`gensym11: Tensor[T]): Tensor[T]		64
+nim	arctan	ufunc.html#arctan_2	proc arctan[T](t`gensym11: Tensor[T]): Tensor[T]		64
+nim	arccosh	ufunc.html#arccosh	proc arccosh[T](t`gensym12: Tensor[T]): Tensor[T]		64
+nim	arccosh	ufunc.html#arccosh_2	proc arccosh[T](t`gensym12: Tensor[T]): Tensor[T]		64
+nim	arcsinh	ufunc.html#arcsinh	proc arcsinh[T](t`gensym13: Tensor[T]): Tensor[T]		64
+nim	arcsinh	ufunc.html#arcsinh_2	proc arcsinh[T](t`gensym13: Tensor[T]): Tensor[T]		64
+nim	arctanh	ufunc.html#arctanh	proc arctanh[T](t`gensym14: Tensor[T]): Tensor[T]		64
+nim	arctanh	ufunc.html#arctanh_2	proc arctanh[T](t`gensym14: Tensor[T]): Tensor[T]		64
+nim	cos	ufunc.html#cos	proc cos[T](t`gensym15: Tensor[T]): Tensor[T]		64
+nim	cos	ufunc.html#cos_2	proc cos[T](t`gensym15: Tensor[T]): Tensor[T]		64
+nim	cosh	ufunc.html#cosh	proc cosh[T](t`gensym16: Tensor[T]): Tensor[T]		64
+nim	cosh	ufunc.html#cosh_2	proc cosh[T](t`gensym16: Tensor[T]): Tensor[T]		64
+nim	sinh	ufunc.html#sinh	proc sinh[T](t`gensym17: Tensor[T]): Tensor[T]		64
+nim	sinh	ufunc.html#sinh_2	proc sinh[T](t`gensym17: Tensor[T]): Tensor[T]		64
+nim	sin	ufunc.html#sin	proc sin[T](t`gensym18: Tensor[T]): Tensor[T]		64
+nim	sin	ufunc.html#sin_2	proc sin[T](t`gensym18: Tensor[T]): Tensor[T]		64
+nim	tan	ufunc.html#tan	proc tan[T](t`gensym19: Tensor[T]): Tensor[T]		64
+nim	tan	ufunc.html#tan_2	proc tan[T](t`gensym19: Tensor[T]): Tensor[T]		64
+nim	tanh	ufunc.html#tanh	proc tanh[T](t`gensym20: Tensor[T]): Tensor[T]		64
+nim	tanh	ufunc.html#tanh_2	proc tanh[T](t`gensym20: Tensor[T]): Tensor[T]		64
+nim	erf	ufunc.html#erf	proc erf[T](t`gensym21: Tensor[T]): Tensor[T]		64
+nim	erf	ufunc.html#erf_2	proc erf[T](t`gensym21: Tensor[T]): Tensor[T]		64
+nim	erfc	ufunc.html#erfc	proc erfc[T](t`gensym22: Tensor[T]): Tensor[T]		64
+nim	erfc	ufunc.html#erfc_2	proc erfc[T](t`gensym22: Tensor[T]): Tensor[T]		64
+nim	gamma	ufunc.html#gamma	proc gamma[T](t`gensym23: Tensor[T]): Tensor[T]		64
+nim	gamma	ufunc.html#gamma_2	proc gamma[T](t`gensym23: Tensor[T]): Tensor[T]		64
+nim	lgamma	ufunc.html#lgamma	proc lgamma[T](t`gensym24: Tensor[T]): Tensor[T]		64
+nim	lgamma	ufunc.html#lgamma_2	proc lgamma[T](t`gensym24: Tensor[T]): Tensor[T]		64
+nim	floor	ufunc.html#floor	proc floor[T](t`gensym25: Tensor[T]): Tensor[T]		64
+nim	floor	ufunc.html#floor_2	proc floor[T](t`gensym25: Tensor[T]): Tensor[T]		64
+nim	ceil	ufunc.html#ceil	proc ceil[T](t`gensym26: Tensor[T]): Tensor[T]		64
+nim	ceil	ufunc.html#ceil_2	proc ceil[T](t`gensym26: Tensor[T]): Tensor[T]		64
+nim	trunc	ufunc.html#trunc	proc trunc[T](t`gensym27: Tensor[T]): Tensor[T]		64
+nim	trunc	ufunc.html#trunc_2	proc trunc[T](t`gensym27: Tensor[T]): Tensor[T]		64
+nim	round	ufunc.html#round	proc round[T](t`gensym28: Tensor[T]): Tensor[T]		64
+nim	round	ufunc.html#round_2	proc round[T](t`gensym28: Tensor[T]): Tensor[T]		64
+nim	degToRad	ufunc.html#degToRad	proc degToRad[T](t`gensym29: Tensor[T]): Tensor[T]		64
+nim	degToRad	ufunc.html#degToRad_2	proc degToRad[T](t`gensym29: Tensor[T]): Tensor[T]		64
+nim	radToDeg	ufunc.html#radToDeg	proc radToDeg[T](t`gensym30: Tensor[T]): Tensor[T]		64
+nim	radToDeg	ufunc.html#radToDeg_2	proc radToDeg[T](t`gensym30: Tensor[T]): Tensor[T]		64
+nimgrp	degtorad	ufunc.html#degToRad-procs-all	proc		129
+nimgrp	arccosh	ufunc.html#arccosh-procs-all	proc		102
+nimgrp	arccos	ufunc.html#arccos-procs-all	proc		99
+nimgrp	tanh	ufunc.html#tanh-procs-all	proc		110
+nimgrp	erfc	ufunc.html#erfc-procs-all	proc		113
+nimgrp	erf	ufunc.html#erf-procs-all	proc		111
+nimgrp	radtodeg	ufunc.html#radToDeg-procs-all	proc		130
+nimgrp	tan	ufunc.html#tan-procs-all	proc		109
+nimgrp	arctanh	ufunc.html#arctanh-procs-all	proc		104
+nimgrp	sinh	ufunc.html#sinh-procs-all	proc		107
+nimgrp	fac	ufunc.html#fac-procs-all	proc		84
+nimgrp	astype	ufunc.html#asType-procs-all	proc		23
+nimgrp	exp	ufunc.html#exp-procs-all	proc		98
+nimgrp	log10	ufunc.html#log10-procs-all	proc		96
+nimgrp	sin	ufunc.html#sin-procs-all	proc		108
+nimgrp	lgamma	ufunc.html#lgamma-procs-all	proc		117
+nimgrp	trunc	ufunc.html#trunc-procs-all	proc		123
+nimgrp	round	ufunc.html#round-procs-all	proc		125
+nimgrp	sqrt	ufunc.html#sqrt-procs-all	proc		91
+nimgrp	cosh	ufunc.html#cosh-procs-all	proc		106
+nimgrp	arctan	ufunc.html#arctan-procs-all	proc		101
+nimgrp	cbrt	ufunc.html#cbrt-procs-all	proc		93
+nimgrp	log2	ufunc.html#log2-procs-all	proc		97
+nimgrp	arcsinh	ufunc.html#arcsinh-procs-all	proc		103
+nimgrp	ceil	ufunc.html#ceil-procs-all	proc		121
+nimgrp	isnan	ufunc.html#isNaN-procs-all	proc		86
+nimgrp	ln	ufunc.html#ln-procs-all	proc		95
+nimgrp	arcsin	ufunc.html#arcsin-procs-all	proc		100
+nimgrp	floor	ufunc.html#floor-procs-all	proc		119
+nimgrp	gamma	ufunc.html#gamma-procs-all	proc		115
+nimgrp	cos	ufunc.html#cos-procs-all	proc		105

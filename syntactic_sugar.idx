@@ -1,0 +1,3 @@
+nimTitle	syntactic_sugar	syntactic_sugar.html	module src/arraymancer/tensor/syntactic_sugar		0
+nim	at	syntactic_sugar.html#at.t,Tensor[T],varargs[untyped]	template at[T](t: Tensor[T]; args: varargs[untyped]): untyped		18
+nim	at_mut	syntactic_sugar.html#at_mut.t,Tensor[T],varargs[untyped]	template at_mut[T](t: var Tensor[T]; args: varargs[untyped]): untyped		33

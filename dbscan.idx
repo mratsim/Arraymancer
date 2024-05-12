@@ -1,0 +1,2 @@
+nimTitle	dbscan	dbscan.html	module src/arraymancer/ml/clustering/dbscan		0
+nim	dbscan	dbscan.html#dbscan,Tensor[T: SomeFloat],float,int,typedesc[AnyMetric],float	proc dbscan[T: SomeFloat](X: Tensor[T]; eps: float; minSamples: int;\n                     metric: typedesc[AnyMetric] = Euclidean; p = 2.0): seq[int]		49

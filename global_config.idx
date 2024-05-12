@@ -1,0 +1,6 @@
+nimTitle	global_config	global_config.html	module src/arraymancer/tensor/backend/global_config		0
+nim	MAXRANK	global_config.html#MAXRANK	const MAXRANK		22
+nim	CUDA_HOF_TPB	global_config.html#CUDA_HOF_TPB	const CUDA_HOF_TPB		25
+nim	CUDA_HOF_BPG	global_config.html#CUDA_HOF_BPG	const CUDA_HOF_BPG		27
+nim	OMP_FOR_THRESHOLD	global_config.html#OMP_FOR_THRESHOLD	const OMP_FOR_THRESHOLD		32
+nim	OMP_MAX_REDUCE_BLOCKS	global_config.html#OMP_MAX_REDUCE_BLOCKS	const OMP_MAX_REDUCE_BLOCKS		33

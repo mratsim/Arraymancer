@@ -1,0 +1,3 @@
+nimTitle	cuda_global_state	cuda_global_state.html	module src/arraymancer/tensor/backend/cuda_global_state		0
+nim	cudaStream0	cuda_global_state.html#cudaStream0	let cudaStream0		37
+nim	cublasHandle0	cuda_global_state.html#cublasHandle0	let cublasHandle0		38

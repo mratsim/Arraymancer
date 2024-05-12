@@ -1,0 +1,3 @@
+nimTitle	io_npy	io_npy.html	module src/arraymancer/io/io_npy		0
+nim	read_npy	io_npy.html#read_npy,string	proc read_npy[T: SomeNumber](npyPath: string): Tensor[T]		64
+nim	write_npy	io_npy.html#write_npy,Tensor[T: SomeNumber],string	proc write_npy[T: SomeNumber](t: Tensor[T]; npyPath: string)		117

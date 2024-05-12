@@ -1,0 +1,8 @@
+nimTitle	linear	linear.html	module src/arraymancer/nn/layers/linear		0
+nim	LinearGate	linear.html#LinearGate	type LinearGate		20
+nim	linear	linear.html#linear,Variable[TT],Variable[TT],Variable[TT]	proc linear[TT](input, weight: Variable[TT]; bias: Variable[TT] = nil): Variable[TT]		75
+nim	Linear	linear.html#Linear	object Linear		117
+nim	init	linear.html#init,Context[Tensor[T]],typedesc[Linear[T]],int,int	proc init[T](ctx: Context[Tensor[T]]; layerType: typedesc[Linear[T]];\n        numInput, numOutput: int): Linear[T]		121
+nim	forward	linear.html#forward,Linear[T],Variable[Tensor[T]]	proc forward[T](self: Linear[T]; input: Variable[Tensor[T]]): Variable[Tensor[T]]		133
+nim	outShape	linear.html#outShape,Linear[T]	proc outShape[T](self: Linear[T]): seq[int]		136
+nim	inShape	linear.html#inShape,Linear[T]	proc inShape[T](self: Linear[T]): seq[int]		138

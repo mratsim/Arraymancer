@@ -1,0 +1,23 @@
+nimTitle	gemm_tiling	gemm_tiling.html	module src/arraymancer/laser/primitives/matrix_multiplication/gemm_tiling		0
+nim	MicroKernel	gemm_tiling.html#MicroKernel	object MicroKernel		62
+nim	x86_Generic	gemm_tiling.html#x86_Generic	CPUFeatureX86.x86_Generic		74
+nim	x86_SSE	gemm_tiling.html#x86_SSE	CPUFeatureX86.x86_SSE		74
+nim	x86_SSE2	gemm_tiling.html#x86_SSE2	CPUFeatureX86.x86_SSE2		74
+nim	x86_SSE4_1	gemm_tiling.html#x86_SSE4_1	CPUFeatureX86.x86_SSE4_1		74
+nim	x86_AVX	gemm_tiling.html#x86_AVX	CPUFeatureX86.x86_AVX		74
+nim	x86_AVX_FMA	gemm_tiling.html#x86_AVX_FMA	CPUFeatureX86.x86_AVX_FMA		74
+nim	x86_AVX2	gemm_tiling.html#x86_AVX2	CPUFeatureX86.x86_AVX2		74
+nim	x86_AVX512	gemm_tiling.html#x86_AVX512	CPUFeatureX86.x86_AVX512		74
+nim	CPUFeatureX86	gemm_tiling.html#CPUFeatureX86	enum CPUFeatureX86		74
+nim	x86_ukernel	gemm_tiling.html#x86_ukernel,CPUFeatureX86,typedesc,bool	proc x86_ukernel(cpu: CPUFeatureX86; T: typedesc; c_unit_stride: bool): MicroKernel		199
+nim	extract_mr	gemm_tiling.html#extract_mr.m,staticMicroKernel	macro extract_mr(ukernel: static MicroKernel): untyped		226
+nim	extract_nr	gemm_tiling.html#extract_nr.m,staticMicroKernel	macro extract_nr(ukernel: static MicroKernel): untyped		228
+nim	extract_cpu_simd	gemm_tiling.html#extract_cpu_simd.m,staticMicroKernel	macro extract_cpu_simd(ukernel: static MicroKernel): untyped		230
+nim	extract_nb_scalars	gemm_tiling.html#extract_nb_scalars.m,staticMicroKernel	macro extract_nb_scalars(ukernel: static MicroKernel): untyped		233
+nim	extract_nb_vecs_nr	gemm_tiling.html#extract_nb_vecs_nr.m,staticMicroKernel	macro extract_nb_vecs_nr(ukernel: static MicroKernel): untyped		235
+nim	extract_c_unit_stride	gemm_tiling.html#extract_c_unit_stride.m,staticMicroKernel	macro extract_c_unit_stride(ukernel: static MicroKernel): untyped		237
+nim	extract_pt	gemm_tiling.html#extract_pt.m,staticMicroKernel	macro extract_pt(ukernel: static MicroKernel): untyped		239
+nim	Tiles	gemm_tiling.html#Tiles	type Tiles		251
+nim	get_num_tiles	gemm_tiling.html#get_num_tiles,int,int	proc get_num_tiles(dim_size, tile_size: int): int		272
+nim	partitionMNK	gemm_tiling.html#partitionMNK,staticMicroKernel,typedesc,Natural,Natural,Natural	proc partitionMNK(ukernel: static MicroKernel; T: typedesc; M, N, K: Natural): tuple[\n    mc, nc, kc: int]		276
+nim	newTiles	gemm_tiling.html#newTiles,staticMicroKernel,typedesc,Natural,Natural,Natural	proc newTiles(ukernel: static MicroKernel; T: typedesc; M, N, K: Natural): Tiles[T]		312

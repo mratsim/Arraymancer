@@ -1,0 +1,17 @@
+nimTitle	p_accessors_macros_write	p_accessors_macros_write.html	module src/arraymancer/tensor/private/p_accessors_macros_write		0
+nim	RelaxedRankOne	p_accessors_macros_write.html#RelaxedRankOne	const RelaxedRankOne		32
+nim	slicerMut	p_accessors_macros_write.html#slicerMut,Tensor[T],openArray[SteppedSlice],T	proc slicerMut[T](t: var Tensor[T]; slices: openArray[SteppedSlice]; val: T)		42
+nim	slicerMut	p_accessors_macros_write.html#slicerMut,Tensor[T],openArray[SteppedSlice],Ellipsis,T	proc slicerMut[T](t: var Tensor[T]; slices: openArray[SteppedSlice];\n             ellipsis: Ellipsis; val: T)		46
+nim	slicerMut	p_accessors_macros_write.html#slicerMut,Tensor[T],Ellipsis,openArray[SteppedSlice],T	proc slicerMut[T](t: var Tensor[T]; ellipsis: Ellipsis;\n             slices: openArray[SteppedSlice]; val: T)		57
+nim	slicerMut	p_accessors_macros_write.html#slicerMut,Tensor[T],openArray[SteppedSlice],Ellipsis,openArray[SteppedSlice],T	proc slicerMut[T](t: var Tensor[T]; slices1: openArray[SteppedSlice];\n             ellipsis: Ellipsis; slices2: openArray[SteppedSlice]; val: T)		68
+nim	slicerMut	p_accessors_macros_write.html#slicerMut,Tensor[T],openArray[SteppedSlice],openArray	proc slicerMut[T](t: var Tensor[T]; slices: openArray[SteppedSlice]; oa: openArray)		102
+nim	slicerMut	p_accessors_macros_write.html#slicerMut,Tensor[T],openArray[SteppedSlice],Ellipsis,openArray	proc slicerMut[T](t: var Tensor[T]; slices: openArray[SteppedSlice];\n             ellipsis: Ellipsis; oa: openArray)		107
+nim	slicerMut	p_accessors_macros_write.html#slicerMut,Tensor[T],Ellipsis,openArray[SteppedSlice],openArray	proc slicerMut[T](t: var Tensor[T]; ellipsis: Ellipsis;\n             slices: openArray[SteppedSlice]; oa: openArray)		117
+nim	slicerMut	p_accessors_macros_write.html#slicerMut,Tensor[T],openArray[SteppedSlice],Ellipsis,openArray[SteppedSlice],openArray	proc slicerMut[T](t: var Tensor[T]; slices1: openArray[SteppedSlice];\n             ellipsis: Ellipsis; slices2: openArray[SteppedSlice]; oa: openArray)		128
+nim	slicerMut	p_accessors_macros_write.html#slicerMut,Tensor[T],openArray[SteppedSlice],Tensor[T]	proc slicerMut[T](t: var Tensor[T]; slices: openArray[SteppedSlice]; t2: Tensor[T])		155
+nim	slicerMut	p_accessors_macros_write.html#slicerMut,Tensor[T],openArray[SteppedSlice],Ellipsis,Tensor[T]	proc slicerMut[T](t: var Tensor[T]; slices: openArray[SteppedSlice];\n             ellipsis: Ellipsis; t2: Tensor[T])		159
+nim	slicerMut	p_accessors_macros_write.html#slicerMut,Tensor[T],Ellipsis,openArray[SteppedSlice],Tensor[T]	proc slicerMut[T](t: var Tensor[T]; ellipsis: Ellipsis;\n             slices: openArray[SteppedSlice]; t2: Tensor[T])		168
+nim	slicerMut	p_accessors_macros_write.html#slicerMut,Tensor[T],openArray[SteppedSlice],Ellipsis,openArray[SteppedSlice],Tensor[T]	proc slicerMut[T](t: var Tensor[T]; slices1: openArray[SteppedSlice];\n             ellipsis: Ellipsis; slices2: openArray[SteppedSlice]; t2: Tensor[T])		177
+nim	slice_typed_dispatch_mut	p_accessors_macros_write.html#slice_typed_dispatch_mut.m,typed,varargs[typed],typed	macro slice_typed_dispatch_mut(t: typed; args: varargs[typed]; val: typed): untyped		192
+nim	slice_typed_dispatch_var	p_accessors_macros_write.html#slice_typed_dispatch_var.m,typed,varargs[typed]	macro slice_typed_dispatch_var(t: typed; args: varargs[typed]): untyped		321
+nimgrp	slicermut	p_accessors_macros_write.html#slicerMut-procs-all	proc		42

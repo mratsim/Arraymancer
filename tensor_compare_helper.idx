@@ -1,0 +1,2 @@
+nimTitle	tensor_compare_helper	tensor_compare_helper.html	module src/arraymancer/spatial/tensor_compare_helper		0
+nim	`<`	tensor_compare_helper.html#<,Tensor[T],Tensor[T]	proc `<`[T](s1, s2: Tensor[T]): bool		2

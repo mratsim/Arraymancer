@@ -1,0 +1,27 @@
+nimTitle	accessors_macros_syntax	accessors_macros_syntax.html	module src/arraymancer/tensor/accessors_macros_syntax		0
+nim	SteppedSlice	accessors_macros_syntax.html#SteppedSlice	object SteppedSlice		56
+nim	Step	accessors_macros_syntax.html#Step	object Step		67
+nim	`_`	accessors_macros_syntax.html#_	const `_`		78
+nim	Ellipsis	accessors_macros_syntax.html#Ellipsis	object Ellipsis		80
+nim	`...`	accessors_macros_syntax.html#...	const `...`		82
+nim	ArrayOfSlices	accessors_macros_syntax.html#ArrayOfSlices	type ArrayOfSlices		87
+nim	toArrayOfSlices	accessors_macros_syntax.html#toArrayOfSlices,varargs[SteppedSlice]	proc toArrayOfSlices(s: varargs[SteppedSlice]): ArrayOfSlices		89
+nim	initSpanSlices	accessors_macros_syntax.html#initSpanSlices,int	proc initSpanSlices(len: int): ArrayOfSlices		97
+nim	`|`	accessors_macros_syntax.html#|,Slice[int],int	proc `|`(s: Slice[int]; step: int): SteppedSlice		108
+nim	`|`	accessors_macros_syntax.html#|,int,int	proc `|`(b, step: int): Step		117
+nim	`|`	accessors_macros_syntax.html#|,SteppedSlice,int	proc `|`(ss: SteppedSlice; step: int): SteppedSlice		130
+nim	`|+`	accessors_macros_syntax.html#|+,Slice[int],int	proc `|+`(s: Slice[int]; step: int): SteppedSlice		140
+nim	`|+`	accessors_macros_syntax.html#|+,int,int	proc `|+`(b, step: int): Step		144
+nim	`|+`	accessors_macros_syntax.html#|+,SteppedSlice,int	proc `|+`(ss: SteppedSlice; step: int): SteppedSlice		148
+nim	`|-`	accessors_macros_syntax.html#|-,Slice[int],int	proc `|-`(s: Slice[int]; step: int): SteppedSlice		152
+nim	`|-`	accessors_macros_syntax.html#|-,int,int	proc `|-`(b, step: int): Step		160
+nim	`|-`	accessors_macros_syntax.html#|-,SteppedSlice,int	proc `|-`(ss: SteppedSlice; step: int): SteppedSlice		168
+nim	`..`	accessors_macros_syntax.html#..,int,Step	proc `..`(a: int; s: Step): SteppedSlice		177
+nim	`..<`	accessors_macros_syntax.html#..<,int,Step	proc `..<`(a: int; s: Step): SteppedSlice		186
+nim	`..^`	accessors_macros_syntax.html#..^,int,Step	proc `..^`(a: int; s: Step): SteppedSlice		195
+nim	`^`	accessors_macros_syntax.html#^,SteppedSlice	proc `^`(s: SteppedSlice): SteppedSlice		204
+nim	`^`	accessors_macros_syntax.html#^,Slice	proc `^`(s: Slice): SteppedSlice		210
+nimgrp	|	accessors_macros_syntax.html#|-procs-all	proc		108
+nimgrp	^	accessors_macros_syntax.html#^-procs-all	proc		204
+nimgrp	|+	accessors_macros_syntax.html#|+-procs-all	proc		140
+nimgrp	|-	accessors_macros_syntax.html#|--procs-all	proc		152

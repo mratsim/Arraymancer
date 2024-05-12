@@ -1,0 +1,7 @@
+nimTitle	nnp_linear	nnp_linear.html	module src/arraymancer/nn_primitives/nnp_linear		0
+nim	linear	nnp_linear.html#linear,Tensor[T],Tensor[T],Tensor[T],Tensor[T]	proc linear[T](input, weight: Tensor[T]; bias: Tensor[T]; output: var Tensor[T])		20
+nim	linear	nnp_linear.html#linear,Tensor[T],Tensor[T],Tensor[T]	proc linear[T](input, weight: Tensor[T]; output: var Tensor[T])		31
+nim	linear_backward	nnp_linear.html#linear_backward,Tensor[T],Tensor[T],Tensor[T],Tensor[T],Tensor[T],Tensor[T]	proc linear_backward[T](input, weight, gradOutput: Tensor[T];\n                   gradInput, gradWeight, gradBias: var Tensor[T])		39
+nim	linear_backward	nnp_linear.html#linear_backward,Tensor[T],Tensor[T],Tensor[T],Tensor[T],Tensor[T]	proc linear_backward[T](input, weight, gradOutput: Tensor[T];\n                   gradInput, gradWeight: var Tensor[T])		57
+nimgrp	linear	nnp_linear.html#linear-procs-all	proc		20
+nimgrp	linearbackward	nnp_linear.html#linear_backward-procs-all	proc		39

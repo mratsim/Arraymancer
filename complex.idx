@@ -1,0 +1,15 @@
+nimTitle	complex	complex.html	module src/arraymancer/tensor/complex		0
+nim	complex	complex.html#complex,Tensor[T: SomeNumber],Tensor[T: SomeNumber]	proc complex[T: SomeNumber](re: Tensor[T]; im: Tensor[T]): auto		11
+nim	complex	complex.html#complex,Tensor[T: SomeNumber]	proc complex[T: SomeNumber](re: Tensor[T]): auto		24
+nim	complex_imag	complex.html#complex_imag,Tensor[T: SomeNumber]	proc complex_imag[T: SomeNumber](im: Tensor[T]): auto		46
+nim	real	complex.html#real,Tensor[Complex[T: SomeFloat]]	proc real[T: SomeFloat](t: Tensor[Complex[T]]): Tensor[T]		61
+nim	real=	complex.html#real=,Tensor[Complex[T: SomeFloat]],T	proc real=[T: SomeFloat](t: var Tensor[Complex[T]]; val: T)		65
+nim	real=	complex.html#real=,Tensor[Complex[T: SomeFloat]],Tensor[T: SomeFloat]	proc real=[T: SomeFloat](t: var Tensor[Complex[T]]; val: Tensor[T])		70
+nim	imag	complex.html#imag,Tensor[Complex[T: SomeFloat]]	proc imag[T: SomeFloat](t: Tensor[Complex[T]]): Tensor[T]		76
+nim	imag=	complex.html#imag=,Tensor[Complex[T: SomeFloat]],T	proc imag=[T: SomeFloat](t: var Tensor[Complex[T]]; val: T)		80
+nim	imag=	complex.html#imag=,Tensor[Complex[T: SomeFloat]],Tensor[T: SomeFloat]	proc imag=[T: SomeFloat](t: var Tensor[Complex[T]]; val: Tensor[T])		85
+nim	conjugate	complex.html#conjugate,Tensor[T: Complex32 or Complex64]	proc conjugate[T: Complex32 | Complex64](t: Tensor[T]): Tensor[T]		91
+nim	cswap	complex.html#cswap,Tensor[T: Complex32 or Complex64]	proc cswap[T: Complex32 | Complex64](t: Tensor[T]): Tensor[T]		96
+nimgrp	complex	complex.html#complex-procs-all	proc		11
+nimgrp	real=	complex.html#real=-procs-all	proc		65
+nimgrp	imag=	complex.html#imag=-procs-all	proc		80

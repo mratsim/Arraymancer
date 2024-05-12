@@ -1,0 +1,19 @@
+nimTitle	autograd_common	autograd_common.html	module src/arraymancer/autograd/autograd_common		0
+nim	Context	autograd_common.html#Context	type Context		43
+nim	Variable	autograd_common.html#Variable	type Variable		57
+nim	Gate	autograd_common.html#Gate	type Gate		70
+nim	pkVar	autograd_common.html#pkVar	PayloadKind.pkVar		76
+nim	pkSeq	autograd_common.html#pkSeq	PayloadKind.pkSeq		76
+nim	PayloadKind	autograd_common.html#PayloadKind	enum PayloadKind		76
+nim	Payload	autograd_common.html#Payload	object Payload		78
+nim	Backward	autograd_common.html#Backward	type Backward		83
+nim	SmallDiffs	autograd_common.html#SmallDiffs	type SmallDiffs		102
+nim	newContext	autograd_common.html#newContext,typedesc	proc newContext(TT: typedesc): Context[TT]		145
+nim	variable	autograd_common.html#variable,Context[TT],TT	proc variable[TT](ctx: Context[TT]; value: TT; requires_grad = false): Variable[TT]		150
+nim	register_node	autograd_common.html#register_node,staticstring,Gate[TT],Backward[TT],,varargs[Variable[TT]]	proc register_node[TT](name: static string; gate: Gate[TT]; backward: Backward[TT];\n                  result: Variable[TT] or seq[Variable[TT]];\n                  parents: varargs[Variable[TT]])		174
+nim	no_grad_mode	autograd_common.html#no_grad_mode.t,Context,untyped	template no_grad_mode(ctx: Context; body: untyped): untyped		197
+nim	is_grad_needed	autograd_common.html#is_grad_needed,Variable	proc is_grad_needed(v: Variable): bool		209
+nim	check_ctx	autograd_common.html#check_ctx,Variable,Variable	proc check_ctx(a, b: Variable)		214
+nim	backprop	autograd_common.html#backprop,Variable[TT]	proc backprop[TT](v: Variable[TT])		218
+nim	newParents	autograd_common.html#newParents,Natural	proc newParents[TT](num: Natural): Parents[TT]		241
+nim	newDiffs	autograd_common.html#newDiffs,Natural	proc newDiffs[TT](num: Natural): SmallDiffs[TT]		244

@@ -1,0 +1,8 @@
+nimTitle	gcn	gcn.html	module src/arraymancer/nn/layers/gcn		0
+nim	GCNGate	gcn.html#GCNGate	type GCNGate		20
+nim	gcn	gcn.html#gcn,Variable[TT],Variable[TT],Variable[TT],Variable[TT]	proc gcn[TT](input, adjacency, weight: Variable[TT]; bias: Variable[TT] = nil): Variable[\n    TT]		71
+nim	GCNLayer	gcn.html#GCNLayer	object GCNLayer		108
+nim	init	gcn.html#init,Context[Tensor[T]],typedesc[GCNLayer[T]],int,int	proc init[T](ctx: Context[Tensor[T]]; layerType: typedesc[GCNLayer[T]];\n        numInput, numOutput: int): GCNLayer[T]		112
+nim	forward	gcn.html#forward,GCNLayer[T],Variable[Tensor[T]],Variable[Tensor[T]]	proc forward[T](self: GCNLayer[T]; input, adjacency: Variable[Tensor[T]]): Variable[\n    Tensor[T]]		124
+nim	outShape	gcn.html#outShape,GCNLayer[T]	proc outShape[T](self: GCNLayer[T]): seq[int]		127
+nim	inShape	gcn.html#inShape,GCNLayer[T]	proc inShape[T](self: GCNLayer[T]): seq[int]		129

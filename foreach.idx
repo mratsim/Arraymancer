@@ -1,0 +1,7 @@
+nimTitle	foreach	foreach.html	module src/arraymancer/laser/strided_iteration/foreach		0
+nim	forEachContiguous	foreach.html#forEachContiguous.m,varargs[untyped]	macro forEachContiguous(args: varargs[untyped]): untyped		191
+nim	forEachContiguousSerial	foreach.html#forEachContiguousSerial.m,varargs[untyped]	macro forEachContiguousSerial(args: varargs[untyped]): untyped		206
+nim	forEachStrided	foreach.html#forEachStrided.m,varargs[untyped]	macro forEachStrided(args: varargs[untyped]): untyped		214
+nim	forEachStridedSerial	foreach.html#forEachStridedSerial.m,varargs[untyped]	macro forEachStridedSerial(args: varargs[untyped]): untyped		229
+nim	forEach	foreach.html#forEach.m,varargs[untyped]	macro forEach(args: varargs[untyped]): untyped		238
+nim	forEachSerial	foreach.html#forEachSerial.m,varargs[untyped]	macro forEachSerial(args: varargs[untyped]): untyped		264

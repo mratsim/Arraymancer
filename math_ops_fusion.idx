@@ -1,0 +1,7 @@
+nimTitle	math_ops_fusion	math_ops_fusion.html	module src/arraymancer/math_ops_fusion/math_ops_fusion		0
+nim	ln1p	math_ops_fusion.html#ln1p,float32	proc ln1p(x: float32): float32		19
+nim	ln1p	math_ops_fusion.html#ln1p,float64	proc ln1p(x: float64): float64		20
+nim	expm1	math_ops_fusion.html#expm1,float32	proc expm1(x: float32): float32		24
+nim	expm1	math_ops_fusion.html#expm1,float64	proc expm1(x: float64): float64		25
+nimgrp	ln1p	math_ops_fusion.html#ln1p-procs-all	proc		19
+nimgrp	expm1	math_ops_fusion.html#expm1-procs-all	proc		24

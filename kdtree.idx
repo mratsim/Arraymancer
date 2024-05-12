@@ -1,0 +1,12 @@
+nimTitle	kdtree	kdtree.html	module src/arraymancer/spatial/kdtree		0
+nim	tnLeaf	kdtree.html#tnLeaf	TreeNodeKind.tnLeaf		21
+nim	tnInner	kdtree.html#tnInner	TreeNodeKind.tnInner		21
+nim	TreeNodeKind	kdtree.html#TreeNodeKind	enum TreeNodeKind		21
+nim	Node	kdtree.html#Node	type Node		24
+nim	KDTree	kdtree.html#KDTree	type KDTree		38
+nim	clone	kdtree.html#clone,Node[T]	proc clone[T](n: Node[T]): Node[T]		50
+nim	clone	kdtree.html#clone,KDTree[T]	proc clone[T](kd: KDTree[T]): KDTree[T]		64
+nim	kdTree	kdtree.html#kdTree,Tensor[T],int,staticbool	proc kdTree[T](data: Tensor[T]; leafSize = 16; copyData = true;\n          balancedTree: static bool = true): KDTree[T]		188
+nim	query	kdtree.html#query,KDTree[T],Tensor[T],int,float,typedesc[AnyMetric],float	proc query[T](tree: KDTree[T]; x: Tensor[T]; k = 1; eps = 0.0;\n         metric: typedesc[AnyMetric] = Euclidean; p = 2.0;\n         distanceUpperBound = Inf): tuple[dist: Tensor[T], idx: Tensor[int]]		371
+nim	query_ball_point	kdtree.html#query_ball_point,KDTree[T],Tensor[T],float,float,typedesc[AnyMetric],float	proc query_ball_point[T](tree: KDTree[T]; x: Tensor[T]; radius: float; eps = 0.0;\n                    metric: typedesc[AnyMetric] = Euclidean; p = 2.0): tuple[\n    dist: Tensor[T], idx: Tensor[int]]		399
+nimgrp	clone	kdtree.html#clone-procs-all	proc		50

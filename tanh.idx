@@ -1,0 +1,3 @@
+nimTitle	tanh	tanh.html	module src/arraymancer/nn/activation/tanh		0
+nim	TanhActivation	tanh.html#TanhActivation	type TanhActivation		20
+nim	tanh	tanh.html#tanh,Variable[TT]	proc tanh[TT](a: Variable[TT]): Variable[TT]		48

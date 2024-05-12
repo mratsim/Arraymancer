@@ -1,0 +1,66 @@
+nimTitle	math_functions	math_functions.html	module src/arraymancer/tensor/math_functions		0
+nim	elwise_mul	math_functions.html#elwise_mul,Tensor[T],Tensor[T]	proc elwise_mul[T](a, b: Tensor[T]): Tensor[T]		27
+nim	melwise_mul	math_functions.html#melwise_mul,Tensor[T],Tensor[T]	proc melwise_mul[T](a: var Tensor[T]; b: Tensor[T])		31
+nim	elwise_div	math_functions.html#elwise_div,Tensor[T: SomeInteger],Tensor[T: SomeInteger]	proc elwise_div[T: SomeInteger](a, b: Tensor[T]): Tensor[T]		35
+nim	elwise_div	math_functions.html#elwise_div,Tensor[T: SomeFloat],Tensor[T: SomeFloat]	proc elwise_div[T: SomeFloat](a, b: Tensor[T]): Tensor[T]		39
+nim	melwise_div	math_functions.html#melwise_div,Tensor[T: SomeInteger],Tensor[T: SomeInteger]	proc melwise_div[T: SomeInteger](a: var Tensor[T]; b: Tensor[T])		43
+nim	melwise_div	math_functions.html#melwise_div,Tensor[T: SomeFloat],Tensor[T: SomeFloat]	proc melwise_div[T: SomeFloat](a: var Tensor[T]; b: Tensor[T])		47
+nim	reciprocal	math_functions.html#reciprocal,Tensor[T: SomeFloat]	proc reciprocal[T: SomeFloat](t: Tensor[T]): Tensor[T]		51
+nim	mreciprocal	math_functions.html#mreciprocal,Tensor[T: SomeFloat]	proc mreciprocal[T: SomeFloat](t: var Tensor[T])		55
+nim	reciprocal	math_functions.html#reciprocal,Tensor[T: Complex[system.float32] or Complex[system.float64]]	proc reciprocal[T: Complex[float32] or Complex[float64]](t: Tensor[T]): Tensor[T]		59
+nim	mreciprocal	math_functions.html#mreciprocal,Tensor[T: Complex[system.float32] or Complex[system.float64]]	proc mreciprocal[T: Complex[float32] or Complex[float64]](t: var Tensor[T])		64
+nim	negate	math_functions.html#negate,Tensor[T: int or int8 or int16 or int32 or int64 or float or float32 or float64]	proc negate[T: SomeSignedInt | SomeFloat](t: Tensor[T]): Tensor[T]		69
+nim	mnegate	math_functions.html#mnegate,Tensor[T: int or int8 or int16 or int32 or int64 or float or float32 or float64]	proc mnegate[T: SomeSignedInt | SomeFloat](t: var Tensor[T])		73
+nim	`-`	math_functions.html#-,Tensor[T: SomeNumber]	proc `-`[T: SomeNumber](t: Tensor[T]): Tensor[T]		77
+nim	abs	math_functions.html#abs,Tensor[T: SomeNumber]	proc abs[T: SomeNumber](t: Tensor[T]): Tensor[T]		82
+nim	abs	math_functions.html#abs,Tensor[Complex[float64]]	proc abs(t: Tensor[Complex[float64]]): Tensor[float64]		87
+nim	abs	math_functions.html#abs,Tensor[Complex[float32]]	proc abs(t: Tensor[Complex[float32]]): Tensor[float32]		91
+nim	mabs	math_functions.html#mabs,Tensor[T]	proc mabs[T](t: var Tensor[T])		95
+nim	phase	math_functions.html#phase,Tensor[Complex[float64]]	proc phase(t: Tensor[Complex[float64]]): Tensor[float64]		101
+nim	phase	math_functions.html#phase,Tensor[Complex[float32]]	proc phase(t: Tensor[Complex[float32]]): Tensor[float32]		105
+nim	sgn	math_functions.html#sgn,Tensor[T: SomeNumber]	proc sgn[T: SomeNumber](t: Tensor[T]): Tensor[int]		109
+nim	copySign	math_functions.html#copySign,Tensor[T: SomeFloat],Tensor[T: SomeFloat]	proc copySign[T: SomeFloat](t1, t2: Tensor[T]): Tensor[T]		119
+nim	mcopySign	math_functions.html#mcopySign,Tensor[T: SomeFloat],Tensor[T: SomeFloat]	proc mcopySign[T: SomeFloat](t1: var Tensor[T]; t2: Tensor[T])		126
+nim	floorMod	math_functions.html#floorMod,Tensor[T: SomeNumber],Tensor[T: SomeNumber]	proc floorMod[T: SomeNumber](t1, t2: Tensor[T]): Tensor[T]		133
+nim	floorMod	math_functions.html#floorMod,Tensor[T: SomeNumber],T	proc floorMod[T: SomeNumber](t: Tensor[T]; val: T): Tensor[T]		137
+nim	floorMod	math_functions.html#floorMod,T,Tensor[T: SomeNumber]	proc floorMod[T: SomeNumber](val: T; t: Tensor[T]): Tensor[T]		141
+nim	clamp	math_functions.html#clamp,Tensor[T],T,T	proc clamp[T](t: Tensor[T]; min, max: T): Tensor[T]		145
+nim	mclamp	math_functions.html#mclamp,Tensor[T],T,T	proc mclamp[T](t: var Tensor[T]; min, max: T)		149
+nim	max	math_functions.html#max,Tensor[T: SomeNumber],Tensor[T: SomeNumber]	proc max[T: SomeNumber](t1, t2: Tensor[T]): Tensor[T]		153
+nim	max	math_functions.html#max,varargs[Tensor[T: SomeNumber]]	proc max[T: SomeNumber](args: varargs[Tensor[T]]): Tensor[T]		160
+nim	mmax	math_functions.html#mmax,Tensor[T: SomeNumber],Tensor[T: SomeNumber]	proc mmax[T: SomeNumber](t1: var Tensor[T]; t2: Tensor[T])		169
+nim	mmax	math_functions.html#mmax,Tensor[T: SomeNumber],varargs[Tensor[T: SomeNumber]]	proc mmax[T: SomeNumber](t1: var Tensor[T]; args: varargs[Tensor[T]])		176
+nim	min	math_functions.html#min,Tensor[T: SomeNumber],Tensor[T: SomeNumber]	proc min[T: SomeNumber](t1, t2: Tensor[T]): Tensor[T]		185
+nim	min	math_functions.html#min,varargs[Tensor[T: SomeNumber]]	proc min[T: SomeNumber](args: varargs[Tensor[T]]): Tensor[T]		192
+nim	mmin	math_functions.html#mmin,Tensor[T: SomeNumber],Tensor[T: SomeNumber]	proc mmin[T: SomeNumber](t1: var Tensor[T]; t2: Tensor[T])		201
+nim	mmin	math_functions.html#mmin,Tensor[T: SomeNumber],varargs[Tensor[T: SomeNumber]]	proc mmin[T: SomeNumber](t1: var Tensor[T]; args: varargs[Tensor[T]])		208
+nim	square	math_functions.html#square,T	proc square[T](x: T): T		217
+nim	square	math_functions.html#square	proc square[T](t`gensym101: Tensor[T]): Tensor[T]		64
+nim	square	math_functions.html#square,T_2	proc square[T](x: T): T		217
+nim	square	math_functions.html#square_2	proc square[T](t`gensym101: Tensor[T]): Tensor[T]		64
+nim	sinc	math_functions.html#sinc,T,staticbool	proc sinc[T: SomeFloat](x: T; normalized: static bool = true): T		223
+nim	sinc	math_functions.html#sinc,Tensor[T: SomeFloat],staticbool	proc sinc[T: SomeFloat](t: Tensor[T]; normalized: static bool = true): Tensor[T]		245
+nim	classify	math_functions.html#classify,Tensor[T: SomeFloat]	proc classify[T: SomeFloat](t: Tensor[T]): Tensor[FloatClass]		263
+nim	almostEqual	math_functions.html#almostEqual,Tensor[T: float or float32 or float64 or Complex32 or Complex64],Tensor[T: float or float32 or float64 or Complex32 or Complex64],Natural	proc almostEqual[T: SomeFloat | Complex32 | Complex64](t1, t2: Tensor[T];\n    unitsInLastPlace: Natural = 4): Tensor[bool]		277
+nim	full	math_functions.html#full	ConvolveMode.full		311
+nim	same	math_functions.html#same	ConvolveMode.same		311
+nim	valid	math_functions.html#valid	ConvolveMode.valid		311
+nim	ConvolveMode	math_functions.html#ConvolveMode	enum ConvolveMode		311
+nim	convolve	math_functions.html#convolve,Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex32 or Complex64],Tensor[T: int or int8 or int16 or int32 or int64 or uint or uint8 or uint16 or uint32 or uint64 or float or float32 or float64 or Complex32 or Complex64]	proc convolve[T: SomeNumber | Complex32 | Complex64](t1, t2: Tensor[T];\n    mode = ConvolveMode.full): Tensor[T]		338
+nim	CorrelateMode	math_functions.html#CorrelateMode	type CorrelateMode		383
+nim	correlate	math_functions.html#correlate,Tensor[T: SomeNumber],Tensor[T: SomeNumber]	proc correlate[T: SomeNumber](t1, t2: Tensor[T]; mode = CorrelateMode.valid): Tensor[\n    T]		385
+nim	correlate	math_functions.html#correlate,Tensor[T: Complex32 or Complex64],Tensor[T: Complex32 or Complex64]	proc correlate[T: Complex32 | Complex64](t1, t2: Tensor[T];\n                                    mode = CorrelateMode.valid): Tensor[T]		428
+nimgrp	correlate	math_functions.html#correlate-procs-all	proc		385
+nimgrp	reciprocal	math_functions.html#reciprocal-procs-all	proc		51
+nimgrp	square	math_functions.html#square-procs-all	proc		217
+nimgrp	phase	math_functions.html#phase-procs-all	proc		101
+nimgrp	melwisediv	math_functions.html#melwise_div-procs-all	proc		43
+nimgrp	max	math_functions.html#max-procs-all	proc		153
+nimgrp	floormod	math_functions.html#floorMod-procs-all	proc		133
+nimgrp	mreciprocal	math_functions.html#mreciprocal-procs-all	proc		55
+nimgrp	mmin	math_functions.html#mmin-procs-all	proc		201
+nimgrp	sinc	math_functions.html#sinc-procs-all	proc		223
+nimgrp	abs	math_functions.html#abs-procs-all	proc		82
+nimgrp	min	math_functions.html#min-procs-all	proc		185
+nimgrp	mmax	math_functions.html#mmax-procs-all	proc		169
+nimgrp	elwisediv	math_functions.html#elwise_div-procs-all	proc		35

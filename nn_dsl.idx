@@ -1,0 +1,2 @@
+nimTitle	nn_dsl	nn_dsl.html	module src/arraymancer/nn/nn_dsl		0
+nim	network	nn_dsl.html#network.m,untyped,untyped	macro network(modelName: untyped; config: untyped): untyped		312

@@ -1,0 +1,12 @@
+nimTitle	algorithms	algorithms.html	module src/arraymancer/tensor/algorithms		0
+nim	sort	algorithms.html#sort,Tensor[T]	proc sort[T](t: var Tensor[T]; order = SortOrder.Ascending)		22
+nim	sorted	algorithms.html#sorted,Tensor[T]	proc sorted[T](t: Tensor[T]; order = SortOrder.Ascending): Tensor[T]		32
+nim	argsort	algorithms.html#argsort,Tensor[T]	proc argsort[T](t: Tensor[T]; order = SortOrder.Ascending; toCopy = false): Tensor[\n    int]		38
+nim	unique	algorithms.html#unique,Tensor[T]	proc unique[T](t: Tensor[T]; isSorted = false): Tensor[T]		61
+nim	unique	algorithms.html#unique,Tensor[T],SortOrder	proc unique[T](t: Tensor[T]; order: SortOrder): Tensor[T]		103
+nim	union	algorithms.html#union,Tensor[T],Tensor[T]	proc union[T](t1, t2: Tensor[T]): Tensor[T]		140
+nim	intersection	algorithms.html#intersection,Tensor[T],Tensor[T]	proc intersection[T](t1, t2: Tensor[T]): Tensor[T]		168
+nim	setDiff	algorithms.html#setDiff,Tensor[T],Tensor[T]	proc setDiff[T](t1, t2: Tensor[T]; symmetric = false): Tensor[T]		195
+nim	contains	algorithms.html#contains,Tensor[T],T	proc contains[T](t: Tensor[T]; item: T): bool		241
+nim	ismember	algorithms.html#ismember,Tensor[T],Tensor[T]	proc ismember[T](t1, t2: Tensor[T]): Tensor[bool]		257
+nimgrp	unique	algorithms.html#unique-procs-all	proc		61

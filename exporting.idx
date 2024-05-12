@@ -1,0 +1,9 @@
+nimTitle	exporting	exporting.html	module src/arraymancer/tensor/exporting		0
+nim	toRawSeq	exporting.html#toRawSeq,Tensor[T]	proc toRawSeq[T](t: Tensor[T]): seq[T]		19
+nim	toFlatSeq	exporting.html#toFlatSeq,Tensor[T]	proc toFlatSeq[T](t: Tensor[T]): seq[T]		48
+nim	export_tensor	exporting.html#export_tensor,Tensor[T]	proc export_tensor[T](t: Tensor[T]): tuple[shape: seq[int], strides: seq[int],\n                                      data: seq[T]]		54
+nim	toSeq1D	exporting.html#toSeq1D,Tensor[T]	proc toSeq1D[T](t: Tensor[T]): seq[T]		69
+nim	toSeq2D	exporting.html#toSeq2D,Tensor[T]	proc toSeq2D[T](t: Tensor[T]): seq[seq[T]]		77
+nim	toSeq3D	exporting.html#toSeq3D,Tensor[T]	proc toSeq3D[T](t: Tensor[T]): seq[seq[seq[T]]]		88
+nim	toSeq4D	exporting.html#toSeq4D,Tensor[T]	proc toSeq4D[T](t: Tensor[T]): seq[seq[seq[seq[T]]]]		102
+nim	toSeq5D	exporting.html#toSeq5D,Tensor[T]	proc toSeq5D[T](t: Tensor[T]): seq[seq[seq[seq[seq[T]]]]]		119

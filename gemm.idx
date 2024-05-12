@@ -1,0 +1,5 @@
+nimTitle	gemm	gemm.html	module src/arraymancer/laser/primitives/matrix_multiplication/gemm		0
+nim	gebp_mkernel	gemm.html#gebp_mkernel,int,int,int,T,ptr.UncheckedArray[T],ptr.UncheckedArray[T],T,MatrixView[T]	proc gebp_mkernel[T; ukernel: static MicroKernel](mc, nc, kc: int; alpha: T;\n    packA, packB: ptr UncheckedArray[T]; beta: T; mcncC: MatrixView[T])		57
+nim	gemm_strided	gemm.html#gemm_strided,int,int,int,T,ptr.T,int,int,ptr.T,int,int,T,ptr.T,int,int	proc gemm_strided[T: SomeNumber and not (uint32 | uint64 | uint | int)](M, N, K: int;\n    alpha: T; A: ptr T; rowStrideA, colStrideA: int; B: ptr T;\n    rowStrideB, colStrideB: int; beta: T; C: ptr T; rowStrideC, colStrideC: int)		192
+nim	gemm_strided	gemm.html#gemm_strided,int,int,int,T,ptr.T,int,int,ptr.T,int,int,T,ptr.T,int,int_2	proc gemm_strided[T: uint32 | uint64 | uint | int](M, N, K: int; alpha: T; A: ptr T;\n    rowStrideA, colStrideA: int; B: ptr T; rowStrideB, colStrideB: int; beta: T;\n    C: ptr T; rowStrideC, colStrideC: int)		275
+nimgrp	gemmstrided	gemm.html#gemm_strided-procs-all	proc		192

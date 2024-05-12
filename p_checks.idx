@@ -1,0 +1,22 @@
+nimTitle	p_checks	p_checks.html	module src/arraymancer/tensor/private/p_checks		0
+nim	check_elementwise	p_checks.html#check_elementwise,CudaTensor[T],CudaTensor[U]	proc check_elementwise[T, U](a: CudaTensor[T]; b: CudaTensor[U])		15
+nim	check_elementwise	p_checks.html#check_elementwise,ClTensor[T],ClTensor[U]	proc check_elementwise[T, U](a: ClTensor[T]; b: ClTensor[U])		15
+nim	check_nested_elements	p_checks.html#check_nested_elements,Metadata,int	proc check_nested_elements(shape: Metadata; len: int)		24
+nim	check_index	p_checks.html#check_index,Tensor,varargs[int]	proc check_index(t: Tensor; idx: varargs[int])		32
+nim	check_contiguous_index	p_checks.html#check_contiguous_index,Tensor,int	proc check_contiguous_index(t: Tensor; idx: int)		48
+nim	check_elementwise	p_checks.html#check_elementwise,Tensor[T],Tensor[U]	proc check_elementwise[T, U](a: Tensor[T]; b: Tensor[U])		55
+nim	check_size	p_checks.html#check_size,Tensor[T],Tensor[U]	proc check_size[T, U](a: Tensor[T]; b: Tensor[U])		61
+nim	check_steps	p_checks.html#check_steps,int,int,int	proc check_steps(a, b, step: int)		70
+nim	check_start_end	p_checks.html#check_start_end,int,int,int	proc check_start_end(a, b: int; dim_size: int)		87
+nim	check_shape	p_checks.html#check_shape,Tensor,,static[bool]	proc check_shape(a: Tensor; b: Tensor | openArray;\n            relaxed_rank1_check: static[bool] = false)		96
+nim	check_reshape	p_checks.html#check_reshape,AnyTensor,Metadata	proc check_reshape(t: AnyTensor; new_shape: Metadata)		120
+nim	check_reshape	p_checks.html#check_reshape,AnyTensor,varargs[int]	proc check_reshape(t: AnyTensor; new_shape: varargs[int])		128
+nim	check_concat	p_checks.html#check_concat,Tensor,Tensor,int	proc check_concat(t1, t2: Tensor; axis: int)		137
+nim	check_squeezeAxis	p_checks.html#check_squeezeAxis,AnyTensor,int	proc check_squeezeAxis(t: AnyTensor; axis: int)		144
+nim	check_unsqueezeAxis	p_checks.html#check_unsqueezeAxis,AnyTensor,int	proc check_unsqueezeAxis(t: AnyTensor; axis: int)		148
+nim	check_dot_prod	p_checks.html#check_dot_prod,AnyTensor,AnyTensor	proc check_dot_prod(a, b: AnyTensor)		152
+nim	check_matmat	p_checks.html#check_matmat,AnyTensor,AnyTensor	proc check_matmat(a, b: AnyTensor)		156
+nim	check_matvec	p_checks.html#check_matvec,AnyTensor,AnyTensor	proc check_matvec(a, b: AnyTensor)		166
+nim	check_axis_index	p_checks.html#check_axis_index,AnyTensor,Natural,Natural,Natural	proc check_axis_index(t: AnyTensor; axis, index, len: Natural)		176
+nimgrp	checkelementwise	p_checks.html#check_elementwise-procs-all	proc		15
+nimgrp	checkreshape	p_checks.html#check_reshape-procs-all	proc		120

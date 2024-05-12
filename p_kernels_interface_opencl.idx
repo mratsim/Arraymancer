@@ -1,0 +1,5 @@
+nimTitle	p_kernels_interface_opencl	p_kernels_interface_opencl.html	module src/arraymancer/tensor/private/p_kernels_interface_opencl		0
+nim	gen_cl_apply3	p_kernels_interface_opencl.html#gen_cl_apply3.t,string,string,string	template gen_cl_apply3(kern_name, ctype, op: string): string		42
+nim	genClInfixOp	p_kernels_interface_opencl.html#genClInfixOp.t,typedesc,string,untyped,string,string,static[bool]	template genClInfixOp(T: typedesc; ctype: string; procName: untyped; cName: string;\n             cInfixOp: string; exported: static[bool] = true): untyped		88
+nim	gen_cl_apply2	p_kernels_interface_opencl.html#gen_cl_apply2.t,string,string,string	template gen_cl_apply2(kern_name, ctype, op: string): string		128
+nim	genClInPlaceOp	p_kernels_interface_opencl.html#genClInPlaceOp.t,typedesc,string,untyped,string,string,static[bool]	template genClInPlaceOp(T: typedesc; ctype: string; procName: untyped; cName: string;\n               cInfixOp: string; exported: static[bool] = true): untyped		161

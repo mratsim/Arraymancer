@@ -15,9 +15,10 @@ import
 # Standard library
 import std / [typetraits, sequtils, sets]
 
-# The folling export is needed to avoid an compilation error in
+# The following export is needed to avoid a compilation error in
 # algorithms.nim/intersection() when running the test_algorithms test:
 # `Error: type mismatch - Expression: items(s1)`
+# (Alternative: could use `bind sets.items` in `intersection` and `setDiff`)
 export sets
 
 # Third-party

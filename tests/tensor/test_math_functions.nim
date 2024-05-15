@@ -182,9 +182,9 @@ proc main() =
         check: all(almostEqual(t1, t3, unitsInLastPlace = 5)) == true
 
     test "1-D convolution":
-      block:
+      block: # Integer tensor convolution
         let a = arange(4)
-        let b = 2 * ones[int](7) - arange(7)
+        let b = (2 * ones[int](7) - arange(7))
         let expected_full = [0, 2, 5, 8, 2, -4, -10, -16, -17, -12].toTensor
         let expected_same = [2, 5, 8, 2, -4, -10, -16].toTensor
         let expected_valid = [8, 2, -4, -10].toTensor
@@ -198,22 +198,135 @@ proc main() =
         check: convolve(a, b) == expected_full
 
         # Test that input order doesn't matter
-        check: convolve(b, a) == expected_full
+        check: convolve(b, a, mode=ConvolveMode.full) == expected_full
+        check: convolve(b, a, mode=ConvolveMode.same) == expected_same
+        check: convolve(b, a, mode=ConvolveMode.valid) == expected_valid
 
         # Test the `same` mode with different input sizes
         let a2 = arange(5)
-        let b2 = 2 * ones[int](8) - arange(8)
+        let b2 = (2 * ones[int](8) - arange(8))
         let expected_same_a2b = [5, 8, 10, 0, -10, -20, -25].toTensor
         let expected_same_ab2 = [2, 5, 8, 2, -4, -10, -16, -22].toTensor
 
         check: convolve(a2, b, mode=ConvolveMode.same) == expected_same_a2b
+        check: convolve(b, a2, mode=ConvolveMode.same) == expected_same_a2b
         check: convolve(a, b2, mode=ConvolveMode.same) == expected_same_ab2
+        check: convolve(b2, a, mode=ConvolveMode.same) == expected_same_ab2
 
-        # Check that convolution works with slices as well
+        # Test that convolution works with slices as well
         check: convolve(a2[_..^2], b2[_..^2]) == expected_full
+        check: convolve(b2[_..^2], a2[_..^2]) == expected_full
+
+        # Test the downsampling rate argument
+        let expected_down3_full = [0, 8, -10, -12].toTensor
+        let expected_down2_full = [0, 5, 2, -10, -17].toTensor
+        let expected_down2_same = [2, 8, -4, -16].toTensor
+        let expected_down2_valid = [8, -4].toTensor
+        check: convolve(a, b, down=3) == expected_down3_full
+        check: convolve(b, a, down=3) == expected_down3_full
+        check: convolve(a, b, down=2) == expected_down2_full
+        check: convolve(b, a, down=2) == expected_down2_full
+        check: convolve(a, b, mode=ConvolveMode.same, down=2) == expected_down2_same
+        check: convolve(b, a, mode=ConvolveMode.same, down=2) == expected_down2_same
+        check: convolve(a, b, mode=ConvolveMode.valid, down=2) == expected_down2_valid
+        check: convolve(b, a, mode=ConvolveMode.valid, down=2) == expected_down2_valid
+
+      block: # Floating-point tensor convolution
+        let a = arange(4.0)
+        let b = (2.0 * ones[float](7) - arange(7.0))
+        let expected_full = [0, 2, 5, 8, 2, -4, -10, -16, -17, -12].toTensor.asType(float)
+        let expected_same = [2, 5, 8, 2, -4, -10, -16].toTensor.asType(float)
+        let expected_valid = [8, 2, -4, -10].toTensor.asType(float)
+
+        # Test all the convolution modes
+        check: all(almostEqual(convolve(a, b, mode=ConvolveMode.full), expected_full))
+        check: all(almostEqual(convolve(a, b, mode=ConvolveMode.same), expected_same))
+        check: all(almostEqual(convolve(a, b, mode=ConvolveMode.valid), expected_valid))
+
+        # Test that the default convolution mode is `full`
+        check: all(almostEqual(convolve(a, b), expected_full))
+
+        # Test that input order doesn't matter
+        check: all(almostEqual(convolve(b, a, mode=ConvolveMode.full), expected_full))
+        check: all(almostEqual(convolve(b, a, mode=ConvolveMode.same), expected_same))
+        check: all(almostEqual(convolve(b, a, mode=ConvolveMode.valid), expected_valid))
+
+        # Test the `same` mode with different input sizes
+        let a2 = arange(5.0)
+        let b2 = (2.0 * ones[float](8) - arange(8.0))
+        let expected_same_a2b = [5, 8, 10, 0, -10, -20, -25].toTensor.asType(float)
+        let expected_same_ab2 = [2, 5, 8, 2, -4, -10, -16, -22].toTensor.asType(float)
+
+        check: all(almostEqual(convolve(a2, b, mode=ConvolveMode.same), expected_same_a2b))
+        check: all(almostEqual(convolve(b, a2, mode=ConvolveMode.same), expected_same_a2b))
+        check: all(almostEqual(convolve(a, b2, mode=ConvolveMode.same), expected_same_ab2))
+        check: all(almostEqual(convolve(b2, a, mode=ConvolveMode.same), expected_same_ab2))
+
+        # Test that convolution works with slices as well
+        check: all(almostEqual(convolve(a2[_..^2], b2[_..^2]), expected_full))
+        check: all(almostEqual(convolve(b2[_..^2], a2[_..^2]), expected_full))
+
+        # Test the downsampling rate argument
+        let expected_down3_full = [0, 8, -10, -12].toTensor.asType(float)
+        let expected_down2_full = [0, 5, 2, -10, -17].toTensor.asType(float)
+        let expected_down2_same = [2, 8, -4, -16].toTensor.asType(float)
+        let expected_down2_valid = [8, -4].toTensor.asType(float)
+        check: all(almostEqual(convolve(a, b, down=3), expected_down3_full))
+        check: all(almostEqual(convolve(b, a, down=3), expected_down3_full))
+        check: all(almostEqual(convolve(a, b, down=2), expected_down2_full))
+        check: all(almostEqual(convolve(b, a, down=2), expected_down2_full))
+        check: all(almostEqual(convolve(a, b, mode=ConvolveMode.same, down=2), expected_down2_same))
+        check: all(almostEqual(convolve(b, a, mode=ConvolveMode.same, down=2), expected_down2_same))
+        check: all(almostEqual(convolve(a, b, mode=ConvolveMode.valid, down=2), expected_down2_valid))
+        check: all(almostEqual(convolve(b, a, mode=ConvolveMode.valid, down=2), expected_down2_valid))
+
+      block: # Complex tensor convolution
+        let a = complex(
+            [6.3, 7.1, -6.0, 1.7].toTensor,
+            [-8.1, -9.2, 0.0, 3.5].toTensor)
+        let b = complex(
+          [-3.9, 1.6, -1.6].toTensor,
+          [1.0, 5.2, 2.1].toTensor)
+        let expected_full = complex(
+          [-16.47, 33.71, 89.53, -11.77, -5.88, -10.07].toTensor,
+          [37.89, 62.78, 42.39, -13.52, 1.84, -2.03].toTensor)
+        let expected_same = complex(
+          [33.71, 89.53, -11.77, -5.88].toTensor,
+          [62.78, 42.39, -13.52, 1.84].toTensor)
+        let expected_valid = complex(
+          [89.53, -11.77].toTensor,
+          [42.39, -13.52].toTensor)
+
+        # Test all the convolution modes
+        check: all(almostEqual(convolve(a, b, mode=ConvolveMode.full), expected_full))
+        check: all(almostEqual(convolve(a, b, mode=ConvolveMode.same), expected_same))
+        check: all(almostEqual(convolve(a, b, mode=ConvolveMode.valid), expected_valid))
+
+        # Test that the default convolution mode is `full`
+        check: all(almostEqual(convolve(a, b), expected_full))
+
+        # Test that input order doesn't matter
+        check: all(almostEqual(convolve(b, a, mode=ConvolveMode.full), expected_full))
+        check: all(almostEqual(convolve(b, a, mode=ConvolveMode.same), expected_same))
+        check: all(almostEqual(convolve(b, a, mode=ConvolveMode.valid), expected_valid))
+
+        # Test the downsampling rate argument
+        let expected_down2_full = complex(
+          [-16.47, 89.53, -5.88].toTensor,
+          [37.89, 42.39, 1.84].toTensor)
+        let expected_down2_same = complex(
+          [33.71, -11.77].toTensor,
+          [62.78, -13.52].toTensor)
+        let expected_down2_valid = [complex(89.53, 42.39)].toTensor
+        check: all(almostEqual(convolve(a, b, down=2), expected_down2_full))
+        check: all(almostEqual(convolve(b, a, down=2), expected_down2_full))
+        check: all(almostEqual(convolve(a, b, mode=ConvolveMode.same, down=2), expected_down2_same))
+        check: all(almostEqual(convolve(b, a, mode=ConvolveMode.same, down=2), expected_down2_same))
+        check: all(almostEqual(convolve(a, b, mode=ConvolveMode.valid, down=2), expected_down2_valid))
+        check: all(almostEqual(convolve(b, a, mode=ConvolveMode.valid, down=2), expected_down2_valid))
 
     test "1-D correlation":
-      block:
+      block: # Integer tensor correlation
         let a = [2, 8, -8, -6, 4].toTensor
         let b = [-7, -7, 6, 0, 6, -7, 5, -6, 2].toTensor
         let expected_full = [4, 4, -54, 62, -40, 50, 26, -30, -94, -36, 122, 14, -28].toTensor
@@ -221,18 +334,53 @@ proc main() =
         let expected_valid = [-40, 50, 26, -30, -94].toTensor
 
         # Test all the correlation modes
-        check: correlate(a, b, mode=ConvolveMode.full) == expected_full
-        check: correlate(a, b, mode=ConvolveMode.same) == expected_same
-        check: correlate(a, b, mode=ConvolveMode.valid) == expected_valid
+        check: correlate(a, b, mode=CorrelateMode.full) == expected_full
+        check: correlate(a, b, mode=CorrelateMode.same) == expected_same
+        check: correlate(a, b, mode=CorrelateMode.valid) == expected_valid
 
         # Test that the default correlation mode is `valid`
         check: correlate(a, b) == expected_valid
 
+        # Test the downsampling rate argument
+        let expected_down3_full = [4, 62, 26, -36, -28].toTensor
+        let expected_down2_full = [4, -54, -40, 26, -94, 122, -28].toTensor
+        let expected_down2_same = [-54,-40, 26, -94, 122].toTensor
+        let expected_down2_valid = [-40, 26, -94].toTensor
+        check: correlate(a, b, mode=ConvolveMode.full, down=3) == expected_down3_full
+        check: correlate(a, b, mode=ConvolveMode.full, down=2) == expected_down2_full
+        check: correlate(a, b, mode=ConvolveMode.same, down=2) == expected_down2_same
+        check: correlate(a, b, down=2) == expected_down2_valid
+
+      block: # Floating-point tensor correlation
+        let a = [2, 8, -8, -6, 4].toTensor.asType(float)
+        let b = [-7, -7, 6, 0, 6, -7, 5, -6, 2].toTensor.asType(float)
+        let expected_full = [4, 4, -54, 62, -40, 50, 26, -30, -94, -36, 122, 14, -28].toTensor.asType(float)
+        let expected_same = [-54, 62, -40, 50, 26, -30, -94, -36, 122].toTensor.asType(float)
+        let expected_valid = [-40, 50, 26, -30, -94].toTensor.asType(float)
+
+        # Test all the correlation modes
+        check: all(almostEqual(correlate(a, b, mode=CorrelateMode.full), expected_full))
+        check: all(almostEqual(correlate(a, b, mode=CorrelateMode.same), expected_same))
+        check: all(almostEqual(correlate(a, b, mode=CorrelateMode.valid), expected_valid))
+
+        # Test that the default correlation mode is `valid`
+        check: all(almostEqual(correlate(a, b), expected_valid))
+
+        # Test the downsampling rate argument
+        let expected_down3_full = [4, 62, 26, -36, -28].toTensor.asType(float)
+        let expected_down2_full = [4, -54, -40, 26, -94, 122, -28].toTensor.asType(float)
+        let expected_down2_same = [-54,-40, 26, -94, 122].toTensor.asType(float)
+        let expected_down2_valid = [-40, 26, -94].toTensor.asType(float)
+        check: all(almostEqual(correlate(a, b, mode=ConvolveMode.full, down=3), expected_down3_full))
+        check: all(almostEqual(correlate(a, b, mode=ConvolveMode.full, down=2), expected_down2_full))
+        check: all(almostEqual(correlate(a, b, mode=ConvolveMode.same, down=2), expected_down2_same))
+        check: all(almostEqual(correlate(a, b, down=2), expected_down2_valid))
+
       block: # Complex Tensor correlation
-        let ca = complex(
+        let a = complex(
           [6.3, 7.1, -6.0, 1.7].toTensor,
           [-8.1, -9.2, 0.0, 3.5].toTensor)
-        let cb = complex(
+        let b = complex(
           [-3.9, 1.6, -1.6].toTensor,
           [1.0, 5.2, 2.1].toTensor)
         let expected_full = complex(
@@ -242,12 +390,24 @@ proc main() =
         let expected_valid = expected_full[2..^3]
 
         # Test all the correlation modes
-        check: expected_full.mean_absolute_error(correlate(ca, cb, mode=ConvolveMode.full)) < 1e-9
-        check: expected_same.mean_absolute_error(correlate(ca, cb, mode=ConvolveMode.same)) < 1e-9
-        check: expected_valid.mean_absolute_error(correlate(ca, cb, mode=ConvolveMode.valid)) < 1e-9
+        check: all(almostEqual(correlate(a, b, mode=CorrelateMode.full), expected_full))
+        check: all(almostEqual(correlate(a, b, mode=CorrelateMode.same), expected_same))
+        check: all(almostEqual(correlate(a, b, mode=CorrelateMode.valid), expected_valid))
 
         # Test that the default correlation mode is `valid`
-        check: expected_valid.mean_absolute_error(correlate(ca, cb)) < 1e-9
+        check: all(almostEqual(correlate(a, b), expected_valid))
+
+        # Test the downsampling rate argument
+        let expected_down2_full = complex(
+          [-27.09, -59.55, 44.32].toTensor,
+          [-0.27, -13.75, 2.76].toTensor)
+        let expected_down2_same = complex(
+          [-62.72, -41.86].toTensor,
+          [-45.91, 50.81].toTensor)
+        let expected_down2_valid = [complex(-59.55, -13.75)].toTensor
+        check: all(almostEqual(correlate(a, b, mode=ConvolveMode.full, down=2), expected_down2_full))
+        check: all(almostEqual(correlate(a, b, mode=ConvolveMode.same, down=2), expected_down2_same))
+        check: all(almostEqual(correlate(a, b, down=2), expected_down2_valid))
 
 main()
 GC_fullCollect()

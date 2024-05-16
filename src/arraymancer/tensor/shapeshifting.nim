@@ -751,3 +751,72 @@ proc tile*[T](t: Tensor[T], reps: varargs[int]): Tensor[T] =
       concat_seq.applyIt(unsqueeze(it, 0))
     result = concat(concat_seq, axis=ax)
 
+proc upsample*[T](t: Tensor[T],
+                  up: int,
+                  phase = 0,
+                  upsample_last = false): Tensor[T] {.noinit.} =
+  ## Upsample a rank-1 Tensor by introducing zeros at an integer factor
+  ##
+  ## This procedure adds `up-1` zero values for every sample (i.e. value) in
+  ## the input tensor (this is a process commonly called "upsampling"). Using
+  ## the `phase` argument you can control how many zeros are added before
+  ## outputting the first input sample.
+  ##
+  ## Inputs:
+  ##   - Rank-1 input Tensor
+  ##   - `up`: Upsampling "factor" specified as a positive (non-zero) integer.
+  ##           `up - 1` zero samples are introduced for each input sample
+  ##           except the last (unless `upsample_last` is set to `true`).
+  ##   - `phase`: Specifies the position of the input samples in the result
+  ##              tensor (modulo `up`). Items whose `index mod up == phase`
+  ##              are copied from the input, while the rest are set to zero.
+  ##              Defaults to 0 (i.e. the first input sample is copied into the
+  ##              first result sample, after which `up-1` zero samples are
+  ##              introduced).
+  ##   - `upsample_last`: By default the last input sample is _not_ upsampled.
+  ##                      Enable this flag to change this behavior and also
+  ##                      upsample the last input sample (in which case the
+  ##                      result length will be exactly `t.len * up`).
+  ##
+  ## Result:
+  ##   - An rank-1 tensor upsampled by a factor of `up`
+  ##
+  ## Notes:
+  ##   - When `up` is 1 no upsampling is performed, and the result is an
+  ##     alias of the input, _not_ a copy! Use `clone` if you need a copy in
+  ##     that case.
+  ##   - When `upsample_last == false` the last input sample will also be the
+  ##     last result sample.
+  ##   - There is no related `downsample` procedure. To downsample a tensor you
+  ##     can simply use a slice expression. For example, to downsample a tensor
+  ##     `t` by 3 (with a `phase` of 0) you could do `t[_|3]`, and to
+  ##     downsample it by 3 with a phase of 1 you could do `t[1.._|3]`.
+  ##
+  ## Examples:
+  ## ```nim
+  ## let t = arange(2, 5)
+  ##
+  ## echo t.upsample(3)
+  ## # Tensor[system.int] of shape "[7]" on backend "Cpu"
+  ## #     2     0     0     3     0     0     4
+  ##
+  ## echo t.upsample(3, phase = 1)
+  ## # Tensor[system.int] of shape "[8]" on backend "Cpu"
+  ## #     0     2     0     0     3     0     0     4
+  ## ```
+  assert up >= 1, "Upsampling rate (" & $up & ") cannot be zero or negative"
+  assert phase >= 0, "Upsampling phase (" & $phase & ") cannot be negative"
+  assert phase < up, "Upsampling phase (" & $phase & ") must be smaller than the upsampling rate (" & $up & ")"
+  if up == 1:
+    return t
+  let t = t.asContiguous()
+  let result_len = if upsample_last:
+      up * t.len
+    else:
+      phase + up * (t.len - 1) + 1
+
+  result = newTensor[T](result_len)
+  let odata = result.unsafe_raw_offset()
+  for (n, it) in t.enumerate():
+    odata[n * up + phase] = it
+

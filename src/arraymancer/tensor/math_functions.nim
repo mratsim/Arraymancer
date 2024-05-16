@@ -402,10 +402,6 @@ proc correlateImpl[T](f, g: Tensor[T],
   # otherwise the `gemm` call below doesn't do the right thing!
   result = newTensorUninit[T](1, result_len)
 
-  # # Let's make sure both inputs are contiguous
-  # let f = f.asContiguous()
-  # let g = g.asContiguous()
-
   # Create the "shifted column input matrix" that will be used to calculate the
   # convolution through a matrix multiplication with the kernel
   var input_shifts = newTensorUninit[T](g.len, result_len)

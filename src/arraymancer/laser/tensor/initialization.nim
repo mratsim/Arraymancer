@@ -258,6 +258,24 @@ proc toTensor*[T](a: openArray[T]): auto =
   let data = toSeq(flatIter(a))
   result = toTensor(data, shape)
 
+proc toTensor*[T; U](a: openArray[T], typ: typedesc[U]): Tensor[U] {.inline.} =
+  ## Convert an openArray into a Tensor of type `typ`
+  ##
+  ## This is a convenience function which given an input `a` is equivalent to
+  ## calling `a.toTensor().asType(typ)`. If `typ` is the same type of the
+  ## elements of `a` then it is the same as `a.toTensor()` (i.e. there is no
+  ## overhead).
+  ##
+  ## Inputs:
+  ##      - An array or a seq (can be nested)
+  ##      - The target type of the result Tensor
+  ## Result:
+  ##      - A Tensor of the selected type and the same shape as the input
+  when T is U:
+    toTensor(a)
+  else:
+    toTensor(a).asType(typ)
+
 proc toTensor*[T](a: SomeSet[T]): auto =
   ## Convert a HashSet or an OrderedSet into a Tensor
   ##
@@ -269,6 +287,24 @@ proc toTensor*[T](a: SomeSet[T]): auto =
   shape.add(a.len)
   let data = toSeq(a)
   result = toTensor(data, shape)
+
+proc toTensor*[T; U](a: SomeSet[T], typ: typedesc[U]): Tensor[U] {.inline.} =
+  ## Convert a HashSet or an OrderedSet into a Tensor of type `typ`
+  ##
+  ## This is a convenience function which given an input `a` is equivalent to
+  ## calling `a.toTensor().asType(typ)`. If `typ` is the same type of the
+  ## elements of `a` then it is the same as `a.toTensor()` (i.e. there is no
+  ## overhead).
+  ##
+  ## Inputs:
+  ##      - An HashSet or an OrderedSet
+  ##      - The target type of the result Tensor
+  ## Result:
+  ##      - A Tensor of the selected type
+  when T is U:
+    toTensor(a)
+  else:
+    toTensor(a).asType(typ)
 
 proc fromBuffer*[T](rawBuffer: ptr UncheckedArray[T], shape: varargs[int], layout: static OrderType): Tensor[T] =
   ## Creates a `Tensor[T]` from a raw buffer, cast as `ptr UncheckedArray[T]`. The

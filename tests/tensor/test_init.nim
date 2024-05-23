@@ -85,6 +85,10 @@ proc main() =
       else:
         echo "Bound-checking is disabled or OpenMP is used. The incorrect seq shape test has been skipped."
 
+      # Call `toTensor` with a target type
+      let t5 = [1, -3, 4].toTensor(Complex64)
+      check t5 == [complex(1.0), complex(-3.0), complex(4.0)].toTensor
+
     test "Check that Tensor shape is in row-by-column order":
       let s = @[@[1,2,3],@[3,2,1]]
       let t = s.toTensor()

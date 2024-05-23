@@ -16,7 +16,8 @@ import  ./data_structure,
         ./backend/openmp,
         ./init_cpu,
         ./higher_order_applymap,
-        ./ufunc
+        ./ufunc,
+        ./operators_blas_l2l3
 import std / math
 import complex except Complex64, Complex32
 
@@ -308,36 +309,131 @@ proc almostEqual*[T: SomeFloat | Complex32 | Complex64](t1, t2: Tensor[T],
     else:
       almostEqual(x, y, unitsInLastPlace=unitsInLastPlace)
 
+# Convolution / Correlation related procedures
+
+proc array2shiftColMatrix[T](input: Tensor[T], kernel_size: int,
+                  padding = 0, stride = 1,
+                  result: var Tensor[T])  =
+  ## Rank-1 (i.e. array) version of conv/im2col
+  ##
+  ## This function is a version of im2col that only works with rank-1 tensors.
+  ## It is about 30% faster than the generic `im2col` version.
+  ##
+  ## This function takes a rank-1 tensor and generates a "shift column matrix",
+  ## which is a matrix in which every column is a "shifted" copy of the input
+  ## tensor (with the shift amount increasing by `stride` on every subsequent
+  ## column). The amount of shifts depends on the `stride` as well as on the
+  ## `padding` which is the total number of zeros that are added around the
+  ## input tensor to generate each shift.
+  ##
+  ## The reason this is done is to be able to perform a convolution by
+  ## multiplying this "shift column matrix" by the kernel tensor.
+  let
+    width = input.len
+    num_shifts = (width + (2 * padding) - kernel_size) div stride + 1
+
+  assert result.is_C_contiguous and input.is_C_contiguous
+  assert result.shape == [kernel_size, num_shifts]
+
+  let odata = result.unsafe_raw_offset()
+  let idata = input.unsafe_raw_offset()
+  for c in `||`(0, kernel_size-1, "simd"):
+    let
+      w_offset = (c mod kernel_size) - padding
+      c_offset = c div kernel_size
+    for w in 0 ..< num_shifts:
+      let col = w_offset + (w * stride)
+      when T is Complex64:
+        var v = complex64(0.0)
+      elif T is Complex32:
+        var v = complex32(0.0)
+      else:
+        var v = 0.T
+      if col >= 0 and col < width:
+        let iidx = (c_offset * width) + col
+        v = idata[iidx]
+      let oidx = (c * num_shifts) + w
+      odata[oidx] = v
+
 type ConvolveMode* = enum full, same, valid
 
-proc convolveImpl[T: SomeNumber | Complex32 | Complex64](
-    f, g: Tensor[T],
-    mode: ConvolveMode): Tensor[T] {.noinit.} =
-  ## Implementation of the linear convolution of two one-dimensional tensors
+proc correlateImpl[T](f, g: Tensor[T],
+                      mode: ConvolveMode,
+                      stride = 1): Tensor[T] =
+  ## Compute the cross-correlation using BLAS' GEMM function
+  # Implementation with ideas from http://cs231n.github.io/convolutional-networks/#conv
+  if f.size < g.size:
+    # Call correlateImpl with both inputs swapped and reversed
+    # The reason is as follows:
+    # The GEMM based implementation assumes that the first input tensor is not
+    # shorter than the second. If it is we must swap the inputs.
+    # However, this causes the result of the GEMM operation to be reversed.
+    # To avoid this result reversal we can simply reverse the inputs (in
+    # addition to swapping them).
+    # It would seem that an alternative to reversing both inputs would be to
+    # just reverse the result. However this does not work well when using the
+    # `same` and `valid` modes or when setting the `down` argument to something
+    # other than 1, because in some cases the output is then shifted by 1 sample
+    mixin `|-`
+    mixin `_`
+    result = correlateImpl(g[_|-1], f[_|-1], mode = mode, stride = stride)
+    return result
 
-  # Calculate the result lenth and the shift offset
-  let len_result = case mode
-    of full: f.size + g.size - 1
-    of same: max(f.size, g.size)
-    of valid: max(f.size, g.size) - min(f.size, g.size) + 1
-  let offset = case mode
-    of full: 0
-    of same: (min(f.size, g.size) - 1) div 2
-    of valid: min(f.size, g.size) - 1
+  let f = f.asContiguous()
+  let g = g.asContiguous()
 
-  # Initialize the result tensor
-  result = zeros[T](len_result)
+  # Note that here we know that f is longer or as long as g, therefore we know
+  # that `max(f.len, g.len) = f.len` and `min(f.len, g.len) = g.len`!
+  let target_result_len = case mode:
+    of full: f.len + g.len - 1
+    of same: f.len               # i.e. max(f.len, g.len)
+    of valid: f.len - g.len + 1  # i.e. max(f.len, g.len) - min(f.len, g.len) + 1
 
-  # And perform the convolution
-  omp_parallel_blocks(block_offset, block_size, len_result):
-    for n in block_offset ..< block_offset + block_size:
-      let shift = n + offset
-      for m in max(0, shift - g.size + 1) .. min(f.size - 1, shift):
-        result[n] += f[m] * g[shift - m]
+  let padding = case mode:
+    of full: g.len - 1  # i.e. min(f.len, g.len) - 1
+    of same: ceil((g.len - 1).float / 2.0).int  # i.e. ceil((min(f.len, g.len).float - 1.0) / 2.0).int
+    of valid: 0
 
-proc convolve*[T: SomeNumber | Complex32 | Complex64](
+  let
+    result_len = (f.len + (2*padding) - g.len) div stride + 1
+    kernel_col = g.reshape(1, g.len)
+
+  # Prepare the `result` tensor whose shape must be `[1, N]`,
+  # otherwise the `gemm` call below doesn't do the right thing!
+  result = newTensorUninit[T](1, result_len)
+
+  # Create the "shifted column input matrix" that will be used to calculate the
+  # convolution through a matrix multiplication with the kernel
+  var input_shifts = newTensorUninit[T](g.len, result_len)
+
+  array2shiftColMatrix(f, g.len, padding, stride, input_shifts)
+
+  # Perform the actual convolution
+  # The following must be done without copy: GEMM will directly write in the result tensor
+  when T is Complex64:
+    const one = complex64(1.0)
+    const zero = complex64(0.0)
+  elif T is Complex32:
+    const one = complex32(1.0)
+    const zero = complex32(0.0)
+  else:
+    const one = 1.T
+    const zero = 0.T
+  mixin `_`
+  gemm(one, kernel_col, input_shifts, zero, result)
+
+  # Now remove the unnecessary dimension of the result
+  result = result.squeeze()
+
+  # And remove the extra samples that sometimes are added because `array2shiftColMatrix`
+  # works with symmetric paddings at the start and end of input_shifts
+  if target_result_len < result_len:
+    result = result[_ ..< target_result_len]
+
+proc convolve*[T](
     t1, t2: Tensor[T],
-    mode = ConvolveMode.full): Tensor[T] {.noinit.} =
+    mode = ConvolveMode.full,
+    down = 1): Tensor[T] {.noinit.} =
   ## Returns the discrete, linear convolution of two one-dimensional tensors.
   ##
   ## The convolution operator is often seen in signal processing, where it models
@@ -350,23 +446,31 @@ proc convolve*[T: SomeNumber | Complex32 | Complex64](
   ## that window).
   ##
   ## Inputs:
-  ##   - t1, t2: Input tensors of size N and M respectively.
-  ##   - mode: Convolution mode (full, same, valid):
-  ##     - `full`: This is the default mode. It returns the convolution at each point
-  ##               of overlap, with an output shape of (N+M-1,). At the end-points of
-  ##               the convolution, the signals do not overlap completely, and boundary
-  ##               effects may be seen.
-  ##      - `same`: Returns an output of length max(M, N).
+  ##   - t1, t2: Rank-1 input tensors of size N and M respectively.
+  ##   - mode: Convolution mode (`full`, `same` or `valid`):
+  ##     - `full`: This is the default mode. It returns the convolution at
+  ##               each point of overlap, with an output length of `N + M - 1`.
+  ##               At the end-points of the convolution, the signals do not
+  ##               overlap completely, and boundary effects may be seen.
+  ##      - `same`: Returns an output of length `max(M, N)`.
   ##                Boundary effects are still visible.
-  ##      - `valid`: Returns output of length max(M, N) - min(M, N) + 1.
-  ##                 The convolution is only given for points where the signals overlap
-  ##                 completely. Values outside the signal boundary have no effect.
+  ##      - `valid`: Returns output of length `max(M, N) - min(M, N) + 1`.
+  ##                 The convolution is only given for points where the signals
+  ##                 overlap completely. Values outside the signal boundary
+  ##                 have no effect.
+  ##   - down: Downsample ratio applied to the result. Defaults to 1 (i.e.
+  ##           no downsampling).
   ##
-  ## Output:
-  ##   - Convolution tensor of same type as the inputs and size according to the mode.
+  ## Result:
+  ##   - Convolution tensor of the same type as the inputs and size according
+  ##     to the mode and the selected `down` downsample ratio.
   ##
   ## Notes:
-  ##  - The API of this function is the same as the one of numpy.convolve.
+  ##   - The API of this function is based on `numpy.convolve`, with the
+  ##     addtion of the `down` argument.
+  ##   - The `down` argument is useful for certain signal processing tasks,
+  ##     and is more efficient than applying the downsampling after the
+  ##     convolution step (which requires `down` times more operations).
 
   # Ensure that both arrays are 1-dimensional
   let f = if t1.rank > 1: t1.squeeze else: t1
@@ -377,84 +481,52 @@ proc convolve*[T: SomeNumber | Complex32 | Complex64](
   if g.rank > 1:
     raise newException(ValueError,
       "convolve input tensors must be 1D, but second input tensor is multi-dimensional (shape=" & $t2.shape & ")")
-
-  convolveImpl(f, g, mode=mode)
+  mixin `|-`
+  mixin `_`
+  correlateImpl(f, g[_|-1], mode = mode, stride = down)
 
 type CorrelateMode* = ConvolveMode
 
-proc correlate*[T: SomeNumber](
+proc correlate*[T: SomeNumber | Complex32 | Complex64](
     t1, t2: Tensor[T],
-    mode = CorrelateMode.valid): Tensor[T] {.noinit.} =
+    mode = CorrelateMode.valid,
+    down = 1): Tensor[T] {.noinit.} =
   ## Returns the cross-correlation of two one-dimensional real tensors.
   ##
-  ## The correlation is defined as the integral of the product of the two tensors
-  ## after the second one is shifted n positions, for all values of n in which
-  ## the tensors overlap (since the integral will be zero outside of that window).
-  ##
-  ## Inputs:
-  ##   - t1, t2: Input tensors of size N and M respectively.
-  ##   - mode: Correlation mode (full, same, valid):
-  ##     - `full`: It returns the correlation at each point
-  ##               of overlap, with an output shape of (N+M-1,). At the end-points of
-  ##               the correlation, the signals do not overlap completely, and boundary
-  ##               effects may be seen.
-  ##      - `same`: Returns an output of length max(M, N).
-  ##                Boundary effects are still visible.
-  ##      - `valid`: This is the default mode. Returns output of length max(M, N) - min(M, N) + 1.
-  ##                 The correlation is only given for points where the signals overlap
-  ##                 completely. Values outside the signal boundary have no effect.
-  ##
-  ## Output:
-  ##   - Correlation tensor of same type as the inputs and size according to the mode.
-  ##
-  ## Notes:
-  ##   - The API of this function is the same as the one of numpy.correlate.
-  ##   - Note that (as with np.correlate) the default correlation mode is `valid`,
-  ##     which is different than the default convolution mode (`full`).
-
-  # Ensure that both arrays are 1-dimensional
-  let f = if t1.rank > 1: t1.squeeze else: t1
-  let g = if t2.rank > 1: t2.squeeze else: t2
-  if f.rank > 1:
-    raise newException(ValueError,
-      "correlate input tensors must be 1D, but first input tensor is multi-dimensional (shape=" & $t1.shape & ")")
-  if g.rank > 1:
-    raise newException(ValueError,
-      "correlate input tensors must be 1D, but second input tensor is multi-dimensional (shape=" & $t2.shape & ")")
-  mixin `|-`
-  mixin `_`
-  convolveImpl(f, g[_|-1], mode=mode)
-
-proc correlate*[T: Complex32 | Complex64](
-    t1, t2: Tensor[T],
-    mode = CorrelateMode.valid): Tensor[T] {.noinit.} =
-  ## Returns the cross-correlation of two one-dimensional complex tensors.
-  ##
-  ## The correlation is defined as the integral of the product of the two tensors
-  ## after the second one is conjugated and shifted n positions, for all values
-  ## of n in which the tensors overlap (since the integral will be zero outside of
+  ## The correlation is defined as the integral of the product of the two
+  ## tensors after the second one is shifted n positions, for all values of n
+  ## in which the tensors overlap (since the integral will be zero outside of
   ## that window).
   ##
   ## Inputs:
-  ##   - t1, t2: Input tensors of size N and M respectively.
-  ##   - mode: Correlation mode (full, same, valid):
+  ##   - t1, t2: Rank-1 input tensors of size N and M respectively.
+  ##   - mode: Correlation mode (`full`, `same` or `valid`):
   ##     - `full`: It returns the correlation at each point
-  ##               of overlap, with an output shape of (N+M-1,). At the end-points of
-  ##               the correlation, the signals do not overlap completely, and boundary
-  ##               effects may be seen.
-  ##      - `same`: Returns an output of length max(M, N).
+  ##               of overlap, with an output length of `N + M - 1`.
+  ##               At the end-points of the correlation, the signals do not
+  ##                overlap completely, and boundary effects may be seen.
+  ##      - `same`: Returns an output of length `max(M, N)`.
   ##                Boundary effects are still visible.
-  ##      - `valid`: This is the default mode. Returns output of length max(M, N) - min(M, N) + 1.
-  ##                 The correlation is only given for points where the signals overlap
-  ##                 completely. Values outside the signal boundary have no effect.
+  ##      - `valid`: This is the default mode. Returns output of length
+  ##                 `max(M, N) - min(M, N) + 1`.
+  ##                 The correlation is only given for points where the signals
+  ##                 overlap completely. Values outside the signal boundary
+  ##                 have no effect.
+  ##   - down: Downsample ratio applied to the result. Defaults to 1 (i.e.
+  ##           no downsampling).
   ##
-  ## Output:
-  ##   - Correlation tensor of same type as the inputs and size according to the mode.
+  ## Result:
+  ##   - Correlation tensor of the same type as the inputs and size according
+  ##     to the mode and the selected `down` downsample ratio.
   ##
   ## Notes:
-  ##   - The API of this function is the same as the one of numpy.correlate.
-  ##   - Note that (as with np.correlate) the default correlation mode is `valid`,
-  ##     which is different than the default convolution mode (`full`).
+  ##   - Note that (as with np.correlate) the default correlation mode is
+  ##     `valid`, which is different than the default convolution mode (`full`).
+  ##   - The API of this function is based on `numpy.convolve`, with the
+  ##     addtion of the `down` argument.
+  ##   - The `down` argument is useful for certain signal processing tasks,
+  ##     and is more efficient than applying the downsampling after the
+  ##     correlation step (which requires `down` times more operations).
 
   # Ensure that both arrays are 1-dimensional
   let f = if t1.rank > 1: t1.squeeze else: t1
@@ -465,6 +537,7 @@ proc correlate*[T: Complex32 | Complex64](
   if g.rank > 1:
     raise newException(ValueError,
       "correlate input tensors must be 1D, but second input tensor is multi-dimensional (shape=" & $t2.shape & ")")
-  mixin `|-`
-  mixin `_`
-  convolveImpl(f, g[_|-1].conjugate, mode=mode)
+  when T is Complex:
+    correlateImpl(f, g.conjugate, mode=mode, stride = down)
+  else:
+    correlateImpl(f, g, mode=mode, stride = down)

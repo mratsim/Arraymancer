@@ -397,5 +397,13 @@ proc main() =
       block: # tiling and repeating values are sometimes equivalent
         check: t.tile(2, 1, 1) == t.unsqueeze(axis=0).repeat_values(2, axis = 0)
 
+    test "Upsampling":
+      block:
+        let t = arange(2, 5)
+        check: t.upsample(3) == [2, 0, 0, 3, 0, 0, 4].toTensor
+        check: t.upsample(3, phase = 1) == [0, 2, 0, 0, 3, 0, 0, 4].toTensor
+        check: t.upsample(2, upsample_last = true) == [2, 0, 3, 0, 4, 0].toTensor
+        check: t.upsample(2, phase = 1, upsample_last = true) == [0, 2, 0, 3, 0, 4].toTensor
+
 main()
 GC_fullCollect()

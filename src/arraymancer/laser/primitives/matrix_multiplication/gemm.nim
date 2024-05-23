@@ -204,7 +204,7 @@ proc gemm_strided*[T: SomeNumber and not(uint32|uint64|uint|int)](
     # TODO: elementwise epilogue fusion like relu/tanh/sigmoid
     # TODO: shortcut for small gemm
 
-    # Create a view to abstract deling with strides
+    # Create a view to abstract dealing with strides
     # and passing those in each proc
     let vA = A.toMatrixView(rowStrideA, colStrideA)
     let vB = B.toMatrixView(rowStrideB, colStrideB)

@@ -1,8 +1,15 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.30 May 26 2024
+=====================================================
 
-Arraymancer v0.7.29 Apr. 15 2023
+- Improve the performance of convolve (and correlate) (#650)
+- Add versions of `toTensor` that take a type as their second argument (#652)
+- More missing numpy and matlab (#649)
+- Add `tile` and `repeat_values` procedures (#648)
+
+Arraymancer v0.7.29 Apr. 15 2024
 =====================================================
 
 - Add `reshape_infer` procedure (PR #646)
@@ -24,7 +31,7 @@ Arraymancer v0.7.29 Apr. 15 2023
 - Support appending one or more individual values (PR #627)
 - Add support for initializing all false, all true and random bool tensors (PR #626)
 
-Arraymancer v0.7.28 Feb. 17 2023
+Arraymancer v0.7.28 Feb. 17 2024
 =====================================================
 
 - drops support for Nim v1.4. Many things are likely to still work,

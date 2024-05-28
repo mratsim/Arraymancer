@@ -298,3 +298,54 @@ template tripleStridedIteration*(strider: IterKind, t1, t2, t3, iter_offset, ite
       advanceStridedIteration(t1_coord, t1_backstrides, t1_iter_pos, t1, iter_offset, iter_size)
       advanceStridedIteration(t2_coord, t2_backstrides, t2_iter_pos, t2, iter_offset, iter_size)
       advanceStridedIteration(t3_coord, t3_backstrides, t3_iter_pos, t3, iter_offset, iter_size)
+
+import std / macros
+import ../accessors_macros_syntax
+proc checkValidSliceType*(n: NimNode)
+proc validObjectType*(n: NimNode): bool =
+  ## Checks if the given node `n` corresponds to an object type
+  ## that is allowed as an argument to
+  doAssert n.typeKind in {ntyObject, ntyGenericInst}
+  let typ = n.getTypeInst
+  # Hardcode the `hasType` calls, because for `bindSym` need a
+  # static string. Unnecessary to produce calls via a macro from an array
+  if hasType(typ, "SteppedSlice"): return true
+  if hasType(typ, "Ellipsis"):     return true
+  # NOTE: On Nim 2.0 if the argument is a `Tensor[T]` we only get a `nnkSym`
+  # from which we cannot get the inner type with the `getType*` logic. That
+  # means `hasType` below matches regardless of the generic argument. There's
+  # not much we can do about that here.
+  if hasType(typ, "Tensor"):       return true
+  # On Nim > 2.0 we get a `nnkBracketExpr` and can indeed compare the inner
+  # type as below.
+  # construct the types we want to compare with
+  let validTensorTypes = [getTypeInst(Tensor[int])[1],
+                          getTypeInst(Tensor[bool])[1]]
+  for t in validTensorTypes:
+    if sameType(typ, t): return true
+
+proc checkValidSliceType*(n: NimNode) =
+  ## Checks if the given node `n` has a type, which is valid as an argument to
+  ## the `[]` and `[]=` macros. It will raise a CT error in case it is not.
+  ##
+  ## TODO: Do we / should we allow other integer types than `tyInt` / `int`?
+  const validTypes = {ntyInt, ntyObject, ntyArray, ntySequence, ntyGenericInst}
+  # `ntyObject` requires to be `Span`, ...
+  template raiseError(arg: untyped): untyped =
+    let typ = arg.getTypeInst
+    error("Invalid argument to `[]` / `[]=` accessor. Must be an integer, array[int/bool], " &
+      "seq[int/bool], Tensor[int/bool] or slice, but found " & $arg.repr & " of type: `" &
+      $typ.repr & "`.")
+  for arg in n:
+    case arg.typeKind
+    of validTypes:
+      if arg.typeKind in {ntyObject, ntyGenericInst} and not validObjectType(arg):
+        raiseError(arg)
+      elif arg.typeKind in {ntyArray, ntySequence}:
+        # Need to check inner type!
+        checkValidSliceType(arg.getTypeInst()[^1])
+        break
+      else:
+        continue
+    else:
+      raiseError(arg)

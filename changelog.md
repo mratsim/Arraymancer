@@ -1,6 +1,15 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.31 May 28 2024
+=====================================================
+
+- make `[]`, `[]=` more 'type safe', by producing better error
+  messages when compile time errors are expected (instead of relying on
+  CT errors via `index_select` and friends
+- add ability to assign multiple values to multiple indices in `[]=`,
+  i.e. `t[[0, 2]] = [5, 1]`
+
 Arraymancer v0.7.30 May 26 2024
 =====================================================
 

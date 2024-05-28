@@ -95,7 +95,7 @@ proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: in
   index_fill_vector_body()
 
 template index_fill_scalar_body(): untyped {.dirty.} =
-  if t.size == 0 or indices.size == 0:
+  if t.len == 0 or indices.len == 0:
     return
   when typeof(indices) isnot Tensor:
     template enumerate(arg): untyped {.gensym.} = pairs(arg)

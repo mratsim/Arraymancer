@@ -15,6 +15,10 @@
 import ../../src/arraymancer
 import std / unittest
 
+template failsCT(body: untyped): untyped =
+  when compiles(body):
+    check false
+
 proc main() =
   suite "Accessing and setting tensor values":
     test "Accessing and setting a single value":
@@ -33,6 +37,74 @@ proc main() =
       var c = zeros[Complex[float64]](@[3,4])
       c[1,2] = complex64(12.0, 0.0)
       check: c[1,2].re - 12.0 <= 1e9
+
+    test "Accessor provides type safety":
+      type Foo = object
+      let x = Foo()
+      var t = arange(0, 10)
+
+      failsCT:
+        echo t[x]
+      failsCT:
+        t[x] = 1.5
+      failsCT:
+        echo t[Foo()]
+      failsCT:
+        t[Foo()] = 1.5
+      failsCT:
+        echo t['c']
+      failsCT:
+        t['c'] = 1.5
+      failsCT:
+        echo t[1.5]
+      failsCT:
+        t[1.5] = 2.5
+      failsCT:
+        echo t["foo"]
+      failsCT:
+        t["foo"] = 1.5
+      failsCT:
+        echo t[[1.5, 2.5]]
+      failsCT:
+        t[[1.5, 2.5]] = 1.5
+
+    test "Accessing and setting multiple values (no slicing)":
+      var t = arange(0, 10)
+      # can index multiple elements at the same time
+      check t[[0, 5]] == toTensor [0, 5]
+      # can index with an integer tensor
+      let z1 = ones[int](10)
+      check t[z1] == z1
+
+      # can mutate with multiple elements at the same time
+
+      # These all just test the exact same thing. We mainly care
+      # that they all compile. We check the value we set at the end
+      t[[0, 2]] = [5, 1]
+      t[[0, 2]] = @[5, 1]
+      t[@[0, 2]] = @[5, 1]
+      t[@[0, 2]] = toTensor [5, 1]
+      t[toTensor [0, 2]] = [5, 1]
+      t[toTensor [0, 2]] = @[5, 1]
+      t[toTensor [0, 2]] = toTensor [5, 1]
+      let z2 = toTensor [0, 2]
+      t[z2] = toTensor [5, 1]
+      check t[[0, 2]] == toTensor [5, 1]
+      check t == toTensor [5, 1, 1, 3, 4, 5, 6, 7, 8, 9] # better check entire tensor too!
+
+      failsCT:
+        t[@[0.5, 2.3]] = @[5, 1, 3]
+      failsCT:
+        t[toTensor @[0.5, 2.3]] = @[5, 1, 3]
+      failsCT:
+        let z4 = toTensor @[0.5, 2.3]
+        t[z4] = @[5, 1, 3]
+
+      # compiles but produces a runtime error
+      try:
+        t[@[0, 2]] = @[5, 1, 3]
+      except ValueError:
+        discard # expected, length mismatch
 
     when compileOption("boundChecks") and not defined(openmp):
       test "Out of bounds checking":

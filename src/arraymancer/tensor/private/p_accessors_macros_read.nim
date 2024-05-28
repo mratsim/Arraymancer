@@ -229,6 +229,9 @@ macro slice_typed_dispatch*(t: typed, args: varargs[typed]): untyped =
   ## Note, normal slices and `_` were already converted in the `[]` macro
   ## TODO in total we do 3 passes over the list of arguments :/. It is done only at compile time though
 
+  # Type check the argument for a saner error message
+  checkValidSliceType(args)
+
   # Point indexing
   # -----------------------------------------------------------------
   if isAllInt(args):

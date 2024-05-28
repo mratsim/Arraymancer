@@ -192,6 +192,9 @@ proc slicerMut*[T](t: var Tensor[T],
 macro slice_typed_dispatch_mut*(t: typed, args: varargs[typed], val: typed): untyped =
   ## Assign `val` to Tensor T at slice/position `args`
 
+  # Type check the argument for a saner error message
+  checkValidSliceType(args)
+
   # Point indexing
   # -----------------------------------------------------------------
   if isAllInt(args):
@@ -324,6 +327,10 @@ macro slice_typed_dispatch_var*(t: typed, args: varargs[typed]): untyped =
   ## Else, all ints are converted to SteppedSlices and we return a Tensor.
   ## Note, normal slices and `_` were already converted in the `[]` macro
   ## TODO in total we do 3 passes over the list of arguments :/. It is done only at compile time though
+
+  # Type check the argument for a saner error message
+  checkValidSliceType(args)
+
   if isAllInt(args):
     result = newCall(bindSym("atIndex"), t)
     for slice in args:

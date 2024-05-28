@@ -67,8 +67,7 @@ proc replaceSymsByIdents*(ast: NimNode): NimNode =
     of nnkLiterals:
       return node
     of nnkHiddenStdConv: # see `test_fancy_indexing.nim` why needed
-      expectKind(node[1], nnkSym)
-      return ident($node[1])
+      return inspect(node[1])
     else:
       letsGoDeeper()
   result = inspect(ast)

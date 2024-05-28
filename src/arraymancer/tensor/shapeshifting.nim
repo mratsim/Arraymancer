@@ -307,17 +307,24 @@ proc append*[T](t: Tensor[T], values: Tensor[T]): Tensor[T] {.noinit.} =
   ##   flatten the inputs if they are not rank-1 tensors. It also does not
   ##   support the `axis` parameter. If you want to append the values along a
   ##   specific axis, you should use `concat` instead.
+  ##
   ## Examples:
-  ## > echo append([1, 2, 3].toTensor, [4, 5, 6, 7].toTensor)
-  ## > # Tensor[system.int] of shape "[9]" on backend "Cpu"
-  ## > #    1     2     3     4     5     6     7
-  ## >
-  ## > echo append([1, 2, 3].toTensor, [[4, 5, 6], [7, 8, 9]].toTensor)
-  ## > # Error: unhandled exception: `values.rank == 1` append only works
-  ## > # on rank-1 tensors but extra values tensor has rank 2 [AssertionDefect]
-  ## >
-  ## > echo append([1, 2, 3].toTensor, [[4, 5, 6], [7, 8, 9]].toTensor.flatten)
-  ## > #    1     2     3     4     5     6     7     8     9
+  ## ```nim
+  ## let t = t
+  ## # Note how we can append a tensor to an unmutable tensor, because
+  ## # `append` does not modify the input tensor, it creates a _new_ tensor
+  ## echo t.append([4, 5, 6, 7].toTensor)
+  ## # Tensor[system.int] of shape "[9]" on backend "Cpu"
+  ## #    1     2     3     4     5     6     7
+  ##
+  ## echo t.append([[4, 5, 6], [7, 8, 9]].toTensor)
+  ## # Error: unhandled exception: `values.rank == 1` append only works
+  ## # on rank-1 tensors but extra values tensor has rank 2 [AssertionDefect]
+  ##
+  ## # Flatten higher ranked tensors before appending them
+  ## echo t.append([[4, 5, 6], [7, 8, 9]].toTensor.flatten)
+  ## #    1     2     3     4     5     6     7     8     9
+  ## ```
   doAssert t.rank <= 1,
     "`append` only works on rank-1 tensors but first input tensor has rank " &
     $t.rank & " (use `concat` for higher rank tensors)"
@@ -347,26 +354,33 @@ proc append*[T](t: Tensor[T], values: varargs[T]): Tensor[T] {.noinit.} =
   ##   flatten the input tensor if its rank is greater than 1. It also does not
   ##   support the `axis` parameter. If you want to append values along a
   ##   specific axis, you should use `concat` instead.
+  ##
   ## Examples:
-  ## - Append a single value
-  ## > echo append([1, 2, 3].toTensor, 4)
-  ## > # Tensor[system.int] of shape "[9]" on backend "Cpu"
-  ## > #    1     2     3     4
-  ## - Append a multiple values
-  ## > echo append([1, 2, 3].toTensor, [4, 5, 6, 7])
-  ## > # Tensor[system.int] of shape "[9]" on backend "Cpu"
-  ## > #    1     2     3     4     5     6     7
-  ## - Append an openArray of values
-  ## > echo append([1, 2, 3].toTensor, [4, 5, 6, 7])
-  ## > # Tensor[system.int] of shape "[9]" on backend "Cpu"
-  ## > #    1     2     3     4     5     6     7
-  ## - Only rank-1 tensors are supported
-  ## > echo append([[1, 2, 3], [4, 5, 6]].toTensor, [7, 8, 9])
-  ## > # Error: unhandled exception: `t.rank == 1` append only works
-  ## > # on rank-1 tensors but first input tensor has rank 2 [AssertionDefect]
-  ## - Flatten higher ranked tensors before appending
-  ## > echo append([[1, 2, 3], [4, 5, 6]].toTensor.flatten, [7, 8, 9])
-  ## > #    1     2     3     4     5     6     7     8     9
+  ## ```nim
+  ## # Append a single value
+  ## echo append([1, 2, 3].toTensor, 4)
+  ## # Tensor[system.int] of shape "[9]" on backend "Cpu"
+  ## #    1     2     3     4
+  ##
+  ## # Append multiple values
+  ## echo append([1, 2, 3].toTensor, [4, 5, 6, 7])
+  ## # Tensor[system.int] of shape "[9]" on backend "Cpu"
+  ## #    1     2     3     4     5     6     7
+  ##
+  ## # Append an openArray of values
+  ## echo append([1, 2, 3].toTensor, [4, 5, 6, 7])
+  ## # Tensor[system.int] of shape "[9]" on backend "Cpu"
+  ## #    1     2     3     4     5     6     7
+  ##
+  ## # Only rank-1 tensors are supported
+  ## echo append([[1, 2, 3], [4, 5, 6]].toTensor, [7, 8, 9])
+  ## # Error: unhandled exception: `t.rank == 1` append only works
+  ## # on rank-1 tensors but first input tensor has rank 2 [AssertionDefect]
+  ##
+  ## # Flatten higher ranked tensors before appending them
+  ## echo append([[1, 2, 3], [4, 5, 6]].toTensor.flatten, [7, 8, 9])
+  ## #    1     2     3     4     5     6     7     8     9
+  ## ```
   doAssert t.rank <= 1,
     "`append` only works on rank-1 tensors but input tensor has rank " &
     $t.rank & " (use `concat` for higher rank tensors)"

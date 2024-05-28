@@ -63,22 +63,25 @@ proc index_select*[T; Idx: byte or char or SomeInteger](t: Tensor[T], axis: int,
 proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: int, indices: Tensor[Idx], value: T) =
   ## Replace elements of `t` indicated by their `indices` along `axis` with `value`
   ## This is equivalent to Numpy `put`.
+template index_fill_scalar_body(): untyped {.dirty.} =
   if t.size == 0 or indices.size == 0:
     return
+  when typeof(indices) isnot Tensor:
+    template enumerate(arg): untyped {.gensym.} = pairs(arg)
   for i, index in enumerate(indices):
     var t_slice = t.atAxisIndex(axis, int(index))
     for old_val in t_slice.mitems():
       old_val = value
 
+proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: int, indices: Tensor[Idx], value: T) =
+  ## Replace elements of `t` indicated by their `indices` along `axis` with `value`
+  ## This is equivalent to Numpy `put`.
+  index_fill_scalar_body()
+
 proc index_fill*[T; Idx: byte or char or SomeInteger](t: var Tensor[T], axis: int, indices: openArray[Idx], value: T) =
   ## Replace elements of `t` indicated by their `indices` along `axis` with `value`
   ## This is equivalent to Numpy `put`.
-  if t.size == 0 or indices.len == 0:
-    return
-  for i, index in indices:
-    var t_slice = t.atAxisIndex(axis, int(index))
-    for old_val in t_slice.mitems():
-      old_val = value
+  index_fill_scalar_body()
 
 # Mask full tensor
 # --------------------------------------------------------------------------------------------

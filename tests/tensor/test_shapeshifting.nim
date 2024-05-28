@@ -117,8 +117,15 @@ proc main() =
       check: a.append(b.toTensor()) == expected
 
       # Test fix for issue #637 (https://github.com/mratsim/Arraymancer/issues/637)
-      let c = newTensor[int](0)
-      check: c.append(1) == [1].toTensor
+      # 1. Properly handle empty rank-1 tensors
+      let empty_tensor = newTensor[int](0)
+      check: empty_tensor.append(1) == [1].toTensor
+      check: empty_tensor.append(a) == a
+      check: a.append(empty_tensor) == a
+      # 2. Properly handle rank-0 (empty) tensors
+      let rank0_tensor = newTensor[int]([])
+      check: a.append(rank0_tensor) == a
+      check: rank0_tensor.append(a) == a
 
     test "Squeeze":
       block:

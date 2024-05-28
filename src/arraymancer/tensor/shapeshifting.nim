@@ -318,12 +318,16 @@ proc append*[T](t: Tensor[T], values: Tensor[T]): Tensor[T] {.noinit.} =
   ## >
   ## > echo append([1, 2, 3].toTensor, [[4, 5, 6], [7, 8, 9]].toTensor.flatten)
   ## > #    1     2     3     4     5     6     7     8     9
-  doAssert t.rank == 1,
+  doAssert t.rank <= 1,
     "`append` only works on rank-1 tensors but first input tensor has rank " &
     $t.rank & " (use `concat` for higher rank tensors)"
-  doAssert values.rank == 1,
+  doAssert values.rank <= 1,
     "`append` only works on rank-1 tensors but extra values tensor has rank " &
     $values.rank & " (use `concat` for higher rank tensors)"
+  if values.size == 0:
+    return t.clone()
+  if t.size == 0:
+    return values.clone()
   let result_size = t.size + values.size
   result = newTensorUninit[T](result_size)
   result[0 ..< t.size] = t
@@ -363,13 +367,16 @@ proc append*[T](t: Tensor[T], values: varargs[T]): Tensor[T] {.noinit.} =
   ## - Flatten higher ranked tensors before appending
   ## > echo append([[1, 2, 3], [4, 5, 6]].toTensor.flatten, [7, 8, 9])
   ## > #    1     2     3     4     5     6     7     8     9
-  doAssert t.rank == 1,
+  doAssert t.rank <= 1,
     "`append` only works on rank-1 tensors but input tensor has rank " &
     $t.rank & " (use `concat` for higher rank tensors)"
+  if values.len == 0:
+    return t.clone()
+  if t.size == 0:
+    return values.toTensor()
   let result_size = t.size + values.len
   result = newTensorUninit[T](result_size)
-  if t.size > 0:
-    result[0 ..< t.size] = t
+  result[0 ..< t.size] = t
   result[t.size ..< result.size] = values
 
 func squeeze*(t: AnyTensor): AnyTensor {.noinit.}=

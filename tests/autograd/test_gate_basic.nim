@@ -71,5 +71,23 @@ proc main() =
       let constantTensor1 = ones[float32](2, 4) / 2.0
       check: va.grad == constantTensor1
 
+    test "Gradient of division":
+      let a = toSeq(1..8).toTensor.reshape(2,4).asType(float32)
+      let b = toSeq(11..18).toTensor.reshape(2,4).asType(float32)
+
+      let ctx = newContext Tensor[float32]
+
+      let va = ctx.variable(a, requires_grad = true)
+      let vb = ctx.variable(b, requires_grad = true)
+
+      let vc = va /. vb
+
+      vc.backprop()
+
+      let gradC = ones[float32](2, 4)
+
+      check: va.grad == gradC /. b
+      check: vb.grad == - gradC *. a /. b ^. 2
+
 main()
 GC_fullCollect()

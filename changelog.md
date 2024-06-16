@@ -1,6 +1,14 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.32 Jun 16 2024
+=====================================================
+
+- minor regression fix for `toTensor` taking `SomeSet` which in some
+  cases could lead to the Nim compiler picking the wrong overload
+- add Division gate for autograd engine (#583 by @jegork)
+- provide a better fix for `append` issue #637 (#654)
+
 Arraymancer v0.7.31 May 28 2024
 =====================================================
 

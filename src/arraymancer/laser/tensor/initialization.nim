@@ -284,8 +284,8 @@ proc toTensor*[T](a: HashSet[T] | OrderedSet[T]): Tensor[T] =
   ## Result:
   ##      - A Tensor of the same shape
   var shape = MetaData()
-  shape.add(a.len)
   let data = toSeq(a)
+  shape.add(data.len)
   result = toTensor(data, shape)
 
 proc toTensor*[T; U](a: HashSet[T] | OrderedSet[T], typ: typedesc[U]): Tensor[U] {.inline.} =

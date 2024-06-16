@@ -276,7 +276,7 @@ proc toTensor*[T; U](a: openArray[T], typ: typedesc[U]): Tensor[U] {.inline.} =
   else:
     toTensor(a).asType(typ)
 
-proc toTensor*[T](a: SomeSet[T]): auto =
+proc toTensor*[T](a: HashSet[T] | OrderedSet[T]): Tensor[T] =
   ## Convert a HashSet or an OrderedSet into a Tensor
   ##
   ## Input:
@@ -288,7 +288,7 @@ proc toTensor*[T](a: SomeSet[T]): auto =
   let data = toSeq(a)
   result = toTensor(data, shape)
 
-proc toTensor*[T; U](a: SomeSet[T], typ: typedesc[U]): Tensor[U] {.inline.} =
+proc toTensor*[T; U](a: HashSet[T] | OrderedSet[T], typ: typedesc[U]): Tensor[U] {.inline.} =
   ## Convert a HashSet or an OrderedSet into a Tensor of type `typ`
   ##
   ## This is a convenience function which given an input `a` is equivalent to

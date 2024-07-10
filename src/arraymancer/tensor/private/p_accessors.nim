@@ -57,6 +57,47 @@ import  ../backend/[global_config, memory_optimization_hints],
 #         coord[k] = 0
 #         iter_pos -= backstrides[k]
 
+type TensorForm = object
+  shape: Metadata
+  strides: Metadata
+
+proc rank(t: TensorForm): range[0 .. LASER_MAXRANK] {.inline.} =
+  t.shape.len
+
+func size(t: TensorForm): int {.inline.} =
+  result = 1
+  for i in 0..<t.rank:
+    result *= t.shape[i]
+
+func reduceRank(t: TensorForm): TensorForm =
+  result = t
+
+  var i = 0
+  result.shape[0] = t.shape[0]
+  result.strides[0] = t.strides[0]
+  for j in 1..<t.rank:
+    #spurious axis
+    if t.shape[j] == 1:
+      continue
+
+    #current axis is spurious
+    if result.shape[i] == 1:
+      result.shape[i] = t.shape[j]
+      result.strides[i] = t.strides[j]
+      continue
+
+    #axes can be coalesced
+    if result.strides[i] == t.shape[j]*t.strides[j]:
+      result.shape[i] = result.shape[i]*t.shape[j]
+      result.strides[i] = t.strides[j]
+      continue
+
+    i += 1
+    result.shape[i] = t.shape[j]
+    result.strides[i] = t.strides[j]
+  result.shape.len = i + 1
+  result.strides.len = i + 1
+
 proc getIndex*[T](t: Tensor[T], idx: varargs[int]): int {.noSideEffect,inline.} =
   ## Convert [i, j, k, l ...] to the proper index.
   when compileOption("boundChecks"):
@@ -166,25 +207,134 @@ template stridedIterationYield*(strider: IterKind, data, i, iter_pos: typed) =
   elif strider == IterKind.Iter_Values: yield (i, data[iter_pos])
   elif strider == IterKind.Offset_Values: yield (iter_pos, data[iter_pos]) ## TODO: remove workaround for C++ backend
 
+template stridedIterationLoop*(strider: IterKind, data, t, iter_offset, iter_size, prev_d, last_d: typed) =
+  assert t.rank > 1
+
+  let prev_s = t.strides[^2]
+  let last_s = t.strides[^1]
+  let rank = t.rank
+  let size = t.size
+
+  initStridedIteration(coord, backstrides, iter_pos, t, 0, size)
+
+  # The end of the main block that loops over (prev_d, last_d) subtensors.
+  # Can be smaller that iter_offset, which means that no complete (prev_d, last_d)
+  # blocks are contained in the part we're iterating over.
+  let main_block_end =
+    if iter_offset + iter_size < size:
+      prev_d*last_d*((iter_offset + iter_size) div (prev_d*last_d))
+    else:
+      size
+
+  block iteration:
+
+    var i = iter_offset
+
+    if iter_offset > 0:
+      let onedim_end = min(
+        iter_offset + iter_size,
+        last_d*(((iter_offset - 1) div last_d) + 1))
+
+      if i < onedim_end:
+        coord[rank - 1] += onedim_end - i - 1
+        while i < onedim_end:
+          stridedIterationYield(strider, data, i, iter_pos)
+          iter_pos += last_s
+          i += 1
+        iter_pos -= last_s
+        advanceStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
+
+      if i == iter_offset + iter_size:
+        break iteration
+      # i is divisible by last_d at this point
+
+      let twodim_end = min(
+        prev_d*last_d*((iter_offset + iter_size) div (prev_d*last_d)),
+        prev_d*last_d*(((iter_offset - 1) div (prev_d*last_d)) + 1)
+      )
+
+      if i < twodim_end:
+        coord[rank - 2] += ((twodim_end - i) div last_d) - 1
+        coord[rank - 1] = last_d - 1
+        while i < twodim_end:
+          for _ in 0..<last_d:
+            stridedIterationYield(strider, data, i, iter_pos)
+            iter_pos += last_s
+            i += 1
+          iter_pos += prev_s - last_s*last_d
+        iterpos -= prev_s
+        advanceStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
+
+      if i == iter_offset + iter_size:
+        break iteration
+      # i is divisible by prev_d*last_d at this point
+
+    # main iteration block
+    while i < main_block_end:
+      for _ in 0..<prev_d:
+        for _ in 0..<last_d:
+          stridedIterationYield(strider, data, i, iter_pos)
+          iter_pos += last_s
+          i += 1
+        iter_pos += prev_s - last_s*last_d
+      iter_pos -= prev_s*prev_d
+
+      for k in countdown(rank - 3, 0):
+        if coord[k] < t.shape[k] - 1:
+          coord[k] += 1
+          iter_pos += t.strides[k]
+          break
+        else:
+          coord[k] = 0
+          iter_pos -= backstrides[k]
+
+    if iter_offset + iter_size < size:
+      let twodim_end = last_d*((iter_offset + iter_size) div last_d)
+      if i < twodim_end:
+        coord[rank - 2] += ((twodim_end - i) div last_d) - 1
+        coord[rank - 1] = last_d - 1
+        while i < twodim_end:
+          for _ in 0..<last_d:
+            stridedIterationYield(strider, data, i, iter_pos)
+            iter_pos += last_s
+            i += 1
+          iter_pos += prev_s - last_s*last_d
+        iterpos -= prev_s
+        advanceStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
+
+      while i < iter_offset + iter_size:
+        stridedIterationYield(strider, data, i, iter_pos)
+        iter_pos += last_s
+        i += 1
+
 template stridedIteration*(strider: IterKind, t, iter_offset, iter_size: typed): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
 
   # Get tensor data address with offset builtin
   # only reading here, pointer access is safe even for ref types
+
   when getSubType(type(t)) is KnownSupportsCopyMem:
     let data = t.unsafe_raw_offset()
   else:
     template data: untyped {.gensym.} = t
 
-  # Optimize for loops in contiguous cases
-  if t.is_C_contiguous:
+  let tf = reduceRank(TensorForm(shape: t.shape, strides: t.strides))
+
+  if tf.rank == 1:
+    let s = tf.strides[^1]
     for i in iter_offset..<(iter_offset+iter_size):
-      stridedIterationYield(strider, data, i, i)
+      stridedIterationYield(strider, data, i, i*s)
   else:
-    initStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
-    for i in iter_offset..<(iter_offset+iter_size):
-      stridedIterationYield(strider, data, i, iter_pos)
-      advanceStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
+    let prev_d = tf.shape[^2]
+    let last_d = tf.shape[^1]
+    if prev_d == 2 and last_d == 2:
+      stridedIterationLoop(strider, data, tf, iter_offset, iter_size, 2, 2)
+    elif last_d == 2:
+      stridedIterationLoop(strider, data, tf, iter_offset, iter_size, prev_d, 2)
+    elif last_d == 3:
+      stridedIterationLoop(strider, data, tf, iter_offset, iter_size, prev_d, 3)
+    else:
+      stridedIterationLoop(strider, data, tf, iter_offset, iter_size, prev_d, last_d)
 
 template stridedCoordsIteration*(t, iter_offset, iter_size: typed): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides. (coords)

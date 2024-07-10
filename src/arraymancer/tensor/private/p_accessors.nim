@@ -215,7 +215,7 @@ template stridedIterationLoop*(strider: IterKind, data, t, iter_offset, iter_siz
   let rank = t.rank
   let size = t.size
 
-  initStridedIteration(coord, backstrides, iter_pos, t, 0, size)
+  initStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
 
   # The end of the main block that loops over (prev_d, last_d) subtensors.
   # Can be smaller that iter_offset, which means that no complete (prev_d, last_d)
@@ -269,7 +269,6 @@ template stridedIterationLoop*(strider: IterKind, data, t, iter_offset, iter_siz
         break iteration
       # i is divisible by prev_d*last_d at this point
 
-    # main iteration block
     while i < main_block_end:
       for _ in 0..<prev_d:
         for _ in 0..<last_d:

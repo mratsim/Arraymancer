@@ -214,6 +214,15 @@ template stridedIterationYield*(strider: IterKind, data, i, iter_pos: typed) =
   elif strider == IterKind.Offset_Values: yield (iter_pos, data[iter_pos]) ## TODO: remove workaround for C++ backend
 
 template stridedIterationLoop*(strider: IterKind, data, t, iter_offset, iter_size, prev_d, last_d: typed) =
+  ## We break up the tensor in 5 parts and iterate over each using for loops.
+  ## We do this because the loop ranges and nestedness are different for each part.
+  ## The part boundaries are calculated and stored in the `bp1`, `bp2`, `bp3`
+  ## and `bp4` variables. The `(iter_offset, bp1)` segment is a rank-1 tensor
+  ## of size `<last_d`. The `(bp1, bp2)` segment is a rank-2 tensor with first
+  ## axis smaller than `prev_d`. The `(bp2, bp3)` segment is the main body, an
+  ## rank-n tensor with last axes sizes `prev_d` and `last_d`. The `(bp3, bp4)`
+  ## segment is a rank-2 tensor, and the `(bp4, iter_offset + iter_size)` segment
+  ## is a rank-1 tensor.
   assert t.rank > 1
 
   let prev_s = t.strides[^2]

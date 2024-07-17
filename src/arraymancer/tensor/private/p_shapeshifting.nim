@@ -30,14 +30,14 @@ proc contiguousImpl*[T](t: Tensor[T], layout: OrderType, result: var Tensor[T]) 
     apply2_inline(result, t):
       y
 
-proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|Metadata|seq[int], result: var Tensor[T]) =
-  result = newTensorUninit[T](new_shape)
-  result.apply2_inline(t,y)
-
 proc reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|Metadata|seq[int], result: var AnyTensor, layout: OrderType) {.noSideEffect.}=
   result.shape.copyFrom(new_shape)
   shape_to_strides(result.shape, layout, result.strides)
   result.offset = t.offset
+
+proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|Metadata|seq[int], result: var Tensor[T]) =
+  contiguousImpl(t, rowMajor, result)
+  reshape_no_copy(t, new_shape, result, rowMajor)
 
 proc infer_shape*(t: Tensor, new_shape: varargs[int]): seq[int] {.noinit.} =
   ## Replace the single -1 value on `new_shape` with the value that

@@ -98,6 +98,12 @@ func reduceRank(t: TensorForm): TensorForm =
   result.shape.len = i + 1
   result.strides.len = i + 1
 
+func floor(x: int, divisor: int): int {.inline.} =
+  return divisor*(x div divisor)
+
+func ceil(x: int, divisor: int): int {.inline.} =
+  return divisor*(((x - 1) div divisor) + 1)
+
 proc getIndex*[T](t: Tensor[T], idx: varargs[int]): int {.noSideEffect,inline.} =
   ## Convert [i, j, k, l ...] to the proper index.
   when compileOption("boundChecks"):
@@ -215,96 +221,98 @@ template stridedIterationLoop*(strider: IterKind, data, t, iter_offset, iter_siz
   let rank = t.rank
   let size = t.size
 
+  assert iter_offset >= 0
+  assert iter_size <= size - iter_offset
+  assert prev_d > 0 and last_d > 0
+  assert size mod prev_d*last_d == 0
+
   initStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
 
-  # The end of the main block that loops over (prev_d, last_d) subtensors.
-  # Can be smaller that iter_offset, which means that no complete (prev_d, last_d)
-  # blocks are contained in the part we're iterating over.
-  let main_block_end =
-    if iter_offset + iter_size < size:
-      prev_d*last_d*((iter_offset + iter_size) div (prev_d*last_d))
+  let bp1 =
+    if iter_offset == 0:
+      0
     else:
+      min(iter_offset + iter_size, ceil(iter_offset, last_d))
+  let bp2 =
+    if iter_offset == 0:
+      0
+    else:
+      max(bp1, min(floor(iter_offset + iter_size, prev_d*last_d), ceil(iter_offset, prev_d*last_d)))
+  let bp3 =
+    if iter_size == size:
       size
+    else:
+      max(bp2, floor(iter_offset + iter_size, prev_d*last_d))
+  let bp4 =
+    if iter_size == size:
+      size
+    else:
+      max(bp3, floor(iter_offset + iter_size, last_d))
 
-  block iteration:
+  assert iter_offset <= bp1 and bp1 <= bp2 and bp2 <= bp3 and bp3 <= bp4 and bp4 <= iter_offset + iter_size
+  assert bp1 - iter_offset < last_d and (bp1 mod last_d == 0 or bp1 == iter_offset + iter_size)
+  assert bp2 == bp1 or (bp2 mod prev_d*last_d == 0 and bp2 - bp1 < prev_d*last_d)
+  assert bp3 == bp2 or bp3 mod prev_d*last_d == 0
+  assert bp4 == bp3 or (bp4 mod last_d == 0 and bp4 - bp3 < prev_d*last_d)
+  assert iter_offset + iter_size - bp4 < last_d
 
-    var i = iter_offset
+  var i = iter_offset
 
-    if iter_offset > 0:
-      let onedim_end = min(
-        iter_offset + iter_size,
-        last_d*(((iter_offset - 1) div last_d) + 1))
+  if bp1 > iter_offset:
+    coord[rank - 1] += bp1 - i - 1
+    while i < bp1:
+      stridedIterationYield(strider, data, i, iter_pos)
+      iter_pos += last_s
+      i += 1
+    iter_pos -= last_s
+    advanceStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
 
-      if i < onedim_end:
-        coord[rank - 1] += onedim_end - i - 1
-        while i < onedim_end:
-          stridedIterationYield(strider, data, i, iter_pos)
-          iter_pos += last_s
-          i += 1
-        iter_pos -= last_s
-        advanceStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
-
-      if i == iter_offset + iter_size:
-        break iteration
-      # i is divisible by last_d at this point
-
-      let twodim_end = min(
-        prev_d*last_d*((iter_offset + iter_size) div (prev_d*last_d)),
-        prev_d*last_d*(((iter_offset - 1) div (prev_d*last_d)) + 1)
-      )
-
-      if i < twodim_end:
-        coord[rank - 2] += ((twodim_end - i) div last_d) - 1
-        coord[rank - 1] = last_d - 1
-        while i < twodim_end:
-          for _ in 0..<last_d:
-            stridedIterationYield(strider, data, i, iter_pos)
-            iter_pos += last_s
-            i += 1
-          iter_pos += prev_s - last_s*last_d
-        iterpos -= prev_s
-        advanceStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
-
-      if i == iter_offset + iter_size:
-        break iteration
-      # i is divisible by prev_d*last_d at this point
-
-    while i < main_block_end:
-      for _ in 0..<prev_d:
-        for _ in 0..<last_d:
-          stridedIterationYield(strider, data, i, iter_pos)
-          iter_pos += last_s
-          i += 1
-        iter_pos += prev_s - last_s*last_d
-      iter_pos -= prev_s*prev_d
-
-      for k in countdown(rank - 3, 0):
-        if coord[k] < t.shape[k] - 1:
-          coord[k] += 1
-          iter_pos += t.strides[k]
-          break
-        else:
-          coord[k] = 0
-          iter_pos -= backstrides[k]
-
-    if iter_offset + iter_size < size:
-      let twodim_end = last_d*((iter_offset + iter_size) div last_d)
-      if i < twodim_end:
-        coord[rank - 2] += ((twodim_end - i) div last_d) - 1
-        coord[rank - 1] = last_d - 1
-        while i < twodim_end:
-          for _ in 0..<last_d:
-            stridedIterationYield(strider, data, i, iter_pos)
-            iter_pos += last_s
-            i += 1
-          iter_pos += prev_s - last_s*last_d
-        iterpos -= prev_s
-        advanceStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
-
-      while i < iter_offset + iter_size:
+  if bp2 > bp1:
+    coord[rank - 2] += ((bp2 - i) div last_d) - 1
+    coord[rank - 1] = last_d - 1
+    while i < bp2:
+      for _ in 0..<last_d:
         stridedIterationYield(strider, data, i, iter_pos)
         iter_pos += last_s
         i += 1
+      iter_pos += prev_s - last_s*last_d
+    iter_pos += last_s*(last_d - 1) - prev_s
+    advanceStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
+
+  while i < bp3:
+    for _ in 0..<prev_d:
+      for _ in 0..<last_d:
+        stridedIterationYield(strider, data, i, iter_pos)
+        iter_pos += last_s
+        i += 1
+      iter_pos += prev_s - last_s*last_d
+    iter_pos -= prev_s*prev_d
+
+    for k in countdown(rank - 3, 0):
+      if coord[k] < t.shape[k] - 1:
+        coord[k] += 1
+        iter_pos += t.strides[k]
+        break
+      else:
+        coord[k] = 0
+        iter_pos -= backstrides[k]
+
+  if bp4 > bp3:
+    coord[rank - 2] += ((bp4 - i) div last_d) - 1
+    coord[rank - 1] = last_d - 1
+    while i < bp4:
+      for _ in 0..<last_d:
+        stridedIterationYield(strider, data, i, iter_pos)
+        iter_pos += last_s
+        i += 1
+      iter_pos += prev_s - last_s*last_d
+    iter_pos += last_s*(last_d - 1) - prev_s
+    advanceStridedIteration(coord, backstrides, iter_pos, t, iter_offset, iter_size)
+
+  while i < iter_offset + iter_size:
+    stridedIterationYield(strider, data, i, iter_pos)
+    iter_pos += last_s
+    i += 1
 
 template stridedIteration*(strider: IterKind, t, iter_offset, iter_size: typed): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides.
@@ -319,6 +327,7 @@ template stridedIteration*(strider: IterKind, t, iter_offset, iter_size: typed):
 
   let tf = reduceRank(TensorForm(shape: t.shape, strides: t.strides))
 
+  assert tf.rank >= 1
   if tf.rank == 1:
     let s = tf.strides[^1]
     for i in iter_offset..<(iter_offset+iter_size):

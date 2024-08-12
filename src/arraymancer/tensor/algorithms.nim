@@ -255,6 +255,28 @@ proc contains*[T](t: Tensor[T], item: T): bool {.inline.}=
   return find(t, item) >= 0
 
 proc ismember*[T](t1, t2: Tensor[T]): Tensor[bool] {.noinit.} =
+  ## Element-wise check whether elements of a Tensor are contained in another Tensor
+  ##
+  ## Inputs:
+  ##   - t1: Tensor whose elements will be looked for, one by one, in `t2`
+  ##   - t2: Tensor in which elements of `t1` will be looked for
+  ##
+  ## Result:
+  ##   - A boolean tensor of the same shape as `t1`.
+  ##     Each element indicates if `t2` contains the `t1` element that
+  ##     is found in that particular position.
+  ##
+  ## Example:
+  ## ```nim
+  ## let t1 = arange(6).reshape(2, 3)
+  ## let t2 = [-3, 0, 2, 5].toTensor
+  ##
+  ## echo t1.ismember(t2)
+  ## # Tensor[system.bool] of shape "[2, 3]" on backend "Cpu"
+  ## # |true     false     true|
+  ## # |false    false     true|
+  ## ```
   result = newTensor[bool](t1.len)
   for n, it in t1.enumerate():
     result[n] = it in t2
+  result = result.reshape(t1.shape)

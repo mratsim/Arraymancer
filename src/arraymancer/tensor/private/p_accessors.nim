@@ -496,7 +496,7 @@ proc checkValidSliceType*(n: NimNode) =
   ## the `[]` and `[]=` macros. It will raise a CT error in case it is not.
   ##
   ## TODO: Do we / should we allow other integer types than `tyInt` / `int`?
-  const validTypes = {ntyInt, ntyObject, ntyArray, ntySequence, ntyGenericInst}
+  const validTypes = {ntyInt, ntyObject, ntyArray, ntySequence, ntyOpenArray, ntyGenericInst}
   # `ntyObject` requires to be `Span`, ...
   template raiseError(arg: untyped): untyped =
     let typ = arg.getTypeInst
@@ -508,7 +508,7 @@ proc checkValidSliceType*(n: NimNode) =
     of validTypes:
       if arg.typeKind in {ntyObject, ntyGenericInst} and not validObjectType(arg):
         raiseError(arg)
-      elif arg.typeKind in {ntyArray, ntySequence}:
+      elif arg.typeKind in {ntyArray, ntySequence, ntyOpenArray}:
         # Need to check inner type!
         checkValidSliceType(arg.getTypeInst()[^1])
         break

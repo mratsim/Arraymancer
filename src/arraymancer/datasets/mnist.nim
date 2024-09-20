@@ -71,7 +71,11 @@ const MNISTFilenames = [
 ]
 
 const
-  DefaultMnistUrl = "http://yann.lecun.com/exdb/mnist/"
+  ## NOTE: As of some time before 2024/09/20 the MNIST dataset cannot be downloaded from
+  ## Yann's website anylonger, due to 403 error.
+  ## The AWS mirror here comes from PyTorch Vision:
+  ## https://github.com/pytorch/vision/blob/6d7851bd5e2bedc294e40e90532f0e375fcfee04/torchvision/datasets/mnist.py#L39C10-L39C56
+  DefaultMnistUrl = "https://ossci-datasets.s3.amazonaws.com/mnist/" # "http://yann.lecun.com/exdb/mnist/"
   FashionMnistUrl = "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com/"
 
 proc read_mnist_images(stream: Stream): Tensor[uint8] {.noinit.} =

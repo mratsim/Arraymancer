@@ -64,5 +64,51 @@ proc main() =
           x.permute(1, 0) == expected
           x.permute(1, 0).reshape(2, 2) == expected
 
+    test "Test for PR #659 regression":
+      ## Data taken from `kdtree` test case, in which the node `split`
+      ## based on `data.percentile(50)` (i.e. `data.median`) suddenly
+      ## changed after PR:
+      ## https://github.com/mratsim/Arraymancer/pull/659/
+      let t = @[@[0.195513 ,       0.225253],
+                @[0.181441 ,       0.102758],
+                @[0.26576  ,       0.218074],
+                @[0.180852 ,     0.00262669],
+                @[0.219789 ,       0.191867],
+                @[0.160581 ,          0.131],
+                @[0.269926 ,       0.237261],
+                @[0.223423 ,       0.232116],
+                @[0.191391 ,       0.183001],
+                @[0.19654  ,      0.0809091],
+                @[0.191497 ,      0.0929182],
+                @[0.22709  ,       0.125705],
+                @[0.263181 ,       0.124787],
+                @[0.204926 ,     0.00688886],
+                @[0.151998 ,      0.0531739],
+                @[0.260266 ,      0.0583248],
+                @[0.214864 ,       0.110506],
+                @[0.247688 ,      0.0732228],
+                @[0.246916 ,       0.204899],
+                @[0.215206 ,       0.202225],
+                @[0.242059 ,       0.102491],
+                @[0.159926 ,       0.115765],
+                @[0.249105 ,       0.200658],
+                @[0.195783 ,       0.123984],
+                @[0.17145  ,      0.0506388],
+                @[0.258146 ,      0.0144846],
+                @[0.215311 ,       0.222503],
+                @[0.266231 ,       0.149363],
+                @[0.178909 ,       0.142174],
+                @[0.263406 ,      0.0867369],
+                @[0.264824 ,       0.221786]
+      ].toTensor
+
+      const exp = 0.124787
+      let arg = t[_, 1]
+      check arg.offset == 1 # offset of 1 due to slicing
+      # `reshape` copies here, because `arg` is a non contiguous tensor. Thus
+      # offset must be reset to 0
+      check arg.reshape([1, arg.size]).offset == 0
+      check t[_, 1].percentile(50) == exp
+
 main()
 GC_fullCollect()

@@ -143,9 +143,9 @@ proc test(name, switches = "", split = false, lang = "c") =
   if not dirExists "build":
     mkDir "build"
   if not split:
-    exec "nim " & lang & " -o:build/" & name & switches & " -r tests/" & name & ".nim"
+    exec "nim " & lang & " -d:ssl -o:build/" & name & switches & " -r tests/" & name & ".nim"
   else:
-    exec "nim " & lang & " -o:build/" & name & switches & " -r tests/_split_tests/" & name & ".nim"
+    exec "nim " & lang & " -d:ssl -o:build/" & name & switches & " -r tests/_split_tests/" & name & ".nim"
 
   # run tests that require old RNG for backward compat. reasos
   let rngTests = ["spatial/test_kdtree",

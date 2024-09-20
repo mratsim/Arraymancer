@@ -38,6 +38,7 @@ proc reshape_no_copy*(t: AnyTensor, new_shape: varargs[int]|Metadata|seq[int], r
 proc reshape_with_copy*[T](t: Tensor[T], new_shape: varargs[int]|Metadata|seq[int], result: var Tensor[T]) =
   contiguousImpl(t, rowMajor, result)
   reshape_no_copy(t, new_shape, result, rowMajor)
+  result.offset = 0 # Offset needs to be reset! Copy is a new tensor of `new_shape`
 
 proc infer_shape*(t: Tensor, new_shape: varargs[int]): seq[int] {.noinit.} =
   ## Replace the single -1 value on `new_shape` with the value that

@@ -8,7 +8,7 @@ license       = "Apache License 2.0"
 requires "nim >= 1.6.0",
   "nimblas >= 0.3.1",
   "nimlapack >= 0.3.1",
-  "nimcuda >= 0.1.9",
+  "nimcuda >= 0.2.0",
   "nimcl >= 0.1.3",
   "clblast >= 0.0.2",
   "stb_image",

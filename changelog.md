@@ -1,6 +1,17 @@
 Arraymancer v0.7.x
 =====================================================
 
+Arraymancer v0.7.33 Oct 11 2024
+=====================================================
+
+- Add "format string" support for tensors (#655)
+- Explicitly allow `openArray` in Tensor `[]`, `[]=`, fix the CI (#666)
+- Update arraymancer dependencies (#665)
+- Add support for running some key `bitops` functions on integer Tensors (#661)
+- Make the output of `ismember`  have the same shape as its first input (#657)
+- Non-contiguous tensor iteration optimization (#659)
+- update nimcuda dependency to v0.2.0
+
 Arraymancer v0.7.32 Jun 16 2024
 =====================================================
 

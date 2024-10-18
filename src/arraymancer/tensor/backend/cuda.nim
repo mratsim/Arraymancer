@@ -20,7 +20,7 @@ export check, cuda_runtime_api, driver_types
 
 # Data structures to ease interfacing with Cuda and kernels
 
-proc cudaMalloc*[T](size: Natural): ptr T {.noSideEffect, inline.}=
+proc cudaMalloc*[T](size: Natural): ptr UncheckedArray[T] {.noSideEffect, inline.}=
   ## Internal proc.
   ## Wrap CudaMAlloc(var pointer, size) -> Error_code
   let s = csize_t(size * sizeof(T))
@@ -107,8 +107,8 @@ proc layoutOnDevice*[T:SomeFloat](t: CudaTensor[T]): CudaTensorLayout[T] {.noSid
   new result.shape, deallocCuda
   new result.strides, deallocCuda
 
-  result.shape.value = cudaMalloc[UncheckedArray[cint]](MAXRANK)
-  result.strides.value = cudaMalloc[UncheckedArray[cint]](MAXRANK)
+  result.shape.value = cudaMalloc[cint](MAXRANK)
+  result.strides.value = cudaMalloc[cint](MAXRANK)
 
   var
     tmp_shape: array[MAXRANK, cint] # CudaLayoutArray

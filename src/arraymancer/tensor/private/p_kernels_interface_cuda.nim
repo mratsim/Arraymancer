@@ -31,8 +31,8 @@ template cuda_assign_binding(kernel_name: string, binding_name: untyped)=
   proc `binding_name`[T: SomeFloat](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T
+    dst_shape, dst_strides: ptr UncheckedArray[cint], dst_offset: cint, dst_data: ptr T,
+    src_shape, src_strides: ptr UncheckedArray[cint], src_offset: cint, src_data: ptr T
   ) {.importcpp: import_string, noSideEffect.}
 
 
@@ -86,9 +86,9 @@ template cuda_assign_call*[T: SomeFloat](
   kernel_name[T](
     CUDA_HOF_TPB, CUDA_HOF_BPG,
     src.rank, dst.len, # Note: small shortcut, in this case len and size are the same
-    dst.shape[], dst.strides[],
+    dst.shape.value, dst.strides.value,
     dst.offset, dst.data,
-    src.shape[], src.strides[],
+    src.shape.value, src.strides.value,
     src.offset, src.data
   )
 
@@ -106,9 +106,9 @@ template cuda_binary_binding(kernel_name: string, binding_name: untyped)=
   proc `binding_name`[T: SomeFloat](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    a_shape, a_strides: ptr cint, a_offset: cint, a_data: ptr T,
-    b_shape, b_strides: ptr cint, b_offset: cint, b_data: ptr T
+    dst_shape, dst_strides: ptr UncheckedArray[cint], dst_offset: cint, dst_data: ptr T,
+    a_shape, a_strides: ptr UncheckedArray[cint], a_offset: cint, a_data: ptr T,
+    b_shape, b_strides: ptr UncheckedArray[cint], b_offset: cint, b_data: ptr T
   ) {.importcpp: import_string, noSideEffect.}
 
 
@@ -170,11 +170,11 @@ template cuda_binary_call*[T: SomeFloat](
   kernel_name(
     CUDA_HOF_TPB, CUDA_HOF_BPG,
     src_a.rank, dst.len, # Note: small shortcut, in this case len and size are the same
-    dst.shape[], dst.strides[],
+    dst.shape.value, dst.strides.value,
     dst.offset, dst.data,
-    src_a.shape[], src_a.strides[],
+    src_a.shape.value, src_a.strides.value,
     src_a.offset, src_a.data,
-    src_b.shape[], src_b.strides[],
+    src_b.shape.value, src_b.strides.value,
     src_b.offset, src_b.data
   )
 
@@ -193,8 +193,8 @@ template cuda_rscal_binding(kernel_name: string, binding_name: untyped)=
   proc `binding_name`[T: SomeFloat](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
-    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T,
+    dst_shape, dst_strides: ptr UncheckedArray[cint], dst_offset: cint, dst_data: ptr T,
+    src_shape, src_strides: ptr UncheckedArray[cint], src_offset: cint, src_data: ptr T,
     beta: T
   ) {.importcpp: import_string, noSideEffect.}
 
@@ -252,9 +252,9 @@ template cuda_rscal_call*[T: SomeFloat](
   kernel_name[T](
     CUDA_HOF_TPB, CUDA_HOF_BPG,
     src.rank, dst.len, # Note: small shortcut, in this case len and size are the same
-    dst.shape[], dst.strides[],
+    dst.shape.value, dst.strides.value,
     dst.offset, dst.data,
-    src.shape[], src.strides[],
+    src.shape.value, src.strides.value,
     src.offset, src.data,
     beta
     )
@@ -274,9 +274,9 @@ template cuda_lscal_binding(kernel_name: string, binding_name: untyped)=
   proc `binding_name`[T: SomeFloat](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    dst_shape, dst_strides: ptr UncheckedArray[cint], dst_offset: cint, dst_data: ptr T,
     alpha: T,
-    src_shape, src_strides: ptr cint, src_offset: cint, src_data: ptr T,
+    src_shape, src_strides: ptr UncheckedArray[cint], src_offset: cint, src_data: ptr T,
   ) {.importcpp: import_string, noSideEffect.}
 
 
@@ -332,10 +332,10 @@ template cuda_lscal_call*[T: SomeFloat](
   kernel_name[T](
     CUDA_HOF_TPB, CUDA_HOF_BPG,
     src.rank, dst.len, # Note: small shortcut, in this case len and size are the same
-    dst.shape[], dst.strides[],
+    dst.shape.value, dst.strides.value,
     dst.offset, dst.data,
     alpha,
-    src.shape[], src.strides[],
+    src.shape.value, src.strides.value,
     src.offset, src.data
     )
 
@@ -352,7 +352,7 @@ template cuda_assignscal_binding(kernel_name: string, binding_name: untyped)=
   proc `binding_name`[T: SomeFloat](
     blocksPerGrid, threadsPerBlock: cint,
     rank, len: cint,
-    dst_shape, dst_strides: ptr cint, dst_offset: cint, dst_data: ptr T,
+    dst_shape, dst_strides: ptr UncheckedArray[cint], dst_offset: cint, dst_data: ptr T,
     scalar: T
   ) {.importcpp: import_string, noSideEffect.}
 
@@ -402,7 +402,7 @@ template cuda_assignscal_call*[T: SomeFloat](
   kernel_name[T](
     CUDA_HOF_TPB, CUDA_HOF_BPG,
     dst.rank, dst.len, # Note: small shortcut, in this case len and size are the same
-    dst.shape[], dst.strides[],
+    dst.shape.value, dst.strides.value,
     dst.offset, dst.data,
     val
   )

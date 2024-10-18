@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  nimcuda/[cublas_v2, cublas_api],
+import  nimcuda/cuda12_5/[cublas_v2, cublas_api],
         ./cuda_global_state,
         ./cuda
 

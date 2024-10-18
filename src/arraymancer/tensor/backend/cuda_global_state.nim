@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import nimcuda/[nimcuda, cuda_runtime_api, cublas_v2, cublas_api]
+import nimcuda/cuda12_5/[check, cuda_runtime_api, cublas_v2, cublas_api,
+                         driver_types]
 
 # ###################################################
 # Global Cuda and CuBLAS state

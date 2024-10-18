@@ -16,6 +16,7 @@ import
   ../laser/dynamic_stack_arrays,
   ../laser/tensor/datatypes,
   nimblas,
+  nimcuda/cuda12_5/[cuda_runtime_api, check],
   # Standard library
   std/[complex]
 
@@ -23,6 +24,11 @@ export nimblas.OrderType, complex
 export datatypes, dynamic_stack_arrays
 
 type
+  CudaTensorRefTrackerObj*[T: SomeFloat] = object
+    value*: ptr UncheckedArray[T]
+
+  CudaTensorRefTracker*[T] = ref CudaTensorRefTrackerObj[T]
+
   CudaStorage*[T: SomeFloat] = object
     ## Opaque seq-like structure for storage on the Cuda backend.
     ##
@@ -31,7 +37,7 @@ type
     # TODO: Forward declaring this and making this completely private prevent assignment in newCudaStorage from working
     Flen*: int
     Fdata*: ptr UncheckedArray[T]
-    Fref_tracking*: ref[ptr UncheckedArray[T]] # We keep ref tracking for the GC in a separate field to avoid double indirection.
+    Fref_tracking*: CudaTensorRefTracker[T] # We keep ref tracking for the GC in a separate field to avoid double indirection.
 
   CudaTensor*[T: SomeFloat] = object
     ## Tensor data structure stored on Nvidia GPU (Cuda)
@@ -72,6 +78,12 @@ type
     storage*: ClStorage[T]
 
   AnyTensor*[T] = Tensor[T] or CudaTensor[T] or ClTensor[T]
+
+
+proc deallocCuda*[T](p: CudaTensorRefTracker[T]) {.noSideEffect.}=
+  if not p.value.isNil:
+    check cudaFree(p.value)
+
 
 # ###############
 # Field accessors

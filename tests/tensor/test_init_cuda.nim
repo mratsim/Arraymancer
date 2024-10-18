@@ -16,7 +16,7 @@ import ../../src/arraymancer
 import std / unittest
 
 
-testSuite "Cuda init":
+suite "Cuda init":
   test "Clone function":
     let a = [ 7, 4, 3, 1, 8, 6,
               8, 1, 6, 2, 6, 6,

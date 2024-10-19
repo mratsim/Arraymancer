@@ -33,14 +33,17 @@ proc transpose*(t: CudaTensor): CudaTensor {.noSideEffect.}=
 
 cuda_assign_glue("cuda_asContiguous", "CopyOp", cuda_asContiguous)
 
-proc asContiguous*[T: SomeFloat](t: CudaTensor[T], layout: OrderType = colMajor, force: bool = false):
-  CudaTensor[T] {.noSideEffect.}=
+proc asContiguous*[T: SomeFloat](t: CudaTensor[T], layout: OrderType = rowMajor, force: bool = false):
+  CudaTensor[T] {.noSideEffect, error: "NOT WORKING RIGHT NOW TODO: FIX".}=
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
   ##
   ## By default CudaTensor will be colMajor (contrary to a cpu tensor).
   ##
   ## By default nothing is done if the tensor is already contiguous (C Major or F major)
   ## The "force" parameter can force re-ordering to a specific layout
+  # TODO: fix. this proc always outputs rowmajor, no matter the input.
+  # probably has to do with all the cuda tensors being colmajor by default,
+  # plus probably some double-negative of two bugs making the other procs work.
 
   if t.isContiguous and not force:
     return t

@@ -49,8 +49,8 @@ proc cpu*[T:SomeFloat](t: CudaTensor[T]): Tensor[T] {.noSideEffect, noinit.}=
   result.strides = t.strides
   result.offset = t.offset
 
-  var s = newSeqUninit[T](t.storage.Flen)
-  result.copyFromRaw(s[0].unsafeAddr, s.len) # We copy over all the memory allocated
+  {.cast(noSideEffect).}:
+    allocCpuStorage result.storage, t.storage.Flen
 
   let size = csize_t(t.storage.Flen * sizeof(T))
 

@@ -17,7 +17,7 @@ import ../../src/arraymancer
 import std / unittest
 
 
-testSuite "CUDA: Testing indexing and slice syntax":
+suite "CUDA: Testing indexing and slice syntax":
   const
     a = @[1, 2, 3, 4, 5]
     b = @[1, 2, 3, 4, 5]

@@ -14,21 +14,18 @@
 
 import  ../data_structure,
         ./global_config,
-        nimcuda/[nimcuda, cuda_runtime_api, driver_types]
+        nimcuda/cuda12_5/[check, cuda_runtime_api, driver_types]
 
-export nimcuda, cuda_runtime_api, driver_types
+export check, cuda_runtime_api, driver_types
 
 # Data structures to ease interfacing with Cuda and kernels
 
-proc cudaMalloc*[T](size: Natural): ptr T {.noSideEffect, inline.}=
+proc cudaMalloc*[T](size: Natural): ptr UncheckedArray[T] {.noSideEffect, inline.}=
   ## Internal proc.
   ## Wrap CudaMAlloc(var pointer, size) -> Error_code
-  let s = size * sizeof(T)
+  let s = csize_t(size * sizeof(T))
   check cudaMalloc(cast[ptr pointer](addr result), s)
 
-proc deallocCuda*[T](p: ref[ptr T]) {.noSideEffect.}=
-  if not p[].isNil:
-    check cudaFree(p[])
 
 
 # ##############################################################
@@ -38,7 +35,7 @@ proc newCudaStorage*[T: SomeFloat](length: int): CudaStorage[T] {.noSideEffect.}
   result.Flen = length
   new(result.Fref_tracking, deallocCuda)
   result.Fdata = cast[ptr UncheckedArray[T]](cudaMalloc[T](result.Flen))
-  result.Fref_tracking[] = result.Fdata
+  result.Fref_tracking.value = result.Fdata
 
 # #########################################################
 # # Sending tensor layout to Cuda Kernel
@@ -70,7 +67,9 @@ type
   ## Using arrays instead of seq avoids having to indicate __restrict__ everywhere to indicate no-aliasing
   ## We also prefer stack allocated array sice the data will be used at every single loop iteration to compute elements position.
   ## Ultimately it avoids worrying about deallocation too
-  CudaLayoutArray = ref[ptr cint]
+  CudaLayoutArrayObj* = object
+    value*: ptr UncheckedArray[cint]
+  CudaLayoutArray* = ref CudaLayoutArrayObj
 
 
   CudaTensorLayout [T: SomeFloat] = object
@@ -88,6 +87,11 @@ type
     data*: ptr T              # Data on Cuda device
     len*: cint                # Number of elements allocated in memory
 
+
+proc deallocCuda*(p: CudaLayoutArray) {.noSideEffect.}=
+  if not p.value.isNil:
+    check cudaFree(p.value)
+
 proc layoutOnDevice*[T:SomeFloat](t: CudaTensor[T]): CudaTensorLayout[T] {.noSideEffect.}=
   ## Store a CudaTensor shape, strides, etc information on the GPU
   #
@@ -103,8 +107,8 @@ proc layoutOnDevice*[T:SomeFloat](t: CudaTensor[T]): CudaTensorLayout[T] {.noSid
   new result.shape, deallocCuda
   new result.strides, deallocCuda
 
-  result.shape[] = cudaMalloc[cint](MAXRANK)
-  result.strides[] = cudaMalloc[cint](MAXRANK)
+  result.shape.value = cudaMalloc[cint](MAXRANK)
+  result.strides.value = cudaMalloc[cint](MAXRANK)
 
   var
     tmp_shape: array[MAXRANK, cint] # CudaLayoutArray
@@ -116,6 +120,6 @@ proc layoutOnDevice*[T:SomeFloat](t: CudaTensor[T]): CudaTensorLayout[T] {.noSid
 
 
   # TODO: use streams and async
-  let size = t.rank * sizeof(cint)
-  check cudaMemCpy(result.shape[], addr tmp_shape[0], size, cudaMemcpyHostToDevice)
-  check cudaMemCpy(result.strides[], addr tmp_strides[0], size, cudaMemcpyHostToDevice)
+  let size = csize_t(t.rank * sizeof(cint))
+  check cudaMemCpy(result.shape.value, addr tmp_shape[0], size, cudaMemcpyHostToDevice)
+  check cudaMemCpy(result.strides.value, addr tmp_strides[0], size, cudaMemcpyHostToDevice)

@@ -40,7 +40,7 @@ proc cuda*[T:SomeFloat](t: Tensor[T]): CudaTensor[T] {.noinit.}=
                         cudaMemcpyHostToDevice,
                         cudaStream0) # cudaStream0 is a cudaStream_t global var
 
-proc cpu*[T:SomeFloat](t: CudaTensor[T]): Tensor[T] {.noSideEffect, noinit.}=
+proc cpu*[T:SomeFloat](t: CudaTensor[T]): Tensor[T] {.noinit.}=
   ## Convert a tensor on a Cuda device to a tensor on Cpu.
   # We use blocking copy in this case to make sure
   # all data is available for future computation
@@ -48,7 +48,8 @@ proc cpu*[T:SomeFloat](t: CudaTensor[T]): Tensor[T] {.noSideEffect, noinit.}=
   result.shape = t.shape
   result.strides = t.strides
   result.offset = t.offset
-  result.data = newSeqUninit[T](t.storage.Flen) # We copy over all the memory allocated
+
+  allocCpuStorage result.storage, t.storage.Flen
 
   let size = csize_t(t.storage.Flen * sizeof(T))
 

@@ -16,7 +16,7 @@
 import ../../src/arraymancer
 import std / [unittest, sugar]
 
-testSuite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
+suite "CUDA CuBLAS backend (Basic Linear Algebra Subprograms)":
   test "GEMM - General Matrix to Matrix Multiplication":
     ## TODO: test with slices
     let a = [[1.0,2,3],

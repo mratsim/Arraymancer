@@ -5,6 +5,7 @@
 import
   macros
 
+const IdentLike = {nnkIdent, nnkSym, nnkOpenSymChoice}
 
 type
   SectionInfo = object
@@ -63,17 +64,25 @@ proc createLayerInfo(sectionInfo: SectionInfo): seq[LayerInfo] =
 
     if layer.kind != nnkCall or
     layer.len != 2 or
-    layer[0].kind != nnkIdent or
+    layer[0].kind notin IdentLike or
     layer[1].kind != nnkStmtList or
     layer[1].len != 1 or
     layer[1][0].kind != nnkCall or
     layer[1][0].len < 1 or
-    layer[1][0][0].kind != nnkIdent:
+    layer[1][0][0].kind notin IdentLike:
       error("Unknown configuration of layer section: \"" & $toStrLit(layer) & "\"", layer)
 
+    let
+      nameNode = layer[0]
+      typeNameNode = layer[1][0][0]
+
     result.add LayerInfo(
-      name: layer[0],
-      typeName: layer[1][0][0]
+      name:
+        if nameNode.kind != nnkOpenSymChoice: nameNode
+        else: nameNode.repr.ident(),
+      typeName:
+        if typeNameNode.kind != nnkOpenSymChoice: typeNameNode
+        else: typeNameNode.repr.ident(),
     )
     if layer[1][0].len >= 2:
       result[^1].arguments = layer[1][0][1..^1]

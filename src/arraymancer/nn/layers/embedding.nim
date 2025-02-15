@@ -109,7 +109,7 @@ type
 
 proc init*[T](
   ctx: Context[Tensor[T]],
-  layerType: typedesc[Embedding[T]],
+  layerType: typedesc[Embedding],
   vocabSize, embedSize: int,
   paddingIdx: VocabIdx = -1
 ): Embedding[T] =

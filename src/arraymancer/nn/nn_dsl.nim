@@ -131,7 +131,7 @@ proc createModelType(layerInfos: seq[LayerInfo], modelName: NimNode): NimNode =
 proc createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelName: NimNode): NimNode =
 
   # creates init function of the model, e.g.:
-  #   proc init[T](ctx: Context[AnyTensor[T]], modelType: typedesc[SomeConvNet[T]], h: auto; w: auto): SomeConvNet[T] =
+  #   proc init[T](ctx: Context[AnyTensor[T]], modelType: typedesc[SomeConvNet], h: auto; w: auto): SomeConvNet[T] =
   #     template cv(): auto =
   #       result.cv
   #     template mp(): auto =
@@ -201,10 +201,7 @@ proc createInitProc(layerInfos: seq[LayerInfo], sectionInfo: SectionInfo, modelN
       genSym(nskParam, "modelType"),
       newNimNode(nnkBracketExpr).add(
         ident"typedesc",
-        newNimNode(nnkBracketExpr).add(
-          modelName,
-          underlyingTypeSymbol
-        )
+        modelName
       )
     )
   ]
@@ -357,7 +354,7 @@ macro network*(modelName: untyped, config: untyped): untyped =
   ## .. code:: nim
   ##   proc init*[T](
   ##     ctx: Context[Tensor[T]], # could also be Context[AnyTensor[T]] for example
-  ##     layerType: typedesc[MyLayer[T]],
+  ##     layerType: typedesc[MyLayer],
   ##     myInitParam: string
   ##     # ... here you can add all the necessary init parameters, like shapes and number of output features
   ##   ): MyLayer[T] =

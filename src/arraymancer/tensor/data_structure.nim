@@ -16,7 +16,7 @@ import
   ../laser/dynamic_stack_arrays,
   ../laser/tensor/datatypes,
   nimblas,
-  nimcuda/cuda12_5/[cuda_runtime_api, check],
+  nimcuda/cuda12_5/[cuda_runtime_api],
   # Standard library
   std/[complex]
 
@@ -81,7 +81,7 @@ type
 
 proc `=destroy`*[T](p: CudaTensorRefTrackerObj[T]) {.noSideEffect.}=
   if not p.value.isNil:
-    check cudaFree(p.value)
+    discard cudaFree(p.value)
 
 
 

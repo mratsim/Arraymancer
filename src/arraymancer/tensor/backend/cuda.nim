@@ -90,7 +90,7 @@ type
 
 proc `=destroy`*(p: CudaLayoutArrayObj) {.noSideEffect.}=
   if not p.value.isNil:
-    check cudaFree(p.value)
+    discard cudaFree(p.value)
 
 proc layoutOnDevice*[T:SomeFloat](t: CudaTensor[T]): CudaTensorLayout[T] {.noSideEffect.}=
   ## Store a CudaTensor shape, strides, etc information on the GPU

@@ -88,9 +88,16 @@ type
     len*: cint                # Number of elements allocated in memory
 
 
-proc `=destroy`*(p: CudaLayoutArrayObj) {.noSideEffect.}=
-  if not p.value.isNil:
-    discard cudaFree(p.value)
+when NimMajor == 1:
+  proc `=destroy`*(p: var CudaLayoutArrayObj) {.noSideEffect.}=
+    if not p.value.isNil:
+      discard cudaFree(p.value)
+else:
+  proc `=destroy`*(p: CudaLayoutArrayObj) {.noSideEffect.}=
+    if not p.value.isNil:
+      discard cudaFree(p.value)
+
+
 
 proc layoutOnDevice*[T:SomeFloat](t: CudaTensor[T]): CudaTensorLayout[T] {.noSideEffect.}=
   ## Store a CudaTensor shape, strides, etc information on the GPU

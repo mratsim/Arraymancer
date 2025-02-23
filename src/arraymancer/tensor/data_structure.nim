@@ -79,9 +79,14 @@ type
 
   AnyTensor*[T] = Tensor[T] or CudaTensor[T] or ClTensor[T]
 
-proc `=destroy`*[T](p: CudaTensorRefTrackerObj[T]) {.noSideEffect.}=
-  if not p.value.isNil:
-    discard cudaFree(p.value)
+when NimMajor == 1:
+  proc `=destroy`*[T](p: var CudaTensorRefTrackerObj[T]) {.noSideEffect.}=
+    if not p.value.isNil:
+      discard cudaFree(p.value)
+else:
+  proc `=destroy`*[T](p: CudaTensorRefTrackerObj[T]) {.noSideEffect.}=
+    if not p.value.isNil:
+      discard cudaFree(p.value)
 
 
 

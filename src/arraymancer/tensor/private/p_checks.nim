@@ -19,7 +19,10 @@ import  ../../laser/private/nested_containers,
 when (NimMajor, NimMinor) < (1, 4):
   import ../../std_version_types
 
-include ./p_checks_cuda, ./p_checks_opencl
+when defined(cuda):
+  include ./p_checks_cuda
+when defined(opencl):
+  include ./p_checks_opencl
 
 func check_nested_elements*(shape: Metadata, len: int) {.inline.}=
   ## Compare the detected shape from flatten with the real length of the data

@@ -79,10 +79,10 @@ type
 
   AnyTensor*[T] = Tensor[T] or CudaTensor[T] or ClTensor[T]
 
-
-proc deallocCuda*[T](p: CudaTensorRefTracker[T]) {.noSideEffect.}=
+proc `=destroy`*[T](p: CudaTensorRefTrackerObj[T]) {.noSideEffect.}=
   if not p.value.isNil:
     check cudaFree(p.value)
+
 
 
 # ###############

@@ -33,7 +33,7 @@ proc cudaMalloc*[T](size: Natural): ptr UncheckedArray[T] {.noSideEffect, inline
 
 proc newCudaStorage*[T: SomeFloat](length: int): CudaStorage[T] {.noSideEffect.}=
   result.Flen = length
-  new(result.Fref_tracking, deallocCuda)
+  new result.Fref_tracking
   result.Fdata = cast[ptr UncheckedArray[T]](cudaMalloc[T](result.Flen))
   result.Fref_tracking.value = result.Fdata
 

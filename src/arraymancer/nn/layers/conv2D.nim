@@ -138,7 +138,7 @@ type
 
 proc init*[T](
   ctx: Context[Tensor[T]],
-  layerType: typedesc[Conv2D[T]],
+  layerType: typedesc[Conv2D],
   inShape: seq[int],
   outChannels: int,
   kernelSize: Size2D,

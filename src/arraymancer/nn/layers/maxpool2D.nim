@@ -120,7 +120,7 @@ type
 
 proc init*[T](
   ctx: Context[Tensor[T]],
-  layerType: typedesc[MaxPool2D[T]],
+  layerType: typedesc[MaxPool2D],
   inShape: seq[int],
   kernelSize, padding, stride: Size2D
 ): MaxPool2D[T] =

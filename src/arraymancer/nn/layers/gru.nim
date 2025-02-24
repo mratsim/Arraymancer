@@ -168,7 +168,7 @@ type
 
 proc init*[T](
   ctx: Context[Tensor[T]],
-  layerType: typedesc[GRULayer[T]],
+  layerType: typedesc[GRULayer],
   numInputFeatures, hiddenSize, layers: int
 ): GRULayer[T] =
 

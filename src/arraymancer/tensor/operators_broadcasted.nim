@@ -52,6 +52,13 @@ proc `/.`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Te
   else:
     result = map2_inline(tmp_a, tmp_b, x / y )
 
+proc `^.`*[T: SomeNumber|Complex[float32]|Complex[float64]](a, b: Tensor[T]): Tensor[T] {.noinit.} =
+  ## Tensor element-wise exponentiation
+  ##
+  ## And broadcasted element-wise exponentiation.
+  let (tmp_a, tmp_b) = broadcast2(a, b)
+  result = map2_inline(tmp_a, tmp_b, pow(x, y))
+
 proc `mod`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noinit.} =
   ## Tensor element-wise modulo operation
   ##
@@ -195,81 +202,196 @@ proc `/.=`*[T: SomeNumber|Complex[float32]|Complex[float64]](t: var Tensor[T], v
 
 
 # #################################################
-# # Mixed Complex64 tensor - real scalar operations
+# # Mixed complex - real tensor operations
 #
-# It is always possible to operate on a Complex64 tensor with a real scalar
-# without loss of precission, so we allow it without explicit type conversion.
-# This makes complex tensor arithmetic more convenient to use.
+# Since nim's built-in complex module supports mixed complex-real operations
+# we allow them too (but in tensor form). This makes such mixed arithmetic
+# more efficient in addition to more convenient to use.
 
-proc `+.`*[T: SomeNumber](val: T, t: Tensor[Complex64]): Tensor[Complex64] {.noinit, inline.} =
-  ## Broadcasted addition for real scalar + Complex64 tensor
-  ##
-  ## The scalar is automatically converted to Complex64 before the operation.
-  let complex_val = complex(float64(val))
-  complex_val +. t
+proc `+.`*[T: SomeNumber](a: Tensor[Complex[T]], b: Tensor[T]): Tensor[Complex[T]] {.noinit,inline.} =
+  ## Broadcasted addition for tensors of incompatible but broadcastable shape.
+  #check_shape(a, b, relaxed_rank1_check = RelaxedRankOne)
+  result = map2_inline(a, b, x + y)
 
-proc `+.`*[T: SomeNumber](t: Tensor[Complex64], val: T): Tensor[Complex64] {.noinit, inline.} =
-  ## Broadcasted addition for real scalar + Complex64 tensor
-  ##
-  ## The scalar is automatically converted to Complex64 before the operation.
-  let complex_val = complex(float64(val))
-  t +. complex_val
+proc `+.`*[T: SomeNumber](a: Tensor[T], b:  Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit,inline.} =
+  ## Broadcasted addition for tensors of incompatible but broadcastable shape.
+  #check_shape(a, b, relaxed_rank1_check = RelaxedRankOne)
+  result = map2_inline(a, b, x + y)
 
-proc `-.`*[T: SomeNumber](val: T, t: Tensor[Complex64]): Tensor[Complex64] {.noinit, inline.} =
-  ## Broadcasted subtraction for real scalar - Complex64 tensor
-  ##
-  ## The scalar is automatically converted to Complex64 before the operation.
-  let complex_val = complex(float64(val))
-  complex_val -. t
+proc `-.`*[T: SomeNumber](a: Tensor[Complex[T]], b: Tensor[T]): Tensor[Complex[T]] {.noinit,inline.} =
+  ## Broadcasted subtraction for tensors of incompatible but broadcastable shape.
+  #check_shape(a, b, relaxed_rank1_check = RelaxedRankOne)
+  result = map2_inline(a, b, x - y)
 
-proc `-.`*[T: SomeNumber](t: Tensor[Complex64], val: T): Tensor[Complex64] {.noinit, inline.} =
-  ## Broadcasted subtraction for real scalar - Complex64 tensor
-  ##
-  ## The scalar is automatically converted to Complex64 before the operation.
-  let complex_val = complex(float64(val))
-  t -. complex_val
+proc `-.`*[T: SomeNumber](a: Tensor[T], b: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit,inline.} =
+  ## Broadcasted subtraction for tensors of incompatible but broadcastable shape.
+  #check_shape(a, b, relaxed_rank1_check = RelaxedRankOne)
+  result = map2_inline(a, b, x - y)
 
-proc `*.`*[T: SomeNumber](val: T, t: Tensor[Complex64]): Tensor[Complex64] {.noinit, inline.} =
-  ## Broadcasted multiplication for real scalar * Complex64 tensor
+proc `*.`*[T: SomeNumber](a: Tensor[Complex[T]], b: Tensor[T]): Tensor[Complex[T]] {.noinit.} =
+  ## Element-wise multiplication (Hadamard product).
   ##
-  ## The scalar is automatically converted to Complex64 before the operation.
-  let complex_val = complex(float64(val))
-  complex_val *. t
+  ## And broadcasted element-wise multiplication.
+  #check_shape(a, b, relaxed_rank1_check = RelaxedRankOne)
+  result = map2_inline(a, b, x * y)
 
-proc `*.`*[T: SomeNumber](t: Tensor[Complex64], val: T): Tensor[Complex64] {.noinit, inline.} =
-  ## Broadcasted multiplication for real scalar * Complex64 tensor
+proc `*.`*[T: SomeNumber](a: Tensor[T], b: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit.} =
+  ## Element-wise multiplication (Hadamard product).
   ##
-  ## The scalar is automatically converted to Complex64 before the operation.
-  let complex_val = complex(float64(val))
-  t *. complex_val
+  ## And broadcasted element-wise multiplication.
+  #check_shape(a, b, relaxed_rank1_check = RelaxedRankOne)
+  result = map2_inline(a, b, x * y)
 
-proc `/.`*[T: SomeNumber](val: T, t: Tensor[Complex64]): Tensor[Complex64] {.noinit, inline.} =
-  ## Broadcasted division for real scalar / Complex64 tensor
+proc `/.`*[T: SomeNumber](a: Tensor[Complex[T]], b: Tensor[T]): Tensor[Complex[T]] {.noinit.} =
+  ## Tensor element-wise division
   ##
-  ## The scalar is automatically converted to Complex64 before the operation.
-  let complex_val = complex(float64(val))
-  complex_val /. t
+  ## And broadcasted element-wise division.
+  #check_shape(a, b, relaxed_rank1_check = RelaxedRankOne)
+  when T is SomeInteger:
+    result = map2_inline(a, b, x div y )
+  else:
+    result = map2_inline(a, b, x / y )
 
-proc `/.`*[T: SomeNumber](t: Tensor[Complex64], val: T): Tensor[Complex64] {.noinit, inline.} =
-  ## Broadcasted division for real scalar / Complex64 tensor
+proc `/.`*[T: SomeNumber](a: Tensor[T], b: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit.} =
+  ## Tensor element-wise division
   ##
-  ## The scalar is automatically converted to Complex64 before the operation.
-  let complex_val = complex(float64(val))
-  t /. complex_val
+  ## And broadcasted element-wise division.
+  #check_shape(a, b, relaxed_rank1_check = RelaxedRankOne)
+  when T is SomeInteger:
+    result = map2_inline(a, b, x div y )
+  else:
+    result = map2_inline(a, b, x / y )
 
-proc `^.`*[T: SomeNumber](val: T, t: Tensor[Complex64]): Tensor[Complex64] {.noinit, inline.} =
-  ## Broadcasted exponentiation for real scalar ^ Complex64 tensor
-  ##
-  ## The scalar is automatically converted to Complex64 before the operation.
-  let complex_val = complex(float64(val))
-  complex_val ^. t
+proc `^.`*[T: SomeFloat](a: Tensor[Complex[T]], b: Tensor[T]): Tensor[Complex[T]] {.noinit.} =
+  ## Tensor element-wise exponentiation for real complex ^ scalar tensors
+  #check_shape(a, b, relaxed_rank1_check = RelaxedRankOne)
+  result = map2_inline(a, b, pow(x, complex(y)))
 
-proc `^.`*[T: SomeNumber](t: Tensor[Complex64], val: T): Tensor[Complex64] {.noinit, inline.} =
-  ## Broadcasted exponentiation for real scalar ^ Complex64 tensor
+proc `^.`*[T: SomeFloat](a: Tensor[T], b: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit.} =
+  ## Tensor element-wise exponentiation for real scalar ^ complex tensors
+  #check_shape(a, b, relaxed_rank1_check = RelaxedRankOne)
+  result = map2_inline(a, b, pow(complex(x), y))
+
+proc `mod`*[T: SomeNumber](a: Tensor[Complex[T]], b: Tensor[T]): Tensor[Complex[T]] {.noinit.} =
+  ## Tensor element-wise modulo operation
   ##
-  ## The scalar is automatically converted to Complex64 before the operation.
-  let complex_val = complex(float64(val))
-  t ^. complex_val
+  ## And broadcasted element-wise modulo operation.
+  #check_shape(a, b, relaxed_rank1_check = RelaxedRankOne)
+  result = map2_inline(a, b, x mod y)
+
+proc `mod`*[T: SomeNumber](a: Tensor[T], b: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit.} =
+  ## Tensor element-wise modulo operation
+  ##
+  ## And broadcasted element-wise modulo operation.
+  #check_shape(a, b, relaxed_rank1_check = RelaxedRankOne)
+  result = map2_inline(a, b, x mod y)
+
+# #################################################
+# # Mixed complex tensor - real scalar operations
+#
+# Since nim's built-in complex module supports mixed complex-real operations
+# we allow them too (but in tensor form). This makes such mixed arithmetic
+# more efficient in addition to more convenient to use.
+
+proc `+.`*[T: SomeNumber](val: T, t: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted addition for real scalar + complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(val + x)
+
+proc `+.`*[T: SomeNumber](val: Complex[T], t: Tensor[T]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted addition for real scalar + complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(val + x)
+
+proc `+.`*[T: SomeNumber](t: Tensor[Complex[T]], val: T): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted addition for real scalar + complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(x + val)
+
+proc `+.`*[T: SomeNumber](t: Tensor[T], val: Complex[T]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted addition for real scalar + complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(x + val)
+
+proc `-.`*[T: SomeNumber](val: T, t: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted subtraction for real scalar - complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(val - x)
+
+proc `-.`*[T: SomeNumber](val: Complex[T], t: Tensor[T]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted subtraction for real scalar - complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(val + x)
+
+proc `-.`*[T: SomeNumber](t: Tensor[Complex[T]], val: T): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted subtraction for real scalar - complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(x - val)
+
+proc `-.`*[T: SomeNumber](t: Tensor[T], val: Complex[T]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted subtraction for real scalar - complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(x - val)
+
+proc `*.`*[T: SomeNumber](val: T, t: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted multiplication for real scalar * complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(val * x)
+
+proc `*.`*[T: SomeNumber](val: Complex[T], t: Tensor[T]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted multiplication for real scalar * complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(val * x)
+
+proc `*.`*[T: SomeNumber](t: Tensor[Complex[T]], val: T): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted multiplication for real scalar * complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(x * val)
+
+proc `*.`*[T: SomeNumber](t: Tensor[T], val: Complex[T]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted multiplication for real scalar * complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(x * val)
+
+proc `/.`*[T: SomeNumber](val: T, t: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted division for real scalar / complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(val / x)
+
+proc `/.`*[T: SomeNumber](val: Complex[T], t: Tensor[T]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted division for real scalar / complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(val / x)
+
+proc `/.`*[T: SomeNumber](t: Tensor[Complex[T]], val: T): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted division for real scalar / complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(x / val)
+
+proc `/.`*[T: SomeNumber](t: Tensor[T], val: Complex[T]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted division for real scalar / complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(x / val)
+
+proc `^.`*[T: SomeFloat](val: T, t: Tensor[Complex[T]]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted exponentiation for real scalar ^ complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(pow(complex(val), x))
+
+proc `^.`*[T: SomeFloat](val: Complex[T], t: Tensor[T]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted exponentiation for real scalar ^ complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(pow(val, x))
+
+proc `^.`*[T: SomeFloat](t: Tensor[Complex[T]], val: T): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted exponentiation for real scalar ^ complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(pow(x, val))
+
+proc `^.`*[T: SomeFloat](t: Tensor[T], val: Complex[T]): Tensor[Complex[T]] {.noinit, inline.} =
+  ## Broadcasted exponentiation for real scalar ^ complex tensor
+  returnEmptyIfEmpty(t)
+  result = t.map_inline(pow(complex(x), val))
 
 proc `+.=`*[T: SomeNumber](t: var Tensor[Complex64], val: T) {.inline.} =
   ## Complex64 tensor in-place addition with a real scalar.

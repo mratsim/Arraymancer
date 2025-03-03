@@ -57,9 +57,14 @@ when defined(cuda):
       offset*: int
       storage*: CudaStorage[T]
 
-  proc deallocCuda*[T](p: CudaTensorRefTracker[T]) {.noSideEffect.}=
-    if not p.value.isNil:
-      check cudaFree(p.value)
+  when NimMajor == 1:
+    proc `=destroy`*[T](p: var CudaTensorRefTrackerObj[T]) {.noSideEffect.}=
+      if not p.value.isNil:
+        discard cudaFree(p.value)
+  else:
+    proc `=destroy`*[T](p: CudaTensorRefTrackerObj[T]) {.noSideEffect.}=
+      if not p.value.isNil:
+        discard cudaFree(p.value)
 
 when defined(opencl):
   type
@@ -95,15 +100,6 @@ else:
   type AnyTensor*[T] = Tensor[T]
 
 type GpuTensor[T] = AnyTensor[T] and not Tensor[T]
-
-when NimMajor == 1:
-  proc `=destroy`*[T](p: var CudaTensorRefTrackerObj[T]) {.noSideEffect.}=
-    if not p.value.isNil:
-      discard cudaFree(p.value)
-else:
-  proc `=destroy`*[T](p: CudaTensorRefTrackerObj[T]) {.noSideEffect.}=
-    if not p.value.isNil:
-      discard cudaFree(p.value)
 
 
 

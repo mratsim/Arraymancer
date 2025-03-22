@@ -111,7 +111,7 @@ type
 
 proc init*[T](
   ctx: Context[Tensor[T]],
-  layerType: typedesc[GCNLayer[T]],
+  layerType: typedesc[GCNLayer],
   numInput, numOutput: int
 ): GCNLayer[T] =
   ## Initializes a graph convolutional layer with `num_input` input features and `num_output` output features.

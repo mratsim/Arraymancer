@@ -33,7 +33,7 @@ proc cudaMalloc*[T](size: Natural): ptr UncheckedArray[T] {.noSideEffect, inline
 
 proc newCudaStorage*[T: SomeFloat](length: int): CudaStorage[T] {.noSideEffect.}=
   result.Flen = length
-  new(result.Fref_tracking, deallocCuda)
+  new result.Fref_tracking
   result.Fdata = cast[ptr UncheckedArray[T]](cudaMalloc[T](result.Flen))
   result.Fref_tracking.value = result.Fdata
 
@@ -88,9 +88,16 @@ type
     len*: cint                # Number of elements allocated in memory
 
 
-proc deallocCuda*(p: CudaLayoutArray) {.noSideEffect.}=
-  if not p.value.isNil:
-    check cudaFree(p.value)
+when NimMajor == 1:
+  proc `=destroy`*(p: var CudaLayoutArrayObj) {.noSideEffect.}=
+    if not p.value.isNil:
+      discard cudaFree(p.value)
+else:
+  proc `=destroy`*(p: CudaLayoutArrayObj) {.noSideEffect.}=
+    if not p.value.isNil:
+      discard cudaFree(p.value)
+
+
 
 proc layoutOnDevice*[T:SomeFloat](t: CudaTensor[T]): CudaTensorLayout[T] {.noSideEffect.}=
   ## Store a CudaTensor shape, strides, etc information on the GPU
@@ -104,8 +111,8 @@ proc layoutOnDevice*[T:SomeFloat](t: CudaTensor[T]): CudaTensorLayout[T] {.noSid
   result.data = t.get_data_ptr
   result.len = t.size.cint
 
-  new result.shape, deallocCuda
-  new result.strides, deallocCuda
+  new result.shape
+  new result.strides
 
   result.shape.value = cudaMalloc[cint](MAXRANK)
   result.strides.value = cudaMalloc[cint](MAXRANK)

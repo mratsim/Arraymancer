@@ -33,17 +33,12 @@ proc toRawSeq*[T](t:Tensor[T]): seq[T] {.noSideEffect, deprecated: "This proc ca
   ## or that you raise your use-case in the issue tracker https://github.com/mratsim/Arraymancer/issues
   ## so that more suitable primitives can be crafted
 
-  # Due to forward declaration this proc must be declared
-  # after "cpu" proc are declared in init_cuda
-  when t is Tensor:
-    result = newSeq[T](t.size)
-    for i in 0 ..< t.size:
-      when T is KnownSupportsCopyMem:
-        result[i] = t.unsafe_raw_offset()[i]
-      else:
-        result[i] = t.storage.raw_buffer[i]
-  elif t is CudaTensor:
-    return t.cpu.data
+  result = newSeq[T](t.size)
+  for i in 0 ..< t.size:
+    when T is KnownSupportsCopyMem:
+      result[i] = t.unsafe_raw_offset()[i]
+    else:
+      result[i] = t.storage.raw_buffer[i]
 
 proc toFlatSeq*[T](t: Tensor[T]) : seq[T] =
   ## Export the data of the Tensor flattened as a Seq

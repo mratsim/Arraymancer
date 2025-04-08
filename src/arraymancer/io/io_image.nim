@@ -53,6 +53,35 @@ proc read_image*(buffer: seq[byte]): Tensor[uint8] =
   let raw_pixels = loadFromMemory(buffer, width, height, channels, desired_channels)
   result = raw_pixels.toTensor.reshape(height, width, channels).hwc_to_chw
 
+proc read_image_16*(filepath: string): Tensor[uint16] =
+  ## Read a 16-bit image file and loads it into a Tensor[uint16] of shape
+  ## Channel x Height x Width. Channel is 1 for greyscale, 3 for RGB.
+  ##
+  ## Supports JPEG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, PNM
+  ## See stb_image https://github.com/nothings/stb/blob/master/stb_image.h
+  var width, height, channels: int
+  let desired_channels = Default # Channel autodetection
+  
+  let raw_pixels = load16(filepath, width, height, channels, desired_channels)
+  result = raw_pixels.toTensor.reshape(height, width, channels).hwc_to_chw
+
+proc read_image_16*(buffer: seq[byte]): Tensor[uint16] =
+  ## Read a 16-bit image from a buffer and loads it into a Tensor[uint16] of shape
+  ## Channel x Height x Width. Channel is 1 for greyscale, 3 for RGB.
+  ##
+  ## Supports JPEG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, PNM
+  ## See stb_image https://github.com/nothings/stb/blob/master/stb_image.h
+  ##
+
+  # TODO: ideally this should also accept pointer + length
+  # but nim-stb_image only accept seq[bytes] (and convert it to pointer + length internally)
+
+  var width, height, channels: int
+  let desired_channels = Default # Channel autodetection
+
+  let raw_pixels = load16FromMemory(buffer, width, height, channels, desired_channels)
+  result = raw_pixels.toTensor.reshape(height, width, channels).hwc_to_chw
+
 template gen_write_image(proc_name: untyped): untyped {.dirty.}=
 
   proc proc_name*(img: Tensor[uint8], filepath: string) =

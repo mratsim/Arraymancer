@@ -18,7 +18,7 @@ func chw_to_hwc[T](img: Tensor[T]): Tensor[T] {.inline.}=
   img.permute(1, 2, 0)
 
 proc read_image*(filepath: string): Tensor[uint8] =
-  ## Read an image file and loads it into a Tensor[uint8] of shape
+  ## Read an 8-bit image file and loads it into a Tensor[uint8] of shape
   ## Channel x Height x Width. Channel is 1 for greyscale, 3 for RGB.
   ##
   ## Supports JPEG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, PNM
@@ -31,13 +31,13 @@ proc read_image*(filepath: string): Tensor[uint8] =
   ##     x.float32 / 255.0
 
   var width, height, channels: int
-  let desired_channels = 0 # Channel autodetection
+  let desired_channels = Default # Channel autodetection
 
   let raw_pixels = load(filepath, width, height, channels, desired_channels)
   result = raw_pixels.toTensor.reshape(height, width, channels).hwc_to_chw
 
 proc read_image*(buffer: seq[byte]): Tensor[uint8] =
-  ## Read an image from a buffer and loads it into a Tensor[uint8] of shape
+  ## Read an 8-bit image from a buffer and loads it into a Tensor[uint8] of shape
   ## Channel x Height x Width. Channel is 1 for greyscale, 3 for RGB.
   ##
   ## Supports JPEG, PNG, TGA, BMP, PSD, GIF, HDR, PIC, PNM
@@ -48,7 +48,7 @@ proc read_image*(buffer: seq[byte]): Tensor[uint8] =
   # but nim-stb_image only accept seq[bytes] (and convert it to pointer + length internally)
 
   var width, height, channels: int
-  let desired_channels = 0 # Channel autodetection
+  let desired_channels = Default # Channel autodetection
 
   let raw_pixels = loadFromMemory(buffer, width, height, channels, desired_channels)
   result = raw_pixels.toTensor.reshape(height, width, channels).hwc_to_chw

@@ -51,8 +51,7 @@ proc read_image*(buffer: seq[byte]): Tensor[uint8] =
   let desired_channels = 0 # Channel autodetection
 
   let raw_pixels = loadFromMemory(buffer, width, height, channels, desired_channels)
-  result = raw_pixels.toTensor.reshape(width, height, channels).hwc_to_chw
-
+  result = raw_pixels.toTensor.reshape(height, width, channels).hwc_to_chw
 
 template gen_write_image(proc_name: untyped): untyped {.dirty.}=
 

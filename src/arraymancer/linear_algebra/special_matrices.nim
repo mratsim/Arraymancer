@@ -4,7 +4,7 @@
 
 import ../tensor
 import ./helpers/triangular
-import std / [sequtils, bitops]
+import std / [sequtils, bitops, strformat]
 
 proc hilbert*(n: int, T: typedesc[SomeFloat]): Tensor[T] =
   ## Generates an Hilbert matrix of shape [N, N]

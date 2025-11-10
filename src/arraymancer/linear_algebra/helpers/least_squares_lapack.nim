@@ -70,7 +70,7 @@ proc gelsd*[T: SomeFloat](
   const smlsiz = 25'i32 # equal to the maximum size of the subproblems at the bottom of the computation tree
   let
     minmn = min(m,n).int
-    nlvl = max(0, (minmn.T / (smlsiz+1).T).ln.int32 + 1)
+    nlvl = max(0, (minmn.T / (smlsiz+1).T).log2.int32 + 1)
     # Bug in some Lapack, liwork must be determined manually: http://icl.cs.utk.edu/lapack-forum/archives/lapack/msg00899.html
     liwork = max(1, 3 * minmn * nlvl + 11 * minmn)
 

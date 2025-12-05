@@ -15,7 +15,8 @@
 import  ../tensor/backend/openmp,
         ../tensor,
         ./private/p_nnp_checks,
-        ./private/p_logsumexp
+        ./private/p_logsumexp,
+        std/math
 
 # Fused numerically stable softmax + cross-entropy loss function
 
@@ -49,17 +50,49 @@ proc softmax_cross_entropy*[T](input, target: Tensor[T]): T =
     check_input_target(input, target)
 
   let batch_size = input.shape[0]
-  # See at the bottom of the file for explanation/proof
-  result = frobenius_inner_prod(input, target)
+  let features = input.shape[1]
 
-  let sum_logsumexp = fold_axis_inline(input, T, fold_axis=0) do:
-    x = y.logsumexp
-  do:
-    x += y.logsumexp
-  do:
-    x += y
+  let inp_ptr = input.unsafe_raw_buf()
+  let tgt_ptr = target.unsafe_raw_buf()
+  let inp_off = input.offset
+  let tgt_off = target.offset
+  let inp_s0 = input.strides[0]
+  let inp_s1 = input.strides[1]
+  let tgt_s0 = target.strides[0]
+  let tgt_s1 = target.strides[1]
 
-  result = (sum_logsumexp - result) / T(batch_size)
+  {.push stacktrace:off, checks:off.}
+  for i in 0||(batch_size-1):
+    let row_inp_idx = inp_off + i * inp_s0
+    let row_tgt_idx = tgt_off + i * tgt_s0
+
+    var max_val = inp_ptr[row_inp_idx]
+    for j in 1 ..< features:
+      let val = inp_ptr[row_inp_idx + j * inp_s1]
+      if val > max_val:
+        max_val = val
+
+    var sum_exp: T = 0
+    var row_dot: T = 0
+
+    for j in 0 ..< features:
+      let val = inp_ptr[row_inp_idx + j * inp_s1]
+      let t_val = tgt_ptr[row_tgt_idx + j * tgt_s1]
+      
+      sum_exp += exp(val - max_val)
+      row_dot += val * t_val
+
+    let local_loss = ln(sum_exp) + max_val - row_dot
+
+    when declared(openmp):
+      {.emit:"""
+      #pragma omp atomic
+      `result` += `local_loss`;""".}
+    else:
+      result += local_loss
+  {.pop.}
+
+  result /= T(batch_size)
 
 proc sparse_softmax_cross_entropy*[T; Idx: SomeNumber or byte or char or enum](
         input: Tensor[T],
@@ -90,28 +123,48 @@ proc sparse_softmax_cross_entropy*[T; Idx: SomeNumber or byte or char or enum](
   # TODO: term rewriting macro for auto fusion
 
   let batch_size = input.shape[0]
+  let features = input.shape[1]
 
   # TODO proper check
   assert batch_size == target.shape[0]
 
+  let inp_ptr = input.unsafe_raw_buf()
+  let tgt_ptr = target.unsafe_raw_buf()
+  let inp_off = input.offset
+  let tgt_off = target.offset
+  let inp_s0 = input.strides[0]
+  let inp_s1 = input.strides[1]
+  let tgt_s0 = target.strides[0]
+
   # See at the bottom of the file for explanation/proof
   # ∑i(- ti * yi) is either -yi or 0 in the sparse case.
   # Since target holds coordinates: ∑i(- ti * yi) = - yi[ti]
-  {.push stacktrace:off.}
-  {.push linedir:off.}
-  for i in 0||(input.shape[0]-1):
-    let lse = input[i,_].logsumexp
+  {.push stacktrace:off, checks:off.}
+  for i in 0||(batch_size-1):
+    let row_inp_idx = inp_off + i * inp_s0
+    let row_tgt_idx = tgt_off + i * tgt_s0
+    let label = int(tgt_ptr[row_tgt_idx])
 
-    when not declared(openmp):
-      result += lse - input[i, int(target[i])]
-    else:
-      let tmp = lse - input[i, int(target[i])]
-      # The new line is intentional or Nim inserts its frame on the line of the omp pragma
+    var max_val = inp_ptr[row_inp_idx]
+    for j in 1 ..< features:
+      let val = inp_ptr[row_inp_idx + j * inp_s1]
+      if val > max_val:
+        max_val = val
+
+    var sum_exp: T = 0
+    for j in 0 ..< features:
+      sum_exp += exp(inp_ptr[row_inp_idx + j * inp_s1] - max_val)
+
+    let lse = ln(sum_exp) + max_val
+    let val_at_target = inp_ptr[row_inp_idx + label * inp_s1]
+    let local_loss = lse - val_at_target
+
+    when declared(openmp):
       {.emit:"""
-
       #pragma omp atomic
-      `result` += `tmp`;""".}
-  {.pop.}
+      `result` += `local_loss`;""".}
+    else:
+      result += local_loss
   {.pop.}
 
   result /= T(batch_size)

@@ -50,6 +50,9 @@ proc softmax_cross_entropy*[T](input, target: Tensor[T]): T =
     check_input_target(input, target)
 
   let batch_size = input.shape[0]
+  if batch_size == 0:
+    return 0.T
+
   let features = input.shape[1]
 
   let inp_ptr = input.unsafe_raw_buf()
@@ -66,12 +69,7 @@ proc softmax_cross_entropy*[T](input, target: Tensor[T]): T =
     let row_inp_idx = inp_off + i * inp_s0
     let row_tgt_idx = tgt_off + i * tgt_s0
 
-    var max_val = inp_ptr[row_inp_idx]
-    for j in 1 ..< features:
-      let val = inp_ptr[row_inp_idx + j * inp_s1]
-      if val > max_val:
-        max_val = val
-
+    var max_val = -T(Inf)
     var sum_exp: T = 0
     var row_dot: T = 0
 
@@ -79,8 +77,13 @@ proc softmax_cross_entropy*[T](input, target: Tensor[T]): T =
       let val = inp_ptr[row_inp_idx + j * inp_s1]
       let t_val = tgt_ptr[row_tgt_idx + j * tgt_s1]
       
-      sum_exp += exp(val - max_val)
       row_dot += val * t_val
+
+      if val <= max_val:
+        sum_exp += exp(val - max_val)
+      else:
+        sum_exp = sum_exp * exp(max_val - val) + 1.T
+        max_val = val
 
     let local_loss = ln(sum_exp) + max_val - row_dot
 
@@ -123,6 +126,9 @@ proc sparse_softmax_cross_entropy*[T; Idx: SomeNumber or byte or char or enum](
   # TODO: term rewriting macro for auto fusion
 
   let batch_size = input.shape[0]
+  if batch_size == 0:
+    return 0.T
+
   let features = input.shape[1]
 
   # TODO proper check
@@ -145,15 +151,17 @@ proc sparse_softmax_cross_entropy*[T; Idx: SomeNumber or byte or char or enum](
     let row_tgt_idx = tgt_off + i * tgt_s0
     let label = int(tgt_ptr[row_tgt_idx])
 
-    var max_val = inp_ptr[row_inp_idx]
-    for j in 1 ..< features:
-      let val = inp_ptr[row_inp_idx + j * inp_s1]
-      if val > max_val:
-        max_val = val
-
+    var max_val = -T(Inf)
     var sum_exp: T = 0
+
     for j in 0 ..< features:
-      sum_exp += exp(inp_ptr[row_inp_idx + j * inp_s1] - max_val)
+      let val = inp_ptr[row_inp_idx + j * inp_s1]
+      
+      if val <= max_val:
+        sum_exp += exp(val - max_val)
+      else:
+        sum_exp = sum_exp * exp(max_val - val) + 1.T
+        max_val = val
 
     let lse = ln(sum_exp) + max_val
     let val_at_target = inp_ptr[row_inp_idx + label * inp_s1]

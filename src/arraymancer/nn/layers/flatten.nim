@@ -8,7 +8,7 @@ type
 
 proc init*[T](
   ctx: Context[Tensor[T]],
-  layerType: typedesc[Flatten[T]],
+  layerType: typedesc[Flatten],
   inShape: seq[int]
 ): Flatten[T] =
 

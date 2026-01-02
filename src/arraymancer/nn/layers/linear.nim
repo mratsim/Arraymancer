@@ -120,7 +120,7 @@ type
 
 proc init*[T](
   ctx: Context[Tensor[T]],
-  layerType: typedesc[Linear[T]],
+  layerType: typedesc[Linear],
   numInput, numOutput: int
 ): Linear[T] =
   ## Initializes a linear layer with `numInput` input features and `numOutput` output features.

@@ -81,3 +81,7 @@ when defined(cuda) or defined(nimdoc) or defined(nimsuggest):
 when defined(opencl) or defined(nimdoc) or defined(nimsuggest):
   import ./tensor/tensor_opencl
   export tensor_opencl
+
+when defined(metal) or defined(nimdoc) or defined(nimsuggest):
+  import ./tensor/tensor_metal
+  export tensor_metal

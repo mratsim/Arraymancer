@@ -219,6 +219,11 @@ task test_opencl, "Run all OpenCL backend tests":
   switches.add " -d:blas=cblas" # Archlinux, comment out on Debian/Ubuntu
   test "tests_opencl", switches, split = false, "cpp"
 
+task test_metal, "Run all Metal backend tests":
+  var switches = " -d:metal"
+  switches.add " -d:blas=cblas" # Archlinux, comment out on Debian/Ubuntu
+  test "tests_metal", switches, split = false
+
 # task test_deprecated, "Run all tests on deprecated procs":
 #  test "tests_cpu_deprecated"
 

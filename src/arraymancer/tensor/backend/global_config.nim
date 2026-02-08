@@ -32,6 +32,10 @@ const CUDA_HOF_BPG*: cint = 256     # should be (grid-stride+threadsPerBlock-1) 
 const OMP_FOR_THRESHOLD* = 1000    # Tensor number of elements threshold before using OpenMP multithreading
 const OMP_MAX_REDUCE_BLOCKS* = 8   # Max number of expected OpenMP threads (used in reduce)
 
+# Metal-specific configuration
+const METAL_THREADGROUP_SIZE* = 256  # Default threadgroup size for Metal kernels
+const METAL_BUFFER_POOL_MAX_SIZE* = 1024 * 1024 * 1024  # 1GB max buffer pool size
+
 # Full procesor optimization (AVX, AVX2, ARM neon, ... if applicable)
 when defined(native):
   {.passC: "-march=native".}

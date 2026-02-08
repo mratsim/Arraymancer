@@ -90,12 +90,55 @@ when defined(opencl):
       offset*: int
       storage*: ClStorage[T]
 
-when defined(cuda) and defined(opencl):
+when defined(metal):
+  import ./backend/metal/metal_buffer
+
+  type
+    MetalTensorRefTrackerObj*[T: SomeFloat] = object
+      value*: MetalBuffer
+
+    MetalTensorRefTracker*[T] = ref MetalTensorRefTrackerObj[T]
+
+    MetalStorage*[T: SomeFloat] = object
+      ## Opaque seq-like structure for storage on the Metal backend.
+      Flen*: int
+      Fbuffer*: MetalBuffer
+      Fref_tracking*: MetalTensorRefTracker[T]
+
+    MetalTensor*[T: SomeFloat] = object
+      ## Tensor data structure stored on Apple Metal GPU
+      ##   - ``shape``: Dimensions of the MetalTensor
+      ##   - ``strides``: Numbers of items to skip to get the next item along a dimension.
+      ##   - ``offset``: Offset to get the first item of the MetalTensor. Note: offset can be negative, in particular for slices.
+      ##   - ``storage``: An opaque data storage for the MetalTensor
+      ##   - ``cpuData``: Optional CPU copy for lazy transfer
+      ##
+      ## Warning ⚠:
+      ##   Assignment ``var a = b`` does not copy the data. Data modification on one MetalTensor will be reflected on the other.
+      ##   However modification on metadata (shape, strides or offset) will not affect the other tensor.
+      ##   Explicit copies can be made with ``clone``: ``var a = b.clone``
+      shape*: Metadata
+      strides*: Metadata
+      offset*: int
+      storage*: MetalStorage[T]
+      cpuData*: seq[T]  ## Optional CPU copy for lazy transfer
+
+
+
+when defined(cuda) and defined(opencl) and defined(metal):
+  type AnyTensor*[T] = Tensor[T] or CudaTensor[T] or ClTensor[T] or MetalTensor[T]
+elif defined(cuda) and defined(opencl):
   type AnyTensor*[T] = Tensor[T] or CudaTensor[T] or ClTensor[T]
+elif defined(cuda) and defined(metal):
+  type AnyTensor*[T] = Tensor[T] or CudaTensor[T] or MetalTensor[T]
+elif defined(opencl) and defined(metal):
+  type AnyTensor*[T] = Tensor[T] or ClTensor[T] or MetalTensor[T]
 elif defined(cuda):
   type AnyTensor*[T] = Tensor[T] or CudaTensor[T]
 elif defined(opencl):
   type AnyTensor*[T] = Tensor[T] or ClTensor[T]
+elif defined(metal):
+  type AnyTensor*[T] = Tensor[T] or MetalTensor[T]
 else:
   type AnyTensor*[T] = Tensor[T]
 
@@ -224,3 +267,4 @@ proc dataArray*[T: KnownSupportsCopyMem](t: Tensor[T]): ptr UncheckedArray[T] {.
 
 proc dataArray*[T: not KnownSupportsCopyMem](t: Tensor[T]): ptr UncheckedArray[T] {.error: "`dataArray` " &
   " is deprecated for mem copyable types and not supported for GC'ed types!".}
+

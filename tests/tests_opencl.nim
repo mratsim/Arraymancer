@@ -14,6 +14,7 @@
 
 # Please compile with -d:opencl switch
 {.push warning[Spacing]: off.}
+{.push warning[UnusedImport]: off.}
 import  ./tensor/test_init_opencl,
         ./tensor/test_operators_blas_opencl,
         ./tensor/test_broadcasting_opencl

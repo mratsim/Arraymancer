@@ -109,7 +109,7 @@ proc layoutOnDevice*[T:SomeFloat](t: ClTensor[T]): ClTensorLayout[T] =
   check enqueueWriteBuffer(
     clQueue0,
     result.shape.value.toClpointer,
-    CL_false, # Non-blocking copy
+    CL_true, # Blocking copy, we don't want tmp_shape to disappear whil copy is pending
     0,
     size,
     addr tmp_shape[0],
@@ -119,7 +119,7 @@ proc layoutOnDevice*[T:SomeFloat](t: ClTensor[T]): ClTensorLayout[T] =
   check enqueueWriteBuffer(
     clQueue0,
     result.strides.value.toClpointer,
-    CL_true, # Blocking copy, we don't want tmp_strides (and tmp_shape) to disappear whil copy is pending
+    CL_true, # Blocking copy, we don't want tmp_strides to disappear whil copy is pending
     0,
     size,
     addr tmp_strides[0],

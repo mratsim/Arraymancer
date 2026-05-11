@@ -66,7 +66,7 @@ when defined(cuda):
       if not p.value.isNil:
         discard cudaFree(p.value)
 
-when true:
+when defined(opencl):
   import opencl
   proc toClpointer*[T](p: ptr T|ptr UncheckedArray[T]): PMem {.inline.}=
     cast[PMem](p)

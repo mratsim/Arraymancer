@@ -15,7 +15,7 @@
 when defined(blis):
   static: echo "--USING BLIS--"
   include ./blis_api
-  echo "Blis initialization status: " & $bli_init()
+  discard bli_init()
 
   proc quit_blis() {.noconv.}=
     when defined(debug):

@@ -122,11 +122,18 @@ type
 #################################################
 
 when defined(windows):
-  const blisSuffix = ".dll"
+  const blisPrefix = ""
 else:
-  const blisSuffix = ".so" #MacOS & Linux
+  const blisPrefix = "lib"
 
-const libblis = "libblis" & blisSuffix
+when defined(windows):
+  const blisSuffix = ".dll"
+elif defined(macosx):
+  const blisSuffix = ".dylib"
+else:
+  const blisSuffix = ".so"
+
+const libblis = blisPrefix & "blis" & blisSuffix
 
 proc bli_init(): BlisError {.importc: "bli_init", dynlib: libblis.}
 proc bli_finalize(): BlisError {.importc: "bli_finalize", dynlib: libblis.}

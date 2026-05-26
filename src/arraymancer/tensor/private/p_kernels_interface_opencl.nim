@@ -17,7 +17,7 @@ template opencl_getIndexOfElementID: string =
   ## For example element 3 in a 3x3 array may have coordinates (1, 0)
   # TODO: use ldiv/lldiv to compute div and mod at the same time
   """
-  __global static inline int opencl_getIndexOfElementID(
+  static inline int opencl_getIndexOfElementID(
     const int rank,
     __global const int * restrict const shape,
     __global const int * restrict const strides,

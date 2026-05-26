@@ -67,12 +67,23 @@ when defined(cuda):
         discard cudaFree(p.value)
 
 when defined(opencl):
+  import opencl
+  proc toClpointer*[T](p: ptr T|ptr UncheckedArray[T]): PMem {.inline.}=
+    cast[PMem](p)
+
+
   type
+    ClTensorRefTrackerObj*[T: SomeFloat] = object
+      value*: ptr UncheckedArray[T]
+
+    ClTensorRefTracker*[T] = ref ClTensorRefTrackerObj[T]
+
+
     ClStorage*[T: SomeFloat] = object
       ## Opaque seq-like structure for storage on the OpenCL backend.
       Flen*: int
       Fdata*: ptr UncheckedArray[T]
-      Fref_tracking*: ref[ptr UncheckedArray[T]] # We keep ref tracking for the GC in a separate field to avoid double indirection.
+      Fref_tracking*: ClTensorRefTracker[T] # We keep ref tracking for the GC in a separate field to avoid double indirection.
 
     ClTensor*[T: SomeFloat] = object
       ## Tensor data structure stored on OpenCL (CPU, GPU, FPGAs or other accelerators)
@@ -89,6 +100,16 @@ when defined(opencl):
       strides*: Metadata
       offset*: int
       storage*: ClStorage[T]
+
+  when NimMajor == 1:
+    proc `=destroy`*[T](p: var ClTensorRefTrackerObj[T]) {.noSideEffect.}=
+      if not p.value.isNil:
+        discard releaseMemObject p.value.toClpointer
+  else:
+    proc `=destroy`*[T](p: ClTensorRefTrackerObj[T]) {.noSideEffect.}=
+      if not p.value.isNil:
+        discard releaseMemObject p.value.toClpointer
+
 
 when defined(cuda) and defined(opencl):
   type AnyTensor*[T] = Tensor[T] or CudaTensor[T] or ClTensor[T]

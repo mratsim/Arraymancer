@@ -22,9 +22,6 @@ export nimcl, opencl, opencl_global_state, clblast
 
 # Data structures to ease interfacing with OpenCL and kernels
 
-proc toClpointer*[T](p: ptr T|ptr UncheckedArray[T]): PMem {.noSideEffect, inline.}=
-  cast[PMem](p)
-
 proc toClpointer*[T](p: ClStorage[T]): PMem {.noSideEffect, inline.}=
   cast[PMem](p.Fdata)
 
@@ -38,24 +35,24 @@ proc clMalloc*[T](size: Natural): ptr UncheckedArray[T] {.inline.}=
     buffer[T](clContext0, size)
   )
 
-proc deallocCl*[T](p: ref[ptr UncheckedArray[T]]) {.noSideEffect.}=
-  if not p[].isNil:
-    check releaseMemObject p[].toClpointer
+
 
 # ##############################################################
 # # Base ClStorage type
 
 proc newClStorage*[T: SomeFloat](length: int): ClStorage[T] =
   result.Flen = length
-  new(result.Fref_tracking, deallocCl)
+  new result.Fref_tracking
   result.Fdata = clMalloc[T](result.Flen)
-  result.Fref_tracking[] = result.Fdata
+  result.Fref_tracking.value = result.Fdata
 
 # #########################################################
 # # Sending tensor layout to OpenCL Kernel
 
 type
-  ClLayoutArray = ref[ptr UncheckedArray[cint]]
+  ClLayoutArrayObj* = object
+    value*: ptr UncheckedArray[cint]
+  ClLayoutArray* = ref ClLayoutArrayObj
     ## Reference to an array on the device
     # TODO: finalizer
     # or replace by a distinct type with a destructor
@@ -71,6 +68,15 @@ type
     data*: ptr T              # Data on OpenCL device
     len*: cint                # Number of elements allocated in memory
 
+when NimMajor == 1:
+  proc `=destroy`*(p: var ClLayoutArrayObj) {.noSideEffect.}=
+    if not p.value.isNil:
+      discard releaseMemObject p.value.toClpointer
+else:
+  proc `=destroy`*(p: ClLayoutArrayObj) {.noSideEffect.}=
+    if not p.value.isNil:
+      discard releaseMemObject p.value.toClpointer
+
 proc layoutOnDevice*[T:SomeFloat](t: ClTensor[T]): ClTensorLayout[T] =
   ## Store a ClTensor shape, strides, etc information on the GPU
   #
@@ -83,11 +89,11 @@ proc layoutOnDevice*[T:SomeFloat](t: ClTensor[T]): ClTensorLayout[T] =
   result.data = t.get_data_ptr
   result.len = t.size.cint
 
-  new result.shape, deallocCl
-  new result.strides, deallocCl
+  new result.shape
+  new result.strides
 
-  result.shape[] = clMalloc[cint](MAXRANK)
-  result.strides[] = clMalloc[cint](MAXRANK)
+  result.shape.value = clMalloc[cint](MAXRANK)
+  result.strides.value = clMalloc[cint](MAXRANK)
 
   var
     tmp_shape: array[MAXRANK, cint] # ClLayoutArray
@@ -102,8 +108,8 @@ proc layoutOnDevice*[T:SomeFloat](t: ClTensor[T]): ClTensorLayout[T] =
   let size = t.rank * sizeof(cint)
   check enqueueWriteBuffer(
     clQueue0,
-    result.shape[].toClpointer,
-    CL_false, # Non-blocking copy
+    result.shape.value.toClpointer,
+    CL_true, # Blocking copy, we don't want tmp_shape to disappear whil copy is pending
     0,
     size,
     addr tmp_shape[0],
@@ -112,8 +118,8 @@ proc layoutOnDevice*[T:SomeFloat](t: ClTensor[T]): ClTensorLayout[T] =
 
   check enqueueWriteBuffer(
     clQueue0,
-    result.strides[].toClpointer,
-    CL_true, # Blocking copy, we don't want tmp_strides (and tmp_shape) to disappear whil copy is pending
+    result.strides.value.toClpointer,
+    CL_true, # Blocking copy, we don't want tmp_strides to disappear whil copy is pending
     0,
     size,
     addr tmp_strides[0],

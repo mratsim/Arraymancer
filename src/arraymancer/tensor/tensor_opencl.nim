@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ./backend/opencl_backend,
-        ./init_opencl,
+import  ./init_opencl,
         ./operators_blas_l1_opencl,
         ./operators_broadcasted_opencl,
         ./operators_blas_l2l3_opencl

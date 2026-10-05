@@ -74,8 +74,7 @@ proc layernorm_backward*[T: SomeFloat](
   let goc = if gradOutput.is_C_contiguous: gradOutput else: gradOutput.clone()
 
   gradInput = newTensorUninit[T](x.shape)
-  if gradWeight.size == 0 or gradWeight.shape != [d].toMetadata:
-    gradWeight = zeros[T]([d])
+  gradWeight = zeros[T]([d])
 
   let (xb, wb, gob) = (xc.unsafe_raw_offset(), wc.unsafe_raw_offset(), goc.unsafe_raw_offset())
   let (gib, gwb) = (gradInput.unsafe_raw_offset(), gradWeight.unsafe_raw_offset())

@@ -82,7 +82,10 @@ proc forward*[T](
 
   # causal mask
   let m =
-    if is_causal and mask.size == 0: causal_mask[T](n)
+    if is_causal:
+      let causal = causal_mask[T](n)
+      if mask.size == 0: causal
+      else: mask +. causal
     else: mask
 
   # attention

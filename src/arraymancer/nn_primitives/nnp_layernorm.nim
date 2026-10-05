@@ -34,7 +34,7 @@ proc layernorm*[T: SomeFloat](
     bc = if bias.is_C_contiguous: bias else: bias.clone()
 
   result = newTensorUninit[T](x.shape)
-  let (xb, wb, ob) = (xc.unsafe_raw_buf(), wc.unsafe_raw_buf(), result.unsafe_raw_buf())
+  let (xb, wb, ob) = (xc.unsafe_raw_offset(), wc.unsafe_raw_offset(), result.unsafe_raw_offset())
 
   for r in 0 ..< n:
     let off = r * d
@@ -53,7 +53,7 @@ proc layernorm*[T: SomeFloat](
       ob[off + c] = (xb[off + c] - mean) * invStd * wb[c]
 
   if hasBias:
-    let bb = bc.unsafe_raw_buf()
+    let bb = bc.unsafe_raw_offset()
     for r in 0 ..< n:
       let off = r * d
       for c in 0 ..< d:
@@ -65,6 +65,9 @@ proc layernorm_backward*[T: SomeFloat](
       eps: T = 1e-5.T
     ) =
   let d = x.shape[^1]
+  assert gradOutput.shape == x.shape, "gradOutput shape must match input"
+  assert weight.shape == [d].toMetadata, "weight shape must be [D] matching input"
+
   let n = x.size div d
   let xc = if x.is_C_contiguous: x else: x.clone()
   let wc = if weight.is_C_contiguous: weight else: weight.clone()
@@ -74,8 +77,8 @@ proc layernorm_backward*[T: SomeFloat](
   if gradWeight.size == 0 or gradWeight.shape != [d].toMetadata:
     gradWeight = zeros[T]([d])
 
-  let (xb, wb, gob) = (xc.unsafe_raw_buf(), wc.unsafe_raw_buf(), goc.unsafe_raw_buf())
-  let (gib, gwb) = (gradInput.unsafe_raw_buf(), gradWeight.unsafe_raw_buf())
+  let (xb, wb, gob) = (xc.unsafe_raw_offset(), wc.unsafe_raw_offset(), goc.unsafe_raw_offset())
+  let (gib, gwb) = (gradInput.unsafe_raw_offset(), gradWeight.unsafe_raw_offset())
 
   for r in 0 ..< n:
     let off = r * d

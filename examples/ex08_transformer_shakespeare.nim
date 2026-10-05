@@ -83,6 +83,7 @@ proc generate[T](
   length: int = 250,
   temperature: T = 0.7.T
 ): string =
+  doAssert prompt.len > 0, "prompt must not be empty"
   var rng = initRand(42)
   var tokens = newSeq[int]()
   for ch in prompt:

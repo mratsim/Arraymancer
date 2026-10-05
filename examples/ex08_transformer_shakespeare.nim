@@ -89,7 +89,7 @@ proc generate[T](
   for ch in prompt:
     tokens.add(if ch in charToIx: charToIx[ch] else: 0)
 
-  result = prompt
+  result = ""
 
   ctx.no_grad_mode:
     for _ in 0 ..< length:
@@ -116,7 +116,7 @@ proc generate[T](
 
 proc main() =
   var
-    steps = 600
+    steps = 2000
     length = 350
     temperature = 0.65'f32
     prompt = "ROMEO:\n"
@@ -205,12 +205,16 @@ proc main() =
 
     if step mod sampleEvery == 0 or step == steps:
       echo &"--- sample @ step {step} ---"
+      echo &"prompt: {prompt.escape}"
+      echo "--- generated ---"
       echo ctx.generate(model, prompt, charToIx, ixToChar, length = min(150, length), temperature = temperature)
 
   echo &"\ntrained in {epochTime() - t0:.1f}s\n"
 
   # generate
   echo "--- Generated Shakespeare ---"
+  echo &"prompt: {prompt.escape}"
+  echo "--- generated ---"
   echo ctx.generate(model, prompt, charToIx, ixToChar, length = length, temperature = temperature)
 
 if isMainModule:

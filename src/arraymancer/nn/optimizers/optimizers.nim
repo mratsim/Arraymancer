@@ -70,7 +70,11 @@ func optimizer*[M, T](
 
   func addLayer(result: var SGD[Tensor[T]], layer: auto) =
     when layer is Variable:
-      result.params.add layer
+      if not layer.isNil:
+        result.params.add layer
+    elif layer is seq or layer is array:
+      for item in layer:
+        result.addLayer(item)
     elif layer is object or layer is tuple: # TODO are there other kinds of variable with fields?
       for field in fields(layer):
         result.addLayer(field)
@@ -173,8 +177,12 @@ proc optimizer*[M, T](
 
   proc addLayer(result: var SGDMomentum[Tensor[T]], layer: auto) =
     when layer is Variable:
-      result.params.add layer
-      result.moments.add layer.grad.zeros_like
+      if not layer.isNil:
+        result.params.add layer
+        result.moments.add layer.grad.zeros_like
+    elif layer is seq or layer is array:
+      for item in layer:
+        result.addLayer(item)
     elif layer is object or layer is tuple:
       for field in fields(layer):
         result.addLayer(field)
@@ -247,9 +255,13 @@ proc optimizer*[M, T](
 
   proc addLayer(result: var Adam[Tensor[T]], layer: auto) =
     when layer is Variable:
-      result.params.add layer
-      result.first_moments.add layer.grad.zeros_like
-      result.second_moments.add layer.grad.zeros_like
+      if not layer.isNil:
+        result.params.add layer
+        result.first_moments.add layer.grad.zeros_like
+        result.second_moments.add layer.grad.zeros_like
+    elif layer is seq or layer is array:
+      for item in layer:
+        result.addLayer(item)
     elif layer is object or layer is tuple:
       for field in fields(layer):
         result.addLayer(field)

@@ -85,7 +85,7 @@ proc variance_scaled(
     let limit = sqrt(3.T) * std
     result = randomTensor(shape, -limit .. limit)
   else:
-    result = randomNormalTensor(shape, 0'f32, std)
+    result = randomNormalTensor(shape, 0.T, std)
 
 # ############################################################
 #

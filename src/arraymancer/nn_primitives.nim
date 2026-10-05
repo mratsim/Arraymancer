@@ -21,7 +21,10 @@ import  ./nn_primitives/nnp_activation,
         ./nn_primitives/nnp_softmax,
         ./nn_primitives/nnp_numerical_gradient,
         ./nn_primitives/nnp_gru,
-        ./nn_primitives/nnp_embedding
+        ./nn_primitives/nnp_embedding,
+        ./nn_primitives/nnp_attention,
+        ./nn_primitives/nnp_layernorm,
+        ./nn_primitives/nnp_rmsnorm
 
 export  nnp_activation,
         nnp_convolution,
@@ -32,7 +35,10 @@ export  nnp_activation,
         nnp_softmax,
         nnp_numerical_gradient,
         nnp_gru,
-        nnp_embedding
+        nnp_embedding,
+        nnp_attention,
+        nnp_layernorm,
+        nnp_rmsnorm
 
 import nn_primitives/private/p_nnp_types
 export Size2D

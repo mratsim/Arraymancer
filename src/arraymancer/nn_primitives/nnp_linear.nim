@@ -12,55 +12,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import  ../tensor,
-        math
+import ../tensor
 
 # Linear forward and backward
 
 proc linear*[T](input, weight: Tensor[T], bias: Tensor[T], output: var Tensor[T]) {.inline.} =
-  # Linear (Dense) forward primitive with bias
-  #   - input tensor shape [batch_size, in_features]
-  #   - weight tensor shape [out_features, in_features]
-  #   - bias tensor shape [1, out_features]
-  # Output does not need to be initialized to 0 or the proper shape, data will be overwritten
-  # Output is: Y = x * W.transpose + b
+  # Y = X Wᵀ + b, X: [..., in], W: [out, in], b: [1, out]
+  let flatIn = input.reshape(input.size div weight.shape[1], weight.shape[1])
+  var flatOut = flatIn * weight.transpose
+  flatOut +.= bias
 
-  output = input * weight.transpose # TODO: with the transpose the non-matching rows and cols is confusing
-  output +.= bias
+  var outShape = input.shape[0 ..< input.rank - 1]
+  outShape.add weight.shape[0]
+  output = flatOut.reshape(outShape)
 
 proc linear*[T](input, weight: Tensor[T], output: var Tensor[T]) {.inline.} =
-  # Linear (Dense) forward primitive with bias
-  #   - input tensor shape [batch_size, in_features]
-  #   - weight tensor shape [out_features, in_features]
-  # Output does not need to be initialized to 0 or the proper shape, data will be overwritten
-  # Output is: Y = x * W.transpose
-  output = input * weight.transpose
+  # Y = X Wᵀ, X: [..., in], W: [out, in]
+  let flatIn = input.reshape(input.size div weight.shape[1], weight.shape[1])
+
+  var outShape = input.shape[0 ..< input.rank - 1]
+  outShape.add weight.shape[0]
+  output = (flatIn * weight.transpose).reshape(outShape)
 
 proc linear_backward*[T](
-        input,
-        weight,
-        gradOutput: Tensor[T],
-        gradInput,
-        gradWeight,
-        gradBias: var Tensor[T]) {.inline.} =
-  # Linear (Dense) backward primitive with bias
-  # Tensors are expected in a batch first shape [batch_size, n_features]
-  # var Tensors do not need to be initialized to 0 or the proper shape, data will be overwritten
-
-  # TODO: have a prealloc procedure and make linear_backward in_place.
-  #       Currently linear backward is unsuitable when result is already slice to assign to.
-  gradInput = gradOutput * weight
-  gradWeight = gradOutput.transpose * input
-
-  gradBias = sum(gradOutput, axis=0) # https://mlxai.github.io/2017/01/10/a-modular-approach-to-implementing-fully-connected-neural-networks.html
+        input, weight, gradOutput: Tensor[T],
+        gradInput, gradWeight, gradBias: var Tensor[T]) {.inline.} =
+  # dX = dY W, dW = dYᵀ X, db = Σ dY
+  let
+    flatIn = input.reshape(input.size div weight.shape[1], weight.shape[1])
+    flatOut = gradOutput.reshape(gradOutput.size div weight.shape[0], weight.shape[0])
+  gradInput = (flatOut * weight).reshape(input.shape)
+  gradWeight = flatOut.transpose * flatIn
+  gradBias = sum(flatOut, axis = 0)
 
 proc linear_backward*[T](
-        input,
-        weight,
-        gradOutput: Tensor[T],
-        gradInput,
-        gradWeight: var Tensor[T]) {.inline.} =
-  # Linear (Dense) backward primitive without bias
-  # Tensors are expected in a batch first shape [batch_size, n_features]
-  gradInput = gradOutput * weight
-  gradWeight = gradOutput.transpose * input
+        input, weight, gradOutput: Tensor[T],
+        gradInput, gradWeight: var Tensor[T]) {.inline.} =
+  # dX = dY W, dW = dYᵀ X
+  let
+    flatIn = input.reshape(input.size div weight.shape[1], weight.shape[1])
+    flatOut = gradOutput.reshape(gradOutput.size div weight.shape[0], weight.shape[0])
+  gradInput = (flatOut * weight).reshape(input.shape)
+  gradWeight = flatOut.transpose * flatIn

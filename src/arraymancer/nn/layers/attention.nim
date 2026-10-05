@@ -58,6 +58,13 @@ proc init*[T](
   layerType: typedesc[MultiHeadAttention[T]],
   embed_dim, num_heads, head_dim: int
 ): MultiHeadAttention[T] =
+  if embed_dim <= 0:
+    raise newException(ValueError, "MultiHeadAttention embed_dim must be positive, got " & $embed_dim)
+  if num_heads <= 0:
+    raise newException(ValueError, "MultiHeadAttention num_heads must be positive, got " & $num_heads)
+  if head_dim <= 0:
+    raise newException(ValueError, "MultiHeadAttention head_dim must be positive, got " & $head_dim)
+
   result.embed_dim = embed_dim
   result.num_heads = num_heads
   result.head_dim = head_dim

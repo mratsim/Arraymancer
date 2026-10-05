@@ -174,8 +174,10 @@ proc main() =
 
     test "MultiHeadAttention Layer with Causal Mask":
       let ctx = newContext Tensor[float32]
-      let mha = ctx.init(MultiHeadAttention[float32], embed_dim = 16, num_heads = 4)
+      let mha = ctx.init(MultiHeadAttention[float32], embed_dim = 16, num_heads = 4, head_dim = 4)
 
+      check: mha.head_dim == 4
+      check: mha.dim_inner == 16
       check: mha.q_proj.bias.isNil
       check: mha.k_proj.bias.isNil
       check: mha.v_proj.bias.isNil
@@ -192,5 +194,25 @@ proc main() =
       check: mha.q_proj.weight.grad.shape == @[16, 16]
       check: mha.k_proj.weight.grad.shape == @[16, 16]
       check: mha.v_proj.weight.grad.shape == @[16, 16]
+
+    test "MultiHeadAttention with explicit head_dim != embed_dim / heads":
+      let ctx = newContext Tensor[float32]
+      let mha = ctx.init(MultiHeadAttention[float32], embed_dim = 16, num_heads = 4, head_dim = 8)
+
+      check: mha.head_dim == 8
+      check: mha.dim_inner == 32
+
+      let x = ctx.variable(randomTensor([2, 6, 16], 1.0f), requires_grad = true)
+      let output = mha.forward(x, is_causal = true)
+      check: output.value.shape == @[2, 6, 16]
+
+      let loss = output.sum()
+      loss.backprop()
+
+      check: x.grad.shape == @[2, 6, 16]
+      check: mha.q_proj.weight.grad.shape == @[32, 16]
+      check: mha.k_proj.weight.grad.shape == @[32, 16]
+      check: mha.v_proj.weight.grad.shape == @[32, 16]
+      check: mha.out_proj.weight.grad.shape == @[16, 32]
 
 main()

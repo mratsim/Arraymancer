@@ -22,7 +22,7 @@ type
 
 proc initBlock[T](ctx: Context[Tensor[T]], dim, heads: int, mult: int = 4): TransformerBlock[T] =
   result.ln1 = ctx.init(LayerNorm[T], dim)
-  result.attn = ctx.init(MultiHeadAttention[T], dim, heads)
+  result.attn = ctx.init(MultiHeadAttention[T], dim, heads, dim div heads)
   result.ln2 = ctx.init(LayerNorm[T], dim)
   result.mlp_fc1 = ctx.init(Linear[T], dim, dim * mult)
   result.mlp_fc2 = ctx.init(Linear[T], dim * mult, dim)

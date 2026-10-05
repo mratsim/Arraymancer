@@ -47,6 +47,7 @@ type MultiHeadAttention*[T] = object
   embed_dim*: int
   num_heads*: int
   head_dim*: int
+  dim_inner*: int
   q_proj*: Linear[T]
   k_proj*: Linear[T]
   v_proj*: Linear[T]
@@ -55,17 +56,17 @@ type MultiHeadAttention*[T] = object
 proc init*[T](
   ctx: Context[Tensor[T]],
   layerType: typedesc[MultiHeadAttention[T]],
-  embed_dim, num_heads: int
+  embed_dim, num_heads, head_dim: int
 ): MultiHeadAttention[T] =
-  doAssert embed_dim mod num_heads == 0, "embed_dim must be divisible by num_heads"
   result.embed_dim = embed_dim
   result.num_heads = num_heads
-  result.head_dim = embed_dim div num_heads
+  result.head_dim = head_dim
+  result.dim_inner = head_dim * num_heads
 
-  result.q_proj = ctx.init(Linear[T], embed_dim, embed_dim, bias = false)
-  result.k_proj = ctx.init(Linear[T], embed_dim, embed_dim, bias = false)
-  result.v_proj = ctx.init(Linear[T], embed_dim, embed_dim, bias = false)
-  result.out_proj = ctx.init(Linear[T], embed_dim, embed_dim, bias = false)
+  result.q_proj = ctx.init(Linear[T], embed_dim, result.dim_inner, bias = false)
+  result.k_proj = ctx.init(Linear[T], embed_dim, result.dim_inner, bias = false)
+  result.v_proj = ctx.init(Linear[T], embed_dim, result.dim_inner, bias = false)
+  result.out_proj = ctx.init(Linear[T], result.dim_inner, embed_dim, bias = false)
 
 proc forward*[T](
   self: MultiHeadAttention[T],
@@ -92,7 +93,7 @@ proc forward*[T](
   let output = scaled_dot_product_attention(q, k, v, mask = m)
 
   # merge heads
-  let merged = output.permute(0, 2, 1, 3).reshape(b, n, self.embed_dim)
+  let merged = output.permute(0, 2, 1, 3).reshape(b, n, self.dim_inner)
 
   # out
   result = self.out_proj.forward(merged)

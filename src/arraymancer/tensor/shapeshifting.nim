@@ -35,6 +35,24 @@ proc transpose*(t: Tensor): Tensor {.noinit,noSideEffect,inline.} =
   result.offset = t.offset
   result.storage = t.storage
 
+proc transpose*(t: Tensor, dim1, dim2: int): Tensor {.noinit,noSideEffect,inline.} =
+  ## Transpose two specific dimensions of a tensor.
+  ## Data is not copied or modified, only metadata is modified.
+  when compileOption("boundChecks"):
+    if dim1 < 0 or dim1 >= t.rank or dim2 < 0 or dim2 >= t.rank:
+      raise newException(IndexDefect, "transpose dimensions (" & $dim1 & ", " & $dim2 & ") out of bounds for rank " & $t.rank)
+  result = exch_dim(t, dim1, dim2)
+
+proc transpose2d*(t: Tensor): Tensor {.noinit,noSideEffect,inline.} =
+  ## Transpose the last two dimensions of a tensor (matrix transpose).
+  ## For a 2D tensor, this is identical to `transpose(t)`.
+  ## For an N-D tensor, transposes dimensions `rank - 2` and `rank - 1`.
+  ## Data is not copied or modified, only metadata is modified.
+  when compileOption("boundChecks"):
+    if t.rank < 2:
+      raise newException(ValueError, "Tensor rank must be at least 2 to transpose last two dimensions, got rank " & $t.rank)
+  result = exch_dim(t, t.rank - 2, t.rank - 1)
+
 proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noinit.} =
   ## Transform a tensor with general striding to a Tensor with contiguous layout.
   ##

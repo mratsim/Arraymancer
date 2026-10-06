@@ -16,7 +16,8 @@
 # b is the rhs (right-hand side)
 
 import  ../tensor,
-        ./autograd_common
+        ./autograd_common,
+        ./private/p_broadcast
 
 type AddGate*[TT] {.final.} = ref object of Gate[TT]
 
@@ -138,3 +139,78 @@ proc `/.`*[TT](a, b: Variable[TT]): Variable[TT] =
 
   if a.is_grad_needed or b.is_grad_needed:
     result.div_cache(a, b)
+
+# ############################################################
+#
+#             Broadcasted Addition & Subtraction
+#
+# ############################################################
+
+type AddBroadcastGate*[TT] {.final.} = ref object of Gate[TT]
+  a, b: Variable[TT]
+
+proc add_broadcast_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = AddBroadcastGate[TT](self)
+  let gradient = payload.variable.grad
+  result = newSeq[TT](2)
+  if self.a.requires_grad:
+    result[0] = reduce_broadcast_dims(gradient, self.a.value.shape)
+  if self.b.requires_grad:
+    result[1] = reduce_broadcast_dims(gradient, self.b.value.shape)
+
+proc add_broadcast_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
+  var gate: AddBroadcastGate[TT]
+  new gate
+  gate.a = a
+  gate.b = b
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+  register_node("AddBroadcast", gate, add_broadcast_backward_ag[TT], result, a, b)
+
+proc `+.`*[TT](a, b: Variable[TT]): Variable[TT] =
+  when compileOption("boundChecks"):
+    check_ctx(a, b)
+  new result
+  result.context = a.context
+  result.value = a.value +. b.value
+  if a.is_grad_needed or b.is_grad_needed:
+    result.add_broadcast_cache(a, b)
+
+type SubBroadcastGate*[TT] {.final.} = ref object of Gate[TT]
+  a, b: Variable[TT]
+
+proc sub_broadcast_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = SubBroadcastGate[TT](self)
+  let gradient = payload.variable.grad
+  result = newSeq[TT](2)
+  if self.a.requires_grad:
+    result[0] = reduce_broadcast_dims(gradient, self.a.value.shape)
+  if self.b.requires_grad:
+    result[1] = reduce_broadcast_dims(-gradient, self.b.value.shape)
+
+proc sub_broadcast_cache[TT](result: Variable[TT], a, b: Variable[TT]) =
+  var gate: SubBroadcastGate[TT]
+  new gate
+  gate.a = a
+  gate.b = b
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+  register_node("SubBroadcast", gate, sub_broadcast_backward_ag[TT], result, a, b)
+
+proc `-.`*[TT](a, b: Variable[TT]): Variable[TT] =
+  when compileOption("boundChecks"):
+    check_ctx(a, b)
+  new result
+  result.context = a.context
+  result.value = a.value -. b.value
+  if a.is_grad_needed or b.is_grad_needed:
+    result.sub_broadcast_cache(a, b)
+
+# Variable + Tensor (e.g. adding a constant attention mask)
+
+proc `+.`*[TT](a: Variable[TT], b: TT): Variable[TT] =
+  a +. a.context.variable(b)
+
+proc `+.`*[TT](b: TT, a: Variable[TT]): Variable[TT] =
+  a +. b
+

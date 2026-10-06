@@ -18,18 +18,20 @@ import  ../../autograd,
 
 type SoftmaxActivation* [TT] = ref object of Gate[TT]
   cache: TT
+  axis: int
 
 proc softmax_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
-  let self = SoftmaxActivation[TT](Gate)
+  let self = SoftmaxActivation[TT](self)
   let gradient = payload.variable.grad
   result = newDiffs[TT](1)
-  result[0] = gradient.softmax_backward(self.cache)
+  result[0] = gradient.softmax_backward(self.cache, self.axis)
 
-proc softmax_cache[TT](result: Variable[TT], a: Variable[TT]) =
+proc softmax_cache[TT](result: Variable[TT], a: Variable[TT], axis: int) =
   # Gate
   var gate: SoftmaxActivation[TT]
   new gate
   gate.cache = result.value
+  gate.axis = axis
 
   # Result setup
   result.grad = zeros_like(result.value)
@@ -44,15 +46,16 @@ proc softmax_cache[TT](result: Variable[TT], a: Variable[TT]) =
     a
   )
 
-proc softmax*[TT](a: Variable[TT]): Variable[TT] =
+proc softmax*[TT](a: Variable[TT], axis: int = -1): Variable[TT] =
   ## Input:
   ##   - A variable
+  ##   - Optional axis (default: -1, the last dimension)
 
   # Resulting var
   new result
   result.context = a.context
-  result.value = softmax a.value
+  result.value = softmax(a.value, axis)
 
   # Caching for backprop
   if a.is_grad_needed:
-    result.softmax_cache(a)
+    result.softmax_cache(a, axis)

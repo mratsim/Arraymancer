@@ -12,26 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ../tensor,
-       ./private/p_logsumexp
+import ../tensor
 
-proc softmax*[T](input: Tensor[T]): Tensor[T] {.noinit.} =
-  ## For each sample in a tensor:
-  ##   do an exponential normalization of each of its class features xi
-  ##   ``exp(xi) / ∑i exp(xi)``
-  ##
-  ## Input:
-  ##   - A tensor of shape [batch_size, number_of_classes]
-  ## Output:
-  ##   - A tensor of shape [batch_size, number_of_classes]
+proc softmax*[T: SomeFloat](input: Tensor[T], axis: int = -1): Tensor[T] {.noinit.} =
+  ## Softmax along an axis (default: -1, the last dimension).
+  ## Numerically stable: exp(x - max(x)) / sum(exp(x - max(x)))
+  let ax = if axis < 0: input.rank + axis else: axis
+  when compileOption("boundChecks"):
+    if ax < 0 or ax >= input.rank:
+      raise newException(IndexDefect, "softmax axis " & $axis & " out of bounds for rank " & $input.rank)
+  result = exp(input -. input.max(axis = ax))
+  result /.= result.sum(axis = ax)
 
-  let batch_size = input.shape[0]
-  result = zeros_like(input)
-
-  for i in 0||(batch_size-1):
-    let (max, sumexp) = input[i, _].streaming_max_sumexp
-
-    var res_slice = result[i, _]
-
-    apply2_inline(res_slice, input[i, _]):
-      stable_softmax(y, max, sumexp)
+proc softmax_backward*[T: SomeFloat](gradOutput, cached_softmax: Tensor[T], axis: int = -1): Tensor[T] {.noinit.} =
+  ## Backward pass for softmax: dX = Y * (dY - Σ dY*Y)
+  let ax = if axis < 0: cached_softmax.rank + axis else: axis
+  when compileOption("boundChecks"):
+    if ax < 0 or ax >= cached_softmax.rank:
+      raise newException(IndexDefect, "softmax_backward axis " & $axis & " out of bounds for rank " & $cached_softmax.rank)
+  let dot = (gradOutput *. cached_softmax).sum(axis = ax)
+  result = gradOutput -. dot
+  result *.= cached_softmax

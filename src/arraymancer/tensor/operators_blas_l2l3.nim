@@ -85,8 +85,91 @@ proc gemm*[T: SomeNumber](
   C: var Tensor[T]) {.deprecated: "Use explicit gemm(1, A, B, 0, C) instead".}=
   gemm(1.T, A, B, 0.T, C)
 
+proc bmmImpl[T](alpha: T, a, b: Tensor[T], beta: T): Tensor[T] {.noinit.} =
+  when compileOption("boundChecks"):
+    if a.rank < 2 or b.rank < 2:
+      raise newException(ValueError, "Batch matrix multiplication requires both tensors to have rank >= 2, got rank " & $a.rank & " and " & $b.rank)
+
+  let M = a.shape[a.rank - 2]
+  let Ka = a.shape[a.rank - 1]
+  let Kb = b.shape[b.rank - 2]
+  let N = b.shape[b.rank - 1]
+
+  when compileOption("boundChecks"):
+    if Ka != Kb:
+      raise newException(ValueError, "Matrix inner dimensions must agree for multiplication: " & $Ka & " vs " & $Kb)
+
+  let a_batch_rank = a.rank - 2
+  let b_batch_rank = b.rank - 2
+  let out_batch_rank = max(a_batch_rank, b_batch_rank)
+
+  var out_batch_shape = newSeq[int](out_batch_rank)
+  for i in 0 ..< out_batch_rank:
+    let a_dim = if i < out_batch_rank - a_batch_rank: 1 else: a.shape[i - (out_batch_rank - a_batch_rank)]
+    let b_dim = if i < out_batch_rank - b_batch_rank: 1 else: b.shape[i - (out_batch_rank - b_batch_rank)]
+    if a_dim == b_dim:
+      out_batch_shape[i] = a_dim
+    elif a_dim == 1:
+      out_batch_shape[i] = b_dim
+    elif b_dim == 1:
+      out_batch_shape[i] = a_dim
+    else:
+      raise newException(ValueError, "Batch dimension mismatch in matrix multiplication: " & $a.shape & " vs " & $b.shape)
+
+  var out_shape = out_batch_shape
+  out_shape.add(M)
+  out_shape.add(N)
+
+  result = newTensorUninit[T](out_shape)
+
+  var total_batches = 1
+  for d in out_batch_shape:
+    total_batches *= d
+
+  for b_idx in 0 ..< total_batches:
+    var curr = b_idx
+    var a_off = a.offset
+    var b_off = b.offset
+    var res_off = result.offset
+
+    for i in countdown(out_batch_rank - 1, 0):
+      let coord = curr mod out_batch_shape[i]
+      curr = curr div out_batch_shape[i]
+
+      res_off += coord * result.strides[i]
+
+      let a_idx = i - (out_batch_rank - a_batch_rank)
+      if a_idx >= 0:
+        let a_coord = if a.shape[a_idx] == 1: 0 else: coord
+        a_off += a_coord * a.strides[a_idx]
+
+      let b_idx_pos = i - (out_batch_rank - b_batch_rank)
+      if b_idx_pos >= 0:
+        let b_coord = if b.shape[b_idx_pos] == 1: 0 else: coord
+        b_off += b_coord * b.strides[b_idx_pos]
+
+    var a_slice: Tensor[T]
+    a_slice.shape = [M, Ka].toMetadata
+    a_slice.strides = [a.strides[a.rank - 2], a.strides[a.rank - 1]].toMetadata
+    a_slice.offset = a_off
+    a_slice.storage = a.storage
+
+    var b_slice: Tensor[T]
+    b_slice.shape = [Kb, N].toMetadata
+    b_slice.strides = [b.strides[b.rank - 2], b.strides[b.rank - 1]].toMetadata
+    b_slice.offset = b_off
+    b_slice.storage = b.storage
+
+    var res_slice: Tensor[T]
+    res_slice.shape = [M, N].toMetadata
+    res_slice.strides = [result.strides[result.rank - 2], result.strides[result.rank - 1]].toMetadata
+    res_slice.offset = res_off
+    res_slice.storage = result.storage
+
+    gemm(alpha, a_slice, b_slice, beta, res_slice)
+
 proc `*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noinit.} =
-  ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
+  ## Matrix multiplication (Matrix-Matrix, Matrix-Vector, and Batched Matrix Multiplication)
   ##
   ## Float and complex operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.
 
@@ -96,12 +179,14 @@ proc `*`*[T: SomeNumber](a, b: Tensor[T]): Tensor[T] {.noinit.} =
   elif a.rank == 2 and b.rank == 1:
     result = newTensorUninit[T](a.shape[0])
     gemv(1.T, a, b, 0.T, result)
+  elif a.rank >= 2 and b.rank >= 2:
+    result = bmmImpl(1.T, a, b, 0.T)
   else:
-    raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+    raise newException(ValueError, "Matrix multiplication valid only if both tensors have rank >= 2 (batched matrix multiplication), or rank 2 and rank 1 (matrix-vector)")
 
 proc `*`*[T: Complex[float32] or Complex[float64]](
       a, b: Tensor[T]): Tensor[T] {.noinit.} =
-  ## Matrix multiplication (Matrix-Matrix and Matrix-Vector)
+  ## Matrix multiplication (Matrix-Matrix, Matrix-Vector, and Batched Matrix Multiplication)
   ##
   ## Float and complex operations use optimized BLAS like OpenBLAS, Intel MKL or BLIS.
 
@@ -115,5 +200,9 @@ proc `*`*[T: Complex[float32] or Complex[float64]](
   elif a.rank == 2 and b.rank == 1:
     result = newTensorUninit[T](a.shape[0])
     gemv(complex(1.F, 0.F), a, b, complex(0.F, 0.F), result)
+  elif a.rank >= 2 and b.rank >= 2:
+    result = bmmImpl(complex(1.F, 0.F), a, b, complex(0.F, 0.F))
   else:
-    raise newException(ValueError, "Matrix-Matrix or Matrix-Vector multiplication valid only if first Tensor is a Matrix and second is a Matrix or Vector")
+    raise newException(ValueError, "Matrix multiplication valid only if both tensors have rank >= 2 (batched matrix multiplication), or rank 2 and rank 1 (matrix-vector)")
+
+

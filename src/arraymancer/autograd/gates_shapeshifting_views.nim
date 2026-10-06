@@ -153,3 +153,77 @@ template squeezeUnsqueeze(GateName, forward_proc, backward_proc: untyped): untyp
 
 squeezeUnsqueeze(SqueezeGate, squeeze, unsqueeze)
 squeezeUnsqueeze(UnsqueezeGate, unsqueeze, squeeze)
+
+# ############################################################
+#
+#                   Transpose2D
+#
+# ############################################################
+
+type Transpose2DGate*[TT] {.final.} = ref object of Gate[TT]
+
+proc transpose2d_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  result = newDiffs[TT](1)
+  result[0] = payload.variable.grad.transpose2d
+
+proc transpose2d_cache[TT](result: Variable[TT], a: Variable[TT]) =
+  var gate: Transpose2DGate[TT]
+  new gate
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+  register_node(
+    "Transpose2D",
+    gate,
+    transpose2d_backward_ag[TT],
+    result,
+    a
+  )
+
+proc transpose2d*[TT](a: Variable[TT]): Variable[TT] =
+  ## Transpose the last two dimensions of a Variable.
+  ## For 2D matrices, this is identical to standard transpose.
+  new result
+  result.context = a.context
+  result.value = a.value.transpose2d
+  if a.is_grad_needed:
+    result.transpose2d_cache(a)
+
+# ############################################################
+#
+#                   Permute
+#
+# ############################################################
+
+type PermuteGate*[TT] {.final.} = ref object of Gate[TT]
+  inv_dims: seq[int]
+
+proc permute_backward_ag[TT](self: Gate[TT], payload: Payload[TT]): SmallDiffs[TT] =
+  let self = PermuteGate[TT](self)
+  result = newDiffs[TT](1)
+  result[0] = payload.variable.grad.permute(self.inv_dims)
+
+proc permute_cache[TT](result: Variable[TT], a: Variable[TT], dims: openArray[int]) =
+  var gate: PermuteGate[TT]
+  new gate
+  gate.inv_dims = newSeq[int](dims.len)
+  for i, p in dims:
+    gate.inv_dims[p] = i
+
+  result.grad = zeros_like result.value
+  result.requires_grad = true
+  register_node(
+    "Permute",
+    gate,
+    permute_backward_ag[TT],
+    result,
+    a
+  )
+
+proc permute*[TT](a: Variable[TT], dims: varargs[int]): Variable[TT] =
+  ## Permute dimensions of a Variable
+  new result
+  result.context = a.context
+  result.value = a.value.permute(dims)
+  if a.is_grad_needed:
+    result.permute_cache(a, dims)
+

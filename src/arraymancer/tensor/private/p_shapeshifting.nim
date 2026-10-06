@@ -136,7 +136,7 @@ proc broadcast2Impl*[T](a, b: AnyTensor[T], result: var tuple[a, b: AnyTensor[T]
 
 proc exch_dim*[T](t: Tensor[T], dim1, dim2: int): Tensor[T] {.noinit,noSideEffect.}=
   if dim1 == dim2:
-    return
+    return t
 
   result = t # copy or no-copy is managed in the caller of exch_dim or permuteImpl
   swap(result.strides[dim1], result.strides[dim2])

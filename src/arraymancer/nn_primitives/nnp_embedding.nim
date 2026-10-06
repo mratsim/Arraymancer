@@ -75,7 +75,9 @@ proc embedding_backward*[T; Idx: byte or char or SomeInteger](
   # We assume that dWeight is zero initialized with shape
   # [vocabulary_size, embedding_size] for us.
   let flat_vocab_id = vocab_id.flatten_idx()
-  let flat_dOutput = dOutput.flatten_idx()
+  let dOutput2d =
+    if dOutput.rank == 2: dOutput
+    else: dOutput.reshape([vocab_id.size.int, dOutput.shape[^1]])
 
   for i, word_idx in enumerate(flat_vocab_id):
     if word_idx != padding_idx:
@@ -84,6 +86,6 @@ proc embedding_backward*[T; Idx: byte or char or SomeInteger](
         # For speed don't respect IEEE-754 and avoid
         # division in tight loop by multiplying by the inverse
         let idf = 1.T div counts[word_idx] # inverse document frequency
-        grad_curr_word +.= flat_dOutput[i] * idf
+        grad_curr_word +.= dOutput2d[i, _] * idf
       else:
-        grad_curr_word +.= flat_dOutput[i]
+        grad_curr_word +.= dOutput2d[i, _]

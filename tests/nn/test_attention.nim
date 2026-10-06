@@ -473,6 +473,20 @@ proc main() =
           check: c3.past_len == n
           check: max(abs(full.value - concat(@[a1.value, a2.value, a3.value], axis = 1))) < 1e-9
 
+    test "MultiHeadAttention caches rotated keys":
+      let ctx = newContext Tensor[float64]
+      let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 8, num_heads = 2, head_dim = 4)
+      let rope = RotaryEmbedding[float64].init(head_dim = 4)
+      let x = randomTensor[float64]([1, 2, 8], 1.0)
+      let token = ctx.variable(x[_, 1 .. 1, _])
+
+      ctx.no_grad_mode:
+        let (_, cache) = mha.forward(token, rope = rope.forward(1, offset = 1), past = default(KVCache[float64]))
+
+        # cached keys are the projections rotated at their absolute position
+        let projected = mha.k_proj.forward(token).value.reshape(1, 1, mha.kv_heads, mha.head_dim).permute(0, 2, 1, 3)
+        check: max(abs(cache.k - apply_rotary(ctx.variable(projected), rope.forward(1, offset = 1)).value)) < 1e-12
+
     test "MultiHeadAttention GQA cached decoding matches full forward":
       let ctx = newContext Tensor[float64]
       let rope = RotaryEmbedding[float64].init(head_dim = 4, rotary_dim = 2)

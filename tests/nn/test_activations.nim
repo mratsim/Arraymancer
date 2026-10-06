@@ -44,6 +44,35 @@ proc main() =
 
       check: vx.grad.mean_relative_error(numerical_gradient(x, loss_fn)) < 1e-6
 
+    test "QuickGELU forward matches x * sigmoid(1.702 x)":
+      let ctx = newContext Tensor[float64]
+      let x = randomTensor[float64]([3, 4], 4.0) -. 2.0
+
+      ctx.no_grad_mode:
+        let y = quick_gelu(ctx.variable(x)).value
+        for i in 0 ..< 3:
+          for j in 0 ..< 4:
+            let e = x[i, j] / (1.0 + exp(-1.702 * x[i, j]))
+            check: abs(y[i, j] - e) < 1e-12
+
+        # the flag and the named activation agree
+        check: gelu(ctx.variable(x), approximate = true).value == y
+
+    test "QuickGELU backward with numerical gradient":
+      let ctx = newContext Tensor[float64]
+      let x = randomTensor[float64]([2, 5], 2.0) -. 1.0
+      let grad_out = randomTensor[float64]([2, 5], 1.0)
+      let vx = ctx.variable(x, requires_grad = true)
+      let loss = (quick_gelu(vx) *. ctx.variable(grad_out)).sum()
+      loss.backprop()
+
+      proc loss_fn(inp: Tensor[float64]): float64 =
+        let c = newContext Tensor[float64]
+        c.no_grad_mode:
+          result = (quick_gelu(c.variable(inp)).value *. grad_out).sum
+
+      check: vx.grad.mean_relative_error(numerical_gradient(x, loss_fn)) < 1e-6
+
   echo ""
 
 main()

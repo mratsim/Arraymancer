@@ -27,24 +27,17 @@ proc scaled_dot_product_attention*[TT](
     scale: float64 = 0.0,
     mask: TT = default(TT)
 ): Variable[TT] =
-  # scale
+  ## `softmax(query keyᵀ * scale + mask) value`
   let d = query.value.shape[^1]
   let s = if scale == 0.0: pow(d.float64, -0.5) else: scale
 
-  # sim
   var sim = (query * key.transpose2d) * s
-
-  # mask
   if mask.size > 0:
     sim = sim +. mask
 
-  # attention
-  let attn = softmax(sim, axis = -1)
+  softmax(sim, axis = -1) * value
 
-  # out
-  result = attn * value
-
-# key/value cache for autoregressive (incremental) inference
+# key/value cache for incremental inference
 
 type KVCache*[T] = object
   k*: Tensor[T] # [batch, kv_heads, seq, head_dim]
@@ -54,7 +47,7 @@ proc isEmpty*[T](cache: KVCache[T]): bool =
   cache.k.size == 0
 
 proc past_len*[T](cache: KVCache[T]): int =
-  ## Number of keys/values already cached
+  ## Number of cached keys/values
   if cache.isEmpty: 0
   else: cache.k.shape[2]
 
@@ -62,17 +55,14 @@ proc repeat_kv*[T](
   x: Variable[Tensor[T]],
   repeats: int
 ): Variable[Tensor[T]] =
-  ## Grouped query attention helper: expand `[batch, kv_heads, seq, head_dim]`
-  ## by repeating each head `repeats` times, so that consecutive query heads
-  ## share one key/value head.
+  ## GQA: repeat each kv head for its `repeats` consecutive query heads
   doAssert repeats >= 1, "repeats must be at least 1, got " & $repeats
   if repeats == 1: return x
-  let g = x.value.shape[1]
-  var expanded: seq[Variable[Tensor[T]]] = @[]
-  for head in x.chunk(g, axis = 1):
+  var heads: seq[Variable[Tensor[T]]] = @[]
+  for head in x.chunk(x.value.shape[1], axis = 1):
     for _ in 0 ..< repeats:
-      expanded.add head
-  result = stack(expanded, axis = 1).squeeze(2)
+      heads.add head
+  stack(heads, axis = 1).squeeze(2)
 
 # attention masks
 
@@ -84,20 +74,18 @@ proc promote_mask[T](mask: Tensor[T]): Tensor[T] =
   while result.rank < 4:
     result = result.unsqueeze(0)
 
-proc key_mask_additive[T: SomeFloat](
-    key_mask: Tensor[bool],
-    n_key: int,
-    mask_val: T
-): Tensor[T] =
-  ## Convert a boolean `[batch, key]` key mask (`true` = masked out)
-  ## into an additive `[batch, 1, 1, key]` attention mask.
+proc key_mask_additive[T: SomeFloat](key_mask: Tensor[bool], mask_val: T): Tensor[T] =
+  ## Boolean `[batch, key]` key mask (`true` = masked out)
+  ## -> additive `[batch, 1, 1, key]` attention mask
   doAssert key_mask.rank == 2, "key_mask must have shape [batch, key]"
-  doAssert key_mask.shape[1] == n_key, "key_mask does not match the number of keys"
-  result = zeros[T]([key_mask.shape[0], 1, 1, n_key])
-  for b in 0 ..< key_mask.shape[0]:
-    for j in 0 ..< n_key:
-      if key_mask[b, j]:
-        result[b, 0, 0, j] = mask_val
+  result = map_inline(key_mask):
+    if x: mask_val else: 0.T
+  result = result.unsqueeze(1).unsqueeze(2)
+
+proc add_mask[T](base, extra: Tensor[T]): Tensor[T] =
+  ## Combine additive masks, an empty `base` means no mask
+  if base.size == 0: extra
+  else: base +. extra
 
 # layers
 
@@ -161,90 +149,61 @@ proc forward*[T](
   rope: RotaryFreqs[T] = default(RotaryFreqs[T]),
   past: KVCache[T]
 ): tuple[output: Variable[Tensor[T]], present: KVCache[T]] =
-  ## Incremental forward. Without `context`, queries, keys and values all come
-  ## from `x` (self-attention) and new keys/values are appended to `past`.
-  ## With a `context`, queries come from `x` while keys/values are projected
-  ## from `context` (cross-attention), once, then reused from `past`.
-  ##
-  ## The cache is detached memory: with a non-empty `past` the whole
-  ## key/value path is detached, so this path is meant for inference only.
-  ## Backprop through a forward with an empty cache is fully supported.
-  ##
-  ## `attn_mask` is additive and broadcast from `[key]`, `[seq, key]`,
-  ## `[heads, seq, key]` or `[batch, heads, seq, key]`. `key_mask` is a
+  ## Incremental forward. Keys/values come from `x` (self-attention) and are
+  ## appended to `past`, or from `context` once (cross-attention), then reused.
+  ## Fresh keys are rotated by `rope` before being cached, cached keys as-is.
+  ## A non-empty `past` detaches the key/value path (inference only).
+  ## `attn_mask` is additive, broadcast from `[key]`, `[seq, key]`,
+  ## `[heads, seq, key]` or `[batch, heads, seq, key]`; `key_mask` is a
   ## boolean `[batch, key]` mask where `true` masks the key out.
-  ## `rope` holds the frequencies of the fresh positions: queries and new keys
-  ## are rotated before they are cached, cached keys are used as-is. In
-  ## cross-attention the context keys share the query frequencies, so the
-  ## context must be exactly as long as `x`.
   ## Causal masking applies to self-attention only.
-  ##
-  ## Keys/values are projected with `kv_heads` heads and repeated to
-  ## `num_heads` for attention (grouped query attention).
 
-  let (b, n, h, d) = (x.value.shape[0], x.value.shape[1], self.num_heads, self.head_dim)
+  let (b, n, d) = (x.value.shape[0], x.value.shape[1], self.head_dim)
   let cross = not context.isNil
   let has_rope = not rope.isEmpty
+  let past_n = past.past_len
 
-  # queries
-  var q = self.q_proj.forward(x).reshape(b, n, h, d).permute(0, 2, 1, 3)
+  if cross and is_causal:
+    raise newException(ValueError, "MultiHeadAttention cannot be causal in cross-attention mode")
+
+  # [batch, seq, heads * head_dim] <-> [batch, heads, seq, head_dim]
+  template to_heads(t: Variable[Tensor[T]], heads: int): Variable[Tensor[T]] =
+    t.reshape(t.value.shape[0], t.value.shape[1], heads, d).permute(0, 2, 1, 3)
+  template merge_heads(t: Variable[Tensor[T]]): Variable[Tensor[T]] =
+    t.permute(0, 2, 1, 3).reshape(b, n, self.dim_inner)
+
+  var q = self.q_proj.forward(x).to_heads(self.num_heads)
   if has_rope:
     q = apply_rotary(q, rope)
 
+  # cross-attention reuses its cached context projection
+  let src = if cross: context else: x
   var k, v: Variable[Tensor[T]]
-  var n_kv: int
-  if cross:
-    if is_causal:
-      raise newException(ValueError, "MultiHeadAttention cannot be causal in cross-attention mode")
-    # keys/values from the context, projected once
-    if past.isEmpty:
-      let (c_b, c_n) = (context.value.shape[0], context.value.shape[1])
-      k = self.k_proj.forward(context).reshape(c_b, c_n, self.kv_heads, d).permute(0, 2, 1, 3)
-      v = self.v_proj.forward(context).reshape(c_b, c_n, self.kv_heads, d).permute(0, 2, 1, 3)
-      n_kv = c_n
-      if has_rope:
-        k = apply_rotary(k, rope)
-    else:
-      k = x.context.variable(past.k)
-      v = x.context.variable(past.v)
-      n_kv = past.past_len
+  if cross and past_n > 0:
+    k = x.context.variable(past.k)
+    v = x.context.variable(past.v)
   else:
-    let past_n = past.past_len
-
-    # keys/values from x
-    k = self.k_proj.forward(x).reshape(b, n, self.kv_heads, d).permute(0, 2, 1, 3)
-    v = self.v_proj.forward(x).reshape(b, n, self.kv_heads, d).permute(0, 2, 1, 3)
+    k = self.k_proj.forward(src).to_heads(self.kv_heads)
+    v = self.v_proj.forward(src).to_heads(self.kv_heads)
     if has_rope:
       k = apply_rotary(k, rope)
-    n_kv = past_n + n
-
-    # continue from the rotated cached prefix
-    if past_n > 0:
+    # self-attention continues from the rotated cached prefix
+    if not cross and past_n > 0:
       k = x.context.variable(concat(past.k, k.value, axis = 2))
       v = x.context.variable(concat(past.v, v.value, axis = 2))
 
-  # attention mask, causal mask offset by the cached prefix
+  # causal mask offset by the cached prefix
+  let n_kv = k.value.shape[2]
   var m = promote_mask(attn_mask)
   if is_causal:
-    let causal = causal_mask[T](n, n_kv, past.past_len)
-    m = if m.size == 0: causal else: m +. causal
+    m = add_mask(m, causal_mask[T](n, n_kv, past_n))
   if key_mask.size > 0:
-    let km = key_mask_additive[T](key_mask, n_kv, -1e9.T)
-    m = if m.size == 0: km else: m +. km
+    m = add_mask(m, key_mask_additive[T](key_mask, -1e9.T))
 
-  # grouped query attention: repeat each kv head for its query heads
   let repeats = self.num_heads div self.kv_heads
-  let k_attn = if repeats == 1: k else: repeat_kv(k, repeats)
-  let v_attn = if repeats == 1: v else: repeat_kv(v, repeats)
+  let output = scaled_dot_product_attention(q, repeat_kv(k, repeats), repeat_kv(v, repeats), mask = m)
 
-  # attention
-  let output = scaled_dot_product_attention(q, k_attn, v_attn, mask = m)
-
-  # merge heads
-  let merged = output.permute(0, 2, 1, 3).reshape(b, n, self.dim_inner)
-
-  # out
-  result.output = self.out_proj.forward(merged)
+  result.output = self.out_proj.forward(output.merge_heads)
   result.present = KVCache[T](k: k.value, v: v.value)
 
 proc forward*[T](

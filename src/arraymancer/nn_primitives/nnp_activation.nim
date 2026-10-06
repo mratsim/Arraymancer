@@ -44,6 +44,11 @@ proc gelu*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noinit.}=
   result = map_inline(t):
     0.5.T * x * (1.T + erf(x / sqrt(2.T)))
 
+proc quick_gelu*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noinit.}=
+  ## Sigmoid approximation to GELU (OpenAI CLIP), :math:`f(x) = x \sigma(1.702 x)`.
+  result = map_inline(t):
+    x * sigmoid(1.702.T * x)
+
 # ##################################################################################################
 # In-place forward
 
@@ -83,6 +88,12 @@ proc gelu_backward*[T: SomeFloat](gradient: Tensor[T], cached_input: Tensor[T]):
   ## GELU derivative, :math:`f'(x) = 1/2(1 + erf(x/\sqrt{2})) + x e^{-x^2/2}/\sqrt{2\pi}`.
   result = map2_inline(cached_input, gradient):
     y * (0.5.T * (1.T + erf(x / sqrt(2.T))) + x * exp(-0.5.T * x * x) / sqrt(2.T * T(PI)))
+
+proc quick_gelu_backward*[T: SomeFloat](gradient: Tensor[T], cached_input: Tensor[T]): Tensor[T]{.noinit.}=
+  ## QuickGELU derivative,
+  ## :math:`f'(x) = \sigma(1.702 x) (1 + 1.702 x (1 - \sigma(1.702 x)))`.
+  result = map2_inline(cached_input, gradient):
+    y * sigmoid(1.702.T * x) * (1.T + 1.702.T * x * (1.T - sigmoid(1.702.T * x)))
 
 # ####################################################################################################
 # Documentation

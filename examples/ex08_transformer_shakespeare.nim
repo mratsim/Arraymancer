@@ -96,7 +96,7 @@ proc forward[T](
 ): Variable[Tensor[T]] =
   doAssert caches.len == self.blocks.len
   let n = tokens.shape[1]
-  let offset = caches[0].past_len
+  let offset = caches[0].seen # positions continue from the cache
   let rope = if self.use_rope: self.rope.forward(n, offset) else: default(RotaryFreqs[T])
 
   # token embeddings, plus learned positions continuing from the cached prefix
@@ -114,6 +114,13 @@ proc forward[T](
 
   # head
   result = self.head.forward(self.norm_f.forward(x))
+
+proc slide[T](cache: var KVCache[T], window: int) =
+  # sliding window: keep the last `window` keys/values
+  let cached = cache.k.shape[2]
+  if cached > window:
+    cache.k = cache.k[_, _, cached - window .. cached - 1, _].clone()
+    cache.v = cache.v[_, _, cached - window .. cached - 1, _].clone()
 
 # sampling
 
@@ -155,9 +162,9 @@ proc generate[T](
   charToIx: Table[char, int],
   ixToChar: seq[char],
   length: int = 250,
-  temperature: T = 0.7.T,
+  temperature: T = 1.0.T,
   topK: T = 0.9.T,
-  useCache: bool = false
+  useCache: bool = true
 ): string =
   doAssert prompt.len > 0, "prompt must not be empty"
   var rng = initRand(42)
@@ -166,23 +173,24 @@ proc generate[T](
     tokens.add(if ch in charToIx: charToIx[ch] else: 0)
 
   result = ""
+  let window = model.max_seq_len
 
   ctx.no_grad_mode:
     var caches = newSeq[KVCache[T]](if useCache: model.blocks.len else: 0)
 
     for _ in 0 ..< length:
       let total = tokens.len
-      # full context for rope, a sliding max_seq_len window otherwise
-      let window = if model.use_rope: total else: min(total, model.max_seq_len)
+      # rope positions are unbounded, learned positions stay inside the window
+      let full = if model.use_rope: total else: min(total, window)
 
-      # a cache that does not hold the current window prefix is invalid
-      if useCache and caches[0].past_len != window - 1:
-        for c in caches.mitems: c = default(KVCache[T])
-
-      # feed the window, or just the last token when continuing from a cache
-      let n = if useCache and not caches[0].isEmpty: 1 else: window
+      # a fresh cache prefills the context, a warm one decodes a single token
+      var n = full
       if useCache and not caches[0].isEmpty:
-        doAssert caches[0].past_len == window - 1
+        if model.use_rope or caches[0].seen + 1 <= window:
+          n = 1
+        else:
+          # learned positions would leave the embedding table
+          for c in caches.mitems: c = default(KVCache[T])
 
       let offset = total - n
       var inp = newTensor[int]([1, n])
@@ -192,6 +200,9 @@ proc generate[T](
       let logits =
         if useCache: model.forward(inp, caches)
         else: model.forward(inp)
+
+      if useCache:
+        for c in caches.mitems: c.slide(window)
 
       let next_id = sampleLast(logits, n - 1, temperature, topK, rng)
       tokens.add next_id
@@ -203,12 +214,11 @@ proc main() =
   var
     steps = 2000
     length = 350
-    temperature = 0.65'f32
+    temperature = 1.0'f32
     topK = 0.9'f32
     prompt = "ROMEO:\n"
     sampleEvery = 100
     kvCache = true
-    compare = false
     useRope = true
 
   for kind, key, val in getopt():
@@ -222,11 +232,13 @@ proc main() =
       of "prompt": prompt = val
       of "sample-every": sampleEvery = parseInt(val)
       of "kv-cache": kvCache = if val.len == 0: true else: parseBool(val)
-      of "compare": compare = true
       of "rope": useRope = if val.len == 0: true else: parseBool(val)
       of "abs-pos": useRope = false
       else: discard
     else: discard
+
+  if sampleEvery <= 0:
+    sampleEvery = max(1, steps div 4)
 
   let path = currentSourcePath().parentDir / "ex06_shakespeare_input.txt"
   if not fileExists(path):
@@ -310,21 +322,10 @@ proc main() =
   echo "--- Generated Shakespeare ---"
   echo &"prompt: {prompt.escape}"
 
-  if compare:
-    var
-      outputs: seq[string] = @[]
-      times: seq[float] = @[]
-    for mode in [false, true]:
-      let t1 = epochTime()
-      outputs.add ctx.generate(model, prompt, charToIx, ixToChar, length = length, temperature = temperature, topK = topK, useCache = mode)
-      times.add epochTime() - t1
-    echo &"--- no-cache {times[0]:.2f}s | kv-cache {times[1]:.2f}s | identical: {outputs[0] == outputs[1]} ---"
-    echo outputs[1]
-  else:
-    let t1 = epochTime()
-    let generated = ctx.generate(model, prompt, charToIx, ixToChar, length = length, temperature = temperature, topK = topK, useCache = kvCache)
-    echo &"--- kv-cache: {kvCache} | {epochTime() - t1:.2f}s | {generated.len} chars ---"
-    echo generated
+  let t1 = epochTime()
+  let generated = ctx.generate(model, prompt, charToIx, ixToChar, length = length, temperature = temperature, topK = topK, useCache = kvCache)
+  echo &"--- kv-cache: {kvCache} | {epochTime() - t1:.2f}s | {generated.len} chars ---"
+  echo generated
 
 if isMainModule:
   main()

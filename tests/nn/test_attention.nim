@@ -267,11 +267,12 @@ proc main() =
       ctx.no_grad_mode:
         let (o, c) = mha.forward(
           ctx.variable(randomTensor[float32]([1, 3, 16], 1.0f)),
-          ctx.variable(randomTensor[float32]([1, 5, 16], 1.0f)),
+          context = ctx.variable(randomTensor[float32]([1, 5, 16], 1.0f)),
           past = default(KVCache[float32])
         )
         check: o.value.shape == @[1, 3, 16]
         check: c.k.shape == @[1, 2, 5, 4]
+        check: c.seen == 5 # context tokens
 
     test "MultiHeadAttention cross-attention mode":
       let ctx = newContext Tensor[float32]
@@ -287,7 +288,7 @@ proc main() =
 
       let x = ctx.variable(randomTensor([2, 6, 16], 1.0f), requires_grad = true)
       let cond = ctx.variable(randomTensor([2, 9, 16], 1.0f), requires_grad = true)
-      let output = mha.forward(x, cond)
+      let output = mha.forward(x, context = cond)
       check: output.value.shape == @[2, 6, 16]
 
       let loss = output.sum()
@@ -310,7 +311,15 @@ proc main() =
       check: mha2.context_dim == 24
       check: mha2.k_proj.weight.value.shape == @[16, 24]
       let cond2 = ctx.variable(randomTensor([2, 9, 24], 1.0f))
-      check: mha2.forward(x, cond2).value.shape == @[2, 6, 16]
+      check: mha2.forward(x, context = cond2).value.shape == @[2, 6, 16]
+
+      # mixed dims only work with a context
+      expect ValueError:
+        discard mha2.forward(x)
+
+      # cross-attention cannot be causal
+      expect ValueError:
+        discard mha.forward(x, context = cond, is_causal = true)
 
     test "Causal mask with offset":
       let m = causal_mask[float64](2, 5, offset = 3)
@@ -337,17 +346,92 @@ proc main() =
           let (o, c) = mha.forward(ctx.variable(x[_, i .. i, _]), is_causal = true, past = cache)
           cache = c
           outs.add o.value
-        check: cache.past_len == n
+        check: cache.seen == n
         check: max(abs(full - concat(outs, axis = 1))) < 1e-9
 
         # chunks of 3, 2 and 2, with an offset causal mask
         let (o1, c1) = mha.forward(ctx.variable(x[_, 0 .. 2, _]), is_causal = true, past = default(KVCache[float64]))
         let (o2, c2) = mha.forward(ctx.variable(x[_, 3 .. 4, _]), is_causal = true, past = c1)
         let (o3, c3) = mha.forward(ctx.variable(x[_, 5 .. 6, _]), is_causal = true, past = c2)
-        check: c3.past_len == n
+        check: c1.seen == 3
+        check: c3.seen == n
         check: max(abs(full - concat(@[o1.value, o2.value, o3.value], axis = 1))) < 1e-9
 
-    test "MultiHeadAttention cross-attention attn_mask and key_mask":
+    test "MultiHeadAttention sliding window cache":
+      let ctx = newContext Tensor[float64]
+      let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 16, num_heads = 4, head_dim = 4)
+      const n = 8
+      const window = 3
+      let x = randomTensor[float64]([1, n, 16], 1.0)
+
+      ctx.no_grad_mode:
+        var cache = default(KVCache[float64])
+        var last = ctx.variable(zeros[float64]([1, 1, 16]))
+        for i in 0 ..< n:
+          let (o, c) = mha.forward(ctx.variable(x[_, i .. i, _]), is_causal = true, past = cache)
+          cache = c
+          last = o
+          # slide: keep only the last `window` keys/values
+          let cached = cache.k.shape[2]
+          if cached > window:
+            cache.k = cache.k[_, _, cached - window .. cached - 1, _].clone()
+            cache.v = cache.v[_, _, cached - window .. cached - 1, _].clone()
+
+        check: cache.seen == n            # positions keep counting
+        check: cache.k.shape[2] == window # cached rows stay bounded
+        check: not cache.isEmpty
+
+        # the last query attends the last `window + 1` tokens
+        let windowed = mha.forward(ctx.variable(x[_, n - window - 1 .. n - 1, _]), is_causal = true).value
+        check: max(abs(last.value - windowed[_, window .. window, _])) < 1e-9
+
+    test "MultiHeadAttention sliding window rope cache":
+      let ctx = newContext Tensor[float64]
+      let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 16, num_heads = 4, head_dim = 4)
+      let rope = RotaryEmbedding[float64].init(head_dim = 4)
+      const n = 6
+      const window = 2
+      let x = randomTensor[float64]([1, n, 16], 1.0)
+
+      ctx.no_grad_mode:
+        var cache = default(KVCache[float64])
+        var last = ctx.variable(zeros[float64]([1, 1, 16]))
+        for i in 0 ..< n:
+          # positions come from `seen`, not from the cached rows
+          let (o, c) = mha.forward(
+            ctx.variable(x[_, i .. i, _]), is_causal = true,
+            rope = rope.forward(1, offset = i), past = cache
+          )
+          cache = c
+          last = o
+          let cached = cache.k.shape[2]
+          if cached > window:
+            cache.k = cache.k[_, _, cached - window .. cached - 1, _].clone()
+            cache.v = cache.v[_, _, cached - window .. cached - 1, _].clone()
+
+        check: cache.seen == n            # positions keep counting
+        check: cache.k.shape[2] == window # while the cache stays bounded
+
+        # the last token attends the last `window + 1` positions
+        let windowed = mha.forward(
+          ctx.variable(x[_, n - window - 1 .. n - 1, _]), is_causal = true,
+          rope = rope.forward(window + 1, offset = n - window - 1)
+        ).value
+        check: max(abs(last.value - windowed[_, window .. window, _])) < 1e-9
+
+    test "MultiHeadAttention fully masked keys attend nothing":
+      let ctx = newContext Tensor[float64]
+      let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 16, num_heads = 4, head_dim = 4)
+      let x = randomTensor[float64]([1, 3, 16], 1.0)
+
+      var key_mask = newTensor[bool]([1, 3])
+      for j in 0 ..< 3: key_mask[0, j] = true
+
+      ctx.no_grad_mode:
+        let masked_out = mha.forward(ctx.variable(x), key_mask = key_mask).value
+        check: max(abs(masked_out)) < 1e-12
+
+    test "MultiHeadAttention cross-attention mask and key_mask":
       let ctx = newContext Tensor[float64]
       let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 16, num_heads = 4, head_dim = 4)
       let x = randomTensor[float64]([1, 3, 16], 1.0)
@@ -374,11 +458,11 @@ proc main() =
 
       ctx.no_grad_mode:
         # masking padding is the same as dropping the padded keys
-        let out_key = mha.forward(ctx.variable(x), ctx.variable(cond), key_mask = key_mask).value
-        let out_cut = mha.forward(ctx.variable(x), ctx.variable(cond[_, 0 .. 2, _])).value
+        let out_key = mha.forward(ctx.variable(x), context = ctx.variable(cond), key_mask = key_mask).value
+        let out_cut = mha.forward(ctx.variable(x), context = ctx.variable(cond[_, 0 .. 2, _])).value
         check: max(abs(out_key - out_cut)) < 1e-9
         for m in [m1, m2, m3, m4]:
-          let res = mha.forward(ctx.variable(x), ctx.variable(cond), attn_mask = m).value
+          let res = mha.forward(ctx.variable(x), context = ctx.variable(cond), mask = m).value
           check: max(abs(res - out_cut)) < 1e-9
 
         # full attention matrix: every query attends key 0 only,
@@ -386,15 +470,16 @@ proc main() =
         var only0 = zeros[float64]([3, 5])
         for i in 0 ..< 3:
           for j in 1 ..< 5: only0[i, j] = -1e9
-        let a = mha.forward(ctx.variable(x), ctx.variable(cond), attn_mask = only0).value
-        let b = mha.forward(ctx.variable(randomTensor[float64]([1, 3, 16], 1.0)), ctx.variable(cond), attn_mask = only0).value
+        let a = mha.forward(ctx.variable(x), context = ctx.variable(cond), mask = only0).value
+        let b = mha.forward(ctx.variable(randomTensor[float64]([1, 3, 16], 1.0)), context = ctx.variable(cond), mask = only0).value
         check: max(abs(a - b)) < 1e-12
 
         # key padding with a cached context
         var cache = default(KVCache[float64])
-        let (o1, c1) = mha.forward(ctx.variable(x[_, 0 .. 0, _]), ctx.variable(cond), key_mask = key_mask, past = cache)
-        let (o2, c2) = mha.forward(ctx.variable(x[_, 1 .. 2, _]), ctx.variable(cond), key_mask = key_mask, past = c1)
-        check: c2.past_len == 5
+        let (o1, c1) = mha.forward(ctx.variable(x[_, 0 .. 0, _]), context = ctx.variable(cond), key_mask = key_mask, past = cache)
+        let (o2, c2) = mha.forward(ctx.variable(x[_, 1 .. 2, _]), context = ctx.variable(cond), key_mask = key_mask, past = c1)
+        check: c1.seen == 5
+        check: c2.seen == 5 # context tokens are not counted twice
         check: max(abs(out_key - concat(@[o1.value, o2.value], axis = 1))) < 1e-9
 
     test "MultiHeadAttention key_mask with cache":
@@ -462,7 +547,7 @@ proc main() =
             cache = present
             outs.add output.value
 
-          check: cache.past_len == n
+          check: cache.seen == n
           let seq_out = concat(outs, axis = 1)
           check: max(abs(full.value - seq_out)) < 1e-9
 
@@ -470,7 +555,7 @@ proc main() =
           let (a1, c1) = mha.forward(ctx.variable(x[_, 0 .. 2, _]), is_causal = true, rope = rope.forward(3), past = default(KVCache[float64]))
           let (a2, c2) = mha.forward(ctx.variable(x[_, 3 .. 4, _]), is_causal = true, rope = rope.forward(2, offset = 3), past = c1)
           let (a3, c3) = mha.forward(ctx.variable(x[_, 5 .. 8, _]), is_causal = true, rope = rope.forward(4, offset = 5), past = c2)
-          check: c3.past_len == n
+          check: c3.seen == n
           check: max(abs(full.value - concat(@[a1.value, a2.value, a3.value], axis = 1))) < 1e-9
 
     test "MultiHeadAttention caches rotated keys":
@@ -509,7 +594,7 @@ proc main() =
             cache = present
             outs.add output.value
 
-          check: cache.past_len == n
+          check: cache.seen == n
           check: cache.k.shape == @[1, kv_heads, n, 4] # compact kv cache
           check: max(abs(full - concat(outs, axis = 1))) < 1e-9
 

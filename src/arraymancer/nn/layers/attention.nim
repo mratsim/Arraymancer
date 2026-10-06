@@ -40,16 +40,12 @@ proc scaled_dot_product_attention*[TT](
 # key/value cache for incremental inference
 
 type KVCache*[T] = object
-  k*: Tensor[T] # [batch, kv_heads, seq, head_dim]
+  seen*: int     # tokens seen, grows past the cached window when sliding
+  k*: Tensor[T]  # [batch, kv_heads, cached_seq, head_dim]
   v*: Tensor[T]
 
 proc isEmpty*[T](cache: KVCache[T]): bool =
   cache.k.size == 0
-
-proc past_len*[T](cache: KVCache[T]): int =
-  ## Number of cached keys/values
-  if cache.isEmpty: 0
-  else: cache.k.shape[2]
 
 proc repeat_kv*[T](
   x: Variable[Tensor[T]],
@@ -81,6 +77,15 @@ proc key_mask_additive[T: SomeFloat](key_mask: Tensor[bool], mask_val: T): Tenso
   result = map_inline(key_mask):
     if x: mask_val else: 0.T
   result = result.unsqueeze(1).unsqueeze(2)
+
+proc key_visibility[T: SomeFloat](key_mask: Tensor[bool]): Tensor[T] =
+  ## [batch, 1, 1, 1]: 0 when every key of the row is masked
+  result = ones[T]([key_mask.shape[0], 1, 1, 1])
+  for b in 0 ..< key_mask.shape[0]:
+    var any_visible = false
+    for j in 0 ..< key_mask.shape[1]:
+      if not key_mask[b, j]: any_visible = true
+    if not any_visible: result[b, 0, 0, 0] = 0.T
 
 proc add_mask[T](base, extra: Tensor[T]): Tensor[T] =
   ## Combine additive masks, an empty `base` means no mask
@@ -142,29 +147,33 @@ proc init*[T](
 proc forward*[T](
   self: MultiHeadAttention[T],
   x: Variable[Tensor[T]],
+  mask: Tensor[T] = default(Tensor[T]),
   context: Variable[Tensor[T]] = nil,
-  attn_mask: Tensor[T] = default(Tensor[T]),
   is_causal: bool = false,
   key_mask: Tensor[bool] = default(Tensor[bool]),
   rope: RotaryFreqs[T] = default(RotaryFreqs[T]),
   past: KVCache[T]
 ): tuple[output: Variable[Tensor[T]], present: KVCache[T]] =
-  ## Incremental forward. Keys/values come from `x` (self-attention) and are
-  ## appended to `past`, or from `context` once (cross-attention), then reused.
-  ## Fresh keys are rotated by `rope` before being cached, cached keys as-is.
+  ## Incremental forward. Self-attention appends fresh keys/values to `past`;
+  ## cross-attention caches the context projection once.
+  ## Fresh keys are rotated by `rope`, cached keys keep theirs.
   ## A non-empty `past` detaches the key/value path (inference only).
-  ## `attn_mask` is additive, broadcast from `[key]`, `[seq, key]`,
+  ## `mask` is additive and broadcasts from `[key]`, `[seq, key]`,
   ## `[heads, seq, key]` or `[batch, heads, seq, key]`; `key_mask` is a
-  ## boolean `[batch, key]` mask where `true` masks the key out.
+  ## boolean `[batch, key]` where `true` masks the key out.
   ## Causal masking applies to self-attention only.
 
   let (b, n, d) = (x.value.shape[0], x.value.shape[1], self.head_dim)
   let cross = not context.isNil
   let has_rope = not rope.isEmpty
-  let past_n = past.past_len
+  let cached = if past.isEmpty: 0 else: past.k.shape[2]
 
   if cross and is_causal:
     raise newException(ValueError, "MultiHeadAttention cannot be causal in cross-attention mode")
+  if not cross and self.context_dim != self.embed_dim:
+    raise newException(ValueError,
+      "MultiHeadAttention self-attention requires context_dim == embed_dim, got " &
+      $self.context_dim & " and " & $self.embed_dim)
 
   # [batch, seq, heads * head_dim] <-> [batch, heads, seq, head_dim]
   template to_heads(t: Variable[Tensor[T]], heads: int): Variable[Tensor[T]] =
@@ -177,42 +186,48 @@ proc forward*[T](
     q = apply_rotary(q, rope)
 
   # cross-attention reuses its cached context projection
-  let src = if cross: context else: x
   var k, v: Variable[Tensor[T]]
-  if cross and past_n > 0:
+  if cross and cached > 0:
     k = x.context.variable(past.k)
     v = x.context.variable(past.v)
   else:
+    let src = if cross: context else: x
     k = self.k_proj.forward(src).to_heads(self.kv_heads)
     v = self.v_proj.forward(src).to_heads(self.kv_heads)
     if has_rope:
       k = apply_rotary(k, rope)
     # self-attention continues from the rotated cached prefix
-    if not cross and past_n > 0:
+    if not cross and cached > 0:
       k = x.context.variable(concat(past.k, k.value, axis = 2))
       v = x.context.variable(concat(past.v, v.value, axis = 2))
 
-  # causal mask offset by the cached prefix
-  let n_kv = k.value.shape[2]
-  var m = promote_mask(attn_mask)
+  # causal mask, offset by the number of cached keys
+  var m = promote_mask(mask)
   if is_causal:
-    m = add_mask(m, causal_mask[T](n, n_kv, past_n))
+    m = add_mask(m, causal_mask[T](n, k.value.shape[2], cached))
   if key_mask.size > 0:
     m = add_mask(m, key_mask_additive[T](key_mask, -1e9.T))
 
   let repeats = self.num_heads div self.kv_heads
-  let output = scaled_dot_product_attention(q, repeat_kv(k, repeats), repeat_kv(v, repeats), mask = m)
+  var output = scaled_dot_product_attention(q, repeat_kv(k, repeats), repeat_kv(v, repeats), mask = m)
+  if key_mask.size > 0:
+    # fully masked queries attend nothing
+    output = output *. x.context.variable(key_visibility[T](key_mask))
 
   result.output = self.out_proj.forward(output.merge_heads)
-  result.present = KVCache[T](k: k.value, v: v.value)
+  # self-attention counts queries, cross-attention counts context tokens once
+  let n_seen = if cross and cached > 0: 0
+               elif cross: context.value.shape[1]
+               else: n
+  result.present = KVCache[T](seen: past.seen + n_seen, k: k.value, v: v.value)
 
 proc forward*[T](
   self: MultiHeadAttention[T],
   x: Variable[Tensor[T]],
+  mask: Tensor[T] = default(Tensor[T]),
   context: Variable[Tensor[T]] = nil,
-  attn_mask: Tensor[T] = default(Tensor[T]),
   is_causal: bool = false,
   key_mask: Tensor[bool] = default(Tensor[bool]),
   rope: RotaryFreqs[T] = default(RotaryFreqs[T])
 ): Variable[Tensor[T]] =
-  self.forward(x, context, attn_mask, is_causal, key_mask, rope, default(KVCache[T])).output
+  self.forward(x, mask, context, is_causal, key_mask, rope, default(KVCache[T])).output

@@ -1,5 +1,5 @@
 import
-  std / [os, random, times, strformat, algorithm, tables, math, parseopt, strutils],
+  std / [os, random, times, strformat, algorithm, tables, math, parseopt, strutils, options],
   ../src/arraymancer
 
 # transformer
@@ -25,7 +25,7 @@ type
     blocks*: seq[TransformerBlock[T]]
     norm_f*: RMSNorm[T]
     head*: Linear[T]
-    max_seq_len*: int
+    max_seq_len*: Option[int]
     use_rope*: bool
 
 proc initBlock[T](
@@ -66,7 +66,8 @@ proc forward[T](
 
 proc initTransformerLM[T](
   ctx: Context[Tensor[T]],
-  vocab_size, dim, max_seq_len, layers, heads: int,
+  vocab_size, dim, layers, heads: int,
+  max_seq_len = none(int),
   useRope = true,
   rotaryDim = 0,
   kvHeads = 0
@@ -74,14 +75,16 @@ proc initTransformerLM[T](
   result.tok_emb = ctx.init(Embedding[T], vocab_size, dim)
   if useRope:
     result.rope = RotaryEmbedding[T].init(dim div heads, rotaryDim)
+    result.max_seq_len = none(int)
   else:
-    result.pos_emb = ctx.init(Embedding[T], max_seq_len, dim)
+    doAssert max_seq_len.isSome, "max_seq_len is required with absolute position embeddings"
+    result.pos_emb = ctx.init(Embedding[T], max_seq_len.get, dim)
+    result.max_seq_len = max_seq_len
   result.blocks = newSeq[TransformerBlock[T]](layers)
   for i in 0 ..< layers:
     result.blocks[i] = ctx.initBlock(dim, heads, kvHeads)
   result.norm_f = ctx.init(RMSNorm[T], dim)
   result.head = ctx.init(Linear[T], dim, vocab_size)
-  result.max_seq_len = max_seq_len
   result.use_rope = useRope
 
 proc forward[T](self: TransformerLM[T], tokens: Tensor[int]): Variable[Tensor[T]] =
@@ -114,13 +117,6 @@ proc forward[T](
 
   # head
   result = self.head.forward(self.norm_f.forward(x))
-
-proc slide[T](cache: var KVCache[T], window: int) =
-  # sliding window: keep the last `window` keys/values
-  let cached = cache.k.shape[2]
-  if cached > window:
-    cache.k = cache.k[_, _, cached - window .. cached - 1, _].clone()
-    cache.v = cache.v[_, _, cached - window .. cached - 1, _].clone()
 
 # sampling
 
@@ -180,13 +176,13 @@ proc generate[T](
 
     for _ in 0 ..< length:
       let total = tokens.len
-      # rope positions are unbounded, learned positions stay inside the window
-      let full = if model.use_rope: total else: min(total, window)
+      # no window: unbounded context; otherwise learned positions stay inside it
+      let full = window.get(total)
 
       # a fresh cache prefills the context, a warm one decodes a single token
       var n = full
       if useCache and not caches[0].isEmpty:
-        if model.use_rope or caches[0].seen + 1 <= window:
+        if window.isNone or caches[0].seen + 1 <= window.get:
           n = 1
         else:
           # learned positions would leave the embedding table
@@ -200,9 +196,6 @@ proc generate[T](
       let logits =
         if useCache: model.forward(inp, caches)
         else: model.forward(inp)
-
-      if useCache:
-        for c in caches.mitems: c.slide(window)
 
       let next_id = sampleLast(logits, n - 1, temperature, topK, rng)
       tokens.add next_id
@@ -280,7 +273,11 @@ proc main() =
   echo &"Shakespeare ({text.len} chars, vocab {vocab_size}) | dim={dim}, heads={heads}, kv_heads={kv_heads}, layers={layers}, ctx={seq_len}{ropeInfo}"
 
   let ctx = newContext Tensor[float32]
-  let model = ctx.initTransformerLM(vocab_size, dim, seq_len, layers, heads, useRope = useRope, rotaryDim = rotary_dim, kvHeads = kv_heads)
+  let model = ctx.initTransformerLM(
+    vocab_size, dim, layers, heads,
+    max_seq_len = if useRope: none(int) else: some(seq_len),
+    useRope = useRope, rotaryDim = rotary_dim, kvHeads = kv_heads
+  )
   var optim = model.optimizer(Adam, learning_rate = lr)
 
   var rng = initRand(1337)

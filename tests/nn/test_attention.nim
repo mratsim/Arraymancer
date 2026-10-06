@@ -215,4 +215,372 @@ proc main() =
       check: mha.v_proj.weight.grad.shape == @[32, 16]
       check: mha.out_proj.weight.grad.shape == @[16, 32]
 
+    test "repeat_kv groups consecutive query heads":
+      let ctx = newContext Tensor[float64]
+      # [1, 4, 1, 1] heads holding 1, 2, 3, 4
+      var x = newTensor[float64]([1, 4, 1, 1])
+      for i in 0 ..< 4: x[0, i, 0, 0] = float64(i + 1)
+
+      let r = repeat_kv(ctx.variable(x), 2).value
+      check: r.shape == @[1, 8, 1, 1]
+      for i in 0 ..< 8:
+        check: r[0, i, 0, 0] == float64(i div 2 + 1)
+
+    test "MultiHeadAttention grouped query attention":
+      let ctx = newContext Tensor[float32]
+      let mha = ctx.init(
+        MultiHeadAttention[float32], embed_dim = 16, num_heads = 4, head_dim = 4, kv_heads = 2
+      )
+
+      check: mha.num_heads == 4
+      check: mha.kv_heads == 2
+      check: mha.q_proj.weight.value.shape == @[16, 16]
+      check: mha.k_proj.weight.value.shape == @[8, 16]
+      check: mha.v_proj.weight.value.shape == @[8, 16]
+      check: mha.out_proj.weight.value.shape == @[16, 16]
+
+      let x = ctx.variable(randomTensor([2, 6, 16], 1.0f), requires_grad = true)
+      let output = mha.forward(x, is_causal = true)
+      check: output.value.shape == @[2, 6, 16]
+
+      let loss = output.sum()
+      loss.backprop()
+      check: x.grad.shape == @[2, 6, 16]
+      check: mha.k_proj.weight.grad.shape == @[8, 16]
+      check: mha.v_proj.weight.grad.shape == @[8, 16]
+
+      # a single shared kv head is multi-query attention
+      let mqa = ctx.init(
+        MultiHeadAttention[float32], embed_dim = 16, num_heads = 4, head_dim = 4, kv_heads = 1
+      )
+      check: mqa.kv_heads == 1
+      check: mqa.k_proj.weight.value.shape == @[4, 16]
+      check: mqa.forward(x).value.shape == @[2, 6, 16]
+
+      # kv heads must divide the query heads
+      expect ValueError:
+        discard ctx.init(MultiHeadAttention[float32], embed_dim = 16, num_heads = 4, head_dim = 4, kv_heads = 3)
+      expect ValueError:
+        discard ctx.init(MultiHeadAttention[float32], embed_dim = 16, num_heads = 4, head_dim = 4, kv_heads = 5)
+
+      # cross-attention keeps a compact cache
+      ctx.no_grad_mode:
+        let (o, c) = mha.forward(
+          ctx.variable(randomTensor[float32]([1, 3, 16], 1.0f)),
+          ctx.variable(randomTensor[float32]([1, 5, 16], 1.0f)),
+          past = default(KVCache[float32])
+        )
+        check: o.value.shape == @[1, 3, 16]
+        check: c.k.shape == @[1, 2, 5, 4]
+
+    test "MultiHeadAttention cross-attention mode":
+      let ctx = newContext Tensor[float32]
+      let mha = ctx.init(MultiHeadAttention[float32], embed_dim = 16, num_heads = 4, head_dim = 4)
+
+      check: mha.head_dim == 4
+      check: mha.dim_inner == 16
+      check: mha.context_dim == 16
+      check: mha.q_proj.bias.isNil
+      check: mha.k_proj.bias.isNil
+      check: mha.v_proj.bias.isNil
+      check: mha.out_proj.bias.isNil
+
+      let x = ctx.variable(randomTensor([2, 6, 16], 1.0f), requires_grad = true)
+      let cond = ctx.variable(randomTensor([2, 9, 16], 1.0f), requires_grad = true)
+      let output = mha.forward(x, cond)
+      check: output.value.shape == @[2, 6, 16]
+
+      let loss = output.sum()
+      loss.backprop()
+
+      check: x.grad.shape == @[2, 6, 16]
+      check: cond.grad.shape == @[2, 9, 16]
+      check: mha.q_proj.weight.grad.shape == @[16, 16]
+      check: mha.k_proj.weight.grad.shape == @[16, 16]
+      check: mha.v_proj.weight.grad.shape == @[16, 16]
+      check: mha.out_proj.weight.grad.shape == @[16, 16]
+
+      # the same layer still does self-attention
+      check: mha.forward(x).value.shape == @[2, 6, 16]
+
+      # separate context feature dim
+      let mha2 = ctx.init(
+        MultiHeadAttention[float32], embed_dim = 16, num_heads = 4, head_dim = 4, context_dim = 24
+      )
+      check: mha2.context_dim == 24
+      check: mha2.k_proj.weight.value.shape == @[16, 24]
+      let cond2 = ctx.variable(randomTensor([2, 9, 24], 1.0f))
+      check: mha2.forward(x, cond2).value.shape == @[2, 6, 16]
+
+    test "Causal mask with offset":
+      let m = causal_mask[float64](2, 5, offset = 3)
+      check: m.shape == @[1, 1, 2, 5]
+      # query 0 is at absolute position 3: keys 0..3 are visible
+      check: m[0, 0, 0, 3] == 0.0
+      check: m[0, 0, 0, 4] == -1e9
+      # query 1 is at absolute position 4: keys 0..4 are visible
+      check: m[0, 0, 1, 4] == 0.0
+
+    test "MultiHeadAttention cached decoding matches full forward":
+      let ctx = newContext Tensor[float64]
+      let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 16, num_heads = 4, head_dim = 4)
+      const n = 7
+      let x = randomTensor[float64]([1, n, 16], 1.0)
+
+      ctx.no_grad_mode:
+        let full = mha.forward(ctx.variable(x), is_causal = true).value
+
+        # token by token, no mask needed
+        var cache = default(KVCache[float64])
+        var outs: seq[Tensor[float64]] = @[]
+        for i in 0 ..< n:
+          let (o, c) = mha.forward(ctx.variable(x[_, i .. i, _]), is_causal = true, past = cache)
+          cache = c
+          outs.add o.value
+        check: cache.past_len == n
+        check: max(abs(full - concat(outs, axis = 1))) < 1e-9
+
+        # chunks of 3, 2 and 2, with an offset causal mask
+        let (o1, c1) = mha.forward(ctx.variable(x[_, 0 .. 2, _]), is_causal = true, past = default(KVCache[float64]))
+        let (o2, c2) = mha.forward(ctx.variable(x[_, 3 .. 4, _]), is_causal = true, past = c1)
+        let (o3, c3) = mha.forward(ctx.variable(x[_, 5 .. 6, _]), is_causal = true, past = c2)
+        check: c3.past_len == n
+        check: max(abs(full - concat(@[o1.value, o2.value, o3.value], axis = 1))) < 1e-9
+
+    test "MultiHeadAttention cross-attention attn_mask and key_mask":
+      let ctx = newContext Tensor[float64]
+      let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 16, num_heads = 4, head_dim = 4)
+      let x = randomTensor[float64]([1, 3, 16], 1.0)
+      let cond = randomTensor[float64]([1, 5, 16], 1.0)
+
+      # keys 3 and 4 are padding
+      var key_mask = newTensor[bool]([1, 5])
+      for j in 0 ..< 5: key_mask[0, j] = j >= 3
+
+      # equivalent additive padding masks at every accepted rank
+      var m1 = zeros[float64]([5]) # [key]
+      m1[3] = -1e9; m1[4] = -1e9
+      var m2 = zeros[float64]([3, 5]) # [seq, key]
+      for i in 0 ..< 3:
+        m2[i, 3] = -1e9; m2[i, 4] = -1e9
+      var m3 = zeros[float64]([4, 3, 5]) # [heads, seq, key]
+      for h in 0 ..< 4:
+        for i in 0 ..< 3:
+          m3[h, i, 3] = -1e9; m3[h, i, 4] = -1e9
+      var m4 = zeros[float64]([1, 4, 3, 5]) # [batch, heads, seq, key]
+      for h in 0 ..< 4:
+        for i in 0 ..< 3:
+          m4[0, h, i, 3] = -1e9; m4[0, h, i, 4] = -1e9
+
+      ctx.no_grad_mode:
+        # masking padding is the same as dropping the padded keys
+        let out_key = mha.forward(ctx.variable(x), ctx.variable(cond), key_mask = key_mask).value
+        let out_cut = mha.forward(ctx.variable(x), ctx.variable(cond[_, 0 .. 2, _])).value
+        check: max(abs(out_key - out_cut)) < 1e-9
+        for m in [m1, m2, m3, m4]:
+          let res = mha.forward(ctx.variable(x), ctx.variable(cond), attn_mask = m).value
+          check: max(abs(res - out_cut)) < 1e-9
+
+        # full attention matrix: every query attends key 0 only,
+        # so the output no longer depends on the queries
+        var only0 = zeros[float64]([3, 5])
+        for i in 0 ..< 3:
+          for j in 1 ..< 5: only0[i, j] = -1e9
+        let a = mha.forward(ctx.variable(x), ctx.variable(cond), attn_mask = only0).value
+        let b = mha.forward(ctx.variable(randomTensor[float64]([1, 3, 16], 1.0)), ctx.variable(cond), attn_mask = only0).value
+        check: max(abs(a - b)) < 1e-12
+
+        # key padding with a cached context
+        var cache = default(KVCache[float64])
+        let (o1, c1) = mha.forward(ctx.variable(x[_, 0 .. 0, _]), ctx.variable(cond), key_mask = key_mask, past = cache)
+        let (o2, c2) = mha.forward(ctx.variable(x[_, 1 .. 2, _]), ctx.variable(cond), key_mask = key_mask, past = c1)
+        check: c2.past_len == 5
+        check: max(abs(out_key - concat(@[o1.value, o2.value], axis = 1))) < 1e-9
+
+    test "MultiHeadAttention key_mask with cache":
+      let ctx = newContext Tensor[float64]
+      let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 16, num_heads = 4, head_dim = 4)
+      const n = 5
+      let x = randomTensor[float64]([1, n, 16], 1.0)
+
+      # keys 3 and 4 are padding
+      var km = newTensor[bool]([1, n])
+      for j in 0 ..< n: km[0, j] = j >= 3
+
+      ctx.no_grad_mode:
+        let full = mha.forward(ctx.variable(x), is_causal = true, key_mask = km).value
+
+        var cache = default(KVCache[float64])
+        var outs: seq[Tensor[float64]] = @[]
+        for i in 0 ..< n:
+          var kmi = newTensor[bool]([1, i + 1])
+          for j in 0 .. i: kmi[0, j] = j >= 3
+          let (o, c) = mha.forward(ctx.variable(x[_, i .. i, _]), is_causal = true, key_mask = kmi, past = cache)
+          cache = c
+          outs.add o.value
+
+        check: max(abs(full - concat(outs, axis = 1))) < 1e-9
+
+    test "Rotary embeddings preserve relative positions":
+      let ctx = newContext Tensor[float64]
+      let rope = RotaryEmbedding[float64].init(head_dim = 8)
+      let q = randomTensor[float64]([1, 1, 1, 8], 1.0)
+      let k = randomTensor[float64]([1, 1, 1, 8], 1.0)
+
+      ctx.no_grad_mode:
+        # dot(q at i, k at j) only depends on i - j
+        var dots: seq[float64] = @[]
+        for (i, j) in [(0, 0), (7, 7), (5, 3), (11, 9)]:
+          let qr = apply_rotary(ctx.variable(q), rope.forward(1, offset = i))
+          let kr = apply_rotary(ctx.variable(k), rope.forward(1, offset = j))
+          dots.add (qr *. kr).value.sum
+
+        check: abs(dots[0] - dots[1]) < 1e-12 # relative position 0
+        check: abs(dots[2] - dots[3]) < 1e-12 # relative position 2
+
+    test "Partial rotary embeddings":
+      let ctx = newContext Tensor[float64]
+      let rope = RotaryEmbedding[float64].init(head_dim = 8, rotary_dim = 4)
+      let x = randomTensor[float64]([1, 1, 1, 8], 1.0)
+
+      ctx.no_grad_mode:
+        let r = apply_rotary(ctx.variable(x), rope.forward(1, offset = 3)).value
+
+        # channels beyond rotary_dim pass through
+        check: r[_, _, _, 4 .. 7] == x[_, _, _, 4 .. 7]
+
+        # rotated channels match the closed form
+        for i in 0 .. 1:
+          let angle = 3.0 * pow(10000.0, -2.0 * float64(i) / 4.0)
+          let (c, s) = (cos(angle), sin(angle))
+          check: abs(r[0, 0, 0, 2 * i] - (x[0, 0, 0, 2 * i] * c - x[0, 0, 0, 2 * i + 1] * s)) < 1e-12
+          check: abs(r[0, 0, 0, 2 * i + 1] - (x[0, 0, 0, 2 * i] * s + x[0, 0, 0, 2 * i + 1] * c)) < 1e-12
+
+    test "Rotary embeddings generalize to any leading rank":
+      let ctx = newContext Tensor[float64]
+      let rope = RotaryEmbedding[float64].init(head_dim = 8)
+      let x = randomTensor[float64]([2, 3, 8], 1.0)
+
+      ctx.no_grad_mode:
+        let freqs = rope.forward(3, offset = 5)
+        let a = apply_rotary(ctx.variable(x), freqs).value
+        let b = apply_rotary(ctx.variable(x.reshape(2, 1, 3, 8)), freqs).value.reshape(2, 3, 8)
+        check: max(abs(a - b)) < 1e-12
+
+    test "Rotary embeddings backward with numerical gradient":
+      let ctx = newContext Tensor[float64]
+      let rope = RotaryEmbedding[float64].init(head_dim = 4)
+      let freqs = rope.forward(3, offset = 5)
+      let x = randomTensor[float64]([2, 2, 3, 4], 1.0)
+      let grad_out = randomTensor[float64]([2, 2, 3, 4], 1.0)
+      let vx = ctx.variable(x, requires_grad = true)
+      let loss = (apply_rotary(vx, freqs) *. ctx.variable(grad_out)).sum()
+      loss.backprop()
+
+      proc loss_fn(inp: Tensor[float64]): float64 =
+        let c = newContext Tensor[float64]
+        c.no_grad_mode:
+          result = (apply_rotary(c.variable(inp), freqs).value *. grad_out).sum
+
+      let exp_grad = numerical_gradient(x, loss_fn)
+      check: vx.grad.mean_relative_error(exp_grad) < 1e-6
+
+    test "MultiHeadAttention with rope backward with numerical gradient":
+      let ctx = newContext Tensor[float64]
+      let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 8, num_heads = 2, head_dim = 4)
+      let rope = RotaryEmbedding[float64].init(head_dim = 4, rotary_dim = 2)
+      let x = randomTensor[float64]([1, 3, 8], 1.0)
+      let grad_out = randomTensor[float64]([1, 3, 8], 1.0)
+
+      let vx = ctx.variable(x, requires_grad = true)
+      let loss = (mha.forward(vx, is_causal = true, rope = rope.forward(3)) *. ctx.variable(grad_out)).sum()
+      loss.backprop()
+
+      proc loss_fn(inp: Tensor[float64]): float64 =
+        ctx.no_grad_mode:
+          result = (mha.forward(ctx.variable(inp), is_causal = true, rope = rope.forward(3)).value *. grad_out).sum
+
+      let exp_grad = numerical_gradient(x, loss_fn)
+      check: vx.grad.mean_relative_error(exp_grad) < 1e-6
+
+    test "MultiHeadAttention with rope cached decoding matches full forward":
+      let ctx = newContext Tensor[float64]
+      const n = 9
+      let x = randomTensor[float64]([1, n, 16], 1.0)
+
+      for rotary_dim in [0, 2, 4]:
+        let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 16, num_heads = 4, head_dim = 4)
+        let rope = RotaryEmbedding[float64].init(head_dim = 4, rotary_dim = rotary_dim)
+
+        ctx.no_grad_mode:
+          let full = mha.forward(ctx.variable(x), is_causal = true, rope = rope.forward(n))
+
+          var cache = default(KVCache[float64])
+          var outs: seq[Tensor[float64]] = @[]
+          for i in 0 ..< n:
+            # only the fresh position is rotated, cached keys keep theirs
+            let (output, present) = mha.forward(
+              ctx.variable(x[_, i .. i, _]), is_causal = true,
+              rope = rope.forward(1, offset = i), past = cache
+            )
+            cache = present
+            outs.add output.value
+
+          check: cache.past_len == n
+          let seq_out = concat(outs, axis = 1)
+          check: max(abs(full.value - seq_out)) < 1e-9
+
+          # chunks of 3, 2 and 4, with an offset causal mask
+          let (a1, c1) = mha.forward(ctx.variable(x[_, 0 .. 2, _]), is_causal = true, rope = rope.forward(3), past = default(KVCache[float64]))
+          let (a2, c2) = mha.forward(ctx.variable(x[_, 3 .. 4, _]), is_causal = true, rope = rope.forward(2, offset = 3), past = c1)
+          let (a3, c3) = mha.forward(ctx.variable(x[_, 5 .. 8, _]), is_causal = true, rope = rope.forward(4, offset = 5), past = c2)
+          check: c3.past_len == n
+          check: max(abs(full.value - concat(@[a1.value, a2.value, a3.value], axis = 1))) < 1e-9
+
+    test "MultiHeadAttention GQA cached decoding matches full forward":
+      let ctx = newContext Tensor[float64]
+      let rope = RotaryEmbedding[float64].init(head_dim = 4, rotary_dim = 2)
+      const n = 9
+      let x = randomTensor[float64]([1, n, 16], 1.0)
+
+      for kv_heads in [1, 2]:
+        let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 16, num_heads = 4, head_dim = 4, kv_heads = kv_heads)
+
+        ctx.no_grad_mode:
+          let full = mha.forward(ctx.variable(x), is_causal = true, rope = rope.forward(n)).value
+
+          var cache = default(KVCache[float64])
+          var outs: seq[Tensor[float64]] = @[]
+          for i in 0 ..< n:
+            let (output, present) = mha.forward(
+              ctx.variable(x[_, i .. i, _]), is_causal = true,
+              rope = rope.forward(1, offset = i), past = cache
+            )
+            cache = present
+            outs.add output.value
+
+          check: cache.past_len == n
+          check: cache.k.shape == @[1, kv_heads, n, 4] # compact kv cache
+          check: max(abs(full - concat(outs, axis = 1))) < 1e-9
+
+    test "MultiHeadAttention GQA backward with numerical gradient":
+      let ctx = newContext Tensor[float64]
+      let rope = RotaryEmbedding[float64].init(head_dim = 2)
+      let x = randomTensor[float64]([1, 3, 8], 1.0)
+      let grad_out = randomTensor[float64]([1, 3, 8], 1.0)
+
+      for kv_heads in [1, 2]:
+        let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 8, num_heads = 4, head_dim = 2, kv_heads = kv_heads)
+
+        let vx = ctx.variable(x, requires_grad = true)
+        let loss = (mha.forward(vx, is_causal = true, rope = rope.forward(3)) *. ctx.variable(grad_out)).sum()
+        loss.backprop()
+
+        proc loss_fn(inp: Tensor[float64]): float64 =
+          ctx.no_grad_mode:
+            result = (mha.forward(ctx.variable(inp), is_causal = true, rope = rope.forward(3)).value *. grad_out).sum
+
+        let exp_grad = numerical_gradient(x, loss_fn)
+        check: vx.grad.mean_relative_error(exp_grad) < 1e-6
+
 main()

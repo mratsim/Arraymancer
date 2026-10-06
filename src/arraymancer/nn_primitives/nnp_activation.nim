@@ -38,6 +38,12 @@ proc relu*[T](t: Tensor[T]): Tensor[T] {.noinit.}=
 proc tanh*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noinit.}=
   t.map_inline tanh(x)
 
+proc gelu*[T: SomeFloat](t: Tensor[T]): Tensor[T] {.noinit.}=
+  ## Gaussian Error Linear Unit (Hendrycks & Gimpel, 2016),
+  ## :math:`f(x) = x/2 (1 + erf(x/sqrt(2)))`, matching PyTorch's default GELU.
+  result = map_inline(t):
+    0.5.T * x * (1.T + erf(x / sqrt(2.T)))
+
 # ##################################################################################################
 # In-place forward
 
@@ -72,6 +78,11 @@ proc relu_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]
 proc tanh_backward*[T](gradient: Tensor[T], cached_tensor: Tensor[T]): Tensor[T]{.noinit.}=
   result = map2_inline(cached_tensor, gradient):
     y * (1 - x * x)
+
+proc gelu_backward*[T: SomeFloat](gradient: Tensor[T], cached_input: Tensor[T]): Tensor[T]{.noinit.}=
+  ## GELU derivative, :math:`f'(x) = 1/2(1 + erf(x/\sqrt{2})) + x e^{-x^2/2}/\sqrt{2\pi}`.
+  result = map2_inline(cached_input, gradient):
+    y * (0.5.T * (1.T + erf(x / sqrt(2.T))) + x * exp(-0.5.T * x * x) / sqrt(2.T * T(PI)))
 
 # ####################################################################################################
 # Documentation

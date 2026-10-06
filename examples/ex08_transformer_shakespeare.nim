@@ -169,25 +169,19 @@ proc generate[T](
     tokens.add(if ch in charToIx: charToIx[ch] else: 0)
 
   result = ""
-  let window = model.max_seq_len
+
+  # learned positions cannot extrapolate: generation stops at max_seq_len
+  let maxNew = if model.use_rope: length
+               else: min(length, max(0, model.max_seq_len.get - tokens.len))
 
   ctx.no_grad_mode:
     var caches = newSeq[KVCache[T]](if useCache: model.blocks.len else: 0)
 
-    for _ in 0 ..< length:
+    for _ in 0 ..< maxNew:
       let total = tokens.len
-      # no window: unbounded context; otherwise learned positions stay inside it
-      let full = window.get(total)
 
       # a fresh cache prefills the context, a warm one decodes a single token
-      var n = full
-      if useCache and not caches[0].isEmpty:
-        if window.isNone or caches[0].seen + 1 <= window.get:
-          n = 1
-        else:
-          # learned positions would leave the embedding table
-          for c in caches.mitems: c = default(KVCache[T])
-
+      let n = if useCache and not caches[0].isEmpty: 1 else: total
       let offset = total - n
       var inp = newTensor[int]([1, n])
       for i in 0 ..< n:

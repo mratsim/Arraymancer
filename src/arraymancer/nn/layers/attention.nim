@@ -40,7 +40,7 @@ proc scaled_dot_product_attention*[TT](
 # key/value cache for incremental inference
 
 type KVCache*[T] = object
-  seen*: int     # tokens seen, grows past the cached window when sliding
+  seen*: int     # tokens seen, positions continue from here
   k*: Tensor[T]  # [batch, kv_heads, cached_seq, head_dim]
   v*: Tensor[T]
 

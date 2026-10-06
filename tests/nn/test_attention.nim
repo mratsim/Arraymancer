@@ -357,68 +357,6 @@ proc main() =
         check: c3.seen == n
         check: max(abs(full - concat(@[o1.value, o2.value, o3.value], axis = 1))) < 1e-9
 
-    test "MultiHeadAttention sliding window cache":
-      let ctx = newContext Tensor[float64]
-      let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 16, num_heads = 4, head_dim = 4)
-      const n = 8
-      const window = 3
-      let x = randomTensor[float64]([1, n, 16], 1.0)
-
-      ctx.no_grad_mode:
-        var cache = default(KVCache[float64])
-        var last = ctx.variable(zeros[float64]([1, 1, 16]))
-        for i in 0 ..< n:
-          let (o, c) = mha.forward(ctx.variable(x[_, i .. i, _]), is_causal = true, past = cache)
-          cache = c
-          last = o
-          # slide: keep only the last `window` keys/values
-          let cached = cache.k.shape[2]
-          if cached > window:
-            cache.k = cache.k[_, _, cached - window .. cached - 1, _].clone()
-            cache.v = cache.v[_, _, cached - window .. cached - 1, _].clone()
-
-        check: cache.seen == n            # positions keep counting
-        check: cache.k.shape[2] == window # cached rows stay bounded
-        check: not cache.isEmpty
-
-        # the last query attends the last `window + 1` tokens
-        let windowed = mha.forward(ctx.variable(x[_, n - window - 1 .. n - 1, _]), is_causal = true).value
-        check: max(abs(last.value - windowed[_, window .. window, _])) < 1e-9
-
-    test "MultiHeadAttention sliding window rope cache":
-      let ctx = newContext Tensor[float64]
-      let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 16, num_heads = 4, head_dim = 4)
-      let rope = RotaryEmbedding[float64].init(head_dim = 4)
-      const n = 6
-      const window = 2
-      let x = randomTensor[float64]([1, n, 16], 1.0)
-
-      ctx.no_grad_mode:
-        var cache = default(KVCache[float64])
-        var last = ctx.variable(zeros[float64]([1, 1, 16]))
-        for i in 0 ..< n:
-          # positions come from `seen`, not from the cached rows
-          let (o, c) = mha.forward(
-            ctx.variable(x[_, i .. i, _]), is_causal = true,
-            rope = rope.forward(1, offset = i), past = cache
-          )
-          cache = c
-          last = o
-          let cached = cache.k.shape[2]
-          if cached > window:
-            cache.k = cache.k[_, _, cached - window .. cached - 1, _].clone()
-            cache.v = cache.v[_, _, cached - window .. cached - 1, _].clone()
-
-        check: cache.seen == n            # positions keep counting
-        check: cache.k.shape[2] == window # while the cache stays bounded
-
-        # the last token attends the last `window + 1` positions
-        let windowed = mha.forward(
-          ctx.variable(x[_, n - window - 1 .. n - 1, _]), is_causal = true,
-          rope = rope.forward(window + 1, offset = n - window - 1)
-        ).value
-        check: max(abs(last.value - windowed[_, window .. window, _])) < 1e-9
-
     test "MultiHeadAttention fully masked keys attend nothing":
       let ctx = newContext Tensor[float64]
       let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 16, num_heads = 4, head_dim = 4)

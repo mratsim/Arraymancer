@@ -118,12 +118,22 @@ proc forward[T](
 # sampling
 
 proc sample[T: SomeFloat](probs: Tensor[T], rng: var Rand): int =
+  ## Inverse-CDF sample from a 1D distribution.
   let u = T(rng.rand(1.0))
   var c = 0.T
   for i in 0 ..< probs.size:
     c += probs[i]
     if u <= c: return i
   return probs.size - 1
+
+proc sampleTopK[T: SomeFloat](logits: Tensor[T], topK: T, rng: var Rand): int =
+  ## Keep the top `ceil((1 - topK) * n)` logits, sample the rest out.
+  var logits = logits.clone()
+  if topK > 0.T and topK < 1.T:
+    let k = max(1, ceil((1.T - topK) * T(logits.size)).int)
+    let idx = logits.argsort(order = SortOrder.Descending)
+    for i in k ..< logits.size: logits[idx[i]] = T(-Inf)
+  sample(logits.softmax(), rng)
 
 proc sampleLast[T: SomeFloat](
   logits: Variable[Tensor[T]],
@@ -136,17 +146,7 @@ proc sampleLast[T: SomeFloat](
   var last = newTensor[T]([v])
   for i in 0 ..< v:
     last[i] = logits.value[0, pos, i] / temperature
-
-  # top-k filter: keep ceil((1 - topK) * vocab) logits, mask the rest # logits -> filtered
-  if topK > 0.T and topK < 1.T:
-    let k = max(1, ceil((1.T - topK) * T(v)).int)
-    let idx = last.argsort(order = SortOrder.Descending)
-    var filtered = newTensor[T]([v])
-    for i in 0 ..< v: filtered[i] = T(-Inf)
-    for i in 0 ..< k: filtered[idx[i]] = last[idx[i]]
-    last = filtered
-
-  result = sample(last.softmax(), rng)
+  sampleTopK(last, topK, rng)
 
 proc generate[T](
   ctx: Context[Tensor[T]],

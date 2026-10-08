@@ -166,9 +166,10 @@ proc generate[T](
 
   result = ""
 
-  # learned positions cannot extrapolate: generation stops at max_seq_len
+  # learned positions cannot extrapolate: generation stops at max_seq_len,
+  # but the final sampled token needs no position embedding so +1 is allowed
   let maxNew = if model.use_rope: length
-               else: min(length, max(0, model.max_seq_len.get - tokens.len))
+               else: min(length, max(0, model.max_seq_len.get - tokens.len + 1))
 
   ctx.no_grad_mode:
     var caches = newSeq[KVCache[T]](if useCache: model.blocks.len else: 0)

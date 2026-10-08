@@ -145,11 +145,7 @@ proc sampleLast[T: SomeFloat](
   topK: T,
   rng: var Rand
 ): int =
-  let v = logits.value.shape[^1]
-  var last = newTensor[T]([v])
-  for i in 0 ..< v:
-    last[i] = logits.value[0, pos, i] / temperature
-  sampleTopK(last, topK, rng)
+  sampleTopK(logits.value[0, pos, _].squeeze /. temperature, topK, rng)
 
 proc generate[T](
   ctx: Context[Tensor[T]],

@@ -16,17 +16,27 @@ import ../tensor,
        ./nnp_softmax,
        math
 
+proc causal_mask*[T: SomeFloat](
+    n_query, n_key: int,
+    offset: int,
+    mask_val: T = -1e9.T
+): Tensor[T] =
+  ## Causal mask where query i is at absolute position offset + i
+  ## and may only attend keys j <= offset + i.
+  result = zeros[T]([1, 1, n_query, n_key])
+  for i in 0 ..< n_query:
+    for j in (offset + i + 1) ..< n_key:
+      result[0, 0, i, j] = mask_val
+
 proc causal_mask*[T: SomeFloat](n: int, mask_val: T = -1e9.T): Tensor[T] =
   # causal mask - upper triangular
-  result = zeros[T]([1, 1, n, n])
-  for i in 0 ..< n:
-    for j in (i + 1) ..< n:
-      result[0, 0, i, j] = mask_val
+  causal_mask[T](n, n, 0, mask_val)
 
 proc scaled_dot_product_attention*[T: SomeFloat](
     query, key, value: Tensor[T],
     scale: T = 0.T,
-    mask: Tensor[T] = default(Tensor[T])
+    mask: Tensor[T] = default(Tensor[T]),
+    bias: Tensor[T] = default(Tensor[T])
 ): Tensor[T] =
   # scale
   let d = query.shape[^1]
@@ -34,6 +44,10 @@ proc scaled_dot_product_attention*[T: SomeFloat](
 
   # sim
   var sim = (query * key.transpose2d) *. s
+
+  # additive bias on the scores, before masking
+  if bias.size > 0:
+    sim = sim +. bias
 
   # mask
   if mask.size > 0:

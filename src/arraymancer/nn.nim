@@ -13,15 +13,15 @@
 # limitations under the License.
 
 import ./nn/nn_dsl,
-       ./nn/activation/[sigmoid, relu, tanh, softmax],
-       ./nn/layers/[linear, flatten, conv2D, maxpool2D, gru, embedding, gcn, attention, layernorm, rmsnorm],
+       ./nn/activation/[sigmoid, relu, tanh, softmax, gelu],
+       ./nn/layers/[linear, flatten, conv2D, maxpool2D, gru, embedding, gcn, attention, rotary, layernorm, rmsnorm],
        ./nn/loss/cross_entropy_losses,
        ./nn/loss/mean_square_error_loss,
        ./nn/optimizers/optimizers,
        ./nn/init
 
-export nn_dsl, sigmoid, relu, tanh, softmax,
-       linear, flatten, conv2D, maxpool2d, gru, embedding, gcn, attention, layernorm, rmsnorm,
+export nn_dsl, sigmoid, relu, tanh, softmax, gelu,
+       linear, flatten, conv2D, maxpool2d, gru, embedding, gcn, attention, rotary, layernorm, rmsnorm,
        cross_entropy_losses, mean_square_error_loss,
        optimizers,
        init

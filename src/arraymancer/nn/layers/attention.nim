@@ -25,15 +25,25 @@ import ../../tensor,
 proc scaled_dot_product_attention*[TT](
     query, key, value: Variable[TT],
     scale: float64 = 0.0,
-    mask: TT = default(TT)
+    mask: TT = default(TT),
+    bias: Variable[TT] = nil
 ): Variable[TT] =
-  ## `softmax(query keyᵀ * scale + mask) value`
+  ## `softmax(query keyᵀ * scale + bias + mask) value`
+  ## `bias` lands on the scores before `mask`; make it learnable
+  ## with `ctx.variable(..., requires_grad = true)`.
   let d = query.value.shape[^1]
   let s = if scale == 0.0: pow(d.float64, -0.5) else: scale
 
   var sim = (query * key.transpose2d) * s
+
+  # additive offsets: learnable bias then constant mask, merged before the
+  # broadcast so the scores are only touched once
+  var offset = bias
   if mask.size > 0:
-    sim = sim +. mask
+    offset = if offset.isNil: sim.context.variable(mask)
+             else: offset +. mask
+  if not offset.isNil:
+    sim = sim +. offset
 
   softmax(sim, axis = -1) * value
 
@@ -60,7 +70,7 @@ proc repeat_kv*[T](
       heads.add head
   stack(heads, axis = 1).squeeze(2)
 
-# attention masks
+# attention masks & biases
 
 proc promote_mask[T](mask: Tensor[T]): Tensor[T] =
   ## Left-pad an attention mask up to `[batch, heads, seq, key]`.
@@ -69,6 +79,16 @@ proc promote_mask[T](mask: Tensor[T]): Tensor[T] =
   result = mask
   while result.rank < 4:
     result = result.unsqueeze(0)
+
+proc promote_bias[T](bias: Variable[Tensor[T]]): Variable[Tensor[T]] =
+  ## Left-pad an attention bias up to `[batch, heads, seq, key]`, grads intact.
+  if bias.isNil: return nil
+  doAssert bias.value.rank <= 4, "attention bias has at most 4 dimensions"
+  if bias.value.rank == 4: return bias
+  var shape = toMetadataArray(1, 1, 1, 1)
+  for i in 0 ..< bias.value.rank:
+    shape[4 - bias.value.rank + i] = bias.value.shape[i]
+  bias.reshape(shape)
 
 proc key_mask_additive[T: SomeFloat](key_mask: Tensor[bool], mask_val: T): Tensor[T] =
   ## Boolean `[batch, key]` key mask (`true` = masked out)
@@ -148,6 +168,7 @@ proc forward*[T](
   self: MultiHeadAttention[T],
   x: Variable[Tensor[T]],
   mask: Tensor[T] = default(Tensor[T]),
+  bias: Variable[Tensor[T]] = nil,
   context: Variable[Tensor[T]] = nil,
   is_causal: bool = false,
   key_mask: Tensor[bool] = default(Tensor[bool]),
@@ -161,6 +182,9 @@ proc forward*[T](
   ## `mask` is additive and broadcasts from `[key]`, `[seq, key]`,
   ## `[heads, seq, key]` or `[batch, heads, seq, key]`; `key_mask` is a
   ## boolean `[batch, key]` where `true` masks the key out.
+  ## `bias` is an additive attention bias with the same broadcasting as
+  ## `mask`, added to the scores before masking (causal or key padding);
+  ## it is learned when passed with `requires_grad = true`.
   ## Causal masking applies to self-attention only.
 
   let (b, n, d) = (x.value.shape[0], x.value.shape[1], self.head_dim)
@@ -201,7 +225,8 @@ proc forward*[T](
       k = x.context.variable(concat(past.k, k.value, axis = 2))
       v = x.context.variable(concat(past.v, v.value, axis = 2))
 
-  # causal mask, offset by the number of cached keys
+  # additive bias first, then causal/key masks on top
+  let attn_bias = promote_bias(bias)
   var m = promote_mask(mask)
   if is_causal:
     m = add_mask(m, causal_mask[T](n, k.value.shape[2], cached))
@@ -209,7 +234,9 @@ proc forward*[T](
     m = add_mask(m, key_mask_additive[T](key_mask, -1e9.T))
 
   let repeats = self.num_heads div self.kv_heads
-  var output = scaled_dot_product_attention(q, repeat_kv(k, repeats), repeat_kv(v, repeats), mask = m)
+  var output = scaled_dot_product_attention(
+    q, repeat_kv(k, repeats), repeat_kv(v, repeats), mask = m, bias = attn_bias
+  )
   if key_mask.size > 0:
     # fully masked queries attend nothing
     output = output *. x.context.variable(key_visibility[T](key_mask))
@@ -225,9 +252,10 @@ proc forward*[T](
   self: MultiHeadAttention[T],
   x: Variable[Tensor[T]],
   mask: Tensor[T] = default(Tensor[T]),
+  bias: Variable[Tensor[T]] = nil,
   context: Variable[Tensor[T]] = nil,
   is_causal: bool = false,
   key_mask: Tensor[bool] = default(Tensor[bool]),
   rope: RotaryFreqs[T] = default(RotaryFreqs[T])
 ): Variable[Tensor[T]] =
-  self.forward(x, mask, context, is_causal, key_mask, rope, default(KVCache[T])).output
+  self.forward(x, mask, bias, context, is_causal, key_mask, rope, default(KVCache[T])).output

@@ -165,12 +165,21 @@ proc main() =
       let attn_out = scaled_dot_product_attention(q, k, v, mask = mask)
       check: attn_out.value.shape == @[B, H, S, D]
 
-      let loss = attn_out.sum()
-      loss.backprop()
+      # additive bias == additive mask on the scores; learnable as a Variable
+      let vb = ctx.variable(randomTensor[float64]([1, 1, S, S], 1.0), requires_grad = true)
+      let biased = scaled_dot_product_attention(q, k, v, mask = mask, bias = vb)
+      let masked = scaled_dot_product_attention(q, k, v, mask = mask +. vb.value)
+      check: max(abs(biased.value - masked.value)) < 1e-12
 
+      # tensor-level primitive takes a constant bias
+      let raw = scaled_dot_product_attention(q.value, k.value, v.value, mask = mask, bias = vb.value)
+      check: max(abs(raw - masked.value)) < 1e-12
+
+      (attn_out.sum() + biased.sum()).backprop()
       check: q.grad.shape == @[B, H, S, D]
       check: k.grad.shape == @[B, H, S, D]
       check: v.grad.shape == @[B, H, S, D]
+      check: vb.grad.shape == @[1, 1, S, S]
 
     test "MultiHeadAttention Layer with Causal Mask":
       let ctx = newContext Tensor[float32]
@@ -194,6 +203,15 @@ proc main() =
       check: mha.q_proj.weight.grad.shape == @[16, 16]
       check: mha.k_proj.weight.grad.shape == @[16, 16]
       check: mha.v_proj.weight.grad.shape == @[16, 16]
+
+      # additive bias broadcasts like a mask and is learnable as a Variable
+      let vb = ctx.variable(randomTensor[float32]([6, 6], 1.0f), requires_grad = true)
+      let biased = mha.forward(x, is_causal = true, bias = vb)
+      let masked = mha.forward(x, is_causal = true, mask = vb.value)
+      check: max(abs(biased.value - masked.value)) < 1e-9
+
+      biased.sum().backprop()
+      check: vb.grad.shape == @[6, 6]
 
     test "MultiHeadAttention with explicit head_dim != embed_dim / heads":
       let ctx = newContext Tensor[float32]

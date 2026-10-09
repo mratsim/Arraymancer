@@ -35,7 +35,8 @@ proc causal_mask*[T: SomeFloat](n: int, mask_val: T = -1e9.T): Tensor[T] =
 proc scaled_dot_product_attention*[T: SomeFloat](
     query, key, value: Tensor[T],
     scale: T = 0.T,
-    mask: Tensor[T] = default(Tensor[T])
+    mask: Tensor[T] = default(Tensor[T]),
+    bias: Tensor[T] = default(Tensor[T])
 ): Tensor[T] =
   # scale
   let d = query.shape[^1]
@@ -43,6 +44,10 @@ proc scaled_dot_product_attention*[T: SomeFloat](
 
   # sim
   var sim = (query * key.transpose2d) *. s
+
+  # additive bias on the scores, before masking
+  if bias.size > 0:
+    sim = sim +. bias
 
   # mask
   if mask.size > 0:

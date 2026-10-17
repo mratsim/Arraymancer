@@ -312,6 +312,13 @@ proc main() =
           a_permuted_2 == a.permute(1, 2, 0)
           a_permuted_2 == a.moveaxis(1, 0).moveaxis(2, 1)
 
+      block: # Transpose two axes, and the last two as transpose2d
+        let a = arange(24).reshape(2, 3, 4)
+        check:
+          a.transpose(0, 2) == a.permute(2, 1, 0)
+          a.transpose(1, 1) == a
+          a.transpose2d == a.transpose(1, 2)
+
     test "Repeat Values":
       let t = arange(6).reshape(2, 3)
 

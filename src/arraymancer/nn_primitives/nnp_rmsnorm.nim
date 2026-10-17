@@ -74,8 +74,8 @@ proc rmsnorm_backward*[T: SomeFloat](
       sumDxHatXHat += dxHat * xHat
       gwb[c] += gob[off + c] * xHat
 
-    let s = sumDxHatXHat / d.T
+    let meanDxHatXHat = sumDxHatXHat / d.T
     for c in 0 ..< d:
       let xHat = xb[off + c] * invRms
       let dxHat = gob[off + c] * wb[c]
-      gib[off + c] = (dxHat - xHat * s) * invRms
+      gib[off + c] = (dxHat - xHat * meanDxHatXHat) * invRms

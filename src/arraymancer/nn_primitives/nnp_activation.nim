@@ -93,7 +93,8 @@ proc quick_gelu_backward*[T: SomeFloat](gradient: Tensor[T], cached_input: Tenso
   ## QuickGELU derivative,
   ## :math:`f'(x) = \sigma(1.702 x) (1 + 1.702 x (1 - \sigma(1.702 x)))`.
   result = map2_inline(cached_input, gradient):
-    y * sigmoid(1.702.T * x) * (1.T + 1.702.T * x * (1.T - sigmoid(1.702.T * x)))
+    let s = sigmoid(1.702.T * x)
+    y * s * (1.T + 1.702.T * x * (1.T - s))
 
 # ####################################################################################################
 # Documentation

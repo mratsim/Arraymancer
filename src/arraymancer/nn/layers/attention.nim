@@ -29,42 +29,39 @@ proc scaled_dot_product_attention*[TT](
     bias: Variable[TT] = nil
 ): Variable[TT] =
   ## `softmax(query keyᵀ * scale + bias + mask) value`
-  ## `bias` lands on the scores before `mask`; make it learnable
-  ## with `ctx.variable(..., requires_grad = true)`.
+  ## `bias` is learnable when created with `requires_grad = true`.
   let d = query.value.shape[^1]
-  let s = if scale == 0.0: pow(d.float64, -0.5) else: scale
+  let s = if scale == 0.0: 1.0 / sqrt(d.float64) else: scale
 
-  var sim = (query * key.transpose2d) * s
-
-  # additive offsets: learnable bias then constant mask, merged before the
-  # broadcast so the scores are only touched once
-  var offset = bias
+  var scores = (query * key.transpose2d) * s
+  if not bias.isNil:
+    scores = scores +. bias
   if mask.size > 0:
-    offset = if offset.isNil: sim.context.variable(mask)
-             else: offset +. mask
-  if not offset.isNil:
-    sim = sim +. offset
-
-  softmax(sim, axis = -1) * value
+    scores = scores +. mask
+  softmax(scores, axis = -1) * value
 
 # key/value cache for incremental inference
 
 type KVCache*[T] = object
-  seen*: int     # tokens seen, positions continue from here
-  k*: Tensor[T]  # [batch, kv_heads, cached_seq, head_dim]
-  v*: Tensor[T]
+  ## Keys and values for incremental self- or cross-attention.
+  k*: Tensor[T] # [batch, kv_heads, cached_seq, head_dim]
+  v*: Tensor[T] # same shape as k
 
-proc isEmpty*[T](cache: KVCache[T]): bool =
+func isEmpty*[T](cache: KVCache[T]): bool =
   cache.k.size == 0
 
-proc repeat_kv*[T](
+func len*[T](cache: KVCache[T]): int =
+  ## Number of cached key/value positions, 0 when empty.
+  if cache.isEmpty: 0 else: cache.k.shape[2]
+
+proc repeatKv*[T](
   x: Variable[Tensor[T]],
   repeats: int
 ): Variable[Tensor[T]] =
   ## GQA: repeat each kv head for its `repeats` consecutive query heads
   doAssert repeats >= 1, "repeats must be at least 1, got " & $repeats
   if repeats == 1: return x
-  var heads: seq[Variable[Tensor[T]]] = @[]
+  var heads: seq[Variable[Tensor[T]]]
   for head in x.chunk(x.value.shape[1], axis = 1):
     for _ in 0 ..< repeats:
       heads.add head
@@ -72,7 +69,7 @@ proc repeat_kv*[T](
 
 # attention masks & biases
 
-proc promote_mask[T](mask: Tensor[T]): Tensor[T] =
+proc promoteMask[T](mask: Tensor[T]): Tensor[T] =
   ## Left-pad an attention mask up to `[batch, heads, seq, key]`.
   if mask.size == 0: return mask
   doAssert mask.rank <= 4, "attention mask has at most 4 dimensions"
@@ -80,17 +77,15 @@ proc promote_mask[T](mask: Tensor[T]): Tensor[T] =
   while result.rank < 4:
     result = result.unsqueeze(0)
 
-proc promote_bias[T](bias: Variable[Tensor[T]]): Variable[Tensor[T]] =
+proc promoteBias[T](bias: Variable[Tensor[T]]): Variable[Tensor[T]] =
   ## Left-pad an attention bias up to `[batch, heads, seq, key]`, grads intact.
   if bias.isNil: return nil
   doAssert bias.value.rank <= 4, "attention bias has at most 4 dimensions"
-  if bias.value.rank == 4: return bias
-  var shape = toMetadataArray(1, 1, 1, 1)
-  for i in 0 ..< bias.value.rank:
-    shape[4 - bias.value.rank + i] = bias.value.shape[i]
-  bias.reshape(shape)
+  result = bias
+  while result.value.rank < 4:
+    result = result.unsqueeze(0)
 
-proc key_mask_additive[T: SomeFloat](key_mask: Tensor[bool], mask_val: T): Tensor[T] =
+proc keyMaskAdditive[T: SomeFloat](key_mask: Tensor[bool], mask_val: T): Tensor[T] =
   ## Boolean `[batch, key]` key mask (`true` = masked out)
   ## -> additive `[batch, 1, 1, key]` attention mask
   doAssert key_mask.rank == 2, "key_mask must have shape [batch, key]"
@@ -98,7 +93,7 @@ proc key_mask_additive[T: SomeFloat](key_mask: Tensor[bool], mask_val: T): Tenso
     if x: mask_val else: 0.T
   result = result.unsqueeze(1).unsqueeze(2)
 
-proc key_visibility[T: SomeFloat](key_mask: Tensor[bool]): Tensor[T] =
+proc keyVisibility[T: SomeFloat](key_mask: Tensor[bool]): Tensor[T] =
   ## [batch, 1, 1, 1]: 0 when every key of the row is masked
   result = ones[T]([key_mask.shape[0], 1, 1, 1])
   for b in 0 ..< key_mask.shape[0]:
@@ -107,22 +102,26 @@ proc key_visibility[T: SomeFloat](key_mask: Tensor[bool]): Tensor[T] =
       if not key_mask[b, j]: any_visible = true
     if not any_visible: result[b, 0, 0, 0] = 0.T
 
-proc add_mask[T](base, extra: Tensor[T]): Tensor[T] =
+proc addMask[T](base, extra: Tensor[T]): Tensor[T] =
   ## Combine additive masks, an empty `base` means no mask
   if base.size == 0: extra
   else: base +. extra
 
 # layers
 
-proc validate_attention_dims(layer: string, embed_dim, num_heads, head_dim: int) =
+proc validateAttentionDims(layer: string, embed_dim, num_heads, head_dim: int) =
   if embed_dim <= 0:
-    raise newException(ValueError, layer & " embed_dim must be positive, got " & $embed_dim)
+    raise newException(ValueError,
+      layer & " embed_dim must be positive, got " & $embed_dim)
   if num_heads <= 0:
-    raise newException(ValueError, layer & " num_heads must be positive, got " & $num_heads)
+    raise newException(ValueError,
+      layer & " num_heads must be positive, got " & $num_heads)
   if head_dim <= 0:
-    raise newException(ValueError, layer & " head_dim must be positive, got " & $head_dim)
+    raise newException(ValueError,
+      layer & " head_dim must be positive, got " & $head_dim)
 
 type MultiHeadAttention*[T] = object
+  ## Multi-head self- or cross-attention with optional grouped-query heads.
   embed_dim*: int
   context_dim*: int # key/value feature dim, defaults to embed_dim
   num_heads*: int
@@ -141,16 +140,18 @@ proc init*[T](
   context_dim = 0,
   kv_heads = 0
 ): MultiHeadAttention[T] =
-  validate_attention_dims("MultiHeadAttention", embed_dim, num_heads, head_dim)
+  validateAttentionDims("MultiHeadAttention", embed_dim, num_heads, head_dim)
   if context_dim < 0:
-    raise newException(ValueError, "MultiHeadAttention context_dim must be non-negative, got " & $context_dim)
+    raise newException(ValueError,
+      "MultiHeadAttention context_dim must be non-negative, got " & $context_dim)
   let n_kv = if kv_heads == 0: num_heads else: kv_heads
   if n_kv < 1 or n_kv > num_heads:
     raise newException(ValueError,
       "MultiHeadAttention kv_heads must be in 1 .. " & $num_heads & ", got " & $kv_heads)
   if num_heads mod n_kv != 0:
     raise newException(ValueError,
-      "MultiHeadAttention num_heads must be a multiple of kv_heads, got " & $num_heads & " and " & $n_kv)
+      "MultiHeadAttention num_heads must be a multiple of kv_heads, got " &
+      $num_heads & " and " & $n_kv)
 
   result.embed_dim = embed_dim
   result.context_dim = if context_dim == 0: embed_dim else: context_dim
@@ -185,15 +186,17 @@ proc forward*[T](
   ## `bias` is an additive attention bias with the same broadcasting as
   ## `mask`, added to the scores before masking (causal or key padding);
   ## it is learned when passed with `requires_grad = true`.
-  ## Causal masking applies to self-attention only.
+  ## Causal masking and rope apply to self-attention only.
 
   let (b, n, d) = (x.value.shape[0], x.value.shape[1], self.head_dim)
   let cross = not context.isNil
   let has_rope = not rope.isEmpty
-  let cached = if past.isEmpty: 0 else: past.k.shape[2]
+  let cached = past.len
 
   if cross and is_causal:
     raise newException(ValueError, "MultiHeadAttention cannot be causal in cross-attention mode")
+  if cross and has_rope:
+    raise newException(ValueError, "MultiHeadAttention cannot use rope in cross-attention mode")
   if not cross and self.context_dim != self.embed_dim:
     raise newException(ValueError,
       "MultiHeadAttention self-attention requires context_dim == embed_dim, got " &
@@ -207,7 +210,7 @@ proc forward*[T](
 
   var q = self.q_proj.forward(x).to_heads(self.num_heads)
   if has_rope:
-    q = apply_rotary(q, rope)
+    q = applyRotary(q, rope)
 
   # cross-attention reuses its cached context projection
   var k, v: Variable[Tensor[T]]
@@ -219,34 +222,30 @@ proc forward*[T](
     k = self.k_proj.forward(src).to_heads(self.kv_heads)
     v = self.v_proj.forward(src).to_heads(self.kv_heads)
     if has_rope:
-      k = apply_rotary(k, rope)
+      k = applyRotary(k, rope)
     # self-attention continues from the rotated cached prefix
     if not cross and cached > 0:
       k = x.context.variable(concat(past.k, k.value, axis = 2))
       v = x.context.variable(concat(past.v, v.value, axis = 2))
 
   # additive bias first, then causal/key masks on top
-  let attn_bias = promote_bias(bias)
-  var m = promote_mask(mask)
+  let attnBias = promoteBias(bias)
+  var attnMask = promoteMask(mask)
   if is_causal:
-    m = add_mask(m, causal_mask[T](n, k.value.shape[2], cached))
+    attnMask = addMask(attnMask, causal_mask[T](n, k.value.shape[2], cached))
   if key_mask.size > 0:
-    m = add_mask(m, key_mask_additive[T](key_mask, -1e9.T))
+    attnMask = addMask(attnMask, keyMaskAdditive[T](key_mask, -1e9.T))
 
   let repeats = self.num_heads div self.kv_heads
   var output = scaled_dot_product_attention(
-    q, repeat_kv(k, repeats), repeat_kv(v, repeats), mask = m, bias = attn_bias
+    q, repeatKv(k, repeats), repeatKv(v, repeats), mask = attnMask, bias = attnBias
   )
   if key_mask.size > 0:
     # fully masked queries attend nothing
-    output = output *. x.context.variable(key_visibility[T](key_mask))
+    output = output *. x.context.variable(keyVisibility[T](key_mask))
 
   result.output = self.out_proj.forward(output.merge_heads)
-  # self-attention counts queries, cross-attention counts context tokens once
-  let n_seen = if cross and cached > 0: 0
-               elif cross: context.value.shape[1]
-               else: n
-  result.present = KVCache[T](seen: past.seen + n_seen, k: k.value, v: v.value)
+  result.present = KVCache[T](k: k.value, v: v.value)
 
 proc forward*[T](
   self: MultiHeadAttention[T],
@@ -258,4 +257,7 @@ proc forward*[T](
   key_mask: Tensor[bool] = default(Tensor[bool]),
   rope: RotaryFreqs[T] = default(RotaryFreqs[T])
 ): Variable[Tensor[T]] =
-  self.forward(x, mask, bias, context, is_causal, key_mask, rope, default(KVCache[T])).output
+  self.forward(
+    x, mask = mask, bias = bias, context = context, is_causal = is_causal,
+    key_mask = key_mask, rope = rope, past = default(KVCache[T])
+  ).output

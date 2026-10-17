@@ -51,7 +51,7 @@ proc transpose2d*(t: Tensor): Tensor {.noinit,noSideEffect,inline.} =
   when compileOption("boundChecks"):
     if t.rank < 2:
       raise newException(ValueError, "Tensor rank must be at least 2 to transpose last two dimensions, got rank " & $t.rank)
-  result = exch_dim(t, t.rank - 2, t.rank - 1)
+  result = t.transpose(t.rank - 2, t.rank - 1)
 
 proc asContiguous*[T](t: Tensor[T], layout: OrderType = rowMajor, force: bool = false): Tensor[T] {.noinit.} =
   ## Transform a tensor with general striding to a Tensor with contiguous layout.

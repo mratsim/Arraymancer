@@ -48,19 +48,17 @@ proc gelu_cache[TT](result: Variable[TT], a: Variable[TT], approximate: bool) =
     a
   )
 
-proc gelu*[TT](a: Variable[TT], approximate = false): Variable[TT] =
-  ## Input:
-  ##   - A variable
-  ## `approximate = true` uses the QuickGELU sigmoid approximation.
-
-  # Resulting var
+proc geluImpl[TT](a: Variable[TT], approximate: bool): Variable[TT] =
   new result
   result.context = a.context
   result.value = if approximate: quick_gelu a.value else: gelu a.value
-
-  # Caching for backprop
   if a.is_grad_needed:
     result.gelu_cache(a, approximate)
 
-proc quick_gelu*[TT](a: Variable[TT]): Variable[TT] =
-  gelu(a, approximate = true)
+proc gelu*[TT](a: Variable[TT]): Variable[TT] =
+  ## Gaussian error linear unit.
+  geluImpl(a, approximate = false)
+
+proc quickGelu*[TT](a: Variable[TT]): Variable[TT] =
+  ## Sigmoid approximation to GELU (OpenAI CLIP).
+  geluImpl(a, approximate = true)

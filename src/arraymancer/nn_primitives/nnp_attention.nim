@@ -29,7 +29,7 @@ proc causal_mask*[T: SomeFloat](
       result[0, 0, i, j] = mask_val
 
 proc causal_mask*[T: SomeFloat](n: int, mask_val: T = -1e9.T): Tensor[T] =
-  # causal mask - upper triangular
+  ## Square causal mask where query `i` may attend keys `j <= i`.
   causal_mask[T](n, n, 0, mask_val)
 
 proc scaled_dot_product_attention*[T: SomeFloat](
@@ -38,23 +38,14 @@ proc scaled_dot_product_attention*[T: SomeFloat](
     mask: Tensor[T] = default(Tensor[T]),
     bias: Tensor[T] = default(Tensor[T])
 ): Tensor[T] =
-  # scale
+  ## `softmax(query keyᵀ * scale + bias + mask) value`
   let d = query.shape[^1]
-  let s = if scale == 0.T: pow(d.T, -0.5.T) else: scale
+  let s = if scale == 0.T: 1.T / sqrt(d.T) else: scale
 
-  # sim
-  var sim = (query * key.transpose2d) *. s
-
-  # additive bias on the scores, before masking
+  var scores = (query * key.transpose2d) *. s
   if bias.size > 0:
-    sim = sim +. bias
-
-  # mask
+    scores = scores +. bias
   if mask.size > 0:
-    sim = sim +. mask
+    scores = scores +. mask
 
-  # attention
-  let attn = sim.softmax(axis = -1)
-
-  # out
-  result = attn * value
+  result = scores.softmax(axis = -1) * value

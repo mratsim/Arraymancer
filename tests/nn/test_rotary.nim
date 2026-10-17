@@ -27,8 +27,8 @@ proc main() =
         # dot(q at i, k at j) only depends on i - j
         var dots: seq[float64] = @[]
         for (i, j) in [(0, 0), (7, 7), (5, 3), (11, 9)]:
-          let qr = apply_rotary(ctx.variable(q), rope.forward(1, offset = i))
-          let kr = apply_rotary(ctx.variable(k), rope.forward(1, offset = j))
+          let qr = applyRotary(ctx.variable(q), rope.forward(1, offset = i))
+          let kr = applyRotary(ctx.variable(k), rope.forward(1, offset = j))
           dots.add (qr *. kr).value.sum
 
         check: abs(dots[0] - dots[1]) < 1e-12 # relative position 0
@@ -40,7 +40,7 @@ proc main() =
       let x = randomTensor[float64]([1, 1, 1, 8], 1.0)
 
       ctx.no_grad_mode:
-        let r = apply_rotary(ctx.variable(x), rope.forward(1, offset = 3)).value
+        let r = applyRotary(ctx.variable(x), rope.forward(1, offset = 3)).value
 
         # channels beyond rotary_dim pass through
         check: r[_, _, _, 4 .. 7] == x[_, _, _, 4 .. 7]
@@ -59,8 +59,8 @@ proc main() =
 
       ctx.no_grad_mode:
         let freqs = rope.forward(3, offset = 5)
-        let a = apply_rotary(ctx.variable(x), freqs).value
-        let b = apply_rotary(ctx.variable(x.reshape(2, 1, 3, 8)), freqs).value.reshape(2, 3, 8)
+        let a = applyRotary(ctx.variable(x), freqs).value
+        let b = applyRotary(ctx.variable(x.reshape(2, 1, 3, 8)), freqs).value.reshape(2, 3, 8)
         check: max(abs(a - b)) < 1e-12
 
     test "Rotary embeddings backward with numerical gradient":
@@ -70,13 +70,13 @@ proc main() =
       let x = randomTensor[float64]([2, 2, 3, 4], 1.0)
       let grad_out = randomTensor[float64]([2, 2, 3, 4], 1.0)
       let vx = ctx.variable(x, requires_grad = true)
-      let loss = (apply_rotary(vx, freqs) *. ctx.variable(grad_out)).sum()
+      let loss = (applyRotary(vx, freqs) *. ctx.variable(grad_out)).sum()
       loss.backprop()
 
       proc loss_fn(inp: Tensor[float64]): float64 =
         let c = newContext Tensor[float64]
         c.no_grad_mode:
-          result = (apply_rotary(c.variable(inp), freqs).value *. grad_out).sum
+          result = (applyRotary(c.variable(inp), freqs).value *. grad_out).sum
 
       let exp_grad = numerical_gradient(x, loss_fn)
       check: vx.grad.mean_relative_error(exp_grad) < 1e-6

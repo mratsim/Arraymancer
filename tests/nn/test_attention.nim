@@ -53,6 +53,13 @@ proc main() =
       check: c32.shape == @[2, 3, 6]
       check: c32[0, _, _].squeeze(0) == a3[0, _, _].squeeze(0) * b2
 
+      # broadcast batch dimensions, aligned from the right
+      let a4b = randomTensor([2, 1, 3, 4], 1.0f)
+      let b4b = randomTensor([1, 5, 4, 6], 1.0f)
+      let c4b = a4b * b4b
+      check: c4b.shape == @[2, 5, 3, 6]
+      check: c4b[1, 4, _, _] == a4b[1, 0, _, _] * b4b[0, 4, _, _]
+
     test "BMM backward with numerical gradient":
       let a = randomTensor([2, 3, 4], 1.0)
       let b = randomTensor([2, 4, 5], 1.0)
@@ -73,6 +80,25 @@ proc main() =
 
       check: va.grad.mean_relative_error(exp_ga) < 1e-6
       check: vb.grad.mean_relative_error(exp_gb) < 1e-6
+
+    test "BMM backward with broadcast batch dimensions":
+      let a = randomTensor([2, 1, 3, 4], 1.0)
+      let b = randomTensor([1, 5, 4, 6], 1.0)
+      let grad_c = randomTensor([2, 5, 3, 6], 1.0)
+
+      let ctx = newContext Tensor[float64]
+      let va = ctx.variable(a, requires_grad = true)
+      let vb = ctx.variable(b, requires_grad = true)
+      let loss = ((va * vb) *. ctx.variable(grad_c)).sum()
+      loss.backprop()
+
+      proc loss_a(inp: Tensor[float64]): float64 = (grad_c *. (inp * b)).sum
+      proc loss_b(inp: Tensor[float64]): float64 = (grad_c *. (a * inp)).sum
+
+      check: va.grad.shape == a.shape
+      check: vb.grad.shape == b.shape
+      check: va.grad.mean_relative_error(numerical_gradient(a, loss_a)) < 1e-6
+      check: vb.grad.mean_relative_error(numerical_gradient(b, loss_b)) < 1e-6
 
     test "Permute in Autograd":
       let ctx = newContext Tensor[float64]
@@ -124,6 +150,16 @@ proc main() =
       check: vx.grad == ones[float64]([2, 3]) *. 2.5
 
     test "Broadcasted Addition & Mask Addition":
+      # both operand orders hit the contiguous/strided iteration paths
+      let lhs = randomTensor([2, 2, 4, 4], 1.0)
+      let rhs = randomTensor([1, 1, 4, 4], 1.0)
+      check: max(abs((lhs +. rhs) - (rhs +. lhs))) < 1e-12
+
+      # empty tensors still take the strided iteration path safely
+      let emptyLhs = newTensor[float64]([2, 0])
+      let emptyRhs = newTensor[float64]([1, 0])
+      check: (emptyLhs +. emptyRhs).shape == @[2, 0]
+
       let ctx = newContext Tensor[float64]
       let scores = ctx.variable(zeros[float64]([2, 2, 4, 4]), requires_grad = true)
       let mask = causal_mask[float64](4)
@@ -135,6 +171,23 @@ proc main() =
       let loss = masked_scores.sum()
       loss.backprop()
       check: scores.grad == ones[float64]([2, 2, 4, 4])
+
+    test "Broadcasted addition reduces gradients to the input shapes":
+      let ctx = newContext Tensor[float64]
+
+      # broadcast along a size-1 axis
+      let a = ctx.variable(zeros[float64]([2, 2, 4, 4]), requires_grad = true)
+      let b = ctx.variable(zeros[float64]([1, 1, 4, 4]), requires_grad = true)
+      (a +. b).sum().backprop()
+      check: a.grad == ones[float64]([2, 2, 4, 4])
+      check: b.grad == ones[float64]([1, 1, 4, 4]) *. 4.0
+
+      # broadcast along the leading axis
+      let c = ctx.variable(zeros[float64]([1, 4]), requires_grad = true)
+      let d = ctx.variable(zeros[float64]([3, 4]), requires_grad = true)
+      (c +. d).sum().backprop()
+      check: c.grad == ones[float64]([1, 4]) *. 3.0
+      check: d.grad == ones[float64]([3, 4])
 
     test "Linear layer on rank-3 tensor":
       let ctx = newContext Tensor[float64]
@@ -213,6 +266,22 @@ proc main() =
       biased.sum().backprop()
       check: vb.grad.shape == @[6, 6]
 
+    test "MultiHeadAttention attention bias backward":
+      let ctx = newContext Tensor[float64]
+      let mha = ctx.init(MultiHeadAttention[float64], embed_dim = 8, num_heads = 2, head_dim = 4)
+      let x = randomTensor[float64]([1, 3, 8], 1.0)
+      let b = randomTensor[float64]([3, 3], 1.0)
+
+      let vb = ctx.variable(b, requires_grad = true)
+      mha.forward(ctx.variable(x), is_causal = true, bias = vb).sum().backprop()
+      check: vb.grad.shape == @[3, 3]
+
+      proc loss_b(inp: Tensor[float64]): float64 =
+        ctx.no_grad_mode:
+          result = mha.forward(ctx.variable(x), is_causal = true, bias = ctx.variable(inp)).value.sum
+
+      check: vb.grad.mean_relative_error(numerical_gradient(b, loss_b)) < 1e-6
+
     test "MultiHeadAttention with explicit head_dim != embed_dim / heads":
       let ctx = newContext Tensor[float32]
       let mha = ctx.init(MultiHeadAttention[float32], embed_dim = 16, num_heads = 4, head_dim = 8)
@@ -233,13 +302,13 @@ proc main() =
       check: mha.v_proj.weight.grad.shape == @[32, 16]
       check: mha.out_proj.weight.grad.shape == @[16, 32]
 
-    test "repeat_kv groups consecutive query heads":
+    test "repeatKv groups consecutive query heads":
       let ctx = newContext Tensor[float64]
       # [1, 4, 1, 1] heads holding 1, 2, 3, 4
       var x = newTensor[float64]([1, 4, 1, 1])
       for i in 0 ..< 4: x[0, i, 0, 0] = float64(i + 1)
 
-      let r = repeat_kv(ctx.variable(x), 2).value
+      let r = repeatKv(ctx.variable(x), 2).value
       check: r.shape == @[1, 8, 1, 1]
       for i in 0 ..< 8:
         check: r[0, i, 0, 0] == float64(i div 2 + 1)
@@ -290,7 +359,7 @@ proc main() =
         )
         check: o.value.shape == @[1, 3, 16]
         check: c.k.shape == @[1, 2, 5, 4]
-        check: c.seen == 5 # context tokens
+        check: c.len == 5 # context tokens
 
     test "MultiHeadAttention cross-attention mode":
       let ctx = newContext Tensor[float32]
@@ -335,9 +404,12 @@ proc main() =
       expect ValueError:
         discard mha2.forward(x)
 
-      # cross-attention cannot be causal
+      # cross-attention cannot be causal or use self-attention rope
       expect ValueError:
         discard mha.forward(x, context = cond, is_causal = true)
+      let rope = RotaryEmbedding[float32].init(head_dim = 4)
+      expect ValueError:
+        discard mha.forward(x, context = cond, rope = rope.forward(6))
 
     test "Causal mask with offset":
       let m = causal_mask[float64](2, 5, offset = 3)
@@ -364,15 +436,15 @@ proc main() =
           let (o, c) = mha.forward(ctx.variable(x[_, i .. i, _]), is_causal = true, past = cache)
           cache = c
           outs.add o.value
-        check: cache.seen == n
+        check: cache.len == n
         check: max(abs(full - concat(outs, axis = 1))) < 1e-9
 
         # chunks of 3, 2 and 2, with an offset causal mask
         let (o1, c1) = mha.forward(ctx.variable(x[_, 0 .. 2, _]), is_causal = true, past = default(KVCache[float64]))
         let (o2, c2) = mha.forward(ctx.variable(x[_, 3 .. 4, _]), is_causal = true, past = c1)
         let (o3, c3) = mha.forward(ctx.variable(x[_, 5 .. 6, _]), is_causal = true, past = c2)
-        check: c1.seen == 3
-        check: c3.seen == n
+        check: c1.len == 3
+        check: c3.len == n
         check: max(abs(full - concat(@[o1.value, o2.value, o3.value], axis = 1))) < 1e-9
 
     test "MultiHeadAttention fully masked keys attend nothing":
@@ -434,8 +506,8 @@ proc main() =
         var cache = default(KVCache[float64])
         let (o1, c1) = mha.forward(ctx.variable(x[_, 0 .. 0, _]), context = ctx.variable(cond), key_mask = key_mask, past = cache)
         let (o2, c2) = mha.forward(ctx.variable(x[_, 1 .. 2, _]), context = ctx.variable(cond), key_mask = key_mask, past = c1)
-        check: c1.seen == 5
-        check: c2.seen == 5 # context tokens are not counted twice
+        check: c1.len == 5
+        check: c2.len == 5 # context tokens are not counted twice
         check: max(abs(out_key - concat(@[o1.value, o2.value], axis = 1))) < 1e-9
 
     test "MultiHeadAttention key_mask with cache":
@@ -503,7 +575,7 @@ proc main() =
             cache = present
             outs.add output.value
 
-          check: cache.seen == n
+          check: cache.len == n
           let seq_out = concat(outs, axis = 1)
           check: max(abs(full.value - seq_out)) < 1e-9
 
@@ -511,7 +583,7 @@ proc main() =
           let (a1, c1) = mha.forward(ctx.variable(x[_, 0 .. 2, _]), is_causal = true, rope = rope.forward(3), past = default(KVCache[float64]))
           let (a2, c2) = mha.forward(ctx.variable(x[_, 3 .. 4, _]), is_causal = true, rope = rope.forward(2, offset = 3), past = c1)
           let (a3, c3) = mha.forward(ctx.variable(x[_, 5 .. 8, _]), is_causal = true, rope = rope.forward(4, offset = 5), past = c2)
-          check: c3.seen == n
+          check: c3.len == n
           check: max(abs(full.value - concat(@[a1.value, a2.value, a3.value], axis = 1))) < 1e-9
 
     test "MultiHeadAttention caches rotated keys":
@@ -526,7 +598,7 @@ proc main() =
 
         # cached keys are the projections rotated at their absolute position
         let projected = mha.k_proj.forward(token).value.reshape(1, 1, mha.kv_heads, mha.head_dim).permute(0, 2, 1, 3)
-        check: max(abs(cache.k - apply_rotary(ctx.variable(projected), rope.forward(1, offset = 1)).value)) < 1e-12
+        check: max(abs(cache.k - applyRotary(ctx.variable(projected), rope.forward(1, offset = 1)).value)) < 1e-12
 
     test "MultiHeadAttention GQA cached decoding matches full forward":
       let ctx = newContext Tensor[float64]
@@ -550,7 +622,7 @@ proc main() =
             cache = present
             outs.add output.value
 
-          check: cache.seen == n
+          check: cache.len == n
           check: cache.k.shape == @[1, kv_heads, n, 4] # compact kv cache
           check: max(abs(full - concat(outs, axis = 1))) < 1e-9
 

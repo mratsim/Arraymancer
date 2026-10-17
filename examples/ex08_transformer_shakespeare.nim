@@ -99,7 +99,7 @@ proc forward[T](
 ): Variable[Tensor[T]] =
   doAssert caches.len == self.blocks.len
   let n = tokens.shape[1]
-  let offset = caches[0].seen # positions continue from the cache
+  let offset = caches[0].len # positions continue from the cache
   let rope = if self.use_rope: self.rope.forward(n, offset) else: default(RotaryFreqs[T])
 
   # token embeddings, plus learned positions continuing from the cached prefix
@@ -129,20 +129,19 @@ proc sample[T: SomeFloat](probs: Tensor[T], rng: var Rand): int =
     if u <= c: return i
   return probs.size - 1
 
-proc sampleTopK[T: SomeFloat](logits: Tensor[T], topK: T, rng: var Rand): int =
-  ## Keep the top `ceil((1 - topK) * n)` logits, sample the rest out.
+proc sampleTopK[T: SomeFloat](logits: Tensor[T], topK: int, rng: var Rand): int =
+  ## Sample from the `topK` most likely tokens; `topK <= 0` disables the cutoff.
   var logits = logits.clone()
-  if topK > 0.T and topK < 1.T:
-    let k = max(1, ceil((1.T - topK) * T(logits.size)).int)
+  if topK > 0 and topK < logits.size:
     let idx = logits.argsort(order = SortOrder.Descending)
-    for i in k ..< logits.size: logits[idx[i]] = T(-Inf)
+    for i in topK ..< logits.size: logits[idx[i]] = T(-Inf)
   sample(logits.softmax(), rng)
 
 proc sampleLast[T: SomeFloat](
   logits: Variable[Tensor[T]],
   pos: int,
   temperature: T,
-  topK: T,
+  topK: int,
   rng: var Rand
 ): int =
   sampleTopK(logits.value[0, pos, _].squeeze /. temperature, topK, rng)
@@ -155,10 +154,11 @@ proc generate[T](
   ixToChar: seq[char],
   length: int = 250,
   temperature: T = 1.0.T,
-  topK: T = 0.9.T,
+  topK: int = 40,
   useCache: bool = true
 ): string =
   doAssert prompt.len > 0, "prompt must not be empty"
+  doAssert temperature > 0.T, "temperature must be positive"
   var rng = initRand(42)
   var tokens = newSeq[int]()
   for ch in prompt:
@@ -199,7 +199,7 @@ proc main() =
     steps = 2000
     length = 350
     temperature = 1.0'f32
-    topK = 0.9'f32
+    topK = 40
     prompt = "ROMEO:\n"
     sampleEvery = 100
     kvCache = true
@@ -212,7 +212,7 @@ proc main() =
       of "steps": steps = parseInt(val)
       of "length": length = parseInt(val)
       of "temperature": temperature = parseFloat(val).float32
-      of "top-k": topK = parseFloat(val).float32
+      of "top-k": topK = parseInt(val)
       of "prompt": prompt = val
       of "sample-every": sampleEvery = parseInt(val)
       of "kv-cache": kvCache = if val.len == 0: true else: parseBool(val)
@@ -252,44 +252,44 @@ proc main() =
   const
     dim = 128
     heads = 4
-    kv_heads = heads div 2 # grouped query attention: half the heads for keys/values
+    kvHeads = heads div 2 # grouped query attention: half the heads for keys/values
     layers = 3
-    seq_len = 64
-    batch_size = 32
+    seqLen = 64
+    batchSize = 32
     lr = 0.0015'f32
-    head_dim = dim div heads
-    rotary_dim = head_dim div 2 # partial rotary
+    headDim = dim div heads
+    rotaryDim = headDim div 2 # partial rotary
 
-  let ropeInfo = if useRope: &", rope, rotary_dim={rotary_dim}" else: ", abs pos"
-  echo &"Shakespeare ({text.len} chars, vocab {vocab_size}) | dim={dim}, heads={heads}, kv_heads={kv_heads}, layers={layers}, ctx={seq_len}{ropeInfo}"
+  let ropeInfo = if useRope: &", rope, rotary_dim={rotaryDim}" else: ", abs pos"
+  echo &"Shakespeare ({text.len} chars, vocab {vocab_size}) | dim={dim}, heads={heads}, kv_heads={kvHeads}, layers={layers}, ctx={seqLen}{ropeInfo}"
 
   let ctx = newContext Tensor[float32]
   let model = ctx.initTransformerLM(
     vocab_size, dim, layers, heads,
-    max_seq_len = if useRope: none(int) else: some(seq_len),
-    useRope = useRope, rotaryDim = rotary_dim, kvHeads = kv_heads
+    max_seq_len = if useRope: none(int) else: some(seqLen),
+    useRope = useRope, rotaryDim = rotaryDim, kvHeads = kvHeads
   )
   var optim = model.optimizer(Adam, learning_rate = lr)
 
   var rng = initRand(1337)
-  let maxStart = data.len - seq_len - 1
+  let maxStart = data.len - seqLen - 1
 
   # train
   let t0 = epochTime()
 
   for step in 1 .. steps:
-    var x = newTensor[int]([batch_size, seq_len])
-    var y = newTensor[int]([batch_size, seq_len])
+    var x = newTensor[int]([batchSize, seqLen])
+    var y = newTensor[int]([batchSize, seqLen])
 
-    for b in 0 ..< batch_size:
+    for b in 0 ..< batchSize:
       let start = rng.rand(0 ..< maxStart)
-      for s in 0 ..< seq_len:
+      for s in 0 ..< seqLen:
         x[b, s] = data[start + s]
         y[b, s] = data[start + s + 1]
 
     # loss & backward
-    let logits = model.forward(x).reshape(batch_size * seq_len, vocab_size)
-    let loss = logits.sparse_softmax_cross_entropy(y.reshape(batch_size * seq_len))
+    let logits = model.forward(x).reshape(batchSize * seqLen, vocab_size)
+    let loss = logits.sparse_softmax_cross_entropy(y.reshape(batchSize * seqLen))
     let lossVal = loss.value[0]
 
     loss.backprop()

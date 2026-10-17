@@ -176,7 +176,7 @@ func `[]=`[T: not KnownSupportsCopyMem](t: var Tensor[T], idx: int, val: T) =
 ## Iterators
 type
   IterKind* = enum
-    Values, Iter_Values, Offset_Values
+    Values, Iter_Values, Offset_Values, Offsets
 
 template initStridedIteration*(coord, backstrides, iter_pos: untyped, t, iter_offset, iter_size: typed): untyped =
   ## Iterator init
@@ -212,6 +212,7 @@ template stridedIterationYield*(strider: IterKind, data, i, iter_pos: typed) =
   when strider == IterKind.Values: yield data[iter_pos]
   elif strider == IterKind.Iter_Values: yield (i, data[iter_pos])
   elif strider == IterKind.Offset_Values: yield (iter_pos, data[iter_pos]) ## TODO: remove workaround for C++ backend
+  elif strider == IterKind.Offsets: yield iter_pos
 
 template stridedIterationLoop*(strider: IterKind, data, t, iter_offset, iter_size, prev_d, last_d: typed) =
   ## We break up the tensor in 5 parts and iterate over each using for loops.
@@ -353,6 +354,11 @@ template stridedIteration*(strider: IterKind, t, iter_offset, iter_size: typed):
     else:
       stridedIterationLoop(strider, data, tf, iter_offset, iter_size, prev_d, last_d)
 
+iterator stridedOffsets*[T](t: Tensor[T], iter_offset, iter_size: int): int {.inline, noSideEffect.} =
+  ## Iterate over a tensor's raw offsets in C order.
+  if iter_size > 0: # stridedIterationLoop asserts non-empty trailing dimensions
+    stridedIteration(IterKind.Offsets, t, iter_offset, iter_size)
+
 template stridedCoordsIteration*(t, iter_offset, iter_size: typed): untyped =
   ## Iterate over a Tensor, displaying data as in C order, whatever the strides. (coords)
 
@@ -395,15 +401,15 @@ template dualStridedIteration*(strider: IterKind, t1, t2, iter_offset, iter_size
     for i in iter_offset..<(iter_offset+iter_size):
       dualStridedIterationYield(strider, t1data, t2data, i, i, i)
   elif t1_contiguous:
-    initStridedIteration(t2_coord, t2_backstrides, t2_iter_pos, t2, iter_offset, iter_size)
-    for i in iter_offset..<(iter_offset+iter_size):
-      dualStridedIterationYield(strider, t1data, t2data, i, i, t2_iter_pos)
-      advanceStridedIteration(t2_coord, t2_backstrides, t2_iter_pos, t2, iter_offset, iter_size)
+    var idx = iter_offset
+    for t2_iter_pos in stridedOffsets(t2, iter_offset, iter_size):
+      dualStridedIterationYield(strider, t1data, t2data, idx, idx, t2_iter_pos)
+      inc idx
   elif t2_contiguous:
-    initStridedIteration(t1_coord, t1_backstrides, t1_iter_pos, t1, iter_offset, iter_size)
-    for i in iter_offset..<(iter_offset+iter_size):
-      dualStridedIterationYield(strider, t1data, t2data, i, t1_iter_pos, i)
-      advanceStridedIteration(t1_coord, t1_backstrides, t1_iter_pos, t1, iter_offset, iter_size)
+    var idx = iter_offset
+    for t1_iter_pos in stridedOffsets(t1, iter_offset, iter_size):
+      dualStridedIterationYield(strider, t1data, t2data, idx, t1_iter_pos, idx)
+      inc idx
   else:
     initStridedIteration(t1_coord, t1_backstrides, t1_iter_pos, t1, iter_offset, iter_size)
     initStridedIteration(t2_coord, t2_backstrides, t2_iter_pos, t2, iter_offset, iter_size)

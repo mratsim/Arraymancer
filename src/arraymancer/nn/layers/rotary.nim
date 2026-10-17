@@ -19,7 +19,7 @@ import ../../tensor,
 type RotaryEmbedding*[T] = object
   ## Rotary position embedding, owned by the model and applied by attention.
   head_dim*: int
-  rotary_dim*: int # 0 = full head_dim
+  rotary_dim*: int # rotated channels
   base*: T
   inv_freq*: Tensor[T] # [head_dim div 2], zero past rotary_dim
 
@@ -39,14 +39,14 @@ proc init*[T: SomeFloat](
   doAssert rd > 0 and rd <= head_dim and rd mod 2 == 0,
     "rotary_dim must be even and in 1 .. head_dim, got " & $rd
   result.head_dim = head_dim
-  result.rotary_dim = rotary_dim
+  result.rotary_dim = rd
   result.base = base
   result.inv_freq = zeros[T]([head_dim div 2])
   # pairs past rotary_dim/2 keep a zero frequency: cos = 1, sin = 0
   for i in 0 ..< rd div 2:
     result.inv_freq[i] = pow(base, T(-2 * i) / T(rd))
 
-proc isEmpty*[T](freqs: RotaryFreqs[T]): bool =
+func isEmpty*[T](freqs: RotaryFreqs[T]): bool =
   freqs.cos.size == 0
 
 proc forward*[T: SomeFloat](
@@ -57,17 +57,21 @@ proc forward*[T: SomeFloat](
   ## Frequencies for the absolute positions `offset ..< offset + seq_len`.
   let pos = arange(offset, offset + seq_len, 1).asType(T).unsqueeze(1) # [seq_len, 1]
   let angles = pos *. self.inv_freq.unsqueeze(0) # [seq_len, head_dim div 2]
-  result.cos = angles.map(cos).unsqueeze(0) # [1, seq_len, head_dim div 2]
-  result.sin = angles.map(sin).unsqueeze(0)
+  let cosAngles = map_inline(angles):
+    cos(x)
+  let sinAngles = map_inline(angles):
+    sin(x)
+  result.cos = cosAngles.unsqueeze(0) # [1, seq_len, head_dim div 2]
+  result.sin = sinAngles.unsqueeze(0)
 
-proc apply_rotary*[T](
+proc applyRotary*[T](
   x: Variable[Tensor[T]],
   freqs: RotaryFreqs[T]
 ): Variable[Tensor[T]] =
   ## Rotate the interleaved pairs (x[2i], x[2i+1]) of a `[..., seq, head_dim]`
   ## tensor, with `freqs` covering exactly `seq` positions.
   let shape = x.value.shape
-  doAssert shape.len >= 2, "apply_rotary expects at least 2 dimensions"
+  doAssert shape.len >= 2, "applyRotary expects at least 2 dimensions"
   let (n, d) = (shape[^2], shape[^1])
   doAssert freqs.cos.shape[1] == n,
     "rotary frequencies cover " & $freqs.cos.shape[1] & " positions, expected " & $n
@@ -76,13 +80,13 @@ proc apply_rotary*[T](
     " channels, the tensor has " & $d
   let leading = x.value.size div (n * d)
 
-  let cos_t = x.context.variable(freqs.cos)
-  let sin_t = x.context.variable(freqs.sin)
+  let cosFreq = x.context.variable(freqs.cos)
+  let sinFreq = x.context.variable(freqs.sin)
 
   # rotate interleaved pairs
   let parts = x.reshape(leading, n, d div 2, 2).chunk(2, axis = 3)
   let x1 = parts[0].squeeze(3)
   let x2 = parts[1].squeeze(3)
-  let y1 = x1 *. cos_t - x2 *. sin_t
-  let y2 = x1 *. sin_t + x2 *. cos_t
+  let y1 = x1 *. cosFreq - x2 *. sinFreq
+  let y2 = x1 *. sinFreq + x2 *. cosFreq
   result = stack(y1, y2, axis = 3).reshape(shape)

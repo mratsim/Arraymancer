@@ -24,7 +24,7 @@ suite "LayerNorm":
     let x = ctx.variable(x_t, requires_grad = true)
     let w = ctx.variable(w_t, requires_grad = true)
 
-    let y = x.layer_norm(w)
+    let y = x.layernorm(w)
     check: y.value.shape == @[2, 3, 4]
 
     let loss = y.sum()
@@ -50,7 +50,7 @@ suite "LayerNorm":
     let w = ctx.variable(w_t, requires_grad = true)
     let b = ctx.variable(b_t, requires_grad = true)
 
-    let y = x.layer_norm(w, b)
+    let y = x.layernorm(w, b)
     check: y.value.shape == @[2, 3, 4]
 
     let loss = y.sum()

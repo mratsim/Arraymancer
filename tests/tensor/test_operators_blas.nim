@@ -445,7 +445,7 @@ proc main() =
 
       check: n1 * n2 == n1n2
 
-    test "complex matrix product":
+    test "Complex matrix product":
       # [[1. + 1.j, 2. + 2.j, 3. + 3.j]    [[1. + 1.j, 4. + 4.j],     [[0. + 28.j, 0. + 64.j],
       #  [4. +4.j, 5. + 5.j, 6. + 6.j]] *  [2. + 2.j, 5. +5.j],  ==  [0. + 64.j, 0. + 154.j]
       #                               [3. + 3.j, 6. + 6.j]]
@@ -456,6 +456,52 @@ proc main() =
       let m5 = m3 * m4
       let m6 = [[28,64],[64,154]].toTensor().asType(Complex[float64])
       check: m5 == m6 * complex64(0,1)
+
+    test "Mixed complex - real operations":
+      let r = arange(1.0, 4.0)
+      let c = complex(arange(1.0, 4.0))
+
+      check: c + r == c + complex(r)
+      check: c +. r == c +. complex(r)
+      check: r + c == complex(r) + c
+      check: r +. c == complex(r) +. c
+      check: c +. 5.0 == c +. complex(5.0)
+      check: 5.0 +. c == complex(5.0) +. c
+      check: r +. complex64(5.0) == c +. complex(5.0)
+      check: complex64(5.0) +. r == c +. complex(5.0)
+
+      check: c - r == c - complex(r)
+      check: c -. r == c -. complex(r)
+      check: r - c == complex(r) - c
+      check: c -. 5.0 == c -. complex(5.0)
+      check: 5.0 -. c == complex(5.0) -. c
+      check: r -. complex64(5.0) == c -. complex(5.0)
+
+      check: c *. r == c *. complex(r)
+      check: r  *. c == complex(r) *. c
+      check: c * 5.0 == c * complex(5.0)
+      check: 5.0 * c == complex(5.0) * c
+      check: r * complex(5.0) == c * complex(5.0)
+      check: complex(5.0) * r == c * complex(5.0)
+      check: c *. 5.0 == c * complex(5.0)
+      check: 5.0 *. c == complex(5.0) * c
+      check: r *. complex(5.0) == c * complex(5.0)
+      check: complex(5.0) *. r == c * complex(5.0)
+
+      check: c /. r == c /. complex(r)
+      check: r /. c == complex(r) /. c
+      check: c / 5.0 == c / complex(5.0)
+      check: mean_absolute_error(5.0 /. c, complex(5.0) /. c) < 1e-9
+      check: mean_absolute_error(r / complex(5.0), c / complex(5.0)) < 1e-9
+      check: c /. 5.0 == c / complex(5.0)
+      check: mean_absolute_error(r /. complex(5.0), c / complex(5.0)) < 1e-9
+
+      check: c ^. r == c ^. complex(r)
+      check: r ^. c == complex(r) ^. c
+      check: c ^. 5.0 == c ^. complex(5.0)
+      check: 5.0 ^. c == complex(5.0) ^. c
+      check: r ^. complex64(5.0) == c ^. complex(5.0)
+
 
 main()
 GC_fullCollect()

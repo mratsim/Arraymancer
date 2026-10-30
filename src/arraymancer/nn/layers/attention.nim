@@ -204,7 +204,8 @@ proc forward*[T](
 
   # [batch, seq, heads * head_dim] <-> [batch, heads, seq, head_dim]
   template to_heads(t: Variable[Tensor[T]], heads: int): Variable[Tensor[T]] =
-    t.reshape(t.value.shape[0], t.value.shape[1], heads, d).permute(0, 2, 1, 3)
+    let tv = t
+    tv.reshape(tv.value.shape[0], tv.value.shape[1], heads, d).permute(0, 2, 1, 3)
   template merge_heads(t: Variable[Tensor[T]]): Variable[Tensor[T]] =
     t.permute(0, 2, 1, 3).reshape(b, n, self.dim_inner)
 

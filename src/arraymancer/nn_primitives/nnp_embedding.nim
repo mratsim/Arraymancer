@@ -75,7 +75,11 @@ proc embedding_backward*[T; Idx: byte or char or SomeInteger](
   # We assume that dWeight is zero initialized with shape
   # [vocabulary_size, embedding_size] for us.
   let flat_vocab_id = vocab_id.flatten_idx()
-  let dOutput2d = dOutput.reshape(vocab_id.size.int, dOutput.shape[^1])
+  let dOutput2d =
+    if dOutput.rank == 2:
+      dOutput
+    else:
+      dOutput.reshape(vocab_id.size.int, dOutput.shape[^1])
 
   for i, word_idx in enumerate(flat_vocab_id):
     if word_idx != padding_idx:

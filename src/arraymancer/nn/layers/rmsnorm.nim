@@ -35,7 +35,11 @@ proc rmsnorm_cache[TT](result: Variable[TT], input, weight: Variable[TT], eps: g
   result.requires_grad = true
   register_node("RMSNorm", gate, rmsnorm_backward_ag[TT], result, input, weight)
 
-proc rms_norm*[TT](input, weight: Variable[TT], eps: getSubType(TT) = getSubType(TT)(1e-5)): Variable[TT] =
+proc rmsnorm*[TT](
+    input, weight: Variable[TT],
+    eps: getSubType(TT) = getSubType(TT)(1e-5)
+  ): Variable[TT] =
+  ## Root-mean-square normalization over the last axis.
   when compileOption("boundChecks"):
     check_ctx(input, weight)
     if weight.value.shape != [input.value.shape[^1]].toMetadata:
@@ -49,6 +53,7 @@ proc rms_norm*[TT](input, weight: Variable[TT], eps: getSubType(TT) = getSubType
 
 type
   RMSNorm*[T] = object
+    ## Root-mean-square normalization with a learnable scale.
     weight*: Variable[Tensor[T]]
     eps*: T
 
@@ -62,7 +67,7 @@ proc init*[T](
   result.eps = eps
 
 proc forward*[T](self: RMSNorm[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
-  input.rms_norm(self.weight, self.eps)
+  input.rmsnorm(self.weight, self.eps)
 
 func outShape*[T](self: RMSNorm[T]): seq[int] = @[self.weight.value.shape[0]]
 func inShape*[T](self: RMSNorm[T]): seq[int] = @[self.weight.value.shape[0]]

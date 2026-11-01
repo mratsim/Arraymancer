@@ -86,6 +86,7 @@ proc gemm*[T: SomeNumber](
   gemm(1.T, A, B, 0.T, C)
 
 proc bmmImpl[T](alpha: T, a, b: Tensor[T], beta: T): Tensor[T] {.noinit.} =
+  ## Batched matrix multiplication with right-aligned batch broadcasting.
   when compileOption("boundChecks"):
     if a.rank < 2 or b.rank < 2:
       raise newException(ValueError, "Batch matrix multiplication requires both tensors to have rank >= 2, got rank " & $a.rank & " and " & $b.rank)
@@ -204,5 +205,3 @@ proc `*`*[T: Complex[float32] or Complex[float64]](
     result = bmmImpl(complex(1.F, 0.F), a, b, complex(0.F, 0.F))
   else:
     raise newException(ValueError, "Matrix multiplication valid only if both tensors have rank >= 2 (batched matrix multiplication), or rank 2 and rank 1 (matrix-vector)")
-
-

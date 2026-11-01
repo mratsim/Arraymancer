@@ -24,7 +24,7 @@ suite "RMSNorm":
     let x = ctx.variable(x_t, requires_grad = true)
     let w = ctx.variable(w_t, requires_grad = true)
 
-    let y = x.rms_norm(w)
+    let y = x.rmsnorm(w)
     check: y.value.shape == @[2, 3, 4]
 
     let loss = y.sum()

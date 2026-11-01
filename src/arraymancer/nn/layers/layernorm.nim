@@ -47,11 +47,12 @@ proc layernorm_cache[TT](result: Variable[TT], input, weight, bias: Variable[TT]
   else:
     register_node("LayerNorm", gate, layernorm_backward_ag[TT], result, input, weight, bias)
 
-proc layer_norm*[TT](
+proc layernorm*[TT](
     input, weight: Variable[TT],
     bias: Variable[TT] = nil,
     eps: getSubType(TT) = getSubType(TT)(1e-5)
   ): Variable[TT] =
+  ## Layer normalization over the last axis, with an optional bias.
   when compileOption("boundChecks"):
     check_ctx(input, weight)
     if weight.value.shape != [input.value.shape[^1]].toMetadata:
@@ -72,6 +73,7 @@ proc layer_norm*[TT](
 
 type
   LayerNorm*[T] = object
+    ## Layer normalization with a learnable scale and optional bias.
     weight*: Variable[Tensor[T]]
     bias*: Variable[Tensor[T]]
     eps*: T
@@ -89,7 +91,7 @@ proc init*[T](
   result.eps = eps
 
 proc forward*[T](self: LayerNorm[T], input: Variable[Tensor[T]]): Variable[Tensor[T]] =
-  input.layer_norm(self.weight, self.bias, self.eps)
+  input.layernorm(self.weight, self.bias, self.eps)
 
 func outShape*[T](self: LayerNorm[T]): seq[int] = @[self.weight.value.shape[0]]
 func inShape*[T](self: LayerNorm[T]): seq[int] = @[self.weight.value.shape[0]]
